@@ -1,0 +1,453 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano 2017. All rights reserved.
+//
+// This is a header-only, quick-and-dirty, universal quantum register
+// simulation, allowing (nonphysical) register cloning and direct measurement of
+// probability and phase, to leverage what advantages classical emulation of qubits
+// can have. (This is a sequential implementation, for reference.)
+//
+// The greater work, except where noted, is licensed under
+// the GNU General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// for details.
+
+#include <math.h>
+#include <complex>
+#include <random>
+#include <stdexcept>
+
+#define Complex16 std::complex<double>
+
+namespace Qrack {
+
+	class Register {
+		public:
+			Register(unsigned int qBitCount) : rand_distribution(0.0, 1.0) {
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				qubitCount = qBitCount;
+				maxQPower = 1<<qBitCount;
+				stateVec = new Complex16[maxQPower];
+				unsigned int lcv;
+				stateVec[0] = Complex16(cosine, sine);
+				for (lcv = 1; lcv < maxQPower; lcv++) {
+					stateVec[lcv] = Complex16(0.0, 0.0);
+				}
+			};
+			Register(unsigned int qBitCount, unsigned int initState) : rand_distribution(0.0, 1.0) {
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				qubitCount = qBitCount;
+				maxQPower = 1<<qBitCount;
+				stateVec = new Complex16[maxQPower];
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if (lcv == initState) {
+						stateVec[lcv] = Complex16(cosine, sine);
+					}	
+					else {
+						stateVec[lcv] = Complex16(0.0, 0.0);
+					}
+				}
+			};
+			Register(const Register& pqs) : rand_distribution(0.0, 1.0) {
+				runningNorm = pqs.runningNorm;
+				qubitCount = pqs.qubitCount;
+				maxQPower = pqs.maxQPower;
+				stateVec = new Complex16[maxQPower];
+				std::copy(pqs.stateVec, pqs.stateVec + qubitCount, stateVec);
+			};
+			~Register() {
+				delete [] stateVec;
+			};
+
+			int GetQubitCount() {
+				return qubitCount;
+			};
+			void CloneRawState(Complex16* output) {
+				if (runningNorm != 1.0) NormalizeState();
+				std::copy(stateVec, stateVec + qubitCount, output);
+			};
+			double Rand() {
+				return rand_distribution(rand_generator);
+			}
+
+			//Logic Gates:
+			void CCNOT(unsigned int qubitIndex1, unsigned int qubitIndex2, unsigned int qubitIndex3) {
+				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+				//	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CCNOT control bits cannot be same bit.");
+				if (qubitIndex1 == qubitIndex3 || qubitIndex2 == qubitIndex3)
+					throw std::invalid_argument("CCNOT control bits cannot also be target.");
+
+				const Complex16 pauliX[4] = {
+					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+				};
+
+				unsigned int qPower1 = 1 << qubitIndex1;
+				unsigned int qPower2 = 1 << qubitIndex2;
+				unsigned int qPower3 = 1 << qubitIndex3;
+				unsigned int qPowerTotal = qPower1 + qPower2 + qPower3;
+				Complex16 qubit[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowerTotal) == 0) {
+						qubit[0] = stateVec[lcv + qPower1 + qPower2 + qPower3];
+						qubit[1] = stateVec[lcv + qPower1 + qPower2];						
+
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);		
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
+
+						stateVec[lcv + qPower1 + qPower2 + qPower3] = qubit[0];
+						stateVec[lcv + qPower1 + qPower2] = qubit[1];
+					}
+				}
+
+				UpdateRunningNorm();
+			};
+			void CNOT(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CNOT control bit cannot also be target.");
+
+				const Complex16 pauliX[4] = {
+					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+				};
+
+				unsigned int qPower1 = 1 << qubitIndex1;
+				unsigned int qPower2 = 1 << qubitIndex2;
+				unsigned int qPowerTotal = qPower1 + qPower2;
+				Complex16 qubit[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowerTotal) == 0) {
+						qubit[0] = stateVec[lcv + qPower2 + qPower1];
+						qubit[1] = stateVec[lcv + qPower1];
+						
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
+
+						stateVec[lcv + qPower2 + qPower1] = qubit[0];
+						stateVec[lcv + qPower1] = qubit[1];						
+					}
+				}
+
+				UpdateRunningNorm();
+			};
+			void H(unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("H tried to operate on bit index greater than total bits.");
+				if (runningNorm != 1.0) NormalizeState();
+
+				const Complex16 had[4] = {
+					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
+					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
+				};
+				ApplyTwoByTwo(qubitIndex, had);
+			};
+			bool M(unsigned int qubitIndex) {
+				bool result;
+				double prob = rand_distribution(rand_generator);
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				unsigned int qPower = 1 << qubitIndex;
+				double zeroChance = 0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if (lcv & qPower == 0) {
+						zeroChance += norm(stateVec[lcv]);
+					} 
+				}
+
+				result = (prob >= zeroChance);
+				double nrmlzr;
+				
+				if (result) {
+					nrmlzr = sqrt(1.0 - zeroChance);
+					for (lcv = 0; lcv < maxQPower; lcv++) {
+						if ((lcv & qPower) == 0) {
+							stateVec[lcv] = Complex16(0.0, 0.0);
+						}
+						else {
+							stateVec[lcv] = Complex16(
+								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
+								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
+							) / nrmlzr;
+						}
+					}
+				}
+				else {
+					nrmlzr = sqrt(zeroChance);
+					for (lcv = 0; lcv < maxQPower; lcv++) {
+						if ((lcv & qPower) == 0) {
+							stateVec[lcv] = Complex16(
+								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
+								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
+							) / nrmlzr;
+						}
+						else {
+							stateVec[lcv] = Complex16(0.0, 0.0);
+						}
+					}
+				}
+			}
+
+			bool MAll(unsigned int fullRegister) {
+				bool result;
+				double prob = rand_distribution(rand_generator);
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				Complex16 toTest = stateVec[fullRegister];
+				double oneChance = real(toTest) * real(toTest) + imag(toTest) * imag(toTest);
+				result = (prob < oneChance);
+
+				double nrmlzr;
+				unsigned int lcv;
+				unsigned int maxPower = 1 << qubitCount;
+				if (result) {
+					for (lcv = 0; lcv < maxPower; lcv++) {
+						if (lcv == fullRegister) {
+							stateVec[lcv] = Complex16(cosine, sine);
+						}
+						else {
+							stateVec[lcv] = Complex16(0.0, 0.0);
+						}
+					}
+				}
+				else {
+					nrmlzr = sqrt(1.0 - oneChance);
+					for (lcv = 0; lcv < maxPower; lcv++) {
+						if (lcv == fullRegister) {
+							stateVec[lcv] = Complex16(0.0, 0.0);
+						}
+						else {
+							stateVec[lcv] = Complex16(
+								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
+								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
+							) / nrmlzr;
+						}
+					}
+				}
+
+				return result;
+			}
+			double Prob(unsigned int qubitIndex) {
+				unsigned int qPower = 1 << qubitIndex;
+				double oneChance = 0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPower) == qPower) {
+						oneChance += normSqrd(stateVec + lcv);
+					} 
+				}
+
+				return oneChance;
+			}
+			double ProbAll(unsigned int fullRegister) {
+				if (runningNorm != 1.0) NormalizeState();
+
+				return normSqrd(stateVec + fullRegister);
+			}
+			void ProbArray(double* probArray) {
+				if (runningNorm != 1.0) NormalizeState();
+
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					probArray[lcv] = normSqrd(stateVec + lcv); 
+				}
+			}
+			void R1(double radians, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				double cosine = cos(radians);
+				double sine = sin(radians); 
+				const Complex16 pauliZ[4] = {
+					Complex16(1.0, 0), Complex16(0.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(cosine, sine)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliZ);
+			};
+			void R1Dyad(int numerator, int denominator, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				R1((M_PI * numerator) / denominator, qubitIndex);
+			};
+			void RX(double radians, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("X tried to operate on bit index greater than total bits.");
+				double cosine = cos(radians / 2.0);
+				double sine = sin(radians / 2.0); 
+				Complex16 pauliRX[4] = {
+					Complex16(cosine, 0.0), Complex16(0.0, -sine),
+					Complex16(0.0, -sine), Complex16(cosine, 0.0)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliRX);
+			};
+			void RXDyad(int numerator, int denominator, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				RX((M_PI * numerator) / denominator, qubitIndex);
+			};
+			void RY(double radians, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
+				double cosine = cos(radians / 2.0);
+				double sine = sin(radians / 2.0); 
+				Complex16 pauliRY[4] = {
+					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
+					Complex16(sine, 0.0), Complex16(cosine, 0.0)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliRY);
+			};
+			void RYDyad(int numerator, int denominator, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				RY((M_PI * numerator) / denominator, qubitIndex);
+			};
+			void RZ(double radians, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				double cosine = cos(radians / 2.0);
+				double sine = sin(radians / 2.0); 
+				const Complex16 pauliZ[4] = {
+					Complex16(cosine, -sine), Complex16(0.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(cosine, sine)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliZ);
+			};
+			void RZDyad(int numerator, int denominator, unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				RZ((M_PI * numerator) / denominator, qubitIndex);
+			};
+			void Swap(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("Swap bits cannot be the same bit.");
+				const Complex16 pauliX[4] = {
+					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+				};
+
+				unsigned int qPower1 = 1 << qubitIndex1;
+				unsigned int qPower2 = 1 << qubitIndex2;
+				Complex16 qubit[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if (((lcv & qPower1) + (lcv & qPower2)) == 0) { 
+						qubit[0] = stateVec[lcv + qPower2];
+						qubit[1] = stateVec[lcv + qPower1];
+
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &a, pauliX, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
+
+						stateVec[lcv + qPower2] = qubit[0];
+						stateVec[lcv + qPower1] = qubit[1];
+					}
+				}
+
+				UpdateRunningNorm();
+			};
+			void X(unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("X tried to operate on bit index greater than total bits.");
+				const Complex16 pauliX[4] = {
+					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliX);
+			};
+			void XAll() {
+				unsigned int lcv;
+				for (lcv = 0; lcv < qubitCount; lcv++) {
+					X(lcv);
+				}
+
+				UpdateRunningNorm();
+			};
+			void Y(unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
+				const Complex16 pauliY[4] = {
+					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
+					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliY);
+			};
+			void Z(unsigned int qubitIndex) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				const Complex16 pauliZ[4] = {
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
+				};
+				ApplyTwoByTwo(qubitIndex, pauliZ);
+			};
+
+		private:
+			double runningNorm;
+			unsigned int qubitCount;
+			unsigned int maxQPower;
+			Complex16* stateVec;
+
+			std::default_random_engine rand_generator;
+			std::uniform_real_distribution<double> rand_distribution;
+
+			void ApplyTwoByTwo(unsigned int qubitIndex, const Complex16* mtrx) {
+				unsigned int qPower = 1 << qubitIndex;
+				Complex16 qubit[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPower) == 0) {
+						qubit[0] = stateVec[lcv + qPower];
+						qubit[1] = stateVec[lcv];						
+
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &a, mtrx, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);		
+
+						stateVec[lcv + qPower] = qubit[0];
+						stateVec[lcv] = qubit[1];
+					}
+				}
+
+				UpdateRunningNorm();
+			};
+
+			void zmv2x2(const Complex16 alpha, const Complex16* A, Complex16* Y) {
+				Complex16 Y0 = Y[0];
+				Y[0] = alpha * (A[0] * Y0 + A[1] * Y[1]);
+				Y[1] = alpha * (A[2] * Y0 + A[3] * Y[1]);
+			}
+
+			void UpdateRunningNorm() {
+				int lcv;
+				double sqrNorm = 0.0;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					sqrNorm += normSqrd(stateVec + lcv);
+				}
+
+				runningNorm = sqrt(sqrNorm);
+			}
+
+			void NormalizeState() {
+				int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					stateVec[lcv] /= runningNorm;
+				}
+				runningNorm = 1.0;
+			}
+
+			double normSqrd(Complex16* cmplx) {
+				return real(*cmplx) * real(*cmplx) + imag(*cmplx) * imag(*cmplx);
+			}
+	};
+};
