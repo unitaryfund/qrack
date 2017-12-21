@@ -1,4 +1,4 @@
-Copyright (c) Daniel Strano 2017. All rights reserved. (See "qrack.hpp" for additional information.)
+Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for additional information.)
 Licensed under the GNU General Public License V3, (except where noted).
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
