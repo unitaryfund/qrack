@@ -41,7 +41,7 @@ RZ(double radians, unsigned int bitIndex) - Rotate around z axis
 
 RZDyad(int numerator, int denominator, unsigned int bitIndex) - Rotate around z axis by an angle as a dyadic fraction, M_PI * numerator / denominator
 
-Swap(unsigned int bitIndex1, unsigned int bitIndex2) - Swap the values of bits at the two register indexes
+Swap(unsigned int bitIndex1, unsigned int bitIndex2) - Swap the values of bits at the two bit indices
 
 X(unsigned int bitIndex) - Apply Pauli x matrix
 
@@ -52,7 +52,7 @@ Z(unsigned int bitIndex) - Apply Pauli z matrix
 
 PSEUDO QUANTUM LOGIC:
 
-It is not possible to perform classical operations directly on a quantum computer, like simply copying the state of a register to another register! However, since we are only emulating a quantum computer, we want to be able to write in quantum logic, while leveraging the abilities of a classical computer to our (speed) advantage. (Complex types are just aliases for standard C++ double accuracy complex number types. See header for details.)
+It is not possible to perform even certain trivial classical operations directly on a quantum computer, like simply copying the state of a register to another register! However, since we are only emulating a quantum computer, we want to be able to write in quantum logic, while leveraging the abilities of a classical computer to our (speed) advantage. (Complex types are just aliases for standard C++ double accuracy complex number types. See header for details.)
 
 Register(Register orig) - Copy constructor that clones the exact state of the emulated register
 
