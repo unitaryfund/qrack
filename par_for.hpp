@@ -3,14 +3,6 @@
 // THE MIT LICENSE APPLIES ONLY TO THIS EXCERPT, IN ACCORDANCE WITH THAT LICENSE.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// (C) Andy Thomason 2016
-//
-// Example using the basic_mesh class to genererate solvent excluded
-// surfaces for molecules.
-//
-
 //Copyright (c) 2016 Andy Thomason
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the  
@@ -21,9 +13,9 @@
 //THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
 //PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
 //CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
-
+namespace Qrack {
 	template <class F>
-	void par_for(const int begin, const int end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const unsigned int* maskArray, F fn) {
+	void par_for(const int begin, const int end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* maskArray, F fn) {
 		std::atomic<int> idx;
 		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
@@ -42,7 +34,7 @@
 			futures[cpu].get();
 		}
 	}
-
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // THIS ENDS THE EXCERPTED SECTION FROM "GILGAMESH."
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

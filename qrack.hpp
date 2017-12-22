@@ -36,13 +36,13 @@ namespace Qrack {
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
 				stateVec = new Complex16[maxQPower];
-				unsigned int lcv;
+				long unsigned int lcv;
 				stateVec[0] = Complex16(cosine, sine);
 				for (lcv = 1; lcv < maxQPower; lcv++) {
 					stateVec[lcv] = Complex16(0.0, 0.0);
 				}
 			};
-			Register(unsigned int qBitCount, unsigned int initState) : rand_distribution(0.0, 1.0) {
+			Register(unsigned int qBitCount, long unsigned int initState) : rand_distribution(0.0, 1.0) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
@@ -51,7 +51,7 @@ namespace Qrack {
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
 				stateVec = new Complex16[maxQPower];
-				unsigned int lcv;
+				long unsigned int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if (lcv == initState) {
 						stateVec[lcv] = Complex16(cosine, sine);
@@ -82,13 +82,13 @@ namespace Qrack {
 			double Rand() {
 				return rand_distribution(rand_generator);
 			}
-			void SetPermutation(unsigned int perm) {
+			void SetPermutation(long unsigned int perm) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
 				runningNorm = 1.0;
-				unsigned int lcv;
+				long unsigned int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if (lcv == perm) {
 						stateVec[lcv] = Complex16(cosine, sine);
@@ -103,11 +103,11 @@ namespace Qrack {
 			}
 
 			//Logic Gates:
-			void CCNOT(unsigned int qubitIndex1, unsigned int qubitIndex2, unsigned int qubitIndex3) {
-				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+			void CCNOT(unsigned int control1, unsigned int control2, unsigned int target) {
+				//if ((control1 >= qubitCount) || (control2 >= qubitCount))
 				//	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CCNOT control bits cannot be same bit.");
-				if (qubitIndex1 == qubitIndex3 || qubitIndex2 == qubitIndex3)
+				if (control1 == control2) throw std::invalid_argument("CCNOT control bits cannot be same bit.");
+				if (control1 == target || control2 == target)
 					throw std::invalid_argument("CCNOT control bits cannot also be target.");
 
 				const Complex16 pauliX[4] = {
@@ -115,14 +115,14 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				unsigned int qPowers[4];
-				qPowers[1] = 1 << qubitIndex1;
-				qPowers[2] = 1 << qubitIndex2;
-				qPowers[3] = 1 << qubitIndex3;
-				qPowers[0] = qPowers[1] + qPowers[2];
+				long unsigned int qPowers[4];
+				qPowers[1] = 1 << control1;
+				qPowers[2] = 1 << control2;
+				qPowers[3] = 1 << target;
+				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const unsigned int* qPowers) {
+					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -141,16 +141,16 @@ namespace Qrack {
 
 				UpdateRunningNorm();
 			};
-			void CNOT(unsigned int qubitIndex1, unsigned int qubitIndex2) {
-				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+			void CNOT(unsigned int control, unsigned int target) {
+				//if ((control >= qubitCount) || (target >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CNOT control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CNOT control bit cannot also be target.");
 
 				const Complex16 pauliX[4] = {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliX);
+				ApplyControlled2x2(control, target, pauliX);
 			};
 			void H(unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("H tried to operate on bit index greater than total bits.");
@@ -169,9 +169,9 @@ namespace Qrack {
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
-				unsigned int qPower = 1 << qubitIndex;
+				long unsigned int qPower = 1 << qubitIndex;
 				double zeroChance = 0;
-				unsigned int lcv;
+				long unsigned int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if (lcv & qPower == 0) {
 						zeroChance += norm(stateVec[lcv]);
@@ -211,7 +211,7 @@ namespace Qrack {
 				}
 			}
 
-			bool MAll(unsigned int fullRegister) {
+			bool MAll(long unsigned int fullRegister) {
 				bool result;
 				double prob = rand_distribution(rand_generator);
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
@@ -223,8 +223,8 @@ namespace Qrack {
 				result = (prob < oneChance);
 
 				double nrmlzr;
-				unsigned int lcv;
-				unsigned int maxPower = 1 << qubitCount;
+				long unsigned int lcv;
+				long unsigned int maxPower = 1 << qubitCount;
 				if (result) {
 					for (lcv = 0; lcv < maxPower; lcv++) {
 						if (lcv == fullRegister) {
@@ -253,9 +253,9 @@ namespace Qrack {
 				return result;
 			}
 			double Prob(unsigned int qubitIndex) {
-				unsigned int qPower = 1 << qubitIndex;
+				long unsigned int qPower = 1 << qubitIndex;
 				double oneChance = 0;
-				unsigned int lcv;
+				long unsigned int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == qPower) {
 						oneChance += normSqrd(stateVec + lcv);
@@ -264,7 +264,7 @@ namespace Qrack {
 
 				return oneChance;
 			}
-			double ProbAll(unsigned int fullRegister) {
+			double ProbAll(long unsigned int fullRegister) {
 				if (runningNorm != 1.0) NormalizeState();
 
 				return normSqrd(stateVec + fullRegister);
@@ -272,7 +272,7 @@ namespace Qrack {
 			void ProbArray(double* probArray) {
 				if (runningNorm != 1.0) NormalizeState();
 
-				unsigned int lcv;
+				long unsigned int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					probArray[lcv] = normSqrd(stateVec + lcv); 
 				}
@@ -342,13 +342,13 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				unsigned int qPowers[4];
+				long unsigned int qPowers[3];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const unsigned int* qPowers) {
+					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -510,18 +510,18 @@ namespace Qrack {
 		private:
 			double runningNorm;
 			unsigned int qubitCount;
-			unsigned int maxQPower;
+			long unsigned int maxQPower;
 			Complex16* stateVec;
 
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
 			void Apply2x2(unsigned int qubitIndex, const Complex16* mtrx) {
-				unsigned int qPowers[1];
+				long unsigned int qPowers[1];
 				qPowers[0] = 1 << qubitIndex;
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const unsigned int* qPowers) {
+					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -542,13 +542,13 @@ namespace Qrack {
 			};
 
 			void ApplyControlled2x2(unsigned int qubitIndex1, unsigned int qubitIndex2, const Complex16* mtrx) {
-				unsigned int qPowers[3];
+				long unsigned int qPowers[3];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const unsigned int* qPowers) {
+					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -569,7 +569,7 @@ namespace Qrack {
 			};
 
 			void UpdateRunningNorm() {
-				int lcv;
+				long int lcv;
 				double sqrNorm = 0.0;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					sqrNorm += normSqrd(stateVec + lcv);
@@ -579,7 +579,7 @@ namespace Qrack {
 			}
 
 			void NormalizeState() {
-				int lcv;
+				long int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					stateVec[lcv] /= runningNorm;
 				}
