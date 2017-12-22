@@ -12,9 +12,36 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(8, 85);
+	Qrack::Register qftReg(8, 1);
 
 	double qftProbs[8];
+	std::cout<<"LSL Test:"<<std::endl;
+	for (i = 0; i < 8; i++) {
+		for (j = 0; j < 8; j++) {
+			std::cout<<((int)qftReg.Prob(j));
+		}
+		std::cout<<"->";
+		qftReg.LSL();
+		for (j = 0; j < 8; j++) {
+			std::cout<<((int)qftReg.Prob(j));
+		}
+		std::cout<<std::endl;	
+	}
+	std::cout<<"LSR Test:"<<std::endl;
+	qftReg.SetPermutation(128);
+	for (i = 0; i < 8; i++) {
+		for (j = 0; j < 8; j++) {
+			std::cout<<((int)qftReg.Prob(j));
+		}
+		std::cout<<"->";
+		qftReg.LSR();
+		for (j = 0; j < 8; j++) {
+			std::cout<<((int)qftReg.Prob(j));
+		}
+		std::cout<<std::endl;	
+	}
+
+	qftReg.SetPermutation(85);
 
 	std::cout<<"Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"<<std::endl;
 

@@ -82,6 +82,25 @@ namespace Qrack {
 			double Rand() {
 				return rand_distribution(rand_generator);
 			}
+			void SetPermutation(unsigned int perm) {
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if (lcv == perm) {
+						stateVec[lcv] = Complex16(cosine, sine);
+					}	
+					else {
+						stateVec[lcv] = Complex16(0.0, 0.0);
+					}
+				}
+			}
+			void SetQuantumState(Complex16* inputState) {
+				std::copy(inputState, inputState + qubitCount, stateVec);
+			}
 
 			//Logic Gates:
 			void CCNOT(unsigned int qubitIndex1, unsigned int qubitIndex2, unsigned int qubitIndex3) {
@@ -464,7 +483,19 @@ namespace Qrack {
 				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliZ);
 			};
 
-			//"Processor instructions:"
+			//Single register instructions:
+			void LSL() {
+				int i;
+				for (i = 1; i < qubitCount; i++) {
+					Swap(i, 0);
+				}
+			}
+			void LSR() {
+				int i;
+				for (i = qubitCount - 2; i >= 0; i--) {
+					Swap(i, qubitCount - 1);
+				}
+			}
 			void QFT() {
 				int i, j;
 				for (i = 0; i < qubitCount; i++) {
