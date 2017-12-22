@@ -124,28 +124,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-
-				unsigned int qPower1 = 1 << qubitIndex1;
-				unsigned int qPower2 = 1 << qubitIndex2;
-				unsigned int qPowerTotal = qPower1 + qPower2;
-				Complex16 qubit[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				double sqrNorm = 0.0;
-				unsigned int lcv;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if ((lcv & qPowerTotal) == 0) {
-						qubit[0] = stateVec[lcv + qPower2 + qPower1];
-						qubit[1] = stateVec[lcv + qPower1];
-						
-						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);
-						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
-
-						stateVec[lcv + qPower2 + qPower1] = qubit[0];
-						stateVec[lcv + qPower1] = qubit[1];						
-					}
-				}
-
-				UpdateRunningNorm();
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliX);
 			};
 			void H(unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("H tried to operate on bit index greater than total bits.");
@@ -155,7 +134,7 @@ namespace Qrack {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
 				};
-				ApplyTwoByTwo(qubitIndex, had);
+				Apply2x2(qubitIndex, had);
 			};
 			bool M(unsigned int qubitIndex) {
 				bool result;
@@ -276,11 +255,11 @@ namespace Qrack {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				double cosine = cos(radians);
 				double sine = sin(radians); 
-				const Complex16 pauliZ[4] = {
+				const Complex16 mtrx[4] = {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliZ);
+				Apply2x2(qubitIndex, mtrx);
 			};
 			void R1Dyad(int numerator, int denominator, unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
@@ -294,11 +273,11 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliRX);
+				Apply2x2(qubitIndex, pauliRX);
 			};
 			void RXDyad(int numerator, int denominator, unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				RX((M_PI * numerator) / denominator, qubitIndex);
+				RX((-M_PI * numerator) / denominator, qubitIndex);
 			};
 			void RY(double radians, unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
@@ -308,25 +287,25 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliRY);
+				Apply2x2(qubitIndex, pauliRY);
 			};
 			void RYDyad(int numerator, int denominator, unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				RY((M_PI * numerator) / denominator, qubitIndex);
+				RY((-M_PI * numerator) / denominator, qubitIndex);
 			};
 			void RZ(double radians, unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
-				const Complex16 pauliZ[4] = {
+				const Complex16 pauliRZ[4] = {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliZ);
+				Apply2x2(qubitIndex, pauliRZ);
 			};
 			void RZDyad(int numerator, int denominator, unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				RZ((M_PI * numerator) / denominator, qubitIndex);
+				RZ((-M_PI * numerator) / denominator, qubitIndex);
 			};
 			void Swap(unsigned int qubitIndex1, unsigned int qubitIndex2) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
@@ -364,7 +343,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliX);
+				Apply2x2(qubitIndex, pauliX);
 			};
 			void XAll() {
 				unsigned int lcv;
@@ -380,7 +359,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliY);
+				Apply2x2(qubitIndex, pauliY);
 			};
 			void Z(unsigned int qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
@@ -388,7 +367,90 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				ApplyTwoByTwo(qubitIndex, pauliZ);
+				Apply2x2(qubitIndex, pauliZ);
+			};
+			void CR1(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CR1 control bit cannot also be target.");
+				double cosine = cos(radians);
+				double sine = sin(radians); 
+				const Complex16 mtrx[4] = {
+					Complex16(1.0, 0), Complex16(0.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(cosine, sine)
+				};
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, mtrx);
+			};
+			void CR1Dyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CR1Dyad control bit cannot also be target.");
+				CR1((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+			};
+			void CRX(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("X tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRX control bit cannot also be target.");
+				double cosine = cos(radians / 2.0);
+				double sine = sin(radians / 2.0); 
+				Complex16 pauliRX[4] = {
+					Complex16(cosine, 0.0), Complex16(0.0, -sine),
+					Complex16(0.0, -sine), Complex16(cosine, 0.0)
+				};
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliRX);
+			};
+			void CRXDyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRXDyad control bit cannot also be target.");
+				CRX((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+			};
+			void CRY(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRY control bit cannot also be target.");
+				double cosine = cos(radians / 2.0);
+				double sine = sin(radians / 2.0); 
+				Complex16 pauliRY[4] = {
+					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
+					Complex16(sine, 0.0), Complex16(cosine, 0.0)
+				};
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliRY);
+			};
+			void CRYDyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRYDyad control bit cannot also be target.");
+				CRY((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+			};
+			void CRZ(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRZ control bit cannot also be target.");
+				double cosine = cos(radians / 2.0);
+				double sine = sin(radians / 2.0); 
+				const Complex16 pauliRZ[4] = {
+					Complex16(cosine, -sine), Complex16(0.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(cosine, sine)
+				};
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliRZ);
+			};
+			void CRZDyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRZDyad control bit cannot also be target.");
+				CRZ((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+			};
+			void CY(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CY control bit cannot also be target.");
+				const Complex16 pauliY[4] = {
+					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
+					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
+				};
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliY);
+			};
+			void CZ(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
+				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CZ control bit cannot also be target.");
+				const Complex16 pauliZ[4] = {
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
+				};
+				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliZ);
 			};
 
 		private:
@@ -400,7 +462,7 @@ namespace Qrack {
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
-			void ApplyTwoByTwo(unsigned int qubitIndex, const Complex16* mtrx) {
+			void Apply2x2(unsigned int qubitIndex, const Complex16* mtrx) {
 				unsigned int qPower = 1 << qubitIndex;
 				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
@@ -421,6 +483,30 @@ namespace Qrack {
 
 				UpdateRunningNorm();
 			};
+
+			void ApplyControlled2x2(unsigned int qubitIndex1, unsigned int qubitIndex2, const Complex16* mtrx) {
+				unsigned int qPower1 = 1 << qubitIndex1;
+				unsigned int qPower2 = 1 << qubitIndex2;
+				unsigned int qPowerTotal = qPower1 + qPower2;
+				Complex16 qubit[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowerTotal) == 0) {
+						qubit[0] = stateVec[lcv + qPower2 + qPower1];
+						qubit[1] = stateVec[lcv + qPower1];
+						
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);
+
+						stateVec[lcv + qPower2 + qPower1] = qubit[0];
+						stateVec[lcv + qPower1] = qubit[1];						
+					}
+				}
+
+				UpdateRunningNorm();
+			}
 
 			void zmv2x2(const Complex16 alpha, const Complex16* A, Complex16* Y) {
 				Complex16 Y0 = Y[0];
