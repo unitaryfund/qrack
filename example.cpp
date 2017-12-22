@@ -12,6 +12,32 @@ int main() {
 
 	int i, j;
 
+	Qrack::Register qftReg(8, 85);
+
+	double qftProbs[8];
+
+	std::cout<<"Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"<<std::endl;
+
+	for (i = 0; i < 8; i+=2) {
+		qftReg.H(i);
+	}
+
+	std::cout<<"Initial:"<<std::endl;
+	for (i = 0; i < 8; i++) {
+		qftProbs[i] = qftReg.Prob(i);
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
+	}
+
+	qftReg.QFT();
+
+	std::cout<<"Final:"<<std::endl;
+	for (i = 0; i < 8; i++) {
+		qftProbs[i] = qftReg.Prob(i);
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
+	}
+
+	std::cout<<"Next step might take a while..."<<std::endl;
+
 	Qrack::Register qReg(mpPowerOfTwo, 0);
 
 	//50/50 Superposition between "step" and "don't step" at each discrete time step

@@ -464,6 +464,17 @@ namespace Qrack {
 				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliZ);
 			};
 
+			//"Processor instructions:"
+			void QFT() {
+				int i, j;
+				for (i = 0; i < qubitCount; i++) {
+					H(i);
+					for (j = 1; j < qubitCount - i; j++) {
+						CR1Dyad(1, 1<<j, i + j, i); 
+					}
+				}
+			}
+
 
 		private:
 			double runningNorm;
