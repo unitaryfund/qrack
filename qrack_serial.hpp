@@ -2,10 +2,10 @@
 //
 // (C) Daniel Strano 2017. All rights reserved.
 //
-// This is a header-only, quick-and-dirty, multithreaded, universal quantum register
+// This is a header-only, quick-and-dirty, universal quantum register
 // simulation, allowing (nonphysical) register cloning and direct measurement of
 // probability and phase, to leverage what advantages classical emulation of qubits
-// can have.
+// can have. (This is a sequential implementation, for reference.)
 //
 // The greater work, except where noted, is licensed under
 // the GNU General Public License V3.
@@ -16,15 +16,11 @@
 #include <complex>
 #include <random>
 #include <stdexcept>
-#include <atomic>
-#include <thread>
-#include <future>
 
 #define Complex16 std::complex<double>
 
-#include "par_for.hpp"
-
 namespace Qrack {
+
 	class Register {
 		public:
 			Register(unsigned int qBitCount) : rand_distribution(0.0, 1.0) {
@@ -120,24 +116,22 @@ namespace Qrack {
 				qPowers[2] = 1 << control2;
 				qPowers[3] = 1 << target;
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
+				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+				double sqrNorm = 0.0;
+				long unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowers[0]) == 0) {
+						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
+						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
 
-							qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
-							qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);		
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-							stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
-							stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
-						}
+						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
+						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
 					}
-				);
+				}
 
 				UpdateRunningNorm();
 			}
@@ -341,11 +335,6 @@ namespace Qrack {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				RZ((-M_PI * numerator) / denominator, qubitIndex);
 			}
-			void SetBit(unsigned int qubitIndex1, bool value) {
-				if (value != M(qubitIndex1)) {
-					X(qubitIndex1);
-				}
-			}
 			void Swap(unsigned int qubitIndex1, unsigned int qubitIndex2) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
@@ -359,24 +348,22 @@ namespace Qrack {
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
+				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowers[0]) == 0) { 
+						qubit[0] = stateVec[lcv + qPowers[2]];
+						qubit[1] = stateVec[lcv + qPowers[1]];
 
-							qubit[0] = stateVec[lcv + qPowers[2]];
-							qubit[1] = stateVec[lcv + qPowers[1]];						
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &a, pauliX, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-							stateVec[lcv + qPowers[2]] = qubit[0];
-							stateVec[lcv + qPowers[1]] = qubit[1];
-						}
+						stateVec[lcv + qPowers[2]] = qubit[0];
+						stateVec[lcv + qPowers[1]] = qubit[1];
 					}
-				);
+				}
 
 				UpdateRunningNorm();
 			}
@@ -518,7 +505,7 @@ namespace Qrack {
 				}
 			}
 			void QFT() {
-				int i, j;
+				unsigned int i, j;
 				for (i = 0; i < qubitCount; i++) {
 					H(i);
 					for (j = 1; j < qubitCount - i; j++) {
@@ -527,37 +514,33 @@ namespace Qrack {
 				}
 			}
 
-
 		private:
 			double runningNorm;
 			unsigned int qubitCount;
-			long unsigned int maxQPower;
+			unsigned int maxQPower;
 			Complex16* stateVec;
 
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
 			void Apply2x2(unsigned int qubitIndex, const Complex16* mtrx) {
-				long unsigned int qPowers[1];
-				qPowers[0] = 1 << qubitIndex;
+				long unsigned int qPower = 1 << qubitIndex;
+				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+				double sqrNorm = 0.0;
+				long unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPower) == 0) {
+						qubit[0] = stateVec[lcv + qPower];
+						qubit[1] = stateVec[lcv];						
 
-							qubit[0] = stateVec[lcv + qPowers[0]];
-							qubit[1] = stateVec[lcv];						
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &a, mtrx, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);		
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-							stateVec[lcv + qPowers[0]] = qubit[0];
-							stateVec[lcv] = qubit[1];
-						}
+						stateVec[lcv + qPower] = qubit[0];
+						stateVec[lcv] = qubit[1];
 					}
-				);
+				}
 
 				UpdateRunningNorm();
 			}
@@ -567,26 +550,30 @@ namespace Qrack {
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
+				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+				double sqrNorm = 0.0;
+				unsigned int lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowers[0]) == 0) {
+						qubit[0] = stateVec[lcv + qPowers[2] + qPowers[1]];
+						qubit[1] = stateVec[lcv + qPowers[1]];
+						
+						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);
+						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);
 
-							qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2]];
-							qubit[1] = stateVec[lcv + qPowers[1]];						
-
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-							stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[0];
-							stateVec[lcv + qPowers[1]] = qubit[1];
-						}
+						stateVec[lcv + qPowers[2] + qPowers[1]] = qubit[0];
+						stateVec[lcv + qPowers[1]] = qubit[1];						
 					}
-				);
+				}
 
 				UpdateRunningNorm();
+			}
+
+			void zmv2x2(const Complex16 alpha, const Complex16* A, Complex16* Y) {
+				Complex16 Y0 = Y[0];
+				Y[0] = alpha * (A[0] * Y0 + A[1] * Y[1]);
+				Y[1] = alpha * (A[2] * Y0 + A[3] * Y[1]);
 			}
 
 			void UpdateRunningNorm() {

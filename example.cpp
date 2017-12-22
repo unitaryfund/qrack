@@ -15,30 +15,49 @@ int main() {
 	Qrack::Register qftReg(8, 1);
 
 	double qftProbs[8];
-	std::cout<<"LSL Test:"<<std::endl;
+	std::cout<<"ROL Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<((int)qftReg.Prob(j));
 		}
 		std::cout<<"->";
-		qftReg.LSL();
+		qftReg.ROL();
 		for (j = 0; j < 8; j++) {
 			std::cout<<((int)qftReg.Prob(j));
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"LSR Test:"<<std::endl;
+	std::cout<<"ROR Test:"<<std::endl;
 	qftReg.SetPermutation(128);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<((int)qftReg.Prob(j));
 		}
 		std::cout<<"->";
-		qftReg.LSR();
+		qftReg.ROR();
 		for (j = 0; j < 8; j++) {
 			std::cout<<((int)qftReg.Prob(j));
 		}
 		std::cout<<std::endl;	
+	}
+
+	qftReg.SetPermutation(0);
+	for (i = 0; i < 8; i++) {
+		qftReg.H(i);
+	}
+
+	std::cout<<"M Test:"<<std::endl;
+	std::cout<<"Initial:"<<std::endl;
+	for (i = 0; i < 8; i++) {
+		qftProbs[i] = qftReg.Prob(i);
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
+	}
+
+	qftReg.M(0);
+	std::cout<<"Final:"<<std::endl;
+	for (i = 0; i < 8; i++) {
+		qftProbs[i] = qftReg.Prob(i);
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
 	}
 
 	qftReg.SetPermutation(85);
@@ -47,7 +66,7 @@ int main() {
 
 	for (i = 0; i < 8; i+=2) {
 		qftReg.H(i);
-	}
+	}	
 
 	std::cout<<"Initial:"<<std::endl;
 	for (i = 0; i < 8; i++) {
