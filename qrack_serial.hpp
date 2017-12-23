@@ -26,6 +26,7 @@
 namespace Qrack {
 	class Register {
 		public:
+			
 			Register(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");

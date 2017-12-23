@@ -1,0 +1,307 @@
+\hypertarget{classQrack_1_1Register}{}\section{Qrack\+:\+:Register Class Reference}
+\label{classQrack_1_1Register}\index{Qrack\+::\+Register@{Qrack\+::\+Register}}
+
+
+The \char`\"{}\+Qrack\+::\+Register\char`\"{} class represents an independent quantum processor register.  
+
+
+
+
+{\ttfamily \#include $<$qrack.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classQrack_1_1Register_ad4327f36e284b98649241ac485240673}{Register} (bit\+Len\+Int q\+Bit\+Count)\hypertarget{classQrack_1_1Register_ad4327f36e284b98649241ac485240673}{}\label{classQrack_1_1Register_ad4327f36e284b98649241ac485240673}
+
+\begin{DoxyCompactList}\small\item\em Initialize a register with q\+Bit\+Count number of bits, all to $\vert$0$>$ state. \end{DoxyCompactList}\item 
+\hyperlink{classQrack_1_1Register_abc21b5f8713919081796bb485229d8b7}{Register} (bit\+Len\+Int q\+Bit\+Count, bit\+Cap\+Int init\+State)\hypertarget{classQrack_1_1Register_abc21b5f8713919081796bb485229d8b7}{}\label{classQrack_1_1Register_abc21b5f8713919081796bb485229d8b7}
+
+\begin{DoxyCompactList}\small\item\em Initialize a register with q\+Bit\+Count number pf bits, to init\+State unsigned integer permutation state. \end{DoxyCompactList}\item 
+\hyperlink{classQrack_1_1Register_acd993a721794cc3e081ea907a9b8847f}{Register} (const \hyperlink{classQrack_1_1Register}{Register} \&pqs)\hypertarget{classQrack_1_1Register_acd993a721794cc3e081ea907a9b8847f}{}\label{classQrack_1_1Register_acd993a721794cc3e081ea907a9b8847f}
+
+\begin{DoxyCompactList}\small\item\em P\+S\+E\+U\+D\+O-\/\+Q\+U\+A\+N\+T\+UM Initialize a cloned register with same exact quantum state as pqs. \end{DoxyCompactList}\item 
+\hyperlink{classQrack_1_1Register_afb95c6368320c2ecd6499ff3a3a5aab7}{$\sim$\+Register} ()\hypertarget{classQrack_1_1Register_afb95c6368320c2ecd6499ff3a3a5aab7}{}\label{classQrack_1_1Register_afb95c6368320c2ecd6499ff3a3a5aab7}
+
+\begin{DoxyCompactList}\small\item\em Delete a register, with heap objects. \end{DoxyCompactList}\item 
+int \hyperlink{classQrack_1_1Register_aa86f504c48762af45f426610cb42c650}{Get\+Qubit\+Count} ()\hypertarget{classQrack_1_1Register_aa86f504c48762af45f426610cb42c650}{}\label{classQrack_1_1Register_aa86f504c48762af45f426610cb42c650}
+
+\begin{DoxyCompactList}\small\item\em Get the count of bits in this register. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ade2cbafa292bf9e6d9539f28699648d0}{Clone\+Raw\+State} (Complex16 $\ast$output)\hypertarget{classQrack_1_1Register_ade2cbafa292bf9e6d9539f28699648d0}{}\label{classQrack_1_1Register_ade2cbafa292bf9e6d9539f28699648d0}
+
+\begin{DoxyCompactList}\small\item\em P\+S\+E\+U\+D\+O-\/\+Q\+U\+A\+N\+T\+UM Output the exact quantum state of this register as a permutation basis array of complex numbers. \end{DoxyCompactList}\item 
+double \hyperlink{classQrack_1_1Register_a9c6df1efc7388aa10c070e86e164b6ca}{Rand} ()\hypertarget{classQrack_1_1Register_a9c6df1efc7388aa10c070e86e164b6ca}{}\label{classQrack_1_1Register_a9c6df1efc7388aa10c070e86e164b6ca}
+
+\begin{DoxyCompactList}\small\item\em Generate a random double from 0 to 1. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a79bf26b68cd549d87e719a8868568040}{Set\+Permutation} (bit\+Cap\+Int perm)\hypertarget{classQrack_1_1Register_a79bf26b68cd549d87e719a8868568040}{}\label{classQrack_1_1Register_a79bf26b68cd549d87e719a8868568040}
+
+\begin{DoxyCompactList}\small\item\em Set $\vert$0$>$/$\vert$1$>$ bit basis pure quantum permutation state, as an unsigned int. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a1756c6bb26d19f2f5bc991db3025b08e}{Set\+Quantum\+State} (Complex16 $\ast$input\+State)\hypertarget{classQrack_1_1Register_a1756c6bb26d19f2f5bc991db3025b08e}{}\label{classQrack_1_1Register_a1756c6bb26d19f2f5bc991db3025b08e}
+
+\begin{DoxyCompactList}\small\item\em Set arbitrary pure quantum state, in unsigned int permutation basis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a8f80b38a9a0dd924be1045c18ebaac3e}{C\+C\+N\+OT} (bit\+Len\+Int control1, bit\+Len\+Int control2, bit\+Len\+Int target)\hypertarget{classQrack_1_1Register_a8f80b38a9a0dd924be1045c18ebaac3e}{}\label{classQrack_1_1Register_a8f80b38a9a0dd924be1045c18ebaac3e}
+
+\begin{DoxyCompactList}\small\item\em Doubly-\/controlled not. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a45aac758ee13e22b52c82843829e0577}{C\+N\+OT} (bit\+Len\+Int control, bit\+Len\+Int target)\hypertarget{classQrack_1_1Register_a45aac758ee13e22b52c82843829e0577}{}\label{classQrack_1_1Register_a45aac758ee13e22b52c82843829e0577}
+
+\begin{DoxyCompactList}\small\item\em Controlled not. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ac08a20a80142c5f0f832ce629c5186c0}{H} (bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_ac08a20a80142c5f0f832ce629c5186c0}{}\label{classQrack_1_1Register_ac08a20a80142c5f0f832ce629c5186c0}
+
+\begin{DoxyCompactList}\small\item\em Hadamard gate. \end{DoxyCompactList}\item 
+bool \hyperlink{classQrack_1_1Register_a57b867997afd9d60ee624b582af16b4a}{M} (bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_a57b867997afd9d60ee624b582af16b4a}{}\label{classQrack_1_1Register_a57b867997afd9d60ee624b582af16b4a}
+
+\begin{DoxyCompactList}\small\item\em Measurement gate. \end{DoxyCompactList}\item 
+bool \hyperlink{classQrack_1_1Register_a7cf0d9ce7f529fff1c396e688c633a5c}{M\+All} (bit\+Cap\+Int full\+Register)\hypertarget{classQrack_1_1Register_a7cf0d9ce7f529fff1c396e688c633a5c}{}\label{classQrack_1_1Register_a7cf0d9ce7f529fff1c396e688c633a5c}
+
+\begin{DoxyCompactList}\small\item\em Measure for exact permutation of all register bits. \end{DoxyCompactList}\item 
+double \hyperlink{classQrack_1_1Register_a974a551de48f59ac5de8ef3fe10b17f3}{Prob} (bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_a974a551de48f59ac5de8ef3fe10b17f3}{}\label{classQrack_1_1Register_a974a551de48f59ac5de8ef3fe10b17f3}
+
+\begin{DoxyCompactList}\small\item\em P\+S\+E\+U\+D\+O-\/\+Q\+U\+A\+N\+T\+UM Direct measure of bit probability to be in $\vert$1$>$ state. \end{DoxyCompactList}\item 
+double \hyperlink{classQrack_1_1Register_a79024fbac5540534b273889127792e8b}{Prob\+All} (bit\+Cap\+Int full\+Register)\hypertarget{classQrack_1_1Register_a79024fbac5540534b273889127792e8b}{}\label{classQrack_1_1Register_a79024fbac5540534b273889127792e8b}
+
+\begin{DoxyCompactList}\small\item\em P\+S\+E\+U\+D\+O-\/\+Q\+U\+A\+N\+T\+UM Direct measure of full register probability to be in permutation state. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ad9e026107fd3ae829caa6fc29a106911}{Prob\+Array} (double $\ast$prob\+Array)\hypertarget{classQrack_1_1Register_ad9e026107fd3ae829caa6fc29a106911}{}\label{classQrack_1_1Register_ad9e026107fd3ae829caa6fc29a106911}
+
+\begin{DoxyCompactList}\small\item\em P\+S\+E\+U\+D\+O-\/\+Q\+U\+A\+N\+T\+UM Direct measure of all bit probabilities in register to be in $\vert$1$>$ state. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_af3282e8368cbf01d1d2326da0db28c0e}{R1} (double radians, bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_af3282e8368cbf01d1d2326da0db28c0e}{}\label{classQrack_1_1Register_af3282e8368cbf01d1d2326da0db28c0e}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}\+Phase shift gate\char`\"{} -\/ Rotates as e$^\wedge$(-\/i$\ast$) around $\vert$1$>$ state \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_aaa97b178131d0073d0f0b60131297201}{R1\+Dyad} (int numerator, int denominator, bit\+Len\+Int qubit\+Index)
+\begin{DoxyCompactList}\small\item\em Dyadic fraction \char`\"{}phase shift gate\char`\"{} -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around $\vert$1$>$ state. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a7827b5498c4b20926a98a98235df2b71}{RX} (double radians, bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_a7827b5498c4b20926a98a98235df2b71}{}\label{classQrack_1_1Register_a7827b5498c4b20926a98a98235df2b71}
+
+\begin{DoxyCompactList}\small\item\em x axis rotation gate -\/ Rotates as e$^\wedge$(-\/i$\ast$) around Pauli x axis \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a4a3d6827d171bfad34fdb08788c55819}{R\+X\+Dyad} (int numerator, int denominator, bit\+Len\+Int qubit\+Index)
+\begin{DoxyCompactList}\small\item\em Dyadic fraction x axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli x axis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ae6b11e5e58b0c8c8a7c7d58a2e962547}{RY} (double radians, bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_ae6b11e5e58b0c8c8a7c7d58a2e962547}{}\label{classQrack_1_1Register_ae6b11e5e58b0c8c8a7c7d58a2e962547}
+
+\begin{DoxyCompactList}\small\item\em y axis rotation gate -\/ Rotates as e$^\wedge$(-\/i$\ast$) around Pauli y axis \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_af2ad9feb2e43e7301420be716900b4fd}{R\+Y\+Dyad} (int numerator, int denominator, bit\+Len\+Int qubit\+Index)
+\begin{DoxyCompactList}\small\item\em Dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a5ab4ee73281c74cf84fa8eba599b211d}{RZ} (double radians, bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_a5ab4ee73281c74cf84fa8eba599b211d}{}\label{classQrack_1_1Register_a5ab4ee73281c74cf84fa8eba599b211d}
+
+\begin{DoxyCompactList}\small\item\em z axis rotation gate -\/ Rotates as e$^\wedge$(-\/i$\ast$) around Pauli z axis \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_af33f56698c61100082fca6ebdc0137b5}{R\+Z\+Dyad} (int numerator, int denominator, bit\+Len\+Int qubit\+Index)
+\begin{DoxyCompactList}\small\item\em Dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a12f2734a1ab842b87e2766244f8f83b4}{Set\+Bit} (bit\+Len\+Int qubit\+Index1, bool value)\hypertarget{classQrack_1_1Register_a12f2734a1ab842b87e2766244f8f83b4}{}\label{classQrack_1_1Register_a12f2734a1ab842b87e2766244f8f83b4}
+
+\begin{DoxyCompactList}\small\item\em Set individual bit to pure $\vert$0$>$ (false) or $\vert$1$>$ (true) state. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a60bb6e4eb965ffdb264a22ef19524756}{Swap} (bit\+Len\+Int qubit\+Index1, bit\+Len\+Int qubit\+Index2)\hypertarget{classQrack_1_1Register_a60bb6e4eb965ffdb264a22ef19524756}{}\label{classQrack_1_1Register_a60bb6e4eb965ffdb264a22ef19524756}
+
+\begin{DoxyCompactList}\small\item\em Swap values of two bits in register. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ab993acc64704e8e1c55526227b210037}{X} (bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_ab993acc64704e8e1c55526227b210037}{}\label{classQrack_1_1Register_ab993acc64704e8e1c55526227b210037}
+
+\begin{DoxyCompactList}\small\item\em N\+OT gate, which is also Pauli x matrix. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a63547410fb6375b7df4e4b8ec9d29d95}{X\+All} ()\hypertarget{classQrack_1_1Register_a63547410fb6375b7df4e4b8ec9d29d95}{}\label{classQrack_1_1Register_a63547410fb6375b7df4e4b8ec9d29d95}
+
+\begin{DoxyCompactList}\small\item\em Apply N\+OT gate, (which is Pauli x matrix,) to each bit in register. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a0b9feb4910452ea495493a1eded7a46c}{Y} (bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_a0b9feb4910452ea495493a1eded7a46c}{}\label{classQrack_1_1Register_a0b9feb4910452ea495493a1eded7a46c}
+
+\begin{DoxyCompactList}\small\item\em Apply Pauli Y matrix to bit. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a1fc52f219837e51b323634c533305302}{Z} (bit\+Len\+Int qubit\+Index)\hypertarget{classQrack_1_1Register_a1fc52f219837e51b323634c533305302}{}\label{classQrack_1_1Register_a1fc52f219837e51b323634c533305302}
+
+\begin{DoxyCompactList}\small\item\em Apply Pauli Z matrix to bit. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ad429509d1a525e7b1d8f0f5eafe4c3b6}{C\+R1} (double radians, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled \char`\"{}phase shift gate\char`\"{}. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a95684b53db07d5fa260407265640d9f5}{C\+R1\+Dyad} (int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled dyadic fraction \char`\"{}phase shift gate\char`\"{}. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ab8e662e76a6bf68ee41ccfe5ec9e2afa}{C\+RX} (double radians, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled x axis rotation. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a9a76efb9a5266e3197d173ad3fb6b417}{C\+R\+X\+Dyad} (int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled dyadic fraction x axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli x axis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a75ff533dfaf55b824389c3e3de44b353}{C\+RY} (double radians, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled y axis rotation. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a69de3518cac8982bbef4e6fc66fae514}{C\+R\+Y\+Dyad} (int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ae2387d321ac710f421e6964fc63a76de}{C\+RZ} (double radians, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled z axis rotation. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_af46e24636c39c3c6cf77b9ed479466e8}{C\+R\+Z\+Dyad} (int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)
+\begin{DoxyCompactList}\small\item\em Controlled dyadic fraction z axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli z axis. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a0e8409d24488b562f5e9e62aa21c0a0f}{CY} (bit\+Len\+Int control, bit\+Len\+Int target)\hypertarget{classQrack_1_1Register_a0e8409d24488b562f5e9e62aa21c0a0f}{}\label{classQrack_1_1Register_a0e8409d24488b562f5e9e62aa21c0a0f}
+
+\begin{DoxyCompactList}\small\item\em Apply controlled Pauli Y matrix to bit. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_a0432629ef4d1d7e96451784e38d565ff}{CZ} (bit\+Len\+Int control, bit\+Len\+Int target)\hypertarget{classQrack_1_1Register_a0432629ef4d1d7e96451784e38d565ff}{}\label{classQrack_1_1Register_a0432629ef4d1d7e96451784e38d565ff}
+
+\begin{DoxyCompactList}\small\item\em Apply controlled Pauli Z matrix to bit. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_af8df2359bb1903834b63f7fed6ea3ba7}{R\+OL} ()\hypertarget{classQrack_1_1Register_af8df2359bb1903834b63f7fed6ea3ba7}{}\label{classQrack_1_1Register_af8df2359bb1903834b63f7fed6ea3ba7}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}\+Circular shift left\char`\"{} -\/ shift each bit left, and carry last bit first position. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ac44e434f628960be0bfc862caa79fe2d}{R\+OR} ()\hypertarget{classQrack_1_1Register_ac44e434f628960be0bfc862caa79fe2d}{}\label{classQrack_1_1Register_ac44e434f628960be0bfc862caa79fe2d}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}\+Circular shift right\char`\"{} -\/ shift each bit right, and carry first bit last position. \end{DoxyCompactList}\item 
+void \hyperlink{classQrack_1_1Register_ac2384de2c947d6b94d844637e90a09a7}{Q\+FT} ()\hypertarget{classQrack_1_1Register_ac2384de2c947d6b94d844637e90a09a7}{}\label{classQrack_1_1Register_ac2384de2c947d6b94d844637e90a09a7}
+
+\begin{DoxyCompactList}\small\item\em Quantum Fourier Transform -\/ Apply the quantum Fourier transform to the register. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \char`\"{}\+Qrack\+::\+Register\char`\"{} class represents an independent quantum processor register. 
+
+The \char`\"{}\+Qrack\+::\+Register\char`\"{} class represents an independent quantum processor register, including primitive bit logic gates and single register (abstract) opcodes. 
+
+\subsection{Member Function Documentation}
+\index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+R1@{C\+R1}}
+\index{C\+R1@{C\+R1}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R1(double radians, bit\+Len\+Int control, bit\+Len\+Int target)}{CR1(double radians, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+R1 (
+\begin{DoxyParamCaption}
+\item[{double}]{radians, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_ad429509d1a525e7b1d8f0f5eafe4c3b6}{}\label{classQrack_1_1Register_ad429509d1a525e7b1d8f0f5eafe4c3b6}
+
+
+Controlled \char`\"{}phase shift gate\char`\"{}. 
+
+Controlled \char`\"{}phase shift gate\char`\"{} -\/ if control bit is true, rotates target bit as e$^\wedge$(-\/i$\ast$) around $\vert$1$>$ state \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+R1\+Dyad@{C\+R1\+Dyad}}
+\index{C\+R1\+Dyad@{C\+R1\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R1\+Dyad(int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)}{CR1Dyad(int numerator, int denominator, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+R1\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_a95684b53db07d5fa260407265640d9f5}{}\label{classQrack_1_1Register_a95684b53db07d5fa260407265640d9f5}
+
+
+Controlled dyadic fraction \char`\"{}phase shift gate\char`\"{}. 
+
+Controlled \char`\"{}phase shift gate\char`\"{} -\/ if control bit is true, rotates target bit as e$^\wedge$(-\/i$\ast$) around $\vert$1$>$ state \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+RX@{C\+RX}}
+\index{C\+RX@{C\+RX}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R\+X(double radians, bit\+Len\+Int control, bit\+Len\+Int target)}{CRX(double radians, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+RX (
+\begin{DoxyParamCaption}
+\item[{double}]{radians, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_ab8e662e76a6bf68ee41ccfe5ec9e2afa}{}\label{classQrack_1_1Register_ab8e662e76a6bf68ee41ccfe5ec9e2afa}
+
+
+Controlled x axis rotation. 
+
+Controlled x axis rotation -\/ if control bit is true, rotates as e$^\wedge$(-\/i$\ast$) around Pauli x axis \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+R\+X\+Dyad@{C\+R\+X\+Dyad}}
+\index{C\+R\+X\+Dyad@{C\+R\+X\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R\+X\+Dyad(int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)}{CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+R\+X\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_a9a76efb9a5266e3197d173ad3fb6b417}{}\label{classQrack_1_1Register_a9a76efb9a5266e3197d173ad3fb6b417}
+
+
+Controlled dyadic fraction x axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli x axis. 
+
+Controlled dyadic fraction x axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli x axis. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+RY@{C\+RY}}
+\index{C\+RY@{C\+RY}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R\+Y(double radians, bit\+Len\+Int control, bit\+Len\+Int target)}{CRY(double radians, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+RY (
+\begin{DoxyParamCaption}
+\item[{double}]{radians, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_a75ff533dfaf55b824389c3e3de44b353}{}\label{classQrack_1_1Register_a75ff533dfaf55b824389c3e3de44b353}
+
+
+Controlled y axis rotation. 
+
+Controlled y axis rotation -\/ if control bit is true, rotates as e$^\wedge$(-\/i$\ast$) around Pauli y axis \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+R\+Y\+Dyad@{C\+R\+Y\+Dyad}}
+\index{C\+R\+Y\+Dyad@{C\+R\+Y\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R\+Y\+Dyad(int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)}{CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+R\+Y\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_a69de3518cac8982bbef4e6fc66fae514}{}\label{classQrack_1_1Register_a69de3518cac8982bbef4e6fc66fae514}
+
+
+Controlled dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. 
+
+Controlled dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+RZ@{C\+RZ}}
+\index{C\+RZ@{C\+RZ}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R\+Z(double radians, bit\+Len\+Int control, bit\+Len\+Int target)}{CRZ(double radians, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+RZ (
+\begin{DoxyParamCaption}
+\item[{double}]{radians, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_ae2387d321ac710f421e6964fc63a76de}{}\label{classQrack_1_1Register_ae2387d321ac710f421e6964fc63a76de}
+
+
+Controlled z axis rotation. 
+
+Controlled z axis rotation -\/ if control bit is true, rotates as e$^\wedge$(-\/i$\ast$) around Pauli z axis \index{Qrack\+::\+Register@{Qrack\+::\+Register}!C\+R\+Z\+Dyad@{C\+R\+Z\+Dyad}}
+\index{C\+R\+Z\+Dyad@{C\+R\+Z\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{C\+R\+Z\+Dyad(int numerator, int denominator, bit\+Len\+Int control, bit\+Len\+Int target)}{CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+C\+R\+Z\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{control, }
+\item[{bit\+Len\+Int}]{target}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_af46e24636c39c3c6cf77b9ed479466e8}{}\label{classQrack_1_1Register_af46e24636c39c3c6cf77b9ed479466e8}
+
+
+Controlled dyadic fraction z axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli z axis. 
+
+Controlled dyadic fraction z axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli z axis. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. \index{Qrack\+::\+Register@{Qrack\+::\+Register}!R1\+Dyad@{R1\+Dyad}}
+\index{R1\+Dyad@{R1\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{R1\+Dyad(int numerator, int denominator, bit\+Len\+Int qubit\+Index)}{R1Dyad(int numerator, int denominator, bitLenInt qubitIndex)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+R1\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{qubit\+Index}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_aaa97b178131d0073d0f0b60131297201}{}\label{classQrack_1_1Register_aaa97b178131d0073d0f0b60131297201}
+
+
+Dyadic fraction \char`\"{}phase shift gate\char`\"{} -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around $\vert$1$>$ state. 
+
+Dyadic fraction \char`\"{}phase shift gate\char`\"{} -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around $\vert$1$>$ state. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. \index{Qrack\+::\+Register@{Qrack\+::\+Register}!R\+X\+Dyad@{R\+X\+Dyad}}
+\index{R\+X\+Dyad@{R\+X\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{R\+X\+Dyad(int numerator, int denominator, bit\+Len\+Int qubit\+Index)}{RXDyad(int numerator, int denominator, bitLenInt qubitIndex)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+R\+X\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{qubit\+Index}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_a4a3d6827d171bfad34fdb08788c55819}{}\label{classQrack_1_1Register_a4a3d6827d171bfad34fdb08788c55819}
+
+
+Dyadic fraction x axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli x axis. 
+
+Dyadic fraction x axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli x axis. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. \index{Qrack\+::\+Register@{Qrack\+::\+Register}!R\+Y\+Dyad@{R\+Y\+Dyad}}
+\index{R\+Y\+Dyad@{R\+Y\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{R\+Y\+Dyad(int numerator, int denominator, bit\+Len\+Int qubit\+Index)}{RYDyad(int numerator, int denominator, bitLenInt qubitIndex)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+R\+Y\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{qubit\+Index}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_af2ad9feb2e43e7301420be716900b4fd}{}\label{classQrack_1_1Register_af2ad9feb2e43e7301420be716900b4fd}
+
+
+Dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. 
+
+Dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. \index{Qrack\+::\+Register@{Qrack\+::\+Register}!R\+Z\+Dyad@{R\+Z\+Dyad}}
+\index{R\+Z\+Dyad@{R\+Z\+Dyad}!Qrack\+::\+Register@{Qrack\+::\+Register}}
+\subsubsection[{\texorpdfstring{R\+Z\+Dyad(int numerator, int denominator, bit\+Len\+Int qubit\+Index)}{RZDyad(int numerator, int denominator, bitLenInt qubitIndex)}}]{\setlength{\rightskip}{0pt plus 5cm}void Qrack\+::\+Register\+::\+R\+Z\+Dyad (
+\begin{DoxyParamCaption}
+\item[{int}]{numerator, }
+\item[{int}]{denominator, }
+\item[{bit\+Len\+Int}]{qubit\+Index}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classQrack_1_1Register_af33f56698c61100082fca6ebdc0137b5}{}\label{classQrack_1_1Register_af33f56698c61100082fca6ebdc0137b5}
+
+
+Dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. 
+
+Dyadic fraction y axis rotation gate -\/ Rotates as e$^\wedge$(i$\ast$(M\+\_\+\+PI $\ast$ numerator) / denominator) around Pauli y axis. N\+O\+TE T\+H\+AT D\+Y\+A\+D\+IC O\+P\+E\+R\+A\+T\+I\+ON A\+N\+G\+LE S\+I\+GN IS R\+E\+V\+E\+R\+S\+ED F\+R\+OM R\+A\+D\+I\+AN R\+O\+T\+A\+T\+I\+ON O\+P\+E\+R\+A\+T\+O\+RS. 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+qrack.\+hpp\end{DoxyCompactItemize}
