@@ -7,8 +7,7 @@
 // probability and phase, to leverage what advantages classical emulation of qubits
 // can have.
 //
-// The greater work, except where noted, is licensed under
-// the GNU General Public License V3.
+// Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
