@@ -1,4 +1,4 @@
-Copyright (c) Daniel Strano 2017. All rights reserved. (See "qrack.hpp" for additional information.)
+Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for additional information.)
 Licensed under the GNU General Public License V3, (except where noted).
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
@@ -10,88 +10,7 @@ To use:
 
 Instantiate a Qrack::Register, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.)
 
-
-PURE QUANTUM LOGIC:
-
-Programs can be carried out in quantum computational logic on any register. See an online encyclopedia or a reference text for the function of the gates:
-
-CCNOT(unsigned int control1, unsigned int control2, unsigned int target) - Doubly-controlled not
-
-CNOT(unsigned int control, unsigned int target) - Controlled not
-
-H(unsigned int bitIndex) - Hadamard
-
-bool M(unsigned int bitIndex) - Measure (true for bit = 1)
-
-bool MAll(unsigned int permutation) - Measure for overall bit permutation state of register. (True if match. Permutations are numbered from 0 to 2^[number of qubits in register].)
-
-R1(double radians, unsigned int bitIndex) - Rotate around |1> state*
-
-R1Dyad(int numerator, int denominator, unsigned int bitIndex) - Rotate around |1> state by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-RX(double radians, unsigned int bitIndex) - Rotate around x axis*
-
-RXDyad(int numerator, int denominator, unsigned int bitIndex) - Rotate around x axis by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-RY(double radians, unsigned int bitIndex) - Rotate around y axis*
-
-RYDyad(int numerator, int denominator, unsigned int bitIndex)- Rotate around y axis by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-RZ(double radians, unsigned int bitIndex) - Rotate around z axis*
-
-RZDyad(int numerator, int denominator, unsigned int bitIndex) - Rotate around z axis by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-Swap(unsigned int bitIndex1, unsigned int bitIndex2) - Swap the values of bits at the two bit indices
-
-X(unsigned int bitIndex) - Apply Pauli x matrix
-
-Y(unsigned int bitIndex) - Apply Pauli y matrix
-
-Z(unsigned int bitIndex) - Apply Pauli z matrix
-
-CR1(double radians, unsigned int control, unsigned int target) - Controlled rotation around |1> state.
-
-CR1Dyad(int numerator, int denominator, unsigned int control, unsigned int target) - Controlled rotation around |1> state by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-CRX(double radians, unsigned int control, unsigned int target) - Controlled rotatation around x axis*
-
-CRXDyad(int numerator, int denominator, unsigned int control, unsigned int target) - Controlled rotation around x axis by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-CRY(double radians, unsigned int control, unsigned int target) - Controlled rotation around y axis*
-
-CRYDyad(int numerator, int denominator, unsigned int control, unsigned int target)- Controlled rotation around y axis by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-CRZ(double radians, unsigned int control, unsigned int target) - Rotate around z axis*
-
-CRZDyad(int numerator, int denominator, unsigned int control, unsigned int target) - Controlled rotation around z axis by an angle as a dyadic fraction, M_PI * numerator / denominator**
-
-CY(unsigned int control, unsigned int target) - Apply controlled Pauli y matrix
-
-CZ(unsigned int control, unsigned int target) - Apply controlled Pauli z matrix
-
-*Angles for radian rotations are Theta as in exp(-i * Theta), with "i" being the square root of -1.
-**Angles for dyadic fraction rotations are n/d as in exp(i * (M_PI * n) / d), with "i" being the square root of -1. Sign convention is opposite from other rotations.
-
-
-PSEUDO QUANTUM LOGIC:
-
-It is not possible to perform even certain trivial classical operations directly on a quantum computer, like simply copying the state of a register to another register! However, since we are only emulating a quantum computer, we want to be able to write in quantum logic, while leveraging the abilities of a classical computer to our (speed) advantage. (Complex types are just aliases for standard C++ double accuracy complex number types. See header for details.)
-
-Register(Register orig) - Copy constructor that clones the exact state of the emulated register
-
-CloneRawState(Complex16 output[registerBitLength]) - Output the raw state of the emulated register, including phase information
-
-Prob(unsigned int bitIndex) - Get the probability that the bit is in the |1> state, with maximum accuracy in one operation
-
-ProbAll(unsigned int permutation) - Get the probability that the entire register is in the given permutation state, with maximum accuracy in one operation. (Permutations are numbered from 0 to 2^[number of qubits in register].)
-
-
-OTHER METHODS:
-
-unsigned int GetQubitCount() - Get the size of the register, in bits.
-
-double Rand() - Generate a pseudo-random double, uniformly distributed from 0 to 1
-
+For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
 EXAMPLE.CPP:
 
