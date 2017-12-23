@@ -24,7 +24,6 @@
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
-#define MIN_PROB 0.001
 
 #include "par_for.hpp"
 
@@ -196,7 +195,7 @@ namespace Qrack {
 				qPowers[0] = 1 << qubitIndex;
 				double oneChance = Prob(qubitIndex);
 
-				result = (prob < oneChance) && oneChance > MIN_PROB;
+				result = (prob < oneChance) && oneChance > 0.0;
 				double nrmlzr = 1.0;
 				bitCapInt lcv;
 				if (result) {
@@ -216,7 +215,7 @@ namespace Qrack {
 					}
 				}
 				else {
-					if (oneChance < 1.0 - MIN_PROB) nrmlzr = sqrt(1.0 - oneChance);
+					if (oneChance < 1.0) nrmlzr = sqrt(1.0 - oneChance);
 					par_for (0, maxQPower, stateVec, Complex16(cosine / nrmlzr, sine), NULL, qPowers,
 						[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
@@ -553,26 +552,43 @@ namespace Qrack {
 			}
 
 			//Single register instructions:
-			void LSL() {
-				ROL();
-				SetBit(0, false);
-			}
-			void LSR() {
-				ROR();
-				SetBit(qubitCount - 1, false);
-			}
-			/// "Circular shift left" - shift each bit left, and carry last bit first position.
-			void ROL() {
-				int i;
-				for (i = 1; i < qubitCount; i++) {
-					Swap(i, 0);
+		
+			///Logical shift left, filling the extra bits with |0>
+			void LSL(bitLenInt shift) {
+				if (shift > 0) {
+					int i;
+					ROL(shift);
+					for (i = 0; i < shift; i++) {
+						SetBit(i, false);
+					}
 				}
 			}
-			/// "Circular shift right" - shift each bit right, and carry first bit last position.
-			void ROR() {
-				int i;
-				for (i = qubitCount - 2; i >= 0; i--) {
-					Swap(i, qubitCount - 1);
+			///Logical shift right, filling the extra bits with |0>
+			void LSR(bitLenInt shift) {
+				if (shift > 0) {
+					int i;
+					ROR(shift);
+					for (i = 0; i < shift; i++) {
+						SetBit(i + qubitCount - 1, false);
+					}
+				}
+			}
+			/// "Circular shift left" - shift bits left, and carry last bits.
+			void ROL(bitLenInt shift) {
+				bitLenInt clamped = shift % qubitCount;
+				if (clamped > 0) {
+					Reverse(0, qubitCount - 1);
+					Reverse(0, clamped - 1);
+					Reverse(clamped, qubitCount - 1);
+				}
+			}
+			/// "Circular shift right" - shift bits right, and carry first bits.
+			void ROR(bitLenInt shift) {
+				bitLenInt clamped = shift % qubitCount;
+				if (clamped > 0) {
+					Reverse(clamped, qubitCount - 1);
+					Reverse(0, clamped - 1);
+					Reverse(0, qubitCount - 1);
 				}
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
@@ -648,16 +664,6 @@ namespace Qrack {
 				UpdateRunningNorm();
 			}
 
-			void UpdateRunningNorm() {
-				long int lcv;
-				double sqrNorm = 0.0;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					sqrNorm += normSqrd(stateVec + lcv);
-				}
-
-				runningNorm = sqrt(sqrNorm);
-			}
-
 			void NormalizeState() {
 				long int lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
@@ -668,6 +674,24 @@ namespace Qrack {
 
 			double normSqrd(Complex16* cmplx) {
 				return real(*cmplx) * real(*cmplx) + imag(*cmplx) * imag(*cmplx);
+			}
+
+			void UpdateRunningNorm() {
+				long int lcv;
+				double sqrNorm = 0.0;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					sqrNorm += normSqrd(stateVec + lcv);
+				}
+
+				runningNorm = sqrt(sqrNorm);
+			}
+
+			void Reverse(bitLenInt start, bitLenInt end) {
+				bitLenInt i;
+				bitLenInt iter = start + (end - start) / 2;
+				for (i = start; i <= iter; i++) {
+					Swap(i, end - i + start);
+				}
 			}
 	};
 }
