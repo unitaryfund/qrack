@@ -192,7 +192,8 @@ namespace Qrack {
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
-				bitCapInt qPower = 1 << qubitIndex;
+				bitCapInt qPowers[1];
+				qPowers[0] = 1 << qubitIndex;
 				double oneChance = Prob(qubitIndex);
 
 				result = (prob < oneChance) && oneChance > MIN_PROB;
@@ -200,31 +201,32 @@ namespace Qrack {
 				bitCapInt lcv;
 				if (result) {
 					if (oneChance > 0.0) nrmlzr = oneChance;
+					par_for (0, maxQPower, stateVec, Complex16(cosine / nrmlzr, sine), NULL, qPowers,
+						[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+							if ((lcv & qPowers[0]) == 0) {
+								stateVec[lcv] = Complex16(0.0, 0.0);
+							}
+							else {
+								stateVec[lcv] = nrm * stateVec[lcv];
+							}
+						}
+					);
 					for (lcv = 0; lcv < maxQPower; lcv++) {
-						if ((lcv & qPower) == 0) {
-							stateVec[lcv] = Complex16(0.0, 0.0);
-						}
-						else {
-							stateVec[lcv] = Complex16(
-								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
-								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
-							) / nrmlzr;
-						}
+						
 					}
 				}
 				else {
 					if (oneChance < 1.0 - MIN_PROB) nrmlzr = sqrt(1.0 - oneChance);
-					for (lcv = 0; lcv < maxQPower; lcv++) {
-						if ((lcv & qPower) == 0) {
-							stateVec[lcv] = Complex16(
-								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
-								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
-							) / nrmlzr;
+					par_for (0, maxQPower, stateVec, Complex16(cosine / nrmlzr, sine), NULL, qPowers,
+						[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+							if ((lcv & qPowers[0]) == 0) {
+								stateVec[lcv] = nrm * stateVec[lcv];
+							}
+							else {
+								stateVec[lcv] = Complex16(0.0, 0.0);
+							}
 						}
-						else {
-							stateVec[lcv] = Complex16(0.0, 0.0);
-						}
-					}
+					);
 				}
 
 				UpdateRunningNorm();
