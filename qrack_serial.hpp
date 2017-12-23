@@ -489,14 +489,14 @@ namespace Qrack {
 			}
 
 			//Single register instructions:
-			//void LSL() {
-			//	ROL();
-			//	SetBit(0, false);
-			//}
-			//void LSR() {
-			//	ROR();
-			//	SetBit(qubitCount - 1, false);
-			//}
+			void LSL() {
+				ROL();
+				SetBit(0, false);
+			}
+			void LSR() {
+				ROR();
+				SetBit(qubitCount - 1, false);
+			}
 			void ROL() {
 				int i;
 				for (i = 1; i < qubitCount; i++) {

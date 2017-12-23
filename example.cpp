@@ -15,28 +15,28 @@ int main() {
 	Qrack::Register qftReg(8, 1);
 
 	double qftProbs[8];
-	std::cout<<"ROL Test:"<<std::endl;
+	std::cout<<"LSL Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
-			std::cout<<((int)qftReg.Prob(j));
+			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.ROL();
+		qftReg.LSL();
 		for (j = 0; j < 8; j++) {
-			std::cout<<((int)qftReg.Prob(j));
+			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"ROR Test:"<<std::endl;
+	std::cout<<"LSR Test:"<<std::endl;
 	qftReg.SetPermutation(128);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
-			std::cout<<((int)qftReg.Prob(j));
+			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.ROR();
+		qftReg.LSR();
 		for (j = 0; j < 8; j++) {
-			std::cout<<((int)qftReg.Prob(j));
+			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}

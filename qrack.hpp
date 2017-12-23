@@ -24,6 +24,7 @@
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
+#define MIN_PROB 0.001
 
 #include "par_for.hpp"
 
@@ -192,20 +193,13 @@ namespace Qrack {
 				double sine = sin(angle);
 
 				bitCapInt qPower = 1 << qubitIndex;
-				double zeroChance = 0;
-				bitCapInt lcv;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if (lcv & qPower == 0) {
-						zeroChance += normSqrd(stateVec + lcv);
-					} 
-				}
+				double oneChance = Prob(qubitIndex);
 
-				result = (prob >= zeroChance);
+				result = (prob < oneChance) && oneChance > MIN_PROB;
 				double nrmlzr = 1.0;
-				runningNorm = 0.0;
-				
+				bitCapInt lcv;
 				if (result) {
-					if (zeroChance < 1.0) nrmlzr = sqrt(1.0 - zeroChance);
+					if (oneChance > 0.0) nrmlzr = oneChance;
 					for (lcv = 0; lcv < maxQPower; lcv++) {
 						if ((lcv & qPower) == 0) {
 							stateVec[lcv] = Complex16(0.0, 0.0);
@@ -215,19 +209,17 @@ namespace Qrack {
 								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
 								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
 							) / nrmlzr;
-							runningNorm += normSqrd(stateVec + lcv);
 						}
 					}
 				}
 				else {
-					if (zeroChance > 0.0) nrmlzr = sqrt(zeroChance);
+					if (oneChance < 1.0 - MIN_PROB) nrmlzr = sqrt(1.0 - oneChance);
 					for (lcv = 0; lcv < maxQPower; lcv++) {
 						if ((lcv & qPower) == 0) {
 							stateVec[lcv] = Complex16(
 								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
 								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
 							) / nrmlzr;
-							runningNorm += normSqrd(stateVec + lcv);
 						}
 						else {
 							stateVec[lcv] = Complex16(0.0, 0.0);
@@ -235,7 +227,9 @@ namespace Qrack {
 					}
 				}
 
-				runningNorm = sqrt(runningNorm);
+				UpdateRunningNorm();
+
+				return result;
 			}
 			///Measure for exact permutation of all register bits
 			bool MAll(bitCapInt fullRegister) {
@@ -557,14 +551,14 @@ namespace Qrack {
 			}
 
 			//Single register instructions:
-			//void LSL() {
-			//	ROL();
-			//	SetBit(0, false);
-			//}
-			//void LSR() {
-			//	ROR();
-			//	SetBit(qubitCount - 1, false);
-			//}
+			void LSL() {
+				ROL();
+				SetBit(0, false);
+			}
+			void LSR() {
+				ROR();
+				SetBit(qubitCount - 1, false);
+			}
 			/// "Circular shift left" - shift each bit left, and carry last bit first position.
 			void ROL() {
 				int i;
