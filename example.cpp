@@ -12,29 +12,29 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(8, 1);
+	Qrack::Register qftReg(8, 3);
 
 	double qftProbs[8];
-	std::cout<<"ROL Test:"<<std::endl;
+	std::cout<<"ASL Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.ROL(2);
+		qftReg.ASL(2);
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"ROR Test:"<<std::endl;
-	qftReg.SetPermutation(128);
+	std::cout<<"ASR Test:"<<std::endl;
+	qftReg.SetPermutation(129);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.ROR(2);
+		qftReg.ASR(2);
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}

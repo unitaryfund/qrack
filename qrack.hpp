@@ -552,42 +552,92 @@ namespace Qrack {
 			}
 
 			//Single register instructions:
-		
+
+			///Arithmetic shift left, with index 0 bit as sign bit
+			void ASL(bitLenInt shift) {
+				if (shift > 0) {
+					int i;
+					if (shift >= (qubitCount - 1)) {
+						for (i = 1; i < qubitCount; i++) {
+							SetBit(i, 0);
+						}
+					}
+					else {
+						Reverse(1, qubitCount - 1);
+						Reverse(1, shift);
+						Reverse(shift + 1, qubitCount - 1);
+
+						for (i = 0; i < shift; i++) {
+							SetBit(i + 1, false);
+						}
+					}
+				}
+			}
+			///Arithmetic shift right, with index 0 bit as sign bit
+			void ASR(bitLenInt shift) {
+				if (shift > 0) {
+					int i;
+					if (shift >= (qubitCount - 1)) {	
+						for (i = 1; i < qubitCount; i++) {
+							SetBit(i, 0);
+						}
+					}
+					else {
+						Reverse(shift + 1, qubitCount - 1);
+						Reverse(1, shift);
+						Reverse(1, qubitCount - 1);
+
+						for (i = 0; i < shift; i++) {
+							SetBit(qubitCount - 1 - i, false);
+						}
+					}
+				}
+			}
 			///Logical shift left, filling the extra bits with |0>
 			void LSL(bitLenInt shift) {
 				if (shift > 0) {
-					int i;
-					ROL(shift);
-					for (i = 0; i < shift; i++) {
-						SetBit(i, false);
+					if (shift >= qubitCount) {	
+						SetPermutation(0);
+					}
+					else {
+						int i;
+						ROL(shift);
+						for (i = 0; i < shift; i++) {
+							SetBit(i, false);
+						}
 					}
 				}
 			}
 			///Logical shift right, filling the extra bits with |0>
 			void LSR(bitLenInt shift) {
 				if (shift > 0) {
-					int i;
-					ROR(shift);
-					for (i = 0; i < shift; i++) {
-						SetBit(i + qubitCount - 1, false);
+					if (shift >= qubitCount) {	
+						SetPermutation(0);
+					}
+					else {
+						int i;
+						ROR(shift);
+						for (i = 0; i < shift; i++) {
+							SetBit(qubitCount - 1 - i, false);
+						}
 					}
 				}
 			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
 			void ROL(bitLenInt shift) {
-				bitLenInt clamped = shift % qubitCount;
-				if (clamped > 0) {
+				shift = shift % qubitCount;
+				if (shift > 0) {
 					Reverse(0, qubitCount - 1);
-					Reverse(0, clamped - 1);
-					Reverse(clamped, qubitCount - 1);
+					Reverse(0, shift - 1);
+					Reverse(shift, qubitCount - 1);
 				}
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift) {
-				bitLenInt clamped = shift % qubitCount;
-				if (clamped > 0) {
-					Reverse(clamped, qubitCount - 1);
-					Reverse(0, clamped - 1);
+				shift = shift % qubitCount;
+				if (shift > 0) {
+					Reverse(shift, qubitCount - 1);
+					Reverse(0, shift - 1);
 					Reverse(0, qubitCount - 1);
 				}
 			}
@@ -688,7 +738,7 @@ namespace Qrack {
 
 			void Reverse(bitLenInt start, bitLenInt end) {
 				bitLenInt i;
-				bitLenInt iter = start + (end - start) / 2;
+				bitLenInt iter = start + (end - start - 1) / 2;
 				for (i = start; i <= iter; i++) {
 					Swap(i, end - i + start);
 				}
