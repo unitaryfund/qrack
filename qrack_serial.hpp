@@ -12,18 +12,23 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
+#include <stdint.h>
 #include <math.h>
 #include <complex>
 #include <random>
 #include <stdexcept>
 
 #define Complex16 std::complex<double>
+#define bitLenInt uint8_t
+#define bitCapInt uint64_t
+#define bitsInByte 8
 
 namespace Qrack {
-
 	class Register {
 		public:
-			Register(unsigned int qBitCount) : rand_distribution(0.0, 1.0) {
+			Register(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
+				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
+					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
@@ -32,13 +37,13 @@ namespace Qrack {
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
 				stateVec = new Complex16[maxQPower];
-				long unsigned int lcv;
+				bitCapInt lcv;
 				stateVec[0] = Complex16(cosine, sine);
 				for (lcv = 1; lcv < maxQPower; lcv++) {
 					stateVec[lcv] = Complex16(0.0, 0.0);
 				}
 			}
-			Register(unsigned int qBitCount, long unsigned int initState) : rand_distribution(0.0, 1.0) {
+			Register(unsigned int qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
@@ -47,7 +52,7 @@ namespace Qrack {
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
 				stateVec = new Complex16[maxQPower];
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if (lcv == initState) {
 						stateVec[lcv] = Complex16(cosine, sine);
@@ -78,13 +83,13 @@ namespace Qrack {
 			double Rand() {
 				return rand_distribution(rand_generator);
 			}
-			void SetPermutation(long unsigned int perm) {
+			void SetPermutation(bitCapInt perm) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
 				runningNorm = 1.0;
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if (lcv == perm) {
 						stateVec[lcv] = Complex16(cosine, sine);
@@ -111,7 +116,7 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				long unsigned int qPowers[4];
+				bitCapInt qPowers[4];
 				qPowers[1] = 1 << control1;
 				qPowers[2] = 1 << control2;
 				qPowers[3] = 1 << target;
@@ -119,7 +124,7 @@ namespace Qrack {
 				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
 				double sqrNorm = 0.0;
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPowers[0]) == 0) {
 						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
@@ -165,9 +170,9 @@ namespace Qrack {
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
-				long unsigned int qPower = 1 << qubitIndex;
+				bitCapInt qPower = 1 << qubitIndex;
 				double zeroChance = 0;
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if (lcv & qPower == 0) {
 						zeroChance += normSqrd(stateVec + lcv);
@@ -211,7 +216,7 @@ namespace Qrack {
 
 				runningNorm = sqrt(runningNorm);
 			}
-			bool MAll(long unsigned int fullRegister) {
+			bool MAll(bitCapInt fullRegister) {
 				bool result;
 				double prob = rand_distribution(rand_generator);
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
@@ -223,8 +228,8 @@ namespace Qrack {
 				result = (prob < oneChance);
 
 				double nrmlzr;
-				long unsigned int lcv;
-				long unsigned int maxPower = 1 << qubitCount;
+				bitCapInt lcv;
+				bitCapInt maxPower = 1 << qubitCount;
 				if (result) {
 					for (lcv = 0; lcv < maxPower; lcv++) {
 						if (lcv == fullRegister) {
@@ -255,9 +260,9 @@ namespace Qrack {
 			double Prob(unsigned int qubitIndex) {
 				if (runningNorm != 1.0) NormalizeState();
 
-				long unsigned int qPower = 1 << qubitIndex;
+				bitCapInt qPower = 1 << qubitIndex;
 				double oneChance = 0;
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == qPower) {
 						oneChance += normSqrd(stateVec + lcv);
@@ -266,7 +271,7 @@ namespace Qrack {
 
 				return oneChance;
 			}
-			double ProbAll(long unsigned int fullRegister) {
+			double ProbAll(bitCapInt fullRegister) {
 				if (runningNorm != 1.0) NormalizeState();
 
 				return normSqrd(stateVec + fullRegister);
@@ -274,7 +279,7 @@ namespace Qrack {
 			void ProbArray(double* probArray) {
 				if (runningNorm != 1.0) NormalizeState();
 
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					probArray[lcv] = normSqrd(stateVec + lcv); 
 				}
@@ -344,7 +349,7 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				long unsigned int qPowers[3];
+				bitCapInt qPowers[3];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
@@ -524,11 +529,11 @@ namespace Qrack {
 			std::uniform_real_distribution<double> rand_distribution;
 
 			void Apply2x2(unsigned int qubitIndex, const Complex16* mtrx) {
-				long unsigned int qPower = 1 << qubitIndex;
+				bitCapInt qPower = 1 << qubitIndex;
 				Complex16 qubit[2];
 				//Complex16 b = Complex16(0.0, 0.0);
 				double sqrNorm = 0.0;
-				long unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == 0) {
 						qubit[0] = stateVec[lcv + qPower];
@@ -546,7 +551,7 @@ namespace Qrack {
 			}
 
 			void ApplyControlled2x2(unsigned int qubitIndex1, unsigned int qubitIndex2, const Complex16* mtrx) {
-				long unsigned int qPowers[3];
+				bitCapInt qPowers[3];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];

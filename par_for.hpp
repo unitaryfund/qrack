@@ -15,15 +15,15 @@
 //CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 namespace Qrack {
 	template <class F>
-	void par_for(const int begin, const int end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const long unsigned int* maskArray, F fn) {
-		std::atomic<int> idx;
+	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, F fn) {
+		std::atomic<bitCapInt> idx;
 		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, &fn]() {
 				for (;;) {
-					int i = idx++;
+					bitCapInt i = idx++;
 					if (i >= end) break;
 					fn(i, cpu, stateArray, nrm, mtrx, maskArray);
 				}
