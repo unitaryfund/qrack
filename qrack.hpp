@@ -654,13 +654,17 @@ namespace Qrack {
 			}
 			///Add (with sign, carry overflow to minimum negative)
 			void SADD(bitCapInt toAdd) {
-				RotateComplex(1, maxQPower, toAdd, false, 2, stateVec);
-				RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);				
+				if (toAdd > 0) {
+					RotateComplex(1, maxQPower, toAdd - 1, true, 2, stateVec);
+					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
+				}			
 			}
 			///Subtract (with sign, carry overflow to maximum positive)
 			void SSUB(bitCapInt toSub) {
-				RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
-				RotateComplex(1, maxQPower, toSub, true, 2, stateVec);
+				if (toSub > 0) {
+					RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
+					RotateComplex(1, maxQPower, toSub - 1, false, 2, stateVec);
+				}
 			}
 			///Add (without sign)
 			void UADD(bitCapInt toAdd) {

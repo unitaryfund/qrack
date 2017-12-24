@@ -12,7 +12,7 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(8, 7);
+	Qrack::Register qftReg(8, 251);
 
 	double qftProbs[8];
 	std::cout<<"SADD Test:"<<std::endl;
