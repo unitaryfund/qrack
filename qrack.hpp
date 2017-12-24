@@ -655,15 +655,19 @@ namespace Qrack {
 			///Add (with sign, carry overflow to minimum negative)
 			void SADD(bitCapInt toAdd) {
 				if (toAdd > 0) {
+					ROL(1);
 					RotateComplex(1, maxQPower, toAdd - 1, true, 2, stateVec);
 					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
+					ROR(1);
 				}			
 			}
 			///Subtract (with sign, carry overflow to maximum positive)
 			void SSUB(bitCapInt toSub) {
 				if (toSub > 0) {
+					ROL(1);
 					RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
 					RotateComplex(1, maxQPower, toSub - 1, false, 2, stateVec);
+					ROR(1);
 				}
 			}
 			///Add (without sign)

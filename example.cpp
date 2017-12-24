@@ -28,7 +28,7 @@ int main() {
 		std::cout<<std::endl;	
 	}
 	std::cout<<"SSUB Test:"<<std::endl;
-	qftReg.SetPermutation(10);
+	qftReg.SetPermutation(5);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
