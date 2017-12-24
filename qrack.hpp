@@ -608,22 +608,26 @@ namespace Qrack {
 			void RDEC(bitCapInt toSub) {
 				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
 			}
-			///Add (with sign, carry overflow to minimum negative)
+			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd) {
 				if (toAdd > 0) {
+					Swap(qubitCount - 1, qubitCount - 2);
 					ROL(1);
 					RotateComplex(1, maxQPower, toAdd - 1, true, 2, stateVec);
 					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
 					ROR(1);
+					Swap(qubitCount - 1, qubitCount - 2);
 				}			
 			}
-			///Subtract (with sign, carry overflow to maximum positive)
+			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
 			void SDEC(bitCapInt toSub) {
 				if (toSub > 0) {
+					Swap(qubitCount - 1, qubitCount - 2);
 					ROL(1);
-					RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
-					RotateComplex(1, maxQPower, toSub - 1, false, 2, stateVec);
+					RotateComplex(0, maxQPower, toSub - 1, false, 2, stateVec);
+					RotateComplex(1, maxQPower, toSub, false, 2, stateVec);
 					ROR(1);
+					Swap(qubitCount - 1, qubitCount - 2);
 				}
 			}
 			///Add (without sign)

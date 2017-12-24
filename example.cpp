@@ -12,7 +12,7 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(8, 251);
+	Qrack::Register qftReg(8, 61);
 
 	double qftProbs[8];
 	std::cout<<"SINC Test:"<<std::endl;
@@ -28,7 +28,7 @@ int main() {
 		std::cout<<std::endl;	
 	}
 	std::cout<<"SDEC Test:"<<std::endl;
-	qftReg.SetPermutation(5);
+	qftReg.SetPermutation(197);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
