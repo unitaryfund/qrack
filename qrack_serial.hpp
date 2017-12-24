@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <math.h>
+#include <algorithm>
 #include <complex>
 #include <random>
 #include <stdexcept>
@@ -487,37 +488,7 @@ namespace Qrack {
 			}
 
 			//Single register instructions:
-		
-			///"Circular rotate left" permutation
-			/** "Circular rotate left" permutation - Adds argument to permutation state, carrying highest permutations to lowest. */
-			void RADD(bitCapInt toAdd) {
-				std::rotate(stateVec, stateVec + maxQPower - toAdd, stateVec + maxQPower); 
-			}
-			///"Circular rotate right" permutation
-			/** "Circular rotate right" permutation - Subtracts argument from permutation state, carrying lowest permutations to highest. */
-			void RSUB(bitCapInt toSub) {
-				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
-			}
-			///Add (without sign or carry)
-			void UADD(bitCapInt toAdd) {
-				RADD(toAdd);
 
-				bitCapInt lcv;
-				for (lcv = 0; lcv < toAdd; lcv++) {
-					runningNorm -= normSqrd(stateVec + lcv);
-					stateVec[lcv] = Complex16(0.0, 0.0);
-				}
-			}
-			///Subtract (without sign or carry)
-			void USUB(bitCapInt toSub) {
-				RSUB(toSub);
-
-				bitCapInt lcv;
-				for (lcv = 0; lcv < toSub; lcv++) {
-					runningNorm -= normSqrd(stateVec + maxQPower - lcv - 1);
-					stateVec[maxQPower - lcv - 1] = Complex16(0.0, 0.0);
-				}
-			}
 			///Arithmetic shift left, with index 0 bit as sign bit
 			void ASL(bitLenInt shift) {
 				if (shift > 0) {
@@ -528,9 +499,9 @@ namespace Qrack {
 						}
 					}
 					else {
-						Reverse(1, qubitCount - 1);
+						Reverse(1, qubitCount);
 						Reverse(1, shift);
-						Reverse(shift + 1, qubitCount - 1);
+						Reverse(shift + 1, qubitCount);
 
 						for (i = 0; i < shift; i++) {
 							SetBit(i + 1, false);
@@ -548,9 +519,9 @@ namespace Qrack {
 						}
 					}
 					else {
-						Reverse(shift + 1, qubitCount - 1);
+						Reverse(shift + 1, qubitCount);
 						Reverse(1, shift);
-						Reverse(1, qubitCount - 1);
+						Reverse(1, qubitCount);
 
 						for (i = 0; i < shift; i++) {
 							SetBit(qubitCount - 1 - i, false);
@@ -592,18 +563,58 @@ namespace Qrack {
 			void ROL(bitLenInt shift) {
 				shift = shift % qubitCount;
 				if (shift > 0) {
-					Reverse(0, qubitCount - 1);
+					Reverse(0, qubitCount);
 					Reverse(0, shift - 1);
-					Reverse(shift, qubitCount - 1);
+					Reverse(shift, qubitCount);
 				}
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift) {
 				shift = shift % qubitCount;
 				if (shift > 0) {
-					Reverse(shift, qubitCount - 1);
+					Reverse(shift, qubitCount);
 					Reverse(0, shift - 1);
-					Reverse(0, qubitCount - 1);
+					Reverse(0, qubitCount);
+				}
+			}
+			///"Circular rotate left" permutation
+			/** "Circular rotate left" permutation - Adds argument to permutation state, carrying highest permutations to lowest. */
+			void RADD(bitCapInt toAdd) {
+				std::rotate(stateVec, stateVec + maxQPower - toAdd, stateVec + maxQPower); 
+			}
+			///"Circular rotate right" permutation
+			/** "Circular rotate right" permutation - Subtracts argument from permutation state, carrying lowest permutations to highest. */
+			void RSUB(bitCapInt toSub) {
+				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
+			}
+			///Subtract (with sign, carry overflow to maximum positive)
+			void SADD(bitCapInt toAdd) {
+				RotateComplex(1, maxQPower, toAdd, false, 2, stateVec);
+				RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);				
+			}
+			///Add (with sign, carry overflow to minimum negative)
+			void SSUB(bitCapInt toSub) {
+				RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
+				RotateComplex(1, maxQPower, toSub, true, 2, stateVec);
+			}
+			///Add (without sign)
+			void UADD(bitCapInt toAdd) {
+				RADD(toAdd);
+
+				bitCapInt lcv;
+				for (lcv = 0; lcv < toAdd; lcv++) {
+					runningNorm -= normSqrd(stateVec + lcv);
+					stateVec[lcv] = Complex16(0.0, 0.0);
+				}
+			}
+			///Subtract (without sign)
+			void USUB(bitCapInt toSub) {
+				RSUB(toSub);
+
+				bitCapInt lcv;
+				for (lcv = 0; lcv < toSub; lcv++) {
+					runningNorm -= normSqrd(stateVec + maxQPower - lcv - 1);
+					stateVec[maxQPower - lcv - 1] = Complex16(0.0, 0.0);
 				}
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
@@ -616,8 +627,6 @@ namespace Qrack {
 					}
 				}
 			}
-
-
 
 		private:
 			double runningNorm;
@@ -698,10 +707,43 @@ namespace Qrack {
 			}
 
 			void Reverse(bitLenInt start, bitLenInt end) {
-				bitLenInt i;
-				bitLenInt iter = start + (end - start - 1) / 2;
-				for (i = start; i <= iter; i++) {
-					Swap(i, end - i + start);
+				if (start + 1 < end) {
+					end -= 1;
+					bitLenInt i;
+					bitLenInt iter = start + (end - start - 1) / 2;
+					for (i = start; i <= iter; i++) {
+						Swap(i, end - i + start);
+					}
+				}
+			}
+
+			void ReverseComplex(bitCapInt start, bitCapInt end, bitCapInt stride, Complex16* vec) {
+				if (start + 1 < end) {
+					end -= 1;
+					Complex16 temp;
+					bitCapInt i;
+					bitCapInt iter = start + (end - start - 1) / 2;
+					for (i = start; i <= iter; i+=stride) {
+						temp = vec[i];
+						vec[i] = vec[end - i + start];
+						vec[end - i + start] = temp;
+					}
+				}
+			}
+
+			void RotateComplex(bitCapInt start, bitCapInt end, bitCapInt shift, bool leftRot, bitCapInt stride, Complex16* vec) {
+				shift *= stride;
+				if (shift > 0) {
+					if (leftRot) {
+						ReverseComplex(start, end, stride, vec);
+						ReverseComplex(start, start + shift - stride, stride, vec);
+						ReverseComplex(start + shift, end, stride, vec);
+					}
+					else {
+						ReverseComplex(start + shift, end, stride, vec);
+						ReverseComplex(start, start + shift - stride, stride, vec);
+						ReverseComplex(start, end, stride, vec);
+					}
 				}
 			}
 

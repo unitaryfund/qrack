@@ -12,29 +12,29 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(8, 0);
+	Qrack::Register qftReg(8, 7);
 
 	double qftProbs[8];
-	std::cout<<"UADD Test:"<<std::endl;
+	std::cout<<"SADD Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.UADD(1);
+		qftReg.SADD(1);
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"USUB Test:"<<std::endl;
-	qftReg.SetPermutation(128);
+	std::cout<<"SSUB Test:"<<std::endl;
+	qftReg.SetPermutation(10);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.USUB(1);
+		qftReg.SSUB(1);
 		for (j = 0; j < 8; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
