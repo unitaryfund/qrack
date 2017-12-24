@@ -2,10 +2,10 @@
 //
 // (C) Daniel Strano 2017. All rights reserved.
 //
-// This is a header-only, quick-and-dirty, universal quantum register
+// This is a header-only, quick-and-dirty, multithreaded, universal quantum register
 // simulation, allowing (nonphysical) register cloning and direct measurement of
 // probability and phase, to leverage what advantages classical emulation of qubits
-// can have. (This is a sequential implementation, for reference.)
+// can have.
 //
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -24,9 +24,11 @@
 #define bitsInByte 8
 
 namespace Qrack {
+	/// The "Qrack::Register" class represents an independent quantum processor register		
+	/** The "Qrack::Register" class represents an independent quantum processor register, including primitive bit logic gates and single register (abstract) opcodes. */
 	class Register {
 		public:
-			
+			///Initialize a register with qBitCount number of bits, all to |0> state.
 			Register(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
@@ -44,7 +46,8 @@ namespace Qrack {
 					stateVec[lcv] = Complex16(0.0, 0.0);
 				}
 			}
-			Register(unsigned int qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+			///Initialize a register with qBitCount number pf bits, to initState unsigned integer permutation state
+			Register(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
@@ -63,6 +66,7 @@ namespace Qrack {
 					}
 				}
 			}
+			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 			Register(const Register& pqs) : rand_distribution(0.0, 1.0) {
 				runningNorm = pqs.runningNorm;
 				qubitCount = pqs.qubitCount;
@@ -70,20 +74,24 @@ namespace Qrack {
 				stateVec = new Complex16[maxQPower];
 				std::copy(pqs.stateVec, pqs.stateVec + qubitCount, stateVec);
 			}
+			///Delete a register, with heap objects
 			~Register() {
 				delete [] stateVec;
 			}
-
+			///Get the count of bits in this register
 			int GetQubitCount() {
 				return qubitCount;
 			}
+			///PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 			void CloneRawState(Complex16* output) {
 				if (runningNorm != 1.0) NormalizeState();
 				std::copy(stateVec, stateVec + qubitCount, output);
 			}
+			///Generate a random double from 0 to 1
 			double Rand() {
 				return rand_distribution(rand_generator);
 			}
+			///Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
 			void SetPermutation(bitCapInt perm) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
@@ -100,12 +108,14 @@ namespace Qrack {
 					}
 				}
 			}
+			///Set arbitrary pure quantum state, in unsigned int permutation basis
 			void SetQuantumState(Complex16* inputState) {
 				std::copy(inputState, inputState + qubitCount, stateVec);
 			}
 
 			//Logic Gates:
-			void CCNOT(unsigned int control1, unsigned int control2, unsigned int target) {
+			/// Doubly-controlled not
+			void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
 				//if ((control1 >= qubitCount) || (control2 >= qubitCount))
 				//	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
 				if (control1 == control2) throw std::invalid_argument("CCNOT control bits cannot be same bit.");
@@ -117,21 +127,18 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
+				Complex16 qubit[2];
 				bitCapInt qPowers[4];
 				qPowers[1] = 1 << control1;
 				qPowers[2] = 1 << control2;
 				qPowers[3] = 1 << target;
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
-				Complex16 qubit[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				double sqrNorm = 0.0;
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPowers[0]) == 0) {
 						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
 						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
-
-						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &nrmlzr, pauliX, 2, qubit, 1, &b, qubit, 1);		
+	
 						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
 
 						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
@@ -139,9 +146,11 @@ namespace Qrack {
 					}
 				}
 
-				UpdateRunningNorm();
+				runningNorm = 1.0;
 			}
-			void CNOT(unsigned int control, unsigned int target) {
+
+			///Controlled not
+			void CNOT(bitLenInt control, bitLenInt target) {
 				//if ((control >= qubitCount) || (target >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
 				if (control == target) throw std::invalid_argument("CNOT control bit cannot also be target.");
@@ -150,9 +159,10 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				ApplyControlled2x2(control, target, pauliX);
+				ApplyControlled2x2(control, target, pauliX, false);
 			}
-			void H(unsigned int qubitIndex) {
+			///Hadamard gate
+			void H(bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("H tried to operate on bit index greater than total bits.");
 				if (runningNorm != 1.0) NormalizeState();
 
@@ -160,8 +170,9 @@ namespace Qrack {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
 				};
-				Apply2x2(qubitIndex, had);
+				Apply2x2(qubitIndex, had, true);
 			}
+			///Measurement gate
 			bool M(bitLenInt qubitIndex) {
 				if (runningNorm != 1.0) NormalizeState();
 
@@ -210,48 +221,8 @@ namespace Qrack {
 
 				return result;
 			}
-			bool MAll(bitCapInt fullRegister) {
-				bool result;
-				double prob = rand_distribution(rand_generator);
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
-				double cosine = cos(angle);
-				double sine = sin(angle);
-
-				Complex16 toTest = stateVec[fullRegister];
-				double oneChance = real(toTest) * real(toTest) + imag(toTest) * imag(toTest);
-				result = (prob < oneChance);
-
-				double nrmlzr;
-				bitCapInt lcv;
-				bitCapInt maxPower = 1 << qubitCount;
-				if (result) {
-					for (lcv = 0; lcv < maxPower; lcv++) {
-						if (lcv == fullRegister) {
-							stateVec[lcv] = Complex16(cosine, sine);
-						}
-						else {
-							stateVec[lcv] = Complex16(0.0, 0.0);
-						}
-					}
-				}
-				else {
-					nrmlzr = sqrt(1.0 - oneChance);
-					for (lcv = 0; lcv < maxPower; lcv++) {
-						if (lcv == fullRegister) {
-							stateVec[lcv] = Complex16(0.0, 0.0);
-						}
-						else {
-							stateVec[lcv] = Complex16(
-								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
-								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
-							) / nrmlzr;
-						}
-					}
-				}
-
-				return result;
-			}
-			double Prob(unsigned int qubitIndex) {
+			///PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+			double Prob(bitLenInt qubitIndex) {
 				if (runningNorm != 1.0) NormalizeState();
 
 				bitCapInt qPower = 1 << qubitIndex;
@@ -265,11 +236,13 @@ namespace Qrack {
 
 				return oneChance;
 			}
+			///PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 			double ProbAll(bitCapInt fullRegister) {
 				if (runningNorm != 1.0) NormalizeState();
 
 				return normSqrd(stateVec + fullRegister);
 			}
+			///PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
 			void ProbArray(double* probArray) {
 				if (runningNorm != 1.0) NormalizeState();
 
@@ -278,7 +251,8 @@ namespace Qrack {
 					probArray[lcv] = normSqrd(stateVec + lcv); 
 				}
 			}
-			void R1(double radians, unsigned int qubitIndex) {
+			///"Phase shift gate" - Rotates as e^(-i*\theta) around |1> state 
+			void R1(double radians, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				double cosine = cos(radians);
 				double sine = sin(radians); 
@@ -286,13 +260,16 @@ namespace Qrack {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, mtrx);
+				Apply2x2(qubitIndex, mtrx, true);
 			}
-			void R1Dyad(int numerator, int denominator, unsigned int qubitIndex) {
+			///Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state
+			/** Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void R1Dyad(int numerator, int denominator, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				R1((M_PI * numerator) / denominator, qubitIndex);
 			}
-			void RX(double radians, unsigned int qubitIndex) {
+			///x axis rotation gate - Rotates as e^(-i*\theta) around Pauli x axis 
+			void RX(double radians, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("X tried to operate on bit index greater than total bits.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
@@ -300,13 +277,16 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRX);
+				Apply2x2(qubitIndex, pauliRX, true);
 			}
-			void RXDyad(int numerator, int denominator, unsigned int qubitIndex) {
+			///Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+			/** Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void RXDyad(int numerator, int denominator, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				RX((-M_PI * numerator) / denominator, qubitIndex);
 			}
-			void RY(double radians, unsigned int qubitIndex) {
+			///y axis rotation gate - Rotates as e^(-i*\theta) around Pauli y axis 
+			void RY(double radians, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
@@ -314,13 +294,16 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRY);
+				Apply2x2(qubitIndex, pauliRY, true);
 			}
-			void RYDyad(int numerator, int denominator, unsigned int qubitIndex) {
+			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void RYDyad(int numerator, int denominator, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				RY((-M_PI * numerator) / denominator, qubitIndex);
 			}
-			void RZ(double radians, unsigned int qubitIndex) {
+			///z axis rotation gate - Rotates as e^(-i*\theta) around Pauli z axis 
+			void RZ(double radians, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
@@ -328,18 +311,22 @@ namespace Qrack {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, pauliRZ);
+				Apply2x2(qubitIndex, pauliRZ, true);
 			}
-			void RZDyad(int numerator, int denominator, unsigned int qubitIndex) {
+			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void RZDyad(int numerator, int denominator, bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				RZ((-M_PI * numerator) / denominator, qubitIndex);
 			}
+			///Set individual bit to pure |0> (false) or |1> (true) state
 			void SetBit(bitLenInt qubitIndex1, bool value) {
 				if (value != M(qubitIndex1)) {
 					X(qubitIndex1);
 				}
 			}
-			void Swap(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Swap values of two bits in register
+			void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
 				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("Swap bits cannot be the same bit.");
@@ -348,20 +335,17 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
+				Complex16 qubit[2];
 				bitCapInt qPowers[3];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
-				Complex16 qubit[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				double sqrNorm = 0.0;
-				unsigned int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPowers[0]) == 0) { 
 						qubit[0] = stateVec[lcv + qPowers[2]];
 						qubit[1] = stateVec[lcv + qPowers[1]];
 
-						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &a, pauliX, 2, qubit, 1, &b, qubit, 1);
 						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
 
 						stateVec[lcv + qPowers[2]] = qubit[0];
@@ -369,122 +353,142 @@ namespace Qrack {
 					}
 				}
 
-				UpdateRunningNorm();
+				runningNorm = 1.0;
 			}
-			void X(unsigned int qubitIndex) {
+			///NOT gate, which is also Pauli x matrix
+			void X(bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("X tried to operate on bit index greater than total bits.");
 				const Complex16 pauliX[4] = {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliX);
+				Apply2x2(qubitIndex, pauliX, false);
 			}
+			///Apply NOT gate, (which is Pauli x matrix,) to each bit in register
 			void XAll() {
-				unsigned int lcv;
+				bitLenInt lcv;
 				for (lcv = 0; lcv < qubitCount; lcv++) {
 					X(lcv);
 				}
-
-				UpdateRunningNorm();
 			}
-			void Y(unsigned int qubitIndex) {
+			///Apply Pauli Y matrix to bit
+			void Y(bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
 				const Complex16 pauliY[4] = {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliY);
+				Apply2x2(qubitIndex, pauliY, false);
 			}
-			void Z(unsigned int qubitIndex) {
+			///Apply Pauli Z matrix to bit
+			void Z(bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
 				const Complex16 pauliZ[4] = {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliZ);
+				Apply2x2(qubitIndex, pauliZ, false);
 			}
-			void CR1(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
-				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+			///Controlled "phase shift gate"
+			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta) around |1> state */
+			void CR1(double radians, bitLenInt control, bitLenInt target) {
+				//if ((control >= qubitCount) || (target >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CR1 control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CR1 control bit cannot also be target.");
 				double cosine = cos(radians);
 				double sine = sin(radians); 
 				const Complex16 mtrx[4] = {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, mtrx);
+				ApplyControlled2x2(control, target, mtrx, true);
 			}
-			void CR1Dyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled dyadic fraction "phase shift gate"
+			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta) around |1> state */
+			void CR1Dyad(int numerator, int denominator, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CR1Dyad control bit cannot also be target.");
-				CR1((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+				if (control == target) throw std::invalid_argument("CR1Dyad control bit cannot also be target.");
+				CR1((-M_PI * numerator) / denominator, control, target);
 			}
-			void CRX(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled x axis rotation
+			/** Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli x axis */
+			void CRX(double radians, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("X tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRX control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CRX control bit cannot also be target.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
 				Complex16 pauliRX[4] = {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliRX);
+				ApplyControlled2x2(control, target, pauliRX, true);
 			}
-			void CRXDyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+			/** Controlled dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRXDyad control bit cannot also be target.");
-				CRX((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+				if (control == target) throw std::invalid_argument("CRXDyad control bit cannot also be target.");
+				CRX((-M_PI * numerator) / denominator, control, target);
 			}
-			void CRY(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled y axis rotation
+			/** Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis */
+			void CRY(double radians, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRY control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CRY control bit cannot also be target.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
 				Complex16 pauliRY[4] = {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliRY);
+				ApplyControlled2x2(control, target, pauliRY, true);
 			}
-			void CRYDyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+			/** Controlled dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRYDyad control bit cannot also be target.");
-				CRY((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+				if (control == target) throw std::invalid_argument("CRYDyad control bit cannot also be target.");
+				CRY((-M_PI * numerator) / denominator, control, target);
 			}
-			void CRZ(double radians, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled z axis rotation
+			/** Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis */
+			void CRZ(double radians, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRZ control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CRZ control bit cannot also be target.");
 				double cosine = cos(radians / 2.0);
 				double sine = sin(radians / 2.0); 
 				const Complex16 pauliRZ[4] = {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliRZ);
+				ApplyControlled2x2(control, target, pauliRZ, true);
 			}
-			void CRZDyad(int numerator, int denominator, unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Controlled dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+			/** Controlled dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CRZDyad control bit cannot also be target.");
-				CRZ((-M_PI * numerator) / denominator, qubitIndex1, qubitIndex2);
+				if (control == target) throw std::invalid_argument("CRZDyad control bit cannot also be target.");
+				CRZ((-M_PI * numerator) / denominator, control, target);
 			}
-			void CY(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Apply controlled Pauli Y matrix to bit
+			void CY(bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CY control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CY control bit cannot also be target.");
 				const Complex16 pauliY[4] = {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliY);
+				ApplyControlled2x2(control, target, pauliY, false);
 			}
-			void CZ(unsigned int qubitIndex1, unsigned int qubitIndex2) {
+			///Apply controlled Pauli Z matrix to bit
+			void CZ(bitLenInt control, bitLenInt target) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("CZ control bit cannot also be target.");
+				if (control == target) throw std::invalid_argument("CZ control bit cannot also be target.");
 				const Complex16 pauliZ[4] = {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				ApplyControlled2x2(qubitIndex1, qubitIndex2, pauliZ);
+				ApplyControlled2x2(control, target, pauliZ, false);
 			}
 
 			//Single register instructions:
@@ -579,31 +583,35 @@ namespace Qrack {
 			}
 			///"Circular rotate left" permutation
 			/** "Circular rotate left" permutation - Adds argument to permutation state, carrying highest permutations to lowest. */
-			void RADD(bitCapInt toAdd) {
+			void RINC(bitCapInt toAdd) {
 				std::rotate(stateVec, stateVec + maxQPower - toAdd, stateVec + maxQPower); 
 			}
 			///"Circular rotate right" permutation
 			/** "Circular rotate right" permutation - Subtracts argument from permutation state, carrying lowest permutations to highest. */
-			void RSUB(bitCapInt toSub) {
+			void RDEC(bitCapInt toSub) {
 				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
 			}
 			///Add (with sign, carry overflow to minimum negative)
-			void SADD(bitCapInt toAdd) {
+			void SINC(bitCapInt toAdd) {
 				if (toAdd > 0) {
+					ROL(1);
 					RotateComplex(1, maxQPower, toAdd - 1, true, 2, stateVec);
 					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
+					ROR(1);
 				}			
 			}
 			///Subtract (with sign, carry overflow to maximum positive)
-			void SSUB(bitCapInt toSub) {
+			void SDEC(bitCapInt toSub) {
 				if (toSub > 0) {
+					ROL(1);
 					RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
 					RotateComplex(1, maxQPower, toSub - 1, false, 2, stateVec);
+					ROR(1);
 				}
 			}
 			///Add (without sign)
-			void UADD(bitCapInt toAdd) {
-				RADD(toAdd);
+			void UINC(bitCapInt toAdd) {
+				RINC(toAdd);
 
 				bitCapInt lcv;
 				for (lcv = 0; lcv < toAdd; lcv++) {
@@ -612,8 +620,8 @@ namespace Qrack {
 				}
 			}
 			///Subtract (without sign)
-			void USUB(bitCapInt toSub) {
-				RSUB(toSub);
+			void UDEC(bitCapInt toSub) {
+				RDEC(toSub);
 
 				bitCapInt lcv;
 				for (lcv = 0; lcv < toSub; lcv++) {
@@ -634,25 +642,22 @@ namespace Qrack {
 
 		private:
 			double runningNorm;
-			unsigned int qubitCount;
-			unsigned int maxQPower;
+			bitLenInt qubitCount;
+			bitCapInt maxQPower;
 			Complex16* stateVec;
 
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
-			void Apply2x2(unsigned int qubitIndex, const Complex16* mtrx) {
-				bitCapInt qPower = 1 << qubitIndex;
+			void Apply2x2(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
 				Complex16 qubit[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				double sqrNorm = 0.0;
+				bitCapInt qPower = 1 << qubitIndex;
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == 0) {
 						qubit[0] = stateVec[lcv + qPower];
 						qubit[1] = stateVec[lcv];						
 
-						//cblas_zhemv(CblasRowMajor, CblasUpper, 2, &a, mtrx, 2, qubit, 1, &b, qubit, 1);
 						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);		
 
 						stateVec[lcv + qPower] = qubit[0];
@@ -660,18 +665,21 @@ namespace Qrack {
 					}
 				}
 
-				UpdateRunningNorm();
+				if (doCalcNorm) {
+					UpdateRunningNorm();
+				}
+				else {
+					runningNorm = 1.0;
+				}
 			}
 
-			void ApplyControlled2x2(unsigned int qubitIndex1, unsigned int qubitIndex2, const Complex16* mtrx) {
-				bitCapInt qPowers[3];
-				qPowers[1] = 1 << qubitIndex1;
-				qPowers[2] = 1 << qubitIndex2;
-				qPowers[0] = qPowers[1] + qPowers[2];
+			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
 				Complex16 qubit[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				double sqrNorm = 0.0;
-				unsigned int lcv;
+				bitCapInt qPowers[3];
+				qPowers[1] = 1 << control;
+				qPowers[2] = 1 << target;
+				qPowers[0] = qPowers[1] + qPowers[2];
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPowers[0]) == 0) {
 						qubit[0] = stateVec[lcv + qPowers[2] + qPowers[1]];
@@ -685,11 +693,16 @@ namespace Qrack {
 					}
 				}
 
-				UpdateRunningNorm();
+				if (doCalcNorm) {
+					UpdateRunningNorm();
+				}
+				else {
+					runningNorm = 1.0;
+				}
 			}
 
 			void NormalizeState() {
-				long int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					stateVec[lcv] /= runningNorm;
 				}
@@ -701,7 +714,7 @@ namespace Qrack {
 			}
 
 			void UpdateRunningNorm() {
-				long int lcv;
+				bitCapInt lcv;
 				double sqrNorm = 0.0;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					sqrNorm += normSqrd(stateVec + lcv);

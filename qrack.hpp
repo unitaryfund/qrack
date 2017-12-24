@@ -156,7 +156,7 @@ namespace Qrack {
 					}
 				);
 
-				UpdateRunningNorm();
+				runningNorm = 1.0;
 			}
 
 			///Controlled not
@@ -169,7 +169,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				ApplyControlled2x2(control, target, pauliX);
+				ApplyControlled2x2(control, target, pauliX, false);
 			}
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
@@ -180,7 +180,7 @@ namespace Qrack {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
 				};
-				Apply2x2(qubitIndex, had);
+				Apply2x2(qubitIndex, had, true);
 			}
 			///Measurement gate
 			bool M(bitLenInt qubitIndex) {
@@ -233,48 +233,6 @@ namespace Qrack {
 
 				return result;
 			}
-			///Measure for exact permutation of all register bits
-			bool MAll(bitCapInt fullRegister) {
-				bool result;
-				double prob = rand_distribution(rand_generator);
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
-				double cosine = cos(angle);
-				double sine = sin(angle);
-
-				Complex16 toTest = stateVec[fullRegister];
-				double oneChance = real(toTest) * real(toTest) + imag(toTest) * imag(toTest);
-				result = (prob < oneChance);
-
-				double nrmlzr;
-				bitCapInt lcv;
-				bitCapInt maxPower = 1 << qubitCount;
-				if (result) {
-					for (lcv = 0; lcv < maxPower; lcv++) {
-						if (lcv == fullRegister) {
-							stateVec[lcv] = Complex16(cosine, sine);
-						}
-						else {
-							stateVec[lcv] = Complex16(0.0, 0.0);
-						}
-					}
-				}
-				else {
-					nrmlzr = sqrt(1.0 - oneChance);
-					for (lcv = 0; lcv < maxPower; lcv++) {
-						if (lcv == fullRegister) {
-							stateVec[lcv] = Complex16(0.0, 0.0);
-						}
-						else {
-							stateVec[lcv] = Complex16(
-								cosine * real(stateVec[lcv]) - sine * imag(stateVec[lcv]),
-								sine * real(stateVec[lcv]) + cosine * imag(stateVec[lcv])
-							) / nrmlzr;
-						}
-					}
-				}
-
-				return result;
-			}
 			///PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 			double Prob(bitLenInt qubitIndex) {
 				if (runningNorm != 1.0) NormalizeState();
@@ -314,7 +272,7 @@ namespace Qrack {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, mtrx);
+				Apply2x2(qubitIndex, mtrx, true);
 			}
 			///Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state
 			/** Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -331,7 +289,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRX);
+				Apply2x2(qubitIndex, pauliRX, true);
 			}
 			///Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
 			/** Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -348,7 +306,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRY);
+				Apply2x2(qubitIndex, pauliRY, true);
 			}
 			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -365,7 +323,7 @@ namespace Qrack {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, pauliRZ);
+				Apply2x2(qubitIndex, pauliRZ, true);
 			}
 			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -412,7 +370,7 @@ namespace Qrack {
 					}
 				);
 
-				UpdateRunningNorm();
+				runningNorm = 1.0;
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
@@ -421,7 +379,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliX);
+				Apply2x2(qubitIndex, pauliX, false);
 			}
 			///Apply NOT gate, (which is Pauli x matrix,) to each bit in register
 			void XAll() {
@@ -429,8 +387,6 @@ namespace Qrack {
 				for (lcv = 0; lcv < qubitCount; lcv++) {
 					X(lcv);
 				}
-
-				UpdateRunningNorm();
 			}
 			///Apply Pauli Y matrix to bit
 			void Y(bitLenInt qubitIndex) {
@@ -439,7 +395,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliY);
+				Apply2x2(qubitIndex, pauliY, false);
 			}
 			///Apply Pauli Z matrix to bit
 			void Z(bitLenInt qubitIndex) {
@@ -448,7 +404,7 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliZ);
+				Apply2x2(qubitIndex, pauliZ, false);
 			}
 			///Controlled "phase shift gate"
 			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta) around |1> state */
@@ -462,7 +418,7 @@ namespace Qrack {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				ApplyControlled2x2(control, target, mtrx);
+				ApplyControlled2x2(control, target, mtrx, true);
 			}
 			///Controlled dyadic fraction "phase shift gate"
 			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta) around |1> state */
@@ -482,7 +438,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				ApplyControlled2x2(control, target, pauliRX);
+				ApplyControlled2x2(control, target, pauliRX, true);
 			}
 			///Controlled dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
 			/** Controlled dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -502,7 +458,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				ApplyControlled2x2(control, target, pauliRY);
+				ApplyControlled2x2(control, target, pauliRY, true);
 			}
 			///Controlled dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Controlled dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -522,7 +478,7 @@ namespace Qrack {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				ApplyControlled2x2(control, target, pauliRZ);
+				ApplyControlled2x2(control, target, pauliRZ, true);
 			}
 			///Controlled dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
 			/** Controlled dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
@@ -539,7 +495,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				ApplyControlled2x2(control, target, pauliY);
+				ApplyControlled2x2(control, target, pauliY, false);
 			}
 			///Apply controlled Pauli Z matrix to bit
 			void CZ(bitLenInt control, bitLenInt target) {
@@ -549,7 +505,7 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				ApplyControlled2x2(control, target, pauliZ);
+				ApplyControlled2x2(control, target, pauliZ, false);
 			}
 
 			//Single register instructions:
@@ -644,16 +600,16 @@ namespace Qrack {
 			}
 			///"Circular rotate left" permutation
 			/** "Circular rotate left" permutation - Adds argument to permutation state, carrying highest permutations to lowest. */
-			void RADD(bitCapInt toAdd) {
+			void RINC(bitCapInt toAdd) {
 				std::rotate(stateVec, stateVec + maxQPower - toAdd, stateVec + maxQPower); 
 			}
 			///"Circular rotate right" permutation
 			/** "Circular rotate right" permutation - Subtracts argument from permutation state, carrying lowest permutations to highest. */
-			void RSUB(bitCapInt toSub) {
+			void RDEC(bitCapInt toSub) {
 				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
 			}
 			///Add (with sign, carry overflow to minimum negative)
-			void SADD(bitCapInt toAdd) {
+			void SINC(bitCapInt toAdd) {
 				if (toAdd > 0) {
 					ROL(1);
 					RotateComplex(1, maxQPower, toAdd - 1, true, 2, stateVec);
@@ -662,7 +618,7 @@ namespace Qrack {
 				}			
 			}
 			///Subtract (with sign, carry overflow to maximum positive)
-			void SSUB(bitCapInt toSub) {
+			void SDEC(bitCapInt toSub) {
 				if (toSub > 0) {
 					ROL(1);
 					RotateComplex(0, maxQPower, toSub, false, 2, stateVec);
@@ -671,8 +627,8 @@ namespace Qrack {
 				}
 			}
 			///Add (without sign)
-			void UADD(bitCapInt toAdd) {
-				RADD(toAdd);
+			void UINC(bitCapInt toAdd) {
+				RINC(toAdd);
 
 				bitCapInt lcv;
 				for (lcv = 0; lcv < toAdd; lcv++) {
@@ -681,8 +637,8 @@ namespace Qrack {
 				}
 			}
 			///Subtract (without sign)
-			void USUB(bitCapInt toSub) {
-				RSUB(toSub);
+			void UDEC(bitCapInt toSub) {
+				RDEC(toSub);
 
 				bitCapInt lcv;
 				for (lcv = 0; lcv < toSub; lcv++) {
@@ -710,7 +666,7 @@ namespace Qrack {
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
-			void Apply2x2(bitLenInt qubitIndex, const Complex16* mtrx) {
+			void Apply2x2(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
 				bitCapInt qPowers[1];
 				qPowers[0] = 1 << qubitIndex;
 				//Complex16 b = Complex16(0.0, 0.0);
@@ -732,10 +688,15 @@ namespace Qrack {
 					}
 				);
 
-				UpdateRunningNorm();
+				if (doCalcNorm) {
+					UpdateRunningNorm();
+				}
+				else {
+					runningNorm = 1.0;
+				}
 			}
 
-			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx) {
+			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
 				bitCapInt qPowers[3];
 				qPowers[1] = 1 << control;
 				qPowers[2] = 1 << target;
@@ -759,11 +720,16 @@ namespace Qrack {
 					}
 				);
 
-				UpdateRunningNorm();
+				if (doCalcNorm) {
+					UpdateRunningNorm();
+				}
+				else {
+					runningNorm = 1.0;
+				}
 			}
 
 			void NormalizeState() {
-				long int lcv;
+				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					stateVec[lcv] /= runningNorm;
 				}
@@ -775,7 +741,7 @@ namespace Qrack {
 			}
 
 			void UpdateRunningNorm() {
-				long int lcv;
+				bitCapInt lcv;
 				double sqrNorm = 0.0;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					sqrNorm += normSqrd(stateVec + lcv);
