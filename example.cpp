@@ -12,30 +12,30 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(8, 61);
+	Qrack::Register qftReg(9, 125);
 
 	double qftProbs[8];
 	std::cout<<"SINC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 8; j++) {
+		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
 		qftReg.SINC(1);
-		for (j = 0; j < 8; j++) {
+		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
 	std::cout<<"SDEC Test:"<<std::endl;
-	qftReg.SetPermutation(197);
+	qftReg.SetPermutation(133);
 	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 8; j++) {
+		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
 		qftReg.SDEC(1);
-		for (j = 0; j < 8; j++) {
+		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	

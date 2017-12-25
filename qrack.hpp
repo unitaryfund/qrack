@@ -613,7 +613,7 @@ namespace Qrack {
 				if (toAdd > 0) {
 					Swap(qubitCount - 1, qubitCount - 2);
 					ROL(1);
-					RotateComplex(1, maxQPower, toAdd - 1, true, 2, stateVec);
+					RotateComplex(1, maxQPower + 1, toAdd - 1, true, 2, stateVec);
 					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
 					ROR(1);
 					Swap(qubitCount - 1, qubitCount - 2);
@@ -625,7 +625,7 @@ namespace Qrack {
 					Swap(qubitCount - 1, qubitCount - 2);
 					ROL(1);
 					RotateComplex(0, maxQPower, toSub - 1, false, 2, stateVec);
-					RotateComplex(1, maxQPower, toSub, false, 2, stateVec);
+					RotateComplex(1, maxQPower + 1, toSub, false, 2, stateVec);
 					ROR(1);
 					Swap(qubitCount - 1, qubitCount - 2);
 				}
