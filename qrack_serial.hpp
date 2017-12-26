@@ -696,9 +696,12 @@ namespace Qrack {
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
+					bitCapInt i;
 					bitCapInt endPower = 1<<end;
 					ROR(start, 0, end);
-					std::rotate(stateVec, stateVec + endPower - toAdd, stateVec + endPower); 
+					for (i = endPower; i < maxQPower; i+= endPower) {
+						std::rotate(stateVec + i, stateVec + i - toAdd, stateVec + endPower + i);
+					} 
 					ROL(start, 0, end);
 				}
 			}
@@ -709,9 +712,12 @@ namespace Qrack {
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
+					bitCapInt i;
 					bitCapInt endPower = 1<<end;
 					ROR(start, 0, end);
-					std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
+					for (i = endPower; i < maxQPower; i+= endPower) {
+						std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
+					}
    					ROL(start, 0, end);
 				}
 			}
@@ -722,13 +728,16 @@ namespace Qrack {
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
+					bitCapInt i;
 					bitCapInt endPower = 1<<end;
 
 					Swap(end - 1, end - 2);
 					ROL(1, start, end);
 					if (start != 0) ROR(start, 0, end);
-					RotateComplex(1, endPower + 1, toAdd - 1, true, 2, stateVec);
-					RotateComplex(0, endPower, toAdd, true, 2, stateVec);
+					for (i = endPower; i <= maxQPower; i+= endPower) {
+						RotateComplex(1 + i - endPower, i + 1, toAdd - 1, true, 2, stateVec);
+						RotateComplex(i - endPower, i, toAdd, true, 2, stateVec);
+					}
 					if (start != 0) ROL(start, 0, end);
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
@@ -741,14 +750,17 @@ namespace Qrack {
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
 			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
+					bitCapInt i;
 					bitCapInt endPower = 1<<end;
 					bitCapInt startPower = 1<<start;
 
 					Swap(end - 1, end - 2);
 					ROL(1, start, end);
 					if (start != 0) ROR(start, 0, end);
-					RotateComplex(0, maxQPower, toSub - 1, false, 2, stateVec);
-					RotateComplex(1, maxQPower + 1, toSub, false, 2, stateVec);
+					for (i = endPower; i <= maxQPower; i+= endPower) {
+						RotateComplex(i - endPower, i, toSub - 1, false, 2, stateVec);
+						RotateComplex(1 + i - endPower, i + 1, toSub, false, 2, stateVec);
+					}
 					if (start != 0) ROL(start, 0, end);
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
