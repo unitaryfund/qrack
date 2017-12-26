@@ -29,6 +29,8 @@
 #include "par_for.hpp"
 
 namespace Qrack {
+	/// "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors
+	/** "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors. An array is passed in with an array of register dimensions. The registers become indexed by their position in the array, and they can be accessed with a numbered enum. */
 	struct RegisterDim {
 		bitLenInt length;
 		bitLenInt startBit;
@@ -588,7 +590,7 @@ namespace Qrack {
 
 			//Single register instructions:
 
-			///Arithmetic shift left, with index 0 bit as sign bit
+			///Arithmetic shift left, with last 2 bits as sign and carry
 			void ASL(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
 					int i;
@@ -598,9 +600,11 @@ namespace Qrack {
 						}
 					}
 					else {
-						Reverse(start, end);
+						Swap(end - 1, end - 2);
+						Reverse(start, end - 1);
 						Reverse(start, start + shift);
-						Reverse(start + shift, end);
+						Reverse(start + shift, end - 1);
+						Swap(end - 1, end - 2);
 
 						for (i = 0; i < shift; i++) {
 							SetBit(i, false);
@@ -608,7 +612,11 @@ namespace Qrack {
 					}
 				}
 			}
-			///Arithmetic shift right, with index 0 bit as sign bit
+			///Arithmetic shift left, of a numbered register, with last 2 bits as sign and carry
+			void ASL(bitLenInt shift, bitLenInt regIndex) {
+				ASL(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
+			///Arithmetic shift right, with last 2 bits as sign and carry
 			void ASR(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
 					int i;
@@ -618,15 +626,21 @@ namespace Qrack {
 						}
 					}
 					else {
-						Reverse(start + shift, end);
+						Swap(end - 1, end - 2);
+						Reverse(start + shift, end - 1);
 						Reverse(start, start + shift);
-						Reverse(start, end);
+						Reverse(start, end - 1);
+						Swap(end - 1, end - 2);
 
 						for (i = start; i < shift; i++) {
 							SetBit(end - i - 1, false);
 						}
 					}
 				}
+			}
+			///Arithmetic shift left, of a numbered register, with last 2 bits as sign and carry
+			void ASR(bitLenInt shift, bitLenInt regIndex) {
+				ASR(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			///Logical shift left, filling the extra bits with |0>
 			void LSL(bitLenInt shift, bitLenInt start, bitLenInt end) {
@@ -645,6 +659,10 @@ namespace Qrack {
 					}
 				}
 			}
+			///Logical shift left, of a numbered register, filling the extra bits with |0>
+			void LSL(bitLenInt shift, bitLenInt regIndex) {
+				LSL(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
 			///Logical shift right, filling the extra bits with |0>
 			void LSR(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
@@ -662,6 +680,10 @@ namespace Qrack {
 					}
 				}
 			}
+			///Logical shift left, of a numbered register, filling the extra bits with |0>
+			void LSR(bitLenInt shift, bitLenInt regIndex) {
+				LSR(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
 			void ROL(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				shift = shift % (end - start);
@@ -670,6 +692,10 @@ namespace Qrack {
 					Reverse(start, start + shift);
 					Reverse(start + shift, end);
 				}
+			}
+			///"Circular shift left" of a numbered register - shift bits left, and carry last bits.
+			void ROL(bitLenInt shift, bitLenInt regIndex) {
+				ROL(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift, bitLenInt start, bitLenInt end) {
@@ -680,6 +706,10 @@ namespace Qrack {
 					Reverse(start, end);
 				}
 			}
+			///"Circular shift right" of a numbered register - shift bits left, and carry last bits.
+			void ROR(bitLenInt shift, bitLenInt regIndex) {
+				ROR(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
@@ -689,6 +719,10 @@ namespace Qrack {
 					ROL(start, 0, end);
 				}
 			}
+			///Add integer, to a numbered register, (without sign)
+			void INC(bitLenInt shift, bitLenInt regIndex) {
+				INC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
@@ -697,6 +731,10 @@ namespace Qrack {
 					std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
    					ROL(start, 0, end);
 				}
+			}
+			///Subtract integer, from a numbered register, (without sign)
+			void DEC(bitLenInt shift, bitLenInt regIndex) {
+				DEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
@@ -713,6 +751,10 @@ namespace Qrack {
 					Swap(end - 1, end - 2);
 				}			
 			}
+			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
+			void SINC(bitLenInt shift, bitLenInt regIndex) {
+				SINC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
 			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
@@ -728,6 +770,10 @@ namespace Qrack {
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
 				}
+			}
+			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
+			void SDEC(bitLenInt shift, bitLenInt regIndex) {
+				SDEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt end) {

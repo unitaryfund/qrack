@@ -24,12 +24,19 @@
 #define bitsInByte 8
 
 namespace Qrack {
-	/// The "Qrack::Register" class represents an independent quantum processor register		
-	/** The "Qrack::Register" class represents an independent quantum processor register, including primitive bit logic gates and single register (abstract) opcodes. */
-	class Register {
+	/// "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors
+	/** "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors. An array is passed in with an array of register dimensions. The registers become indexed by their position in the array, and they can be accessed with a numbered enum. */
+	struct RegisterDim {
+		bitLenInt length;
+		bitLenInt startBit;
+	};
+
+	/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers		
+	/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit logic gates and (abstract) opcodes-like methods. */
+	class CoherentUnit {
 		public:
-			///Initialize a register with qBitCount number of bits, all to |0> state.
-			Register(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
+			///Initialize a coherent unit with qBitCount number of bits, all to |0> state.
+			CoherentUnit(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
@@ -45,9 +52,14 @@ namespace Qrack {
 				for (lcv = 1; lcv < maxQPower; lcv++) {
 					stateVec[lcv] = Complex16(0.0, 0.0);
 				}
+
+				registerDims = new RegisterDim[1];
+				registerDims[0].length = qubitCount;
+				registerDims[0].startBit = 0;
+				registerCount = 1;
 			}
-			///Initialize a register with qBitCount number pf bits, to initState unsigned integer permutation state
-			Register(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
+			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
@@ -65,18 +77,86 @@ namespace Qrack {
 						stateVec[lcv] = Complex16(0.0, 0.0);
 					}
 				}
+
+				registerDims = new RegisterDim[1];
+				registerDims[0].length = qubitCount;
+				registerDims[0].startBit = 0;
+				registerCount = 1;
+			}
+			///Initialize a coherent unit with register dimensions
+			CoherentUnit(RegisterDim* regDims, bitLenInt regCount) : rand_distribution(0.0, 1.0) {
+				bitLenInt i;
+				qubitCount = 0;
+				for (i = 0; i < registerCount; i++) {
+					qubitCount += registerDims[i].length;
+				}
+
+				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
+					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				maxQPower = 1<<qubitCount;
+				stateVec = new Complex16[maxQPower];
+				bitCapInt lcv;
+				stateVec[0] = Complex16(cosine, sine);
+				for (lcv = 1; lcv < maxQPower; lcv++) {
+					stateVec[lcv] = Complex16(0.0, 0.0);
+				}
+
+				registerCount = regCount;
+				registerDims = new RegisterDim[regCount];
+				std::copy(regDims, regDims + regCount, registerDims);
+			}
+
+			///Initialize a coherent unit with register dimensions and initial overall permutation state
+			CoherentUnit(RegisterDim* regDims, bitLenInt regCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+				bitLenInt i;
+				qubitCount = 0;
+				for (i = 0; i < registerCount; i++) {
+					qubitCount += registerDims[i].length;
+				}
+
+				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
+					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				maxQPower = 1<<qubitCount;
+				stateVec = new Complex16[maxQPower];
+				bitCapInt lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if (lcv == initState) {
+						stateVec[lcv] = Complex16(cosine, sine);
+					}	
+					else {
+						stateVec[lcv] = Complex16(0.0, 0.0);
+					}
+				}
+
+				registerCount = regCount;
+				registerDims = new RegisterDim[regCount];
+				std::copy(regDims, regDims + regCount, registerDims);
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
-			Register(const Register& pqs) : rand_distribution(0.0, 1.0) {
+			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
 				runningNorm = pqs.runningNorm;
 				qubitCount = pqs.qubitCount;
 				maxQPower = pqs.maxQPower;
 				stateVec = new Complex16[maxQPower];
 				std::copy(pqs.stateVec, pqs.stateVec + qubitCount, stateVec);
+				registerCount = pqs.registerCount;
+				registerDims = new RegisterDim[pqs.registerCount];
+				std::copy(pqs.registerDims, pqs.registerDims + pqs.registerCount, registerDims);
 			}
 			///Delete a register, with heap objects
-			~Register() {
+			~CoherentUnit() {
 				delete [] stateVec;
+				delete [] registerDims;
 			}
 			///Get the count of bits in this register
 			int GetQubitCount() {
@@ -493,152 +573,197 @@ namespace Qrack {
 
 			//Single register instructions:
 
-			///Arithmetic shift left, with index 0 bit as sign bit
-			void ASL(bitLenInt shift) {
+			///Arithmetic shift left, with last 2 bits as sign and carry
+			void ASL(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
 					int i;
-					if (shift >= (qubitCount - 1)) {
-						for (i = 1; i < qubitCount; i++) {
-							SetBit(i, 0);
+					if ((start + shift) >= end) {
+						for (i = 0; i < end; i++) {
+							SetBit(i, false);
 						}
 					}
 					else {
-						Reverse(1, qubitCount);
-						Reverse(1, shift);
-						Reverse(shift + 1, qubitCount);
+						Swap(end - 1, end - 2);
+						Reverse(start, end - 1);
+						Reverse(start, start + shift);
+						Reverse(start + shift, end - 1);
+						Swap(end - 1, end - 2);
 
-						for (i = 0; i < shift; i++) {
-							SetBit(i + 1, false);
-						}
-					}
-				}
-			}
-			///Arithmetic shift right, with index 0 bit as sign bit
-			void ASR(bitLenInt shift) {
-				if (shift > 0) {
-					int i;
-					if (shift >= (qubitCount - 1)) {	
-						for (i = 1; i < qubitCount; i++) {
-							SetBit(i, 0);
-						}
-					}
-					else {
-						Reverse(shift + 1, qubitCount);
-						Reverse(1, shift);
-						Reverse(1, qubitCount);
-
-						for (i = 0; i < shift; i++) {
-							SetBit(qubitCount - 1 - i, false);
-						}
-					}
-				}
-			}
-			///Logical shift left, filling the extra bits with |0>
-			void LSL(bitLenInt shift) {
-				if (shift > 0) {
-					if (shift >= qubitCount) {	
-						SetPermutation(0);
-					}
-					else {
-						int i;
-						ROL(shift);
 						for (i = 0; i < shift; i++) {
 							SetBit(i, false);
 						}
 					}
 				}
 			}
-			///Logical shift right, filling the extra bits with |0>
-			void LSR(bitLenInt shift) {
+			///Arithmetic shift left, of a numbered register, with last 2 bits as sign and carry
+			void ASL(bitLenInt shift, bitLenInt regIndex) {
+				ASL(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
+			///Arithmetic shift right, with last 2 bits as sign and carry
+			void ASR(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
-					if (shift >= qubitCount) {	
-						SetPermutation(0);
+					int i;
+					if ((start + shift) >= end) {	
+						for (i = start; i < end; i++) {
+							SetBit(i, false);
+						}
 					}
 					else {
-						int i;
-						ROR(shift);
-						for (i = 0; i < shift; i++) {
-							SetBit(qubitCount - 1 - i, false);
+						Swap(end - 1, end - 2);
+						Reverse(start + shift, end - 1);
+						Reverse(start, start + shift);
+						Reverse(start, end - 1);
+						Swap(end - 1, end - 2);
+
+						for (i = start; i < shift; i++) {
+							SetBit(end - i - 1, false);
 						}
 					}
 				}
 			}
-			/// "Circular shift left" - shift bits left, and carry last bits.
-			void ROL(bitLenInt shift) {
-				shift = shift % qubitCount;
+			///Arithmetic shift left, of a numbered register, with last 2 bits as sign and carry
+			void ASR(bitLenInt shift, bitLenInt regIndex) {
+				ASR(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
+			///Logical shift left, filling the extra bits with |0>
+			void LSL(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
-					Reverse(0, qubitCount);
-					Reverse(0, shift - 1);
-					Reverse(shift, qubitCount);
+					int i;
+					if ((start + shift) >= end) {	
+						for (i = start; i < end; i++) {
+							SetBit(i, false);
+						}
+					}
+					else {
+						ROL(shift, start, end);
+						for (i = start; i < shift; i++) {
+							SetBit(i, false);
+						}
+					}
 				}
+			}
+			///Logical shift left, of a numbered register, filling the extra bits with |0>
+			void LSL(bitLenInt shift, bitLenInt regIndex) {
+				LSL(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
+			///Logical shift right, filling the extra bits with |0>
+			void LSR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (shift > 0) {
+					int i;
+					if ((start + shift) >= end) {	
+						for (i = start; i < end; i++) {
+							SetBit(i, false);
+						}
+					}
+					else {
+						ROR(shift, start, end);
+						for (i = start; i < shift; i++) {
+							SetBit(end - i - 1, false);
+						}
+					}
+				}
+			}
+			///Logical shift left, of a numbered register, filling the extra bits with |0>
+			void LSR(bitLenInt shift, bitLenInt regIndex) {
+				LSR(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
+			/// "Circular shift left" - shift bits left, and carry last bits.
+			void ROL(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				shift = shift % (end - start);
+				if (shift > 0) {
+					Reverse(start, end);
+					Reverse(start, start + shift);
+					Reverse(start + shift, end);
+				}
+			}
+			///"Circular shift left" of a numbered register - shift bits left, and carry last bits.
+			void ROL(bitLenInt shift, bitLenInt regIndex) {
+				ROL(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
-			void ROR(bitLenInt shift) {
-				shift = shift % qubitCount;
+			void ROR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				shift = shift % (end - start);
 				if (shift > 0) {
-					Reverse(shift, qubitCount);
-					Reverse(0, shift - 1);
-					Reverse(0, qubitCount);
+					Reverse(start + shift, end);
+					Reverse(start, start + shift);
+					Reverse(start, end);
 				}
 			}
-			///"Circular rotate left" permutation
-			/** "Circular rotate left" permutation - Adds argument to permutation state, carrying highest permutations to lowest. */
-			void RINC(bitCapInt toAdd) {
-				std::rotate(stateVec, stateVec + maxQPower - toAdd, stateVec + maxQPower); 
+			///"Circular shift right" of a numbered register - shift bits left, and carry last bits.
+			void ROR(bitLenInt shift, bitLenInt regIndex) {
+				ROR(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
-			///"Circular rotate right" permutation
-			/** "Circular rotate right" permutation - Subtracts argument from permutation state, carrying lowest permutations to highest. */
-			void RDEC(bitCapInt toSub) {
-				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
+			///Add integer (without sign)
+			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
+				if (toAdd > 0) {
+					bitCapInt endPower = 1<<end;
+					ROR(start, 0, end);
+					std::rotate(stateVec, stateVec + endPower - toAdd, stateVec + endPower); 
+					ROL(start, 0, end);
+				}
+			}
+			///Add integer, to a numbered register, (without sign)
+			void INC(bitLenInt shift, bitLenInt regIndex) {
+				INC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
+			///Subtract integer (without sign)
+			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
+				if (toSub > 0) {
+					bitCapInt endPower = 1<<end;
+					ROR(start, 0, end);
+					std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
+   					ROL(start, 0, end);
+				}
+			}
+			///Subtract integer, from a numbered register, (without sign)
+			void DEC(bitLenInt shift, bitLenInt regIndex) {
+				DEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
-			void SINC(bitCapInt toAdd) {
+			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
-					Swap(qubitCount - 1, qubitCount - 2);
-					ROL(1);
-					RotateComplex(1, maxQPower + 1, toAdd - 1, true, 2, stateVec);
-					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
-					ROR(1);
-					Swap(qubitCount - 1, qubitCount - 2);
+					bitCapInt endPower = 1<<end;
+
+					Swap(end - 1, end - 2);
+					ROL(1, start, end);
+					if (start != 0) ROR(start, 0, end);
+					RotateComplex(1, endPower + 1, toAdd - 1, true, 2, stateVec);
+					RotateComplex(0, endPower, toAdd, true, 2, stateVec);
+					if (start != 0) ROL(start, 0, end);
+					ROR(1, start, end);
+					Swap(end - 1, end - 2);
 				}			
 			}
+			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
+			void SINC(bitLenInt shift, bitLenInt regIndex) {
+				SINC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
+			}
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
-			void SDEC(bitCapInt toSub) {
+			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
-					Swap(qubitCount - 1, qubitCount - 2);
-					ROL(1);
+					bitCapInt endPower = 1<<end;
+					bitCapInt startPower = 1<<start;
+
+					Swap(end - 1, end - 2);
+					ROL(1, start, end);
+					if (start != 0) ROR(start, 0, end);
 					RotateComplex(0, maxQPower, toSub - 1, false, 2, stateVec);
 					RotateComplex(1, maxQPower + 1, toSub, false, 2, stateVec);
-					ROR(1);
-					Swap(qubitCount - 1, qubitCount - 2);
+					if (start != 0) ROL(start, 0, end);
+					ROR(1, start, end);
+					Swap(end - 1, end - 2);
 				}
 			}
-			///Add (without sign)
-			void UINC(bitCapInt toAdd) {
-				RINC(toAdd);
-
-				bitCapInt lcv;
-				for (lcv = 0; lcv < toAdd; lcv++) {
-					runningNorm -= normSqrd(stateVec + lcv);
-					stateVec[lcv] = Complex16(0.0, 0.0);
-				}
-			}
-			///Subtract (without sign)
-			void UDEC(bitCapInt toSub) {
-				RDEC(toSub);
-
-				bitCapInt lcv;
-				for (lcv = 0; lcv < toSub; lcv++) {
-					runningNorm -= normSqrd(stateVec + maxQPower - lcv - 1);
-					stateVec[maxQPower - lcv - 1] = Complex16(0.0, 0.0);
-				}
+			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
+			void SDEC(bitLenInt shift, bitLenInt regIndex) {
+				SDEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].startBit + registerDims[regIndex].length);
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
-			void QFT() {
+			void QFT(bitLenInt start, bitLenInt end) {
 				int i, j;
-				for (i = 0; i < qubitCount; i++) {
+				for (i = start; i < end; i++) {
 					H(i);
-					for (j = 1; j < qubitCount - i; j++) {
+					for (j = 1; j < (end - i); j++) {
 						CR1Dyad(1, 1<<j, i + j, i); 
 					}
 				}
@@ -649,6 +774,8 @@ namespace Qrack {
 			bitLenInt qubitCount;
 			bitCapInt maxQPower;
 			Complex16* stateVec;
+			bitLenInt registerCount;
+			RegisterDim* registerDims;
 
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
