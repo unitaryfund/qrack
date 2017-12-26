@@ -21,7 +21,7 @@ int main() {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.INC(1, 4, 9);
+		qftReg.SINC(1, 0, 9);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
@@ -34,7 +34,7 @@ int main() {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.DEC(1, 4, 9);
+		qftReg.SDEC(1, 0, 9);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}

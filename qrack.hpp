@@ -29,11 +29,16 @@
 #include "par_for.hpp"
 
 namespace Qrack {
+	struct RegisterDim {
+		bitLenInt length;
+		bitLenInt startBit;
+	};
+
 	/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers		
 	/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit logic gates and (abstract) opcodes-like methods. */
 	class CoherentUnit {
 		public:
-			///Initialize a register with qBitCount number of bits, all to |0> state.
+			///Initialize a coherent unit with qBitCount number of bits, all to |0> state.
 			CoherentUnit(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
@@ -50,8 +55,13 @@ namespace Qrack {
 				for (lcv = 1; lcv < maxQPower; lcv++) {
 					stateVec[lcv] = Complex16(0.0, 0.0);
 				}
+
+				registerDims = new RegisterDim[1];
+				registerDims[0].length = qubitCount;
+				registerDims[0].startBit = 0;
+				registerCount = 1;
 			}
-			///Initialize a register with qBitCount number pf bits, to initState unsigned integer permutation state
+			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
@@ -70,6 +80,70 @@ namespace Qrack {
 						stateVec[lcv] = Complex16(0.0, 0.0);
 					}
 				}
+
+				registerDims = new RegisterDim[1];
+				registerDims[0].length = qubitCount;
+				registerDims[0].startBit = 0;
+				registerCount = 1;
+			}
+			///Initialize a coherent unit with register dimensions
+			CoherentUnit(RegisterDim* regDims, bitLenInt regCount) : rand_distribution(0.0, 1.0) {
+				bitLenInt i;
+				qubitCount = 0;
+				for (i = 0; i < registerCount; i++) {
+					qubitCount += registerDims[i].length;
+				}
+
+				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
+					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				maxQPower = 1<<qubitCount;
+				stateVec = new Complex16[maxQPower];
+				bitCapInt lcv;
+				stateVec[0] = Complex16(cosine, sine);
+				for (lcv = 1; lcv < maxQPower; lcv++) {
+					stateVec[lcv] = Complex16(0.0, 0.0);
+				}
+
+				registerCount = regCount;
+				registerDims = new RegisterDim[regCount];
+				std::copy(regDims, regDims + regCount, registerDims);
+			}
+
+			///Initialize a coherent unit with register dimensions and initial overall permutation state
+			CoherentUnit(RegisterDim* regDims, bitLenInt regCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+				bitLenInt i;
+				qubitCount = 0;
+				for (i = 0; i < registerCount; i++) {
+					qubitCount += registerDims[i].length;
+				}
+
+				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
+					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
+				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double cosine = cos(angle);
+				double sine = sin(angle);
+
+				runningNorm = 1.0;
+				maxQPower = 1<<qubitCount;
+				stateVec = new Complex16[maxQPower];
+				bitCapInt lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if (lcv == initState) {
+						stateVec[lcv] = Complex16(cosine, sine);
+					}	
+					else {
+						stateVec[lcv] = Complex16(0.0, 0.0);
+					}
+				}
+
+				registerCount = regCount;
+				registerDims = new RegisterDim[regCount];
+				std::copy(regDims, regDims + regCount, registerDims);
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
@@ -78,10 +152,14 @@ namespace Qrack {
 				maxQPower = pqs.maxQPower;
 				stateVec = new Complex16[maxQPower];
 				std::copy(pqs.stateVec, pqs.stateVec + qubitCount, stateVec);
+				registerCount = pqs.registerCount;
+				registerDims = new RegisterDim[pqs.registerCount];
+				std::copy(pqs.registerDims, pqs.registerDims + pqs.registerCount, registerDims);
 			}
 			///Delete a register, with heap objects
 			~CoherentUnit() {
 				delete [] stateVec;
+				delete [] registerDims;
 			}
 			///Get the count of bits in this register
 			int GetQubitCount() {
@@ -625,14 +703,14 @@ namespace Qrack {
 				if (toAdd > 0) {
 					bitCapInt endPower = 1<<end;
 
-					Swap(end, end - 1);
+					Swap(end - 1, end - 2);
 					ROL(1, start, end);
-					ROR(start, 0, end);
+					if (start != 0) ROR(start, 0, end);
 					RotateComplex(1, endPower + 1, toAdd - 1, true, 2, stateVec);
 					RotateComplex(0, endPower, toAdd, true, 2, stateVec);
-					ROL(start, 0, end);
+					if (start != 0) ROL(start, 0, end);
 					ROR(1, start, end);
-					Swap(end, end - 1);
+					Swap(end - 1, end - 2);
 				}			
 			}
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
@@ -641,14 +719,14 @@ namespace Qrack {
 					bitCapInt endPower = 1<<end;
 					bitCapInt startPower = 1<<start;
 
-					Swap(end, end - 1);
+					Swap(end - 1, end - 2);
 					ROL(1, start, end);
-					ROR(start, 0, end);
+					if (start != 0) ROR(start, 0, end);
 					RotateComplex(0, maxQPower, toSub - 1, false, 2, stateVec);
 					RotateComplex(1, maxQPower + 1, toSub, false, 2, stateVec);
-					ROL(start, 0, end);
+					if (start != 0) ROL(start, 0, end);
 					ROR(1, start, end);
-					Swap(end, end - 1);
+					Swap(end - 1, end - 2);
 				}
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
@@ -667,6 +745,8 @@ namespace Qrack {
 			bitLenInt qubitCount;
 			bitCapInt maxQPower;
 			Complex16* stateVec;
+			bitLenInt registerCount;
+			RegisterDim* registerDims;
 
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;

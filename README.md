@@ -8,7 +8,7 @@ To use:
 1)#include "qrack.hpp"
 2)Link against math and pthreads. (See build.sh for example.)
 
-Instantiate a Qrack::CoherentUnit object, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.)
+Instantiate a Qrack::Register, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.)
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
