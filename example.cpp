@@ -12,7 +12,7 @@ int main() {
 
 	int i, j;
 
-	Qrack::Register qftReg(9, 125);
+	Qrack::CoherentUnit qftReg(11, 125);
 
 	double qftProbs[8];
 	std::cout<<"SINC Test:"<<std::endl;
@@ -21,7 +21,7 @@ int main() {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.SINC(1);
+		qftReg.INC(1, 4, 9);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
@@ -34,7 +34,7 @@ int main() {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.SDEC(1);
+		qftReg.DEC(1, 4, 9);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
@@ -74,7 +74,7 @@ int main() {
 		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
 	}
 
-	qftReg.QFT();
+	qftReg.QFT(0, 8);
 
 	std::cout<<"Final:"<<std::endl;
 	for (i = 0; i < 8; i++) {
@@ -84,7 +84,7 @@ int main() {
 
 	std::cout<<"Next step might take a while..."<<std::endl;
 
-	Qrack::Register qReg(mpPowerOfTwo, 0);
+	Qrack::CoherentUnit qReg(mpPowerOfTwo, 0);
 
 	//50/50 Superposition between "step" and "don't step" at each discrete time step
 	//is equivalent to Pi/4 rotation around the y-axis of spin, each time: 

@@ -29,12 +29,12 @@
 #include "par_for.hpp"
 
 namespace Qrack {
-	/// The "Qrack::Register" class represents an independent quantum processor register		
-	/** The "Qrack::Register" class represents an independent quantum processor register, including primitive bit logic gates and single register (abstract) opcodes. */
-	class Register {
+	/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers		
+	/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit logic gates and (abstract) opcodes-like methods. */
+	class CoherentUnit {
 		public:
 			///Initialize a register with qBitCount number of bits, all to |0> state.
-			Register(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
+			CoherentUnit(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
@@ -52,7 +52,7 @@ namespace Qrack {
 				}
 			}
 			///Initialize a register with qBitCount number pf bits, to initState unsigned integer permutation state
-			Register(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
 				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
@@ -72,7 +72,7 @@ namespace Qrack {
 				}
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
-			Register(const Register& pqs) : rand_distribution(0.0, 1.0) {
+			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
 				runningNorm = pqs.runningNorm;
 				qubitCount = pqs.qubitCount;
 				maxQPower = pqs.maxQPower;
@@ -80,7 +80,7 @@ namespace Qrack {
 				std::copy(pqs.stateVec, pqs.stateVec + qubitCount, stateVec);
 			}
 			///Delete a register, with heap objects
-			~Register() {
+			~CoherentUnit() {
 				delete [] stateVec;
 			}
 			///Get the count of bits in this register
@@ -511,151 +511,152 @@ namespace Qrack {
 			//Single register instructions:
 
 			///Arithmetic shift left, with index 0 bit as sign bit
-			void ASL(bitLenInt shift) {
+			void ASL(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
 					int i;
-					if (shift >= (qubitCount - 1)) {
-						for (i = 1; i < qubitCount; i++) {
-							SetBit(i, 0);
+					if ((start + shift) >= end) {
+						for (i = 0; i < end; i++) {
+							SetBit(i, false);
 						}
 					}
 					else {
-						Reverse(1, qubitCount);
-						Reverse(1, shift);
-						Reverse(shift + 1, qubitCount);
+						Reverse(start, end);
+						Reverse(start, start + shift);
+						Reverse(start + shift, end);
 
-						for (i = 0; i < shift; i++) {
-							SetBit(i + 1, false);
-						}
-					}
-				}
-			}
-			///Arithmetic shift right, with index 0 bit as sign bit
-			void ASR(bitLenInt shift) {
-				if (shift > 0) {
-					int i;
-					if (shift >= (qubitCount - 1)) {	
-						for (i = 1; i < qubitCount; i++) {
-							SetBit(i, 0);
-						}
-					}
-					else {
-						Reverse(shift + 1, qubitCount);
-						Reverse(1, shift);
-						Reverse(1, qubitCount);
-
-						for (i = 0; i < shift; i++) {
-							SetBit(qubitCount - 1 - i, false);
-						}
-					}
-				}
-			}
-			///Logical shift left, filling the extra bits with |0>
-			void LSL(bitLenInt shift) {
-				if (shift > 0) {
-					if (shift >= qubitCount) {	
-						SetPermutation(0);
-					}
-					else {
-						int i;
-						ROL(shift);
 						for (i = 0; i < shift; i++) {
 							SetBit(i, false);
 						}
 					}
 				}
 			}
-			///Logical shift right, filling the extra bits with |0>
-			void LSR(bitLenInt shift) {
+			///Arithmetic shift right, with index 0 bit as sign bit
+			void ASR(bitLenInt shift, bitLenInt start, bitLenInt end) {
 				if (shift > 0) {
-					if (shift >= qubitCount) {	
-						SetPermutation(0);
+					int i;
+					if ((start + shift) >= end) {	
+						for (i = start; i < end; i++) {
+							SetBit(i, false);
+						}
 					}
 					else {
-						int i;
-						ROR(shift);
-						for (i = 0; i < shift; i++) {
-							SetBit(qubitCount - 1 - i, false);
+						Reverse(start + shift, end);
+						Reverse(start, start + shift);
+						Reverse(start, end);
+
+						for (i = start; i < shift; i++) {
+							SetBit(end - i - 1, false);
+						}
+					}
+				}
+			}
+			///Logical shift left, filling the extra bits with |0>
+			void LSL(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (shift > 0) {
+					int i;
+					if ((start + shift) >= end) {	
+						for (i = start; i < end; i++) {
+							SetBit(i, false);
+						}
+					}
+					else {
+						ROL(shift, start, end);
+						for (i = start; i < shift; i++) {
+							SetBit(i, false);
+						}
+					}
+				}
+			}
+			///Logical shift right, filling the extra bits with |0>
+			void LSR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (shift > 0) {
+					int i;
+					if ((start + shift) >= end) {	
+						for (i = start; i < end; i++) {
+							SetBit(i, false);
+						}
+					}
+					else {
+						ROR(shift, start, end);
+						for (i = start; i < shift; i++) {
+							SetBit(end - i - 1, false);
 						}
 					}
 				}
 			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
-			void ROL(bitLenInt shift) {
-				shift = shift % qubitCount;
+			void ROL(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				shift = shift % (end - start);
 				if (shift > 0) {
-					Reverse(0, qubitCount);
-					Reverse(0, shift - 1);
-					Reverse(shift, qubitCount);
+					Reverse(start, end);
+					Reverse(start, start + shift);
+					Reverse(start + shift, end);
 				}
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
-			void ROR(bitLenInt shift) {
-				shift = shift % qubitCount;
+			void ROR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				shift = shift % (end - start);
 				if (shift > 0) {
-					Reverse(shift, qubitCount);
-					Reverse(0, shift - 1);
-					Reverse(0, qubitCount);
+					Reverse(start + shift, end);
+					Reverse(start, start + shift);
+					Reverse(start, end);
 				}
 			}
-			///"Circular rotate left" permutation
-			/** "Circular rotate left" permutation - Adds argument to permutation state, carrying highest permutations to lowest. */
-			void RINC(bitCapInt toAdd) {
-				std::rotate(stateVec, stateVec + maxQPower - toAdd, stateVec + maxQPower); 
+			///Add integer (without sign)
+			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
+				if (toAdd > 0) {
+					bitCapInt endPower = 1<<end;
+					ROR(start, 0, end);
+					std::rotate(stateVec, stateVec + endPower - toAdd, stateVec + endPower); 
+					ROL(start, 0, end);
+				}
 			}
-			///"Circular rotate right" permutation
-			/** "Circular rotate right" permutation - Subtracts argument from permutation state, carrying lowest permutations to highest. */
-			void RDEC(bitCapInt toSub) {
-				std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower); 
+			///Subtract integer (without sign)
+			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
+				if (toSub > 0) {
+					bitCapInt endPower = 1<<end;
+					ROR(start, 0, end);
+					std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
+   					ROL(start, 0, end);
+				}
 			}
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
-			void SINC(bitCapInt toAdd) {
+			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
-					Swap(qubitCount - 1, qubitCount - 2);
-					ROL(1);
-					RotateComplex(1, maxQPower + 1, toAdd - 1, true, 2, stateVec);
-					RotateComplex(0, maxQPower, toAdd, true, 2, stateVec);
-					ROR(1);
-					Swap(qubitCount - 1, qubitCount - 2);
+					bitCapInt endPower = 1<<end;
+
+					Swap(end, end - 1);
+					ROL(1, start, end);
+					ROR(start, 0, end);
+					RotateComplex(1, endPower + 1, toAdd - 1, true, 2, stateVec);
+					RotateComplex(0, endPower, toAdd, true, 2, stateVec);
+					ROL(start, 0, end);
+					ROR(1, start, end);
+					Swap(end, end - 1);
 				}			
 			}
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
-			void SDEC(bitCapInt toSub) {
+			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
-					Swap(qubitCount - 1, qubitCount - 2);
-					ROL(1);
+					bitCapInt endPower = 1<<end;
+					bitCapInt startPower = 1<<start;
+
+					Swap(end, end - 1);
+					ROL(1, start, end);
+					ROR(start, 0, end);
 					RotateComplex(0, maxQPower, toSub - 1, false, 2, stateVec);
 					RotateComplex(1, maxQPower + 1, toSub, false, 2, stateVec);
-					ROR(1);
-					Swap(qubitCount - 1, qubitCount - 2);
-				}
-			}
-			///Add (without sign)
-			void UINC(bitCapInt toAdd) {
-				RINC(toAdd);
-
-				bitCapInt lcv;
-				for (lcv = 0; lcv < toAdd; lcv++) {
-					runningNorm -= normSqrd(stateVec + lcv);
-					stateVec[lcv] = Complex16(0.0, 0.0);
-				}
-			}
-			///Subtract (without sign)
-			void UDEC(bitCapInt toSub) {
-				RDEC(toSub);
-
-				bitCapInt lcv;
-				for (lcv = 0; lcv < toSub; lcv++) {
-					runningNorm -= normSqrd(stateVec + maxQPower - lcv - 1);
-					stateVec[maxQPower - lcv - 1] = Complex16(0.0, 0.0);
+					ROL(start, 0, end);
+					ROR(1, start, end);
+					Swap(end, end - 1);
 				}
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
-			void QFT() {
+			void QFT(bitLenInt start, bitLenInt end) {
 				int i, j;
-				for (i = 0; i < qubitCount; i++) {
+				for (i = start; i < end; i++) {
 					H(i);
-					for (j = 1; j < qubitCount - i; j++) {
+					for (j = 1; j < (end - i); j++) {
 						CR1Dyad(1, 1<<j, i + j, i); 
 					}
 				}
