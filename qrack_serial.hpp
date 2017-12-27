@@ -39,7 +39,7 @@ namespace Qrack {
 			CoherentUnit(bitLenInt qBitCount) : rand_distribution(0.0, 1.0) {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double angle = Rand() * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
@@ -60,7 +60,7 @@ namespace Qrack {
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double angle = Rand() * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
@@ -93,7 +93,7 @@ namespace Qrack {
 
 				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double angle = Rand() * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
@@ -121,7 +121,7 @@ namespace Qrack {
 
 				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double angle = Rand() * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
@@ -173,7 +173,7 @@ namespace Qrack {
 			}
 			///Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
 			void SetPermutation(bitCapInt perm) {
-				double angle = rand_distribution(rand_generator) * 2.0 * M_PI;
+				double angle = Rand() * 2.0 * M_PI;
 				double cosine = cos(angle);
 				double sine = sin(angle);
 
@@ -191,6 +191,45 @@ namespace Qrack {
 			///Set arbitrary pure quantum state, in unsigned int permutation basis
 			void SetQuantumState(Complex16* inputState) {
 				std::copy(inputState, inputState + qubitCount, stateVec);
+			}
+			///Minimally decohere a set of contigious bits from the full coherent unit.
+			/** Minimally decohere a set of contigious bits from the full coherent unit. Load the decohered fragment into partStateVec, and set |0> in the bits these were "copied" from. */
+			void Decohere(bitLenInt start, bitLenInt end, Complex16* partStateVec) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
+
+				if (runningNorm != 1.0) NormalizeState();
+				
+				bitCapInt mask = 0;
+				bitCapInt partPower = 1<<(end - start);
+				bitCapInt i;				
+				for (i = start; i < end; i++) {
+					mask += (1<<i);
+				}
+				
+				double angle = Rand() * 2.0 * M_PI;
+				Complex16 phaseFac(cos(angle), sin(angle));
+				double* partStateProb = new double[partPower]();				
+				for (i = 0; i < maxQPower; i++) {
+					partStateProb[(i & mask)] += normSqrd(stateVec + i);
+					if ((i & mask) != 0) {
+						stateVec[i] = Complex16(0.0, 0.0);
+					}
+					else {
+						stateVec[i] = phaseFac * stateVec[i];
+					}  
+				}
+
+				angle = Rand() * 2.0 * M_PI;
+				phaseFac = Complex16(cos(angle), sin(angle));
+				
+				for (i = 0; i < partPower; i++) {
+					partStateVec[i] = sqrt(partStateProb[i]) * phaseFac;
+				}
+				delete [] partStateProb;
+
+				UpdateRunningNorm();
 			}
 
 			//Logic Gates:
@@ -575,6 +614,9 @@ namespace Qrack {
 
 			///Arithmetic shift left, with last 2 bits as sign and carry
 			void ASL(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (shift > 0) {
 					int i;
 					if ((start + shift) >= end) {
@@ -601,6 +643,9 @@ namespace Qrack {
 			}
 			///Arithmetic shift right, with last 2 bits as sign and carry
 			void ASR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (shift > 0) {
 					int i;
 					if ((start + shift) >= end) {	
@@ -627,6 +672,9 @@ namespace Qrack {
 			}
 			///Logical shift left, filling the extra bits with |0>
 			void LSL(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (shift > 0) {
 					int i;
 					if ((start + shift) >= end) {	
@@ -648,6 +696,9 @@ namespace Qrack {
 			}
 			///Logical shift right, filling the extra bits with |0>
 			void LSR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (shift > 0) {
 					int i;
 					if ((start + shift) >= end) {	
@@ -669,6 +720,9 @@ namespace Qrack {
 			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
 			void ROL(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				shift = shift % (end - start);
 				if (shift > 0) {
 					Reverse(start, end);
@@ -682,6 +736,9 @@ namespace Qrack {
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				shift = shift % (end - start);
 				if (shift > 0) {
 					Reverse(start + shift, end);
@@ -695,6 +752,9 @@ namespace Qrack {
 			}
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (toAdd > 0) {
 					bitCapInt i, j;
 					bitCapInt startPower = 1<<start;
@@ -712,6 +772,9 @@ namespace Qrack {
 			}
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (toSub > 0) {
 					bitCapInt i, j;
 					bitCapInt startPower = 1<<start;
@@ -729,6 +792,9 @@ namespace Qrack {
 			}
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (toAdd > 0) {
 					bitCapInt i, j;
 					bitCapInt startPower = 1<<start;
@@ -753,6 +819,9 @@ namespace Qrack {
 			}
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
 			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				if (toSub > 0) {
 					bitCapInt i, j;					
 					bitCapInt startPower = 1<<start;
@@ -777,6 +846,9 @@ namespace Qrack {
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt end) {
+				if (end <= start) {
+					throw std::invalid_argument("End must be greater than start");
+				}
 				int i, j;
 				for (i = start; i < end; i++) {
 					H(i);
