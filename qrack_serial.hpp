@@ -209,11 +209,19 @@ namespace Qrack {
 				if (runningNorm != 1.0) NormalizeState();
 				
 				bitCapInt mask = 0;
+				bitCapInt startMask = 0;
+				bitCapInt endMask = 0;
 				bitCapInt partPower = 1<<(end - start);
 				bitCapInt remainderPower = 1<<(qubitCount - end + start + 1);
 				bitCapInt i;				
 				for (i = start; i < end; i++) {
 					mask += (1<<i);
+				}
+				for (i = 0; i < start; i++) {
+					startMask += (1<<i);
+				}
+				for (i = end; i < qubitCount; i++) {
+					endMask += (1<<end);
 				}
 				
 				double* partStateProb = new double[partPower]();
@@ -221,8 +229,8 @@ namespace Qrack {
 				double prob;
 				for (i = 0; i < maxQPower; i++) {
 					prob = normSqrd(stateVec + i);
-					partStateProb[(i & mask)] += prob;
-					remainderStateProb[(i ^ mask)] += prob;
+					partStateProb[(i & mask)<<start] += prob;
+					remainderStateProb[(i & startMask) + ((i & endMask)<<end)] += prob;
 				}
 
 				delete [] stateVec;
