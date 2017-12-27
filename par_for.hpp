@@ -22,10 +22,36 @@ namespace Qrack {
 		std::vector<std::future<void>> futures(num_cpus);
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, &fn]() {
+				bitCapInt i;
 				for (;;) {
-					bitCapInt i = idx++;
+					i = idx++;
 					if (i >= end) break;
 					fn(i, cpu, stateArray, nrm, mtrx, maskArray);
+				}
+			});
+		}
+
+		for (int cpu = 0; cpu != num_cpus; ++cpu) {
+			futures[cpu].get();
+		}
+	}
+
+	template <class F>
+	void par_for_reg(const bitCapInt startPower, const bitCapInt endPower, const bitCapInt maxQPower, const bitCapInt addSub, Complex16* stateArray, CoherentUnit* coherentUnit, F fn) {
+		std::atomic<bitCapInt> idx;
+		idx = 0;
+		bitCapInt maxIter = startPower * (maxQPower / endPower);
+		int num_cpus = std::thread::hardware_concurrency();
+		std::vector<std::future<void>> futures(num_cpus);
+		for (int cpu = 0; cpu != num_cpus; ++cpu) {
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, startPower, endPower, maxIter, addSub, stateArray, coherentUnit, &fn]() {
+				bitCapInt i, low, high;
+				for (;;) {
+					i = idx++;
+					if (i >= maxIter) break;
+					low = i % startPower;
+					high = (i - low) * endPower;
+					fn(low + high, cpu, startPower, endPower, addSub, stateArray, coherentUnit);
 				}
 			});
 		}

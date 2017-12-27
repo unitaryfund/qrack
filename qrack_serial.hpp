@@ -696,13 +696,14 @@ namespace Qrack {
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
-					bitCapInt i;
+					bitCapInt i, j;
+					bitCapInt startPower = 1<<start;
 					bitCapInt endPower = 1<<end;
-					ROR(start, 0, end);
-					for (i = endPower; i < maxQPower; i+= endPower) {
-						std::rotate(stateVec + i, stateVec + i - toAdd, stateVec + endPower + i);
-					} 
-					ROL(start, 0, end);
+					for (i = 0; i < startPower; i++) {
+						for (j = 0; j < maxQPower; j+=endPower) {
+							RotateComplex(i + j, i + j + endPower, toAdd, true, startPower, stateVec);
+						}
+					}
 				}
 			}
 			///Add integer, to a numbered register, (without sign)
@@ -712,13 +713,14 @@ namespace Qrack {
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
-					bitCapInt i;
+					bitCapInt i, j;
+					bitCapInt startPower = 1<<start;
 					bitCapInt endPower = 1<<end;
-					ROR(start, 0, end);
-					for (i = endPower; i < maxQPower; i+= endPower) {
-						std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
+					for (i = 0; i < startPower; i++) {
+						for (j = 0; j < maxQPower; j+=endPower) {
+							RotateComplex(i + j, i + j + endPower, toSub, false, startPower, stateVec);
+						}
 					}
-   					ROL(start, 0, end);
 				}
 			}
 			///Subtract integer, from a numbered register, (without sign)
@@ -728,17 +730,19 @@ namespace Qrack {
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
-					bitCapInt i;
+					bitCapInt i, j;
+					bitCapInt startPower = 1<<start;
 					bitCapInt endPower = 1<<end;
+					bitCapInt stride = startPower<<1;
 
 					Swap(end - 1, end - 2);
 					ROL(1, start, end);
-					if (start != 0) ROR(start, 0, end);
-					for (i = endPower; i <= maxQPower; i+= endPower) {
-						RotateComplex(1 + i - endPower, i + 1, toAdd - 1, true, 2, stateVec);
-						RotateComplex(i - endPower, i, toAdd, true, 2, stateVec);
+					for (i = 0; i < startPower; i++) {
+						for (j = 0; j < maxQPower; j+=endPower) {
+							RotateComplex(i + j + 1, i + j + endPower + 1, toAdd - 1, true, stride, stateVec);
+							RotateComplex(i + j, i + j + endPower, toAdd, true, stride, stateVec);
+						}
 					}
-					if (start != 0) ROL(start, 0, end);
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
 				}			
@@ -750,18 +754,19 @@ namespace Qrack {
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
 			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
-					bitCapInt i;
-					bitCapInt endPower = 1<<end;
+					bitCapInt i, j;					
 					bitCapInt startPower = 1<<start;
+					bitCapInt endPower = 1<<end;
+					bitCapInt stride = startPower<<1;
 
 					Swap(end - 1, end - 2);
 					ROL(1, start, end);
-					if (start != 0) ROR(start, 0, end);
-					for (i = endPower; i <= maxQPower; i+= endPower) {
-						RotateComplex(i - endPower, i, toSub - 1, false, 2, stateVec);
-						RotateComplex(1 + i - endPower, i + 1, toSub, false, 2, stateVec);
+					for (i = 0; i < startPower; i++) {
+						for (j = 0; j < maxQPower; j+=endPower) {
+							RotateComplex(i + j, i + j + endPower, toSub - 1, false, stride, stateVec);
+							RotateComplex(i + j + 1, i + j + endPower + 1, toSub, false, stride, stateVec);
+						}
 					}
-					if (start != 0) ROL(start, 0, end);
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
 				}

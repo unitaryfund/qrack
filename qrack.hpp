@@ -26,6 +26,8 @@
 #define bitCapInt uint64_t
 #define bitsInByte 8
 
+namespace Qrack { class CoherentUnit; }
+
 #include "par_for.hpp"
 
 namespace Qrack {
@@ -219,7 +221,7 @@ namespace Qrack {
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -282,7 +284,7 @@ namespace Qrack {
 				if (result) {
 					if (oneChance > 0.0) nrmlzr = oneChance;
 					par_for (0, maxQPower, stateVec, Complex16(cosine / nrmlzr, sine), NULL, qPowers,
-						[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+						[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
 								stateVec[lcv] = Complex16(0.0, 0.0);
 							}
@@ -298,7 +300,7 @@ namespace Qrack {
 				else {
 					if (oneChance < 1.0) nrmlzr = sqrt(1.0 - oneChance);
 					par_for (0, maxQPower, stateVec, Complex16(cosine / nrmlzr, sine), NULL, qPowers,
-						[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+						[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
 								stateVec[lcv] = nrm * stateVec[lcv];
 							}
@@ -433,7 +435,7 @@ namespace Qrack {
 				qPowers[0] = qPowers[1] + qPowers[2];
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -713,13 +715,13 @@ namespace Qrack {
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
-					bitCapInt i;
+					bitCapInt startPower = 1<<start;
 					bitCapInt endPower = 1<<end;
-					ROR(start, 0, end);
-					for (i = endPower; i < maxQPower; i+= endPower) {
-						std::rotate(stateVec + i, stateVec + i - toAdd, stateVec + endPower + i);
-					} 
-					ROL(start, 0, end);
+					par_for_reg(startPower, endPower, maxQPower, toAdd, stateVec, this,
+						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toAdd, Complex16* stateVec, CoherentUnit* caller) {
+							caller->RotateComplex(k, k + endPower, toAdd, true, startPower, stateVec);
+						}
+					);
 				}
 			}
 			///Add integer, to a numbered register, (without sign)
@@ -729,13 +731,13 @@ namespace Qrack {
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
-					bitCapInt i;
+					bitCapInt startPower = 1<<start;
 					bitCapInt endPower = 1<<end;
-					ROR(start, 0, end);
-					for (i = endPower; i < maxQPower; i+= endPower) {
-						std::rotate(stateVec, stateVec + toSub, stateVec + maxQPower);
-					}
-   					ROL(start, 0, end);
+					par_for_reg(startPower, endPower, maxQPower, toSub, stateVec, this,
+						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toSub, Complex16* stateVec, CoherentUnit* caller) {
+							caller->RotateComplex(k, k + endPower, toSub, false, startPower, stateVec);
+						}
+					);
 				}
 			}
 			///Subtract integer, from a numbered register, (without sign)
@@ -745,20 +747,20 @@ namespace Qrack {
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt end) {
 				if (toAdd > 0) {
-					bitCapInt i;
+					bitCapInt startPower = 1<<start;
 					bitCapInt endPower = 1<<end;
 
 					Swap(end - 1, end - 2);
 					ROL(1, start, end);
-					if (start != 0) ROR(start, 0, end);
-					for (i = endPower; i <= maxQPower; i+= endPower) {
-						RotateComplex(1 + i - endPower, i + 1, toAdd - 1, true, 2, stateVec);
-						RotateComplex(i - endPower, i, toAdd, true, 2, stateVec);
-					}
-					if (start != 0) ROL(start, 0, end);
+					par_for_reg(startPower, endPower, maxQPower, toAdd, stateVec, this,
+						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toAdd, Complex16* stateVec, CoherentUnit* caller) {
+							caller->RotateComplex(k + 1, k + endPower + 1, toAdd - 1, true, startPower<<1, stateVec);
+							caller->RotateComplex(k, k + endPower, toAdd, true, startPower<<1, stateVec);
+						}
+					);
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
-				}			
+				}
 			}
 			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitLenInt shift, bitLenInt regIndex) {
@@ -767,18 +769,17 @@ namespace Qrack {
 			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
 			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt end) {
 				if (toSub > 0) {
-					bitCapInt i;
-					bitCapInt endPower = 1<<end;
 					bitCapInt startPower = 1<<start;
+					bitCapInt endPower = 1<<end;
 
 					Swap(end - 1, end - 2);
 					ROL(1, start, end);
-					if (start != 0) ROR(start, 0, end);
-					for (i = endPower; i <= maxQPower; i+= endPower) {
-						RotateComplex(i - endPower, i, toSub - 1, false, 2, stateVec);
-						RotateComplex(1 + i - endPower, i + 1, toSub, false, 2, stateVec);
-					}
-					if (start != 0) ROL(start, 0, end);
+					par_for_reg(startPower, endPower, maxQPower, toSub, stateVec, this,
+						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toSub, Complex16* stateVec, CoherentUnit* caller) {
+							caller->RotateComplex(k, k + endPower, toSub - 1, false, startPower<<1, stateVec);
+							caller->RotateComplex(k + 1, k + endPower + 1, toSub, false, startPower<<1, stateVec);
+						}
+					);
 					ROR(1, start, end);
 					Swap(end - 1, end - 2);
 				}
@@ -814,7 +815,7 @@ namespace Qrack {
 				qPowers[0] = 1 << qubitIndex;
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -846,7 +847,7 @@ namespace Qrack {
 				qPowers[0] = qPowers[1] + qPowers[2];
 				//Complex16 b = Complex16(0.0, 0.0);
 				par_for (0, maxQPower, stateVec, Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
-					[](const int lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 						if ((lcv & qPowers[0]) == 0) {
 							Complex16 qubit[2];
 
@@ -909,11 +910,11 @@ namespace Qrack {
 					end -= 1;
 					Complex16 temp;
 					bitCapInt i;
-					bitCapInt iter = start + (end - start - 1) / 2;
-					for (i = start; i <= iter; i+=stride) {
-						temp = vec[i];
-						vec[i] = vec[end - i + start];
-						vec[end - i + start] = temp;
+					bitCapInt maxLCV = (end - start) / 2;
+					for (i = 0; i <= maxLCV; i+=stride) {
+						temp = vec[i + start];
+						vec[i + start] = vec[end - i];
+						vec[end - i] = temp;
 					}
 				}
 			}
