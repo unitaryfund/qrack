@@ -202,9 +202,26 @@ namespace Qrack {
 			///Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
 			/** Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added. */
 			void Cohere(CoherentUnit* toCopy) {
-				//if (runningNorm != 1.0) NormalizeState();
+				if (runningNorm != 1.0) NormalizeState();
 
-				throw std::logic_error("Cohere method is not yet implemented.");
+				bitCapInt i;
+				bitCapInt nMaxQPower = 1<<(qubitCount + toCopy->qubitCount);
+				bitCapInt startMask = 0;
+				bitCapInt endMask = 0;
+				for (i = 0; i < maxQPower; i++) {
+					startMask += (1<<i);
+				}
+				for (i = maxQPower; i < nMaxQPower; i++) {
+					endMask += (1<<i);
+				}
+				Complex16* nStateVec = new Complex16[nMaxQPower];
+				for (i = 0; i < nMaxQPower; i++) {
+					nStateVec[i] = stateVec[(i & startMask)] * toCopy->stateVec[((i & endMask)<<qubitCount)];
+				}
+				delete [] stateVec;
+				stateVec = nStateVec;
+				qubitCount = qubitCount + toCopy->qubitCount;
+				maxQPower = 1<<qubitCount;
 			}
 			///Minimally decohere a set of contigious bits from the full coherent unit.
 			/** Minimally decohere a set of contigious bits from the full coherent unit. The length of this coherent unit is reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer. The destination object must be initialized to the correct number of bits, in 0 permutation state. */
@@ -228,7 +245,7 @@ namespace Qrack {
 					startMask += (1<<i);
 				}
 				for (i = end; i < qubitCount; i++) {
-					endMask += (1<<end);
+					endMask += (1<<i);
 				}
 				
 				double* partStateProb = new double[partPower]();
