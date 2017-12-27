@@ -37,7 +37,7 @@ namespace Qrack {
 	}
 
 	template <class F>
-	void par_for_reg(const bitCapInt startPower, const bitCapInt endPower, const bitCapInt maxQPower, const bitCapInt addSub, Complex16* stateArray, CoherentUnit* coherentUnit, F fn) {
+	void par_for_reg(const bitCapInt startPower, const bitCapInt endPower, const bitCapInt maxQPower, const bitCapInt addSub, Complex16* stateArray, CoherentUnit*  coherentUnit, F fn) {
 		std::atomic<bitCapInt> idx;
 		idx = 0;
 		bitCapInt maxIter = startPower * (maxQPower / endPower);

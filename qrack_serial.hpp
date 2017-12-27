@@ -194,12 +194,12 @@ namespace Qrack {
 			}
 			///Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
 			/** Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added. */
-			void Cohere(CoherentUnit* toCopy) {
+			void Cohere(CoherentUnit &toCopy) {
 				if (runningNorm != 1.0) NormalizeState();
-				if (toCopy->runningNorm != 1.0) toCopy->NormalizeState();
+				if (toCopy->runningNorm != 1.0) toCopy.NormalizeState();
 
 				bitCapInt i;
-				bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
+				bitCapInt nQubitCount = qubitCount + toCopy.qubitCount;
 				bitCapInt nMaxQPower = 1<<nQubitCount;
 				bitCapInt startMask = 0;
 				bitCapInt endMask = 0;
@@ -209,9 +209,12 @@ namespace Qrack {
 				for (i = qubitCount; i < nQubitCount; i++) {
 					endMask += (1<<i);
 				}
+
+				double angle = Rand() * 2.0 * M_PI;
+				Complex16 phaseFac(cos(angle), sin(angle));
 				Complex16* nStateVec = new Complex16[nMaxQPower];
 				for (i = 0; i < nMaxQPower; i++) {
-					nStateVec[i] = stateVec[(i & startMask)] * toCopy->stateVec[((i & endMask)<<qubitCount)];
+					nStateVec[i] = sqrt(normSqrd(stateVec[(i & startMask)]) * normSqrd(toCopy->stateVec[((i & endMask)<<qubitCount)])) * phaseFac;
 				}
 				delete [] stateVec;
 				stateVec = nStateVec;
@@ -222,7 +225,7 @@ namespace Qrack {
 			}
 			///Minimally decohere a set of contigious bits from the full coherent unit.
 			/** Minimally decohere a set of contigious bits from the full coherent unit. The length of this coherent unit is reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer. The destination object must be initialized to the correct number of bits, in 0 permutation state. */
-			void Decohere(bitLenInt start, bitLenInt end, CoherentUnit* destination) {
+			void Decohere(bitLenInt start, bitLenInt end, CoherentUnit &destination) {
 				if (end <= start) {
 					throw std::invalid_argument("End must be greater than start");
 				}
@@ -264,11 +267,11 @@ namespace Qrack {
 				double totProb = 0.0;
 				for (i = 0; i < partPower; i++) {
 					totProb += partStateProb[i];
-					destination->stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
+					destination.stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
 				}
 				delete [] partStateProb;
 				if (totProb == 0.0) {
-					destination->stateVec[0] = phaseFac;
+					destination.stateVec[0] = phaseFac;
 				}
 
 				angle = Rand() * 2.0 * M_PI;
@@ -284,7 +287,7 @@ namespace Qrack {
 				}
 
 				UpdateRunningNorm();
-				destination->UpdateRunningNorm();
+				destination.UpdateRunningNorm();
 			}
 
 			//Logic Gates:

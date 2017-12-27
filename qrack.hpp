@@ -162,8 +162,8 @@ namespace Qrack {
 			}
 			///Delete a register, with heap objects
 			~CoherentUnit() {
-				delete [] stateVec;
-				delete [] registerDims;
+				delete[] stateVec;
+				delete[] registerDims;
 			}
 			///Get the count of bits in this register
 			int GetQubitCount() {
@@ -201,12 +201,12 @@ namespace Qrack {
 			}
 			///Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
 			/** Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added. */
-			void Cohere(CoherentUnit* toCopy) {
+			void Cohere(CoherentUnit &toCopy) {
 				if (runningNorm != 1.0) NormalizeState();
-				if (toCopy->runningNorm != 1.0) toCopy->NormalizeState();
+				if (toCopy.runningNorm != 1.0) toCopy.NormalizeState();
 
 				bitCapInt i;
-				bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
+				bitCapInt nQubitCount = qubitCount + toCopy.qubitCount;
 				bitCapInt nMaxQPower = 1<<nQubitCount;
 				bitCapInt startMask = 0;
 				bitCapInt endMask = 0;
@@ -218,9 +218,9 @@ namespace Qrack {
 				}
 				Complex16* nStateVec = new Complex16[nMaxQPower];
 				for (i = 0; i < nMaxQPower; i++) {
-					nStateVec[i] = stateVec[(i & startMask)] * toCopy->stateVec[((i & endMask)<<qubitCount)];
+					nStateVec[i] = stateVec[(i & startMask)] * toCopy.stateVec[((i & endMask)>>qubitCount)];
 				}
-				delete [] stateVec;
+				delete[] stateVec;
 				stateVec = nStateVec;
 				qubitCount = nQubitCount;
 				maxQPower = 1<<nQubitCount;
@@ -229,18 +229,19 @@ namespace Qrack {
 			}
 			///Minimally decohere a set of contigious bits from the full coherent unit.
 			/** Minimally decohere a set of contigious bits from the full coherent unit. The length of this coherent unit is reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer. The destination object must be initialized to the correct number of bits, in 0 permutation state. */
-			void Decohere(bitLenInt start, bitLenInt end, CoherentUnit* destination) {
+			void Decohere(bitLenInt start, bitLenInt end, CoherentUnit& destination) {
 				if (end <= start) {
 					throw std::invalid_argument("End must be greater than start");
 				}
 
 				if (runningNorm != 1.0) NormalizeState();
 				
+				bitLenInt bitLen = end - start;
 				bitCapInt mask = 0;
 				bitCapInt startMask = 0;
 				bitCapInt endMask = 0;
-				bitCapInt partPower = 1<<(end - start);
-				bitCapInt remainderPower = 1<<(qubitCount - end + start + 1);
+				bitCapInt partPower = 1<<bitLen;
+				bitCapInt remainderPower = 1<<(qubitCount - bitLen);
 				bitCapInt i;				
 				for (i = start; i < end; i++) {
 					mask += (1<<i);
@@ -257,11 +258,12 @@ namespace Qrack {
 				double prob;
 				for (i = 0; i < maxQPower; i++) {
 					prob = normSqrd(stateVec + i);
-					partStateProb[(i & mask)<<start] += prob;
-					remainderStateProb[(i & startMask) + ((i & endMask)<<end)] += prob;
+					partStateProb[(i & mask)>>start] += prob;
+					remainderStateProb[(i & startMask) + ((i & endMask)>>bitLen)] += prob;
 				}
 
-				delete [] stateVec;
+				std::cout<<"1"<<std::endl;
+				delete[] stateVec;
 				stateVec = new Complex16[remainderPower]();
 				qubitCount = qubitCount - end + start + 1;
 				maxQPower = 1<<qubitCount;
@@ -271,11 +273,12 @@ namespace Qrack {
 				double totProb = 0.0;
 				for (i = 0; i < partPower; i++) {
 					totProb += partStateProb[i];
-					destination->stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
+					destination.stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
 				}
-				delete [] partStateProb;
+				std::cout<<"2"<<std::endl;
+				delete[] partStateProb;
 				if (totProb == 0.0) {
-					destination->stateVec[0] = phaseFac;
+					destination.stateVec[0] = phaseFac;
 				}
 
 				angle = Rand() * 2.0 * M_PI;
@@ -285,13 +288,15 @@ namespace Qrack {
 					totProb += remainderStateProb[i];
 					stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
 				}
-				delete [] remainderStateProb;
+				std::cout<<"3"<<std::endl;
+				delete[] remainderStateProb;
 				if (totProb == 0.0) {
 					stateVec[0] = phaseFac;
 				}
 
 				UpdateRunningNorm();
-				destination->UpdateRunningNorm();
+				destination.UpdateRunningNorm();
+				std::cout<<"1"<<std::endl;
 			}
 
 			//Logic Gates:
