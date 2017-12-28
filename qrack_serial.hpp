@@ -812,7 +812,7 @@ namespace Qrack {
 					bitCapInt endPower = 1<<(start + length - 1);
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxQPower; j+=endPower) {
-							RotateComplex(i + j, i + j + endPower, toAdd, true, startPower, &(stateVec[0]));
+							stateVec = std::move(RotateComplex(i + j, i + j + endPower, toAdd, true, startPower, std::move(stateVec)));
 						}
 					}
 				}
@@ -829,7 +829,7 @@ namespace Qrack {
 					bitCapInt endPower = 1<<(start + length - 1);
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxQPower; j+=endPower) {
-							RotateComplex(i + j, i + j + endPower, toSub, false, startPower, &(stateVec[0]));
+							stateVec = std::move(RotateComplex(i + j, i + j + endPower, toSub, false, startPower, std::move(stateVec)));
 						}
 					}
 				}
@@ -851,8 +851,8 @@ namespace Qrack {
 					ROL(1, start, length);
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxQPower; j+=endPower) {
-							RotateComplex(i + j + 1, i + j + endPower + 1, toAdd - 1, true, stride, &(stateVec[0]));
-							RotateComplex(i + j, i + j + endPower, toAdd, true, stride, &(stateVec[0]));
+							stateVec = std::move(RotateComplex(i + j + 1, i + j + endPower + 1, toAdd, true, stride, std::move(stateVec)));
+							stateVec = std::move(RotateComplex(i + j, i + j + endPower, toAdd - 1, true, stride, std::move(stateVec)));
 						}
 					}
 					ROR(1, start, length);
@@ -876,8 +876,8 @@ namespace Qrack {
 					ROL(1, start, length);
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxQPower; j+=endPower) {
-							RotateComplex(i + j, i + j + endPower, toSub - 1, false, stride, &(stateVec[0]));
-							RotateComplex(i + j + 1, i + j + endPower + 1, toSub, false, stride, &(stateVec[0]));
+							stateVec = std::move(RotateComplex(i + j, i + j + endPower, toSub - 1, false, stride, std::move(stateVec)));
+							stateVec = std::move(RotateComplex(i + j + 1, i + j + endPower + 1, toSub, false, stride, std::move(stateVec)));
 						}
 					}
 					ROR(1, start, length);
@@ -998,7 +998,7 @@ namespace Qrack {
 				}
 			}
 
-			void ReverseComplex(bitCapInt start, bitCapInt end, bitCapInt stride, Complex16* vec) {
+			std::unique_ptr<Complex16[]> ReverseComplex(bitCapInt start, bitCapInt end, bitCapInt stride, std::unique_ptr<Complex16[]> vec) {
 				if (start + 1 < end) {
 					end -= 1;
 					Complex16 temp;
@@ -1010,22 +1010,26 @@ namespace Qrack {
 						vec[end - i + start] = temp;
 					}
 				}
+
+				return std::move(vec);
 			}
 
-			void RotateComplex(bitCapInt start, bitCapInt end, bitCapInt shift, bool leftRot, bitCapInt stride, Complex16* vec) {
+			std::unique_ptr<Complex16[]> RotateComplex(bitCapInt start, bitCapInt end, bitCapInt shift, bool leftRot, bitCapInt stride, std::unique_ptr<Complex16[]> vec) {
 				shift *= stride;
 				if (shift > 0) {
 					if (leftRot) {
-						ReverseComplex(start, end, stride, vec);
-						ReverseComplex(start, start + shift - stride, stride, vec);
-						ReverseComplex(start + shift, end, stride, vec);
+						vec = std::move(ReverseComplex(start, end, stride, std::move(vec)));
+						vec = std::move(ReverseComplex(start, start + shift - stride, stride, std::move(vec)));
+						vec = std::move(ReverseComplex(start + shift, end, stride, std::move(vec)));
 					}
 					else {
-						ReverseComplex(start + shift, end, stride, vec);
-						ReverseComplex(start, start + shift - stride, stride, vec);
-						ReverseComplex(start, end, stride, vec);
+						vec = std::move(ReverseComplex(start + shift, end, stride, std::move(vec)));
+						vec = std::move(ReverseComplex(start, start + shift - stride, stride, std::move(vec)));
+						vec = std::move(ReverseComplex(start, end, stride, std::move(vec)));
 					}
 				}
+
+				return std::move(vec);
 			}
 
 			void zmv2x2(const Complex16 alpha, const Complex16* A, Complex16* Y) {
