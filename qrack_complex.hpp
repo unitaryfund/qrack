@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano 2017. All rights reserved.
+//
+// SIMD implementation of the double precision complex type
+//
+// Licensed under the GNU General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// for details.
+
 #include <emmintrin.h>
 
 namespace Qrack {
