@@ -21,16 +21,16 @@
 #include <thread>
 #include <future>
 
-#include <complex>
-//#include "qrack_complex.hpp"
+//#include <complex>
+#include "qrack_complex.hpp"
 
-#define Complex16 std::complex<double>
-namespace Qrack {
-	double normSqrd(Complex16 cmplx) {
-		return real(cmplx) * real(cmplx) + imag(cmplx) * imag(cmplx);
-	}
-}
-//#define Complex16 ComplexSimd
+//#define Complex16 std::complex<double>
+//namespace Qrack {
+//	double normSqrd(Complex16 cmplx) {
+//		return real(cmplx) * real(cmplx) + imag(cmplx) * imag(cmplx);
+//	}
+//}
+#define Complex16 ComplexSimd
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
