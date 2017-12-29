@@ -109,8 +109,8 @@ namespace Qrack {
 	static ComplexSimd operator/(const double lhs, const ComplexSimd& rhs) {
 		__v2df temp = (__v2df)_mm_mul_pd(rhs._val, rhs._val);
 		double denom = temp[0] + temp[1];
-		temp = (__v2df)_mm_mul_pd(rhs._val, _mm_set1_pd(lhs));	
-		return ComplexSimd(_mm_div_pd(temp, _mm_set1_pd(denom)));
+		temp = (__v2df)_mm_div_pd(_mm_mul_pd(rhs._val, _mm_set1_pd(lhs)), _mm_set1_pd(denom));	
+		return ComplexSimd(temp[0], -temp[1]);
 	}
 	double real(const ComplexSimd& cmplx) {
 		return ((__v2df)(cmplx._val))[0];
