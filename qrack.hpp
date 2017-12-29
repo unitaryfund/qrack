@@ -289,26 +289,26 @@ namespace Qrack {
 			//Logic Gates:
 			///Classical "AND" compare two bits in register, and store result in first bit
 			void AND(bitLenInt resultBit, bitLenInt compareBit) {
-				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
-				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				//if ((resultBit >= qubitCount) || (compareBit >= qubitCount))
+				//	throw std::invalid_argument("AND tried to operate on bit index greater than total bits.");
 				if (resultBit == compareBit) throw std::invalid_argument("AND bits cannot be the same bit.");
 
 				bool result = M(resultBit);
 				bool compare = M(compareBit);
 				if (result && !compare) {
-					SetBit(resultBit, false);
+					X(resultBit);
 				}
 			}
-			///Classical"OR" compare two bits in register, and store result in first bit
+			///Classical "OR" compare two bits in register, and store result in first bit
 			void OR(bitLenInt resultBit, bitLenInt compareBit) {
-				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
-				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				//if ((resultBit >= qubitCount) || (compareBit >= qubitCount))
+				//	throw std::invalid_argument("OR tried to operate on bit index greater than total bits.");
 				if (resultBit == compareBit) throw std::invalid_argument("OR bits cannot be the same bit.");
 				
 				bool result = M(resultBit);
 				bool compare = M(compareBit);
 				if (!result && compare) {
-					SetBit(resultBit, true);
+					X(resultBit);
 				}
 			}
 			/// Doubly-controlled not
