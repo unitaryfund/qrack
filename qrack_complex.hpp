@@ -42,24 +42,26 @@ namespace Qrack {
 			return ComplexSimd(_val);
 		}
 		ComplexSimd operator*(const ComplexSimd& other) const {
-			__v2df realComps = (__v2df)_mm_mul_pd(other._val, _val);
-			__v2df imagComps  = (__v2df)_mm_mul_pd(other._val,
+			__v2df temp = (__v2df)_mm_mul_pd(other._val, _val);
+			double real = temp[0] - temp[1];
+			temp  = (__v2df)_mm_mul_pd(other._val,
 				_mm_move_sd(
 					_mm_castsi128_pd(_mm_bslli_si128(_mm_castpd_si128(_val), 8)),
 					_mm_castsi128_pd(_mm_bsrli_si128(_mm_castpd_si128(_val), 8))
 				)
 			);			
-			return ComplexSimd(realComps[0] - realComps[1], imagComps[0] + imagComps[1]);
+			return ComplexSimd(real, temp[0] + temp[1]);
 		}
 		ComplexSimd operator*=(const ComplexSimd& other) {
-			__v2df realComps = (__v2df)_mm_mul_pd(other._val, _val);
-			__v2df imagComps  = (__v2df)_mm_mul_pd(other._val,
+			__v2df temp = (__v2df)_mm_mul_pd(other._val, _val);
+			double real = temp[0] - temp[1];
+			temp  = (__v2df)_mm_mul_pd(other._val,
 				_mm_move_sd(
 					_mm_castsi128_pd(_mm_bslli_si128(_mm_castpd_si128(_val), 8)),
 					_mm_castsi128_pd(_mm_bsrli_si128(_mm_castpd_si128(_val), 8))
 				)
 			);	
-			_val = _mm_set_pd(imagComps[0] + imagComps[1], realComps[0] - realComps[1]);
+			_val = _mm_set_pd(temp[0] + temp[1], real);
 			return ComplexSimd(_val);
 		}
 		ComplexSimd operator*(const double rhs) const {
@@ -103,6 +105,12 @@ namespace Qrack {
 
 	static ComplexSimd operator*(const double lhs, const ComplexSimd& rhs) {
 		return _mm_mul_pd(_mm_set1_pd(lhs), rhs._val);
+	}
+	static ComplexSimd operator/(const double lhs, const ComplexSimd& rhs) {
+		__v2df temp = (__v2df)_mm_mul_pd(rhs._val, rhs._val);
+		double denom = temp[0] + temp[1];
+		temp = (__v2df)_mm_mul_pd(rhs._val, _mm_set1_pd(lhs));	
+		return ComplexSimd(_mm_div_pd(temp, _mm_set1_pd(denom)));
 	}
 	double real(const ComplexSimd& cmplx) {
 		return ((__v2df)(cmplx._val))[0];
