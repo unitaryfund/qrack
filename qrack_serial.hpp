@@ -278,65 +278,29 @@ namespace Qrack {
 
 			//Logic Gates:
 
-			///"AND" compare two bits in register, and store result in first bit
+			///Classical "AND" compare two bits in register, and store result in first bit
 			void AND(bitLenInt resultBit, bitLenInt compareBit) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
 				if (resultBit == compareBit) throw std::invalid_argument("AND bits cannot be the same bit.");
-				const Complex16 mtrx[4] = {
-					Complex16(1.0, 0.0), Complex16(1.0, 0.0),
-					Complex16(0.0, 0.0), Complex16(0.0, 0.0)
-				};
 
-				bitCapInt qPowers[3];
-				qPowers[1] = 1 << resultBit;
-				qPowers[2] = 1 << compareBit;
-				qPowers[0] = qPowers[1] + qPowers[2];
-				Complex16 qubit[2];
-				bitCapInt lcv;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if ((lcv & qPowers[0]) == 0) { 
-						qubit[0] = stateVec[lcv];
-						qubit[1] = stateVec[lcv + qPowers[1]];						
-
-						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);
-
-						stateVec[lcv] = qubit[0];
-						stateVec[lcv + qPowers[1]] = qubit[1];
-					}
+				bool result = M(resultBit);
+				bool compare = M(compareBit);
+				if (result && !compare) {
+					Set(resultBit, false);
 				}
-
-				runningNorm = 1.0;
 			}
-			///"AND" compare two bits in register, and store result in first bit
+			///Classical "OR" compare two bits in register, and store result in first bit
 			void OR(bitLenInt resultBit, bitLenInt compareBit) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
 				if (resultBit == compareBit) throw std::invalid_argument("OR bits cannot be the same bit.");
-				const Complex16 mtrx[4] = {
-					Complex16(0.0, 0.0), Complex16(0.0, 0.0),
-					Complex16(1.0, 0.0), Complex16(1.0, 0.0)
-				};
 
-				bitCapInt qPowers[3];
-				qPowers[1] = 1 << resultBit;
-				qPowers[2] = 1 << compareBit;
-				qPowers[0] = qPowers[1] + qPowers[2];
-				Complex16 qubit[2];
-				bitCapInt lcv;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if ((lcv & qPowers[0]) == 0) { 
-						qubit[0] = stateVec[lcv];
-						qubit[1] = stateVec[lcv + qPowers[2]];						
-
-						zmv2x2(Complex16(1.0 / runningNorm, 0.0), mtrx, qubit);						
-
-						stateVec[lcv] = qubit[0];
-						stateVec[lcv + qPowers[1]] = qubit[2];
-					}
+				bool result = M(resultBit);
+				bool compare = M(compareBit);
+				if (!result && compare) {
+					Set(resultBit, true);
 				}
-
-				runningNorm = 1.0;
 			}
 			/// Doubly-controlled not
 			void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
