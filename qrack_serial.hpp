@@ -14,12 +14,20 @@
 #include <stdint.h>
 #include <math.h>
 #include <algorithm>
-#include <complex>
 #include <random>
 #include <stdexcept>
 #include <memory>
 
-#define Complex16 std::complex<double>
+//#include <complex>
+#include "qrack_complex.hpp"
+
+//#define Complex16 std::complex<double>
+//namespace Qrack {
+//	double normSqrd(Complex16 cmplx) {
+//		return real(cmplx) * real(cmplx) + imag(cmplx) * imag(cmplx);
+//	}
+//}
+#define Complex16 ComplexSimd
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -982,10 +990,6 @@ namespace Qrack {
 					stateVec[lcv] /= runningNorm;
 				}
 				runningNorm = 1.0;
-			}
-
-			double normSqrd(Complex16 cmplx) {
-				return real(cmplx) * real(cmplx) + imag(cmplx) * imag(cmplx);
 			}
 
 			void UpdateRunningNorm() {
