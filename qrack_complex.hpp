@@ -12,6 +12,8 @@
 
 namespace Qrack {
 
+	/// SIMD implementation of the double precision complex type
+	/** SIMD implementation of the double precision complex type. */
 	struct ComplexSimd {
 		__m128d _val;
 
@@ -57,11 +59,38 @@ namespace Qrack {
 					_mm_castsi128_pd(_mm_bsrli_si128(_mm_castpd_si128(_val), 8))
 				)
 			);	
-			_val = _mm_set_pd(realComps[0] - realComps[1], imagComps[0] + imagComps[1]);
+			_val = _mm_set_pd(imagComps[0] + imagComps[1], realComps[0] - realComps[1]);
 			return ComplexSimd(_val);
 		}
 		ComplexSimd operator*(const double rhs) const {
 			return _mm_mul_pd(_val, _mm_set1_pd(rhs));
+		}
+		ComplexSimd operator/(const ComplexSimd& other) const {
+			__v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
+			double denom = temp[0] + temp[1];
+			temp = (__v2df)_mm_mul_pd(other._val, _val);
+			double realNumer = temp[0] + temp[1];
+			temp = (__v2df)_mm_mul_pd(other._val,
+				_mm_move_sd(
+					_mm_castsi128_pd(_mm_bslli_si128(_mm_castpd_si128(_val), 8)),
+					_mm_castsi128_pd(_mm_bsrli_si128(_mm_castpd_si128(_val), 8))
+				)
+			);	
+			return ComplexSimd(_mm_div_pd(_mm_set_pd(temp[0] + temp[1], realNumer), _mm_set1_pd(denom)));
+		}
+		ComplexSimd operator/=(const ComplexSimd& other) {
+			__v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
+			double denom = temp[0] + temp[1];
+			temp = (__v2df)_mm_mul_pd(other._val, _val);
+			double realNumer = temp[0] + temp[1];
+			temp = (__v2df)_mm_mul_pd(other._val,
+				_mm_move_sd(
+					_mm_castsi128_pd(_mm_bslli_si128(_mm_castpd_si128(_val), 8)),
+					_mm_castsi128_pd(_mm_bsrli_si128(_mm_castpd_si128(_val), 8))
+				)
+			);	
+			_val = _mm_div_pd(_mm_set_pd(temp[0] + temp[1], realNumer), _mm_set1_pd(denom));
+			return ComplexSimd(_val);
 		}
 		ComplexSimd operator/(const double rhs) const {
 			return _mm_div_pd(_val, _mm_set1_pd(rhs));
