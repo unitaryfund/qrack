@@ -23,6 +23,7 @@
 #include <future>
 
 #define Complex16 std::complex<double>
+//#define Complex16 ComplexSimd
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -37,7 +38,7 @@ namespace Qrack {
 	struct RegisterDim {
 		bitLenInt length;
 		bitLenInt startBit;
-	};
+	};	
 
 	/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers		
 	/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit logic gates and (abstract) opcodes-like methods. */
@@ -66,6 +67,8 @@ namespace Qrack {
 				registerDims[0].length = qubitCount;
 				registerDims[0].startBit = 0;
 				registerCount = 1;
+
+				//__m128d test = (__m128d)(stateVec[0]);
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
@@ -284,7 +287,76 @@ namespace Qrack {
 			}
 
 			//Logic Gates:
+			///"AND" compare two bits in register, and store result in first bit
+			void AND(bitLenInt resultBit, bitLenInt compareBit) {
+				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				if (resultBit == compareBit) throw std::invalid_argument("AND bits cannot be the same bit.");
+				const Complex16 mtrx[4] = {
+					Complex16(1.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(0.0, 0.0), Complex16(0.0, 0.0)
+				};
 
+				bitCapInt qPowers[3];
+				qPowers[1] = 1 << resultBit;
+				qPowers[2] = 1 << compareBit;
+				qPowers[0] = qPowers[1] + qPowers[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+						if ((lcv & qPowers[0]) == 0) {
+							Complex16 qubit[2];
+
+							qubit[0] = stateVec[lcv];
+							qubit[1] = stateVec[lcv + qPowers[1]];						
+
+							Complex16 Y0 = qubit[0];
+							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
+							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+
+							stateVec[lcv] = qubit[0];
+							stateVec[lcv + qPowers[1]] = qubit[1];
+						}
+					}
+				);
+
+				runningNorm = 1.0;
+			}
+			///"OR" compare two bits in register, and store result in first bit
+			void OR(bitLenInt resultBit, bitLenInt compareBit) {
+				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
+				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				if (resultBit == compareBit) throw std::invalid_argument("OR bits cannot be the same bit.");
+				const Complex16 mtrx[4] = {
+					Complex16(0.0, 0.0), Complex16(0.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(1.0, 0.0)
+				};
+
+				bitCapInt qPowers[3];
+				qPowers[1] = 1 << resultBit;
+				qPowers[2] = 1 << compareBit;
+				qPowers[0] = qPowers[1] + qPowers[2];
+				//Complex16 b = Complex16(0.0, 0.0);
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+						if ((lcv & qPowers[0]) == 0) {
+							Complex16 qubit[2];
+
+							qubit[0] = stateVec[lcv];
+							qubit[1] = stateVec[lcv + qPowers[2]];						
+
+							Complex16 Y0 = qubit[0];
+							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
+							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+
+							stateVec[lcv] = qubit[0];
+							stateVec[lcv + qPowers[1]] = qubit[2];
+						}
+					}
+				);
+
+				runningNorm = 1.0;
+			}
 			/// Doubly-controlled not
 			void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
 				//if ((control1 >= qubitCount) || (control2 >= qubitCount))
