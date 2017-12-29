@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack_serial.hpp"
+#include "qrack.hpp"
 
 int main() {
 	char testKey;
@@ -82,17 +82,19 @@ int main() {
 		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
 	}
 
-	//Qrack::CoherentUnit qftReg2(4, 0);
+	std::cout<<"Decohere test:"<<std::endl;
 
-	//qftReg.Decohere(0, 4, qftReg2);
+	Qrack::CoherentUnit qftReg2(4, 0);
 
-	//for (i = 0; i < 4; i++) {
-	//	std::cout<<"Bit "<<i<<", Chance of 1:"<<qftReg.Prob(i)<<std::endl;
-	//}
+	qftReg.Decohere(0, 4, qftReg2);
 
-	//for (i = 0; i < 4; i++) {
-	//	std::cout<<"Bit "<<(i+4)<<", Chance of 1:"<<qftReg2.Prob(i)<<std::endl;
-	//}
+	for (i = 0; i < 4; i++) {
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftReg.Prob(i)<<std::endl;
+	}
+
+	for (i = 0; i < 4; i++) {
+		std::cout<<"Bit "<<(i+4)<<", Chance of 1:"<<qftReg2.Prob(i)<<std::endl;
+	}
 
 	std::cout<<"Next step might take a while..."<<std::endl;
 
