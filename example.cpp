@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack_serial.hpp"
+#include "qrack.hpp"
 
 int main() {
 	char testKey;

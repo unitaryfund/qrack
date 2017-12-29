@@ -296,10 +296,10 @@ namespace Qrack {
 				bool result = M(resultBit);
 				bool compare = M(compareBit);
 				if (result && !compare) {
-					Set(resultBit, false);
+					SetBit(resultBit, false);
 				}
 			}
-			///Classical "OR" compare two bits in register, and store result in first bit
+			///Classical"OR" compare two bits in register, and store result in first bit
 			void OR(bitLenInt resultBit, bitLenInt compareBit) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
@@ -308,7 +308,7 @@ namespace Qrack {
 				bool result = M(resultBit);
 				bool compare = M(compareBit);
 				if (!result && compare) {
-					Set(resultBit, true);
+					SetBit(resultBit, true);
 				}
 			}
 			/// Doubly-controlled not

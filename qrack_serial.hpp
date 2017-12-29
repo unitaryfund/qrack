@@ -287,7 +287,7 @@ namespace Qrack {
 				bool result = M(resultBit);
 				bool compare = M(compareBit);
 				if (result && !compare) {
-					Set(resultBit, false);
+					SetBit(resultBit, false);
 				}
 			}
 			///Classical "OR" compare two bits in register, and store result in first bit
@@ -299,7 +299,7 @@ namespace Qrack {
 				bool result = M(resultBit);
 				bool compare = M(compareBit);
 				if (!result && compare) {
-					Set(resultBit, true);
+					SetBit(resultBit, true);
 				}
 			}
 			/// Doubly-controlled not
