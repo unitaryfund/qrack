@@ -22,15 +22,10 @@
 #include <future>
 
 //#include <complex>
-#include "qrack_complex.hpp"
+#include "complex16simd.hpp"
 
 //#define Complex16 std::complex<double>
-//namespace Qrack {
-//	double normSqrd(Complex16 cmplx) {
-//		return real(cmplx) * real(cmplx) + imag(cmplx) * imag(cmplx);
-//	}
-//}
-#define Complex16 ComplexSimd
+#define Complex16 Complex16Simd
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -257,7 +252,7 @@ namespace Qrack {
 				std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
 				double prob;
 				for (i = 0; i < maxQPower; i++) {
-					prob = normSqrd(stateVec[i]);
+					prob = norm(stateVec[i]);
 					partStateProb[(i & mask)>>start] += prob;
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
 				}
@@ -337,21 +332,19 @@ namespace Qrack {
 				qPowers[3] = 1 << target;
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers, 3,
 					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+						Complex16 qubit[2];
 
-							qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
-							qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
+						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
+						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+						Complex16 Y0 = qubit[0];
+						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
+						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
 
-							stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
-							stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
-						}
+						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
+						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
 					}
 				);
 
@@ -400,7 +393,7 @@ namespace Qrack {
 				bitCapInt lcv;
 				if (result) {
 					if (oneChance > 0.0) nrmlzr = oneChance;
-					par_for (0, maxQPower, &(stateVec[0]), Complex16(cosine / nrmlzr, sine), NULL, qPowers,
+					par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine / nrmlzr, sine), NULL, qPowers,
 						[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
 								stateVec[lcv] = Complex16(0.0, 0.0);
@@ -416,7 +409,7 @@ namespace Qrack {
 				}
 				else {
 					if (oneChance < 1.0) nrmlzr = sqrt(1.0 - oneChance);
-					par_for (0, maxQPower, &(stateVec[0]), Complex16(cosine / nrmlzr, sine), NULL, qPowers,
+					par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine / nrmlzr, sine), NULL, qPowers,
 						[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
 								stateVec[lcv] = nrm * stateVec[lcv];
@@ -441,7 +434,7 @@ namespace Qrack {
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == qPower) {
-						oneChance += normSqrd(stateVec[lcv]);
+						oneChance += norm(stateVec[lcv]);
 					} 
 				}
 
@@ -451,7 +444,7 @@ namespace Qrack {
 			double ProbAll(bitCapInt fullRegister) {
 				if (runningNorm != 1.0) NormalizeState();
 
-				return normSqrd(stateVec[fullRegister]);
+				return norm(stateVec[fullRegister]);
 			}
 			///PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
 			void ProbArray(double* probArray) {
@@ -459,7 +452,7 @@ namespace Qrack {
 
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
-					probArray[lcv] = normSqrd(stateVec[lcv]); 
+					probArray[lcv] = norm(stateVec[lcv]); 
 				}
 			}
 			///"Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state 
@@ -551,21 +544,19 @@ namespace Qrack {
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers,
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers, 2,
 					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+						Complex16 qubit[2];
 
-							qubit[0] = stateVec[lcv + qPowers[2]];
-							qubit[1] = stateVec[lcv + qPowers[1]];						
+						qubit[0] = stateVec[lcv + qPowers[2]];
+						qubit[1] = stateVec[lcv + qPowers[1]];						
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+						Complex16 Y0 = qubit[0];
+						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
+						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
 
-							stateVec[lcv + qPowers[2]] = qubit[0];
-							stateVec[lcv + qPowers[1]] = qubit[1];
-						}
+						stateVec[lcv + qPowers[2]] = qubit[0];
+						stateVec[lcv + qPowers[1]] = qubit[1];
 					}
 				);
 
@@ -954,21 +945,19 @@ namespace Qrack {
 				bitCapInt qPowers[1];
 				qPowers[0] = 1 << qubitIndex;
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers, 1,
 					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+						Complex16 qubit[2];
 
-							qubit[0] = stateVec[lcv + qPowers[0]];
-							qubit[1] = stateVec[lcv];						
+						qubit[0] = stateVec[lcv + qPowers[0]];
+						qubit[1] = stateVec[lcv];						
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+						Complex16 Y0 = qubit[0];
+						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
+						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
 
-							stateVec[lcv + qPowers[0]] = qubit[0];
-							stateVec[lcv] = qubit[1];
-						}
+						stateVec[lcv + qPowers[0]] = qubit[0];
+						stateVec[lcv] = qubit[1];
 					}
 				);
 
@@ -986,21 +975,19 @@ namespace Qrack {
 				qPowers[2] = 1 << target;
 				qPowers[0] = qPowers[1] + qPowers[2];
 				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers,
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers, 2,
 					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						if ((lcv & qPowers[0]) == 0) {
-							Complex16 qubit[2];
+						Complex16 qubit[2];
 
-							qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2]];
-							qubit[1] = stateVec[lcv + qPowers[1]];						
+						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2]];
+						qubit[1] = stateVec[lcv + qPowers[1]];						
 
-							Complex16 Y0 = qubit[0];
-							qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-							qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+						Complex16 Y0 = qubit[0];
+						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
+						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
 
-							stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[0];
-							stateVec[lcv + qPowers[1]] = qubit[1];
-						}
+						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[0];
+						stateVec[lcv + qPowers[1]] = qubit[1];
 					}
 				);
 
@@ -1024,7 +1011,7 @@ namespace Qrack {
 				bitCapInt lcv;
 				double sqrNorm = 0.0;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
-					sqrNorm += normSqrd(stateVec[lcv]);
+					sqrNorm += norm(stateVec[lcv]);
 				}
 
 				runningNorm = sqrt(sqrNorm);
