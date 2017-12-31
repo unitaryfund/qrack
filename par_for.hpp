@@ -1,3 +1,4 @@
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // THE FOLLOWING SECTION IS ADAPTED FROM THE "GILGAMESH" PROJECT, ( https://github.com/andy-thomason/gilgamesh ), UNDER THE MIT LICENSE.
 // AS PART OF Qrack, THE ADAPTED CODE IS LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE V3.
@@ -12,17 +13,16 @@
 //The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
 //PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
-//CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-//(Modified by Daniel Strano, 2017) 
+//CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
 namespace Qrack {
-	void par_for_all(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, void (*fn)(const bitCapInt, const int, Complex16*, const Complex16, const Complex16*, const bitCapInt*)) 		{
+	template <class F>
+	void par_for_all(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, F fn)		{
 		std::atomic<bitCapInt> idx;
 		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
-		for (int cpu = 0; cpu != num_cpus; ++cpu) {
+		for (int cpu = 0; cpu < num_cpus; cpu++) {
 			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, &fn]() {
 				bitCapInt i;
 				for (;;) {
@@ -33,36 +33,13 @@ namespace Qrack {
 			});
 		}
 
-		for (int cpu = 0; cpu != num_cpus; ++cpu) {
+		for (int cpu = 0; cpu < num_cpus; cpu++) {
 			futures[cpu].get();
 		}
 	}
 
-	std::mutex incMutex;
-
-	void par_for_body(const int cpu, bitCapInt* idx, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitLenInt bitCount, const bitCapInt* qPowersSorted, const bitCapInt stride, void (*fn)(const bitCapInt, const int, Complex16*, const Complex16, const Complex16*, const bitCapInt*)) {
-		bitCapInt i;
-		bitLenInt p;
-		for (;;) {
-			incMutex.lock();
-			if ((idx & maskArray[0]) == 0) {
-				(idx*)+=stride;
-			}
-			else {
-				for (p = 0; p < bitCount; p++) {
-					if (((idx*) & qPowersSorted[p]) != 0) {
-						(idx*) += qPowersSorted[p];
-					}
-				}
-			}
-			i = (idx*);
-			incMutex.unlock();
-			if (i >= end) break;
-			fn(i, cpu, stateArray, nrm, mtrx, maskArray);
-		}
-	}*/
-
-	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitLenInt bitCount, void (*fn)(const bitCapInt, const int, Complex16*, const Complex16, const Complex16*, const bitCapInt*)) {
+	template <class F>
+	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitLenInt bitCount, F fn) {
 		bitCapInt stride = 1;
 		bitCapInt* qPowersSorted = new bitCapInt[bitCount];
 		if (bitCount == 1) {
@@ -73,29 +50,48 @@ namespace Qrack {
 		}
 		else {
 			bitLenInt lcv = 0;
+			std::copy(maskArray + 1, maskArray + bitCount + 1, qPowersSorted); 
+			std::sort(qPowersSorted, qPowersSorted + bitCount);
 			for (bitLenInt lcv = 0; lcv < bitCount; lcv++) {
-				qPowersSorted[lcv] = maskArray[lcv + 1];
-			}
-			for (bitLenInt lcv = 0; lcv < bitCount; lcv++) {
-				if (qPowersSorted[lcv] == (1<<lcv)) stride<<=1;
+				if (qPowersSorted[lcv] == (1<<lcv)) stride=(1<<(lcv+1));
 				else break;
 			}
-			std::sort(qPowersSorted, qPowersSorted + bitCount);
 		}
-		
-		bitCapInt idx = begin;
+		std::atomic<bitCapInt> idx;
+		idx = begin / stride;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
+		std::mutex incMutex;
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			//futures[cpu] = std::async(std::launch::async, par_for_body, cpu, &idx, end, stateArray, nrm, mtrx, maskArray, bitCount, qPowersSorted, stride, &fn);
-			futures[cpu] = std::async(std::launch::async, Qrack::par_for_body, cpu, &idx, end, stateArray, nrm, mtrx, maskArray, bitCount, qPowersSorted, stride, fn);
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, bitCount, qPowersSorted, stride, &incMutex, &fn]() {
+				bitCapInt i;
+				bitLenInt p;
+				for (;;) {
+					i = idx++;
+					i *= stride;
+					if (i >= end) break;
+					if ((i & maskArray[0]) == 0) {
+						fn(i, cpu, stateArray, nrm, mtrx, maskArray);
+					}
+					//else {
+					//	incMutex.lock();
+					//	if (((i - stride) & maskArray[0]) == 0) {
+					//		for (p = 0; p < bitCount; p++) {
+					//			if ((i & qPowersSorted[p]) != 0) {
+					//				i += qPowersSorted[p];
+					//			}
+					//		}
+					//		idx = i / stride;
+					//	}
+					//	incMutex.unlock();
+					//}								
+				}
+			});
 		}
 
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu].get();
 		}
-
-		delete [] qPowersSorted;
 	}
 
 	template <class F>
