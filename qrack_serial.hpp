@@ -19,10 +19,15 @@
 #include <memory>
 
 //#include <complex>
-#include "complex16simd.hpp"
+#include "qrack_complex.hpp"
 
 //#define Complex16 std::complex<double>
-#define Complex16 Complex16Simd
+//namespace Qrack {
+//	double normSqrd(Complex16 cmplx) {
+//		return real(cmplx) * real(cmplx) + imag(cmplx) * imag(cmplx);
+//	}
+//}
+#define Complex16 ComplexSimd
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -243,7 +248,7 @@ namespace Qrack {
 				std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
 				double prob;
 				for (i = 0; i < maxQPower; i++) {
-					prob = norm(stateVec[i]);
+					prob = normSqrd(stateVec[i]);
 					partStateProb[(i & mask)>>start] += prob;
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
 				}
@@ -318,30 +323,14 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				bitLenInt powerMask = 0;
 				Complex16 qubit[2];
 				bitCapInt qPowers[4];
-				bitCapInt qPowersSorted[3];
 				qPowers[1] = 1 << control1;
-				qPowersSorted[0] = qPowers[1];
 				qPowers[2] = 1 << control2;
-				qPowersSorted[1] = qPowers[2];
 				qPowers[3] = 1 << target;
-				qPowersSorted[2] = qPowers[3];
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
-				std::sort(qPowersSorted, qPowersSorted + 3);
-				bitCapInt stride = 1;
-				if (qPowersSorted[0] == 1) {
-					stride = 2;
-					if (qPowersSorted[1] == 2) {
-						stride = 4;
-						if (qPowersSorted[2] == 4) {
-							stride = 8;
-						}
-					}
-				}
-				bitCapInt lcv = 0;
-				while (lcv < maxQPower) {
+				bitCapInt lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPowers[0]) == 0) {
 						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
 						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
@@ -350,19 +339,6 @@ namespace Qrack {
 
 						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
 						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
-					
-						lcv+=stride;
-					}
-					else {
-						if ((lcv & qPowersSorted[0]) != 0) {
-							lcv += qPowersSorted[0];
-						}
-						if ((lcv & qPowersSorted[1]) != 0) {
-							lcv += qPowersSorted[1];
-						}
-						if ((lcv & qPowersSorted[2]) != 0) {
-							lcv += qPowersSorted[2];
-						}
 					}
 				}
 
@@ -450,7 +426,7 @@ namespace Qrack {
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == qPower) {
-						oneChance += norm(stateVec[lcv]);
+						oneChance += normSqrd(stateVec[lcv]);
 					} 
 				}
 
@@ -460,7 +436,7 @@ namespace Qrack {
 			double ProbAll(bitCapInt fullRegister) {
 				if (runningNorm != 1.0) NormalizeState();
 
-				return norm(stateVec[fullRegister]);
+				return normSqrd(stateVec[fullRegister]);
 			}
 			///PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
 			void ProbArray(double* probArray) {
@@ -468,7 +444,7 @@ namespace Qrack {
 
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
-					probArray[lcv] = norm(stateVec[lcv]); 
+					probArray[lcv] = normSqrd(stateVec[lcv]); 
 				}
 			}
 			///"Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state 
@@ -555,31 +531,14 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				bool bit1Greater = qubitIndex1 > qubitIndex2;
 				Complex16 qubit[2];
 				bitCapInt qPowers[3];
-				bitCapInt qPowersSorted[2];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
-				if (qubitIndex1 < qubitIndex2) {
-					qPowersSorted[0] = qPowers[1];
-					qPowersSorted[1] = qPowers[2];
-				}
-				else {
-					qPowersSorted[0] = qPowers[2];
-					qPowersSorted[1] = qPowers[1];
-				}
-				bitCapInt stride = 1;
-				if (qPowersSorted[0] == 1) {
-					stride = 2;
-					if (qPowersSorted[1] == 2) {
-						stride = 4;
-					}
-				}
-				bitCapInt lcv = 0;
-				while (lcv < maxQPower) {
-					if ((lcv & qPowers[0]) == 0) {
+				bitCapInt lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					if ((lcv & qPowers[0]) == 0) { 
 						qubit[0] = stateVec[lcv + qPowers[2]];
 						qubit[1] = stateVec[lcv + qPowers[1]];
 
@@ -587,16 +546,6 @@ namespace Qrack {
 
 						stateVec[lcv + qPowers[2]] = qubit[0];
 						stateVec[lcv + qPowers[1]] = qubit[1];
-					
-						lcv+=stride;
-					}
-					else {
-						if ((lcv & qPowersSorted[0]) != 0) {
-							lcv += qPowersSorted[0];
-						}
-						if ((lcv & qPowersSorted[1]) != 0) {
-							lcv += qPowersSorted[1];
-						}
 					}
 				}
 
@@ -920,8 +869,8 @@ namespace Qrack {
 					ROL(1, start, length);
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxLCV; j+=endPower) {
-							stateVec = RotateComplex(i + j + 1, i + j + endPower + 1, toAdd - 1, true, stride, std::move(stateVec));
-							stateVec = RotateComplex(i + j, i + j + endPower, toAdd, true, stride, std::move(stateVec));
+							stateVec = RotateComplex(i + j + 1, i + j + endPower + 1, toAdd, true, stride, std::move(stateVec));
+							stateVec = RotateComplex(i + j, i + j + endPower, toAdd - 1, true, stride, std::move(stateVec));
 						}
 					}
 					ROR(1, start, length);
@@ -986,12 +935,8 @@ namespace Qrack {
 			void Apply2x2(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
 				Complex16 qubit[2];
 				bitCapInt qPower = 1 << qubitIndex;
-				bitCapInt stride = 1;
-				if (qPower == 1) {
-					stride = 2;
-				}
-				bitCapInt lcv = 0;
-				while (lcv < maxQPower) {
+				bitCapInt lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPower) == 0) {
 						qubit[0] = stateVec[lcv + qPower];
 						qubit[1] = stateVec[lcv];						
@@ -1000,11 +945,6 @@ namespace Qrack {
 
 						stateVec[lcv + qPower] = qubit[0];
 						stateVec[lcv] = qubit[1];
-
-						lcv+=stride;
-					}
-					else {
-						lcv += qPower;
 					}
 				}
 
@@ -1019,27 +959,11 @@ namespace Qrack {
 			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
 				Complex16 qubit[2];
 				bitCapInt qPowers[3];
-				bitCapInt qPowersSorted[2];
 				qPowers[1] = 1 << control;
 				qPowers[2] = 1 << target;
 				qPowers[0] = qPowers[1] + qPowers[2];
-				if (control < target) {
-					qPowersSorted[0] = qPowers[1];
-					qPowersSorted[1] = qPowers[2];
-				}
-				else {
-					qPowersSorted[0] = qPowers[2];
-					qPowersSorted[1] = qPowers[1];
-				}
-				bitCapInt stride = 1;
-				if (qPowersSorted[0] == 1) {
-					stride = 2;
-					if (qPowersSorted[1] == 2) {
-						stride = 4;
-					}
-				}
-				bitCapInt lcv = 0;
-				while (lcv < maxQPower) {
+				bitCapInt lcv;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
 					if ((lcv & qPowers[0]) == 0) {
 						qubit[0] = stateVec[lcv + qPowers[2] + qPowers[1]];
 						qubit[1] = stateVec[lcv + qPowers[1]];
@@ -1049,16 +973,6 @@ namespace Qrack {
 
 						stateVec[lcv + qPowers[2] + qPowers[1]] = qubit[0];
 						stateVec[lcv + qPowers[1]] = qubit[1];						
-					
-						lcv+=stride;
-					}
-					else {
-						if ((lcv & qPowersSorted[0]) != 0) {
-							lcv += qPowersSorted[0];
-						}
-						if ((lcv & qPowersSorted[1]) != 0) {
-							lcv += qPowersSorted[1];
-						}
 					}
 				}
 
@@ -1082,7 +996,7 @@ namespace Qrack {
 				bitCapInt lcv;
 				double sqrNorm = 0.0;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
-					sqrNorm += norm(stateVec[lcv]);
+					sqrNorm += normSqrd(stateVec[lcv]);
 				}
 
 				runningNorm = sqrt(sqrNorm);
