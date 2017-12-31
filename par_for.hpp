@@ -40,51 +40,34 @@ namespace Qrack {
 
 	template <class F>
 	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitLenInt bitCount, F fn) {
-		bitCapInt stride = 1;
 		bitCapInt* qPowersSorted = new bitCapInt[bitCount];
 		if (bitCount == 1) {
 			qPowersSorted[0] = maskArray[0];
-			if (qPowersSorted[0] == 1) {
-				stride = 2;
-			}
 		}
 		else {
 			bitLenInt lcv = 0;
 			std::copy(maskArray + 1, maskArray + bitCount + 1, qPowersSorted); 
 			std::sort(qPowersSorted, qPowersSorted + bitCount);
-			for (bitLenInt lcv = 0; lcv < bitCount; lcv++) {
-				if (qPowersSorted[lcv] == (1<<lcv)) stride=(1<<(lcv+1));
-				else break;
-			}
 		}
 		std::atomic<bitCapInt> idx;
-		idx = begin / stride;
+		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
-		std::mutex incMutex;
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, bitCount, qPowersSorted, stride, &incMutex, &fn]() {
-				bitCapInt i;
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, bitCount, qPowersSorted, &fn]() {
+				bitCapInt i, iLow, iHigh;
 				bitLenInt p;
 				for (;;) {
-					i = idx++;
-					i *= stride;
-					if (i >= end) break;
-					if ((i & maskArray[0]) == 0) {
-						fn(i, cpu, stateArray, nrm, mtrx, maskArray);
+					iHigh = idx++;
+					i = 0;
+					for (p = 0; p < bitCount; p++) {
+						iLow = iHigh % qPowersSorted[p];
+						i += iLow;
+						iHigh = (iHigh - iLow)<<1;						
 					}
-					//else {
-					//	incMutex.lock();
-					//	if (((i - stride) & maskArray[0]) == 0) {
-					//		for (p = 0; p < bitCount; p++) {
-					//			if ((i & qPowersSorted[p]) != 0) {
-					//				i += qPowersSorted[p];
-					//			}
-					//		}
-					//		idx = i / stride;
-					//	}
-					//	incMutex.unlock();
-					//}								
+					i += iHigh;
+					if (i >= end) break;
+					fn(i, cpu, stateArray, nrm, mtrx, maskArray);								
 				}
 			});
 		}
@@ -92,6 +75,8 @@ namespace Qrack {
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu].get();
 		}
+
+		delete [] qPowersSorted;
 	}
 
 	template <class F>
