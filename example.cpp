@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack.hpp"
+#include "qrack_ocl.hpp"
 
 int main() {
+
 	char testKey;
 
 	const int planckTimes = 65500;
@@ -41,6 +42,7 @@ int main() {
 		std::cout<<std::endl;	
 	}
 
+	
 	qftReg.SetPermutation(0);
 	for (i = 0; i < 8; i++) {
 		qftReg.H(i);
