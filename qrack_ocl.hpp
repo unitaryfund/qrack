@@ -51,6 +51,7 @@ namespace Qrack {
 	class OCLSingleton{
 		public:
 			static OCLSingleton* Instance();
+			static OCLSingleton* Instance(int plat, int dev);
 			cl::Context* GetContextPtr() {
 				return &context;
 			}
@@ -72,13 +73,16 @@ namespace Qrack {
 			cl::Kernel apply2x2;
 
 			OCLSingleton(){
-				InitOCL();
+				InitOCL(0, 0);
+			}  // Private so that it can  not be called
+			OCLSingleton(int plat, int dev){
+				InitOCL(plat, dev);
 			}  // Private so that it can  not be called
 			OCLSingleton(OCLSingleton const&){};             // copy constructor is private
 			OCLSingleton& operator=(OCLSingleton const&){};  // assignment operator is private
 			static OCLSingleton* m_pInstance;
 
-			void InitOCL() {
+			void InitOCL(int plat, int dev) {
 				// get all platforms (drivers), e.g. NVIDIA
 				
 				cl::Platform::get(&all_platforms);
@@ -87,7 +91,7 @@ namespace Qrack {
 					std::cout<<" No platforms found. Check OpenCL installation!\n";
 					exit(1);
 				}
-				default_platform=all_platforms[0];
+				default_platform=all_platforms[plat];
 				std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
 
 				// get default device (CPUs, GPUs) of the default platform
@@ -98,7 +102,7 @@ namespace Qrack {
 				}
 
 				// use device[1] because that's a GPU; device[0] is the CPU
-				default_device=all_devices[0];
+				default_device=all_devices[dev];
 				std::cout<< "Using device: "<<default_device.getInfo<CL_DEVICE_NAME>()<<"\n";
 
 				// a context is like a "runtime link" to the device and platform;
@@ -182,6 +186,15 @@ namespace Qrack {
 	OCLSingleton* OCLSingleton::m_pInstance = NULL;
 	OCLSingleton* OCLSingleton::Instance() {
 		if (!m_pInstance) m_pInstance = new OCLSingleton();
+		return m_pInstance;
+	}
+	OCLSingleton* OCLSingleton::Instance(int plat, int dev) {
+		if (!m_pInstance) {
+			m_pInstance = new OCLSingleton(plat, dev);
+		}
+		else {
+			std::cout<<"Warning: Tried to reinitialize OpenCL environment with platform and device."<<std::endl;
+		}
 		return m_pInstance;
 	}
 

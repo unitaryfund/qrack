@@ -5,6 +5,8 @@
 
 int main() {
 
+	Qrack::OCLSingleton::Instance(0, 0);
+
 	char testKey;
 
 	const int planckTimes = 65500;
