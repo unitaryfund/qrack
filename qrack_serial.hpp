@@ -940,6 +940,10 @@ namespace Qrack {
 					}
 				}
 			}
+			///Quantum Fourier Transform - Apply the quantum Fourier transform to a numbered register
+			void QFT(bitLenInt regIndex) {
+				QFT(registerDims[regIndex].startBit, registerDims[regIndex].length);
+			}
 
 		private:
 			double runningNorm;

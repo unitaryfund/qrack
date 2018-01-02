@@ -39,35 +39,26 @@ namespace Qrack {
 	}
 
 	template <class F>
-	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitLenInt bitCount, F fn) {
-		bitCapInt* qPowersSorted = new bitCapInt[bitCount];
-		if (bitCount == 1) {
-			qPowersSorted[0] = maskArray[0];
-		}
-		else {
-			bitLenInt lcv = 0;
-			std::copy(maskArray + 1, maskArray + bitCount + 1, qPowersSorted); 
-			std::sort(qPowersSorted, qPowersSorted + bitCount);
-		}
+	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitCapInt offset1, const bitCapInt offset2, const bitLenInt bitCount, F fn) {
 		std::atomic<bitCapInt> idx;
 		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, maskArray, bitCount, qPowersSorted, &fn]() {
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, nrm, mtrx, offset1, offset2, bitCount, maskArray, &fn]() {
 				bitCapInt i, iLow, iHigh;
 				bitLenInt p;
 				for (;;) {
 					iHigh = idx++;
 					i = 0;
 					for (p = 0; p < bitCount; p++) {
-						iLow = iHigh % qPowersSorted[p];
+						iLow = iHigh % maskArray[p];
 						i += iLow;
 						iHigh = (iHigh - iLow)<<1;						
 					}
 					i += iHigh;
 					if (i >= end) break;
-					fn(i, cpu, stateArray, nrm, mtrx, maskArray);								
+					fn(i, cpu, stateArray, nrm, mtrx, offset1, offset2);								
 				}
 			});
 		}
@@ -75,8 +66,6 @@ namespace Qrack {
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu].get();
 		}
-
-		delete [] qPowersSorted;
 	}
 
 	template <class F>

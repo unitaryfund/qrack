@@ -12,8 +12,8 @@
 
 namespace Qrack {
 
-	/// SIMD implementation of the double precision complex type
-	/** SIMD implementation of the double precision complex type. */
+	/// SIMD implementation of the single precision complex type
+	/** SIMD implementation of the single precision complex type. (Only for reference. Uses twice as much memory as necessary.) */
 	struct Complex8Simd {
 		__m128 _val;
 

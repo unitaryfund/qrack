@@ -69,8 +69,6 @@ namespace Qrack {
 				registerDims[0].length = qubitCount;
 				registerDims[0].startBit = 0;
 				registerCount = 1;
-
-				//__m128d test = (__m128d)(stateVec[0]);
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
@@ -326,27 +324,19 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
+				bitLenInt powerMask = 0;
+				Complex16 qubit[2];
 				bitCapInt qPowers[4];
+				bitCapInt qPowersSorted[3];
 				qPowers[1] = 1 << control1;
+				qPowersSorted[0] = qPowers[1];
 				qPowers[2] = 1 << control2;
+				qPowersSorted[1] = qPowers[2];
 				qPowers[3] = 1 << target;
+				qPowersSorted[2] = qPowers[3];
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
-				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers, 3,
-					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						Complex16 qubit[2];
-
-						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
-						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
-
-						Complex16 Y0 = qubit[0];
-						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
-						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
-					}
-				);
+				std::sort(qPowersSorted, qPowersSorted + 3);
+				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
 
 				runningNorm = 1.0;
 			}
@@ -372,7 +362,7 @@ namespace Qrack {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
 				};
-				Apply2x2(qubitIndex, had, true);
+				ApplySingleBit(qubitIndex, had, true);
 			}
 			///Measurement gate
 			bool M(bitLenInt qubitIndex) {
@@ -464,7 +454,7 @@ namespace Qrack {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, mtrx, true);
+				ApplySingleBit(qubitIndex, mtrx, true);
 			}
 			///Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state
 			/** Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -481,7 +471,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRX, true);
+				ApplySingleBit(qubitIndex, pauliRX, true);
 			}
 			///Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
 			/** Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -498,7 +488,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRY, true);
+				ApplySingleBit(qubitIndex, pauliRY, true);
 			}
 			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -515,7 +505,7 @@ namespace Qrack {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, pauliRZ, true);
+				ApplySingleBit(qubitIndex, pauliRZ, true);
 			}
 			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -540,27 +530,20 @@ namespace Qrack {
 				};
 
 				bitCapInt qPowers[3];
+				bitCapInt qPowersSorted[2];
 				qPowers[1] = 1 << qubitIndex1;
 				qPowers[2] = 1 << qubitIndex2;
 				qPowers[0] = qPowers[1] + qPowers[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), pauliX, qPowers, 2,
-					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						Complex16 qubit[2];
-
-						qubit[0] = stateVec[lcv + qPowers[2]];
-						qubit[1] = stateVec[lcv + qPowers[1]];						
-
-						Complex16 Y0 = qubit[0];
-						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-						stateVec[lcv + qPowers[2]] = qubit[0];
-						stateVec[lcv + qPowers[1]] = qubit[1];
-					}
-				);
-
-				runningNorm = 1.0;
+				if (qubitIndex1 < qubitIndex2) {
+					qPowersSorted[0] = qPowers[1];
+					qPowersSorted[1] = qPowers[2];
+				}
+				else {
+					qPowersSorted[0] = qPowers[2];
+					qPowersSorted[1] = qPowers[1];
+				}
+				
+				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
@@ -569,7 +552,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliX, false);
+				ApplySingleBit(qubitIndex, pauliX, false);
 			}
 			///Apply NOT gate, (which is Pauli x matrix,) to each bit in register
 			void XAll() {
@@ -585,7 +568,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliY, false);
+				ApplySingleBit(qubitIndex, pauliY, false);
 			}
 			///Apply Pauli Z matrix to bit
 			void Z(bitLenInt qubitIndex) {
@@ -594,7 +577,7 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliZ, false);
+				ApplySingleBit(qubitIndex, pauliZ, false);
 			}
 			///Controlled "phase shift gate"
 			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
@@ -929,6 +912,10 @@ namespace Qrack {
 					}
 				}
 			}
+			///Quantum Fourier Transform - Apply the quantum Fourier transform to a numbered register
+			void QFT(bitLenInt regIndex) {
+				QFT(registerDims[regIndex].startBit, registerDims[regIndex].length);
+			}
 
 		private:
 			double runningNorm;
@@ -941,23 +928,29 @@ namespace Qrack {
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
-			void Apply2x2(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
-				bitCapInt qPowers[1];
-				qPowers[0] = 1 << qubitIndex;
-				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers, 1,
-					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
+			void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
+					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm) {
+				Complex16 Y0;
+				bitCapInt i, iLow, iHigh, lcv;
+				Complex16 nrm = Complex16(1.0 / runningNorm, 0.0);
+				Complex16 qubit[2];
+				bitLenInt p;
+				lcv = 0;
+				iHigh = 0;
+				i = 0;
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowersSorted, offset1, offset2, bitCount,
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt offset1, const bitCapInt offset2) {
 						Complex16 qubit[2];
 
-						qubit[0] = stateVec[lcv + qPowers[0]];
-						qubit[1] = stateVec[lcv];						
+						qubit[0] = stateVec[lcv + offset1];
+						qubit[1] = stateVec[lcv + offset2];						
 
 						Complex16 Y0 = qubit[0];
 						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
 						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
 
-						stateVec[lcv + qPowers[0]] = qubit[0];
-						stateVec[lcv] = qubit[1];
+						stateVec[lcv + offset1] = qubit[0];
+						stateVec[lcv + offset2] = qubit[1];
 					}
 				);
 
@@ -969,34 +962,27 @@ namespace Qrack {
 				}
 			}
 
+			void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
+				bitCapInt qPowers[1];
+				qPowers[0] = 1<<qubitIndex;
+				Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, doCalcNorm);
+			}
+
 			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
 				bitCapInt qPowers[3];
+				bitCapInt qPowersSorted[2];
 				qPowers[1] = 1 << control;
 				qPowers[2] = 1 << target;
 				qPowers[0] = qPowers[1] + qPowers[2];
-				//Complex16 b = Complex16(0.0, 0.0);
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowers, 2,
-					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
-						Complex16 qubit[2];
-
-						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2]];
-						qubit[1] = stateVec[lcv + qPowers[1]];						
-
-						Complex16 Y0 = qubit[0];
-						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
-
-						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[0];
-						stateVec[lcv + qPowers[1]] = qubit[1];
-					}
-				);
-
-				if (doCalcNorm) {
-					UpdateRunningNorm();
+				if (control < target) {
+					qPowersSorted[0] = qPowers[1];
+					qPowersSorted[1] = qPowers[2];
 				}
 				else {
-					runningNorm = 1.0;
+					qPowersSorted[0] = qPowers[2];
+					qPowersSorted[1] = qPowers[1];
 				}
+				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
 			}
 
 			void NormalizeState() {

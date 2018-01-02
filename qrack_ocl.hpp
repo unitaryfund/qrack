@@ -48,16 +48,23 @@ namespace Qrack {
 		bitLenInt startBit;
 	};
 
+	/// "Qrack::OCLSingleton" manages the single OpenCL context
+	/** "Qrack::OCLSingleton" manages the single OpenCL context. */
 	class OCLSingleton{
 		public:
+			///Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.) 
 			static OCLSingleton* Instance();
+			///If this is the first time instantiating the OpenCL context, you may specify platform number and device number.
 			static OCLSingleton* Instance(int plat, int dev);
+			///Get a pointer to the OpenCL context
 			cl::Context* GetContextPtr() {
 				return &context;
 			}
+			///Get a pointer to the OpenCL queue
 			cl::CommandQueue* GetQueuePtr() {
 				return &queue;
 			}
+			///Get a pointer to the Apply2x2 function kernel
 			cl::Kernel* GetApply2x2Ptr() {
 				return &apply2x2;
 			}
@@ -1114,7 +1121,7 @@ namespace Qrack {
 			void SDEC(bitLenInt shift, bitLenInt regIndex) {
 				SDEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
-			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
+			/// Quantum Fourier Transform - Apply the quantum Fourier transform to a bit segment
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
 					bitLenInt end = start + length;
@@ -1126,6 +1133,10 @@ namespace Qrack {
 						}
 					}
 				}
+			}
+			///Quantum Fourier Transform - Apply the quantum Fourier transform to a numbered register
+			void QFT(bitLenInt regIndex) {
+				QFT(registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
 
 		private:
