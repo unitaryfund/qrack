@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack.hpp"
+#include "qrack_ocl.hpp"
 
 int main() {
 

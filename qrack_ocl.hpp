@@ -531,32 +531,8 @@ namespace Qrack {
 				bitCapInt qPowersSorted[3];
 				std::copy(qPowers, qPowers + 4, qPowersSorted);
 				std::sort(qPowersSorted, qPowersSorted + 3);
-				bitLenInt bCount[1] = {1};
-				bitCapInt mxI[1] = {maxQPower};
-				Complex16 cmplx[5];
-				for (int i = 0; i < 4; i++){
-					cmplx[i] = pauliX[i];
-				}
-				cmplx[4] = Complex16(1.0 / runningNorm, 0.0);
-				bitCapInt ulong[7] = {2, maxQPower, qPowers[0], qPowers[1] + qPowers[2], qPowersSorted[0], qPowersSorted[1], qPowersSorted[2]};
 
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-				queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
-				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 7, ulong);
-
-				cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
-				queue.finish();
-				apply2x2.setArg(0, stateBuffer);
-				apply2x2.setArg(1, cmplxBuffer);
-				apply2x2.setArg(2, ulongBuffer);
-				queue.enqueueNDRangeKernel(apply2x2, cl::NullRange,  // kernel, offset
-            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-					cl::NDRange(1)); // local number (per group)
-
-				// read result from GPU to here
-				//queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-
-				runningNorm = 1.0;
+				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
 			}
 
 			///Controlled not
@@ -580,7 +556,7 @@ namespace Qrack {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
 				};
-				Apply2x2(qubitIndex, had, true);
+				ApplySingleBit(qubitIndex, had, true);
 			}
 			///Measurement gate
 			bool M(bitLenInt qubitIndex) {
@@ -672,7 +648,7 @@ namespace Qrack {
 					Complex16(1.0, 0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, mtrx, true);
+				ApplySingleBit(qubitIndex, mtrx, true);
 			}
 			///Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state
 			/** Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -689,7 +665,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(0.0, -sine),
 					Complex16(0.0, -sine), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRX, true);
+				ApplySingleBit(qubitIndex, pauliRX, true);
 			}
 			///Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
 			/** Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -706,7 +682,7 @@ namespace Qrack {
 					Complex16(cosine, 0.0), Complex16(-sine, 0.0),
 					Complex16(sine, 0.0), Complex16(cosine, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliRY, true);
+				ApplySingleBit(qubitIndex, pauliRY, true);
 			}
 			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -723,7 +699,7 @@ namespace Qrack {
 					Complex16(cosine, -sine), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(cosine, sine)
 				};
-				Apply2x2(qubitIndex, pauliRZ, true);
+				ApplySingleBit(qubitIndex, pauliRZ, true);
 			}
 			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
@@ -760,32 +736,7 @@ namespace Qrack {
 					qPowersSorted[0] = qPowers[2];
 					qPowersSorted[1] = qPowers[1];
 				}
-				bitLenInt bCount[1] = {1};
-				bitCapInt mxI[1] = {maxQPower};
-				Complex16 cmplx[5];
-				for (int i = 0; i < 4; i++){
-					cmplx[i] = pauliX[i];
-				}
-				cmplx[4] = Complex16(1.0 / runningNorm, 0.0);
-				bitCapInt ulong[7] = {2, maxQPower, qPowers[2], qPowers[1], qPowersSorted[0], qPowersSorted[1], 0};
-
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-				queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
-				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 7, ulong);
-
-				cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
-				queue.finish();
-				apply2x2.setArg(0, stateBuffer);
-				apply2x2.setArg(1, cmplxBuffer);
-				apply2x2.setArg(2, ulongBuffer);
-				queue.enqueueNDRangeKernel(apply2x2, cl::NullRange,  // kernel, offset
-            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-					cl::NDRange(1)); // local number (per group)
-
-				// read result from GPU to here
-				queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-
-				runningNorm = 1.0;
+				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
@@ -794,7 +745,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliX, false);
+				ApplySingleBit(qubitIndex, pauliX, false);
 			}
 			///Apply NOT gate, (which is Pauli x matrix,) to each bit in register
 			void XAll() {
@@ -810,7 +761,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(0.0, -1.0),
 					Complex16(0.0, 1.0), Complex16(0.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliY, false);
+				ApplySingleBit(qubitIndex, pauliY, false);
 			}
 			///Apply Pauli Z matrix to bit
 			void Z(bitLenInt qubitIndex) {
@@ -819,7 +770,7 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0),
 					Complex16(0.0, 0.0), Complex16(-1.0, 0.0)
 				};
-				Apply2x2(qubitIndex, pauliZ, false);
+				ApplySingleBit(qubitIndex, pauliZ, false);
 			}
 			///Controlled "phase shift gate"
 			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
@@ -1178,17 +1129,18 @@ namespace Qrack {
 			cl::Buffer nrmBuffer;
 			cl::Buffer maxBuffer;
 
-			void Apply2x2(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
-				bitCapInt qPowers[1];
-				qPowers[0] = 1 << qubitIndex;
-				bitLenInt bCount[1] = {1};
+			void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
+					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm) {
 				bitCapInt mxI[1] = {maxQPower};
 				Complex16 cmplx[5];
 				for (int i = 0; i < 4; i++){
 					cmplx[i] = mtrx[i];
 				}
 				cmplx[4] = Complex16(1.0 / runningNorm, 0.0);
-				bitCapInt ulong[7] = {1, maxQPower, qPowers[0], 0, qPowers[0], 0, 0};
+				bitCapInt ulong[7] = {bitCount, maxQPower, offset1, offset2, 0, 0, 0};
+				for (int i = 0; i < bitCount; i++) {
+					ulong[4 + i] = qPowersSorted[i];
+				}
 
 				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
@@ -1211,6 +1163,12 @@ namespace Qrack {
 				}
 			}
 
+			void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
+				bitCapInt qPowers[1];
+				qPowers[0] = 1 << qubitIndex;
+				Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, doCalcNorm);
+			}
+
 			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
 				bitCapInt qPowers[3];
 				qPowers[1] = 1 << control;
@@ -1226,34 +1184,7 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 
-				bitLenInt bCount[1] = {1};
-				bitCapInt mxI[1] = {maxQPower};
-				Complex16 cmplx[5];
-				for (int i = 0; i < 4; i++){
-					cmplx[i] = mtrx[i];
-				}
-				cmplx[4] = Complex16(1.0 / runningNorm, 0.0);
-				bitCapInt ulong[7] = {2, maxQPower, qPowers[0], qPowers[1], qPowersSorted[0], qPowersSorted[1], 0};
-
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-				queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
-				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 7, ulong);
-
-				cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
-				queue.finish();
-				apply2x2.setArg(0, stateBuffer);
-				apply2x2.setArg(1, cmplxBuffer);
-				apply2x2.setArg(2, ulongBuffer);
-				queue.enqueueNDRangeKernel(apply2x2, cl::NullRange,  // kernel, offset
-            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-					cl::NDRange(1)); // local number (per group)
-
-				if (doCalcNorm) {
-					UpdateRunningNorm(false);
-				}
-				else {
-					runningNorm = 1.0;
-				}
+				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
 			}
 
 			void InitOCL() {
