@@ -994,13 +994,7 @@ namespace Qrack {
 			}
 
 			void UpdateRunningNorm() {
-				bitCapInt lcv;
-				double sqrNorm = 0.0;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					sqrNorm += norm(stateVec[lcv]);
-				}
-
-				runningNorm = sqrt(sqrNorm);
+				runningNorm = par_norm(maxQPower, &(stateVec[0]));
 			}
 
 			void Reverse(bitLenInt start, bitLenInt end) {
