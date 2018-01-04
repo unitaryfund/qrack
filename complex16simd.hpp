@@ -92,6 +92,10 @@ namespace Qrack {
 	static Complex16Simd operator*(const double lhs, const Complex16Simd& rhs) {
 		return _mm_mul_pd(_mm_set1_pd(lhs), rhs._val);
 	}
+	static Complex16Simd operator*=(Complex16Simd& lhs, const double rhs) {
+		lhs._val = _mm_mul_pd(_mm_set1_pd(rhs), lhs._val);
+		return lhs;
+	}
 	static Complex16Simd operator/(const double lhs, const Complex16Simd& rhs) {
 		__v2df temp = (__v2df)_mm_mul_pd(rhs._val, rhs._val);
 		double denom = temp[0] + temp[1];

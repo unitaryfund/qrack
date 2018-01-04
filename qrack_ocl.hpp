@@ -1204,9 +1204,14 @@ namespace Qrack {
 			}
 
 			void NormalizeState() {
+				Complex16* sortedStateVec = new Complex16[maxQPower];
+				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, sortedStateVec);
+				runningNorm = 1/par_norm(maxQPower, sortedStateVec);
+				delete [] sortedStateVec;
+
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
-					stateVec[lcv] /= runningNorm;
+					stateVec[lcv] *= runningNorm;
 				}
 				runningNorm = 1.0;
 			}
