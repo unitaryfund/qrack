@@ -346,7 +346,7 @@ namespace Qrack {
 						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
 						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
 	
-						zmv2x2(Complex16(1.0 / runningNorm, 0.0), pauliX, qubit);
+						zmv2x2(Complex16(1.0, 0.0), pauliX, qubit);
 
 						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
 						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
@@ -365,8 +365,6 @@ namespace Qrack {
 						}
 					}
 				}
-
-				runningNorm = 1.0;
 			}
 
 			///Controlled not
@@ -379,7 +377,10 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				ApplyControlled2x2(control, target, pauliX, false);
+				runningNorm = tempNorm;
 			}
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
@@ -569,7 +570,10 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 				
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
+				runningNorm = tempNorm;
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {

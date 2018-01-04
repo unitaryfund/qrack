@@ -532,7 +532,10 @@ namespace Qrack {
 				std::copy(qPowers, qPowers + 4, qPowersSorted);
 				std::sort(qPowersSorted, qPowersSorted + 3);
 
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
+				runningNorm = tempNorm;
 			}
 
 			///Controlled not
@@ -545,7 +548,10 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				ApplyControlled2x2(control, target, pauliX, false);
+				runningNorm = tempNorm;
 			}
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
@@ -736,7 +742,10 @@ namespace Qrack {
 					qPowersSorted[0] = qPowers[2];
 					qPowersSorted[1] = qPowers[1];
 				}
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
+				runningNorm = tempNorm;
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
