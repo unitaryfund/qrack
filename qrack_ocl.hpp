@@ -68,10 +68,6 @@ namespace Qrack {
 			cl::Kernel* GetApply2x2Ptr() {
 				return &apply2x2;
 			}
-			///Get a pointer to the UpdateRunningNorm function kernel
-			cl::Kernel* GetUpdateRunningNormPtr() {
-				return &updateRunningNorm;
-			}
 
 		private:
 			std::vector<cl::Platform> all_platforms;
@@ -82,7 +78,6 @@ namespace Qrack {
 			cl::Program program;
 			cl::CommandQueue queue;
 			cl::Kernel apply2x2;
-			cl::Kernel updateRunningNorm;
 
 			OCLSingleton(){
 				InitOCL(0, 0);
@@ -182,21 +177,7 @@ namespace Qrack {
 				"		i += iHigh;"
 				"	}"
 				"   }"
-				""
-				"   void kernel updateRunningNorm(global double2* stateVec, constant ulong* maxPtr, global double* nrm) {"
-				"	ulong lcv, maxQPower, ID, Nthreads;"
-				"	maxQPower = *maxPtr;"
-				"	double sqrNorm = 0.0;"
-				"       ID = get_global_id(0);"
-				"       Nthreads = get_global_size(0);"
-				"	double2 temp;"
-				"	for (lcv = ID; lcv < maxQPower; lcv+=Nthreads) {"
-				"		temp = stateVec[lcv];"
-				"		temp *= temp;"
-				"		sqrNorm += temp.x + temp.y;"
-				"	}"
-				"	nrm[ID] = sqrNorm;"
-				"   }";
+				"";
 				sources.push_back({kernel_code.c_str(), kernel_code.length()});
 
 				program = cl::Program(context, sources);
@@ -207,7 +188,6 @@ namespace Qrack {
 
 				queue = cl::CommandQueue(context, default_device);
 				apply2x2 = cl::Kernel(program, "apply2x2");
-				updateRunningNorm = cl::Kernel(program, "updateRunningNorm");
 			}
 	};
 
@@ -1204,11 +1184,6 @@ namespace Qrack {
 			}
 
 			void NormalizeState() {
-				Complex16* sortedStateVec = new Complex16[maxQPower];
-				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, sortedStateVec);
-				runningNorm = 1/par_norm(maxQPower, sortedStateVec);
-				delete [] sortedStateVec;
-
 				bitCapInt lcv;
 				for (lcv = 0; lcv < maxQPower; lcv++) {
 					stateVec[lcv] *= runningNorm;
@@ -1217,32 +1192,10 @@ namespace Qrack {
 			}
 
 			void UpdateRunningNorm(bool isMapped) {
-				if (isMapped) {
-					queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+				if (!isMapped) {
+					queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 				}
-				double nrmParts[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE] = {0};
-				queue.enqueueWriteBuffer(maxBuffer, CL_FALSE, 0, sizeof(bitCapInt), &(maxQPower));
-				queue.enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);				
-
-				cl::Kernel updateRunningNorm = *(clObj->GetUpdateRunningNormPtr());
-				queue.finish();
-				updateRunningNorm.setArg(0, stateBuffer);
-				updateRunningNorm.setArg(1, maxBuffer);
-				updateRunningNorm.setArg(2, nrmBuffer);
-				queue.enqueueNDRangeKernel(updateRunningNorm, cl::NullRange,  // kernel, offset
-            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-					cl::NDRange(1)); // local number (per group)
-
-				// read result from GPU to here
-				runningNorm = 0;
-				queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
-				for (int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
-					runningNorm += nrmParts[i];
-				}
-				runningNorm = sqrt(runningNorm);
-
-				// read result from GPU to here
-				queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+				runningNorm = par_norm(maxQPower, &(stateVec[0]));
 			}
 
 			void Reverse(bitLenInt start, bitLenInt end) {
