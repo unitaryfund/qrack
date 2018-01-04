@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack.hpp"
+#include "qrack_ocl.hpp"
 
 int main() {
 
 	///Choose OpenCL platform 0, device 0:
-	//Qrack::OCLSingleton::Instance(0, 0);
+	Qrack::OCLSingleton::Instance(0, 0);
 
 	char testKey;
 

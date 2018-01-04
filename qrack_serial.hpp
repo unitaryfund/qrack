@@ -330,41 +330,10 @@ namespace Qrack {
 				qPowersSorted[2] = qPowers[3];
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
 				std::sort(qPowersSorted, qPowersSorted + 3);
-				bitCapInt stride = 1;
-				if (qPowersSorted[0] == 1) {
-					stride = 2;
-					if (qPowersSorted[1] == 2) {
-						stride = 4;
-						if (qPowersSorted[2] == 4) {
-							stride = 8;
-						}
-					}
-				}
-				bitCapInt lcv = 0;
-				while (lcv < maxQPower) {
-					if ((lcv & qPowers[0]) == 0) {
-						qubit[0] = stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]];
-						qubit[1] = stateVec[lcv + qPowers[1] + qPowers[2]];						
-	
-						zmv2x2(Complex16(1.0, 0.0), pauliX, qubit);
-
-						stateVec[lcv + qPowers[1] + qPowers[2] + qPowers[3]] = qubit[0];
-						stateVec[lcv + qPowers[1] + qPowers[2]] = qubit[1];
-					
-						lcv+=stride;
-					}
-					else {
-						if ((lcv & qPowersSorted[0]) != 0) {
-							lcv += qPowersSorted[0];
-						}
-						if ((lcv & qPowersSorted[1]) != 0) {
-							lcv += qPowersSorted[1];
-						}
-						if ((lcv & qPowersSorted[2]) != 0) {
-							lcv += qPowersSorted[2];
-						}
-					}
-				}
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
+				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
+				runningNorm = tempNorm;
 			}
 
 			///Controlled not
@@ -377,10 +346,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
 				ApplyControlled2x2(control, target, pauliX, false);
-				runningNorm = tempNorm;
 			}
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
@@ -1020,7 +986,10 @@ namespace Qrack {
 					qPowersSorted[0] = qPowers[2];
 					qPowersSorted[1] = qPowers[1];
 				}
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
+				runningNorm = tempNorm;
 			}
 
 			void NormalizeState() {

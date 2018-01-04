@@ -548,10 +548,7 @@ namespace Qrack {
 					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
 				ApplyControlled2x2(control, target, pauliX, false);
-				runningNorm = tempNorm;
 			}
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
@@ -1193,7 +1190,10 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 
+				double tempNorm = runningNorm;
+				runningNorm = 1.0;
 				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
+				runningNorm = tempNorm;
 			}
 
 			void InitOCL() {
