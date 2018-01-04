@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <algorithm>
+#include <ctime>
 #include <random>
 #include <stdexcept>
 #include <memory>
@@ -51,18 +52,15 @@ namespace Qrack {
 				if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
 					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
 
+				rand_generator.seed(std::time(0));
+
 				double angle = Rand() * 2.0 * M_PI;
 				runningNorm = 1.0;
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				bitCapInt lcv;
-				
 				stateVec[0] = Complex16(cos(angle), sin(angle));
-				for (lcv = 1; lcv < maxQPower; lcv++) {
-					stateVec[lcv] = Complex16(0.0, 0.0);
-				}
 
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[1]);
 				registerDims = std::move(rd);
@@ -72,21 +70,15 @@ namespace Qrack {
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+				rand_generator.seed(std::time(0));
+
 				double angle = Rand() * 2.0 * M_PI;
 				runningNorm = 1.0;
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				bitCapInt lcv;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if (lcv == initState) {
-						stateVec[lcv] = Complex16(cos(angle), sin(angle));
-					}	
-					else {
-						stateVec[lcv] = Complex16(0.0, 0.0);
-					}
-				}
+				stateVec[initState] = Complex16(cos(angle), sin(angle));
 
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[1]);
 				registerDims = std::move(rd);
@@ -96,6 +88,8 @@ namespace Qrack {
 			}
 			///Initialize a coherent unit with register dimensions
 			CoherentUnit(const RegisterDim* regDims, bitLenInt regCount) : rand_distribution(0.0, 1.0) {
+				rand_generator.seed(std::time(0));
+
 				bitCapInt lcv;
 				qubitCount = 0;
 				for (lcv = 0; lcv < registerCount; lcv++) {
@@ -108,21 +102,20 @@ namespace Qrack {
 				double angle = Rand() * 2.0 * M_PI;
 				runningNorm = 1.0;
 				maxQPower = 1<<qubitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
 				stateVec[0] = Complex16(cos(angle), sin(angle));
-				for (lcv = 1; lcv < maxQPower; lcv++) {
-					stateVec[lcv] = Complex16(0.0, 0.0);
-				}
 
 				registerCount = regCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[regCount]);
 				registerDims = std::move(rd);
-				std::copy(&(regDims[0]), &(regDims[regCount]), &(registerDims[0]));
+				std::copy(&(regDims[0]), &(regDims[0]) + regCount, &(registerDims[0]));
 			}
 
 			///Initialize a coherent unit with register dimensions and initial overall permutation state
 			CoherentUnit(const RegisterDim* regDims, bitLenInt regCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
+				rand_generator.seed(std::time(0));
+
 				bitLenInt lcv;
 				qubitCount = 0;
 				for (lcv = 0; lcv < registerCount; lcv++) {
@@ -134,24 +127,19 @@ namespace Qrack {
 				double angle = Rand() * 2.0 * M_PI;
 				runningNorm = 1.0;
 				maxQPower = 1<<qubitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if (lcv == initState) {
-						stateVec[lcv] = Complex16(cos(angle), sin(angle));
-					}	
-					else {
-						stateVec[lcv] = Complex16(0.0, 0.0);
-					}
-				}
+				stateVec[initState] = Complex16(cos(angle), sin(angle));
 
 				registerCount = regCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[regCount]);
 				registerDims = std::move(rd);
-				std::copy(&(regDims[0]), &(regDims[regCount]), &(registerDims[0]));
+				std::copy(&(regDims[0]), &(regDims[0]) + regCount, &(registerDims[0]));
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
+				rand_generator.seed(std::time(0));
+
 				runningNorm = pqs.runningNorm;
 				qubitCount = pqs.qubitCount;
 				maxQPower = pqs.maxQPower;
@@ -161,7 +149,7 @@ namespace Qrack {
 				registerCount = pqs.registerCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[registerCount]);
 				registerDims = std::move(rd);
-				std::copy(&(pqs.registerDims[0]), &(pqs.registerDims[pqs.registerCount]), &(registerDims[0]));
+				std::copy(&(pqs.registerDims[0]), &(pqs.registerDims[0]) + pqs.registerCount, &(registerDims[0]));
 			}
 
 			///Get the count of bits in this register
@@ -171,7 +159,7 @@ namespace Qrack {
 			///PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 			void CloneRawState(Complex16* output) {
 				if (runningNorm != 1.0) NormalizeState();
-				std::copy(&(stateVec[0]), &(stateVec[maxQPower]), &(output[0]));
+				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(output[0]));
 			}
 			///Generate a random double from 0 to 1
 			double Rand() {
@@ -182,19 +170,12 @@ namespace Qrack {
 				double angle = Rand() * 2.0 * M_PI;
 
 				runningNorm = 1.0;
-				bitCapInt lcv;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					if (lcv == perm) {
-						stateVec[lcv] = Complex16(cos(angle), sin(angle));
-					}	
-					else {
-						stateVec[lcv] = Complex16(0.0, 0.0);
-					}
-				}
+				std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0,0.0));
+				stateVec[perm] = Complex16(cos(angle), sin(angle));
 			}
 			///Set arbitrary pure quantum state, in unsigned int permutation basis
 			void SetQuantumState(Complex16* inputState) {
-				std::copy(&(inputState[0]), &(inputState[maxQPower]), &(stateVec[0]));
+				std::copy(&(inputState[0]), &(inputState[0]) + maxQPower, &(stateVec[0]));
 			}
 			///Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
 			/** Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added. */

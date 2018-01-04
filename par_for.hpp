@@ -94,6 +94,11 @@ namespace Qrack {
 	}
 
 	double par_norm(const bitCapInt maxQPower, const Complex16* stateArray) {
+		//const double* sAD = reinterpret_cast<const double*>(stateArray);
+		//double* sSAD = new double[maxQPower * 2];
+		//std::partial_sort_copy(sAD, sAD + (maxQPower * 2), sSAD, sSAD + (maxQPower * 2));
+		//Complex16* sorted = reinterpret_cast<Complex16*>(sSAD);
+
 		std::atomic<bitCapInt> idx;
 		idx = 0;
 		int num_cpus = std::thread::hardware_concurrency();
@@ -102,9 +107,19 @@ namespace Qrack {
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
 				double sqrNorm = 0.0;
+				double smallSqrNorm = 0.0;
 				bitCapInt i;
 				for (;;) {
 					i = idx++;
+					//if (i >= maxQPower) {
+					//	sqrNorm += smallSqrNorm;
+					//	break;
+					//}
+					//smallSqrNorm += norm(sorted[i]);
+					//if (smallSqrNorm > sqrNorm) {
+					//	sqrNorm += smallSqrNorm;
+					//	smallSqrNorm = 0;
+					//}
 					if (i >= maxQPower) break;
 					sqrNorm += norm(stateArray[i]);
 				}
