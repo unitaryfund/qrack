@@ -532,10 +532,7 @@ namespace Qrack {
 				std::copy(qPowers, qPowers + 4, qPowersSorted);
 				std::sort(qPowersSorted, qPowersSorted + 3);
 
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
-				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
-				runningNorm = tempNorm;
+				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false, false);
 			}
 
 			///Controlled not
@@ -739,10 +736,7 @@ namespace Qrack {
 					qPowersSorted[0] = qPowers[2];
 					qPowersSorted[1] = qPowers[1];
 				}
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
-				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
-				runningNorm = tempNorm;
+				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
@@ -1136,13 +1130,13 @@ namespace Qrack {
 			cl::Buffer maxBuffer;
 
 			void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
-					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm) {
+					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {
 				bitCapInt mxI[1] = {maxQPower};
 				Complex16 cmplx[5];
 				for (int i = 0; i < 4; i++){
 					cmplx[i] = mtrx[i];
 				}
-				cmplx[4] = Complex16(1.0 / runningNorm, 0.0);
+				cmplx[4] = Complex16(doApplyNorm ? 1.0 / runningNorm : 1.0, 0.0);
 				bitCapInt ulong[7] = {bitCount, maxQPower, offset1, offset2, 0, 0, 0};
 				for (int i = 0; i < bitCount; i++) {
 					ulong[4 + i] = qPowersSorted[i];
@@ -1172,7 +1166,7 @@ namespace Qrack {
 			void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
 				bitCapInt qPowers[1];
 				qPowers[0] = 1 << qubitIndex;
-				Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, doCalcNorm);
+				Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, true, doCalcNorm);
 			}
 
 			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
@@ -1190,10 +1184,7 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
-				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
-				runningNorm = tempNorm;
+				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
 			}
 
 			void InitOCL() {

@@ -336,10 +336,7 @@ namespace Qrack {
 				qPowersSorted[2] = qPowers[3];
 				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
 				std::sort(qPowersSorted, qPowersSorted + 3);
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
-				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
-				runningNorm = tempNorm;
+				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false, false);
 			}
 
 			///Controlled not
@@ -543,10 +540,7 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 				
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
-				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
-				runningNorm = tempNorm;
+				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
@@ -932,7 +926,7 @@ namespace Qrack {
 			std::uniform_real_distribution<double> rand_distribution;
 
 			void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
-					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm) {
+					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {
 				Complex16 Y0;
 				bitCapInt i, iLow, iHigh, lcv;
 				Complex16 nrm = Complex16(1.0 / runningNorm, 0.0);
@@ -941,8 +935,10 @@ namespace Qrack {
 				lcv = 0;
 				iHigh = 0;
 				i = 0;
-				par_for (0, maxQPower, &(stateVec[0]), Complex16(1.0 / runningNorm, 0.0), mtrx, qPowersSorted, offset1, offset2, bitCount,
-					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt offset1, const bitCapInt offset2) {
+				par_for (0, maxQPower, &(stateVec[0]), Complex16(doApplyNorm ? 1.0 / runningNorm : 1.0, 0.0),
+					   mtrx, qPowersSorted, offset1, offset2, bitCount,
+					[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm,
+					      const Complex16* mtrx, const bitCapInt offset1, const bitCapInt offset2) {
 						Complex16 qubit[2];
 
 						qubit[0] = stateVec[lcv + offset1];
@@ -968,7 +964,7 @@ namespace Qrack {
 			void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm) {
 				bitCapInt qPowers[1];
 				qPowers[0] = 1<<qubitIndex;
-				Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, doCalcNorm);
+				Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, true, doCalcNorm);
 			}
 
 			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
@@ -985,10 +981,7 @@ namespace Qrack {
 					qPowersSorted[0] = qPowers[2];
 					qPowersSorted[1] = qPowers[1];
 				}
-				double tempNorm = runningNorm;
-				runningNorm = 1.0;
-				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
-				runningNorm = tempNorm;
+				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
 			}
 
 			void NormalizeState() {
