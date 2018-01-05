@@ -314,13 +314,17 @@ namespace Qrack {
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
 				stateVec = std::move(sv);
 				InitOCL();
-				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[qubitCount]), &(stateVec[0]));
+				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
 				registerCount = pqs.registerCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[registerCount]);
 				registerDims = std::move(rd);
 				std::copy(&(pqs.registerDims[0]), &(pqs.registerDims[0]) + pqs.registerCount, &(registerDims[0]));
 			}
-
+			~CoherentUnit() {
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+				stateVec.reset();
+				registerDims.reset();
+			}
 			///Get the count of bits in this register
 			int GetQubitCount() {
 				return qubitCount;
@@ -371,7 +375,7 @@ namespace Qrack {
 				stateVec = std::move(nStateVec);
 				qubitCount = nQubitCount;
 				maxQPower = 1<<nQubitCount;
-
+				InitOCL();
 				UpdateRunningNorm(true);
 			}
 			///Minimally decohere a set of contigious bits from the full coherent unit.
@@ -409,6 +413,7 @@ namespace Qrack {
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
+				InitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
@@ -467,6 +472,7 @@ namespace Qrack {
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
+				InitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));

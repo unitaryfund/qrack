@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack_ocl.hpp"
+#include "qrack.hpp"
 
 int main() {
 
 	///Choose OpenCL platform 0, device 0:
-	Qrack::OCLSingleton::Instance(0, 0);
+	//Qrack::OCLSingleton::Instance(0, 0);
 
 	char testKey;
 
@@ -45,7 +45,7 @@ int main() {
 		std::cout<<std::endl;	
 	}
 
-	/*std::cout<<"AND Test:"<<std::endl;
+	std::cout<<"AND Test:"<<std::endl;
 	qftReg.SetPermutation(46);
 	std::cout<<"[6,9) = [0,3) & [3,6):"<<std::endl;
 	for (j = 0; j < 9; j++) {
@@ -67,7 +67,7 @@ int main() {
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
-	std::cout<<std::endl;*/
+	std::cout<<std::endl;
 
 	
 	qftReg.SetPermutation(0);

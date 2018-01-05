@@ -145,11 +145,15 @@ namespace Qrack {
 				maxQPower = pqs.maxQPower;
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
 				stateVec = std::move(sv);
-				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[qubitCount]), &(stateVec[0]));
+				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
 				registerCount = pqs.registerCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[registerCount]);
 				registerDims = std::move(rd);
 				std::copy(&(pqs.registerDims[0]), &(pqs.registerDims[0]) + pqs.registerCount, &(registerDims[0]));
+			}
+			~CoherentUnit() {
+				stateVec.reset();
+				registerDims.reset();
 			}
 
 			///Get the count of bits in this register
