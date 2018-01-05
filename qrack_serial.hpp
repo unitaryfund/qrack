@@ -260,18 +260,78 @@ namespace Qrack {
 				destination.UpdateRunningNorm();
 			}
 
+			void Dispose(bitLenInt start, bitLenInt length) {
+				if (runningNorm != 1.0) NormalizeState();
+				
+				bitLenInt end = start + length;
+				bitCapInt mask = 0;
+				bitCapInt startMask = 0;
+				bitCapInt endMask = 0;
+				bitCapInt partPower = 1<<length;
+				bitCapInt remainderPower = 1<<(qubitCount - length);
+				bitCapInt i;				
+				for (i = start; i < end; i++) {
+					mask += (1<<i);
+				}
+				for (i = 0; i < start; i++) {
+					startMask += (1<<i);
+				}
+				for (i = end; i < qubitCount; i++) {
+					endMask += (1<<i);
+				}
+				
+				std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
+				double prob;
+				for (i = 0; i < maxQPower; i++) {
+					prob = norm(stateVec[i]);
+					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
+				}
+				stateVec.reset();
+				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
+				stateVec = std::move(sv);
+				qubitCount = qubitCount - length;
+				maxQPower = 1<<qubitCount;
+
+				double angle = Rand() * 2.0 * M_PI;
+				Complex16 phaseFac(cos(angle), sin(angle));
+				double totProb = 0.0;
+				for (i = 0; i < remainderPower; i++) {
+					totProb += remainderStateProb[i];
+					stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
+				}
+				if (totProb == 0.0) {
+					stateVec[0] = phaseFac;
+				}
+
+				UpdateRunningNorm();
+			}
+
 			//Logic Gates:
 
-			///Classical "AND" compare two bits in register, and store result in first bit
-			void AND(bitLenInt resultBit, bitLenInt compareBit) {
-				//if ((resultBit >= qubitCount) || (compareBit >= qubitCount))
-				//	throw std::invalid_argument("AND tried to operate on bit index greater than total bits.");
-				if (resultBit == compareBit) throw std::invalid_argument("AND bits cannot be the same bit.");
-
-				bool result = M(resultBit);
-				bool compare = M(compareBit);
-				if (result && !compare) {
-					X(resultBit);
+			///"AND" compare two bits in CoherentUnit, and store result in outputBit
+			void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+				if (!((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+					if ((inputBit1 == outputBit) || (inputBit2 == outputBit)) {
+						CoherentUnit extraBit(1, 0);
+						Cohere(extraBit);
+						CCNOT(inputBit1, inputBit2, qubitCount - 1);
+						if (inputBit1 == outputBit) {
+							Swap(qubitCount - 1, inputBit1);
+						}
+						else {
+							Swap(qubitCount - 1, inputBit2);
+						}
+						Dispose(qubitCount - 1, 1);
+					}
+					else {
+						SetBit(outputBit, false);
+						if (inputBit1 == inputBit2) {
+							CNOT(inputBit1, outputBit);
+						}
+						else {
+							CCNOT(inputBit1, inputBit2, outputBit);
+						}
+					}
 				}
 			}
 			///Classical "OR" compare two bits in register, and store result in first bit
@@ -654,6 +714,14 @@ namespace Qrack {
 
 			//Single register instructions:
 
+			///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
+			void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
+				if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
+					for (bitLenInt i = 0; i < length; i++) {
+						AND(inputStart1 + i, inputStart2 + i, outputStart + i);
+					}
+				}
+			}
 			///Arithmetic shift left, with last 2 bits as sign and carry
 			void ASL(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if ((length > 0) && (shift > 0)) {
