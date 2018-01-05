@@ -398,8 +398,6 @@ namespace Qrack {
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("H tried to operate on bit index greater than total bits.");
-				if (runningNorm != 1.0) NormalizeState();
-
 				const Complex16 had[4] = {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
