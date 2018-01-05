@@ -907,8 +907,8 @@ namespace Qrack {
 					ROL(1, start, length);
 					par_for_reg(startPower, endPower, maxLCV, toAdd, &(stateVec[0]), this,
 						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toAdd, Complex16* stateVec, CoherentUnit* caller) {
-							caller->RotateComplex(k + 1, k + endPower + 1, toAdd - 1, true, startPower<<1, stateVec);
-							caller->RotateComplex(k, k + endPower, toAdd, true, startPower<<1, stateVec);
+							caller->RotateComplex(k + 1, k + endPower + 1, toAdd, true, startPower<<1, stateVec);
+							caller->RotateComplex(k, k + endPower, toAdd - 1, true, startPower<<1, stateVec);
 						}
 					);
 					ROR(1, start, length);

@@ -902,8 +902,8 @@ namespace Qrack {
 					ROL(1, start, length);
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxLCV; j+=endPower) {
-							stateVec = RotateComplex(i + j + 1, i + j + endPower + 1, toAdd - 1, true, stride, std::move(stateVec));
-							stateVec = RotateComplex(i + j, i + j + endPower, toAdd, true, stride, std::move(stateVec));
+							stateVec = RotateComplex(i + j + 1, i + j + endPower + 1, toAdd, true, stride, std::move(stateVec));
+							stateVec = RotateComplex(i + j, i + j + endPower, toAdd - 1, true, stride, std::move(stateVec));
 						}
 					}
 					ROR(1, start, length);
