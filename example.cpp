@@ -18,7 +18,7 @@ int main() {
 
 	Qrack::CoherentUnit qftReg(11, 125);
 
-	double qftProbs[8];
+	double qftProbs[9];
 	std::cout<<"SINC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
@@ -53,6 +53,7 @@ int main() {
 	}
 	std::cout<<"->";
 	qftReg.AND(0, 3, 6, 3);
+	//qftReg.CRY(-M_PI / 4.0,3,4);
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
@@ -78,15 +79,13 @@ int main() {
 	std::cout<<"M Test:"<<std::endl;
 	std::cout<<"Initial:"<<std::endl;
 	for (i = 0; i < 8; i++) {
-		qftProbs[i] = qftReg.Prob(i);
-		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftReg.Prob(i)<<std::endl;
 	}
 
 	qftReg.M(0);
 	std::cout<<"Final:"<<std::endl;
 	for (i = 0; i < 8; i++) {
-		qftProbs[i] = qftReg.Prob(i);
-		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftReg.Prob(i)<<std::endl;
 	}
 
 	qftReg.SetPermutation(85);
@@ -99,8 +98,7 @@ int main() {
 
 	std::cout<<"Initial:"<<std::endl;
 	for (i = 0; i < 8; i++) {
-		qftProbs[i] = qftReg.Prob(i);
-		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftProbs[i]<<std::endl;
+		std::cout<<"Bit "<<i<<", Chance of 1:"<<qftReg.Prob(i)<<std::endl;
 	}
 
 	qftReg.QFT(0, 8);

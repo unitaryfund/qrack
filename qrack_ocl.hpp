@@ -138,10 +138,9 @@ namespace Qrack {
 				"	double2 nrm = cmplxPtr[4];"
 				"	ulong bitCount = ulongPtr[0];"
 				"	ulong maxI = ulongPtr[1];"
-				"	constant ulong* qPowers = (ulongPtr + 2);"
+				"	ulong offset1 = ulongPtr[2];"
+				"	ulong offset2 = ulongPtr[3];"
 				"	constant ulong* qPowersSorted = (ulongPtr + 4);"
-				"	ulong offset1 = qPowers[0];"
-				"	ulong offset2 = qPowers[1];"
 				""
 				"	double2 Y0;"
 				"	ulong i, iLow, iHigh;"
@@ -224,7 +223,6 @@ namespace Qrack {
 				maxQPower = 1<<qBitCount;
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				InitOCL();
 				stateVec[0] = Complex16(cos(angle), sin(angle));
 
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[1]);
@@ -232,6 +230,8 @@ namespace Qrack {
 				registerDims[0].length = qubitCount;
 				registerDims[0].startBit = 0;
 				registerCount = 1;
+
+				InitOCL();
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
@@ -243,7 +243,6 @@ namespace Qrack {
 				maxQPower = 1<<qBitCount;
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				InitOCL();
 				stateVec[initState] = Complex16(cos(angle), sin(angle));
 
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[1]);
@@ -251,6 +250,8 @@ namespace Qrack {
 				registerDims[0].length = qubitCount;
 				registerDims[0].startBit = 0;
 				registerCount = 1;
+
+				InitOCL();
 			}
 			///Initialize a coherent unit with register dimensions
 			CoherentUnit(const RegisterDim* regDims, bitLenInt regCount) : rand_distribution(0.0, 1.0) {
@@ -270,13 +271,14 @@ namespace Qrack {
 				maxQPower = 1<<qubitCount;
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				InitOCL();
 				stateVec[0] = Complex16(cos(angle), sin(angle));
 
 				registerCount = regCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[regCount]);
 				registerDims = std::move(rd);
 				std::copy(&(regDims[0]), &(regDims[0]) + regCount, &(registerDims[0]));
+
+				InitOCL();
 			}
 
 			///Initialize a coherent unit with register dimensions and initial overall permutation state
@@ -296,17 +298,17 @@ namespace Qrack {
 				maxQPower = 1<<qubitCount;
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
-				InitOCL();
 				stateVec[initState] = Complex16(cos(angle), sin(angle));
 
 				registerCount = regCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[regCount]);
 				registerDims = std::move(rd);
 				std::copy(&(regDims[0]), &(regDims[0]) + regCount, &(registerDims[0]));
+
+				InitOCL();
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
-				OCLSingleton::Instance()->GetQueuePtr()->finish();
 				rand_generator.seed(std::time(0));
 
 				runningNorm = pqs.runningNorm;
@@ -314,25 +316,25 @@ namespace Qrack {
 				maxQPower = pqs.maxQPower;
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
 				stateVec = std::move(sv);
-				InitOCL();
 				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
 				registerCount = pqs.registerCount;
 				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[registerCount]);
 				registerDims = std::move(rd);
 				std::copy(&(pqs.registerDims[0]), &(pqs.registerDims[0]) + pqs.registerCount, &(registerDims[0]));
+
+				InitOCL();
 			}
 			~CoherentUnit() {
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				registerDims.reset();
 			}
+
 			///Get the count of bits in this register
 			int GetQubitCount() {
 				return qubitCount;
 			}
 			///PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 			void CloneRawState(Complex16* output) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(output[0]));
 			}
@@ -342,21 +344,19 @@ namespace Qrack {
 			}
 			///Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
 			void SetPermutation(bitCapInt perm) {
-				queue.finish();
 				double angle = Rand() * 2.0 * M_PI;
+
 				runningNorm = 1.0;
 				std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0,0.0));
 				stateVec[perm] = Complex16(cos(angle), sin(angle));
 			}
 			///Set arbitrary pure quantum state, in unsigned int permutation basis
 			void SetQuantumState(Complex16* inputState) {
-				queue.finish();
 				std::copy(&(inputState[0]), &(inputState[0]) + maxQPower, &(stateVec[0]));
 			}
 			///Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
 			/** Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added. */
 			void Cohere(CoherentUnit &toCopy) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 				if (toCopy.runningNorm != 1.0) toCopy.NormalizeState();
 
@@ -381,12 +381,11 @@ namespace Qrack {
 				qubitCount = nQubitCount;
 				maxQPower = 1<<nQubitCount;
 				ReInitOCL();
-				UpdateRunningNorm(true);
+				UpdateRunningNorm();
 			}
 			///Minimally decohere a set of contigious bits from the full coherent unit.
 			/** Minimally decohere a set of contigious bits from the full coherent unit. The length of this coherent unit is reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer. The destination object must be initialized to the correct number of bits, in 0 permutation state. */
 			void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 				
 				bitLenInt end = start + length;
@@ -444,12 +443,11 @@ namespace Qrack {
 					stateVec[0] = phaseFac;
 				}
 
-				UpdateRunningNorm(true);
-				destination.UpdateRunningNorm(true);
+				UpdateRunningNorm();
+				destination.UpdateRunningNorm();
 			}
 
 			void Dispose(bitLenInt start, bitLenInt length) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 				
 				bitLenInt end = start + length;
@@ -475,6 +473,7 @@ namespace Qrack {
 					prob = norm(stateVec[i]);
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
 				}
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
 				stateVec = std::move(sv);
@@ -493,7 +492,7 @@ namespace Qrack {
 					stateVec[0] = phaseFac;
 				}
 
-				UpdateRunningNorm(true);
+				UpdateRunningNorm();
 			}
 
 			//Logic Gates:
@@ -585,7 +584,6 @@ namespace Qrack {
 			}
 			///Measurement gate
 			bool M(bitLenInt qubitIndex) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 
 				bool result;
@@ -631,13 +629,12 @@ namespace Qrack {
 					);
 				}
 
-				UpdateRunningNorm(true);
+				UpdateRunningNorm();
 
 				return result;
 			}
 			///PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 			double Prob(bitLenInt qubitIndex) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 
 				bitCapInt qPower = 1 << qubitIndex;
@@ -653,14 +650,12 @@ namespace Qrack {
 			}
 			///PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 			double ProbAll(bitCapInt fullRegister) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 
 				return norm(stateVec[fullRegister]);
 			}
 			///PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
 			void ProbArray(double* probArray) {
-				queue.finish();
 				if (runningNorm != 1.0) NormalizeState();
 
 				bitCapInt lcv;
@@ -1146,6 +1141,7 @@ namespace Qrack {
 			void QFT(bitLenInt regIndex) {
 				QFT(registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
+
 		private:
 			double runningNorm;
 			bitLenInt qubitCount;
@@ -1167,7 +1163,6 @@ namespace Qrack {
 
 			void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {
-				bitCapInt mxI[1] = {maxQPower};
 				Complex16 cmplx[5];
 				for (int i = 0; i < 4; i++){
 					cmplx[i] = mtrx[i];
@@ -1191,8 +1186,9 @@ namespace Qrack {
             				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
 					cl::NDRange(1)); // local number (per group)
 
+				queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 				if (doCalcNorm) {
-					UpdateRunningNorm(false);
+					UpdateRunningNorm();
 				}
 				else {
 					runningNorm = 1.0;
@@ -1258,10 +1254,7 @@ namespace Qrack {
 				runningNorm = 1.0;
 			}
 
-			void UpdateRunningNorm(bool isMapped) {
-				if (!isMapped) {
-					queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-				}
+			void UpdateRunningNorm() {
 				runningNorm = par_norm(maxQPower, &(stateVec[0]));
 			}
 
