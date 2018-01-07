@@ -948,7 +948,7 @@ namespace Qrack {
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxLCV; j+=endPower) {
 							rotate(&(stateVec[0]) + i + j,
-								  &(stateVec[0]) + lengthPower - toAdd + i + j,
+								  &(stateVec[0]) + ((lengthPower - toAdd) * startPower) + i + j,
 								  &(stateVec[0]) + endPower,
 								  startPower);
 						}
@@ -973,7 +973,7 @@ namespace Qrack {
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxLCV; j+=endPower) {
 							rotate(&(stateVec[0]) + i + j,
-								  &(stateVec[0]) + toSub + i + j,
+								  &(stateVec[0]) + (toSub * startPower) + i + j,
 								  &(stateVec[0]) + endPower,
 								  startPower);
 						}

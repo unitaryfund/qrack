@@ -1123,7 +1123,7 @@ namespace Qrack {
 					       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
 						     const bitCapInt lengthPower, const bitCapInt toAdd, Complex16* stateArray) {
 							rotate(stateArray + k,
-								  stateArray + lengthPower - toAdd + k,
+								  stateArray + ((lengthPower - toAdd) * startPower) + k,
 								  stateArray + endPower,
 								  startPower);
 						}
@@ -1139,7 +1139,7 @@ namespace Qrack {
 					       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
 						     const bitCapInt lengthPower, const bitCapInt toSub, Complex16* stateArray) {
 							rotate(stateArray + k,
-								  stateArray + toSub + k,
+								  stateArray + (toSub * startPower) + k,
 								  stateArray + endPower,
 								  startPower);
 						}
