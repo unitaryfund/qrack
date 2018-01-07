@@ -928,16 +928,22 @@ namespace Qrack {
 			}
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
+				bitCapInt lengthPower = 1<<length;
+				toAdd %= lengthPower;
 				if ((length > 0) && (toAdd > 0)) {
 					bitCapInt i, j;
+					bitLenInt end = start + length;
 					bitCapInt startPower = 1<<start;
-					bitCapInt endPower = 1<<(start + length);
-					bitCapInt maxLCV = maxQPower - endPower - startPower;
-					par_for_reg(startPower, endPower, maxLCV, toAdd, &(stateVec[0]), this,
-						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toAdd, Complex16* stateVec, CoherentUnit* caller) {
-							caller->RotateComplex(k, k + endPower, toAdd, true, startPower, stateVec);
+					bitCapInt endPower = 1<<end;
+					bitCapInt iterPower = 1<<(qubitCount - end);
+					bitCapInt maxLCV = iterPower * endPower;
+					for (i = 0; i < startPower; i++) {
+						for (j = 0; j < maxLCV; j+=endPower) {
+							std::rotate(&(stateVec[0]) + i + j,
+								       &(stateVec[0]) + lengthPower - toAdd + i + j,
+								       &(stateVec[0]) + endPower);
 						}
-					);
+					}
 				}
 			}
 			///Add integer, to a numbered register, (without sign)
@@ -945,23 +951,30 @@ namespace Qrack {
 				INC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
 			///Subtract integer (without sign)
-			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
+			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {	
+				bitCapInt lengthPower = 1<<length;
+				toSub %= lengthPower;
 				if ((length > 0) && (toSub > 0)) {
 					bitCapInt i, j;
+					bitLenInt end = start + length;
 					bitCapInt startPower = 1<<start;
-					bitCapInt endPower = 1<<(start + length);
-					bitCapInt maxLCV = maxQPower - endPower - startPower;
-					par_for_reg(startPower, endPower, maxLCV, toSub, &(stateVec[0]), this,
-						[](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower, const bitCapInt toSub, Complex16* stateVec, CoherentUnit* caller) {
-							caller->RotateComplex(k, k + endPower, toSub, false, startPower, stateVec);
+					bitCapInt endPower = 1<<end;
+					bitCapInt iterPower = 1<<(qubitCount - end);
+					bitCapInt maxLCV = iterPower * endPower;
+					for (i = 0; i < startPower; i++) {
+						for (j = 0; j < maxLCV; j+=endPower) {
+							std::rotate(&(stateVec[0]) + i + j,
+								       &(stateVec[0]) + toSub + i + j,
+								       &(stateVec[0]) + endPower);
 						}
-					);
+					}
 				}
 			}
 			///Subtract integer, from a numbered register, (without sign)
 			void DEC(bitLenInt shift, bitLenInt regIndex) {
 				DEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
+			/*
 			///Add (with sign, with carry bit, carry overflow to minimum negative)
 			void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
 				if ((length > 0) && (toAdd > 0)) {
@@ -1011,7 +1024,7 @@ namespace Qrack {
 			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
 			void SDEC(bitLenInt shift, bitLenInt regIndex) {
 				SDEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
+			}*/
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
@@ -1136,36 +1149,6 @@ namespace Qrack {
 					bitLenInt iter = start + (end - start - 1) / 2;
 					for (i = start; i <= iter; i++) {
 						Swap(i, end - i + start);
-					}
-				}
-			}
-
-			void ReverseComplex(bitCapInt start, bitCapInt end, bitCapInt stride, Complex16* vec) {
-				if (start + 1 < end) {
-					end -= 1;
-					Complex16 temp;
-					bitCapInt i;
-					bitCapInt iter = start + (end - start - 1) / 2;
-					for (i = start; i <= iter; i+=stride) {
-						temp = vec[i];
-						vec[i] = vec[end - i + start];
-						vec[end - i + start] = temp;
-					}
-				}
-			}
-
-			void RotateComplex(bitCapInt start, bitCapInt end, bitCapInt shift, bool leftRot, bitCapInt stride, Complex16* vec) {
-				shift *= stride;
-				if (shift > 0) {
-					if (leftRot) {
-						ReverseComplex(start, end, stride, vec);
-						ReverseComplex(start, start + shift - stride, stride, vec);
-						ReverseComplex(start + shift, end, stride, vec);
-					}
-					else {
-						ReverseComplex(start + shift, end, stride, vec);
-						ReverseComplex(start, start + shift - stride, stride, vec);
-						ReverseComplex(start, end, stride, vec);
 					}
 				}
 			}

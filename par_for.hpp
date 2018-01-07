@@ -68,22 +68,22 @@ namespace Qrack {
 		}
 	}
 
-	template <class F>
-	void par_for_reg(const bitCapInt startPower, const bitCapInt endPower, const bitCapInt maxQPower, const bitCapInt addSub, Complex16* stateArray, CoherentUnit*  coherentUnit, F fn) {
+	/*template <class F>
+	void par_for_reg(const bitCapInt startPower, const bitCapInt endPower, const bitCapInt maxQPower, const bitCapInt addSub, Complex16* stateArray, F fn) {
 		std::atomic<bitCapInt> idx;
 		idx = 0;
 		bitCapInt maxIter = startPower * (maxQPower / endPower);
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			futures[cpu] = std::async(std::launch::async, [cpu, &idx, startPower, endPower, maxIter, addSub, stateArray, coherentUnit, &fn]() {
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, startPower, endPower, maxIter, addSub, stateArray, &fn]() {
 				bitCapInt i, low, high;
 				for (;;) {
 					i = idx++;
 					if (i >= maxIter) break;
 					low = i % startPower;
 					high = (i - low) * endPower;
-					fn(low + high, cpu, startPower, endPower, addSub, stateArray, coherentUnit);
+					fn(low + high, cpu, startPower, endPower, addSub, stateArray);
 				}
 			});
 		}
@@ -91,7 +91,7 @@ namespace Qrack {
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu].get();
 		}
-	}
+	}*/
 
 	double par_norm(const bitCapInt maxQPower, const Complex16* stateArray) {
 		//const double* sAD = reinterpret_cast<const double*>(stateArray);
