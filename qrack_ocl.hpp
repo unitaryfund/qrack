@@ -131,7 +131,6 @@ namespace Qrack {
 				// create the program that we want to execute on the device
 				cl::Program::Sources sources;
 
-				// calculates for each element; C = A + B
 				std::string kernel_code=
 				"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"
 				"   inline double2 zmul(const double2 lhs, const double2 rhs) {"
@@ -317,10 +316,12 @@ namespace Qrack {
 				for (i = 0; i < nMaxQPower; i++) {
 					nStateVec[i] = phaseFac * sqrt(norm(stateVec[(i & startMask)]) * norm(toCopy.stateVec[((i & endMask)>>qubitCount)]));
 				}
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				stateVec = std::move(nStateVec);
 				qubitCount = nQubitCount;
 				maxQPower = 1<<nQubitCount;
+				ReInitOCL();
 
 				UpdateRunningNorm();
 			}
@@ -354,11 +355,13 @@ namespace Qrack {
 					partStateProb[(i & mask)>>start] += prob;
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
 				}
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
+				ReInitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
@@ -413,11 +416,13 @@ namespace Qrack {
 				for (i = 0; i < maxQPower; i++) {
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += norm(stateVec[i]);
 				}
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
+				ReInitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
@@ -445,12 +450,7 @@ namespace Qrack {
 						CoherentUnit extraBit(1, 0);
 						Cohere(extraBit);
 						CCNOT(inputBit1, inputBit2, qubitCount - 1);
-						if (inputBit1 == outputBit) {
-							Swap(qubitCount - 1, inputBit1);
-						}
-						else {
-							Swap(qubitCount - 1, inputBit2);
-						}
+						Swap(qubitCount - 1, outputBit);
 						Dispose(qubitCount - 1, 1);
 					}
 					else {
@@ -471,12 +471,7 @@ namespace Qrack {
 						CoherentUnit extraBit(1, 1);
 						Cohere(extraBit);
 						AntiCCNOT(inputBit1, inputBit2, qubitCount - 1);
-						if (inputBit1 == outputBit) {
-							Swap(qubitCount - 1, inputBit1);
-						}
-						else {
-							Swap(qubitCount - 1, inputBit2);
-						}
+						Swap(qubitCount - 1, outputBit);
 						Dispose(qubitCount - 1, 1);
 					}
 					else {
@@ -1179,10 +1174,6 @@ namespace Qrack {
 				runningNorm = 1.0;
 			}
 
-			void UpdateRunningNorm() {
-				runningNorm = par_norm(maxQPower, &(stateVec[0]));
-			}
-
 			void Reverse(bitLenInt start, bitLenInt end) {
 				if (start + 1 < end) {
 					end -= 1;
@@ -1192,6 +1183,10 @@ namespace Qrack {
 						Swap(i, end - i + start);
 					}
 				}
+			}
+
+			void UpdateRunningNorm() {
+				runningNorm = par_norm(maxQPower, &(stateVec[0]));
 			}
 	};
 }

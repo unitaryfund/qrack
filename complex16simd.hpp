@@ -27,6 +27,11 @@ namespace Qrack {
 			_val = _mm_set_pd(imag, real);
 		}
 
+		Complex16Simd operator=(const Complex16Simd& other) {
+			_val = other._val;
+			return Complex16Simd(_val);
+		}
+
 		Complex16Simd operator+(const Complex16Simd& other) const {
 			return Complex16Simd(_mm_add_pd(_val, other._val));
 		}

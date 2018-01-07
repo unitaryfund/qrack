@@ -94,6 +94,7 @@ namespace Qrack {
 			~CoherentUnit() {
 				stateVec.reset();
 			}
+
 			///Get the count of bits in this register
 			int GetQubitCount() {
 				return qubitCount;
@@ -270,12 +271,7 @@ namespace Qrack {
 						CoherentUnit extraBit(1, 0);
 						Cohere(extraBit);
 						CCNOT(inputBit1, inputBit2, qubitCount - 1);
-						if (inputBit1 == outputBit) {
-							Swap(qubitCount - 1, inputBit1);
-						}
-						else {
-							Swap(qubitCount - 1, inputBit2);
-						}
+						Swap(qubitCount - 1, outputBit);
 						Dispose(qubitCount - 1, 1);
 					}
 					else {
@@ -296,12 +292,7 @@ namespace Qrack {
 						CoherentUnit extraBit(1, 1);
 						Cohere(extraBit);
 						AntiCCNOT(inputBit1, inputBit2, qubitCount - 1);
-						if (inputBit1 == outputBit) {
-							Swap(qubitCount - 1, inputBit1);
-						}
-						else {
-							Swap(qubitCount - 1, inputBit2);
-						}
+						Swap(qubitCount - 1, outputBit);
 						Dispose(qubitCount - 1, 1);
 					}
 					else {
@@ -394,8 +385,6 @@ namespace Qrack {
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
 				//if (qubitIndex >= qubitCount) throw std::invalid_argument("H tried to operate on bit index greater than total bits.");
-				if (runningNorm != 1.0) NormalizeState();
-
 				const Complex16 had[4] = {
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
 					Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0)
@@ -713,7 +702,6 @@ namespace Qrack {
 			}
 
 			//Single register instructions:
-
 			///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 			void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
 				if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
@@ -891,6 +879,7 @@ namespace Qrack {
 					}
 				}
 			}
+
 		private:
 			double runningNorm;
 			bitLenInt qubitCount;
@@ -915,8 +904,8 @@ namespace Qrack {
 					qubit[1] = stateVec[i + offset2];			
 				
 					Y0 = qubit[0];
-					qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-					qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+					qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+					qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
 
 					stateVec[i + offset1] = qubit[0];
 					stateVec[i + offset2] = qubit[1];
@@ -988,16 +977,6 @@ namespace Qrack {
 				runningNorm = 1.0;
 			}
 
-			void UpdateRunningNorm() {
-				bitCapInt lcv;
-				double sqrNorm = 0.0;
-				for (lcv = 0; lcv < maxQPower; lcv++) {
-					sqrNorm += norm(stateVec[lcv]);
-				}
-
-				runningNorm = sqrt(sqrNorm);
-			}
-
 			void Reverse(bitLenInt start, bitLenInt end) {
 				if (start + 1 < end) {
 					end -= 1;
@@ -1009,10 +988,14 @@ namespace Qrack {
 				}
 			}
 
-			void zmv2x2(const Complex16 alpha, const Complex16* A, Complex16* Y) {
-				Complex16 Y0 = Y[0];
-				Y[0] = alpha * (A[0] * Y0 + A[1] * Y[1]);
-				Y[1] = alpha * (A[2] * Y0 + A[3] * Y[1]);
+			void UpdateRunningNorm() {
+				bitCapInt lcv;
+				double sqrNorm = 0.0;
+				for (lcv = 0; lcv < maxQPower; lcv++) {
+					sqrNorm += norm(stateVec[lcv]);
+				}
+
+				runningNorm = sqrt(sqrNorm);
 			}
 	};
 }

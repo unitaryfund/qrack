@@ -45,7 +45,7 @@ int main() {
 		std::cout<<std::endl;	
 	}
 
-	/*std::cout<<"AND Test:"<<std::endl;
+	std::cout<<"AND Test:"<<std::endl;
 	qftReg.SetPermutation(46);
 	std::cout<<"[6,9) = [0,3) & [3,6):"<<std::endl;
 	for (j = 0; j < 9; j++) {
@@ -81,7 +81,7 @@ int main() {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;
-	qftReg.SetPermutation(62);
+	qftReg.SetPermutation(58);
 	std::cout<<"[0,4) = [0,4) & [4,8):"<<std::endl;
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
@@ -91,7 +91,7 @@ int main() {
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
-	std::cout<<std::endl;*/
+	std::cout<<std::endl;
 	
 	qftReg.SetPermutation(0);
 	for (i = 0; i < 8; i++) {

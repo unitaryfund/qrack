@@ -283,12 +283,7 @@ namespace Qrack {
 						CoherentUnit extraBit(1, 0);
 						Cohere(extraBit);
 						CCNOT(inputBit1, inputBit2, qubitCount - 1);
-						if (inputBit1 == outputBit) {
-							Swap(qubitCount - 1, inputBit1);
-						}
-						else {
-							Swap(qubitCount - 1, inputBit2);
-						}
+						Swap(qubitCount - 1, outputBit);
 						Dispose(qubitCount - 1, 1);
 					}
 					else {
@@ -309,12 +304,7 @@ namespace Qrack {
 						CoherentUnit extraBit(1, 1);
 						Cohere(extraBit);
 						AntiCCNOT(inputBit1, inputBit2, qubitCount - 1);
-						if (inputBit1 == outputBit) {
-							Swap(qubitCount - 1, inputBit1);
-						}
-						else {
-							Swap(qubitCount - 1, inputBit2);
-						}
+						Swap(qubitCount - 1, outputBit);
 						Dispose(qubitCount - 1, 1);
 					}
 					else {
@@ -920,8 +910,8 @@ namespace Qrack {
 						qubit[1] = stateVec[lcv + offset2];						
 
 						Complex16 Y0 = qubit[0];
-						qubit[0] = nrm * (mtrx[0] * Y0 + mtrx[1] * qubit[1]);
-						qubit[1] = nrm * (mtrx[2] * Y0 + mtrx[3] * qubit[1]);
+						qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+						qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
 
 						stateVec[lcv + offset1] = qubit[0];
 						stateVec[lcv + offset2] = qubit[1];
@@ -984,10 +974,6 @@ namespace Qrack {
 				runningNorm = 1.0;
 			}
 
-			void UpdateRunningNorm() {
-				runningNorm = par_norm(maxQPower, &(stateVec[0]));
-			}
-
 			void Reverse(bitLenInt start, bitLenInt end) {
 				if (start + 1 < end) {
 					end -= 1;
@@ -997,6 +983,10 @@ namespace Qrack {
 						Swap(i, end - i + start);
 					}
 				}
+			}
+
+			void UpdateRunningNorm() {
+				runningNorm = par_norm(maxQPower, &(stateVec[0]));
 			}
 	};
 }
