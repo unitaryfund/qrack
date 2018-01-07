@@ -64,9 +64,13 @@ namespace Qrack {
 				runningNorm = 1.0;
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
+				stateVec.reset(); 
 				stateVec = std::move(sv);
+				std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0,0.0));
 				stateVec[0] = Complex16(cos(angle), sin(angle));
+
+				//InitOCL();
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
@@ -76,9 +80,13 @@ namespace Qrack {
 				runningNorm = 1.0;
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				stateVec.reset(); 
 				stateVec = std::move(sv);
+				std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0,0.0));
 				stateVec[initState] = Complex16(cos(angle), sin(angle));
+
+				//InitOCL();
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
@@ -87,12 +95,12 @@ namespace Qrack {
 				runningNorm = pqs.runningNorm;
 				qubitCount = pqs.qubitCount;
 				maxQPower = pqs.maxQPower;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
+				stateVec.reset(); 
 				stateVec = std::move(sv);
 				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
-			}
-			~CoherentUnit() {
-				stateVec.reset();
+
+				//InitOCL();
 			}
 
 			///Get the count of bits in this register
@@ -143,10 +151,12 @@ namespace Qrack {
 				for (i = 0; i < nMaxQPower; i++) {
 					nStateVec[i] = phaseFac * sqrt(norm(stateVec[(i & startMask)]) * norm(toCopy.stateVec[((i & endMask)>>qubitCount)]));
 				}
+				//queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				stateVec = std::move(nStateVec);
 				qubitCount = nQubitCount;
 				maxQPower = 1<<nQubitCount;
+				//ReInitOCL();
 
 				UpdateRunningNorm();
 			}
@@ -180,11 +190,13 @@ namespace Qrack {
 					partStateProb[(i & mask)>>start] += prob;
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
 				}
-				stateVec.reset();
+				//queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
+				stateVec.reset();
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
+				//ReInitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
@@ -239,11 +251,13 @@ namespace Qrack {
 				for (i = 0; i < maxQPower; i++) {
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += norm(stateVec[i]);
 				}
-				stateVec.reset();
+				//queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
+				stateVec.reset();
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
+				//ReInitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
@@ -879,7 +893,6 @@ namespace Qrack {
 					}
 				}
 			}
-
 		private:
 			double runningNorm;
 			bitLenInt qubitCount;
@@ -893,11 +906,10 @@ namespace Qrack {
 					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {
 				Complex16 Y0;
 				bitCapInt i, iLow, iHigh, lcv;
-				Complex16 nrm = Complex16(doApplyNorm ? 1.0 / runningNorm : 1.0, 0.0);
+				Complex16 nrm = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
 				Complex16 qubit[2];
 				bitLenInt p;
 				lcv = 0;
-				iHigh = 0;
 				i = 0;
 				while (i < maxQPower) {				
 					qubit[0] = stateVec[i + offset1];
@@ -987,6 +999,7 @@ namespace Qrack {
 					}
 				}
 			}
+
 
 			void UpdateRunningNorm() {
 				bitCapInt lcv;

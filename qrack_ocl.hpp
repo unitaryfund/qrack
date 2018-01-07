@@ -231,8 +231,10 @@ namespace Qrack {
 				runningNorm = 1.0;
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
+				stateVec.reset(); 
 				stateVec = std::move(sv);
+				std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0,0.0));
 				stateVec[0] = Complex16(cos(angle), sin(angle));
 
 				InitOCL();
@@ -245,8 +247,10 @@ namespace Qrack {
 				runningNorm = 1.0;
 				qubitCount = qBitCount;
 				maxQPower = 1<<qBitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				stateVec.reset(); 
 				stateVec = std::move(sv);
+				std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0,0.0));
 				stateVec[initState] = Complex16(cos(angle), sin(angle));
 
 				InitOCL();
@@ -258,14 +262,12 @@ namespace Qrack {
 				runningNorm = pqs.runningNorm;
 				qubitCount = pqs.qubitCount;
 				maxQPower = pqs.maxQPower;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
+				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
+				stateVec.reset(); 
 				stateVec = std::move(sv);
 				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
 
 				InitOCL();
-			}
-			~CoherentUnit() {
-				stateVec.reset();
 			}
 
 			///Get the count of bits in this register
