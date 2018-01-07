@@ -37,7 +37,25 @@
 #define bitCapInt uint64_t
 #define bitsInByte 8
 
-namespace Qrack { class CoherentUnit; }
+namespace Qrack {
+	template <class BidirectionalIterator>
+	void reverse (BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride)
+	{
+	  while ((first < last) && (first < (last - stride))) {
+		last -= stride;
+		std::iter_swap (first,last);
+		first += stride;
+	  }
+	}
+
+	template <class BidirectionalIterator>
+	void rotate (BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last,  bitCapInt stride)
+	{
+		reverse(first, middle, stride);
+		reverse(middle, last, stride);
+		reverse(first, last, stride);
+	}
+}
 
 #include "par_for.hpp"
 
@@ -1101,47 +1119,31 @@ namespace Qrack {
 			}
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-				bitCapInt lengthPower = 1<<length;
-				toAdd %= lengthPower;
-				if ((length > 0) && (toAdd > 0)) {
-					bitCapInt i, j;
-					bitLenInt end = start + length;
-					bitCapInt startPower = 1<<start;
-					bitCapInt endPower = 1<<end;
-					bitCapInt iterPower = 1<<(qubitCount - end);
-					bitCapInt maxLCV = iterPower * endPower;
-					for (i = 0; i < startPower; i++) {
-						for (j = 0; j < maxLCV; j+=endPower) {
-							std::rotate(&(stateVec[0]) + i + j,
-								       &(stateVec[0]) + lengthPower - toAdd + i + j,
-								       &(stateVec[0]) + endPower);
+				par_for_reg(start, length, qubitCount, toAdd, &(stateVec[0]),
+					       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
+						     const bitCapInt lengthPower, const bitCapInt toAdd, Complex16* stateArray) {
+							rotate(stateArray + k,
+								  stateArray + lengthPower - toAdd + k,
+								  stateArray + endPower,
+								  startPower);
 						}
-					}
-				}
+				);
 			}
 			///Add integer, to a numbered register, (without sign)
 			void INC(bitLenInt shift, bitLenInt regIndex) {
 				INC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
 			///Subtract integer (without sign)
-			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {	
-				bitCapInt lengthPower = 1<<length;
-				toSub %= lengthPower;
-				if ((length > 0) && (toSub > 0)) {
-					bitCapInt i, j;
-					bitLenInt end = start + length;
-					bitCapInt startPower = 1<<start;
-					bitCapInt endPower = 1<<end;
-					bitCapInt iterPower = 1<<(qubitCount - end);
-					bitCapInt maxLCV = iterPower * endPower;
-					for (i = 0; i < startPower; i++) {
-						for (j = 0; j < maxLCV; j+=endPower) {
-							std::rotate(&(stateVec[0]) + i + j,
-								       &(stateVec[0]) + toSub + i + j,
-								       &(stateVec[0]) + endPower);
+			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
+				par_for_reg(start, length, qubitCount, toSub, &(stateVec[0]),
+					       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
+						     const bitCapInt lengthPower, const bitCapInt toSub, Complex16* stateArray) {
+							rotate(stateArray + k,
+								  stateArray + toSub + k,
+								  stateArray + endPower,
+								  startPower);
 						}
-					}
-				}
+				);
 			}
 			///Subtract integer, from a numbered register, (without sign)
 			void DEC(bitLenInt shift, bitLenInt regIndex) {

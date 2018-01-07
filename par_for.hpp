@@ -68,30 +68,38 @@ namespace Qrack {
 		}
 	}
 
-	/*template <class F>
-	void par_for_reg(const bitCapInt startPower, const bitCapInt endPower, const bitCapInt maxQPower, const bitCapInt addSub, Complex16* stateArray, F fn) {
-		std::atomic<bitCapInt> idx;
-		idx = 0;
-		bitCapInt maxIter = startPower * (maxQPower / endPower);
-		int num_cpus = std::thread::hardware_concurrency();
-		std::vector<std::future<void>> futures(num_cpus);
-		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			futures[cpu] = std::async(std::launch::async, [cpu, &idx, startPower, endPower, maxIter, addSub, stateArray, &fn]() {
-				bitCapInt i, low, high;
-				for (;;) {
-					i = idx++;
-					if (i >= maxIter) break;
-					low = i % startPower;
-					high = (i - low) * endPower;
-					fn(low + high, cpu, startPower, endPower, addSub, stateArray);
-				}
-			});
-		}
+	template <class F>
+	void par_for_reg(const bitLenInt start, const bitLenInt length, const bitLenInt qubitCount, bitCapInt addSub, Complex16* stateArray, F fn) {
+		bitCapInt lengthPower = 1<<length;
+		addSub %= lengthPower;
+		if ((length > 0) && (addSub > 0)) {
+			std::atomic<bitCapInt> idx;
+			idx = 0;
+			bitLenInt end = start + length;
+			bitCapInt startPower = 1<<start;
+			bitCapInt endPower = 1<<end;
+			bitCapInt iterPower = 1<<(qubitCount - end);
+			bitCapInt maxLCV = iterPower * startPower;
+			int num_cpus = std::thread::hardware_concurrency();
+			std::vector<std::future<void>> futures(num_cpus);
+			for (int cpu = 0; cpu != num_cpus; ++cpu) {
+				futures[cpu] = std::async(std::launch::async, [cpu, &idx, startPower, endPower, lengthPower, maxLCV, addSub, stateArray, &fn]() {
+					bitCapInt i, low, high;
+					for (;;) {
+						i = idx++;
+						if (i >= maxLCV) break;
+						low = i % startPower;
+						high = (i - low) * endPower;
+						fn(low + high, cpu, startPower, endPower, lengthPower, addSub, stateArray);
+					}
+				});
+			}
 
-		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			futures[cpu].get();
+			for (int cpu = 0; cpu != num_cpus; ++cpu) {
+				futures[cpu].get();
+			}
 		}
-	}*/
+	}
 
 	double par_norm(const bitCapInt maxQPower, const Complex16* stateArray) {
 		//const double* sAD = reinterpret_cast<const double*>(stateArray);

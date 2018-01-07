@@ -29,6 +29,26 @@
 #define bitsInByte 8
 
 namespace Qrack {
+	template <class BidirectionalIterator>
+	void reverse (BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride)
+	{
+	  while ((first < last) && (first < (last - stride))) {
+		last -= stride;
+		std::iter_swap (first,last);
+		first += stride;
+	  }
+	}
+
+	template <class BidirectionalIterator>
+	void rotate (BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last,  bitCapInt stride)
+	{
+		reverse(first, middle, stride);
+		reverse(middle, last, stride);
+		reverse(first, last, stride);
+	}
+}
+
+namespace Qrack {
 	/// "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors
 	/** "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors. An array is passed in with an array of register dimensions. The registers become indexed by their position in the array, and they can be accessed with a numbered enum. */
 	struct RegisterDim {
@@ -927,9 +947,10 @@ namespace Qrack {
 					bitCapInt maxLCV = iterPower * endPower;
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxLCV; j+=endPower) {
-							std::rotate(&(stateVec[0]) + i + j,
-								       &(stateVec[0]) + lengthPower - toAdd + i + j,
-								       &(stateVec[0]) + endPower);
+							rotate(&(stateVec[0]) + i + j,
+								  &(stateVec[0]) + lengthPower - toAdd + i + j,
+								  &(stateVec[0]) + endPower,
+								  startPower);
 						}
 					}
 				}
@@ -951,9 +972,10 @@ namespace Qrack {
 					bitCapInt maxLCV = iterPower * endPower;
 					for (i = 0; i < startPower; i++) {
 						for (j = 0; j < maxLCV; j+=endPower) {
-							std::rotate(&(stateVec[0]) + i + j,
-								       &(stateVec[0]) + toSub + i + j,
-								       &(stateVec[0]) + endPower);
+							rotate(&(stateVec[0]) + i + j,
+								  &(stateVec[0]) + toSub + i + j,
+								  &(stateVec[0]) + endPower,
+								  startPower);
 						}
 					}
 				}
