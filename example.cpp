@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack.hpp"
+#include "qrack_ocl.hpp"
 
 int main() {
 
 	///Choose OpenCL platform 0, device 0:
-	//Qrack::OCLSingleton::Instance(0, 0);
+	Qrack::OCLSingleton::Instance(0, 0);
 
 	char testKey;
 
@@ -19,7 +19,7 @@ int main() {
 	Qrack::CoherentUnit qftReg(9, 125);
 
 	double qftProbs[9];
-	/*std::cout<<"INC Test:"<<std::endl;
+	std::cout<<"INC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
@@ -43,7 +43,7 @@ int main() {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
-	}*/
+	}
 
 	std::cout<<"AND Test:"<<std::endl;
 	qftReg.SetPermutation(46);
@@ -88,6 +88,43 @@ int main() {
 	}
 	std::cout<<"->";
 	qftReg.OR(0, 4, 0, 4);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
+	std::cout<<"XOR Test:"<<std::endl;
+	qftReg.SetPermutation(38);
+	std::cout<<"[6,9) = [0,3) & [3,6):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.XOR(0, 3, 6, 3);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+	qftReg.SetPermutation(58);
+	std::cout<<"[0,4) = [0,4) & [4,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.XOR(0, 4, 0, 4);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
+	std::cout<<"ADD Test:"<<std::endl;
+	qftReg.SetPermutation(38);
+	std::cout<<"[0,4) = [0,4) & [4,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.ADD(0, 4, 4);
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}

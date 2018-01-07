@@ -325,6 +325,27 @@ namespace Qrack {
 					}
 				}
 			}
+			///"XOR" compare two bits in CoherentUnit, and store result in outputBit
+			void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+				if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+					SetBit(outputBit, false);
+				}
+				else {
+					if ((inputBit1 == outputBit) || (inputBit2 == outputBit)) {
+						CoherentUnit extraBit(1, 0);
+						Cohere(extraBit);
+						CNOT(inputBit1, qubitCount - 1);
+						CNOT(inputBit2, qubitCount - 1);
+						Swap(qubitCount - 1, outputBit);
+						Dispose(qubitCount - 1, 1);
+					}
+					else {
+						SetBit(outputBit, false);
+						CNOT(inputBit1, outputBit);
+						CNOT(inputBit2, outputBit);
+					}
+				}
+			}
 			/// Doubly-controlled not
 			void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
 				//if ((control1 >= qubitCount) || (control2 >= qubitCount))
@@ -744,6 +765,14 @@ namespace Qrack {
 					}
 				}
 			}
+			///"XOR" compare two bit ranges in CoherentUnit, and store result in range starting at output
+			void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
+				if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
+					for (bitLenInt i = 0; i < length; i++) {
+						XOR(inputStart1 + i, inputStart2 + i, outputStart + i);
+					}
+				}
+			}
 			///Arithmetic shift left, with last 2 bits as sign and carry
 			void ASL(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if ((length > 0) && (shift > 0)) {
@@ -850,7 +879,7 @@ namespace Qrack {
 					}
 				}
 			}
-			///Add integer (without sign)
+			///Increment quantum integer by classical integer
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
 				par_for_reg(start, length, qubitCount, toAdd, &(stateVec[0]),
 					       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
@@ -862,7 +891,7 @@ namespace Qrack {
 						}
 				);
 			}
-			///Subtract integer (without sign)
+			///Decrement quantum integer by classical integer
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
 				par_for_reg(start, length, qubitCount, toSub, &(stateVec[0]),
 					       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
@@ -873,6 +902,24 @@ namespace Qrack {
 								  startPower);
 						}
 				);
+			}
+			///Add two quantum integers
+			/** Add integer of "length" bits in "inClear" to integer of "length" bits in "inOut," and store in "inOut." Integer in "inClear" is cleared. */
+			void ADD(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
+				bitLenInt i, j, loopCount;
+				bitLenInt origQubitCount = qubitCount;
+				CoherentUnit carry(length, 0);
+				Cohere(carry);
+				loopCount = 0;
+				for (i = 0; i < length; i++) {
+					AND(inOut, inClear, origQubitCount, length);
+					XOR(inOut, inClear, inOut, length);
+					ASL(1, origQubitCount, length);
+					for (j = 0; j < length; j++) {
+						Swap(inClear + j, origQubitCount + j);
+					}
+				}
+				Dispose(origQubitCount, length);
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
