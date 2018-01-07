@@ -49,13 +49,6 @@ namespace Qrack {
 }
 
 namespace Qrack {
-	/// "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors
-	/** "Qrack::RegisterDim" is used to dimension a register in "Qrack::CoherentUnit" constructors. An array is passed in with an array of register dimensions. The registers become indexed by their position in the array, and they can be accessed with a numbered enum. */
-	struct RegisterDim {
-		bitLenInt length;
-		bitLenInt startBit;
-	};
-
 	/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers		
 	/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit logic gates and (abstract) opcodes-like methods. */
 	class CoherentUnit {
@@ -74,12 +67,6 @@ namespace Qrack {
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
 				stateVec[0] = Complex16(cos(angle), sin(angle));
-
-				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[1]);
-				registerDims = std::move(rd);
-				registerDims[0].length = qubitCount;
-				registerDims[0].startBit = 0;
-				registerCount = 1;
 			}
 			///Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 			CoherentUnit(bitLenInt qBitCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
@@ -92,62 +79,6 @@ namespace Qrack {
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
 				stateVec = std::move(sv);
 				stateVec[initState] = Complex16(cos(angle), sin(angle));
-
-				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[1]);
-				registerDims = std::move(rd);
-				registerDims[0].length = qubitCount;
-				registerDims[0].startBit = 0;
-				registerCount = 1;
-			}
-			///Initialize a coherent unit with register dimensions
-			CoherentUnit(const RegisterDim* regDims, bitLenInt regCount) : rand_distribution(0.0, 1.0) {
-				rand_generator.seed(std::time(0));
-
-				bitCapInt lcv;
-				qubitCount = 0;
-				for (lcv = 0; lcv < registerCount; lcv++) {
-					qubitCount += registerDims[lcv].length;
-				}
-
-				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
-					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
-
-				double angle = Rand() * 2.0 * M_PI;
-				runningNorm = 1.0;
-				maxQPower = 1<<qubitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
-				stateVec = std::move(sv);
-				stateVec[0] = Complex16(cos(angle), sin(angle));
-
-				registerCount = regCount;
-				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[regCount]);
-				registerDims = std::move(rd);
-				std::copy(&(regDims[0]), &(regDims[0]) + regCount, &(registerDims[0]));
-			}
-
-			///Initialize a coherent unit with register dimensions and initial overall permutation state
-			CoherentUnit(const RegisterDim* regDims, bitLenInt regCount, bitCapInt initState) : rand_distribution(0.0, 1.0) {
-				rand_generator.seed(std::time(0));
-
-				bitLenInt lcv;
-				qubitCount = 0;
-				for (lcv = 0; lcv < registerCount; lcv++) {
-					qubitCount += registerDims[lcv].length;
-				}
-
-				if (qubitCount > (sizeof(bitCapInt) * bitsInByte))
-					throw std::invalid_argument("Cannot instantiate a register with greater capacity than native types on emulating system.");
-				double angle = Rand() * 2.0 * M_PI;
-				runningNorm = 1.0;
-				maxQPower = 1<<qubitCount;
-				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]()); 
-				stateVec = std::move(sv);
-				stateVec[initState] = Complex16(cos(angle), sin(angle));
-
-				registerCount = regCount;
-				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[regCount]);
-				registerDims = std::move(rd);
-				std::copy(&(regDims[0]), &(regDims[0]) + regCount, &(registerDims[0]));
 			}
 			///PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 			CoherentUnit(const CoherentUnit& pqs) : rand_distribution(0.0, 1.0) {
@@ -159,14 +90,9 @@ namespace Qrack {
 				std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]); 
 				stateVec = std::move(sv);
 				std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
-				registerCount = pqs.registerCount;
-				std::unique_ptr<RegisterDim[]> rd(new RegisterDim[registerCount]);
-				registerDims = std::move(rd);
-				std::copy(&(pqs.registerDims[0]), &(pqs.registerDims[0]) + pqs.registerCount, &(registerDims[0]));
 			}
 			~CoherentUnit() {
 				stateVec.reset();
-				registerDims.reset();
 			}
 			///Get the count of bits in this register
 			int GetQubitCount() {
@@ -827,10 +753,6 @@ namespace Qrack {
 					}
 				}
 			}
-			///Arithmetic shift left, of a numbered register, with last 2 bits as sign and carry
-			void ASL(bitLenInt shift, bitLenInt regIndex) {
-				ASL(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
 			///Arithmetic shift right, with last 2 bits as sign and carry
 			void ASR(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if ((length > 0) && (shift > 0)) {
@@ -854,10 +776,6 @@ namespace Qrack {
 					}
 				}
 			}
-			///Arithmetic shift left, of a numbered register, with last 2 bits as sign and carry
-			void ASR(bitLenInt shift, bitLenInt regIndex) {
-				ASR(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
 			///Logical shift left, filling the extra bits with |0>
 			void LSL(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if ((length > 0) && (shift > 0)) {
@@ -875,10 +793,6 @@ namespace Qrack {
 						}
 					}
 				}
-			}
-			///Logical shift left, of a numbered register, filling the extra bits with |0>
-			void LSL(bitLenInt shift, bitLenInt regIndex) {
-				LSL(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
 			///Logical shift right, filling the extra bits with |0>
 			void LSR(bitLenInt shift, bitLenInt start, bitLenInt length) {
@@ -898,10 +812,6 @@ namespace Qrack {
 					}
 				}
 			}
-			///Logical shift left, of a numbered register, filling the extra bits with |0>
-			void LSR(bitLenInt shift, bitLenInt regIndex) {
-				LSR(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
 			void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if (length > 0) {
@@ -914,10 +824,6 @@ namespace Qrack {
 					}
 				}
 			}
-			///"Circular shift left" of a numbered register - shift bits left, and carry last bits.
-			void ROL(bitLenInt shift, bitLenInt regIndex) {
-				ROL(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if (length > 0) {
@@ -929,10 +835,6 @@ namespace Qrack {
 						Reverse(start, end);
 					}
 				}
-			}
-			///"Circular shift right" of a numbered register - shift bits left, and carry last bits.
-			void ROR(bitLenInt shift, bitLenInt regIndex) {
-				ROR(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
 			}
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
@@ -955,10 +857,6 @@ namespace Qrack {
 					}
 				}
 			}
-			///Add integer, to a numbered register, (without sign)
-			void INC(bitLenInt shift, bitLenInt regIndex) {
-				INC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {	
 				bitCapInt lengthPower = 1<<length;
@@ -980,62 +878,6 @@ namespace Qrack {
 					}
 				}
 			}
-			///Subtract integer, from a numbered register, (without sign)
-			void DEC(bitLenInt shift, bitLenInt regIndex) {
-				DEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
-			///Add (with sign, with carry bit, carry overflow to minimum negative)
-			/*void SINC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-				if ((length > 0) && (toAdd > 0)) {
-					bitCapInt i, j;
-					bitCapInt end = start + length;
-					bitCapInt startPower = 1<<start;
-					bitCapInt endPower = 1<<end;
-					bitCapInt stride = startPower<<1;
-					bitCapInt maxLCV = maxQPower - endPower - startPower;
-					
-					Swap(end - 1, end - 2);
-					ROL(1, start, length);
-					for (i = 0; i < startPower; i++) {
-						for (j = 0; j < maxLCV; j+=endPower) {
-							stateVec = RotateComplex(i + j + 1, i + j + endPower + 1, toAdd, true, stride, std::move(stateVec));
-							stateVec = RotateComplex(i + j, i + j + endPower, toAdd - 1, true, stride, std::move(stateVec));
-						}
-					}
-					ROR(1, start, length);
-					Swap(end - 1, end - 2);
-				}			
-			}
-			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
-			void SINC(bitLenInt shift, bitLenInt regIndex) {
-				SINC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
-			///Subtract (with sign, with carry bit, carry overflow to maximum positive)
-			void SDEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
-				if ((length > 0) && (toSub > 0)) {
-					bitCapInt i, j;
-					bitCapInt end = start + length;
-					bitCapInt startPower = 1<<start;
-					bitCapInt endPower = 1<<end;
-					bitCapInt stride = startPower<<1;
-					bitCapInt maxLCV = maxQPower - endPower - startPower;
-
-					Swap(end - 1, end - 2);
-					ROL(1, start, length);
-					for (i = 0; i < startPower; i++) {
-						for (j = 0; j < maxLCV; j+=endPower) {
-							stateVec = RotateComplex(i + j, i + j + endPower, toSub - 1, false, stride, std::move(stateVec));
-							stateVec = RotateComplex(i + j + 1, i + j + endPower + 1, toSub, false, stride, std::move(stateVec));
-						}
-					}
-					ROR(1, start, length);
-					Swap(end - 1, end - 2);
-				}
-			}
-			///Add integer, to a numbered register, (with sign, with carry bit, carry overflow to minimum negative)
-			void SDEC(bitLenInt shift, bitLenInt regIndex) {
-				SDEC(shift, registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}*/
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
@@ -1049,17 +891,10 @@ namespace Qrack {
 					}
 				}
 			}
-			///Quantum Fourier Transform - Apply the quantum Fourier transform to a numbered register
-			void QFT(bitLenInt regIndex) {
-				QFT(registerDims[regIndex].startBit, registerDims[regIndex].length);
-			}
-
 		private:
 			double runningNorm;
 			bitLenInt qubitCount;
 			bitCapInt maxQPower;
-			bitLenInt registerCount;
-			std::unique_ptr<RegisterDim[]> registerDims;
 			std::unique_ptr<Complex16[]> stateVec;
 
 			std::default_random_engine rand_generator;
