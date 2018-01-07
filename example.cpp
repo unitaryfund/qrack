@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include "qrack.hpp"
+#include "qrack_serial.hpp"
 
 int main() {
 
@@ -16,34 +16,34 @@ int main() {
 
 	int i, j;
 
-	Qrack::CoherentUnit qftReg(11, 125);
+	Qrack::CoherentUnit qftReg(9, 125);
 
 	double qftProbs[9];
-	std::cout<<"SINC Test:"<<std::endl;
+	/*std::cout<<"INC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.SINC(1, 0, 9);
+		qftReg.INC(1, 0, 9);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"SDEC Test:"<<std::endl;
+	std::cout<<"DEC Test:"<<std::endl;
 	qftReg.SetPermutation(133);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.SDEC(1, 0, 9);
+		qftReg.DEC(1, 0, 9);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
-	}
+	}*/
 
 	std::cout<<"AND Test:"<<std::endl;
 	qftReg.SetPermutation(46);
@@ -53,7 +53,6 @@ int main() {
 	}
 	std::cout<<"->";
 	qftReg.AND(0, 3, 6, 3);
-	//qftReg.CRY(-M_PI / 4.0,3,4);
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
@@ -70,6 +69,29 @@ int main() {
 	}
 	std::cout<<std::endl;
 
+	std::cout<<"OR Test:"<<std::endl;
+	qftReg.SetPermutation(38);
+	std::cout<<"[6,9) = [0,3) & [3,6):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.OR(0, 3, 6, 3);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+	qftReg.SetPermutation(62);
+	std::cout<<"[0,4) = [0,4) & [4,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.OR(0, 4, 0, 4);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
 	
 	qftReg.SetPermutation(0);
 	for (i = 0; i < 8; i++) {

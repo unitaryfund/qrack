@@ -371,16 +371,17 @@ namespace Qrack {
 				for (i = qubitCount; i < nQubitCount; i++) {
 					endMask += (1<<i);
 				}
+				double angle = Rand() * 2.0 * M_PI;
+				Complex16 phaseFac(cos(angle), sin(angle));
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 				for (i = 0; i < nMaxQPower; i++) {
-					nStateVec[i] = stateVec[(i & startMask)] * toCopy.stateVec[((i & endMask)>>qubitCount)];
+					nStateVec[i] = phaseFac * sqrt(norm(stateVec[(i & startMask)]) * norm(toCopy.stateVec[((i & endMask)>>qubitCount)]));
 				}
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				stateVec = std::move(nStateVec);
 				qubitCount = nQubitCount;
 				maxQPower = 1<<nQubitCount;
-				ReInitOCL();
+
 				UpdateRunningNorm();
 			}
 			///Minimally decohere a set of contigious bits from the full coherent unit.
@@ -413,23 +414,25 @@ namespace Qrack {
 					partStateProb[(i & mask)>>start] += prob;
 					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
 				}
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
-				ReInitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
 				double totProb = 0.0;
 				for (i = 0; i < partPower; i++) {
 					totProb += partStateProb[i];
-					destination.stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
 				}
 				if (totProb == 0.0) {
 					destination.stateVec[0] = phaseFac;
+				}
+				else {
+					for (i = 0; i < partPower; i++) {
+						destination.stateVec[i] = sqrt(partStateProb[i] / totProb) * phaseFac;
+					}
 				}
 
 				angle = Rand() * 2.0 * M_PI;
@@ -437,10 +440,14 @@ namespace Qrack {
 				totProb = 0.0;
 				for (i = 0; i < remainderPower; i++) {
 					totProb += remainderStateProb[i];
-					stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
 				}
 				if (totProb == 0.0) {
 					stateVec[0] = phaseFac;
+				}
+				else {
+					for (i = 0; i < remainderPower; i++) {
+						stateVec[i] = sqrt(remainderStateProb[i] / totProb) * phaseFac;
+					}
 				}
 
 				UpdateRunningNorm();
@@ -451,15 +458,10 @@ namespace Qrack {
 				if (runningNorm != 1.0) NormalizeState();
 				
 				bitLenInt end = start + length;
-				bitCapInt mask = 0;
 				bitCapInt startMask = 0;
 				bitCapInt endMask = 0;
-				bitCapInt partPower = 1<<length;
 				bitCapInt remainderPower = 1<<(qubitCount - length);
 				bitCapInt i;				
-				for (i = start; i < end; i++) {
-					mask += (1<<i);
-				}
 				for (i = 0; i < start; i++) {
 					startMask += (1<<i);
 				}
@@ -468,28 +470,28 @@ namespace Qrack {
 				}
 				
 				std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-				double prob;
 				for (i = 0; i < maxQPower; i++) {
-					prob = norm(stateVec[i]);
-					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += prob;
+					remainderStateProb[(i & startMask) + ((i & endMask)>>length)] += norm(stateVec[i]);
 				}
-				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				stateVec.reset();
 				std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
 				stateVec = std::move(sv);
 				qubitCount = qubitCount - length;
 				maxQPower = 1<<qubitCount;
-				ReInitOCL();
 
 				double angle = Rand() * 2.0 * M_PI;
 				Complex16 phaseFac(cos(angle), sin(angle));
 				double totProb = 0.0;
 				for (i = 0; i < remainderPower; i++) {
 					totProb += remainderStateProb[i];
-					stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
 				}
 				if (totProb == 0.0) {
 					stateVec[0] = phaseFac;
+				}
+				else {
+					for (i = 0; i < remainderPower; i++) {
+						stateVec[i] = sqrt(remainderStateProb[i] / totProb) * phaseFac;
+					}
 				}
 
 				UpdateRunningNorm();
@@ -522,16 +524,30 @@ namespace Qrack {
 					}
 				}
 			}
-			///Classical "OR" compare two bits in register, and store result in first bit
-			void OR(bitLenInt resultBit, bitLenInt compareBit) {
-				//if ((resultBit >= qubitCount) || (compareBit >= qubitCount))
-				//	throw std::invalid_argument("OR tried to operate on bit index greater than total bits.");
-				if (resultBit == compareBit) throw std::invalid_argument("OR bits cannot be the same bit.");
-				
-				bool result = M(resultBit);
-				bool compare = M(compareBit);
-				if (!result && compare) {
-					X(resultBit);
+			///"OR" compare two bits in CoherentUnit, and store result in outputBit
+			void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+				if (!((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+					if ((inputBit1 == outputBit) || (inputBit2 == outputBit)) {
+						CoherentUnit extraBit(1, 1);
+						Cohere(extraBit);
+						AntiCCNOT(inputBit1, inputBit2, qubitCount - 1);
+						if (inputBit1 == outputBit) {
+							Swap(qubitCount - 1, inputBit1);
+						}
+						else {
+							Swap(qubitCount - 1, inputBit2);
+						}
+						Dispose(qubitCount - 1, 1);
+					}
+					else {
+						SetBit(outputBit, true);
+						if (inputBit1 == inputBit2) {
+							AntiCNOT(inputBit1, outputBit);
+						}
+						else {
+							AntiCCNOT(inputBit1, inputBit2, outputBit);
+						}
+					}
 				}
 			}
 			/// Doubly-controlled not
@@ -561,7 +577,33 @@ namespace Qrack {
 				std::sort(qPowersSorted, qPowersSorted + 3);
 				Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false, false);
 			}
+			/// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
+			void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
+				//if ((control1 >= qubitCount) || (control2 >= qubitCount))
+				//	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
+				if (control1 == control2) throw std::invalid_argument("CCNOT control bits cannot be same bit.");
+				if (control1 == target || control2 == target)
+					throw std::invalid_argument("CCNOT control bits cannot also be target.");
 
+				const Complex16 pauliX[4] = {
+					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+				};
+
+				bitLenInt powerMask = 0;
+				Complex16 qubit[2];
+				bitCapInt qPowers[4];
+				bitCapInt qPowersSorted[3];
+				qPowers[1] = 1 << control1;
+				qPowersSorted[0] = qPowers[1];
+				qPowers[2] = 1 << control2;
+				qPowersSorted[1] = qPowers[2];
+				qPowers[3] = 1 << target;
+				qPowersSorted[2] = qPowers[3];
+				qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
+				std::sort(qPowersSorted, qPowersSorted + 3);
+				Apply2x2(0, qPowers[3], pauliX, 3, qPowersSorted, false, false);
+			}
 			///Controlled not
 			void CNOT(bitLenInt control, bitLenInt target) {
 				//if ((control >= qubitCount) || (target >= qubitCount))
@@ -572,6 +614,17 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 				ApplyControlled2x2(control, target, pauliX, false);
+			}
+			///"Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
+			void AntiCNOT(bitLenInt control, bitLenInt target) {
+				//if ((control >= qubitCount) || (target >= qubitCount))
+				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+				if (control == target) throw std::invalid_argument("CNOT control bit cannot also be target.");
+				const Complex16 pauliX[4] = {
+					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+				};
+				ApplyAntiControlled2x2(control, target, pauliX, false);
 			}
 			///Hadamard gate
 			void H(bitLenInt qubitIndex) {
@@ -601,7 +654,7 @@ namespace Qrack {
 				bitCapInt lcv;
 				if (result) {
 					if (oneChance > 0.0) nrmlzr = oneChance;
-					par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine / nrmlzr, sine), NULL, qPowers,
+					par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine, sine) / nrmlzr, NULL, qPowers,
 						[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
 								stateVec[lcv] = Complex16(0.0, 0.0);
@@ -617,7 +670,7 @@ namespace Qrack {
 				}
 				else {
 					if (oneChance < 1.0) nrmlzr = sqrt(1.0 - oneChance);
-					par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine / nrmlzr, sine), NULL, qPowers,
+					par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine, sine) / nrmlzr, NULL, qPowers,
 						[](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* qPowers) {
 							if ((lcv & qPowers[0]) == 0) {
 								stateVec[lcv] = nrm * stateVec[lcv];
@@ -1216,6 +1269,23 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 				Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
+			}
+
+			void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm) {
+				bitCapInt qPowers[3];
+				bitCapInt qPowersSorted[2];
+				qPowers[1] = 1 << control;
+				qPowers[2] = 1 << target;
+				qPowers[0] = qPowers[1] + qPowers[2];
+				if (control < target) {
+					qPowersSorted[0] = qPowers[1];
+					qPowersSorted[1] = qPowers[2];
+				}
+				else {
+					qPowersSorted[0] = qPowers[2];
+					qPowersSorted[1] = qPowers[1];
+				}
+				Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
 			}
 
 			void InitOCL() {
