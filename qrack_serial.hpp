@@ -929,8 +929,6 @@ namespace Qrack {
 			}
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
-			///Subtract two quantum integers
-			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
 			void SUB(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
 				DEC(1, inClear, length);
 				for (bitLenInt i = 0; i < length; i++) {
