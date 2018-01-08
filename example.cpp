@@ -135,6 +135,24 @@ int main() {
 		qftReg.H(i);
 	}
 
+	std::cout<<"SUB Test:"<<std::endl;
+	qftReg.SetPermutation(38);
+	std::cout<<"[0,4) = [0,4) & [4,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.SUB(0, 4, 4);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+	
+	qftReg.SetPermutation(0);
+	for (i = 0; i < 8; i++) {
+		qftReg.H(i);
+	}
+
 	std::cout<<"M Test:"<<std::endl;
 	std::cout<<"Initial:"<<std::endl;
 	for (i = 0; i < 8; i++) {

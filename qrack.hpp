@@ -904,7 +904,7 @@ namespace Qrack {
 				);
 			}
 			///Add two quantum integers
-			/** Add integer of "length" bits in "inClear" to integer of "length" bits in "inOut," and store in "inOut." Integer in "inClear" is cleared. */
+			/** Add integer of "length" bits in "inClear" to integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
 			void ADD(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
 				bitLenInt i, j, loopCount;
 				bitLenInt origQubitCount = qubitCount;
@@ -914,10 +914,32 @@ namespace Qrack {
 				for (i = 0; i < length; i++) {
 					AND(inOut, inClear, origQubitCount, length);
 					XOR(inOut, inClear, inOut, length);
-					ASL(1, origQubitCount, length);
 					for (j = 0; j < length; j++) {
 						Swap(inClear + j, origQubitCount + j);
 					}
+					ASL(1, inClear, length);
+				}
+				Dispose(origQubitCount, length);
+			}
+			///Subtract two quantum integers
+			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
+			void SUB(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
+				bitLenInt i, j, loopCount;
+				bitLenInt origQubitCount = qubitCount;
+				CoherentUnit carry(length, 0);
+				Cohere(carry);
+				loopCount = 0;
+				for (i = 0; i < length; i++) {
+					for (j = 0; j < length; j++) {
+						SetBit(origQubitCount + j, true);
+						CNOT(inOut + j , origQubitCount + j);
+					}
+					AND(origQubitCount, inClear, origQubitCount, length);
+					XOR(inOut, inClear, inOut, length);
+					for (j = 0; j < length; j++) {
+						Swap(inClear + j, origQubitCount + j);
+					}
+					ASL(1, inClear, length);
 				}
 				Dispose(origQubitCount, length);
 			}
