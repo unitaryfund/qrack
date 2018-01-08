@@ -929,25 +929,14 @@ namespace Qrack {
 			}
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
+			///Subtract two quantum integers
+			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
 			void SUB(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
-				bitLenInt i, j, loopCount;
-				bitLenInt origQubitCount = qubitCount;
-				CoherentUnit carry(length, 0);
-				Cohere(carry);
-				loopCount = 0;
-				for (i = 0; i < length; i++) {
-					for (j = 0; j < length; j++) {
-						SetBit(origQubitCount + j, true);
-						CNOT(inOut + j , origQubitCount + j);
-					}
-					AND(origQubitCount, inClear, origQubitCount, length);
-					XOR(inOut, inClear, inOut, length);
-					for (j = 0; j < length; j++) {
-						Swap(inClear + j, origQubitCount + j);
-					}
-					ASL(1, inClear, length);
+				DEC(1, inClear, length);
+				for (bitLenInt i = 0; i < length; i++) {
+					X(inClear + i);
 				}
-				Dispose(origQubitCount, length);
+				ADD(inOut, inClear, length);
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
