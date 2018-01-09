@@ -910,7 +910,7 @@ namespace Qrack {
 				}
 			}
 			///Add two quantum integers
-			/** Add integer of "length" bits in "inClear" to integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
+			/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
 				bitCapInt inOutMask = 0;
 				bitCapInt inMask = 0;
@@ -967,8 +967,8 @@ namespace Qrack {
 				Dispose(origQubitCount, length);
 			}*/
 			///Subtract two quantum integers
-			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
-			void SUB(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)  {
+			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
+			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)  {
 				bitCapInt inOutMask = 0;
 				bitCapInt inMask = 0;
 				bitCapInt otherMask = (1<<qubitCount) - 1;
@@ -976,7 +976,7 @@ namespace Qrack {
 				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
 				for (i = 0; i < length; i++) {
 					inOutMask += 1<<(inOutStart + i);
-					inMask += 1<<(inStart + i);
+					inMask += 1<<(toSub + i);
 				}
 				allMask = inOutMask + inMask;
 				otherMask -= allMask;
@@ -990,7 +990,7 @@ namespace Qrack {
 						inOutRes = (i & inOutMask);
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
-						inInt = inRes>>inStart;
+						inInt = inRes>>toSub;
 						nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
 					}
 				}
