@@ -935,7 +935,7 @@ namespace Qrack {
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
 						inInt = inRes>>inStart;
-						nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) + otherRes + inRes] += stateVec[i];
+						nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
 					}
 				}
 				stateVec.reset(); 
@@ -993,7 +993,7 @@ namespace Qrack {
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
 						inInt = inRes>>inStart;
-						nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) + otherRes + inRes] += stateVec[i];
+						nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
 					}
 				}
 				stateVec.reset(); 
