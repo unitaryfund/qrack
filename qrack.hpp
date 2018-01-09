@@ -911,13 +911,19 @@ namespace Qrack {
 				CoherentUnit carry(length, 0);
 				Cohere(carry);
 				loopCount = 0;
-				for (i = 0; i < length; i++) {
+				for (i = 0; i < length; i+=2) {
 					AND(inOut, inClear, origQubitCount, length);
 					XOR(inOut, inClear, inOut, length);
+					ASL(1, origQubitCount, length);
+					if ((i + 1) < length) {
+						AND(inOut, origQubitCount, inClear, length);
+						XOR(inOut, origQubitCount, inOut, length);
+					}
+				}
+				if (i != length) {
 					for (j = 0; j < length; j++) {
 						Swap(inClear + j, origQubitCount + j);
 					}
-					ASL(1, inClear, length);
 				}
 				Dispose(origQubitCount, length);
 			}
@@ -1019,6 +1025,26 @@ namespace Qrack {
 					qPowersSorted[1] = qPowers[1];
 				}
 				Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
+			}
+
+			void Carry(bitLenInt integerStart, bitLenInt integerLength, bitLenInt carryBit) {
+				if (integerLength > 0) {
+					bitLenInt i;
+					CoherentUnit extraBit(1, 0);
+					Cohere(extraBit);
+					for (i = 0; i < integerLength; i+=2) {
+						AND(carryBit, integerStart + i, qubitCount - 1);
+						XOR(carryBit, integerStart + i, integerStart + i);
+						if ((i + 1) < integerLength) { 
+							AND(qubitCount - 1, integerStart+ i + 1, carryBit);
+							XOR(qubitCount - 1, integerStart + i + 1, integerStart + i + 1);
+						}
+					}
+					if (i != integerLength) {
+						Swap(carryBit, qubitCount - 1);
+					}
+					Dispose(qubitCount - 1, 1);
+				}
 			}
 
 			void NormalizeState() {
