@@ -39,6 +39,28 @@ namespace Qrack {
 	}
 
 	template <class F>
+	void par_for_copy(const bitCapInt begin, const bitCapInt end, const Complex16* stateArray, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt inStart, Complex16* nStateArray, F fn)		{
+		std::atomic<bitCapInt> idx;
+		idx = begin;
+		int num_cpus = std::thread::hardware_concurrency();
+		std::vector<std::future<void>> futures(num_cpus);
+		for (int cpu = 0; cpu < num_cpus; cpu++) {
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart, nStateArray, &fn]() {
+				bitCapInt i;
+				for (;;) {
+					i = idx++;
+					if (i >= end) break;
+					fn(i, cpu, stateArray, inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart, nStateArray);
+				}
+			});
+		}
+
+		for (int cpu = 0; cpu < num_cpus; cpu++) {
+			futures[cpu].get();
+		}
+	}
+
+	template <class F>
 	void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, const Complex16 nrm, const Complex16* mtrx, const bitCapInt* maskArray, const bitCapInt offset1, const bitCapInt offset2, const bitLenInt bitCount, F fn) {
 		std::atomic<bitCapInt> idx;
 		idx = begin;

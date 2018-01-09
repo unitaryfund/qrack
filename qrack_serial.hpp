@@ -911,9 +911,37 @@ namespace Qrack {
 			}
 			///Add two quantum integers
 			/** Add integer of "length" bits in "inClear" to integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
-			///Add two quantum integers
-			/** Add integer of "length" bits in "inClear" to integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
-			void ADD(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
+			void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
+				bitCapInt inOutMask = 0;
+				bitCapInt inMask = 0;
+				bitCapInt otherMask = (1<<maxQPower) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
+				for (i = 0; i < length; i++) {
+					inOutMask += 1<<(inOutStart + i);
+					inMask += 1<<(inStart + i);
+				}
+				allMask = inOutMask + inMask;
+				otherMask -= allMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+				for (i = 0; i < maxQPower; i++) {
+					otherRes = (i & otherMask);
+					if (otherRes == i) {
+						nStateVec[i] = stateVec[i];
+					}
+					else {
+						inOutRes = (i & inOutMask);
+						inOutInt = inOutRes>>inOutStart;
+						inRes = (i & inMask);
+						inInt = inRes>>inStart;
+						nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) + otherRes + inRes] += stateVec[i];
+					}
+				}
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+			}
+			/*void ADD(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
 				bitLenInt i, j, loopCount;
 				bitLenInt origQubitCount = qubitCount;
 				CoherentUnit carry(length, 0);
@@ -938,16 +966,46 @@ namespace Qrack {
 					XOR(inOut, inClear, inOut, length);
 				}
 				Dispose(origQubitCount, length);
-			}
+			}*/
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "inClear" from integer of "length" bits in "inOut," and store result in "inOut." Integer in "inClear" is cleared. */
-			void SUB(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
+			void SUB(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)  {
+				bitCapInt inOutMask = 0;
+				bitCapInt inMask = 0;
+				bitCapInt otherMask = (1<<maxQPower) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
+				for (i = 0; i < length; i++) {
+					inOutMask += 1<<(inOutStart + i);
+					inMask += 1<<(inStart + i);
+				}
+				allMask = inOutMask + inMask;
+				otherMask -= allMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+				for (i = 0; i < maxQPower; i++) {
+					otherRes = (i & otherMask);
+					if (otherRes == i) {
+						nStateVec[i] = stateVec[i];
+					}
+					else {
+						inOutRes = (i & inOutMask);
+						inOutInt = inOutRes>>inOutStart;
+						inRes = (i & inMask);
+						inInt = inRes>>inStart;
+						nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) + otherRes + inRes] += stateVec[i];
+					}
+				}
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+			}
+			/*void SUB(bitLenInt inOut, bitLenInt inClear, bitLenInt length) {
 				DEC(1, inClear, length);
 				for (bitLenInt i = 0; i < length; i++) {
 					X(inClear + i);
 				}
 				ADD(inOut, inClear, length);
-			}
+			}*/
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
