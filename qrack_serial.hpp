@@ -924,13 +924,10 @@ namespace Qrack {
 				allMask = inOutMask + inMask;
 				otherMask -= allMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(nStateVec[0]));
 				for (i = 0; i < maxQPower; i++) {
 					otherRes = (i & otherMask);
-					if (otherRes == i) {
-						nStateVec[i] = stateVec[i];
-					}
-					else {
+					if (otherRes != i) {
 						inOutRes = (i & inOutMask);
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
@@ -982,13 +979,10 @@ namespace Qrack {
 				allMask = inOutMask + inMask;
 				otherMask -= allMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(nStateVec[0]));
 				for (i = 0; i < maxQPower; i++) {
 					otherRes = (i & otherMask);
-					if (otherRes == i) {
-						nStateVec[i] = stateVec[i];
-					}
-					else {
+					if (otherRes != i) {
 						inOutRes = (i & inOutMask);
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
