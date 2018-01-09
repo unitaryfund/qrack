@@ -1073,19 +1073,23 @@ namespace Qrack {
 				CoherentUnit carry(length, 0);
 				Cohere(carry);
 				loopCount = 0;
-				for (i = 0; i < length; i+=2) {
+				for (i = 0; i < (length - 2); i+=2) {
 					AND(inOut, inClear, origQubitCount, length);
 					XOR(inOut, inClear, inOut, length);
 					ASL(1, origQubitCount, length);
-					if ((i + 1) < length) {
-						AND(inOut, origQubitCount, inClear, length);
-						XOR(inOut, origQubitCount, inOut, length);
-					}
+					AND(inOut, origQubitCount, inClear, length);
+					XOR(inOut, origQubitCount, inOut, length);
+					ASL(1, inClear, length);
 				}
-				if (i != length) {
-					for (j = 0; j < length; j++) {
-						Swap(inClear + j, origQubitCount + j);
-					}
+				i+=2;
+				if (i == length) {
+					AND(inOut, inClear, origQubitCount, length);
+					XOR(inOut, inClear, inOut, length);
+					ASL(1, origQubitCount, length);
+					XOR(inOut, origQubitCount, inOut, length);
+				}
+				else {
+					XOR(inOut, inClear, inOut, length);
 				}
 				Dispose(origQubitCount, length);
 			}
