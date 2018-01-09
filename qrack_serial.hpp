@@ -914,7 +914,7 @@ namespace Qrack {
 			void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
 				bitCapInt inOutMask = 0;
 				bitCapInt inMask = 0;
-				bitCapInt otherMask = (1<<maxQPower) - 1;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
 				bitCapInt lengthPower = 1<<length;
 				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
 				for (i = 0; i < length; i++) {
@@ -924,10 +924,12 @@ namespace Qrack {
 				allMask = inOutMask + inMask;
 				otherMask -= allMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(nStateVec[0]));
 				for (i = 0; i < maxQPower; i++) {
 					otherRes = (i & otherMask);
-					if (otherRes != i) {
+					if (otherRes == i) {
+						nStateVec[i] = stateVec[i];
+					}
+					else {
 						inOutRes = (i & inOutMask);
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
@@ -969,7 +971,7 @@ namespace Qrack {
 			void SUB(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)  {
 				bitCapInt inOutMask = 0;
 				bitCapInt inMask = 0;
-				bitCapInt otherMask = (1<<maxQPower) - 1;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
 				bitCapInt lengthPower = 1<<length;
 				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
 				for (i = 0; i < length; i++) {
@@ -979,10 +981,12 @@ namespace Qrack {
 				allMask = inOutMask + inMask;
 				otherMask -= allMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(nStateVec[0]));
 				for (i = 0; i < maxQPower; i++) {
 					otherRes = (i & otherMask);
-					if (otherRes != i) {
+					if (otherRes == i) {
+						nStateVec[i] = stateVec[i];
+					}
+					else {
 						inOutRes = (i & inOutMask);
 						inOutInt = inOutRes>>inOutStart;
 						inRes = (i & inMask);
