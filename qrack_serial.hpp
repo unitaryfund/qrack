@@ -578,27 +578,28 @@ namespace Qrack {
 			void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) throw std::invalid_argument("Swap bits cannot be the same bit.");
-				const Complex16 pauliX[4] = {
-					Complex16(0.0, 0.0), Complex16(1.0, 0.0),
-					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
-				};
+				if (qubitIndex1 == qubitIndex2) {
+					const Complex16 pauliX[4] = {
+						Complex16(0.0, 0.0), Complex16(1.0, 0.0),
+						Complex16(1.0, 0.0), Complex16(0.0, 0.0)
+					};
 
-				bitCapInt qPowers[3];
-				bitCapInt qPowersSorted[2];
-				qPowers[1] = 1 << qubitIndex1;
-				qPowers[2] = 1 << qubitIndex2;
-				qPowers[0] = qPowers[1] + qPowers[2];
-				if (qubitIndex1 < qubitIndex2) {
-					qPowersSorted[0] = qPowers[1];
-					qPowersSorted[1] = qPowers[2];
-				}
-				else {
-					qPowersSorted[0] = qPowers[2];
-					qPowersSorted[1] = qPowers[1];
-				}
+					bitCapInt qPowers[3];
+					bitCapInt qPowersSorted[2];
+					qPowers[1] = 1 << qubitIndex1;
+					qPowers[2] = 1 << qubitIndex2;
+					qPowers[0] = qPowers[1] + qPowers[2];
+					if (qubitIndex1 < qubitIndex2) {
+						qPowersSorted[0] = qPowers[1];
+						qPowersSorted[1] = qPowers[2];
+					}
+					else {
+						qPowersSorted[0] = qPowers[2];
+						qPowersSorted[1] = qPowers[1];
+					}
 				
-				Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
+					Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
+				}
 			}
 			///NOT gate, which is also Pauli x matrix
 			void X(bitLenInt qubitIndex) {
@@ -966,6 +967,24 @@ namespace Qrack {
 				}
 				Dispose(origQubitCount, length);
 			}*/
+			///Add two quantum integers with carry bit
+			/** Add integer of "length" - 1 bits in "inStart" to integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
+			void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+				bitLenInt inOutCarry = inOutStart + length - 1;
+				bitLenInt inCarry = inStart + length - 1;
+				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
+				if (carryIndex != inCarry) SetBit(inCarry, false);
+				OR(carryIndex, inOutCarry, inOutCarry);
+				OR(carryIndex, inCarry, inCarry);
+				ROL(1, inOutStart, length);
+				ROL(1, inStart, length);
+				ADD(inOutStart, inStart, length);
+				ROR(1, inOutStart, length);
+				ROR(1, inStart, length);
+				Swap(carryIndex, inOutCarry);
+				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
+				if (carryIndex != inCarry) SetBit(inCarry, false);
+			}
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)  {
@@ -1004,6 +1023,24 @@ namespace Qrack {
 				}
 				ADD(inOut, inClear, length);
 			}*/
+			///Subtract two quantum integers with carry bit
+			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
+			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
+				bitLenInt inOutCarry = inOutStart + length - 1;
+				bitLenInt inCarry = toSub + length - 1;
+				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
+				if (carryIndex != inCarry) SetBit(inCarry, false);
+				OR(carryIndex, inOutCarry, inOutCarry);
+				OR(carryIndex, inCarry, inCarry);
+				ROL(1, inOutStart, length);
+				ROL(1, toSub, length);
+				SUB(inOutStart, toSub, length);
+				ROR(1, inOutStart, length);
+				ROR(1, toSub, length);
+				Swap(carryIndex, inOutCarry);
+				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
+				if (carryIndex != inCarry) SetBit(inCarry, false);
+			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
