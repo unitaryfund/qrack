@@ -153,7 +153,7 @@ int main() {
 		qftReg.H(i);
 	}
 
-	/*std::cout<<"ADDC Test:"<<std::endl;
+	std::cout<<"ADDC Test:"<<std::endl;
 	qftReg.SetPermutation(295);
 	std::cout<<"[0,3) = [0,3) & [4,7):"<<std::endl;
 	for (j = 0; j < 9; j++) {
@@ -182,7 +182,7 @@ int main() {
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
-	std::cout<<std::endl;*/
+	std::cout<<std::endl;
 	
 	qftReg.SetPermutation(0);
 	for (i = 0; i < 8; i++) {

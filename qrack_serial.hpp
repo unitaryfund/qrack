@@ -969,7 +969,7 @@ namespace Qrack {
 			}*/
 			///Add two quantum integers with carry bit
 			/** Add integer of "length" - 1 bits in "inStart" to integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
-			/*void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+			void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
 				if (length > 0) {
 					bitLenInt inOutCarry = (inOutStart + length) - 1;
 					bitLenInt inCarry = (inStart + length) - 1;
@@ -986,11 +986,12 @@ namespace Qrack {
 					ADD(inOutStart, inStart, length);
 					ROR(1, inOutStart, length);
 					ROR(1, inStart, length);
+					CNOT(carryIndex, inOutCarry);
 					Swap(carryIndex, inOutCarry);
 					if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
 					if (carryIndex != inCarry) SetBit(inCarry, false);
 				}
-			}*/
+			}
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)  {
@@ -1031,7 +1032,7 @@ namespace Qrack {
 			}*/
 			///Subtract two quantum integers with carry bit
 			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
-			/*void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
+			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
 				if (length > 0) {
 					bitLenInt inOutCarry = (inOutStart + length) - 1;
 					bitLenInt inCarry = (toSub + length) - 1;
@@ -1049,7 +1050,7 @@ namespace Qrack {
 					if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
 					if (carryIndex != inCarry) SetBit(inCarry, false);
 				}
-			}*/
+			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
