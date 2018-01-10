@@ -1020,27 +1020,53 @@ namespace Qrack {
 			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
 			void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
-				if (length > 0) {
-					shift = shift % length;
-					if (shift > 0) {
-						bitLenInt end = start + length;
-						Reverse(start, end);
-						Reverse(start, start + shift);
-						Reverse(start + shift, end);
-					}
+				bitCapInt regMask = 0;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt lmsPower = 1<<(length - shift);
+				bitCapInt i;
+				for (i = 0; i < length; i++) {
+					regMask += 1<<(start + i);
 				}
+				otherMask -= regMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				par_for_copy (0, maxQPower, &(stateVec[0]), regMask, 0, 0, otherMask, lengthPower, start, shift, 0, length, &(nStateVec[0]),
+						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt regMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt start, const bitCapInt shift, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateVec) {
+						bitCapInt otherRes = (lcv & otherMask);
+						bitCapInt regRes = (lcv & regMask);
+						bitCapInt regInt = regRes>>start;
+						bitCapInt outInt = (regInt>>(length - shift)) | ((regInt<<shift) & (lengthPower - 1));
+						nStateVec[(outInt<<start) + otherRes] = stateVec[lcv];
+					}
+				);
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+				ReInitOCL();
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
-				if (length > 0) {
-					shift = shift % length;
-					if (shift > 0) {
-						bitLenInt end = start + length;
-						Reverse(start + shift, end);
-						Reverse(start, start + shift);
-						Reverse(start, end);
-					}
+			bitCapInt regMask = 0;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt lmsPower = 1<<(length - shift);
+				bitCapInt otherRes, regRes, regInt, outInt, i;
+				for (i = 0; i < length; i++) {
+					regMask += 1<<(start + i);
 				}
+				otherMask -= regMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				par_for_copy (0, maxQPower, &(stateVec[0]), regMask, 0, 0, otherMask, lengthPower, start, shift, 0, length, &(nStateVec[0]),
+						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt regMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt start, const bitCapInt shift, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateVec) {
+						bitCapInt otherRes = (lcv & otherMask);
+						bitCapInt regRes = (lcv & regMask);
+						bitCapInt regInt = regRes>>start;
+						bitCapInt outInt = (regInt>>shift) | ((regInt<<(length - shift)) & (lengthPower - 1));
+						nStateVec[(outInt<<start) + otherRes] = stateVec[lcv];
+					}
+				);
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+				ReInitOCL();
 			}
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
@@ -1080,8 +1106,8 @@ namespace Qrack {
 				}
 				otherMask -= inOutMask + inMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, 0, otherMask, lengthPower, inOutStart, inStart, 0, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt inStart, const bitCapInt carryIndex, Complex16* nStateVec) {
+				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, 0, otherMask, lengthPower, inOutStart, inStart, 0, length, &(nStateVec[0]),
+						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt inStart, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateVec) {
 						bitCapInt otherRes = (lcv & otherMask);
 						if (otherRes == lcv) {
 							nStateVec[lcv] = stateVec[lcv];
@@ -1115,8 +1141,8 @@ namespace Qrack {
 				otherMask -= inOutMask + inMask - carryMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt inStart, const bitCapInt carryIndex, Complex16* nStateVec) {
+				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, length, &(nStateVec[0]),
+						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt inStart, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateVec) {
 						bitCapInt otherRes = (lcv & otherMask);
 						if (otherRes == lcv) {
 							nStateVec[lcv] = stateVec[lcv];
@@ -1155,8 +1181,8 @@ namespace Qrack {
 				}
 				otherMask -= inOutMask + inMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, 0, otherMask, lengthPower, inOutStart, toSub, 0, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt toSub, const bitCapInt carryIndex, Complex16* nStateVec) {
+				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, 0, otherMask, lengthPower, inOutStart, toSub, 0, length, &(nStateVec[0]),
+						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt toSub, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateVec) {
 						bitCapInt otherRes = (lcv & otherMask);
 						if (otherRes == lcv) {
 							nStateVec[lcv] = stateVec[lcv];
@@ -1190,8 +1216,8 @@ namespace Qrack {
 				otherMask -= inOutMask + inMask + carryMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt toSub, const bitCapInt carryIndex, Complex16* nStateVec) {
+				par_for_copy (0, maxQPower, &(stateVec[0]), inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex, length, &(nStateVec[0]),
+						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt toSub, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateVec) {
 						bitCapInt otherRes = (lcv & otherMask);
 						if (otherRes == lcv) {
 							nStateVec[lcv] = stateVec[lcv];

@@ -846,6 +846,27 @@ namespace Qrack {
 			}
 			/// "Circular shift left" - shift bits left, and carry last bits.
 			void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
+				bitCapInt regMask = 0;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt lmsPower = 1<<(length - shift);
+				bitCapInt otherRes, regRes, regInt, outInt, i;
+				for (i = 0; i < length; i++) {
+					regMask += 1<<(start + i);
+				}
+				otherMask -= regMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				for (i = 0; i < maxQPower; i++) {
+					otherRes = (i & otherMask);
+					regRes = (i & regMask);
+					regInt = regRes>>start;
+					outInt = (regInt>>(length - shift)) | ((regInt<<shift) & (lengthPower - 1));
+					nStateVec[(outInt<<start) + otherRes] = stateVec[i];
+				}
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+			}
+			/*void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if (length > 0) {
 					shift = shift % length;
 					if (shift > 0) {
@@ -855,9 +876,30 @@ namespace Qrack {
 						Reverse(start + shift, end);
 					}
 				}
-			}
+			}*/
 			/// "Circular shift right" - shift bits right, and carry first bits.
 			void ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
+			bitCapInt regMask = 0;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt lmsPower = 1<<(length - shift);
+				bitCapInt otherRes, regRes, regInt, outInt, i;
+				for (i = 0; i < length; i++) {
+					regMask += 1<<(start + i);
+				}
+				otherMask -= regMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				for (i = 0; i < maxQPower; i++) {
+					otherRes = (i & otherMask);
+					regRes = (i & regMask);
+					regInt = regRes>>start;
+					outInt = (regInt>>shift) | ((regInt<<(length - shift)) & (lengthPower - 1));
+					nStateVec[(outInt<<start) + otherRes] = stateVec[i];
+				}
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+			}
+			/*void ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
 				if (length > 0) {
 					shift = shift % length;
 					if (shift > 0) {
@@ -867,7 +909,7 @@ namespace Qrack {
 						Reverse(start, end);
 					}
 				}
-			}
+			}*/
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
 				bitCapInt lengthPower = 1<<length;
