@@ -917,13 +917,12 @@ namespace Qrack {
 				bitCapInt inMask = 0;
 				bitCapInt otherMask = (1<<qubitCount) - 1;
 				bitCapInt lengthPower = 1<<length;
-				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
+				bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, i;
 				for (i = 0; i < length; i++) {
 					inOutMask += 1<<(inOutStart + i);
 					inMask += 1<<(inStart + i);
 				}
-				allMask = inOutMask + inMask;
-				otherMask -= allMask;
+				otherMask -= inOutMask + inMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 				for (i = 0; i < maxQPower; i++) {
 					otherRes = (i & otherMask);
@@ -968,8 +967,45 @@ namespace Qrack {
 				Dispose(origQubitCount, length);
 			}*/
 			///Add two quantum integers with carry bit
-			/** Add integer of "length" - 1 bits in "inStart" to integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
+			/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+				bitCapInt inOutMask = 0;
+				bitCapInt inMask = 0;
+				bitCapInt carryMask = 1<<carryIndex;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt inOutRes, inRes, carryInt, otherRes, inOutInt, inInt, outInt, i;
+				for (i = 0; i < length; i++) {
+					inOutMask += 1<<(inOutStart + i);
+					inMask += 1<<(inStart + i);
+				}
+				otherMask -= inOutMask + inMask - carryMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+				for (i = 0; i < maxQPower; i++) {
+					otherRes = (i & otherMask);
+					if (otherRes == i) {
+						nStateVec[i] = stateVec[i];
+					}
+					else {
+						inOutRes = (i & inOutMask);
+						inOutInt = inOutRes>>inOutStart;
+						inRes = (i & inMask);
+						carryInt = (i & carryMask)>>carryIndex;
+						inInt = inRes>>inStart;
+						outInt = inOutInt + inInt + carryInt;
+						if (outInt < lengthPower) {
+							nStateVec[(outInt<<inOutStart) + otherRes + inRes] = stateVec[i];
+						}
+						else {
+							nStateVec[((outInt - lengthPower)<<inOutStart) + otherRes + inRes + carryMask] = stateVec[i];
+						}
+					}
+				}
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+			}
+			/*void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
 				if (length > 0) {
 					bitLenInt inOutCarry = (inOutStart + length) - 1;
 					bitLenInt inCarry = (inStart + length) - 1;
@@ -991,7 +1027,7 @@ namespace Qrack {
 					if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
 					if (carryIndex != inCarry) SetBit(inCarry, false);
 				}
-			}
+			}*/
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)  {
@@ -999,13 +1035,12 @@ namespace Qrack {
 				bitCapInt inMask = 0;
 				bitCapInt otherMask = (1<<qubitCount) - 1;
 				bitCapInt lengthPower = 1<<length;
-				bitCapInt allMask, inOutRes, inRes, otherRes, inOutInt, inInt, i;
+				bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, i;
 				for (i = 0; i < length; i++) {
 					inOutMask += 1<<(inOutStart + i);
 					inMask += 1<<(toSub + i);
 				}
-				allMask = inOutMask + inMask;
-				otherMask -= allMask;
+				otherMask -= inOutMask + inMask;
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 				for (i = 0; i < maxQPower; i++) {
 					otherRes = (i & otherMask);
@@ -1031,8 +1066,45 @@ namespace Qrack {
 				ADD(inOut, inClear, length);
 			}*/
 			///Subtract two quantum integers with carry bit
-			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
+			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
+				bitCapInt inOutMask = 0;
+				bitCapInt inMask = 0;
+				bitCapInt carryMask = 1<<carryIndex;
+				bitCapInt otherMask = (1<<qubitCount) - 1;
+				bitCapInt lengthPower = 1<<length;
+				bitCapInt inOutRes, inRes, carryInt, otherRes, inOutInt, inInt, outInt, i;
+				for (i = 0; i < length; i++) {
+					inOutMask += 1<<(inOutStart + i);
+					inMask += 1<<(toSub + i);
+				}
+				otherMask -= inOutMask + inMask + carryMask;
+				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+				for (i = 0; i < maxQPower; i++) {
+					otherRes = (i & otherMask);
+					if (otherRes == i) {
+						nStateVec[i] = stateVec[i];
+					}
+					else {
+						inOutRes = (i & inOutMask);
+						inOutInt = inOutRes>>inOutStart;
+						inRes = (i & inMask);
+						carryInt = (i & carryMask)>>carryIndex;
+						inInt = inRes>>toSub;
+						outInt = (inOutInt - inInt - carryInt) + lengthPower;
+						if (outInt < lengthPower) {
+							nStateVec[(outInt<<inOutStart) + otherRes + inRes + carryMask] = stateVec[i];
+						}
+						else {
+							nStateVec[((outInt - lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
+						}
+					}
+				}
+				stateVec.reset(); 
+				stateVec = std::move(nStateVec);
+			}
+			/*void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
 				if (length > 0) {
 					bitLenInt inOutCarry = (inOutStart + length) - 1;
 					bitLenInt inCarry = (toSub + length) - 1;
@@ -1050,7 +1122,7 @@ namespace Qrack {
 					if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
 					if (carryIndex != inCarry) SetBit(inCarry, false);
 				}
-			}
+			}*/
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
