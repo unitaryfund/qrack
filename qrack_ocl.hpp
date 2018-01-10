@@ -752,7 +752,7 @@ namespace Qrack {
 			void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
 				//if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
 				//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-				if (qubitIndex1 == qubitIndex2) {
+				if (qubitIndex1 != qubitIndex2) {
 					const Complex16 pauliX[4] = {
 						Complex16(0.0, 0.0), Complex16(1.0, 0.0),
 						Complex16(1.0, 0.0), Complex16(0.0, 0.0)
@@ -1101,22 +1101,28 @@ namespace Qrack {
 			}
 			///Add two quantum integers with carry bit
 			/** Add integer of "length" - 1 bits in "inStart" to integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
-			void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
-				bitLenInt inOutCarry = inOutStart + length - 1;
-				bitLenInt inCarry = inStart + length - 1;
-				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
-				if (carryIndex != inCarry) SetBit(inCarry, false);
-				OR(carryIndex, inOutCarry, inOutCarry);
-				OR(carryIndex, inCarry, inCarry);
-				ROL(1, inOutStart, length);
-				ROL(1, inStart, length);
-				ADD(inOutStart, inStart, length);
-				ROR(1, inOutStart, length);
-				ROR(1, inStart, length);
-				Swap(carryIndex, inOutCarry);
-				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
-				if (carryIndex != inCarry) SetBit(inCarry, false);
-			}
+			/*void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+				if (length > 0) {
+					bitLenInt inOutCarry = (inOutStart + length) - 1;
+					bitLenInt inCarry = (inStart + length) - 1;
+					if (carryIndex != inOutCarry) {
+						SetBit(inOutCarry, false);
+						CNOT(carryIndex, inOutCarry);
+					}
+					if (carryIndex != inCarry) {
+						SetBit(inCarry, false);
+						CNOT(carryIndex, inCarry);
+					}
+					ROL(1, inOutStart, length);
+					ROL(1, inStart, length);
+					ADD(inOutStart, inStart, length);
+					ROR(1, inOutStart, length);
+					ROR(1, inStart, length);
+					Swap(carryIndex, inOutCarry);
+					if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
+					if (carryIndex != inCarry) SetBit(inCarry, false);
+				}
+			}*/
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)  {
@@ -1152,22 +1158,25 @@ namespace Qrack {
 			}
 			///Subtract two quantum integers with carry bit
 			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Last bit in each register is assumed to be a redundant carry overallocation. Get carry value from bit at "carryIndex" and place end result into this bit. */
-			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
-				bitLenInt inOutCarry = inOutStart + length - 1;
-				bitLenInt inCarry = toSub + length - 1;
-				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
-				if (carryIndex != inCarry) SetBit(inCarry, false);
-				OR(carryIndex, inOutCarry, inOutCarry);
-				OR(carryIndex, inCarry, inCarry);
-				ROL(1, inOutStart, length);
-				ROL(1, toSub, length);
-				SUB(inOutStart, toSub, length);
-				ROR(1, inOutStart, length);
-				ROR(1, toSub, length);
-				Swap(carryIndex, inOutCarry);
-				if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
-				if (carryIndex != inCarry) SetBit(inCarry, false);
-			}
+			/*void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex) {
+				if (length > 0) {
+					bitLenInt inOutCarry = (inOutStart + length) - 1;
+					bitLenInt inCarry = (toSub + length) - 1;
+					SetBit(inOutCarry, false);
+					if (carryIndex != inCarry) {
+						SetBit(inCarry, false);
+						CNOT(carryIndex, inCarry);
+					}
+					ROL(1, inOutStart, length);
+					ROL(1, toSub, length);
+					SUB(inOutStart, toSub, length);
+					ROR(1, inOutStart, length);
+					ROR(1, toSub, length);
+					Swap(carryIndex, inOutCarry);
+					if (carryIndex != inOutCarry) SetBit(inOutCarry, false);
+					if (carryIndex != inCarry) SetBit(inCarry, false);
+				}
+			}*/
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length) {
 				if (length > 0) {
@@ -1328,14 +1337,11 @@ namespace Qrack {
 				runningNorm = 1.0;
 			}
 
-			void Reverse(bitLenInt start, bitLenInt end) {
-				if (start + 1 < end) {
-					end -= 1;
-					bitLenInt i;
-					bitLenInt iter = start + (end - start - 1) / 2;
-					for (i = start; i <= iter; i++) {
-						Swap(i, end - i + start);
-					}
+			void Reverse(bitLenInt first, bitLenInt last) {
+				while ((first < last) && (first < (last - 1))) {
+					last--;
+					Swap(first, last);
+					first++;
 				}
 			}
 
