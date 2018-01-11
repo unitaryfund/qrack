@@ -84,6 +84,10 @@ namespace Qrack {
 			cl::Kernel* GetROLPtr() {
 				return &rol;
 			}
+			///Get a pointer to the ROL function kernel
+			cl::Kernel* GetRORPtr() {
+				return &ror;
+			}
 
 		private:
 			std::vector<cl::Platform> all_platforms;
@@ -95,6 +99,7 @@ namespace Qrack {
 			cl::CommandQueue queue;
 			cl::Kernel apply2x2;
 			cl::Kernel rol;
+			cl::Kernel ror;
 
 			OCLSingleton(){
 				InitOCL(0, 0);
@@ -215,6 +220,30 @@ namespace Qrack {
 				"		outInt = (regInt>>(length - shift)) | ((regInt<<shift) & (lengthPower - 1));"
 				"		nStateVec[(outInt<<start) + otherRes] = stateVec[lcv];"
 				"	}"
+				"   }"
+				""
+				"   void kernel ror(global double2* stateVec, constant ulong* ulongPtr,"
+				"			   global double2* nStateVec) {"
+				""
+				"	ulong ID, Nthreads, lcv;"
+				""
+				"       ID = get_global_id(0);"
+				"       Nthreads = get_global_size(0);"
+				"	ulong maxI = ulongPtr[0];"
+				"	ulong regMask = ulongPtr[1];"
+				"	ulong otherMask = ulongPtr[2];"
+				"	ulong lengthPower = ulongPtr[3];"
+				"	ulong start = ulongPtr[4];"
+				"	ulong shift = ulongPtr[5];"
+				"	ulong length = ulongPtr[6];"
+				"	ulong otherRes, regRes, regInt, outInt;"
+				"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+				"		otherRes = (lcv & otherMask);"
+				"		regRes = (lcv & regMask);"
+				"		regInt = regRes>>start;"
+				"		outInt = ((regInt>>shift) & (lengthPower - 1)) | (regInt<<(length - shift));"
+				"		nStateVec[(outInt<<start) + otherRes] = stateVec[lcv];"
+				"	}"
 				"   }";
 				sources.push_back({kernel_code.c_str(), kernel_code.length()});
 
@@ -227,6 +256,7 @@ namespace Qrack {
 				queue = cl::CommandQueue(context, default_device);
 				apply2x2 = cl::Kernel(program, "apply2x2");
 				rol = cl::Kernel(program, "rol");
+				ror = cl::Kernel(program, "ror");
 			}
 	};
 
@@ -1090,19 +1120,27 @@ namespace Qrack {
 					regMask += 1<<(start + i);
 				}
 				otherMask -= regMask;
-				bitCapInt bciArgs[6] = {regMask, otherMask, lengthPower, start, shift, length};
+				bitCapInt bciArgs[10] = {maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0};
+				
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-						bitCapInt otherRes = (lcv & (bciArgs[1]));
-						bitCapInt regRes = (lcv & (bciArgs[0]));
-						bitCapInt regInt = regRes>>(bciArgs[3]);
-						bitCapInt outInt = (regInt>>(bciArgs[4])) | ((regInt<<(bciArgs[5] - bciArgs[4])) & (bciArgs[2] - 1));
-						nStateVec[(outInt<<(bciArgs[3])) + otherRes] = stateVec[lcv];
-					}
-				);
-				stateVec.reset(); 
+				cl::Context context = *(clObj->GetContextPtr());
+				cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+				cl::Kernel ror = *(clObj->GetRORPtr());				
+				ror.setArg(0, stateBuffer);
+				ror.setArg(1, ulongBuffer);
+				ror.setArg(2, nStateBuffer);
+				queue.finish();
+				
+				queue.enqueueNDRangeKernel(ror, cl::NullRange,  // kernel, offset
+            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+					cl::NDRange(1)); // local number (per group)
+
+				queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+				stateVec.reset();
 				stateVec = std::move(nStateVec);
+				queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 				ReInitOCL();
 			}
 			///Add integer (without sign)

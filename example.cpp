@@ -58,6 +58,18 @@ int main() {
 	}
 	std::cout<<std::endl;
 
+	std::cout<<"ROR Test:"<<std::endl;
+	std::cout<<"[4,8) by 1:"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.ROL(1, 4, 4);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
 	std::cout<<"AND Test:"<<std::endl;
 	qftReg.SetPermutation(46);
 	std::cout<<"[6,9) = [0,3) & [3,6):"<<std::endl;
