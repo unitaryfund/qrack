@@ -100,6 +100,10 @@ namespace Qrack {
 			cl::Kernel* GetADDCPtr() {
 				return &addc;
 			}
+			///Get a pointer to the SUBC function kernel
+			cl::Kernel* GetSUBCPtr() {
+				return &subc;
+			}
 
 		private:
 			std::vector<cl::Platform> all_platforms;
@@ -115,6 +119,7 @@ namespace Qrack {
 			cl::Kernel add;
 			cl::Kernel sub;
 			cl::Kernel addc;
+			cl::Kernel subc;
 
 			OCLSingleton(){
 				InitOCL(0, 0);
@@ -343,6 +348,40 @@ namespace Qrack {
 				"			nStateVec[((outInt - lengthPower)<<inOutStart) + otherRes + inRes + carryMask] = stateVec[lcv];"
 				"		}"
 				"	}"
+				"   }"
+				""
+				"   void kernel subc(global double2* stateVec, constant ulong* ulongPtr,"
+				"			   global double2* nStateVec) {"
+				""
+				"	ulong ID, Nthreads, lcv;"
+				""
+				"       ID = get_global_id(0);"
+				"       Nthreads = get_global_size(0);"
+				"	ulong maxI = ulongPtr[0];"
+				"	ulong inOutMask = ulongPtr[1];"
+				"	ulong inMask = ulongPtr[2];"
+				"	ulong carryMask = ulongPtr[3];"
+				"	ulong otherMask = ulongPtr[4];"
+				"	ulong lengthPower = ulongPtr[5];"
+				"	ulong inOutStart = ulongPtr[6];"
+				"	ulong inStart = ulongPtr[7];"
+				"	ulong carryIndex = ulongPtr[8];"
+				"	ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt;"
+				"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+				"		otherRes = (lcv & otherMask);"
+				"		inOutRes = (lcv & inOutMask);"
+				"		inOutInt = inOutRes>>inOutStart;"
+				"		inRes = (lcv & inMask);"
+				"		carryInt = (lcv & carryMask)>>carryIndex;"
+				"		inInt = inRes>>inStart;"
+				"		outInt = (inOutInt - inInt - carryInt) + lengthPower;"
+				"		if (outInt < lengthPower) {"
+				"			nStateVec[(outInt<<inOutStart) + otherRes + inRes + carryMask] = stateVec[lcv];"
+				"		}"
+				"		else {"
+				"			nStateVec[((outInt - lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[lcv];"
+				"		}"
+				"	}"
 				"   }";
 				sources.push_back({kernel_code.c_str(), kernel_code.length()});
 
@@ -359,6 +398,7 @@ namespace Qrack {
 				add = cl::Kernel(program, "add");
 				sub = cl::Kernel(program, "sub");
 				addc = cl::Kernel(program, "addc");
+				subc = cl::Kernel(program, "subc");
 			}
 	};
 
@@ -1393,33 +1433,28 @@ namespace Qrack {
 					inMask += 1<<(toSub + i);
 				}
 				otherMask -= inOutMask + inMask + carryMask;
+				bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex, 0};
+				
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 				std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-				bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex};
-				par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-						bitCapInt otherRes = (lcv & (bciArgs[3]));
-						if (otherRes == lcv) {
-							nStateVec[lcv] = stateVec[lcv];
-						}
-						else {
-							bitCapInt inOutRes = (lcv & (bciArgs[0]));
-							bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
-							bitCapInt inRes = (lcv & (bciArgs[1]));
-							bitCapInt carryInt = (lcv & (bciArgs[2]))>>(bciArgs[7]);
-							bitCapInt inInt = inRes>>(bciArgs[6]);
-							bitCapInt outInt = (inOutInt - inInt - carryInt) + (bciArgs[4]);
-							if (outInt < (bciArgs[4])) {
-								nStateVec[(outInt<<(bciArgs[5])) + otherRes + inRes + (bciArgs[2])] = stateVec[lcv];
-							}
-							else {
-								nStateVec[((outInt - (bciArgs[4]))<<(bciArgs[5])) + otherRes + inRes] = stateVec[lcv];
-							}
-						}
-					}
-				);
-				stateVec.reset(); 
+				cl::Context context = *(clObj->GetContextPtr());
+				cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+				cl::Kernel subc = *(clObj->GetSUBCPtr());				
+				subc.setArg(0, stateBuffer);
+				subc.setArg(1, ulongBuffer);
+				subc.setArg(2, nStateBuffer);
+				queue.finish();
+				
+				queue.enqueueNDRangeKernel(subc, cl::NullRange,  // kernel, offset
+            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+					cl::NDRange(1)); // local number (per group)
+
+				queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+				stateVec.reset();
 				stateVec = std::move(nStateVec);
+				queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 				ReInitOCL();
 			}
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
