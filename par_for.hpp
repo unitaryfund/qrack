@@ -39,18 +39,18 @@ namespace Qrack {
 	}
 
 	template <class F>
-	void par_for_copy(const bitCapInt begin, const bitCapInt end, const Complex16* stateArray, const bitCapInt inOutMask, const bitCapInt inMask, const bitCapInt carryMask, const bitCapInt otherMask, const bitCapInt lengthPower, const bitCapInt inOutStart, const bitCapInt inStart, const bitCapInt carryIndex, const bitCapInt length, Complex16* nStateArray, F fn)		{
+	void par_for_copy(const bitCapInt begin, const bitCapInt end, const Complex16* stateArray, const bitCapInt* bciArgs, Complex16* nStateArray, F fn)		{
 		std::atomic<bitCapInt> idx;
 		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
 		for (int cpu = 0; cpu < num_cpus; cpu++) {
-			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, length, nStateArray, &fn]() {
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, stateArray, bciArgs, nStateArray, &fn]() {
 				bitCapInt i;
 				for (;;) {
 					i = idx++;
 					if (i >= end) break;
-					fn(i, cpu, stateArray, inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, length, nStateArray);
+					fn(i, cpu, stateArray, bciArgs, nStateArray);
 				}
 			});
 		}
