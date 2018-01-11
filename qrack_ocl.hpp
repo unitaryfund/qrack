@@ -84,9 +84,13 @@ namespace Qrack {
 			cl::Kernel* GetROLPtr() {
 				return &rol;
 			}
-			///Get a pointer to the ROL function kernel
+			///Get a pointer to the ROR function kernel
 			cl::Kernel* GetRORPtr() {
 				return &ror;
+			}
+			///Get a pointer to the ADD function kernel
+			cl::Kernel* GetADDPtr() {
+				return &add;
 			}
 
 		private:
@@ -100,6 +104,7 @@ namespace Qrack {
 			cl::Kernel apply2x2;
 			cl::Kernel rol;
 			cl::Kernel ror;
+			cl::Kernel add;
 
 			OCLSingleton(){
 				InitOCL(0, 0);
@@ -244,6 +249,30 @@ namespace Qrack {
 				"		outInt = ((regInt>>shift) & (lengthPower - 1)) | (regInt<<(length - shift));"
 				"		nStateVec[(outInt<<start) + otherRes] = stateVec[lcv];"
 				"	}"
+				"   }"
+				"   void kernel add(global double2* stateVec, constant ulong* ulongPtr,"
+				"			   global double2* nStateVec) {"
+				""
+				"	ulong ID, Nthreads, lcv;"
+				""
+				"       ID = get_global_id(0);"
+				"       Nthreads = get_global_size(0);"
+				"	ulong maxI = ulongPtr[0];"
+				"	ulong inOutMask = ulongPtr[1];"
+				"	ulong inMask = ulongPtr[2];"
+				"	ulong otherMask = ulongPtr[3];"
+				"	ulong lengthPower = ulongPtr[4];"
+				"	ulong inOutStart = ulongPtr[5];"
+				"	ulong inStart = ulongPtr[6];"
+				"	ulong otherRes, inOutRes, inOutInt, inRes, inInt;"
+				"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+				"		otherRes = (lcv & otherMask);"
+				"		inOutRes = (lcv & inOutMask);"
+				"		inOutInt = inOutRes>>inOutStart;"
+				"		inRes = (lcv & inMask);"
+				"		inInt = inRes>>inStart;"
+				"		nStateVec[(((inOutInt + inInt) \% lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[lcv];"
+				"	}"
 				"   }";
 				sources.push_back({kernel_code.c_str(), kernel_code.length()});
 
@@ -257,6 +286,7 @@ namespace Qrack {
 				apply2x2 = cl::Kernel(program, "apply2x2");
 				rol = cl::Kernel(program, "rol");
 				ror = cl::Kernel(program, "ror");
+				add = cl::Kernel(program, "add");
 			}
 	};
 
@@ -1180,25 +1210,27 @@ namespace Qrack {
 					inMask += 1<<(inStart + i);
 				}
 				otherMask -= inOutMask + inMask;
-				bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart};
+				bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart, 0, 0, 0};
+				
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-						bitCapInt otherRes = (lcv & (bciArgs[2]));
-						if (otherRes == lcv) {
-							nStateVec[lcv] = stateVec[lcv];
-						}
-						else {
-							bitCapInt inOutRes = (lcv & (bciArgs[0]));
-							bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
-							bitCapInt inRes = (lcv & (bciArgs[1]));
-							bitCapInt inInt = inRes>>(bciArgs[5]);
-							nStateVec[(((inOutInt + inInt) % (bciArgs[3]))<<(bciArgs[4])) + otherRes + inRes] = stateVec[lcv];
-						}
-					}
-				);
-				stateVec.reset(); 
+				cl::Context context = *(clObj->GetContextPtr());
+				cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+				cl::Kernel add = *(clObj->GetADDPtr());				
+				add.setArg(0, stateBuffer);
+				add.setArg(1, ulongBuffer);
+				add.setArg(2, nStateBuffer);
+				queue.finish();
+				
+				queue.enqueueNDRangeKernel(add, cl::NullRange,  // kernel, offset
+            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+					cl::NDRange(1)); // local number (per group)
+
+				queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+				stateVec.reset();
 				stateVec = std::move(nStateVec);
+				queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 				ReInitOCL();
 			}
 			///Add two quantum integers with carry bit
