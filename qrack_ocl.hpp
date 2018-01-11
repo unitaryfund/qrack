@@ -80,6 +80,10 @@ namespace Qrack {
 			cl::Kernel* GetApply2x2Ptr() {
 				return &apply2x2;
 			}
+			///Get a pointer to the ROL function kernel
+			cl::Kernel* GetROLPtr() {
+				return &rol;
+			}
 
 		private:
 			std::vector<cl::Platform> all_platforms;
@@ -90,6 +94,7 @@ namespace Qrack {
 			cl::Program program;
 			cl::CommandQueue queue;
 			cl::Kernel apply2x2;
+			cl::Kernel rol;
 
 			OCLSingleton(){
 				InitOCL(0, 0);
@@ -187,7 +192,30 @@ namespace Qrack {
 				"		i += iHigh;"
 				"	}"
 				"   }"
-				"";
+				""
+				"   void kernel rol(global double2* stateVec, constant ulong* ulongPtr,"
+				"			   global double2* nStateVec) {"
+				""
+				"	ulong ID, Nthreads, lcv;"
+				""
+				"       ID = get_global_id(0);"
+				"       Nthreads = get_global_size(0);"
+				"	ulong maxI = ulongPtr[0];"
+				"	ulong regMask = ulongPtr[1];"
+				"	ulong otherMask = ulongPtr[2];"
+				"	ulong lengthPower = ulongPtr[3];"
+				"	ulong start = ulongPtr[4];"
+				"	ulong shift = ulongPtr[5];"
+				"	ulong length = ulongPtr[6];"
+				"	ulong otherRes, regRes, regInt, outInt;"
+				"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+				"		otherRes = (lcv & otherMask);"
+				"		regRes = (lcv & regMask);"
+				"		regInt = regRes>>start;"
+				"		outInt = (regInt>>(length - shift)) | ((regInt<<shift) & (lengthPower - 1));"
+				"		nStateVec[(outInt<<start) + otherRes] = stateVec[lcv];"
+				"	}"
+				"   }";
 				sources.push_back({kernel_code.c_str(), kernel_code.length()});
 
 				program = cl::Program(context, sources);
@@ -198,6 +226,7 @@ namespace Qrack {
 
 				queue = cl::CommandQueue(context, default_device);
 				apply2x2 = cl::Kernel(program, "apply2x2");
+				rol = cl::Kernel(program, "rol");
 			}
 	};
 
@@ -1028,19 +1057,27 @@ namespace Qrack {
 					regMask += 1<<(start + i);
 				}
 				otherMask -= regMask;
-				bitCapInt bciArgs[6] = {regMask, otherMask, lengthPower, start, shift, length};
+				bitCapInt bciArgs[10] = {maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0};
+				
+				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
 				std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-				par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-						[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-						bitCapInt otherRes = (lcv & (bciArgs[1]));
-						bitCapInt regRes = (lcv & (bciArgs[0]));
-						bitCapInt regInt = regRes>>(bciArgs[3]);
-						bitCapInt outInt = (regInt>>(bciArgs[5] - bciArgs[4])) | ((regInt<<(bciArgs[4])) & (bciArgs[2] - 1));
-						nStateVec[(outInt<<(bciArgs[3])) + otherRes] = stateVec[lcv];
-					}
-				);
-				stateVec.reset(); 
+				cl::Context context = *(clObj->GetContextPtr());
+				cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+				cl::Kernel rol = *(clObj->GetROLPtr());				
+				rol.setArg(0, stateBuffer);
+				rol.setArg(1, ulongBuffer);
+				rol.setArg(2, nStateBuffer);
+				queue.finish();
+				
+				queue.enqueueNDRangeKernel(rol, cl::NullRange,  // kernel, offset
+            				cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+					cl::NDRange(1)); // local number (per group)
+
+				queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+				stateVec.reset();
 				stateVec = std::move(nStateVec);
+				queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 				ReInitOCL();
 			}
 			/// "Circular shift right" - shift bits right, and carry first bits.
@@ -1283,14 +1320,14 @@ namespace Qrack {
 					cmplx[i] = mtrx[i];
 				}
 				cmplx[4] = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
-				bitCapInt ulong[7] = {bitCount, maxQPower, offset1, offset2, 0, 0, 0};
+				bitCapInt ulong[10] = {bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0};
 				for (int i = 0; i < bitCount; i++) {
 					ulong[4 + i] = qPowersSorted[i];
 				}
 
 				queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
 				queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
-				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 7, ulong);
+				queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, ulong);
 
 				cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
 				queue.finish();
@@ -1379,7 +1416,7 @@ namespace Qrack {
 				// create buffers on device (allocate space on GPU)
 				stateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
 				cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
-				ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 7);
+				ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 10);
 				nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
 				maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
 

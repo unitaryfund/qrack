@@ -849,7 +849,6 @@ namespace Qrack {
 				bitCapInt regMask = 0;
 				bitCapInt otherMask = (1<<qubitCount) - 1;
 				bitCapInt lengthPower = 1<<length;
-				bitCapInt lmsPower = 1<<(length - shift);
 				bitCapInt otherRes, regRes, regInt, outInt, i;
 				for (i = 0; i < length; i++) {
 					regMask += 1<<(start + i);
@@ -882,7 +881,6 @@ namespace Qrack {
 			bitCapInt regMask = 0;
 				bitCapInt otherMask = (1<<qubitCount) - 1;
 				bitCapInt lengthPower = 1<<length;
-				bitCapInt lmsPower = 1<<(length - shift);
 				bitCapInt otherRes, regRes, regInt, outInt, i;
 				for (i = 0; i < length; i++) {
 					regMask += 1<<(start + i);
