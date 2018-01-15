@@ -1,5 +1,3 @@
-# Project: MKBasic
-
 QRACKVER = qrack_ocl.cpp #or qrack.cpp or qrack_serial.cpp
 CPP      = g++
 OBJ      = complex16simd.o qrack.o example.o

@@ -2,7 +2,7 @@ Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for ad
 Licensed under the GNU General Public License V3.
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
-This is a header-only, multithreaded framework for developing universal quantum processors, allowing (nonphysical) register cloning and direct measurement of probability and phase, to leverage what advantages classical emulation of qubits can have.
+This is an easy-to-use, multithreaded framework for developing universal quantum processors, allowing (nonphysical) register cloning and direct measurement of probability and phase, to leverage what advantages classical emulation of qubits can have.
 
 The intent of "Qrack" is to provide a framework for developing classically emulated universal quantum virtual machines. Theoretically, the virtual machines created with Qrack, and the code that runs on them, need not be packaged with each other. Qrack can be used to create a virtual machine that translates opcodes into instructions for a virtual quantum processor. Then, software that runs on the virtual machine could be abstracted from the machine itself as any higher-level software could. All that is necessary to run the quantum binary is any virtual machine with the same instruction set.
 
