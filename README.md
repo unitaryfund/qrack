@@ -8,9 +8,12 @@ The intent of "Qrack" is to provide a framework for developing classically emula
 
 To use:
 
-1)#include "qrack.hpp" or #include "qrack_ocl.hpp". ("qrack_serial.hpp" is a serialized reference implementation, and should generally not be used for production code.)
+1)In your source code:
+#include "qrack.hpp"
+2)On the command line, in the project directory
+make all
 
-2)Link against math, pthreads, and, if using the OpenCL version, OpenCL. (See build.sh and buildocl.sh for respective examples.)
+Make will link against math, pthreads, and OpenCL. Modify the makefile as necessary for inclusion in your project. Set the makefile QRACKVER variable to "qrack_ocl.cpp" for the OpenCL version, "qrack.cpp" for CPU parallelism only (without OpenCL), or "qrack_serial.cpp" for a totally non-parallel version. If you aren't using the OpenCL version, you should remove OpenCL linkage from the makefile. 
 
 Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
 

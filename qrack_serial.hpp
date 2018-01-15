@@ -299,6 +299,46 @@ namespace Qrack {
 					}
 				}
 			}
+			/*
+			void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+				if (!((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+					double angle;
+					bitCapInt in1Mask = 0;
+					bitCapInt in2Mask = 0;
+					bitCapInt outMask = 0;
+					bitCapInt inOutMask;
+					bitCapInt otherMask = (1<<qubitCount) - 1;
+					bitCapInt in1Res, in2Res, otherRes, i;
+					in1Mask = 1<<inputBit1;
+					in2Mask = 1<<inputBit2;
+					outMask = 1<<outputBit;
+					inOutMask = in1Mask | in2Mask | outMask;
+					otherMask -= inOutMask;
+					std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+
+					for (i = 0; i < maxQPower; i++) {
+						if ((i & inOutMask) == inOutMask) {
+							nStateVec[i] = stateVec[i];
+						}
+						else if ((i & outMask) == outMask) {
+							otherRes = (i & otherMask);
+							in1Res = (i & in1Mask);
+							in2Res = (i & in2Mask);
+							angle = arg(stateVec[in1Res]);
+							nStateVec[i] = Complex16(cos(angle), sin(angle)) * sqrt(
+								norm(stateVec[otherMask]) + norm(stateVec[in1Res | otherMask]) + norm(stateVec[in2Res | otherMask]) 
+							);
+						}
+						else {
+							nStateVec[i] = Complex16(0.0, 0.0);
+						}
+					}
+
+					stateVec.reset(); 
+					stateVec = std::move(nStateVec);
+				}
+			}
+			*/
 			///"OR" compare two bits in CoherentUnit, and store result in outputBit
 			void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
 				if (!((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
