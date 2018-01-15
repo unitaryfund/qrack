@@ -89,7 +89,7 @@ namespace Qrack {
 			OCLSingleton(); // Private so that it can  not be called
 			OCLSingleton(int plat, int dev); // Private so that it can  not be called
 			OCLSingleton(OCLSingleton const&);             // copy constructor is private
-			OCLSingleton& operator=(OCLSingleton const&);  // assignment operator is private
+			OCLSingleton& operator=(OCLSingleton const& rhs);  // assignment operator is private
 			static OCLSingleton* m_pInstance;
 
 			void InitOCL(int plat, int dev);

@@ -66,7 +66,7 @@ namespace Qrack {
 	OCLSingleton::OCLSingleton(){ InitOCL(0, 0); } // Private so that it can  not be called
 	OCLSingleton::OCLSingleton(int plat, int dev){ InitOCL(plat, dev); } // Private so that it can  not be called
 	OCLSingleton::OCLSingleton(OCLSingleton const&){} // copy constructor is private
-	OCLSingleton& OCLSingleton::operator=(OCLSingleton const&){} // assignment operator is private
+	OCLSingleton& OCLSingleton::operator=(OCLSingleton const& rhs){ return *this; } // assignment operator is private
 	void OCLSingleton::InitOCL(int plat, int dev) {
 		// get all platforms (drivers), e.g. NVIDIA
 		
