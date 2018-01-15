@@ -65,8 +65,8 @@ namespace Qrack {
 	//Private singleton methods:
 	OCLSingleton::OCLSingleton(){ InitOCL(0, 0); } // Private so that it can  not be called
 	OCLSingleton::OCLSingleton(int plat, int dev){ InitOCL(plat, dev); } // Private so that it can  not be called
-	OCLSingleton::OCLSingleton(OCLSingleton const&){}; // copy constructor is private
-	OCLSingleton& OCLSingleton::operator=(OCLSingleton const&){}; // assignment operator is private
+	OCLSingleton::OCLSingleton(OCLSingleton const&){} // copy constructor is private
+	OCLSingleton& OCLSingleton::operator=(OCLSingleton const&){} // assignment operator is private
 	void OCLSingleton::InitOCL(int plat, int dev) {
 		// get all platforms (drivers), e.g. NVIDIA
 		
@@ -223,7 +223,7 @@ namespace Qrack {
 		"		inOutInt = inOutRes>>inOutStart;"
 		"		inRes = (lcv & inMask);"
 		"		inInt = inRes>>inStart;"
-		"		nStateVec[(((inOutInt + inInt) \% lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[lcv];"
+		"		nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[lcv];"
 		"	}"
 		"   }"
 		""
@@ -248,7 +248,7 @@ namespace Qrack {
 		"		inOutInt = inOutRes>>inOutStart;"
 		"		inRes = (lcv & inMask);"
 		"		inInt = inRes>>inStart;"
-		"		nStateVec[(((inOutInt - inInt + lengthPower) \% lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[lcv];"
+		"		nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[lcv];"
 		"	}"
 		"   }"
 		""
@@ -656,8 +656,6 @@ namespace Qrack {
 			Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 		};
 
-		bitLenInt powerMask = 0;
-		Complex16 qubit[2];
 		bitCapInt qPowers[4];
 		bitCapInt qPowersSorted[3];
 		qPowers[1] = 1 << control1;
@@ -683,8 +681,6 @@ namespace Qrack {
 			Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 		};
 
-		bitLenInt powerMask = 0;
-		Complex16 qubit[2];
 		bitCapInt qPowers[4];
 		bitCapInt qPowersSorted[3];
 		qPowers[1] = 1 << control1;
@@ -1184,7 +1180,7 @@ namespace Qrack {
 	bitCapInt regMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt otherRes, regRes, regInt, outInt, i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			regMask += 1<<(start + i);
 		}

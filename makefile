@@ -22,8 +22,5 @@ $(BIN): $(OBJ)
 complex16simd.o: complex16simd.cpp
 	$(CPP) -c complex16simd.cpp -o complex16simd.o $(CXXFLAGS)	
 
-example.o: example.cpp
-	$(CPP) -c example.cpp -o example.o $(CXXFLAGS)
-
 qrack.o: $(QRACKVER)
 	$(CPP) -c $(QRACKVER) -o qrack.o $(CXXFLAGS)	

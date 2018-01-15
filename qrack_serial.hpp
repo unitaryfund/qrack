@@ -394,8 +394,6 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				bitLenInt powerMask = 0;
-				Complex16 qubit[2];
 				bitCapInt qPowers[4];
 				bitCapInt qPowersSorted[3];
 				qPowers[1] = 1 << control1;
@@ -421,8 +419,6 @@ namespace Qrack {
 					Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 				};
 
-				bitLenInt powerMask = 0;
-				Complex16 qubit[2];
 				bitCapInt qPowers[4];
 				bitCapInt qPowersSorted[3];
 				qPowers[1] = 1 << control1;

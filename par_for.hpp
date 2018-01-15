@@ -140,7 +140,7 @@ namespace Qrack {
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
 				double sqrNorm = 0.0;
-				double smallSqrNorm = 0.0;
+				//double smallSqrNorm = 0.0;
 				bitCapInt i;
 				for (;;) {
 					i = idx++;
