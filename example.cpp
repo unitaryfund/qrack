@@ -47,6 +47,19 @@ int main() {
 		std::cout<<std::endl;	
 	}
 
+	std::cout<<"NOT Test:"<<std::endl;
+	qftReg.SetPermutation(31);
+	std::cout<<"[0,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.X(0, 8);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
 	std::cout<<"ROL Test:"<<std::endl;
 	qftReg.SetPermutation(160);
 	std::cout<<"[4,8) by 1:"<<std::endl;

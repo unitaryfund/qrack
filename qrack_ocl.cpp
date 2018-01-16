@@ -1036,6 +1036,32 @@ namespace Qrack {
 	}
 
 	//Single register instructions:
+	///Apply X ("not") gate to each bit in "length," starting from bit index "start"
+	void CoherentUnit::X(bitLenInt start, bitLenInt length) {
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		for (bitLenInt i = 0; i < length; i++) {
+			inOutMask += 1<<(start + i);
+		}
+		otherMask -= inOutMask;
+		bitCapInt bciArgs[2] = {inOutMask, otherMask};
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+			bitCapInt otherRes = (lcv & bciArgs[1]);
+			bitCapInt inOutRes = ((~lcv) & bciArgs[0]);
+			nStateVec[inOutRes | otherRes] = stateVec[lcv];
+		});
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+		ReInitOCL();
+	}
+	///Apply Hadamard gate to each bit in "length," starting from bit index "start"
+	void CoherentUnit::H(bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			H(start + lcv);
+		}
+	}
 	///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 	void CoherentUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
 		if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {

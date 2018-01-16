@@ -720,6 +720,31 @@ namespace Qrack {
 	}
 
 	//Single register instructions:
+	///Apply X ("not") gate to each bit in "length," starting from bit index "start"
+	void CoherentUnit::X(bitLenInt start, bitLenInt length) {
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt inOutRes, otherRes, i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(start + i);
+		}
+		otherMask -= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			inOutRes = ((~i) & inOutMask);
+			nStateVec[inOutRes | otherRes] = stateVec[i];
+		}
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
+	///Apply Hadamard gate to each bit in "length," starting from bit index "start"
+	void CoherentUnit::H(bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			H(start + lcv);
+		}
+	}
 	///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 	void CoherentUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
 		if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
@@ -842,7 +867,7 @@ namespace Qrack {
 			regRes = (i & regMask);
 			regInt = regRes>>start;
 			outInt = (regInt>>(length - shift)) | ((regInt<<shift) & (lengthPower - 1));
-			nStateVec[(outInt<<start) + otherRes] = stateVec[i];
+			nStateVec[(outInt<<start) | otherRes] = stateVec[i];
 		}
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
@@ -863,7 +888,7 @@ namespace Qrack {
 			regRes = (i & regMask);
 			regInt = regRes>>start;
 			outInt = (regInt>>shift) | ((regInt<<(length - shift)) & (lengthPower - 1));
-			nStateVec[(outInt<<start) + otherRes] = stateVec[i];
+			nStateVec[(outInt<<start) | otherRes] = stateVec[i];
 		}
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
@@ -934,7 +959,7 @@ namespace Qrack {
 				inOutInt = inOutRes>>inOutStart;
 				inRes = (i & inMask);
 				inInt = inRes>>inStart;
-				nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
+				nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
 			}
 		}
 		stateVec.reset(); 
@@ -972,7 +997,7 @@ namespace Qrack {
 					nStateVec[(outInt<<inOutStart) + otherRes + inRes] = stateVec[i];
 				}
 				else {
-					nStateVec[((outInt - lengthPower)<<inOutStart) + otherRes + inRes + carryMask] = stateVec[i];
+					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask] = stateVec[i];
 				}
 			}
 		}
@@ -1003,7 +1028,7 @@ namespace Qrack {
 				inOutInt = inOutRes>>inOutStart;
 				inRes = (i & inMask);
 				inInt = inRes>>toSub;
-				nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
+				nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
 			}
 		}
 		stateVec.reset(); 
@@ -1038,10 +1063,10 @@ namespace Qrack {
 				inInt = inRes>>toSub;
 				outInt = (inOutInt - inInt - carryInt) + lengthPower;
 				if (outInt < lengthPower) {
-					nStateVec[(outInt<<inOutStart) + otherRes + inRes + carryMask] = stateVec[i];
+					nStateVec[(outInt<<inOutStart) | otherRes | inRes | carryMask] = stateVec[i];
 				}
 				else {
-					nStateVec[((outInt - lengthPower)<<inOutStart) + otherRes + inRes] = stateVec[i];
+					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
 				}
 			}
 		}

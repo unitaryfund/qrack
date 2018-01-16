@@ -208,6 +208,10 @@ namespace Qrack {
 			void CZ(bitLenInt control, bitLenInt target);
 
 			//Single register instructions:
+			///Apply X ("not") gate to each bit in "length," starting from bit index "start"
+			void X(bitLenInt start, bitLenInt length);
+			///Apply Hadamard gate to each bit in "length," starting from bit index "start"
+			void H(bitLenInt start, bitLenInt length);
 			///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 			void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 			///"OR" compare two bit ranges in CoherentUnit, and store result in range starting at output
