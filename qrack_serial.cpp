@@ -619,10 +619,10 @@ namespace Qrack {
 	}
 	///Controlled "phase shift gate"
 	/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
-	void CoherentUnit::CR1(double radians, bitLenInt control, bitLenInt target) {
+	void CoherentUnit::CRT(double radians, bitLenInt control, bitLenInt target) {
 		//if ((control >= qubitCount) || (target >= qubitCount))
 		//	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-		if (control == target) throw std::invalid_argument("CR1 control bit cannot also be target.");
+		if (control == target) throw std::invalid_argument("CRT control bit cannot also be target.");
 		double cosine = cos(radians / 2.0);
 		double sine = sin(radians / 2.0); 
 		const Complex16 mtrx[4] = {
@@ -633,10 +633,10 @@ namespace Qrack {
 	}
 	///Controlled dyadic fraction "phase shift gate"
 	/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
-	void CoherentUnit::CR1Dyad(int numerator, int denominator, bitLenInt control, bitLenInt target) {
+	void CoherentUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) {
 		//if (qubitIndex >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total bits.");
-		if (control == target) throw std::invalid_argument("CR1Dyad control bit cannot also be target.");
-		CR1((-M_PI * numerator * 2) / denominator, control, target);
+		if (control == target) throw std::invalid_argument("CRTDyad control bit cannot also be target.");
+		CRT((-M_PI * numerator * 2) / denominator, control, target);
 	}
 	///Controlled x axis rotation
 	/** Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis */
@@ -1081,7 +1081,7 @@ namespace Qrack {
 			for (i = start; i < end; i++) {
 				H(i);
 				for (j = 1; j < (end - i); j++) {
-					CR1Dyad(1, 1<<j, i + j, i); 
+					CRTDyad(1, 1<<j, i + j, i); 
 				}
 			}
 		}

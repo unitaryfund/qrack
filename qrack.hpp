@@ -180,10 +180,10 @@ namespace Qrack {
 			void Z(bitLenInt qubitIndex);
 			///Controlled "phase shift gate"
 			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
-			void CR1(double radians, bitLenInt control, bitLenInt target);
+			void CRT(double radians, bitLenInt control, bitLenInt target);
 			///Controlled dyadic fraction "phase shift gate"
 			/** Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
-			void CR1Dyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+			void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 			///Controlled x axis rotation
 			/** Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis */
 			void CRX(double radians, bitLenInt control, bitLenInt target);
