@@ -126,10 +126,16 @@ namespace Qrack {
 			//Logic Gates:
 			///"AND" compare two bits in CoherentUnit, and store result in outputBit
 			void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+			///"AND" compare a qubit in CoherentUnit with a classical bit, and store result in outputBit
+			void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 			///"OR" compare two bits in CoherentUnit, and store result in outputBit
 			void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+			///"OR" compare a qubit in CoherentUnit with a classical bit, and store result in outputBit
+			void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 			///"XOR" compare two bits in CoherentUnit, and store result in outputBit
 			void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+			///"XOR" compare a qubit in CoherentUnit with a classical bit, and store result in outputBit
+			void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 			/// Doubly-controlled not
 			void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 			/// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
@@ -208,14 +214,22 @@ namespace Qrack {
 			void CZ(bitLenInt control, bitLenInt target);
 
 			//Single register instructions:
+			///Apply X ("not") gate to each bit in "length," starting from bit index "start"
+			void X(bitLenInt start, bitLenInt length);
 			///Apply Hadamard gate to each bit in "length," starting from bit index "start"
 			void H(bitLenInt start, bitLenInt length);
 			///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 			void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+			///"AND" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at output
+			void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 			///"OR" compare two bit ranges in CoherentUnit, and store result in range starting at output
 			void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+			///"OR" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at output
+			void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 			///"XOR" compare two bit ranges in CoherentUnit, and store result in range starting at output
 			void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+			///"XOR" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at output
+			void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 			///Arithmetic shift left, with last 2 bits as sign and carry
 			void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
 			///Arithmetic shift right, with last 2 bits as sign and carry
@@ -246,61 +260,6 @@ namespace Qrack {
 			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length);
-			///Register "phase shift gate" - Rotates each bit from start for length as e^(i*(M_PI * numerator) / denominator) around |1> state
-			void R1(double radians, bitLenInt start, bitLenInt Length);
-			///Register dyadic fraction "phase shift gate" - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around |1> state
-			/** Register Dyadic fraction "phase shift gate" - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
-			void R1Dyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-			///Register x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis 
-			void RX(double radians, bitLenInt start, bitLenInt Length);
-			///Register dyadic fraction x axis rotation gate - Rotates each bit from "start" to "start" + "length"  as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
-			/** Dyadic fraction x axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
-			void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-			///Register y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(-i*\theta/2) around Pauli y axis 
-			void RY(double radians, bitLenInt start, bitLenInt Length);
-			///Register dyadic fraction y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-			/** Dyadic fraction y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
-			void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-			///Register z axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(-i*\theta/2) around Pauli z axis 
-			void RZ(double radians, bitLenInt start, bitLenInt Length);
-			///Register Dyadic fraction y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-			/** Dyadic fraction y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
-			void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-			///Apply X ("not") gate to each bit in "length," starting from bit index "start"
-			void X(bitLenInt start, bitLenInt length);
-			///Apply Pauli Y matrix to each bit in "length," starting from bit index "start"
-			void Y(bitLenInt start, bitLenInt length);
-			///Apply Pauli Z matrix to each bit in "length," starting from bit index "start"
-			void Z(bitLenInt start, bitLenInt length);
-			///Register controlled "phase shift gate"
-			/** Register controlled "phase shift gate" - pairing control and target registers by each respective bit, if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
-			void CRT(double radians, bitLenInt controlStart, bitLenInt targetStart, bitLenInt Length);
-			///Register controlled dyadic fraction "phase shift gate"
-			/** Register controlled "phase shift gate" - pairing control and target registers by each respective bit, if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
-			void CRTDyad(int numerator, int denominator, bitLenInt controlStart, bitLenInt targetStart, bitLenInt length);
-			///Register controlled x axis rotation
-			/** Register Controlled x axis rotation - pairing control and target registers by each respective bit, if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis */
-			void CRX(double radians, bitLenInt controlStart, bitLenInt targetStart, bitLenInt Length);
-			///Register controlled dyadic fraction x axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
-			/** Register Controlled dyadic fraction x axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
-			void CRXDyad(int numerator, int denominator, bitLenInt controlStart, bitLenInt targetStart, bitLenInt length);
-			///Register controlled y axis rotation 
-			/** Register Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis */
-			void CRY(double radians, bitLenInt controlStart, bitLenInt targetStart, bitLenInt Length);
-			///Register controlled dyadic fraction y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-			/** Register controlled dyadic fraction y axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
-			void CRYDyad(int numerator, int denominator, bitLenInt controlStart, bitLenInt targetStart, bitLenInt length);
-			///Register controlled z axis rotation
-			/** Register controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis */
-			void CRZ(double radians, bitLenInt controlStart, bitLenInt targetStart, bitLenInt Length);
-			///Register controlled dyadic fraction z axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
-			/** Register controlled dyadic fraction z axis rotation gate - Rotates each bit from "start" to "start" + "length" as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
-			void CRZDyad(int numerator, int denominator, bitLenInt controlStart, bitLenInt targetStart, bitLenInt length);
-			///Apply controlled Pauli Y matrix to each bit in "length," starting from bit index "start"
-			void CY(bitLenInt controlStart, bitLenInt targetStart, bitLenInt Length);
-			///Apply controlled Pauli Z matrix to each bit in "length," starting from bit index "start"
-			void CZ(bitLenInt controlStart, bitLenInt targetStart, bitLenInt Length);
-
 
 		private:
 			double runningNorm;
