@@ -1018,6 +1018,70 @@ namespace Qrack {
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
 	}
+	///Add two binary-coded decimal numbers.
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitLenInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask;
+		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, inOutStart, inStart, nibbleCount};
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[2]));
+				if (otherRes == lcv) {
+					nStateVec[lcv] = stateVec[lcv];
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
+					bitCapInt inRes = (lcv & (bciArgs[1]));
+					bitCapInt inInt = inRes>>(bciArgs[4]);
+					unsigned char test1, test2, j;
+					unsigned char* nibbles = new unsigned char[bciArgs[5]];
+					bool isValid = true;
+					for (j = 0; j < bciArgs[5]; j++) {
+						test1 = (inOutInt & (15 << (j * 4)));
+						test2 = (inInt & (15 << (j * 4)));					
+						nibbles[j] = test1 + test2;
+						if ((test1 > 9) || (test2 > 9)) {
+							isValid = false;
+						}
+					
+					}
+					if (isValid) {
+						bitCapInt outInt = 0;
+						for (j = 0; j < bciArgs[5]; j++) {
+							if (nibbles[j] > 9) {
+								nibbles[j] -= 10;
+								if ((j + 1) < bciArgs[5]) {
+									nibbles[j + 1]++;
+								}
+							}
+							outInt |= nibbles[j] << (j * 4);
+						}
+						nStateVec[(outInt<<(bciArgs[3])) | otherRes | inRes] = stateVec[lcv];
+					}
+					else {
+						nStateVec[lcv] = stateVec[lcv];
+					}
+					delete [] nibbles;
+				}
+			}
+		);
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
 	///Add two quantum integers with carry bit
 	/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 	void CoherentUnit::ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
@@ -1087,6 +1151,70 @@ namespace Qrack {
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
 					nStateVec[(((inOutInt - inInt + (bciArgs[3])) & bciArgs[3])<<(bciArgs[4])) + otherRes + inRes] = stateVec[lcv];
+				}
+			}
+		);
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
+	///Subtract two binary-coded decimal numbers.
+	/** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitLenInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask;
+		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, inOutStart, inStart, nibbleCount};
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[2]));
+				if (otherRes == lcv) {
+					nStateVec[lcv] = stateVec[lcv];
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
+					bitCapInt inRes = (lcv & (bciArgs[1]));
+					bitCapInt inInt = inRes>>(bciArgs[4]);
+					unsigned char test1, test2, j;
+					unsigned char* nibbles = new unsigned char[bciArgs[5]];
+					bool isValid = true;
+					for (j = 0; j < bciArgs[5]; j++) {
+						test1 = (inOutInt & (15 << (j * 4)));
+						test2 = (inInt & (15 << (j * 4)));					
+						nibbles[j] = test1 - test2;
+						if ((test1 > 9) || (test2 > 9)) {
+							isValid = false;
+						}
+					
+					}
+					if (isValid) {
+						bitCapInt outInt = 0;
+						for (j = 0; j < bciArgs[5]; j++) {
+							if (nibbles[j] < 0) {
+								nibbles[j] += 10;
+								if ((j + 1) < bciArgs[5]) {
+									nibbles[j + 1]--;
+								}
+							}
+							outInt |= nibbles[j] << (j * 4);
+						}
+						nStateVec[(outInt<<(bciArgs[3])) | otherRes | inRes] = stateVec[lcv];
+					}
+					else {
+						nStateVec[lcv] = stateVec[lcv];
+					}
+					delete [] nibbles;
 				}
 			}
 		);

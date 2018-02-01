@@ -1062,7 +1062,7 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 	}
 	///Add two binary-coded decimal numbers.
-	/** Add bcd of "length" bits in "inStart" to bcd of "length" bits in "inOutStart," and store result in "inOutStart." */
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 	void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
 		bitCapInt nibbleCount = length / 4;
 		if (nibbleCount * 4 != length) {
@@ -1071,7 +1071,6 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt inMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, outInt, i, j;
 		bool isValid;
 		unsigned char test1, test2;
@@ -1155,8 +1154,8 @@ namespace Qrack {
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
 	}
-	///Add two binary-coded decimal numbers.
-	/** Add bcd of "length" bits in "inStart" to bcd of "length" bits in "inOutStart," and store result in "inOutStart." */
+	///Subtract two binary-coded decimal numbers.
+	/** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 	void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
 		bitCapInt nibbleCount = length / 4;
 		if (nibbleCount * 4 != length) {

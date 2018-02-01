@@ -259,7 +259,7 @@ namespace Qrack {
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
 			///Subtract two quantum binary coded decimal numbers
-			/** Subtract BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+			/** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 			///Subtract two quantum integers with carry bit
 			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */

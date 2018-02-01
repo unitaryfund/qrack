@@ -1,4 +1,4 @@
-QRACKVER = qrack_serial.cpp #or qrack.cpp or qrack_serial.cpp
+QRACKVER = qrack.cpp #qrack_ocl.cpp, qrack.cpp or qrack_serial.cpp
 CPP      = g++
 OBJ      = complex16simd.o qrack.o example.o
 LINKOBJ  = complex16simd.o qrack.o example.o
