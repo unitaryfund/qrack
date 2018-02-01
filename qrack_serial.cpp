@@ -758,7 +758,6 @@ namespace Qrack {
 	void CoherentUnit::X(bitLenInt start, bitLenInt length) {
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt inOutRes, otherRes, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(start + i);
@@ -913,7 +912,7 @@ namespace Qrack {
 	void CoherentUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
 		bitCapInt regMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
+		bitCapInt lengthMask = (1<<length) - 1;
 		bitCapInt otherRes, regRes, regInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			regMask += 1<<(start + i);
@@ -924,7 +923,7 @@ namespace Qrack {
 			otherRes = (i & otherMask);
 			regRes = (i & regMask);
 			regInt = regRes>>start;
-			outInt = (regInt>>(length - shift)) | ((regInt<<shift) & (lengthPower - 1));
+			outInt = (regInt>>(length - shift)) | ((regInt<<shift) & lengthMask);
 			nStateVec[(outInt<<start) | otherRes] = stateVec[i];
 		}
 		stateVec.reset(); 
@@ -934,7 +933,7 @@ namespace Qrack {
 	void CoherentUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
 		bitCapInt regMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
+		bitCapInt lengthMask = (1<<length) - 1;
 		bitCapInt otherRes, regRes, regInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			regMask += 1<<(start + i);
@@ -945,7 +944,7 @@ namespace Qrack {
 			otherRes = (i & otherMask);
 			regRes = (i & regMask);
 			regInt = regRes>>start;
-			outInt = (regInt>>shift) | ((regInt<<(length - shift)) & (lengthPower - 1));
+			outInt = (regInt>>shift) | ((regInt<<(length - shift)) & lengthMask);
 			nStateVec[(outInt<<start) | otherRes] = stateVec[i];
 		}
 		stateVec.reset(); 
@@ -999,7 +998,7 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt inMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
+		bitCapInt lengthMask = (1<<length) - 1;
 		bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -1017,7 +1016,7 @@ namespace Qrack {
 				inOutInt = inOutRes>>inOutStart;
 				inRes = (i & inMask);
 				inInt = inRes>>inStart;
-				nStateVec[(((inOutInt + inInt) % lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
+				nStateVec[(((inOutInt + inInt) & lengthMask)<<inOutStart) | otherRes | inRes] = stateVec[i];
 			}
 		}
 		stateVec.reset(); 
@@ -1132,7 +1131,7 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt inMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
+		bitCapInt lengthPower = (1<<length) - 1;
 		bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -1150,7 +1149,7 @@ namespace Qrack {
 				inOutInt = inOutRes>>inOutStart;
 				inRes = (i & inMask);
 				inInt = inRes>>toSub;
-				nStateVec[(((inOutInt - inInt + lengthPower) % lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
+				nStateVec[(((inOutInt - inInt + lengthPower) & lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
 			}
 		}
 		stateVec.reset(); 

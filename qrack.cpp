@@ -923,14 +923,14 @@ namespace Qrack {
 			regMask += 1<<(start + i);
 		}
 		otherMask -= regMask;
-		bitCapInt bciArgs[6] = {regMask, otherMask, lengthPower, start, shift, length};
+		bitCapInt bciArgs[6] = {regMask, otherMask, lengthPower - 1, start, shift, length};
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[1]));
 				bitCapInt regRes = (lcv & (bciArgs[0]));
 				bitCapInt regInt = regRes>>(bciArgs[3]);
-				bitCapInt outInt = (regInt>>(bciArgs[5] - bciArgs[4])) | ((regInt<<(bciArgs[4])) & (bciArgs[2] - 1));
+				bitCapInt outInt = (regInt>>(bciArgs[5] - bciArgs[4])) | ((regInt<<(bciArgs[4])) & bciArgs[2]);
 				nStateVec[(outInt<<(bciArgs[3])) + otherRes] = stateVec[lcv];
 			}
 		);
@@ -947,14 +947,14 @@ namespace Qrack {
 			regMask += 1<<(start + i);
 		}
 		otherMask -= regMask;
-		bitCapInt bciArgs[6] = {regMask, otherMask, lengthPower, start, shift, length};
+		bitCapInt bciArgs[6] = {regMask, otherMask, lengthPower - 1, start, shift, length};
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[1]));
 				bitCapInt regRes = (lcv & (bciArgs[0]));
 				bitCapInt regInt = regRes>>(bciArgs[3]);
-				bitCapInt outInt = (regInt>>(bciArgs[4])) | ((regInt<<(bciArgs[5] - bciArgs[4])) & (bciArgs[2] - 1));
+				bitCapInt outInt = (regInt>>(bciArgs[4])) | ((regInt<<(bciArgs[5] - bciArgs[4])) & bciArgs[2]);
 				nStateVec[(outInt<<(bciArgs[3])) + otherRes] = stateVec[lcv];
 			}
 		);
@@ -998,7 +998,7 @@ namespace Qrack {
 			inMask += 1<<(inStart + i);
 		}
 		otherMask -= inOutMask + inMask;
-		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart};
+		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, lengthPower - 1, inOutStart, inStart};
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
@@ -1011,7 +1011,7 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
-					nStateVec[(((inOutInt + inInt) % (bciArgs[3]))<<(bciArgs[4])) + otherRes + inRes] = stateVec[lcv];
+					nStateVec[(((inOutInt + inInt) & bciArgs[3])<<(bciArgs[4])) + otherRes + inRes] = stateVec[lcv];
 				}
 			}
 		);
@@ -1066,7 +1066,7 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt inMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
+		bitCapInt lengthPower = (1<<length) - 1;
 		bitLenInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -1074,7 +1074,7 @@ namespace Qrack {
 		}
 		otherMask -= inOutMask + inMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, lengthPower, inOutStart, toSub};
+		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, lengthPower - 1, inOutStart, toSub};
 		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[2]));
@@ -1086,7 +1086,7 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
-					nStateVec[(((inOutInt - inInt + (bciArgs[3])) % (bciArgs[3]))<<(bciArgs[4])) + otherRes + inRes] = stateVec[lcv];
+					nStateVec[(((inOutInt - inInt + (bciArgs[3])) & bciArgs[3])<<(bciArgs[4])) + otherRes + inRes] = stateVec[lcv];
 				}
 			}
 		);
