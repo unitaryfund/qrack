@@ -252,9 +252,15 @@ namespace Qrack {
 			///Add two quantum integers with carry bit
 			/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
+			///Add two quantum binary coded decimal numbers
+			/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+			void ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
+			///Subtract two quantum binary coded decimal numbers
+			/** Subtract BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+			void SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 			///Subtract two quantum integers with carry bit
 			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
