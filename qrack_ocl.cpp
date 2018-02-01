@@ -57,6 +57,10 @@ namespace Qrack {
 	cl::Kernel* OCLSingleton::GetADDPtr() { return &add; }
 	///Get a pointer to the SUB function kernel
 	cl::Kernel* OCLSingleton::GetSUBPtr() { return &sub; }
+	///Get a pointer to the ADDBCD function kernel
+	cl::Kernel* OCLSingleton::GetADDBCDPtr() { return &addbcd; }
+	///Get a pointer to the SUBBCD function kernel
+	cl::Kernel* OCLSingleton::GetSUBBCDPtr() { return &subbcd; }
 	///Get a pointer to the ADDC function kernel
 	cl::Kernel* OCLSingleton::GetADDCPtr() { return &addc; }
 	///Get a pointer to the SUBC function kernel
@@ -252,6 +256,122 @@ namespace Qrack {
 		"	}"
 		"   }"
 		""
+		"   void kernel addbcd(global double2* stateVec, constant ulong* ulongPtr,"
+		"			   global double2* nStateVec) {"
+		""
+		"	ulong ID, Nthreads, lcv;"
+		""
+		"       ID = get_global_id(0);"
+		"       Nthreads = get_global_size(0);"
+		"	ulong maxI = ulongPtr[0];"
+		"	ulong inOutMask = ulongPtr[1];"
+		"	ulong inMask = ulongPtr[2];"
+		"	ulong otherMask = ulongPtr[3];"
+		"	ulong lengthMask = ulongPtr[4] - 1;"
+		"	ulong inOutStart = ulongPtr[5];"
+		"	ulong inStart = ulongPtr[6];"
+		"	ulong otherRes, inOutRes, inOutInt, inRes, inInt, outInt, j;"
+		"	ulong nibbleCount = ulongPtr[9];"
+		"	uchar nibbles[8];"
+		"	uchar test1, test2;"
+		"	bool isValid;"
+		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+		"		otherRes = (lcv & otherMask);"
+		"		if (otherRes == lcv) {"
+		"			nStateVec[lcv] = stateVec[lcv];"
+		"		}"
+		"		else {"
+		"			inOutRes = (lcv & inOutMask);"
+		"			inOutInt = inOutRes>>inOutStart;"
+		"			inRes = (lcv & inMask);"
+		"			inInt = inRes>>inStart;"
+		"			isValid = true;"
+		"			for (j = 0; j < nibbleCount; j++) {"
+		"				test1 = (inOutInt & (15 << (j * 4)));"
+		"				test2 = (inInt & (15 << (j * 4)));"					
+		"				nibbles[j] = test1 + test2;"
+		"				if ((test1 > 9) || (test2 > 9)) {"
+		"					isValid = false;"
+		"				}"			
+		"			}"
+		"			if (isValid) {"
+		"				outInt = 0;"
+		"				for (j = 0; j < nibbleCount; j++) {"
+		"					if (nibbles[j] > 9) {"
+		"						nibbles[j] -= 10;"
+		"						if ((j + 1) < nibbleCount) {"
+		"							nibbles[j + 1]++;"
+		"						}"
+		"					}"
+		"					outInt |= nibbles[j] << (j * 4);"
+		"				}"
+		"				nStateVec[(outInt<<inOutStart) | otherRes | inRes] = stateVec[lcv];"
+		"			}"
+		"			else {"
+		"				nStateVec[lcv] = stateVec[lcv];"
+		"			}"
+		"		}"
+		"	}"
+		"   }"
+		""
+		"   void kernel subbcd(global double2* stateVec, constant ulong* ulongPtr,"
+		"			   global double2* nStateVec) {"
+		""
+		"	ulong ID, Nthreads, lcv;"
+		""
+		"       ID = get_global_id(0);"
+		"       Nthreads = get_global_size(0);"
+		"	ulong maxI = ulongPtr[0];"
+		"	ulong inOutMask = ulongPtr[1];"
+		"	ulong inMask = ulongPtr[2];"
+		"	ulong otherMask = ulongPtr[3];"
+		"	ulong lengthMask = ulongPtr[4] - 1;"
+		"	ulong inOutStart = ulongPtr[5];"
+		"	ulong inStart = ulongPtr[6];"
+		"	ulong otherRes, inOutRes, inOutInt, inRes, inInt, outInt, j;"
+		"	ulong nibbleCount = ulongPtr[9];"
+		"	uchar nibbles[8];"
+		"	uchar test1, test2;"
+		"	bool isValid;"
+		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+		"		otherRes = (lcv & otherMask);"
+		"		if (otherRes == lcv) {"
+		"			nStateVec[lcv] = stateVec[lcv];"
+		"		}"
+		"		else {"
+		"			inOutRes = (lcv & inOutMask);"
+		"			inOutInt = inOutRes>>inOutStart;"
+		"			inRes = (lcv & inMask);"
+		"			inInt = inRes>>inStart;"
+		"			isValid = true;"
+		"			for (j = 0; j < nibbleCount; j++) {"
+		"				test1 = (inOutInt & (15 << (j * 4)));"
+		"				test2 = (inInt & (15 << (j * 4)));"
+		"				nibbles[j] = test1 + test2;"
+		"				if ((test1 > 9) || (test2 > 9)) {"
+		"					isValid = false;"
+		"				}"
+		"			}"
+		"			if (isValid) {"
+		"				outInt = 0;"
+		"				for (j = 0; j < nibbleCount; j++) {"
+		"					if (nibbles[j] < 0) {"
+		"						nibbles[j] += 10;"
+		"						if ((j + 1) < nibbleCount) {"
+		"							nibbles[j + 1]--;"
+		"						}"
+		"					}"
+		"					outInt |= nibbles[j] << (j * 4);"
+		"				}"
+		"				nStateVec[(outInt<<inOutStart) | otherRes | inRes] = stateVec[lcv];"
+		"			}"
+		"			else {"
+		"				nStateVec[lcv] = stateVec[lcv];"
+		"			}"
+		"		}"
+		"	}"
+		"   }"
+		""
 		"   void kernel addc(global double2* stateVec, constant ulong* ulongPtr,"
 		"			   global double2* nStateVec) {"
 		""
@@ -333,6 +453,8 @@ namespace Qrack {
 		ror = cl::Kernel(program, "ror");
 		add = cl::Kernel(program, "add");
 		sub = cl::Kernel(program, "sub");
+		addbcd = cl::Kernel(program, "addbcd");
+		subbcd = cl::Kernel(program, "subbcd");
 		addc = cl::Kernel(program, "addc");
 		subc = cl::Kernel(program, "subc");
 	}
@@ -1352,6 +1474,46 @@ namespace Qrack {
 		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 		ReInitOCL();
 	}
+	///Add two binary-coded decimal numbers.
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitLenInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask;
+		bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart, nibbleCount, 0, 0};
+		
+		queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+		queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		cl::Context context = *(clObj->GetContextPtr());
+		cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+		cl::Kernel addbcd = *(clObj->GetADDBCDPtr());				
+		addbcd.setArg(0, stateBuffer);
+		addbcd.setArg(1, ulongBuffer);
+		addbcd.setArg(2, nStateBuffer);
+		queue.finish();
+		
+		queue.enqueueNDRangeKernel(addbcd, cl::NullRange,  // kernel, offset
+			cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+			cl::NDRange(1)); // local number (per group)
+
+		queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
+		ReInitOCL();
+	}
 	///Add two quantum integers with carry bit
 	/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 	void CoherentUnit::ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
@@ -1417,6 +1579,46 @@ namespace Qrack {
 		queue.finish();
 		
 		queue.enqueueNDRangeKernel(sub, cl::NullRange,  // kernel, offset
+			cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+			cl::NDRange(1)); // local number (per group)
+
+		queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
+		ReInitOCL();
+	}
+	///Subtract two binary-coded decimal numbers.
+	/** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitLenInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask;
+		bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart, nibbleCount, 0, 0};
+		
+		queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+		queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		cl::Context context = *(clObj->GetContextPtr());
+		cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+		cl::Kernel subbcd = *(clObj->GetSUBBCDPtr());				
+		subbcd.setArg(0, stateBuffer);
+		subbcd.setArg(1, ulongBuffer);
+		subbcd.setArg(2, nStateBuffer);
+		queue.finish();
+		
+		queue.enqueueNDRangeKernel(subbcd, cl::NullRange,  // kernel, offset
 			cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
 			cl::NDRange(1)); // local number (per group)
 

@@ -65,6 +65,10 @@ namespace Qrack {
 			cl::Kernel* GetADDPtr();
 			///Get a pointer to the SUB function kernel
 			cl::Kernel* GetSUBPtr();
+			///Get a pointer to the ADDBCD function kernel
+			cl::Kernel* GetADDBCDPtr();
+			///Get a pointer to the SUBBCD function kernel
+			cl::Kernel* GetSUBBCDPtr();
 			///Get a pointer to the ADDC function kernel
 			cl::Kernel* GetADDCPtr();
 			///Get a pointer to the SUBC function kernel
@@ -83,6 +87,8 @@ namespace Qrack {
 			cl::Kernel ror;
 			cl::Kernel add;
 			cl::Kernel sub;
+			cl::Kernel addbcd;
+			cl::Kernel subbcd;
 			cl::Kernel addc;
 			cl::Kernel subc;
 
