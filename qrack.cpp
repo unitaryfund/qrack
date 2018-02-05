@@ -1099,7 +1099,7 @@ namespace Qrack {
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex};
-		par_for_skip(0, maxQPower, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
@@ -1121,7 +1121,7 @@ namespace Qrack {
 				}
 			}
 		);
-		par_for_skip(0, maxQPower, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
