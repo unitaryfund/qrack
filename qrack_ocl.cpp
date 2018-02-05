@@ -1527,7 +1527,7 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
-		otherMask -= inOutMask + inMask - carryMask;
+		otherMask -= inOutMask + inMask + carryMask;
 		bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, 0};
 		
 		queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
@@ -1551,6 +1551,10 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 		ReInitOCL();
+	}
+	///Add two binary-coded decimal numbers.
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::ADDBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
 	}
 	///Subtract two quantum integers
 	/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */

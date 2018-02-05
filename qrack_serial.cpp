@@ -1022,45 +1022,6 @@ namespace Qrack {
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
 	}
-	///Add two quantum integers with carry bit
-	/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
-	void CoherentUnit::ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
-		bitCapInt inOutMask = 0;
-		bitCapInt inMask = 0;
-		bitCapInt carryMask = 1<<carryIndex;
-		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, inRes, carryInt, otherRes, inOutInt, inInt, outInt, i;
-		for (i = 0; i < length; i++) {
-			inOutMask += 1<<(inOutStart + i);
-			inMask += 1<<(inStart + i);
-		}
-		otherMask -= inOutMask + inMask - carryMask;
-		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		for (i = 0; i < maxQPower; i++) {
-			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = stateVec[i];
-			}
-			else {
-				inOutRes = (i & inOutMask);
-				inOutInt = inOutRes>>inOutStart;
-				inRes = (i & inMask);
-				carryInt = (i & carryMask)>>carryIndex;
-				inInt = inRes>>inStart;
-				outInt = inOutInt + inInt + carryInt;
-				if (outInt < lengthPower) {
-					nStateVec[(outInt<<inOutStart) + otherRes + inRes] = stateVec[i];
-				}
-				else {
-					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask] = stateVec[i];
-				}
-			}
-		}
-		stateVec.reset(); 
-		stateVec = std::move(nStateVec);
-	}
 	///Add two binary-coded decimal numbers.
 	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 	void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length) {
@@ -1114,6 +1075,121 @@ namespace Qrack {
 						outInt |= nibbles[j] << (j * 4);
 					}
 					nStateVec[(outInt<<inOutStart) | otherRes | inRes] = stateVec[i];
+				}
+				else {
+					nStateVec[i] = stateVec[i];
+				}
+			}
+		}
+		delete [] nibbles;
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
+	///Add two quantum integers with carry bit
+	/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
+	void CoherentUnit::ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt inOutRes, inRes, carryInt, otherRes, inOutInt, inInt, outInt, i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask - carryMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			if (otherRes == i) {
+				nStateVec[i] = stateVec[i];
+			}
+			else {
+				inOutRes = (i & inOutMask);
+				inOutInt = inOutRes>>inOutStart;
+				inRes = (i & inMask);
+				carryInt = (i & carryMask)>>carryIndex;
+				inInt = inRes>>inStart;
+				outInt = inOutInt + inInt + carryInt;
+				if (outInt < lengthPower) {
+					nStateVec[(outInt<<inOutStart) + otherRes + inRes] += stateVec[i];
+				}
+				else {
+					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask] += stateVec[i];
+				}
+			}
+		}
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
+	///Add two binary-coded decimal numbers.
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::ADDBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, inRes, otherRes, carryRes, inOutInt, inInt, outInt, carryInt, i, j;
+		bool isValid;
+		unsigned char test1, test2;
+		unsigned char* nibbles = new unsigned char[nibbleCount];
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask + carryMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			if (otherRes == i) {
+				nStateVec[i] = stateVec[i];
+			}
+			else {
+				inOutRes = (i & inOutMask);
+				inOutInt = inOutRes>>inOutStart;
+				inRes = (i & inMask);
+				inInt = inRes>>inStart;
+				carryInt = (i & carryMask)>>carryIndex;
+				carryRes = 0;
+				isValid = true;
+
+				test1 = inOutInt & 15;
+				test2 = inInt & 15;					
+				nibbles[0] = test1 + test2 + carryInt;
+				if ((test1 > 9) || (test2 > 9)) {
+					isValid = false;
+				}
+
+				for (j = 1; j < nibbleCount; j++) {
+					test1 = (inOutInt & (15 << (j * 4)));
+					test2 = (inInt & (15 << (j * 4)));					
+					nibbles[j] = test1 + test2;
+					if ((test1 > 9) || (test2 > 9)) {
+						isValid = false;
+					}
+				}
+				if (isValid) {
+					outInt = 0;
+					for (j = 0; j < nibbleCount; j++) {
+						if (nibbles[j] > 9) {
+							nibbles[j] -= 10;
+							if ((j + 1) < nibbleCount) {
+								nibbles[j + 1]++;
+							}
+							else {
+								carryRes = carryMask;
+							}
+						}
+						outInt |= nibbles[j] << (j * 4);
+					}
+					nStateVec[(outInt<<inOutStart) | otherRes | inRes | carryRes] += stateVec[i];
 				}
 				else {
 					nStateVec[i] = stateVec[i];
@@ -1247,10 +1323,10 @@ namespace Qrack {
 				inInt = inRes>>toSub;
 				outInt = (inOutInt - inInt - carryInt) + lengthPower;
 				if (outInt < lengthPower) {
-					nStateVec[(outInt<<inOutStart) | otherRes | inRes | carryMask] = stateVec[i];
+					nStateVec[(outInt<<inOutStart) | otherRes | inRes | carryMask] += stateVec[i];
 				}
 				else {
-					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
+					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes] += stateVec[i];
 				}
 			}
 		}

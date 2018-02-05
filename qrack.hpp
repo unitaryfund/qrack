@@ -261,6 +261,9 @@ namespace Qrack {
 			///Add two quantum binary coded decimal numbers
 			/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+			///Add two quantum binary coded decimal numbers with carry bit
+			/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart," with carry in/out. */
+			void ADDBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 			///Subtract two quantum integers
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
