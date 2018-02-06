@@ -94,13 +94,13 @@ namespace Qrack {
 	}
 
 	template <class F>
-	void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower, const Complex16* stateArray, const bitCapInt* bciArgs, Complex16* nStateArray, F fn) {
+	void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower, const Complex16* stateArray, const bitCapInt* bciArgs, double* prob, double* phase, F fn) {
 		std::atomic<bitCapInt> idx;
 		idx = begin;
 		int num_cpus = std::thread::hardware_concurrency();
 		std::vector<std::future<void>> futures(num_cpus);
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
-			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateArray, &fn]() {
+			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, prob, phase, &fn]() {
 				bitCapInt i, iLow, iHigh;
 				bitLenInt p;
 				for (;;) {
@@ -111,7 +111,7 @@ namespace Qrack {
 					iHigh = (iHigh - iLow)<<1;						
 					i += iHigh;
 					if (i >= end) break;
-					fn(i, cpu, stateArray, bciArgs, nStateArray);							
+					fn(i, cpu, stateArray, bciArgs, prob, phase);							
 				}
 			});
 		}

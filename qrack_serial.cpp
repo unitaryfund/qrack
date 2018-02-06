@@ -1093,18 +1093,22 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, inRes, carryInt, otherRes, inOutInt, inInt, outInt, i;
+		bitCapInt inOutRes, inRes, carryInt, otherRes, outRes, inOutInt, inInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
 		otherMask -= inOutMask + inMask - carryMask;
+		std::unique_ptr<double[]> prob(new double[maxQPower]);
+		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
+		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
 			if (otherRes == i) {
-				nStateVec[i] = stateVec[i];
+				prob[outRes] = norm(stateVec[i]);
+				phase[outRes] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1114,12 +1118,19 @@ namespace Qrack {
 				inInt = inRes>>inStart;
 				outInt = inOutInt + inInt + carryInt;
 				if (outInt < lengthPower) {
-					nStateVec[(outInt<<inOutStart) + otherRes + inRes] += stateVec[i];
+					outRes = (outInt<<inOutStart) | otherRes | inRes;
+					prob[outRes] += norm(stateVec[i]);
+					phase[outRes] *= arg(stateVec[i]);
 				}
 				else {
-					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask] += stateVec[i];
+					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask;
+					prob[outRes] += norm(stateVec[i]);
+					phase[outRes] *= arg(stateVec[i]);
 				}
 			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = (sqrt(prob[i]) * polar(1.0, phase[i]));
 		}
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
@@ -1302,18 +1313,22 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, inRes, carryInt, otherRes, inOutInt, inInt, outInt, i;
+		bitCapInt inOutRes, inRes, carryInt, otherRes, outRes, inOutInt, inInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(toSub + i);
 		}
 		otherMask -= inOutMask + inMask + carryMask;
+		std::unique_ptr<double[]> prob(new double[maxQPower]);
+		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
+		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
 			if (otherRes == i) {
-				nStateVec[i] = stateVec[i];
+				prob[i] += norm(stateVec[i]);
+				phase[i] *= arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1323,14 +1338,21 @@ namespace Qrack {
 				inInt = inRes>>toSub;
 				outInt = (inOutInt - inInt - carryInt) + lengthPower;
 				if (outInt < lengthPower) {
-					nStateVec[(outInt<<inOutStart) | otherRes | inRes | carryMask] += stateVec[i];
+					outRes = (outInt << inOutStart) | otherRes | inRes | carryMask;
+					prob[outRes] += norm(stateVec[i]);
+					phase[outRes] *= arg(stateVec[i]);
 				}
 				else {
-					nStateVec[((outInt - lengthPower)<<inOutStart) | otherRes | inRes] += stateVec[i];
+					outRes = ((outInt - lengthPower) << inOutStart) | otherRes | inRes;
+					prob[outRes] += norm(stateVec[i]);
+					phase[outRes] *= arg(stateVec[i]);
 				}
 			}
 		}
-		stateVec.reset(); 
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+		}
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
