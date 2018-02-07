@@ -1119,14 +1119,12 @@ namespace Qrack {
 					bitCapInt outRes;
 					if (outInt < (bciArgs[4])) {
 						outRes = (outInt<<(bciArgs[5])) | otherRes | inRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] *= arg(stateVec[lcv]);
 					}
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] *= arg(stateVec[lcv]);
 					}
+					prob[outRes] += norm(stateVec[lcv]);
+					phase[outRes] *= arg(stateVec[lcv]);
 				}
 			}
 		);
@@ -1147,14 +1145,12 @@ namespace Qrack {
 					bitCapInt outRes;
 					if (outInt < (bciArgs[4])) {
 						outRes = (outInt<<(bciArgs[5])) | otherRes | inRes;
-						prob[outRes] += norm(stateVec[lcv + (bciArgs[2])]);
-						phase[outRes] *= arg(stateVec[lcv + (bciArgs[2])]);
 					}
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
-						prob[outRes] += norm(stateVec[lcv + (bciArgs[2])]);
-						phase[outRes] *= arg(stateVec[lcv + (bciArgs[2])]);
 					}
+					prob[outRes] += norm(stateVec[lcv + (bciArgs[2])]);
+					phase[outRes] *= arg(stateVec[lcv + (bciArgs[2])]);
 				}
 			}
 		);
