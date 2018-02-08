@@ -215,7 +215,7 @@ int main() {
 
 	std::cout<<"SUBC Test:"<<std::endl;
 	qftReg.SetPermutation(290);
-	std::cout<<"[0,4) = [0,4) - [4,7):"<<std::endl;
+	std::cout<<"[0,4) = [0,4) - [4,8):"<<std::endl;
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}

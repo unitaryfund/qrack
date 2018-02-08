@@ -390,12 +390,12 @@ namespace Qrack {
 		"	ulong inStart = ulongPtr[7];"
 		"	ulong carryIndex = ulongPtr[8];"
 		"	ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt, outRes;"
-		"	ulong iHigh, iLow, i;"
+		"	ulong iHigh, iLow, i, j;"
 		"	double2 temp;"
 		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
 		"		iHigh = lcv;"
 		"		i = 0;"
-		"		iLow = iHigh % carryMask;"
+		"		iLow = iHigh & (carryMask - 1);"
 		"		i += iLow;"
 		"		iHigh = (iHigh - iLow)<<1;"						
 		"		i += iHigh;"
@@ -405,53 +405,27 @@ namespace Qrack {
 		"		inRes = (i & inMask);"
 		"		inInt = inRes>>inStart;"
 		"		outInt = inOutInt + inInt;"
+		"		j = i - inOutRes;"
+		"		if ((inOutInt - 1) >= 0) {"
+		"			j += (inOutInt - 1)<<inOutStart;"
+		"		}"
+		"		else {"
+		"			j += (inOutInt - 1 + lengthPower)<<inOutStart;"
+		"		}"
+		"		j |= carryMask;"
 		"		if (outInt < lengthPower) {"
 		"			outRes = (outInt<<inOutStart) | otherRes | inRes;"
 		"		}"
 		"		else {"
 		"			outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask;"
 		"		}"
-		"		temp = stateVec[i] * stateVec[i];"
-		"		nStateVec[outRes].x = temp.x + temp.y;"
-		"		if ((temp.x + temp.y) != 0) {"
-		"			//nStateVec[outRes].y = atan2(stateVec[i].x, stateVec[i].y);\n"
-		"		}"
-		"	}"
-		""
-		"	barrier(CLK_GLOBAL_MEM_FENCE);"
-		""
-		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
-		"		iHigh = lcv;"
-		"		i = 0;"
-		"		iLow = iHigh % carryMask;"
-		"		i += iLow;"
-		"		iHigh = (iHigh - iLow)<<1;"						
-		"		i += iHigh;"
-		"		otherRes = (i & otherMask);"
-		"		inOutRes = (i & inOutMask);"
-		"		inOutInt = inOutRes>>inOutStart;"
-		"		inRes = (i & inMask);"
-		"		carryInt = (i & carryMask)>>carryIndex;"
-		"		inInt = inRes>>inStart;"
-		"		outInt = inOutInt + inInt + 1;"
-		"		i |= carryMask;"
-		"		if (outInt < lengthPower) {"
-		"			outRes = (outInt<<inOutStart) | otherRes | inRes;"
+		"		temp = stateVec[i] * stateVec[i] + stateVec[j] * stateVec[j];"
+		"		if ((temp.x + temp.y) == 0) {"
+		"			nStateVec[outRes] = (double2)(temp.x + temp.y, 0.0);"
 		"		}"
 		"		else {"
-		"			outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask;"
+		"			nStateVec[outRes] = (double2)(temp.x + temp.y, atan2(stateVec[i].x, stateVec[i].y) + atan2(stateVec[j].x, stateVec[j].y));"
 		"		}"
-		"		temp = stateVec[i] * stateVec[i];"
-		"		nStateVec[outRes].x += temp.x + temp.y;"
-		"		if ((temp.x + temp.y) != 0) {"
-		"			//nStateVec[outRes].y += atan2(stateVec[i].x, stateVec[i].y);\n"
-		"		}"
-		"	}"
-		""
-		"	barrier(CLK_GLOBAL_MEM_FENCE);"
-		""
-		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
-		"		nStateVec[lcv] = sqrt(nStateVec[lcv].x) * (double2)(cos(nStateVec[lcv].y), sin(nStateVec[lcv].y));"
 		"	}"
 		"   }"
 		""
@@ -473,7 +447,7 @@ namespace Qrack {
 		"	ulong inStart = ulongPtr[7];"
 		"	ulong carryIndex = ulongPtr[8];"
 		"	ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt, outRes;"
-		"	ulong iHigh, iLow, i;"
+		"	ulong iHigh, iLow, i, j;"
 		"	double2 temp;"
 		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
 		"		iHigh = lcv;"
@@ -488,52 +462,27 @@ namespace Qrack {
 		"		inRes = (i & inMask);"
 		"		inInt = inRes>>inStart;"
 		"		outInt = (inOutInt - inInt) + lengthPower;"
+		"		j = i - inOutRes;"
+		"		if ((inOutInt + 1) < lengthPower) {"
+		"			j += (inOutInt + 1)<<inOutStart;"
+		"		}"
+		"		else {"
+		"			j += (inOutInt + 1 - lengthPower)<<inOutStart;"
+		"		}"
+		"		j |= carryMask;"
 		"		if (outInt < lengthPower) {"
 		"			outRes = (outInt<<inOutStart) | otherRes | inRes | carryMask;"
 		"		}"
 		"		else {"
 		"			outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | inRes;"
 		"		}"
-		"		temp = stateVec[i] * stateVec[i];"
-		"		nStateVec[outRes].x = temp.x + temp.y;"
-		"		if ((temp.x + temp.y) != 0) {"
-		"			//nStateVec[outRes].y = atan2(stateVec[i].x, stateVec[i].y);\n"
-		"		}"
-		"	}"
-		""
-		"	barrier(CLK_GLOBAL_MEM_FENCE);"
-		""
-		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
-		"		iHigh = lcv;"
-		"		i = 0;"
-		"		iLow = iHigh & (carryMask - 1);"
-		"		i += iLow;"
-		"		iHigh = (iHigh - iLow)<<1;"						
-		"		i += iHigh;"
-		"		otherRes = (i & otherMask);"
-		"		inOutRes = (i & inOutMask);"
-		"		inOutInt = inOutRes>>inOutStart;"
-		"		inRes = (lcv & inMask);"
-		"		inInt = inRes>>inStart;"
-		"		outInt = (inOutInt - inInt - 1) + lengthPower;"
-		"		i |= carryMask;"
-		"		if (outInt < lengthPower) {"
-		"			outRes = (outInt<<inOutStart) | otherRes | inRes | carryMask;"
+		"		temp = stateVec[i] * stateVec[i] + stateVec[j] * stateVec[j];"
+		"		if ((temp.x + temp.y) == 0) {"
+		"			nStateVec[outRes] = (double2)(temp.x + temp.y, 0.0);"
 		"		}"
 		"		else {"
-		"			outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | inRes;"
+		"			nStateVec[outRes] = (double2)(temp.x + temp.y, atan2(stateVec[i].x, stateVec[i].y) + atan2(stateVec[j].x, stateVec[j].y));"
 		"		}"
-		"		temp = stateVec[i] * stateVec[i];"
-		"		nStateVec[outRes].x += temp.x + temp.y;"
-		"		if ((temp.x + temp.y) != 0) {"
-		"			//nStateVec[outRes].y += atan2(stateVec[i].x, stateVec[i].y);\n"
-		"		}"
-		"	}"
-		""
-		"	barrier(CLK_GLOBAL_MEM_FENCE);"
-		""
-		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
-		"		nStateVec[lcv] = sqrt(nStateVec[lcv].x) * (double2)(cos(nStateVec[lcv].y), sin(nStateVec[lcv].y));"
 		"	}"
 		"   }";
 		sources.push_back({kernel_code.c_str(), kernel_code.length()});
@@ -1619,7 +1568,7 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitLenInt i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
@@ -1646,6 +1595,9 @@ namespace Qrack {
 		queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
+		for (i = 0; i < maxQPower; i++) {
+			stateVec[i] = sqrt(real(stateVec[i])) * polar(1.0, imag(stateVec[i]));
+		}
 		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 		ReInitOCL();
 	}
@@ -1737,7 +1689,7 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitLenInt i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(toSub + i);
@@ -1764,6 +1716,9 @@ namespace Qrack {
 		queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
+		for (i = 0; i < maxQPower; i++) {
+			stateVec[i] = sqrt(real(stateVec[i])) * polar(1.0, imag(stateVec[i]));
+		}
 		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 		ReInitOCL();
 	}
