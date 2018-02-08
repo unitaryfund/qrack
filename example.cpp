@@ -187,21 +187,6 @@ int main() {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;
-
-	/*
-	std::cout<<"ADDBCDC Test:"<<std::endl;
-	qftReg.SetPermutation(50);
-	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
-	for (j = 0; j < 9; j++) {
-		std::cout<<qftReg.Prob(j);
-	}
-	std::cout<<"->";
-	qftReg.ADDBCDC(0, 4, 4, 8);
-	for (j = 0; j < 9; j++) {
-		std::cout<<qftReg.Prob(j);
-	}
-	std::cout<<std::endl;
-	*/
 	
 	//qftReg.SetPermutation(0);
 	//for (i = 0; i < 8; i++) {
@@ -245,6 +230,34 @@ int main() {
 	for (i = 0; i < 8; i++) {
 		qftReg.H(i);
 	}
+
+	/*
+	std::cout<<"ADDBCDC Test:"<<std::endl;
+	qftReg.SetPermutation(57);
+	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.ADDBCDC(0, 4, 4, 8);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
+	std::cout<<"SUBBCDC Test:"<<std::endl;
+	qftReg.SetPermutation(49);
+	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.SUBBCDC(0, 4, 4, 8);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+	*/
 
 	std::cout<<"M Test:"<<std::endl;
 	std::cout<<"Initial:"<<std::endl;

@@ -1106,8 +1106,8 @@ namespace Qrack {
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
-					prob[lcv] += norm(stateVec[lcv]);
-					phase[lcv] *= arg(stateVec[lcv]);
+					prob[lcv] = norm(stateVec[lcv]);
+					phase[lcv] = arg(stateVec[lcv]);
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1124,7 +1124,7 @@ namespace Qrack {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
 					}
 					prob[outRes] += norm(stateVec[lcv]);
-					phase[outRes] *= arg(stateVec[lcv]);
+					phase[outRes] += arg(stateVec[lcv]);
 				}
 			}
 		);
@@ -1132,8 +1132,8 @@ namespace Qrack {
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
-					prob[lcv + (bciArgs[2])] += norm(stateVec[lcv + (bciArgs[2])]);
-					phase[lcv + (bciArgs[2])] *= arg(stateVec[lcv + (bciArgs[2])]);
+					prob[lcv + (bciArgs[2])] = norm(stateVec[lcv + (bciArgs[2])]);
+					phase[lcv + (bciArgs[2])] = arg(stateVec[lcv + (bciArgs[2])]);
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1150,19 +1150,150 @@ namespace Qrack {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
 					}
 					prob[outRes] += norm(stateVec[lcv + (bciArgs[2])]);
-					phase[outRes] *= arg(stateVec[lcv + (bciArgs[2])]);
+					phase[outRes] += arg(stateVec[lcv + (bciArgs[2])]);
 				}
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
 		}
-		stateVec.reset(); 
+		prob.reset();
+		phase.reset();
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	///Add two binary-coded decimal numbers.
 	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 	void CoherentUnit::ADDBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+		/*
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitLenInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask;
+		bitCapInt bciArgs[6] = {inOutMask, inMask, otherMask, inOutStart, inStart, nibbleCount};
+		std::unique_ptr<double[]> prob(new double[maxQPower]);
+		std::unique_ptr<double[]> phase(new double[maxQPower]);
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
+		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
+		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex};
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (otherRes == lcv) {
+					prob[lcv] = norm(stateVec[lcv]);
+					phase[lcv] = arg(stateVec[lcv]);
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
+					bitCapInt inRes = (lcv & (bciArgs[1]));
+					bitCapInt inInt = inRes>>(bciArgs[4]);
+					unsigned char test1, test2, j;
+					unsigned char* nibbles = new unsigned char[bciArgs[5]];
+					bool isValid = true;
+					for (j = 0; j < bciArgs[5]; j++) {
+						test1 = (inOutInt & (15 << (j * 4)));
+						test2 = (inInt & (15 << (j * 4)));					
+						nibbles[j] = test1 + test2;
+						if ((test1 > 9) || (test2 > 9)) {
+							isValid = false;
+						}
+					
+					}
+					if (isValid) {
+						outInt = 0;
+						for (j = 0; j < nibbleCount; j++) {
+							if (nibbles[j] > 9) {
+								nibbles[j] -= 10;
+								if ((j + 1) < nibbleCount) {
+									nibbles[j + 1]++;
+								}
+								else {
+									carryRes = carryMask;
+								}
+							}
+							outInt |= nibbles[j] << (j * 4);
+						}
+						outRes = (outInt<<inOutStart) | otherRes | inRes | carryRes;
+						prob[outRes] += norm(stateVec[i]);
+						phase[outRes] += arg(stateVec[i]);
+					}
+					else {
+						prob[i] = norm(stateVec[i]);
+						phase[i] = arg(stateVec[i]);
+					}
+					delete [] nibbles;
+				}
+			}
+		);
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (otherRes == lcv) {
+					prob[lcv + (bciArgs[2])] += norm(stateVec[lcv + (bciArgs[2])]);
+					phase[lcv + (bciArgs[2])] += arg(stateVec[lcv + (bciArgs[2])]);
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
+					bitCapInt inRes = (lcv & (bciArgs[1]));
+					bitCapInt inInt = inRes>>(bciArgs[4]);
+					unsigned char test1, test2, j;
+					unsigned char* nibbles = new unsigned char[bciArgs[5]];
+					bool isValid = true;
+					for (j = 0; j < bciArgs[5]; j++) {
+						test1 = (inOutInt & (15 << (j * 4)));
+						test2 = (inInt & (15 << (j * 4)));					
+						nibbles[j] = test1 + test2 + 1;
+						if ((test1 > 9) || (test2 > 9)) {
+							isValid = false;
+						}
+					
+					}
+					if (isValid) {
+						outInt = 0;
+						for (j = 0; j < nibbleCount; j++) {
+							if (nibbles[j] > 9) {
+								nibbles[j] -= 10;
+								if ((j + 1) < nibbleCount) {
+									nibbles[j + 1]++;
+								}
+								else {
+									carryRes = carryMask;
+								}
+							}
+							outInt |= nibbles[j] << (j * 4);
+						}
+						outRes = (outInt<<inOutStart) | otherRes | inRes | carryRes;
+						prob[outRes] += norm(stateVec[i]);
+						phase[outRes] += arg(stateVec[i]);
+					}
+					else {
+						prob[i] = norm(stateVec[i]);
+						phase[i] = arg(stateVec[i]);
+					}
+					delete [] nibbles;
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+		}
+		prob.reset();
+		phase.reset();
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+		*/
 	}
 	///Subtract two quantum integers
 	/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
@@ -1286,7 +1417,7 @@ namespace Qrack {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
 					prob[lcv] += norm(stateVec[lcv]);
-					phase[lcv] *= arg(stateVec[lcv]);
+					phase[lcv] += arg(stateVec[lcv]);
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1298,12 +1429,12 @@ namespace Qrack {
 					if (outInt < (bciArgs[4])) {
 						outRes = (outInt<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
 						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] *= arg(stateVec[lcv]);
+						phase[outRes] += arg(stateVec[lcv]);
 					}
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes;
 						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] *= arg(stateVec[lcv]);
+						phase[outRes] += arg(stateVec[lcv]);
 					}
 				}
 			}
@@ -1313,7 +1444,7 @@ namespace Qrack {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
 					prob[lcv + (bciArgs[2])] += norm(stateVec[lcv + (bciArgs[2])]);
-					phase[lcv + (bciArgs[2])] *= arg(stateVec[lcv + (bciArgs[2])]);
+					phase[lcv + (bciArgs[2])] += arg(stateVec[lcv + (bciArgs[2])]);
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1325,12 +1456,12 @@ namespace Qrack {
 					if (outInt < (bciArgs[4])) {
 						outRes = (outInt<<(bciArgs[5])) | otherRes | inRes;
 						prob[outRes] += norm(stateVec[lcv + (bciArgs[2])]);
-						phase[outRes] *= arg(stateVec[lcv + (bciArgs[2])]);
+						phase[outRes] += arg(stateVec[lcv + (bciArgs[2])]);
 					}
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) + otherRes + inRes;
 						prob[outRes] += norm(stateVec[lcv + (bciArgs[2])]);
-						phase[outRes] *= arg(stateVec[lcv + (bciArgs[2])]);
+						phase[outRes] += arg(stateVec[lcv + (bciArgs[2])]);
 					}
 				}
 			}

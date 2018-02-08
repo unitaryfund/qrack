@@ -1082,7 +1082,7 @@ namespace Qrack {
 			}
 		}
 		delete [] nibbles;
-		stateVec.reset(); 
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	///Add two quantum integers with carry bit
@@ -1120,19 +1120,21 @@ namespace Qrack {
 				if (outInt < lengthPower) {
 					outRes = (outInt<<inOutStart) | otherRes | inRes;
 					prob[outRes] += norm(stateVec[i]);
-					phase[outRes] *= arg(stateVec[i]);
+					phase[outRes] += arg(stateVec[i]);
 				}
 				else {
 					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | inRes | carryMask;
 					prob[outRes] += norm(stateVec[i]);
-					phase[outRes] *= arg(stateVec[i]);
+					phase[outRes] += arg(stateVec[i]);
 				}
 			}
 		}
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = (sqrt(prob[i]) * polar(1.0, phase[i]));
 		}
-		stateVec.reset(); 
+		prob.reset();
+		phase.reset();
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	///Add two binary-coded decimal numbers.
@@ -1146,7 +1148,7 @@ namespace Qrack {
 		bitCapInt inMask = 0;
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt inOutRes, inRes, otherRes, carryRes, inOutInt, inInt, outInt, carryInt, i, j;
+		bitCapInt inOutRes, inRes, otherRes, carryRes, outRes, inOutInt, inInt, outInt, carryInt, i, j;
 		bool isValid;
 		unsigned char test1, test2;
 		unsigned char* nibbles = new unsigned char[nibbleCount];
@@ -1155,12 +1157,16 @@ namespace Qrack {
 			inMask += 1<<(inStart + i);
 		}
 		otherMask -= inOutMask + inMask + carryMask;
+		std::unique_ptr<double[]> prob(new double[maxQPower]);
+		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
+		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
 			if (otherRes == i) {
-				nStateVec[i] = stateVec[i];
+				prob[outRes] = norm(stateVec[i]);
+				phase[outRes] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1200,15 +1206,23 @@ namespace Qrack {
 						}
 						outInt |= nibbles[j] << (j * 4);
 					}
-					nStateVec[(outInt<<inOutStart) | otherRes | inRes | carryRes] += stateVec[i];
+					outRes = (outInt<<inOutStart) | otherRes | inRes | carryRes;
+					prob[outRes] += norm(stateVec[i]);
+					phase[outRes] += arg(stateVec[i]);
 				}
 				else {
-					nStateVec[i] = stateVec[i];
+					prob[i] = norm(stateVec[i]);
+					phase[i] = arg(stateVec[i]);
 				}
 			}
 		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = (sqrt(prob[i]) * polar(1.0, phase[i]));
+		}
 		delete [] nibbles;
-		stateVec.reset(); 
+		prob.reset();
+		phase.reset();
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	///Subtract two quantum integers
@@ -1238,7 +1252,7 @@ namespace Qrack {
 				nStateVec[(((inOutInt - inInt + lengthPower) & lengthPower)<<inOutStart) | otherRes | inRes] = stateVec[i];
 			}
 		}
-		stateVec.reset(); 
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	///Subtract two binary-coded decimal numbers.
@@ -1327,8 +1341,8 @@ namespace Qrack {
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
 			if (otherRes == i) {
-				prob[i] += norm(stateVec[i]);
-				phase[i] *= arg(stateVec[i]);
+				prob[i] = norm(stateVec[i]);
+				phase[i] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1340,19 +1354,107 @@ namespace Qrack {
 				if (outInt < lengthPower) {
 					outRes = (outInt << inOutStart) | otherRes | inRes | carryMask;
 					prob[outRes] += norm(stateVec[i]);
-					phase[outRes] *= arg(stateVec[i]);
+					phase[outRes] += arg(stateVec[i]);
 				}
 				else {
 					outRes = ((outInt - lengthPower) << inOutStart) | otherRes | inRes;
 					prob[outRes] += norm(stateVec[i]);
-					phase[outRes] *= arg(stateVec[i]);
+					phase[outRes] += arg(stateVec[i]);
 				}
 			}
 		}
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
 		}
+		prob.reset();
+		phase.reset();
 		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+	///Add two binary-coded decimal numbers.
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::SUBBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, inRes, otherRes, carryRes, outRes, inOutInt, inInt, outInt, carryInt, i, j;
+		bool isValid;
+		unsigned char test1, test2;
+		unsigned char* nibbles = new unsigned char[nibbleCount];
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask + carryMask;
+		std::unique_ptr<double[]> prob(new double[maxQPower]);
+		std::unique_ptr<double[]> phase(new double[maxQPower]);
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
+		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			if (otherRes == i) {
+				prob[i] = norm(stateVec[i]);
+				phase[i] = arg(stateVec[i]);
+			}
+			else {
+				inOutRes = (i & inOutMask);
+				inOutInt = inOutRes>>inOutStart;
+				inRes = (i & inMask);
+				inInt = inRes>>inStart;
+				carryInt = (i & carryMask)>>carryIndex;
+				carryRes = 0;
+				isValid = true;
+
+				test1 = inOutInt & 15;
+				test2 = inInt & 15;					
+				nibbles[0] = test1 - test2 - carryInt;
+				if ((test1 > 9) || (test2 > 9)) {
+					isValid = false;
+				}
+
+				for (j = 1; j < nibbleCount; j++) {
+					test1 = (inOutInt & (15 << (j * 4)));
+					test2 = (inInt & (15 << (j * 4)));					
+					nibbles[j] = test1 - test2;
+					if ((test1 > 9) || (test2 > 9)) {
+						isValid = false;
+					}
+				}
+				if (isValid) {
+					outInt = 0;
+					for (j = 0; j < nibbleCount; j++) {
+						if (nibbles[j] < 0) {
+							nibbles[j] += 10;
+							if ((j + 1) < nibbleCount) {
+								nibbles[j + 1]--;
+							}
+							else {
+								carryRes = carryMask;
+							}
+						}
+						outInt |= nibbles[j] << (j * 4);
+					}
+					outRes = (outInt<<inOutStart) | otherRes | inRes | carryRes;
+					prob[outRes] += norm(stateVec[i]);
+					phase[outRes] += arg(stateVec[i]);
+				}
+				else {
+					prob[i] = norm(stateVec[i]);
+					phase[i] = arg(stateVec[i]);
+				}
+			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+		}
+		delete [] nibbles;
+		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
 	}
 	/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register

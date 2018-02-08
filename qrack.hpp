@@ -270,8 +270,11 @@ namespace Qrack {
 			///Subtract two quantum binary coded decimal numbers
 			/** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+			///Subtract two quantum binary coded decimal numbers with carry bit
+			/** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result in "inOutStart," with carry in/out. */
+			void SUBBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 			///Subtract two quantum integers with carry bit
-			/** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
+			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
 			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 			void QFT(bitLenInt start, bitLenInt length);
