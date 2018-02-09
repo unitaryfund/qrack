@@ -1596,7 +1596,7 @@ namespace Qrack {
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 		for (i = 0; i < maxQPower; i++) {
-			stateVec[i] = sqrt(real(stateVec[i])) * polar(1.0, imag(stateVec[i]));
+			stateVec[i] = polar(sqrt(real(stateVec[i])), imag(stateVec[i]));
 		}
 		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 		ReInitOCL();
@@ -1717,7 +1717,7 @@ namespace Qrack {
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 		for (i = 0; i < maxQPower; i++) {
-			stateVec[i] = sqrt(real(stateVec[i])) * polar(1.0, imag(stateVec[i]));
+			stateVec[i] = polar(sqrt(real(stateVec[i])), imag(stateVec[i]));
 		}
 		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
 		ReInitOCL();

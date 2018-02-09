@@ -193,6 +193,7 @@ int main() {
 	//	qftReg.H(i);
 	//}
 
+	
 	std::cout<<"ADDC Test:"<<std::endl;
 	qftReg.SetPermutation(303);
 	//qftReg.H(0);

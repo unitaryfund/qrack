@@ -1155,7 +1155,7 @@ namespace Qrack {
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
 		}
 		prob.reset();
 		phase.reset();
@@ -1287,7 +1287,7 @@ namespace Qrack {
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
 		}
 		prob.reset();
 		phase.reset();
@@ -1467,7 +1467,7 @@ namespace Qrack {
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
 		}
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);

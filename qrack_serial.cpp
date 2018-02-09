@@ -1034,8 +1034,8 @@ namespace Qrack {
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, outInt, i, j;
 		bool isValid;
-		unsigned char test1, test2;
-		unsigned char* nibbles = new unsigned char[nibbleCount];
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
@@ -1107,8 +1107,8 @@ namespace Qrack {
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
 			if (otherRes == i) {
-				prob[outRes] = norm(stateVec[i]);
-				phase[outRes] = arg(stateVec[i]);
+				prob[i] = norm(stateVec[i]);
+				phase[i] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1130,7 +1130,7 @@ namespace Qrack {
 			}
 		}
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = (sqrt(prob[i]) * polar(1.0, phase[i]));
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
 		}
 		prob.reset();
 		phase.reset();
@@ -1150,8 +1150,8 @@ namespace Qrack {
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt inOutRes, inRes, otherRes, carryRes, outRes, inOutInt, inInt, outInt, carryInt, i, j;
 		bool isValid;
-		unsigned char test1, test2;
-		unsigned char* nibbles = new unsigned char[nibbleCount];
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
@@ -1165,8 +1165,8 @@ namespace Qrack {
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
 			if (otherRes == i) {
-				prob[outRes] = norm(stateVec[i]);
-				phase[outRes] = arg(stateVec[i]);
+				prob[i] = norm(stateVec[i]);
+				phase[i] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1174,11 +1174,10 @@ namespace Qrack {
 				inRes = (i & inMask);
 				inInt = inRes>>inStart;
 				carryInt = (i & carryMask)>>carryIndex;
-				carryRes = 0;
 				isValid = true;
 
-				test1 = inOutInt & 15;
-				test2 = inInt & 15;					
+				test1 = (inOutInt & 15);
+				test2 = (inInt & 15);					
 				nibbles[0] = test1 + test2 + carryInt;
 				if ((test1 > 9) || (test2 > 9)) {
 					isValid = false;
@@ -1191,9 +1190,12 @@ namespace Qrack {
 					if ((test1 > 9) || (test2 > 9)) {
 						isValid = false;
 					}
+					
 				}
+
 				if (isValid) {
 					outInt = 0;
+					carryRes = 0;
 					for (j = 0; j < nibbleCount; j++) {
 						if (nibbles[j] > 9) {
 							nibbles[j] -= 10;
@@ -1217,11 +1219,9 @@ namespace Qrack {
 			}
 		}
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = (sqrt(prob[i]) * polar(1.0, phase[i]));
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
 		}
 		delete [] nibbles;
-		prob.reset();
-		phase.reset();
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
@@ -1268,8 +1268,8 @@ namespace Qrack {
 		bitCapInt lengthPower = 1<<length;
 		bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, outInt, i, j;
 		bool isValid;
-		unsigned char test1, test2;
-		unsigned char* nibbles = new unsigned char[nibbleCount];
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
@@ -1364,7 +1364,7 @@ namespace Qrack {
 			}
 		}
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
 		}
 		prob.reset();
 		phase.reset();
@@ -1384,8 +1384,8 @@ namespace Qrack {
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt inOutRes, inRes, otherRes, carryRes, outRes, inOutInt, inInt, outInt, carryInt, i, j;
 		bool isValid;
-		unsigned char test1, test2;
-		unsigned char* nibbles = new unsigned char[nibbleCount];
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
@@ -1408,11 +1408,10 @@ namespace Qrack {
 				inRes = (i & inMask);
 				inInt = inRes>>inStart;
 				carryInt = (i & carryMask)>>carryIndex;
-				carryRes = 0;
 				isValid = true;
 
-				test1 = inOutInt & 15;
-				test2 = inInt & 15;					
+				test1 = (inOutInt & 15);
+				test2 = (inInt & 15);					
 				nibbles[0] = test1 - test2 - carryInt;
 				if ((test1 > 9) || (test2 > 9)) {
 					isValid = false;
@@ -1425,9 +1424,12 @@ namespace Qrack {
 					if ((test1 > 9) || (test2 > 9)) {
 						isValid = false;
 					}
+					
 				}
+
 				if (isValid) {
 					outInt = 0;
+					carryRes = 0;
 					for (j = 0; j < nibbleCount; j++) {
 						if (nibbles[j] < 0) {
 							nibbles[j] += 10;
@@ -1451,10 +1453,13 @@ namespace Qrack {
 			}
 		}
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = sqrt(prob[i]) * polar(1.0, phase[i]);
+			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
+			if (prob[outRes]) {
+				std::cout<<(int)outRes<<" "<<prob[outRes]<<" "<<phase[outRes]<<std::endl;
+			}
 		}
 		delete [] nibbles;
-		stateVec.reset(); 
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
