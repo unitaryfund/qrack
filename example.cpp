@@ -246,6 +246,7 @@ int main() {
 	}
 	std::cout<<std::endl;
 
+	
 	std::cout<<"SUBBCDC Test:"<<std::endl;
 	qftReg.SetPermutation(49);
 	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
