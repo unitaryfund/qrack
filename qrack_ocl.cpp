@@ -65,6 +65,10 @@ namespace Qrack {
 	cl::Kernel* OCLSingleton::GetADDCPtr() { return &addc; }
 	///Get a pointer to the SUBC function kernel
 	cl::Kernel* OCLSingleton::GetSUBCPtr() { return &subc; }
+	///Get a pointer to the ADDBCDC function kernel
+	cl::Kernel* OCLSingleton::GetADDBCDCPtr() { return &addbcdc; }
+	///Get a pointer to the SUBBCDC function kernel
+	cl::Kernel* OCLSingleton::GetSUBBCDCPtr() { return &subbcdc; }
 
 	//Private singleton methods:
 	OCLSingleton::OCLSingleton(){ InitOCL(0, 0); } // Private so that it can  not be called
@@ -277,10 +281,6 @@ namespace Qrack {
 		"	bool isValid;"
 		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
 		"		otherRes = (lcv & otherMask);"
-		"		if (otherRes == lcv) {"
-		"			nStateVec[lcv] = stateVec[lcv];"
-		"		}"
-		"		else {"
 		"			inOutRes = (lcv & inOutMask);"
 		"			inOutInt = inOutRes>>inOutStart;"
 		"			inRes = (lcv & inMask);"
@@ -310,7 +310,6 @@ namespace Qrack {
 		"			else {"
 		"				nStateVec[lcv] = stateVec[lcv];"
 		"			}"
-		"		}"
 		"	}"
 		"   }"
 		""
@@ -335,44 +334,143 @@ namespace Qrack {
 		"	bool isValid;"
 		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
 		"		otherRes = (lcv & otherMask);"
-		"		if (otherRes == lcv) {"
-		"			nStateVec[lcv] = stateVec[lcv];"
+		"		inOutRes = (lcv & inOutMask);"
+		"		inOutInt = inOutRes>>inOutStart;"
+		"		inRes = (lcv & inMask);"
+		"		inInt = inRes>>inStart;"
+		"		isValid = true;"
+		"		for (j = 0; j < nibbleCount; j++) {"
+		"			test1 = (inOutInt & (15 << (j * 4)));"
+		"			test2 = (inInt & (15 << (j * 4)));"
+		"			nibbles[j] = test1 + test2;"
+		"			if ((test1 > 9) || (test2 > 9)) {"
+		"				isValid = false;"
+		"			}"
+		"		}"
+		"		if (isValid) {"
+		"			outInt = 0;"
+		"			for (j = 0; j < nibbleCount; j++) {"
+		"				if (nibbles[j] < 0) {"
+		"					nibbles[j] += 10;"
+		"					if ((j + 1) < nibbleCount) {"
+		"						nibbles[j + 1]--;"
+		"					}"
+		"				}"
+		"				outInt |= nibbles[j] << (j * 4);"
+		"			}"
+		"			nStateVec[(outInt<<inOutStart) | otherRes | inRes] = stateVec[lcv];"
 		"		}"
 		"		else {"
-		"			inOutRes = (lcv & inOutMask);"
-		"			inOutInt = inOutRes>>inOutStart;"
-		"			inRes = (lcv & inMask);"
-		"			inInt = inRes>>inStart;"
-		"			isValid = true;"
-		"			for (j = 0; j < nibbleCount; j++) {"
-		"				test1 = (inOutInt & (15 << (j * 4)));"
-		"				test2 = (inInt & (15 << (j * 4)));"
-		"				nibbles[j] = test1 + test2;"
-		"				if ((test1 > 9) || (test2 > 9)) {"
-		"					isValid = false;"
-		"				}"
-		"			}"
-		"			if (isValid) {"
-		"				outInt = 0;"
-		"				for (j = 0; j < nibbleCount; j++) {"
-		"					if (nibbles[j] < 0) {"
-		"						nibbles[j] += 10;"
-		"						if ((j + 1) < nibbleCount) {"
-		"							nibbles[j + 1]--;"
-		"						}"
-		"					}"
-		"					outInt |= nibbles[j] << (j * 4);"
-		"				}"
-		"				nStateVec[(outInt<<inOutStart) | otherRes | inRes] = stateVec[lcv];"
-		"			}"
-		"			else {"
-		"				nStateVec[lcv] = stateVec[lcv];"
-		"			}"
+		"			nStateVec[lcv] = stateVec[lcv];"
 		"		}"
 		"	}"
 		"   }"
 		""
 		"   void kernel addc(global double2* stateVec, constant ulong* ulongPtr,"
+		"			   global double2* nStateVec) {"
+		""
+		"	ulong ID, Nthreads, lcv;"
+		""
+		"       ID = get_global_id(0);"
+		"       Nthreads = get_global_size(0);"
+		"	ulong maxQPower = ulongPtr[0];"
+		"	ulong maxI = ulongPtr[0]>>1;"
+		"	ulong inOutMask = ulongPtr[1];"
+		"	ulong inMask = ulongPtr[2];"
+		"	ulong carryMask = ulongPtr[3];"
+		"	ulong otherMask = ulongPtr[4];"
+		"	ulong lengthPower = ulongPtr[5];"
+		"	ulong inOutStart = ulongPtr[6];"
+		"	ulong inStart = ulongPtr[7];"
+		"	ulong carryIndex = ulongPtr[8];"
+		"	ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt, outRes;"
+		"	ulong iHigh, iLow, i, j;"
+		"	double2 tempX, temp1, temp2, tempY;"
+		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+		"		iHigh = lcv;"
+		"		i = 0;"
+		"		iLow = iHigh & (carryMask - 1);"
+		"		i += iLow;"
+		"		iHigh = (iHigh - iLow)<<1;"						
+		"		i += iHigh;"
+		"		otherRes = (i & otherMask);"
+		"		inOutRes = (i & inOutMask);"
+		"		inOutInt = inOutRes>>inOutStart;"
+		"		inRes = (i & inMask);"
+		"		inInt = inRes>>inStart;"
+		"		outInt = (inOutInt + inInt);"
+		"		j = inOutInt - 1 + lengthPower;"
+		"		j %= lengthPower;"
+		"		j = (j<<inOutStart) | (i ^ inOutRes) | carryMask;"
+		"		outRes = 0;"
+		"		if (outInt >= lengthPower) {"
+		"			outRes = carryMask;"
+		"			outInt ^= lengthPower;"
+		"		}"
+		"		outRes |= (outInt<<inOutStart) | otherRes | inRes;"
+		"		temp1 = stateVec[i] * stateVec[i];"
+		"		temp2 = stateVec[j] * stateVec[j];"
+		"		tempX = temp1 + temp2;"
+		"		if ((temp1.x + temp1.y) > 0.0) temp1 = atan2(stateVec[i].x, stateVec[i].y);"
+		"		if ((temp2.x + temp2.y) > 0.0) temp2 = atan2(stateVec[j].x, stateVec[j].y);"
+		"		tempY = temp1 + temp2;"
+		"		nStateVec[outRes] = (double2)(tempX.x + tempX.y, tempY.x + tempY.y);"
+		"	}"
+		"   }"
+		""
+		"   void kernel subc(global double2* stateVec, constant ulong* ulongPtr,"
+		"			   global double2* nStateVec) {"
+		""
+		"	ulong ID, Nthreads, lcv;"
+		""
+		"       ID = get_global_id(0);"
+		"       Nthreads = get_global_size(0);"
+		"	ulong maxQPower = ulongPtr[0];"
+		"	ulong maxI = ulongPtr[0]>>1;"
+		"	ulong inOutMask = ulongPtr[1];"
+		"	ulong inMask = ulongPtr[2];"
+		"	ulong carryMask = ulongPtr[3];"
+		"	ulong otherMask = ulongPtr[4];"
+		"	ulong lengthPower = ulongPtr[5];"
+		"	ulong inOutStart = ulongPtr[6];"
+		"	ulong inStart = ulongPtr[7];"
+		"	ulong carryIndex = ulongPtr[8];"
+		"	ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt, outRes;"
+		"	ulong iHigh, iLow, i, j;"
+		"	double2 tempX, temp1, temp2, tempY;"
+		"	for (lcv = ID; lcv < maxI; lcv+=Nthreads) {"
+		"		iHigh = lcv;"
+		"		i = 0;"
+		"		iLow = iHigh & (carryMask - 1);"
+		"		i += iLow;"
+		"		iHigh = (iHigh - iLow)<<1;"						
+		"		i += iHigh;"
+		"		otherRes = (i & otherMask);"
+		"		inOutRes = (i & inOutMask);"
+		"		inOutInt = inOutRes>>inOutStart;"
+		"		inRes = (i & inMask);"
+		"		inInt = inRes>>inStart;"
+		"		outInt = (inOutInt - inInt) + lengthPower;"
+		"		j = inOutInt + 1;"
+		"		j %= lengthPower;"
+		"		j = (j<<inOutStart) | (i ^ inOutRes) | carryMask;"
+		"		outRes = 0;"
+		"		if (outInt >= lengthPower) {"
+		"			outRes = carryMask;"
+		"			outInt ^= lengthPower;"
+		"		}"
+		"		outRes |= (outInt<<inOutStart) | otherRes | inRes;"
+		"		temp1 = stateVec[i] * stateVec[i];"
+		"		temp2 = stateVec[j] * stateVec[j];"
+		"		tempX = temp1 + temp2;"
+		"		if ((temp1.x + temp1.y) > 0.0) temp1 = atan2(stateVec[i].x, stateVec[i].y);"
+		"		if ((temp2.x + temp2.y) > 0.0) temp2 = atan2(stateVec[j].x, stateVec[j].y);"
+		"		tempY = temp1 + temp2;"
+		"		nStateVec[outRes] = (double2)(tempX.x + tempX.y, tempY.x + tempY.y);"
+		"	}"
+		"   }"
+		""
+		"   void kernel addbcdc(global double2* stateVec, constant ulong* ulongPtr,"
 		"			   global double2* nStateVec) {"
 		""
 		"	ulong ID, Nthreads, lcv;"
@@ -429,7 +527,7 @@ namespace Qrack {
 		"	}"
 		"   }"
 		""
-		"   void kernel subc(global double2* stateVec, constant ulong* ulongPtr,"
+		"   void kernel subbcdc(global double2* stateVec, constant ulong* ulongPtr,"
 		"			   global double2* nStateVec) {"
 		""
 		"	ulong ID, Nthreads, lcv;"
@@ -503,6 +601,8 @@ namespace Qrack {
 		subbcd = cl::Kernel(program, "subbcd");
 		addc = cl::Kernel(program, "addc");
 		subc = cl::Kernel(program, "subc");
+		addbcdc = cl::Kernel(program, "addbcdc");
+		subbcdc = cl::Kernel(program, "subbcdc");
 	}
 
 	OCLSingleton* OCLSingleton::m_pInstance = NULL;
@@ -1604,6 +1704,43 @@ namespace Qrack {
 	///Add two binary-coded decimal numbers.
 	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 	void CoherentUnit::ADDBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask + carryMask;
+		bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, 0};
+		
+		queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+		queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		cl::Context context = *(clObj->GetContextPtr());
+		cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+		cl::Kernel addbcdc = *(clObj->GetADDBCDCPtr());				
+		addbcdc.setArg(0, stateBuffer);
+		addbcdc.setArg(1, ulongBuffer);
+		addbcdc.setArg(2, nStateBuffer);
+		queue.finish();
+		
+		queue.enqueueNDRangeKernel(addbcdc, cl::NullRange,  // kernel, offset
+			cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+			cl::NDRange(1)); // local number (per group)
+
+		queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+		for (i = 0; i < maxQPower; i++) {
+			stateVec[i] = polar(sqrt(real(stateVec[i])), imag(stateVec[i]));
+		}
+		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
+		ReInitOCL();
 	}
 	///Subtract two quantum integers
 	/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." */
@@ -1710,6 +1847,47 @@ namespace Qrack {
 		queue.finish();
 		
 		queue.enqueueNDRangeKernel(subc, cl::NullRange,  // kernel, offset
+			cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+			cl::NDRange(1)); // local number (per group)
+
+		queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+		for (i = 0; i < maxQPower; i++) {
+			stateVec[i] = polar(sqrt(real(stateVec[i])), imag(stateVec[i]));
+		}
+		queue.enqueueUnmapMemObject(nStateBuffer, &(nStateVec[0]));
+		ReInitOCL();
+	}
+	///Add two binary-coded decimal numbers.
+	/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
+	void CoherentUnit::SUBBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt inMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+			inMask += 1<<(inStart + i);
+		}
+		otherMask -= inOutMask + inMask + carryMask;
+		bitCapInt bciArgs[10] = {maxQPower, inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, 0};
+		
+		queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+		queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		cl::Context context = *(clObj->GetContextPtr());
+		cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+		cl::Kernel subbcdc = *(clObj->GetSUBBCDCPtr());				
+		subbcdc.setArg(0, stateBuffer);
+		subbcdc.setArg(1, ulongBuffer);
+		subbcdc.setArg(2, nStateBuffer);
+		queue.finish();
+		
+		queue.enqueueNDRangeKernel(subbcdc, cl::NullRange,  // kernel, offset
 			cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
 			cl::NDRange(1)); // local number (per group)
 

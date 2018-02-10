@@ -73,6 +73,10 @@ namespace Qrack {
 			cl::Kernel* GetADDCPtr();
 			///Get a pointer to the SUBC function kernel
 			cl::Kernel* GetSUBCPtr();
+			///Get a pointer to the ADDBCDC function kernel
+			cl::Kernel* GetADDBCDCPtr();
+			///Get a pointer to the SUBBCDC function kernel
+			cl::Kernel* GetSUBBCDCPtr();
 
 		private:
 			std::vector<cl::Platform> all_platforms;
@@ -91,6 +95,8 @@ namespace Qrack {
 			cl::Kernel subbcd;
 			cl::Kernel addc;
 			cl::Kernel subc;
+			cl::Kernel addbcdc;
+			cl::Kernel subbcdc;
 
 			OCLSingleton(); // Private so that it can  not be called
 			OCLSingleton(int plat, int dev); // Private so that it can  not be called
