@@ -1047,8 +1047,8 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[4]);
-					unsigned char test1, test2, j;
-					unsigned char* nibbles = new unsigned char[bciArgs[5]];
+					char test1, test2, j;
+					char* nibbles = new char[bciArgs[5]];
 					bool isValid = true;
 					for (j = 0; j < bciArgs[5]; j++) {
 						test1 = (inOutInt & (15 << (j * 4)));

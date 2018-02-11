@@ -232,7 +232,6 @@ int main() {
 		qftReg.H(i);
 	}
 
-	/*
 	std::cout<<"ADDBCDC Test:"<<std::endl;
 	qftReg.SetPermutation(57);
 	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
@@ -246,7 +245,6 @@ int main() {
 	}
 	std::cout<<std::endl;
 
-	
 	std::cout<<"SUBBCDC Test:"<<std::endl;
 	qftReg.SetPermutation(49);
 	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
@@ -259,7 +257,6 @@ int main() {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;
-	*/
 
 	std::cout<<"M Test:"<<std::endl;
 	std::cout<<"Initial:"<<std::endl;
