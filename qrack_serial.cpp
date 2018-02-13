@@ -1098,7 +1098,8 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
-		otherMask -= inOutMask + inMask - carryMask;
+		bitCapInt edgeMask = inOutMask | carryMask;
+		otherMask ^= inOutMask | inMask | carryMask;
 		std::unique_ptr<double[]> prob(new double[maxQPower]);
 		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1109,6 +1110,10 @@ namespace Qrack {
 			if (otherRes == i) {
 				prob[i] = norm(stateVec[i]);
 				phase[i] = arg(stateVec[i]);
+			}
+			else if ((edgeMask & i) == i) {
+				prob[(i & otherMask) | carryMask] = norm(stateVec[i]);
+				phase[(i & otherMask) | carryMask] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1149,6 +1154,11 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt inOutRes, inRes, otherRes, carryRes, outRes, inOutInt, inInt, outInt, carryInt, i, j;
+		bitCapInt maxMask = 9;
+		for (i = 1; i < nibbleCount; i++) {
+			maxMask = (maxMask<<4) + 9;
+		}
+		maxMask <<= inOutStart;
 		bool isValid;
 		char test1, test2;
 		char* nibbles = new char[nibbleCount];
@@ -1156,7 +1166,8 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
-		otherMask -= inOutMask + inMask + carryMask;
+		bitCapInt edgeMask = maxMask | carryMask;
+		otherMask ^= inOutMask | inMask | carryMask;
 		std::unique_ptr<double[]> prob(new double[maxQPower]);
 		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1167,6 +1178,10 @@ namespace Qrack {
 			if (otherRes == i) {
 				prob[i] = norm(stateVec[i]);
 				phase[i] = arg(stateVec[i]);
+			}
+			else if ((edgeMask & i) == i) {
+				prob[(i & otherMask) | carryMask] = norm(stateVec[i]);
+				phase[(i & otherMask) | carryMask] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1332,7 +1347,8 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(toSub + i);
 		}
-		otherMask -= inOutMask + inMask + carryMask;
+		bitCapInt edgeMask = inOutMask;
+		otherMask ^= inOutMask | inMask | carryMask;
 		std::unique_ptr<double[]> prob(new double[maxQPower]);
 		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1343,6 +1359,10 @@ namespace Qrack {
 			if (otherRes == i) {
 				prob[i] = norm(stateVec[i]);
 				phase[i] = arg(stateVec[i]);
+			}
+			else if (((edgeMask ^ i) | carryMask) == i) {
+				prob[i | inOutMask] = norm(stateVec[i]);
+				phase[i | inOutMask] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1383,6 +1403,11 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt inOutRes, inRes, otherRes, carryRes, outRes, inOutInt, inInt, outInt, carryInt, i, j;
+		bitCapInt maxMask = 9;
+		for (i = 1; i < nibbleCount; i++) {
+			maxMask = (maxMask<<4) + 9;
+		}
+		maxMask <<= inOutStart;
 		bool isValid;
 		char test1, test2;
 		char* nibbles = new char[nibbleCount];
@@ -1390,6 +1415,7 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
+		bitCapInt edgeMask = maxMask;
 		otherMask -= inOutMask + inMask + carryMask;
 		std::unique_ptr<double[]> prob(new double[maxQPower]);
 		std::unique_ptr<double[]> phase(new double[maxQPower]);
@@ -1401,6 +1427,10 @@ namespace Qrack {
 			if (otherRes == i) {
 				prob[i] = norm(stateVec[i]);
 				phase[i] = arg(stateVec[i]);
+			}
+			else if (((edgeMask ^ i) | carryMask) == i) {
+				prob[i | maxMask] = norm(stateVec[i]);
+				phase[i | maxMask] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
