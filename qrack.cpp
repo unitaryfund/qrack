@@ -1413,7 +1413,7 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(toSub + i);
 		}
-		bitCapInt edgeMask = inOutMask;
+		bitCapInt edgeMask = inOutMask | inMask;
 		otherMask ^= inOutMask | inMask | carryMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
@@ -1447,7 +1447,7 @@ namespace Qrack {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (((~bciArgs[8]) & lcv) == lcv) {				
-					nStateVec[lcv | bciArgs[8]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					nStateVec[lcv | bciArgs[0]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1496,10 +1496,10 @@ namespace Qrack {
 			maxMask = (maxMask<<4) + 9;
 		}
 		maxMask <<= inOutStart;
-		bitCapInt edgeMask = maxMask;
+		bitCapInt edgeMask = maxMask | inMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask};
+		bitCapInt bciArgs[9] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask, maxMask};
 		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -1562,7 +1562,7 @@ namespace Qrack {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if ((((~bciArgs[7]) & lcv) | bciArgs[2]) == lcv) {
-					nStateVec[lcv | bciArgs[7]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					nStateVec[lcv | bciArgs[8]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
