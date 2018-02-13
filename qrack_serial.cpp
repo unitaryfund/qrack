@@ -1360,9 +1360,9 @@ namespace Qrack {
 				prob[i] = norm(stateVec[i]);
 				phase[i] = arg(stateVec[i]);
 			}
-			else if (((edgeMask ^ i) | carryMask) == i) {
-				prob[i | inOutMask] = norm(stateVec[i]);
-				phase[i | inOutMask] = arg(stateVec[i]);
+			else if ((((~edgeMask) & i) | carryMask) == i) {
+				prob[i | edgeMask] = norm(stateVec[i]);
+				phase[i | edgeMask] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);
@@ -1416,7 +1416,7 @@ namespace Qrack {
 			inMask += 1<<(inStart + i);
 		}
 		bitCapInt edgeMask = maxMask;
-		otherMask -= inOutMask + inMask + carryMask;
+		otherMask ^= inOutMask + inMask + carryMask;
 		std::unique_ptr<double[]> prob(new double[maxQPower]);
 		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1428,9 +1428,9 @@ namespace Qrack {
 				prob[i] = norm(stateVec[i]);
 				phase[i] = arg(stateVec[i]);
 			}
-			else if (((edgeMask ^ i) | carryMask) == i) {
-				prob[i | maxMask] = norm(stateVec[i]);
-				phase[i | maxMask] = arg(stateVec[i]);
+			else if ((((~edgeMask) & i) | carryMask) == i) {
+				prob[i | edgeMask] = norm(stateVec[i]);
+				phase[i | edgeMask] = arg(stateVec[i]);
 			}
 			else {
 				inOutRes = (i & inOutMask);

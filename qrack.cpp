@@ -1097,18 +1097,14 @@ namespace Qrack {
 		}
 		bitCapInt edgeMask = inOutMask | carryMask;
 		otherMask ^= inOutMask | inMask | carryMask;
-		std::unique_ptr<double[]> prob(new double[maxQPower]);
-		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
-		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		bitCapInt bciArgs[9] = {inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex, edgeMask};
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
-					prob[lcv] = norm(stateVec[lcv]);
-					phase[lcv] = arg(stateVec[lcv]);
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1124,18 +1120,16 @@ namespace Qrack {
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
 					}
-					prob[outRes] += norm(stateVec[lcv]);
-					phase[outRes] += arg(stateVec[lcv]);
+					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 			}
 		);
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = lcv & (bciArgs[3]);
 				if ((bciArgs[8] & lcv) == lcv) {
-					prob[(lcv & bciArgs[3]) | bciArgs[2]] = norm(stateVec[lcv]);
-					phase[(lcv & bciArgs[3]) | bciArgs[2]] = arg(stateVec[lcv]);
+					nStateVec[(lcv & bciArgs[3]) | bciArgs[2]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1151,16 +1145,13 @@ namespace Qrack {
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
 					}
-					prob[outRes] += norm(stateVec[lcv]);
-					phase[outRes] += arg(stateVec[lcv]);
+					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
-		prob.reset();
-		phase.reset();
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
@@ -1182,18 +1173,20 @@ namespace Qrack {
 			inMask += 1<<(inStart + i);
 		}
 		otherMask ^= inOutMask | inMask | carryMask;
-		std::unique_ptr<double[]> prob(new double[maxQPower]);
-		std::unique_ptr<double[]> phase(new double[maxQPower]);
+		bitCapInt maxMask = 9;
+		for (i = 1; i < nibbleCount; i++) {
+			maxMask = (maxMask<<4) + 9;
+		}
+		maxMask <<= inOutStart;
+		bitCapInt edgeMask = maxMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
-		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
-		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount};
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[9] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask};
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
-					prob[lcv] = norm(stateVec[lcv]);
-					phase[lcv] = arg(stateVec[lcv]);
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1237,24 +1230,21 @@ namespace Qrack {
 							outInt |= nibbles[j] << (j * 4);
 						}
 						outRes = (outInt<<(bciArgs[4])) | otherRes | inRes | carryRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					else {
-						prob[lcv] = norm(stateVec[lcv]);
-						phase[lcv] = arg(stateVec[lcv]);
+						nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					delete [] nibbles;
 				}
 			}
 		);
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if ((bciArgs[8] & lcv) == lcv) {
-					prob[(lcv & bciArgs[3]) | bciArgs[2]] = norm(stateVec[lcv]);
-					phase[(lcv & bciArgs[3]) | bciArgs[2]] = arg(stateVec[lcv]);
+					nStateVec[(lcv & bciArgs[3]) | bciArgs[2]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1298,22 +1288,18 @@ namespace Qrack {
 							outInt |= nibbles[j] << (j * 4);
 						}
 						outRes = (outInt<<(bciArgs[4])) | otherRes | inRes | carryRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					else {
-						prob[lcv] = norm(stateVec[lcv]);
-						phase[lcv] = arg(stateVec[lcv]);
+						nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					delete [] nibbles;
 				}
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
-		prob.reset();
-		phase.reset();
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
@@ -1429,18 +1415,14 @@ namespace Qrack {
 		}
 		bitCapInt edgeMask = inOutMask;
 		otherMask ^= inOutMask | inMask | carryMask;
-		std::unique_ptr<double[]> prob(new double[maxQPower]);
-		std::unique_ptr<double[]> phase(new double[maxQPower]);
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
-		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		bitCapInt bciArgs[9] = {inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex, edgeMask};
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
-					prob[lcv] += norm(stateVec[lcv]);
-					phase[lcv] += arg(stateVec[lcv]);
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1451,24 +1433,21 @@ namespace Qrack {
 					bitCapInt outRes;
 					if (outInt < (bciArgs[4])) {
 						outRes = (outInt<<(bciArgs[5])) | otherRes | inRes | (bciArgs[2]);
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					else {
 						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 				}
 			}
 		);
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
-				if (((bciArgs[8] ^ lcv) | bciArgs[2]) == lcv) {
-					prob[lcv | bciArgs[0]] = norm(stateVec[lcv]);
-					phase[lcv | bciArgs[0]] = arg(stateVec[lcv]);
+				if (((~bciArgs[8]) & lcv) == lcv) {				
+					nStateVec[lcv | bciArgs[8]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1479,19 +1458,17 @@ namespace Qrack {
 					bitCapInt outRes;
 					if (outInt < (bciArgs[4])) {
 						outRes = (outInt<<(bciArgs[5])) | otherRes | inRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					else {
-						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) + otherRes + inRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | inRes;
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 				}
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
 		stateVec.reset(); 
 		stateVec = std::move(nStateVec);
@@ -1514,18 +1491,20 @@ namespace Qrack {
 			inMask += 1<<(inStart + i);
 		}
 		otherMask -= inOutMask + inMask + carryMask;
-		std::unique_ptr<double[]> prob(new double[maxQPower]);
-		std::unique_ptr<double[]> phase(new double[maxQPower]);
+		bitCapInt maxMask = 9;
+		for (i = 1; i < nibbleCount; i++) {
+			maxMask = (maxMask<<4) + 9;
+		}
+		maxMask <<= inOutStart;
+		bitCapInt edgeMask = maxMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(prob[0]), &(prob[0]) + maxQPower, 0.0);
-		std::fill(&(phase[0]), &(phase[0]) + maxQPower, 0.0);
-		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount};
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask};
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
 				if (otherRes == lcv) {
-					prob[lcv] = norm(stateVec[lcv]);
-					phase[lcv] = arg(stateVec[lcv]);
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1569,24 +1548,21 @@ namespace Qrack {
 							outInt |= nibbles[j] << (j * 4);
 						}
 						outRes = (outInt<<(bciArgs[4])) | otherRes | inRes | carryRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					else {
-						prob[lcv] = norm(stateVec[lcv]);
-						phase[lcv] = arg(stateVec[lcv]);
+						nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					delete [] nibbles;
 				}
 			}
 		);
-		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(prob[0]), &(phase[0]),
-				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, double* prob, double* phase) {
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
-				if (((bciArgs[8] ^ lcv) | bciArgs[2]) == lcv) {
-					prob[lcv | bciArgs[0]] = norm(stateVec[lcv]);
-					phase[lcv | bciArgs[0]] = arg(stateVec[lcv]);
+				if ((((~bciArgs[7]) & lcv) | bciArgs[2]) == lcv) {
+					nStateVec[lcv | bciArgs[7]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1630,22 +1606,18 @@ namespace Qrack {
 							outInt |= nibbles[j] << (j * 4);
 						}
 						outRes = (outInt<<(bciArgs[4])) | otherRes | inRes | carryRes;
-						prob[outRes] += norm(stateVec[lcv]);
-						phase[outRes] += arg(stateVec[lcv]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					else {
-						prob[lcv] = norm(stateVec[lcv]);
-						phase[lcv] = arg(stateVec[lcv]);
+						nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 					}
 					delete [] nibbles;
 				}
 			}
 		);
 		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = polar(sqrt(prob[i]), phase[i]);
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
-		prob.reset();
-		phase.reset();
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
