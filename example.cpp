@@ -18,16 +18,16 @@ int main() {
 
 	int i, j;
 
-	Qrack::CoherentUnit qftReg(9, 125);
+	Qrack::CoherentUnit qftReg(9, 256);
 
 	double qftProbs[9];
-	std::cout<<"INC Test:"<<std::endl;
+	std::cout<<"INCC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.INC(1, 0, 9);
+		qftReg.INC(1, 0, 8);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}

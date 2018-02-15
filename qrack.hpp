@@ -256,6 +256,8 @@ namespace Qrack {
 			void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 			///Add integer (without sign)
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+			///Add integer (without sign, with carry)
+			void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 			///Subtract integer (without sign)
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 			///Add two quantum integers

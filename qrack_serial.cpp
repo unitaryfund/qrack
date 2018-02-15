@@ -965,10 +965,66 @@ namespace Qrack {
 				for (j = 0; j < maxLCV; j+=endPower) {
 					rotate(&(stateVec[0]) + i + j,
 						  &(stateVec[0]) + ((lengthPower - toAdd) * startPower) + i + j,
-						  &(stateVec[0]) + endPower,
+						  &(stateVec[0]) + endPower + i + j,
 						  startPower);
 				}
 			}
+		}
+	}
+	///Add integer (without sign, with carry)
+	void CoherentUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
+		bitCapInt lengthPower = 1<<length;
+		toAdd %= lengthPower;
+		if ((length > 0) && (toAdd > 0)) {
+			bitCapInt i, j;
+			bitLenInt end = start + length;
+			bitCapInt startPower = 1<<start;
+			bitCapInt endPower = 1<<end;
+			bitCapInt iterPower = 1<<(qubitCount - end);
+			bitCapInt maxLCV = iterPower * endPower;
+			for (i = 0; i < startPower; i++) {
+				for (j = 0; j < maxLCV; j+=endPower) {
+					rotate(&(stateVec[0]) + i + j,
+						  &(stateVec[0]) + ((lengthPower - toAdd) * startPower) + i + j,
+						  &(stateVec[0]) + endPower + i + j,
+						  startPower);
+				}
+			}
+
+			/*bitCapInt carryPower = 1<<carryIndex;
+			bitCapInt inOutMask = ((1<<length) - 1)<<start;
+			bitCapInt inOutInt, outRes;
+			bitCapInt otherMask = ((maxQPower - 1) ^ inOutMask) ^ carryPower;
+			maxLCV = maxQPower>>1;
+			bitCapInt iHigh, iLow;
+			Complex16 temp1 = stateVec[0];
+			Complex16 temp2;
+			for (i = 0; i < maxLCV; i++) {
+				iHigh = i;
+				iLow = iHigh % carryPower;
+				j = iLow;
+				iHigh = (iHigh - iLow)<<1;				
+				j += iHigh;
+				j |= carryPower;
+				
+				if ((j & inOutMask) == inOutMask) {
+					if (norm(stateVec[j ^ inOutMask]) > 0.0) {
+						std::cout<<"out: "<<(int)inOutMask<<std::endl;
+					}
+					stateVec[j ^ inOutMask] = temp1;
+					temp1 = stateVec[j ^ inOutMask];
+				}
+				else {
+					inOutInt = (j & inOutMask)>>start;
+					outRes = (j & otherMask) | ((inOutInt + 1)<<start);
+					if (norm(stateVec[outRes]) > 0.0) {
+						std::cout<<"outRes: "<<(int)outRes<<std::endl;
+					}
+					temp2 = stateVec[outRes];
+					stateVec[outRes] = temp1;
+					temp1 = temp2;
+				}
+			}*/
 		}
 	}
 	///Subtract integer (without sign)
@@ -986,7 +1042,7 @@ namespace Qrack {
 				for (j = 0; j < maxLCV; j+=endPower) {
 					rotate(&(stateVec[0]) + i + j,
 						  &(stateVec[0]) + (toSub * startPower) + i + j,
-						  &(stateVec[0]) + endPower,
+						  &(stateVec[0]) + endPower + i + j,
 						  startPower);
 				}
 			}
