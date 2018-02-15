@@ -27,20 +27,20 @@ int main() {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.INC(1, 0, 8);
+		qftReg.INCC(1, 0, 8, 8);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"DEC Test:"<<std::endl;
-	qftReg.SetPermutation(133);
+	std::cout<<"DECC Test:"<<std::endl;
+	qftReg.SetPermutation(389);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.DEC(1, 0, 9);
+		qftReg.DECC(1, 0, 8, 8);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}

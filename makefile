@@ -14,7 +14,7 @@ RM       = rm -f
 all: all-before $(BIN) all-after
 
 clean: clean-custom
-	${RM} $(OBJ)
+	$(RM) $(OBJ)
 
 $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)

@@ -1630,6 +1630,70 @@ namespace Qrack {
 				}
 		);
 	}
+	///Add integer (without sign, with carry)
+	void CoherentUnit::INCC(const bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		bitCapInt edgeMask = inOutMask | carryMask;
+		otherMask ^= inOutMask | carryMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[8] = {inOutMask, toAdd, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask};
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (otherRes == lcv) {
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
+					bitCapInt outInt = inOutInt + bciArgs[1];
+					bitCapInt outRes;
+					if (outInt < (bciArgs[4])) {
+						outRes = (outInt<<(bciArgs[5])) | otherRes;
+					}
+					else {
+						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | (bciArgs[2]);
+					}
+					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+			}
+		);
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				lcv |= bciArgs[2];
+				bitCapInt otherRes = lcv & (bciArgs[3]);
+				if ((bciArgs[7] | lcv) == lcv) {
+					nStateVec[(lcv & bciArgs[3]) | bciArgs[2]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
+					bitCapInt outInt = inOutInt + bciArgs[1] + 1;
+					bitCapInt outRes;
+					if (outInt < (bciArgs[4])) {
+						outRes = (outInt<<(bciArgs[5])) | otherRes;
+					}
+					else {
+						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes | (bciArgs[2]);
+					}
+					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
 	///Subtract integer (without sign)
 	void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
 		par_for_reg(start, length, qubitCount, toSub, &(stateVec[0]),
@@ -1641,6 +1705,72 @@ namespace Qrack {
 						  startPower);
 				}
 		);
+	}
+	///Subtract integer (without sign, with carry)
+	void CoherentUnit::DECC(const bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		bitCapInt edgeMask = inOutMask;
+		otherMask ^= inOutMask | carryMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[8] = {inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask};
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (otherRes == lcv) {
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
+					bitCapInt outInt = (inOutInt - bciArgs[1]) + (bciArgs[4]);
+					bitCapInt outRes;
+					if (outInt < (bciArgs[4])) {
+						outRes = (outInt<<(bciArgs[5])) | otherRes | (bciArgs[2]);
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+					else {
+						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes;
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+				}
+			}
+		);
+		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				lcv |= bciArgs[2];
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (((~bciArgs[7]) & lcv) == lcv) {				
+					nStateVec[lcv | bciArgs[0]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
+					bitCapInt outInt = (inOutInt - bciArgs[1] - 1) + (bciArgs[4]);
+					bitCapInt outRes;
+					if (outInt < (bciArgs[4])) {
+						outRes = (outInt<<(bciArgs[5])) | otherRes;
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+					else {
+						outRes = ((outInt - (bciArgs[4]))<<(bciArgs[5])) | otherRes;
+						nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
 	}
 	///Add two quantum integers
 	/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." */
@@ -1846,7 +1976,7 @@ namespace Qrack {
 				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = lcv & (bciArgs[3]);
-				if ((bciArgs[8] & lcv) == lcv) {
+				if ((bciArgs[8] | lcv) == lcv) {
 					nStateVec[(lcv & bciArgs[3]) | bciArgs[2]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
@@ -1961,7 +2091,7 @@ namespace Qrack {
 				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
-				if ((bciArgs[8] & lcv) == lcv) {
+				if ((bciArgs[8] | lcv) == lcv) {
 					nStateVec[(lcv & bciArgs[3]) | bciArgs[2]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
