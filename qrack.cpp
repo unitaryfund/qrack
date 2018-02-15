@@ -1765,6 +1765,34 @@ namespace Qrack {
 		}
 	}
 
+	/// For chips with a zero flag, set the zero flag after a register operation.
+	void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag) {
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt startPower = 1<<start;
+		bitCapInt regMask = (lengthPower - 1)<<start;
+		bitCapInt flagMask = 1<<zeroFlag;
+		bitCapInt otherMask = ((1<<qubitCount) - 1) ^ (regMask | flagMask);
+		bitCapInt i;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[2] = {otherMask, flagMask};
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+					if (((lcv & bciArgs[0]) == lcv) || (((lcv & bciArgs[0]) | bciArgs[1]) == lcv)) {
+						nStateVec[lcv | bciArgs[1]] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+					else {
+						nStateVec[lcv & (~(bciArgs[1]))] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+				}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+
 	//Private CoherentUnit methods
 	void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 			const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {

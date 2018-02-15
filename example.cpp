@@ -18,9 +18,22 @@ int main() {
 
 	int i, j;
 
-	Qrack::CoherentUnit qftReg(9, 256);
+	Qrack::CoherentUnit qftReg(9, 257);
 
 	double qftProbs[9];
+
+	std::cout<<"Set Zero Flag Test:"<<std::endl;
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.SetZeroFlag(0, 8, 8);
+	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
+	qftReg.SetPermutation(256);
 	std::cout<<"INCC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {

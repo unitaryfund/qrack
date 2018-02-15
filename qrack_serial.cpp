@@ -1553,6 +1553,31 @@ namespace Qrack {
 		}
 	}
 
+	/// For chips with a zero flag, set the zero flag after a register operation.
+	void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag) {
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt startPower = 1<<start;
+		bitCapInt regMask = (lengthPower - 1)<<start;
+		bitCapInt flagMask = 1<<zeroFlag;
+		bitCapInt otherMask = ((1<<qubitCount) - 1) ^ (regMask | flagMask);
+		bitCapInt i;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			if (((i & otherMask) == i) || (((i & otherMask) | flagMask) == i)) {
+				nStateVec[i | flagMask] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+			else {
+				nStateVec[i & (~flagMask)] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+
 	//Private CoherentUnit methods
 	void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 			const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {

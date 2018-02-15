@@ -286,8 +286,10 @@ namespace Qrack {
 			///Subtract two quantum integers with carry bit
 			/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
-			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
+			/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
 			void QFT(bitLenInt start, bitLenInt length);
+			/// For chips with a zero flag, set the zero flag after a register operation.
+			void SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag);
 
 		private:
 			double runningNorm;
