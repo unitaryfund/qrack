@@ -264,6 +264,8 @@ namespace Qrack {
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 			///Subtract integer (without sign, with carry)
 			void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+			///Subtract BCD integer (without sign)
+			void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 			///Add two quantum integers
 			/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);

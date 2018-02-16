@@ -46,14 +46,14 @@ int main() {
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"DECC Test:"<<std::endl;
+	std::cout<<"DECBCD Test:"<<std::endl;
 	qftReg.SetPermutation(389);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.DECC(1, 0, 8, 8);
+		qftReg.DECBCD(9, 0, 8);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}

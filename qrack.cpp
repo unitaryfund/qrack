@@ -1106,6 +1106,63 @@ namespace Qrack {
 				}
 		);
 	}
+	///Subtract BCD integer (without sign)
+	void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToAdd, i, j;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		otherMask ^= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[5] = {inOutMask, toAdd, otherMask, inOutStart, nibbleCount};
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[2]));
+				bitCapInt partToSub = bciArgs[1];
+				bitCapInt inOutRes = (lcv & (bciArgs[0]));
+				bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
+				char test1, test2, j;
+				char* nibbles = new char[bciArgs[4]];
+				bool isValid = true;
+				for (j = 0; j < bciArgs[4]; j++) {
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = (partToSub % 10);
+					partToSub /= 10;					
+					nibbles[j] = test1 - test2;
+					if (test1 > 9) {
+						isValid = false;
+					}
+				
+				}
+				if (isValid) {
+					bitCapInt outInt = 0;
+					for (j = 0; j < bciArgs[4]; j++) {
+						if (nibbles[j] < 0) {
+							nibbles[j] += 10;
+							if ((j + 1) < bciArgs[4]) {
+								nibbles[j + 1]--;
+							}
+						}
+						outInt |= nibbles[j] << (j * 4);
+					}
+					nStateVec[(outInt<<(bciArgs[3])) | otherRes] = stateVec[lcv];
+				}
+				else {
+					nStateVec[lcv] = stateVec[lcv];
+				}
+				delete [] nibbles;
+			}
+		);
+		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
 	///Subtract integer (without sign, with carry)
 	void CoherentUnit::DECC(const bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex) {
 		bitCapInt inOutMask = 0;

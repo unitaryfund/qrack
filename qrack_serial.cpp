@@ -1090,6 +1090,62 @@ namespace Qrack {
 			}
 		}
 	}
+	///Subtract BCD integer (without sign)
+	void CoherentUnit::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToSub, i, j;
+		bool isValid;
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		otherMask ^= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			partToSub = toSub;
+			inOutRes = (i & inOutMask);
+			inOutInt = inOutRes>>inOutStart;
+			isValid = true;
+			for (j = 0; j < nibbleCount; j++) {
+				test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+				test2 = (partToSub % 10);
+				partToSub /= 10;					
+				nibbles[j] = test1 - test2;
+				if (test1 > 9) {
+					isValid = false;
+				}
+				
+			}
+			if (isValid) {
+				outInt = 0;
+				for (j = 0; j < nibbleCount; j++) {
+					if (nibbles[j] < 0) {
+						nibbles[j] += 10;
+						if ((j + 1) < nibbleCount) {
+							nibbles[j + 1]--;
+						}
+					}
+					outInt |= nibbles[j] << (j * 4);
+				}
+				outRes = (outInt<<inOutStart) | otherRes;
+				nStateVec[(outInt<<inOutStart) | otherRes] = stateVec[i];
+			}
+			else {
+				nStateVec[i] = stateVec[i];
+			}
+		}
+		delete [] nibbles;
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
 	///Subtract integer (without sign, with carry)
 	void CoherentUnit::DECC(const bitCapInt toSub, const bitLenInt inOutStart,  const bitLenInt length, const bitLenInt carryIndex) {
 		bitCapInt inOutMask = 0;
@@ -1412,7 +1468,7 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
-		otherMask -= inOutMask + inMask;
+		otherMask ^= inOutMask + inMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
