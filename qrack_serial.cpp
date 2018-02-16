@@ -971,6 +971,62 @@ namespace Qrack {
 			}
 		}
 	}
+	///Add BCD integer (without sign)
+	void CoherentUnit::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToAdd, i, j;
+		bool isValid;
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		otherMask ^= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			partToAdd = toAdd;
+			inOutRes = (i & inOutMask);
+			inOutInt = inOutRes>>inOutStart;
+			isValid = true;
+			for (j = 0; j < nibbleCount; j++) {
+				test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+				test2 = (partToAdd % 10);
+				partToAdd /= 10;					
+				nibbles[j] = test1 + test2;
+				if (test1 > 9) {
+					isValid = false;
+				}
+				
+			}
+			if (isValid) {
+				outInt = 0;
+				for (j = 0; j < nibbleCount; j++) {
+					if (nibbles[j] > 9) {
+						nibbles[j] -= 10;
+						if ((j + 1) < nibbleCount) {
+							nibbles[j + 1]++;
+						}
+					}
+					outInt |= nibbles[j] << (j * 4);
+				}
+				outRes = (outInt<<inOutStart) | otherRes;
+				nStateVec[(outInt<<inOutStart) | otherRes] = stateVec[i];
+			}
+			else {
+				nStateVec[i] = stateVec[i];
+			}
+		}
+		delete [] nibbles;
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
 	///Add integer (without sign, with carry)
 	void CoherentUnit::INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) {
 		bitCapInt inOutMask = 0;
@@ -1124,7 +1180,7 @@ namespace Qrack {
 			inOutMask += 1<<(inOutStart + i);
 			inMask += 1<<(inStart + i);
 		}
-		otherMask -= inOutMask + inMask;
+		otherMask ^= inOutMask + inMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
@@ -1139,8 +1195,8 @@ namespace Qrack {
 				inInt = inRes>>inStart;
 				isValid = true;
 				for (j = 0; j < nibbleCount; j++) {
-					test1 = (inOutInt & (15 << (j * 4)));
-					test2 = (inInt & (15 << (j * 4)));					
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = (inInt & (15 << (j * 4)))>>(j * 4);					
 					nibbles[j] = test1 + test2;
 					if ((test1 > 9) || (test2 > 9)) {
 						isValid = false;
@@ -1268,8 +1324,8 @@ namespace Qrack {
 				}
 
 				for (j = 1; j < nibbleCount; j++) {
-					test1 = (inOutInt & (15 << (j * 4)));
-					test2 = (inInt & (15 << (j * 4)));					
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = (inInt & (15 << (j * 4)))>>(j * 4);					
 					nibbles[j] = test1 + test2;
 					if ((test1 > 9) || (test2 > 9)) {
 						isValid = false;
@@ -1371,8 +1427,8 @@ namespace Qrack {
 				inInt = inRes>>inStart;
 				isValid = true;
 				for (j = 0; j < nibbleCount; j++) {
-					test1 = (inOutInt & (15 << (j * 4)));
-					test2 = (inInt & (15 << (j * 4)));					
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = (inInt & (15 << (j * 4)))>>(j * 4);					
 					nibbles[j] = test1 - test2;
 					if ((test1 > 9) || (test2 > 9)) {
 						isValid = false;
@@ -1500,8 +1556,8 @@ namespace Qrack {
 				}
 
 				for (j = 1; j < nibbleCount; j++) {
-					test1 = (inOutInt & (15 << (j * 4)));
-					test2 = (inInt & (15 << (j * 4)));					
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = (inInt & (15 << (j * 4)))>>(j * 4);					
 					nibbles[j] = test1 - test2;
 					if ((test1 > 9) || (test2 > 9)) {
 						isValid = false;
