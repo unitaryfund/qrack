@@ -258,6 +258,9 @@ namespace Qrack {
 			void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 			///Add integer (without sign, with carry)
 			void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+			///Add integer (with sign, without carry)
+			/** Add an integer to the register, with sign and without carry. Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast. */
+			void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 			///Add BCD integer (without sign)
 			void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 			///Add BCD integer (without sign, with carry)
@@ -266,6 +269,9 @@ namespace Qrack {
 			void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 			///Subtract integer (without sign, with carry)
 			void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+			///Subtract integer (with sign, without carry)
+			/** Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast. */
+			void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 			///Subtract BCD integer (without sign)
 			void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 			///Subtract BCD integer (without sign, with carry)

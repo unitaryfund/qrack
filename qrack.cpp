@@ -1094,6 +1094,51 @@ namespace Qrack {
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
+	///Add integer (with sign, without carry)
+	/** Add an integer to the register, with sign and without carry. Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast. */
+	void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt overflowMask = 1<<overflowIndex;
+		bitCapInt signMask = 1<<(length - 1);
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt inOutRes, otherRes, signRes, outRes, inOutInt, outInt, i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		otherMask ^= inOutMask | overflowMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[7] = {inOutMask, toAdd, overflowMask, otherMask, lengthPower, inOutStart, signMask};
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (otherRes == lcv) {
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
+					bitCapInt signRes = (lcv & (bciArgs[6]));
+					bitCapInt outInt = inOutInt + bciArgs[1];
+					bitCapInt outRes;
+					if (outInt < bciArgs[4]) {
+						outRes = (outInt<<(bciArgs[5])) | otherRes;
+					}
+					else {
+						outRes = ((outInt - bciArgs[4])<<(bciArgs[5])) | otherRes;
+					}
+					if (signRes < (outRes & (bciArgs[6]))) outRes |= bciArgs[2];
+					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
 	///Add BCD integer (without sign, with carry)
 	void CoherentUnit::INCBCDC(const bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex) {
 		bitCapInt nibbleCount = length / 4;
@@ -1369,6 +1414,51 @@ namespace Qrack {
 			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
 		stateVec.reset(); 
+		stateVec = std::move(nStateVec);
+	}
+	///Subtract integer (with sign, without carry)
+	/** Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast. */
+	void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex) {
+		bitCapInt inOutMask = 0;
+		bitCapInt overflowMask = 1<<overflowIndex;
+		bitCapInt signMask = 1<<(length - 1);
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt inOutRes, otherRes, signRes, outRes, inOutInt, outInt, i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		otherMask ^= inOutMask | overflowMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[7] = {inOutMask, toSub, overflowMask, otherMask, lengthPower, inOutStart, signMask};
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt otherRes = (lcv & (bciArgs[3]));
+				if (otherRes == lcv) {
+					nStateVec[lcv] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+				else {
+					bitCapInt inOutRes = (lcv & (bciArgs[0]));
+					bitCapInt inOutInt = inOutRes>>(bciArgs[5]);
+					bitCapInt signRes = (lcv & (bciArgs[6]));
+					bitCapInt outInt = inOutInt - bciArgs[1] + bciArgs[4];
+					bitCapInt outRes;
+					if (outInt < bciArgs[4]) {
+						outRes = (outInt<<(bciArgs[5])) | otherRes;
+					}
+					else {
+						outRes = ((outInt - bciArgs[4])<<(bciArgs[5])) | otherRes;
+					}
+					if (signRes > (outRes & (bciArgs[6]))) outRes |= bciArgs[2];
+					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
 	///Subtract BCD integer (without sign, with carry)
