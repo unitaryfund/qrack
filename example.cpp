@@ -18,9 +18,9 @@ int main() {
 
 	int i, j;
 
-	Qrack::CoherentUnit qftReg(9, 257);
+	Qrack::CoherentUnit qftReg(10, 257);
 
-	double qftProbs[9];
+	double qftProbs[10];
 
 	std::cout<<"Set Zero Flag Test:"<<std::endl;
 	for (j = 0; j < 9; j++) {
@@ -34,27 +34,27 @@ int main() {
 	std::cout<<std::endl;
 
 	qftReg.SetPermutation(127);
-	std::cout<<"INCS Test:"<<std::endl;
+	std::cout<<"INCSC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 9; j++) {
+		for (j = 0; j < 10; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.INCS(9, 0, 8, 8);
-		for (j = 0; j < 9; j++) {
+		qftReg.INCSC(9, 0, 8, 8, 9);
+		for (j = 0; j < 10; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"DECS Test:"<<std::endl;
+	std::cout<<"DECSC Test:"<<std::endl;
 	qftReg.SetPermutation(128);
 	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 9; j++) {
+		for (j = 0; j < 10; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.DECS(9, 0, 8, 8);
-		for (j = 0; j < 9; j++) {
+		qftReg.DECSC(9, 0, 8, 8, 9);
+		for (j = 0; j < 10; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
