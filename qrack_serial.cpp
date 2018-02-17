@@ -1027,6 +1027,92 @@ namespace Qrack {
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
+	///Add BCD integer (without sign, with carry)
+	void CoherentUnit::INCBCDC(const bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, otherRes, carryRes, outRes, inOutInt, outInt, carryInt, partToAdd, i, j;
+		bitCapInt maxMask = 9;
+		for (i = 1; i < nibbleCount; i++) {
+			maxMask = (maxMask<<4) + 9;
+		}
+		maxMask <<= inOutStart;
+		bool isValid;
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		bitCapInt edgeMask = maxMask | carryMask;
+		otherMask ^= inOutMask | carryMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			if ((edgeMask | i) == i) {
+				nStateVec[(i & otherMask) | carryMask] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+			else {
+				partToAdd = toAdd;
+				inOutRes = (i & inOutMask);
+				inOutInt = inOutRes>>inOutStart;
+				carryInt = (i & carryMask)>>carryIndex;
+				isValid = true;
+
+				test1 = (inOutInt & 15);
+				test2 = partToAdd % 10;
+				partToAdd /= 10;					
+				nibbles[0] = test1 + test2 + carryInt;
+				if (test1 > 9) {
+					isValid = false;
+				}
+
+				for (j = 1; j < nibbleCount; j++) {
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = partToAdd % 10;
+					partToAdd /= 10;					
+					nibbles[j] = test1 + test2;
+					if (test1 > 9) {
+						isValid = false;
+					}
+					
+				}
+
+				if (isValid) {
+					outInt = 0;
+					carryRes = 0;
+					for (j = 0; j < nibbleCount; j++) {
+						if (nibbles[j] > 9) {
+							nibbles[j] -= 10;
+							if ((j + 1) < nibbleCount) {
+								nibbles[j + 1]++;
+							}
+							else {
+								carryRes = carryMask;
+							}
+						}
+						outInt |= nibbles[j] << (j * 4);
+					}
+					outRes = (outInt<<inOutStart) | otherRes | carryRes;
+					nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+				}
+				else {
+					nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+				}
+			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		delete [] nibbles;
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
 	///Add integer (without sign, with carry)
 	void CoherentUnit::INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) {
 		bitCapInt inOutMask = 0;
@@ -1185,6 +1271,91 @@ namespace Qrack {
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+	void CoherentUnit::DECBCDC(const bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex) {
+		bitCapInt nibbleCount = length / 4;
+		if (nibbleCount * 4 != length) {
+			throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+		}
+		bitCapInt inOutMask = 0;
+		bitCapInt carryMask = 1<<carryIndex;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt inOutRes, otherRes, carryRes, outRes, inOutInt, outInt, carryInt, partToSub, i, j;
+		bitCapInt maxMask = 9;
+		for (i = 1; i < nibbleCount; i++) {
+			maxMask = (maxMask<<4) + 9;
+		}
+		maxMask <<= inOutStart;
+		bool isValid;
+		char test1, test2;
+		char* nibbles = new char[nibbleCount];
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(inOutStart + i);
+		}
+		bitCapInt edgeMask = maxMask;
+		otherMask ^= inOutMask | carryMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			if ((((~edgeMask) & i) | carryMask) == i) {
+				nStateVec[i | maxMask] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+			else {
+				partToSub = toSub;
+				inOutRes = (i & inOutMask);
+				inOutInt = inOutRes>>inOutStart;
+				carryInt = (i & carryMask)>>carryIndex;
+				isValid = true;
+
+				test1 = (inOutInt & 15);
+				test2 = partToSub % 10;
+				partToSub /= 10;					
+				nibbles[0] = test1 - test2 - carryInt;
+				if (test1 > 9) {
+					isValid = false;
+				}
+
+				for (j = 1; j < nibbleCount; j++) {
+					test1 = (inOutInt & (15 << (j * 4)))>>(j * 4);
+					test2 = partToSub % 10;
+					partToSub /= 10;					
+					nibbles[j] = test1 - test2;
+					if (test1 > 9) {
+						isValid = false;
+					}
+					
+				}
+
+				if (isValid) {
+					outInt = 0;
+					carryRes = 0;
+					for (j = 0; j < nibbleCount; j++) {
+						if (nibbles[j] < 0) {
+							nibbles[j] += 10;
+							if ((j + 1) < nibbleCount) {
+								nibbles[j + 1]--;
+							}
+							else {
+								carryRes = carryMask;
+							}
+						}
+						outInt |= nibbles[j] << (j * 4);
+					}
+					outRes = (outInt<<inOutStart) | otherRes | carryRes;
+					nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+				}
+				else {
+					nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+				}
+			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		delete [] nibbles;
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
@@ -1585,7 +1756,7 @@ namespace Qrack {
 			inMask += 1<<(inStart + i);
 		}
 		bitCapInt edgeMask = maxMask | inMask;
-		otherMask ^= inOutMask + inMask + carryMask;
+		otherMask ^= inOutMask | inMask | carryMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
@@ -1640,7 +1811,7 @@ namespace Qrack {
 					nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 				}
 				else {
-					nStateVec[outRes] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+					nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
 				}
 			}
 		}

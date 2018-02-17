@@ -34,26 +34,26 @@ int main() {
 	std::cout<<std::endl;
 
 	qftReg.SetPermutation(256);
-	std::cout<<"INCBCD Test:"<<std::endl;
+	std::cout<<"INCBCDC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.INCBCD(9, 0, 8);
+		qftReg.INCBCDC(9, 0, 8, 8);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	
 	}
-	std::cout<<"DECBCD Test:"<<std::endl;
+	std::cout<<"DECBCDC Test:"<<std::endl;
 	qftReg.SetPermutation(389);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.DECBCD(9, 0, 8);
+		qftReg.DECBCDC(9, 0, 8, 8);
 		for (j = 0; j < 9; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
