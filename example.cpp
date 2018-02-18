@@ -207,17 +207,17 @@ int main() {
 	//}
 
 	
-	std::cout<<"ADDC Test:"<<std::endl;
-	qftReg.SetPermutation(271);
+	std::cout<<"ADDSC Test:"<<std::endl;
+	qftReg.SetPermutation(55);
 	//qftReg.H(0);
 	//qftReg.H(8);
 	std::cout<<"[0,4) = [0,4) + [4,8):"<<std::endl;
-	for (j = 0; j < 9; j++) {
+	for (j = 0; j < 10; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<"->";
-	qftReg.ADDC(0, 4, 4, 8);
-	for (j = 0; j < 9; j++) {
+	qftReg.ADDSC(0, 4, 4, 8, 9);
+	for (j = 0; j < 10; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;
@@ -227,15 +227,15 @@ int main() {
 	//	qftReg.H(i);
 	//}
 
-	std::cout<<"SUBC Test:"<<std::endl;
-	qftReg.SetPermutation(256);
+	std::cout<<"SUBSC Test:"<<std::endl;
+	qftReg.SetPermutation(56);
 	std::cout<<"[0,4) = [0,4) - [4,8):"<<std::endl;
-	for (j = 0; j < 9; j++) {
+	for (j = 0; j < 10; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<"->";
-	qftReg.SUBC(0, 4, 4, 8);
-	for (j = 0; j < 9; j++) {
+	qftReg.SUBSC(0, 4, 4, 8, 9);
+	for (j = 0; j < 10; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;
