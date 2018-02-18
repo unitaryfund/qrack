@@ -1221,11 +1221,11 @@ namespace Qrack {
 					if (inOutInt & inInt & (bciArgs[9])) {
 						inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
 						inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
-						if ((inOutInt + inInt) > (bciArgs[9])) outRes |= bciArgs[8];
+						if ((inOutInt + inInt - 1) > (bciArgs[9])) outRes |= bciArgs[8];
 					}
 					//Both positive:
 					else if ((~inOutInt) & (~inInt) & (bciArgs[9])) {
-						if ((inOutInt + inInt) >= (bciArgs[9])) outRes |= bciArgs[8];
+						if ((inOutInt + inInt + 1) >= (bciArgs[9])) outRes |= bciArgs[8];
 					}
 					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
@@ -1638,12 +1638,12 @@ namespace Qrack {
 					//First negative:
 					if (inOutInt & (~inInt) & (bciArgs[9])) {
 						inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
-						if ((inOutInt + inInt) > bciArgs[9]) outRes |= bciArgs[8];
+						if ((inOutInt + inInt - 1) > bciArgs[9]) outRes |= bciArgs[8];
 					}
 					//First positive:
 					else if (inOutInt & (~inInt) & (bciArgs[9])) {
 						inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
-						if ((inOutInt + inInt) >= bciArgs[9]) outRes |= bciArgs[8];
+						if ((inOutInt + inInt + 1) >= bciArgs[9]) outRes |= bciArgs[8];
 					}
 					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
@@ -2103,11 +2103,11 @@ namespace Qrack {
 					if (inOutInt & inInt & (bciArgs[10])) {
 						inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
 						inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
-						if ((inOutInt + inInt) > (bciArgs[10])) outRes |= bciArgs[9];
+						if ((inOutInt + inInt + 1) > (bciArgs[10])) outRes |= bciArgs[9];
 					}
 					//Both positive:
 					else if ((~inOutInt) & (~inInt) & (bciArgs[10])) {
-						if ((inOutInt + inInt) >= (bciArgs[10])) outRes |= bciArgs[9];
+						if ((inOutInt + inInt - 1) >= (bciArgs[10])) outRes |= bciArgs[9];
 					}
 					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
@@ -2568,12 +2568,12 @@ namespace Qrack {
 					//First negative:
 					if (inOutInt & (~inInt) & (bciArgs[10])) {
 						inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
-						if ((inOutInt + inInt) > bciArgs[10]) outRes |= bciArgs[9];
+						if ((inOutInt + inInt - 1) > bciArgs[10]) outRes |= bciArgs[9];
 					}
 					//First positive:
 					else if (inOutInt & (~inInt) & (bciArgs[10])) {
 						inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
-						if ((inOutInt + inInt) >= bciArgs[10]) outRes |= bciArgs[9];
+						if ((inOutInt + inInt + 1) >= bciArgs[10]) outRes |= bciArgs[9];
 					}
 					nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
