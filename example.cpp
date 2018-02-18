@@ -10,7 +10,7 @@ int main() {
 	///Choose OpenCL platform 0, device 0:
 	//Qrack::OCLSingleton::Instance(0, 0);
 
-	char testKey;
+	//char testKey;
 
 	const int planckTimes = 65500;
         const int mpPowerOfTwo = 16;
@@ -340,7 +340,7 @@ int main() {
 	unsigned int power = 1 << mpPowerOfTwo;
 
 	//We will store our ultimate position in this variable and return it from the operation:
-	unsigned int toReturn = 0;
+	//unsigned int toReturn = 0;
 
 	double* zeroProbs = new double[mpPowerOfTwo];
 

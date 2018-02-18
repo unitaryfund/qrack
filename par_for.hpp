@@ -102,7 +102,6 @@ namespace Qrack {
 		for (int cpu = 0; cpu != num_cpus; ++cpu) {
 			futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateVec, &fn]() {
 				bitCapInt i, iLow, iHigh;
-				bitLenInt p;
 				for (;;) {
 					iHigh = idx++;
 					i = 0;

@@ -103,6 +103,7 @@ namespace Qrack {
 	}
 
 	double arg(const Complex16Simd& cmplx) {
+		if ((imag(cmplx) == 0.0) && (real(cmplx) == 0.0)) return 0.0;
 		return atan2(imag(cmplx), real(cmplx));
 	}
 	Complex16Simd conj(const Complex16Simd& cmplx) {

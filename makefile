@@ -6,7 +6,7 @@ BIN      = example
 LIBS     = -lm -lpthread -lOpenCL
 INCS     =
 CXXINCS  = 
-CXXFLAGS = $(CXXINCS) -std=c++11 -pedantic
+CXXFLAGS = $(CXXINCS) -std=c++11 -Wall -pedantic
 RM       = rm -f
 
 .PHONY: all all-before all-after clean clean-custom

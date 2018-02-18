@@ -377,8 +377,6 @@ namespace Qrack {
 			Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 		};
 
-		bitLenInt powerMask = 0;
-		Complex16 qubit[2];
 		bitCapInt qPowers[4];
 		bitCapInt qPowersSorted[3];
 		qPowers[1] = 1 << control1;
@@ -404,8 +402,6 @@ namespace Qrack {
 			Complex16(1.0, 0.0), Complex16(0.0, 0.0)
 		};
 
-		bitLenInt powerMask = 0;
-		Complex16 qubit[2];
 		bitCapInt qPowers[4];
 		bitCapInt qPowersSorted[3];
 		qPowers[1] = 1 << control1;
@@ -979,7 +975,7 @@ namespace Qrack {
 		}
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToAdd, i, j;
+		bitCapInt inOutRes, otherRes, inOutInt, outInt, partToAdd, i, j;
 		bool isValid;
 		char test1, test2;
 		char* nibbles = new char[nibbleCount];
@@ -1016,7 +1012,6 @@ namespace Qrack {
 					}
 					outInt |= nibbles[j] << (j * 4);
 				}
-				outRes = (outInt<<inOutStart) | otherRes;
 				nStateVec[(outInt<<inOutStart) | otherRes] = stateVec[i];
 			}
 			else {
@@ -1164,7 +1159,6 @@ namespace Qrack {
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
 		bitCapInt inOutRes, otherRes, outRes, inOutInt, inInt, outInt, i;
-		bool firstNeg;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1215,7 +1209,7 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, carryInt, otherRes, carryRes, outRes, inOutInt, inInt, outInt, i;
+		bitCapInt inOutRes, carryInt, otherRes, outRes, inOutInt, inInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1291,7 +1285,7 @@ namespace Qrack {
 		}
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToSub, i, j;
+		bitCapInt inOutRes, otherRes, inOutInt, outInt, partToSub, i, j;
 		bool isValid;
 		char test1, test2;
 		char* nibbles = new char[nibbleCount];
@@ -1328,7 +1322,6 @@ namespace Qrack {
 					}
 					outInt |= nibbles[j] << (j * 4);
 				}
-				outRes = (outInt<<inOutStart) | otherRes;
 				nStateVec[(outInt<<inOutStart) | otherRes] = stateVec[i];
 			}
 			else {
@@ -1955,7 +1948,6 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt inMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt inOutRes, inRes, otherRes, inOutInt, inInt, outInt, i, j;
 		bool isValid;
 		char test1, test2;
@@ -2276,7 +2268,6 @@ namespace Qrack {
 	/// For chips with a zero flag, set the zero flag after a register operation.
 	void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag) {
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt startPower = 1<<start;
 		bitCapInt regMask = (lengthPower - 1)<<start;
 		bitCapInt flagMask = 1<<zeroFlag;
 		bitCapInt otherMask = ((1<<qubitCount) - 1) ^ (regMask | flagMask);
@@ -2303,7 +2294,6 @@ namespace Qrack {
 		bitCapInt inOutRes = value<<start;
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt otherRes, outRes, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(start + i);

@@ -1638,7 +1638,7 @@ namespace Qrack {
 		}
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToAdd, i, j;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1652,7 +1652,8 @@ namespace Qrack {
 				bitCapInt partToAdd = bciArgs[1];
 				bitCapInt inOutRes = (lcv & (bciArgs[0]));
 				bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
-				char test1, test2, j;
+				char test1, test2;
+				unsigned char j;
 				char* nibbles = new char[bciArgs[4]];
 				bool isValid = true;
 				for (j = 0; j < bciArgs[4]; j++) {
@@ -1670,7 +1671,7 @@ namespace Qrack {
 					for (j = 0; j < bciArgs[4]; j++) {
 						if (nibbles[j] > 9) {
 							nibbles[j] -= 10;
-							if ((j + 1) < bciArgs[4]) {
+							if ((unsigned char)(j + 1) < bciArgs[4]) {
 								nibbles[j + 1]++;
 							}
 						}
@@ -1696,7 +1697,6 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -1717,7 +1717,8 @@ namespace Qrack {
 				bitCapInt partToAdd = bciArgs[1];
 				bitCapInt inOutRes = (lcv & (bciArgs[0]));
 				bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
-				char test1, test2, j;
+				char test1, test2;
+				unsigned char j;
 				char* nibbles = new char[bciArgs[5]];
 				bool isValid = true;
 
@@ -1746,7 +1747,7 @@ namespace Qrack {
 					for (j = 0; j < bciArgs[5]; j++) {
 						if (nibbles[j] > 9) {
 							nibbles[j] -= 10;
-							if ((j + 1) < bciArgs[5]) {
+							if ((unsigned char)(j + 1) < bciArgs[5]) {
 								nibbles[j + 1]++;
 							}
 							else {
@@ -1775,7 +1776,8 @@ namespace Qrack {
 					bitCapInt partToAdd = bciArgs[1];
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
-					char test1, test2, j;
+					char test1, test2;
+					unsigned char j;
 					char* nibbles = new char[bciArgs[5]];
 					bool isValid = true;
 
@@ -1804,7 +1806,7 @@ namespace Qrack {
 						for (j = 0; j < bciArgs[5]; j++) {
 							if (nibbles[j] > 9) {
 								nibbles[j] -= 10;
-								if ((j + 1) < bciArgs[6]) {
+								if ((unsigned char)(j + 1) < bciArgs[6]) {
 									nibbles[j + 1]++;
 								}
 								else {
@@ -1901,7 +1903,7 @@ namespace Qrack {
 		bitCapInt signMask = 1<<(length - 1);
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, otherRes, outRes, inOutInt, outInt, i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1956,7 +1958,7 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, carryInt, otherRes, outRes, inOutInt, outInt, i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -2056,7 +2058,7 @@ namespace Qrack {
 		}
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt inOutRes, outRes, otherRes, inOutInt, outInt, partToAdd, i, j;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -2070,7 +2072,8 @@ namespace Qrack {
 				bitCapInt partToSub = bciArgs[1];
 				bitCapInt inOutRes = (lcv & (bciArgs[0]));
 				bitCapInt inOutInt = inOutRes>>(bciArgs[3]);
-				char test1, test2, j;
+				char test1, test2;
+				unsigned char j;
 				char* nibbles = new char[bciArgs[4]];
 				bool isValid = true;
 				for (j = 0; j < bciArgs[4]; j++) {
@@ -2088,7 +2091,7 @@ namespace Qrack {
 					for (j = 0; j < bciArgs[4]; j++) {
 						if (nibbles[j] < 0) {
 							nibbles[j] += 10;
-							if ((j + 1) < bciArgs[4]) {
+							if ((unsigned char)(j + 1) < bciArgs[4]) {
 								nibbles[j + 1]--;
 							}
 						}
@@ -2177,7 +2180,7 @@ namespace Qrack {
 		bitCapInt signMask = 1<<(length - 1);
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, otherRes, outRes, inOutInt, outInt, i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -2232,7 +2235,7 @@ namespace Qrack {
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, carryInt, otherRes, outRes, inOutInt, outInt, i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -2321,7 +2324,6 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -2342,7 +2344,8 @@ namespace Qrack {
 				bitCapInt partToSub = bciArgs[1];
 				bitCapInt inOutRes = (lcv & (bciArgs[0]));
 				bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
-				char test1, test2, j;
+				char test1, test2;
+				unsigned char j;
 				char* nibbles = new char[bciArgs[5]];
 				bool isValid = true;
 
@@ -2371,7 +2374,7 @@ namespace Qrack {
 					for (j = 0; j < bciArgs[5]; j++) {
 						if (nibbles[j] < 0) {
 							nibbles[j] += 10;
-							if ((j + 1) < bciArgs[5]) {
+							if ((unsigned char)(j + 1) < bciArgs[5]) {
 								nibbles[j + 1]--;
 							}
 							else {
@@ -2400,7 +2403,8 @@ namespace Qrack {
 					bitCapInt partToSub = bciArgs[1];
 					bitCapInt inOutRes = (lcv & (bciArgs[0]));
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
-					char test1, test2, j;
+					char test1, test2;
+					unsigned char j;
 					char* nibbles = new char[bciArgs[5]];
 					bool isValid = true;
 
@@ -2429,7 +2433,7 @@ namespace Qrack {
 						for (j = 0; j < bciArgs[5]; j++) {
 							if (nibbles[j] < 0) {
 								nibbles[j] += 10;
-								if ((j + 1) < bciArgs[6]) {
+								if ((unsigned char)(j + 1) < bciArgs[6]) {
 									nibbles[j + 1]--;
 								}
 								else {
@@ -2848,7 +2852,6 @@ namespace Qrack {
 		bitCapInt inMask = 0;
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -2875,7 +2878,8 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
-					char test1, test2, j;
+					char test1, test2;
+					unsigned char j;
 					char* nibbles = new char[bciArgs[6]];
 					bool isValid = true;
 
@@ -2902,7 +2906,7 @@ namespace Qrack {
 						for (j = 0; j < bciArgs[6]; j++) {
 							if (nibbles[j] > 9) {
 								nibbles[j] -= 10;
-								if ((j + 1) < bciArgs[6]) {
+								if ((unsigned char)(j + 1) < bciArgs[6]) {
 									nibbles[j + 1]++;
 								}
 								else {
@@ -2933,7 +2937,8 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
-					char test1, test2, j;
+					char test1, test2;
+					unsigned char j;
 					char* nibbles = new char[bciArgs[6]];
 					bool isValid = true;
 
@@ -2960,7 +2965,7 @@ namespace Qrack {
 						for (j = 0; j < bciArgs[6]; j++) {
 							if (nibbles[j] > 9) {
 								nibbles[j] -= 10;
-								if ((j + 1) < bciArgs[6]) {
+								if ((unsigned char)(j + 1) < bciArgs[6]) {
 									nibbles[j + 1]++;
 								}
 								else {
@@ -3375,7 +3380,6 @@ namespace Qrack {
 		bitCapInt inMask = 0;
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
 		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -3402,7 +3406,8 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
-					char test1, test2, j;
+					char test1, test2;
+					unsigned char j;
 					char* nibbles = new char[bciArgs[6]];
 					bool isValid = true;
 
@@ -3429,7 +3434,7 @@ namespace Qrack {
 						for (j = 0; j < bciArgs[6]; j++) {
 							if (nibbles[j] < 0) {
 								nibbles[j] += 10;
-								if ((j + 1) < bciArgs[6]) {
+								if ((unsigned char)(j + 1) < bciArgs[6]) {
 									nibbles[j + 1]--;
 								}
 								else {
@@ -3460,7 +3465,8 @@ namespace Qrack {
 					bitCapInt inOutInt = inOutRes>>(bciArgs[4]);
 					bitCapInt inRes = (lcv & (bciArgs[1]));
 					bitCapInt inInt = inRes>>(bciArgs[5]);
-					char test1, test2, j;
+					char test1, test2;
+					unsigned char j;
 					char* nibbles = new char[bciArgs[6]];
 					bool isValid = true;
 
@@ -3487,7 +3493,7 @@ namespace Qrack {
 						for (j = 0; j < bciArgs[6]; j++) {
 							if (nibbles[j] < 0) {
 								nibbles[j] += 10;
-								if ((j + 1) < bciArgs[6]) {
+								if ((unsigned char)(j + 1) < bciArgs[6]) {
 									nibbles[j + 1]--;
 								}
 								else {
@@ -3531,8 +3537,7 @@ namespace Qrack {
 		bitCapInt inOutRes = value<<start;
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt lengthPower = 1<<length;
-		bitCapInt otherRes, outRes, i;
+		bitCapInt i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(start + i);
 		}
@@ -3551,7 +3556,7 @@ namespace Qrack {
 				bitCapInt outRes = bciArgs[1] | (i & bciArgs[0]);
 				bitCapInt maxLCV = 1<<(bciArgs[2]);
 				bitCapInt inRes;
-				for (int j = 0; j < maxLCV; j++) {
+				for (unsigned int j = 0; j < maxLCV; j++) {
 					inRes =  i | (j<<(bciArgs[4]));
 					nStateVec[outRes] += Complex16(norm(stateVec[inRes]), arg(stateVec[inRes]));
 				}
@@ -3567,7 +3572,6 @@ namespace Qrack {
 	/// For chips with a zero flag, set the zero flag after a register operation.
 	void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag) {
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt startPower = 1<<start;
 		bitCapInt regMask = (lengthPower - 1)<<start;
 		bitCapInt flagMask = 1<<zeroFlag;
 		bitCapInt otherMask = ((1<<qubitCount) - 1) ^ (regMask | flagMask);
