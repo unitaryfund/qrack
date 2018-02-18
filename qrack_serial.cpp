@@ -2298,6 +2298,31 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 	}
 
+	///Set register bits to given permutation
+	void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
+		bitCapInt inOutRes = value<<start;
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt otherRes, outRes, i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(start + i);
+		}
+		otherMask ^= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			outRes = inOutRes | otherRes;
+			nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+
 	//Private CoherentUnit methods
 	void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 			const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {

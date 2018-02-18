@@ -2775,6 +2775,44 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 	}
 
+	///Set register bits to given permutation
+	void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
+		bitCapInt inOutRes = value<<start;
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt otherRes, outRes, i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(start + i);
+		}
+		otherMask ^= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[5] = {otherMask, inOutRes, length, (bitCapInt)(1<<start), start};
+		par_for_copy(0, maxQPower>>length, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt iHigh = lcv;
+				bitCapInt i = 0;
+				bitCapInt iLow = iHigh % bciArgs[3];
+				i += iLow;
+				iHigh = (iHigh - iLow)<<(bciArgs[2]);						
+				i += iHigh;
+				bitCapInt outRes = bciArgs[1] | (i & bciArgs[0]);
+				bitCapInt maxLCV = 1<<(bciArgs[2]);
+				bitCapInt inRes;
+				for (int j = 0; j < maxLCV; j++) {
+					inRes =  i | (j<<(bciArgs[4]));
+					nStateVec[outRes] += Complex16(norm(stateVec[inRes]), arg(stateVec[inRes]));
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+
 	//Private CoherentUnit methods
 	void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 			const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {
