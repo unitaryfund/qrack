@@ -1161,10 +1161,9 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt overflowMask = 1<<overflowIndex;
 		bitCapInt signMask = (1<<(length - 1));
-		bitCapInt penMask = 1<<(length - 2);
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, otherRes, signRes, outRes, inOutInt, outInt, i;
+		bitCapInt inOutRes, otherRes, outRes, inOutInt, inInt, outInt, i;
 		bool firstNeg;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
@@ -1180,7 +1179,7 @@ namespace Qrack {
 			else {
 				inOutRes = (i & inOutMask);
 				inOutInt = inOutRes>>inOutStart;
-				signRes = (i & signMask);
+				inInt = toAdd;
 				outInt = inOutInt + toAdd;
 				if (outInt < lengthPower) {
 					outRes = (outInt<<inOutStart) | otherRes;
@@ -1188,7 +1187,16 @@ namespace Qrack {
 				else {
 					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
 				}
-				if (((inOutInt & signMask) ^ penMask) == ((toAdd & signMask) ^ penMask)) outRes |= overflowMask;
+				//Both negative:
+				if (inOutInt & inInt & signMask) {
+					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+					inInt = ((~inInt) & (lengthPower - 1)) + 1;
+					if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
+				}
+				//Both positive:
+				else if ((~inOutInt) & (~inInt) & signMask) {
+					if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
+				}
 				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 		}
@@ -1203,12 +1211,11 @@ namespace Qrack {
 	void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
 		bitCapInt inOutMask = 0;
 		bitCapInt overflowMask = 1<<overflowIndex;
-		bitCapInt signMask = 1<<(length - 1);
-		bitCapInt penMask = 1<<(length - 2);
+		bitCapInt signMask = (1<<(length - 1));
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, carryInt, otherRes, signRes, outRes, inOutInt, outInt, i;
+		bitCapInt inOutRes, carryInt, otherRes, carryRes, outRes, inOutInt, inInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1227,7 +1234,7 @@ namespace Qrack {
 			else {
 				inOutRes = (i & inOutMask);
 				inOutInt = inOutRes>>inOutStart;
-				signRes = (i & signMask);
+				inInt = toAdd;
 				carryInt = (i & carryMask)>>carryIndex;
 				outInt = inOutInt + toAdd + carryInt;
 				if (outInt < lengthPower) {
@@ -1236,7 +1243,16 @@ namespace Qrack {
 				else {
 					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | carryMask;
 				}
-				if (((inOutInt & signMask) ^ penMask) == ((toAdd & signMask) ^ penMask)) outRes |= overflowMask;
+				//Both negative:
+				if (inOutInt & inInt & signMask) {
+					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+					inInt = ((~inInt) & (lengthPower - 1)) + 1;
+					if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
+				}
+				//Both positive:
+				else if ((~inOutInt) & (~inInt) & signMask) {
+					if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
+				}
 				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 		}
@@ -1371,10 +1387,9 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt overflowMask = 1<<overflowIndex;
 		bitCapInt signMask = 1<<(length - 1);
-		bitCapInt penMask = 1<<(length - 2);
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, otherRes, signRes, outRes, inOutInt, outInt, i;
+		bitCapInt inOutRes, otherRes, outRes, inOutInt, inInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1389,7 +1404,7 @@ namespace Qrack {
 			else {
 				inOutRes = (i & inOutMask);
 				inOutInt = inOutRes>>inOutStart;
-				signRes = (i & signMask);
+				inInt = toSub;
 				outInt = inOutInt - toSub + lengthPower;
 				if (outInt < lengthPower) {
 					outRes = (outInt<<inOutStart) | otherRes;
@@ -1397,7 +1412,16 @@ namespace Qrack {
 				else {
 					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
 				}
-				if (((inOutInt & penMask) ^ signMask) == ((toSub & penMask) ^ signMask))  outRes |= overflowMask;
+				//First negative:
+				if (inOutInt & (~inInt) & signMask) {
+					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+					if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
+				}
+				//First positive:
+				else if (inOutInt & (~inInt) & signMask) {
+					inInt = ((~inInt) & (lengthPower - 1)) + 1;
+					if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
+				}
 				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 		}
@@ -1413,11 +1437,10 @@ namespace Qrack {
 		bitCapInt inOutMask = 0;
 		bitCapInt overflowMask = 1<<overflowIndex;
 		bitCapInt signMask = 1<<(length - 1);
-		bitCapInt penMask = 1<<(length - 2);
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, carryInt, otherRes, signRes, outRes, inOutInt, outInt, i;
+		bitCapInt inOutRes, carryInt, otherRes, outRes, inOutInt, inInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1436,7 +1459,7 @@ namespace Qrack {
 			else {
 				inOutRes = (i & inOutMask);
 				inOutInt = inOutRes>>inOutStart;
-				signRes = (i & signMask);
+				inInt = toSub;
 				carryInt = (i & carryMask)>>carryIndex;
 				outInt = inOutInt - toSub - carryInt + lengthPower;
 				if (outInt < lengthPower) {
@@ -1445,7 +1468,16 @@ namespace Qrack {
 				else {
 					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
 				}
-				if (((inOutInt & penMask) ^ signMask) == ((toSub & penMask) ^ signMask)) outRes |= overflowMask;
+				//First negative:
+				if (inOutInt & (~inInt) & signMask) {
+					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+					if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
+				}
+				//First positive:
+				else if (inOutInt & (~inInt) & signMask) {
+					inInt = ((~inInt) & (lengthPower - 1)) + 1;
+					if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
+				}
 				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 		}

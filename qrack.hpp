@@ -289,6 +289,9 @@ namespace Qrack {
 			///Add two quantum integers with carry bit
 			/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
 			void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
+			///Add two signed quantum integers with overflow bit
+			/** Add signed integer of "length" bits in "inStart" to signed integer of "length" bits in "inOutStart," and store result in "inOutStart." Set overflow bit input to output wraps past minimum or maximum integer. */
+			void ADDS(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 			///Add two quantum binary coded decimal numbers
 			/** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in "inOutStart." */
 			void ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
