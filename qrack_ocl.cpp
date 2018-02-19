@@ -3532,6 +3532,33 @@ namespace Qrack {
 		}
 	}
 
+	/// For chips with a zero flag, set the zero flag after a register operation.
+	void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag) {
+		bitCapInt lengthPower = 1<<length;
+		bitCapInt regMask = (lengthPower - 1)<<start;
+		bitCapInt flagMask = 1<<zeroFlag;
+		bitCapInt otherMask = ((1<<qubitCount) - 1) ^ (regMask | flagMask);
+		bitCapInt i;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[2] = {otherMask, flagMask};
+		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+					if (((lcv & bciArgs[0]) == lcv) || (((lcv & bciArgs[0]) | bciArgs[1]) == lcv)) {
+						nStateVec[lcv | bciArgs[1]] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+					else {
+						nStateVec[lcv & (~(bciArgs[1]))] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+					}
+				}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+
 	///Set register bits to given permutation
 	void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
 		bitCapInt inOutRes = value<<start;
@@ -3569,31 +3596,15 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 	}
 
-	/// For chips with a zero flag, set the zero flag after a register operation.
-	void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag) {
-		bitCapInt lengthPower = 1<<length;
-		bitCapInt regMask = (lengthPower - 1)<<start;
-		bitCapInt flagMask = 1<<zeroFlag;
-		bitCapInt otherMask = ((1<<qubitCount) - 1) ^ (regMask | flagMask);
-		bitCapInt i;
-		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[2] = {otherMask, flagMask};
-		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-					if (((lcv & bciArgs[0]) == lcv) || (((lcv & bciArgs[0]) | bciArgs[1]) == lcv)) {
-						nStateVec[lcv | bciArgs[1]] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
-					}
-					else {
-						nStateVec[lcv & (~(bciArgs[1]))] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
-					}
-				}
-		);
-		for (i = 0; i < maxQPower; i++) {
-			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+	///Measure permutation state of a register
+	bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length) {
+		bitCapInt toRet = 0;
+		for (bitLenInt i = 0; i < length; i++) {
+			if (M(i + start)) {
+				toRet |= 1<<i;
+			}
 		}
-		stateVec.reset();
-		stateVec = std::move(nStateVec);
+		return toRet;
 	}
 
 	//Private CoherentUnit methods

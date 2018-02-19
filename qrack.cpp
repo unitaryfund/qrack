@@ -2819,6 +2819,17 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 	}
 
+	///Measure permutation state of a register
+	bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length) {
+		bitCapInt toRet = 0;
+		for (bitLenInt i = 0; i < length; i++) {
+			if (M(i + start)) {
+				toRet |= 1<<i;
+			}
+		}
+		return toRet;
+	}
+
 	//Private CoherentUnit methods
 	void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 			const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm) {
