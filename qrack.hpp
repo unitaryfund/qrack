@@ -183,8 +183,8 @@ namespace Qrack {
 			void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
 			///z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis 
 			void RZ(double radians, bitLenInt qubitIndex);
-			///Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-			/** Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+			///Dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+			/** Dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
 			void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
 			///Set individual bit to pure |0> (false) or |1> (true) state
 			void SetBit(bitLenInt qubitIndex1, bool value);
@@ -205,20 +205,20 @@ namespace Qrack {
 			///Controlled x axis rotation
 			/** Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis */
 			void CRX(double radians, bitLenInt control, bitLenInt target);
-			///Controlled dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
-			/** Controlled dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			///Controlled dyadic fraction x axis rotation gate - if control bit is true, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+			/** Controlled dyadic fraction x axis rotation gate - if control bit is true, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
 			void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 			///Controlled y axis rotation
 			/** Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis */
 			void CRY(double radians, bitLenInt control, bitLenInt target);
-			///Controlled dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-			/** Controlled dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			///Controlled dyadic fraction y axis rotation gate - if control bit is true, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+			/** Controlled dyadic fraction y axis rotation gate - if control bit is true, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
 			void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 			///Controlled z axis rotation
 			/** Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis */
 			void CRZ(double radians, bitLenInt control, bitLenInt target);
-			///Controlled dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
-			/** Controlled dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			///Controlled dyadic fraction z axis rotation gate - if control bit is true, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+			/** Controlled dyadic fraction z axis rotation gate - if control bit is true, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
 			void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 			///Apply controlled Pauli Y matrix to bit
 			void CY(bitLenInt control, bitLenInt target);
@@ -226,10 +226,62 @@ namespace Qrack {
 			void CZ(bitLenInt control, bitLenInt target);
 
 			//Single register instructions:
-			///Apply X ("not") gate to each bit in "length," starting from bit index "start"
-			void X(bitLenInt start, bitLenInt length);
 			///Apply Hadamard gate to each bit in "length," starting from bit index "start"
 			void H(bitLenInt start, bitLenInt length);
+			///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state 
+			void R1(double radians, bitLenInt start, bitLenInt length);
+			///Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state
+			/** Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+			void R1Dyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+			///x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis 
+			void RX(double radians, bitLenInt start, bitLenInt length);
+			///Dyadic fraction x axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+			/** Dyadic fraction x axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+			void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+			///y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis 
+			void RY(double radians, bitLenInt start, bitLenInt length);
+			///Dyadic fraction y axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+			/** Dyadic fraction y axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+			void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+			///z axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli z axis 
+			void RZ(double radians, bitLenInt start, bitLenInt length);
+			///Dyadic fraction z axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+			/** Dyadic fraction z axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+			void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+			///Apply X ("not") gate to each bit in "length," starting from bit index "start"
+			void X(bitLenInt start, bitLenInt length);
+			///Apply Pauli Y matrix to each bit
+			void Y(bitLenInt start, bitLenInt length);
+			///Apply Pauli Z matrix to each bit
+			void Z(bitLenInt start, bitLenInt length);
+			///Controlled "phase shift gate"
+			/** Controlled "phase shift gate" - for each bit, if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
+			void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled dyadic fraction "phase shift gate"
+			/** Controlled "phase shift gate" - for each bit, if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
+			void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled x axis rotation
+			/** Controlled x axis rotation - for each bit, if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis */
+			void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+			/** Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled y axis rotation
+			/** Controlled y axis rotation - for each bit, if control bit is true, rotates as e^(-i*\theta) around Pauli y axis */
+			void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+			/** Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled z axis rotation
+			/** Controlled z axis rotation - for each bit, if control bit is true, rotates as e^(-i*\theta) around Pauli z axis */
+			void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+			/** Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+			void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+			///Apply controlled Pauli Y matrix to each bit
+			void CY(bitLenInt control, bitLenInt target, bitLenInt length);
+			///Apply controlled Pauli Z matrix to each bit
+			void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
 			///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 			void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 			///"AND" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at output
@@ -329,6 +381,8 @@ namespace Qrack {
 			bitCapInt MReg(bitLenInt start, bitLenInt length);
 			///Measure permutation state of an 8 bit register
 			unsigned char MReg8(bitLenInt start);
+			///Set 8 bit register bits based on read from classical memory
+			unsigned char SuperposeReg8(bitLenInt start, unsigned char* values);
 
 		private:
 			double runningNorm;

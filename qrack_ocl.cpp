@@ -1418,6 +1418,138 @@ namespace Qrack {
 			H(start + lcv);
 		}
 	}
+	///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state 
+	void CoherentUnit::R1(double radians, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			R1(radians, start + lcv);
+		}
+	}
+	///Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state
+	/** Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+	void CoherentUnit::R1Dyad(int numerator, int denominator, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			R1Dyad(numerator, denominator, start + lcv);
+		}
+	}
+	///x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis 
+	void CoherentUnit::RX(double radians, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			RX(radians, start + lcv);
+		}
+	}
+	///Dyadic fraction x axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+	/** Dyadic fraction x axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+	void CoherentUnit::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			RXDyad(numerator, denominator, start + lcv);
+		}
+	}
+	///y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis 
+	void CoherentUnit::RY(double radians, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			RY(radians, start + lcv);
+		}
+	}
+	///Dyadic fraction y axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+	/** Dyadic fraction y axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+	void CoherentUnit::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			RYDyad(numerator, denominator, start + lcv);
+		}
+	}
+	///z axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli z axis 
+	void CoherentUnit::RZ(double radians, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			RZ(radians, start + lcv);
+		}
+	}
+	///Dyadic fraction z axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+	/** Dyadic fraction z axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO. */
+	void CoherentUnit::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			RZDyad(numerator, denominator, start + lcv);
+		}
+	}
+	///Apply Pauli Y matrix to each bit
+	void CoherentUnit::Y(bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			Y(start + lcv);
+		}
+	}
+	///Apply Pauli Z matrix to each bit
+	void CoherentUnit::Z(bitLenInt start, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			Z(start + lcv);
+		}
+	}
+	///Controlled "phase shift gate"
+	/** Controlled "phase shift gate" - for each bit, if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
+	void CoherentUnit::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRT(radians, control + lcv, target + lcv);
+		}
+	}
+	///Controlled dyadic fraction "phase shift gate"
+	/** Controlled "phase shift gate" - for each bit, if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state */
+	void CoherentUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRTDyad(numerator, denominator, control + lcv, target + lcv);
+		}
+	}
+	///Controlled x axis rotation
+	/** Controlled x axis rotation - for each bit, if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis */
+	void CoherentUnit::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRX(radians, control + lcv, target + lcv);
+		}
+	}
+	///Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+	/** Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli x axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+	void CoherentUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRXDyad(numerator, denominator, control + lcv, target + lcv);
+		}
+	}
+	///Controlled y axis rotation
+	/** Controlled y axis rotation - for each bit, if control bit is true, rotates as e^(-i*\theta) around Pauli y axis */
+	void CoherentUnit::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRY(radians, control + lcv, target + lcv);
+		}
+	}
+	///Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+	/** Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli y axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+	void CoherentUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRYDyad(numerator, denominator, control + lcv, target + lcv);
+		}
+	}
+	///Controlled z axis rotation
+	/** Controlled z axis rotation - for each bit, if control bit is true, rotates as e^(-i*\theta) around Pauli z axis */
+	void CoherentUnit::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRZ(radians, control + lcv, target + lcv);
+		}
+	}
+	///Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+	/** Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / denominator) around Pauli z axis. NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS. */
+	void CoherentUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CRZDyad(numerator, denominator, control + lcv, target + lcv);
+		}
+	}
+	///Apply controlled Pauli Y matrix to each bit
+	void CoherentUnit::CY(bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CY(control + lcv, target + lcv);
+		}
+	}
+	///Apply controlled Pauli Z matrix to each bit
+	void CoherentUnit::CZ(bitLenInt control, bitLenInt target, bitLenInt length) {
+		for (bitLenInt lcv = 0; lcv < length; lcv++) {
+			CZ(control + lcv, target + lcv);
+		}
+	}
 	///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 	void CoherentUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
 		if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
@@ -3614,6 +3746,34 @@ namespace Qrack {
 		}
 		
 		return toRet;
+	}
+
+	///Set 8 bit register bits based on read from classical memory
+	unsigned char CoherentUnit::SuperposeReg8(bitLenInt start, unsigned char* values) {
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt regMask = 255<<start;
+		bitCapInt regRes, otherRes, regInt, i;
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = i ^ regMask;
+			regRes = i & regMask;
+			regInt = regRes>>start;
+			regInt = values[regInt];
+			regRes = regInt<<start;
+			nStateVec[regRes | otherRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+		}
+		double prob, average;
+		for (i = 0; i < maxQPower; i++) {
+			regRes = i & regMask;
+			regInt = regRes>>start;
+			prob = real(nStateVec[i]);
+			average += prob * regInt;
+			nStateVec[i] = polar(sqrt(prob), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+
+		return (unsigned char)(average + 0.5);
 	}
 
 	//Private CoherentUnit methods
