@@ -2323,6 +2323,19 @@ namespace Qrack {
 		}
 		return toRet;
 	}
+	///Measure permutation state of an 8 bit register
+	unsigned char CoherentUnit::MReg8(bitLenInt start) {
+		unsigned char toRet = 0;
+		unsigned char power = 1;
+		for (bitLenInt i = 0; i < 8; i++) {
+			if (M(i + start)) {
+				toRet += power;
+			}
+			power<<=1;
+		}
+		
+		return toRet;
+	}
 
 	//Private CoherentUnit methods
 	void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,

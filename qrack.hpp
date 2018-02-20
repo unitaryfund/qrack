@@ -327,6 +327,8 @@ namespace Qrack {
 			void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 			///Measure permutation state of a register
 			bitCapInt MReg(bitLenInt start, bitLenInt length);
+			///Measure permutation state of an 8 bit register
+			unsigned char MReg8(bitLenInt start);
 
 		private:
 			double runningNorm;

@@ -1100,7 +1100,6 @@ namespace Qrack {
 
 		result = (prob < oneChance) && oneChance > 0.0;
 		double nrmlzr = 1.0;
-		bitCapInt lcv;
 		if (result) {
 			if (oneChance > 0.0) nrmlzr = oneChance;
 			par_for_all (0, maxQPower, &(stateVec[0]), Complex16(cosine, sine) / nrmlzr, NULL, qPowers,
@@ -1113,9 +1112,6 @@ namespace Qrack {
 					}
 				}
 			);
-			for (lcv = 0; lcv < maxQPower; lcv++) {
-				
-			}
 		}
 		else {
 			if (oneChance < 1.0) nrmlzr = sqrt(1.0 - oneChance);
@@ -1710,7 +1706,7 @@ namespace Qrack {
 		bitCapInt edgeMask = maxMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[9] = {inOutMask, toAdd, carryMask, otherMask, inOutStart, nibbleCount, edgeMask, maxMask};
+		bitCapInt bciArgs[8] = {inOutMask, toAdd, carryMask, otherMask, inOutStart, nibbleCount, edgeMask, maxMask};
 		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2337,7 +2333,7 @@ namespace Qrack {
 		bitCapInt edgeMask = maxMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[9] = {inOutMask, toSub, carryMask, otherMask, inOutStart, nibbleCount, edgeMask, maxMask};
+		bitCapInt bciArgs[8] = {inOutMask, toSub, carryMask, otherMask, inOutStart, nibbleCount, edgeMask, maxMask};
 		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2866,7 +2862,7 @@ namespace Qrack {
 		bitCapInt edgeMask = maxMask | otherMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[9] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask};
+		bitCapInt bciArgs[8] = {inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask};
 		par_for_skip(0, maxQPower>>1, 1<<carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
 				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2929,7 +2925,7 @@ namespace Qrack {
 				[](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
 				lcv |= bciArgs[2];
 				bitCapInt otherRes = (lcv & (bciArgs[3]));
-				if ((bciArgs[8] & lcv) == lcv) {
+				if ((bciArgs[7] & lcv) == lcv) {
 					nStateVec[(lcv & bciArgs[3]) | bciArgs[2]] = Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
 				}
 				else {
@@ -3580,7 +3576,7 @@ namespace Qrack {
 				i += iLow;
 				iHigh = (iHigh - iLow)<<(bciArgs[2]);						
 				i += iHigh;
-				bitCapInt outRes = bciArgs[1] | (i & bciArgs[0]);
+				bitCapInt outRes = bciArgs[1] | i;
 				bitCapInt maxLCV = 1<<(bciArgs[2]);
 				bitCapInt inRes;
 				for (unsigned int j = 0; j < maxLCV; j++) {
@@ -3604,6 +3600,19 @@ namespace Qrack {
 				toRet |= 1<<i;
 			}
 		}
+		return toRet;
+	}
+	///Measure permutation state of an 8 bit register
+	unsigned char CoherentUnit::MReg8(bitLenInt start) {
+		unsigned char toRet = 0;
+		unsigned char power = 1;
+		for (bitLenInt i = 0; i < 8; i++) {
+			if (M(i + start)) {
+				toRet += power;
+			}
+			power<<=1;
+		}
+		
 		return toRet;
 	}
 
@@ -3687,7 +3696,7 @@ namespace Qrack {
 		// create buffers on device (allocate space on GPU)
 		stateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
 		cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
-		ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 10);
+		ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
 		nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
 		maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
 

@@ -18,7 +18,7 @@ int main() {
 
 	int i, j;
 
-	Qrack::CoherentUnit qftReg(10, 256);
+	Qrack::CoherentUnit qftReg(20, 0);
 
 	double qftProbs[10];
 
@@ -27,11 +27,14 @@ int main() {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<"->";
-	qftReg.SetReg(0, 8, 1);
+	qftReg.SetReg(0, 8, 10);
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;
+
+	std::cout<<"M Reg Test:"<<std::endl;
+	std::cout<<qftReg.MReg(0, 8)<<std::endl;
 
 	std::cout<<"Set Zero Flag Test:"<<std::endl;
 	for (j = 0; j < 9; j++) {
