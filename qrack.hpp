@@ -382,7 +382,7 @@ namespace Qrack {
 			///Measure permutation state of an 8 bit register
 			unsigned char MReg8(bitLenInt start);
 			///Set 8 bit register bits based on read from classical memory
-			unsigned char SuperposeReg8(bitLenInt start, unsigned char* values);
+			unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
 		private:
 			double runningNorm;

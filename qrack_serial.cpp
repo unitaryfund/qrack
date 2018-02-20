@@ -2473,23 +2473,37 @@ namespace Qrack {
 	}
 
 	///Set 8 bit register bits based on read from classical memory
-	unsigned char CoherentUnit::SuperposeReg8(bitLenInt start, unsigned char* values) {
+	unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values) {
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt regMask = 255<<start;
-		bitCapInt regRes, otherRes, regInt, i;
-		for (i = 0; i < maxQPower; i++) {
-			otherRes = i ^ regMask;
-			regRes = i & regMask;
-			regInt = regRes>>start;
-			regInt = values[regInt];
-			regRes = regInt<<start;
-			nStateVec[regRes | otherRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+		bitCapInt inputMask = 255<<inputStart;
+		bitCapInt outputMask = 255<<outputStart;
+		bitCapInt otherMask = (~inputMask) & (~outputMask);
+		bitCapInt inputRes, outputRes, otherRes, regRes, inputInt, outputInt, regInt, i;
+		if (inputStart == outputStart) {
+			for (i = 0; i < maxQPower; i++) {
+				otherRes = i ^ otherMask;
+				regRes = i & inputMask;
+				regInt = regRes>>inputStart;
+				regInt = values[regInt];
+				regRes = regInt<<inputStart;
+				nStateVec[regRes | otherRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+		}
+		else {
+			for (i = 0; i < maxQPower; i++) {
+				otherRes = i ^ otherMask;
+				inputRes = i & inputMask;
+				inputInt = inputRes>>inputStart;
+				outputInt = values[inputInt];
+				outputRes = outputInt<<outputStart;
+				nStateVec[outputRes | inputRes | otherRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
 		}
 		double prob, average;
 		for (i = 0; i < maxQPower; i++) {
-			regRes = i & regMask;
-			regInt = regRes>>start;
+			outputRes = i & outputMask;
+			outputInt = outputRes>>outputStart;
 			prob = real(nStateVec[i]);
 			average += prob * regInt;
 			nStateVec[i] = polar(sqrt(prob), imag(nStateVec[i]));
