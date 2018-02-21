@@ -20,7 +20,7 @@ int main() {
 
 	Qrack::CoherentUnit qftReg(20, 0);
 
-	double qftProbs[10];
+	double qftProbs[20];
 
 	std::cout<<"Set Reg Test:"<<std::endl;
 	for (j = 0; j < 9; j++) {
@@ -29,6 +29,21 @@ int main() {
 	std::cout<<"->";
 	qftReg.SetReg(0, 8, 10);
 	for (j = 0; j < 9; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<std::endl;
+
+	std::cout<<"Superpose Reg Test:"<<std::endl;
+	unsigned char testPage[256];
+	for (j = 0; j < 256; j++) {
+		testPage[j] = j;
+	}
+	for (j = 0; j < 20; j++) {
+		std::cout<<qftReg.Prob(j);
+	}
+	std::cout<<"->";
+	qftReg.SuperposeReg8(0, 8, testPage);
+	for (j = 0; j < 20; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;

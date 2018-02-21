@@ -2982,7 +2982,7 @@ namespace Qrack {
 		bitCapInt inputRes, outputRes, otherRes, regRes, inputInt, outputInt, regInt, i;
 		if (inputStart == outputStart) {
 			for (i = 0; i < maxQPower; i++) {
-				otherRes = i ^ otherMask;
+				otherRes = i & otherMask;
 				regRes = i & inputMask;
 				regInt = regRes>>inputStart;
 				regInt = values[regInt];
@@ -2992,7 +2992,7 @@ namespace Qrack {
 		}
 		else {
 			for (i = 0; i < maxQPower; i++) {
-				otherRes = i ^ otherMask;
+				otherRes = i & otherMask;
 				inputRes = i & inputMask;
 				inputInt = inputRes>>inputStart;
 				outputInt = values[inputInt];
