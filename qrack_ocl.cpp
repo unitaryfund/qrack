@@ -3751,7 +3751,7 @@ namespace Qrack {
 			outputRes = i & outputMask;
 			outputInt = outputRes>>outputStart;
 			prob = real(nStateVec[i]);
-			average += prob * regInt;
+			average += prob * outputInt;
 			nStateVec[i] = polar(sqrt(prob), imag(nStateVec[i]));
 		}
 		stateVec.reset();
