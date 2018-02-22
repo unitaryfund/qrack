@@ -2901,7 +2901,7 @@ namespace Qrack {
 				i += iLow;
 				iHigh = (iHigh - iLow)<<(bciArgs[2]);						
 				i += iHigh;
-				bitCapInt outRes = bciArgs[1];
+				bitCapInt outRes = i | bciArgs[1];
 				bitCapInt maxLCV = 1<<(bciArgs[2]);
 				bitCapInt inRes;
 				for (unsigned int j = 0; j < maxLCV; j++) {
