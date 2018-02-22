@@ -34,6 +34,7 @@ int main() {
 	std::cout<<std::endl;
 
 	std::cout<<"Superpose Reg Test:"<<std::endl;
+	qftReg.SetReg(0, 8, 768);
 	unsigned char testPage[256];
 	for (j = 0; j < 256; j++) {
 		testPage[j] = j;
@@ -42,7 +43,7 @@ int main() {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<"->";
-	qftReg.SuperposeReg8(0, 8, testPage);
+	qftReg.SuperposeReg8(8, 0, testPage);
 	for (j = 0; j < 20; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
@@ -65,12 +66,12 @@ int main() {
 	qftReg.SetPermutation(127);
 	std::cout<<"INCSC Test:"<<std::endl;
 	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 10; j++) {
+		for (j = 0; j < 20; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<"->";
-		qftReg.INCSC(9, 0, 8, 8, 9);
-		for (j = 0; j < 10; j++) {
+		qftReg.INCSC(1, 8, 8, 18, 19);
+		for (j = 0; j < 20; j++) {
 			std::cout<<qftReg.Prob(j);
 		}
 		std::cout<<std::endl;	

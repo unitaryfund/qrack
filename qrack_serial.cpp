@@ -1256,10 +1256,7 @@ namespace Qrack {
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
-			}
-			else if ((edgeMask | i) == i) {
+			if ((edgeMask | i) == i) {
 				nStateVec[(i & otherMask) | carryMask] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 			else {
@@ -1299,32 +1296,27 @@ namespace Qrack {
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			inOutRes = (i & inOutMask);
+			inOutInt = inOutRes>>inOutStart;
+			inInt = toAdd;
+			outInt = inOutInt + toAdd;
+			if (outInt < lengthPower) {
+				outRes = (outInt<<inOutStart) | otherRes;
 			}
 			else {
-				inOutRes = (i & inOutMask);
-				inOutInt = inOutRes>>inOutStart;
-				inInt = toAdd;
-				outInt = inOutInt + toAdd;
-				if (outInt < lengthPower) {
-					outRes = (outInt<<inOutStart) | otherRes;
-				}
-				else {
-					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
-				}
-				//Both negative:
-				if (inOutInt & inInt & signMask) {
-					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-					inInt = ((~inInt) & (lengthPower - 1)) + 1;
-					if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
-				}
-				//Both positive:
-				else if ((~inOutInt) & (~inInt) & signMask) {
-					if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
-				}
-				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+				outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
 			}
+			//Both negative:
+			if (inOutInt & inInt & signMask) {
+				inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+				inInt = ((~inInt) & (lengthPower - 1)) + 1;
+				if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
+			}
+			//Both positive:
+			else if ((~inOutInt) & (~inInt) & signMask) {
+				if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
+			}
+			nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 		}
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
@@ -1337,11 +1329,10 @@ namespace Qrack {
 	void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
 		bitCapInt inOutMask = 0;
 		bitCapInt overflowMask = 1<<overflowIndex;
-		bitCapInt signMask = (1<<(length - 1));
 		bitCapInt carryMask = 1<<carryIndex;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
 		bitCapInt lengthPower = 1<<length;
-		bitCapInt inOutRes, carryInt, otherRes, outRes, inOutInt, inInt, outInt, i;
+		bitCapInt inOutRes, carryInt, otherRes, outRes, inOutInt, outInt, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(inOutStart + i);
 		}
@@ -1351,16 +1342,12 @@ namespace Qrack {
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
-			}
-			else if ((edgeMask | i) == i) {
+			if ((edgeMask | i) == i) {
 				nStateVec[(i & otherMask) | carryMask] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 			else {
 				inOutRes = (i & inOutMask);
 				inOutInt = inOutRes>>inOutStart;
-				inInt = toAdd;
 				carryInt = (i & carryMask)>>carryIndex;
 				outInt = inOutInt + toAdd + carryInt;
 				if (outInt < lengthPower) {
@@ -1368,16 +1355,6 @@ namespace Qrack {
 				}
 				else {
 					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes | carryMask;
-				}
-				//Both negative:
-				if (inOutInt & inInt & signMask) {
-					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-					inInt = ((~inInt) & (lengthPower - 1)) + 1;
-					if ((inOutInt + inInt - carryInt) > signMask) outRes |= overflowMask;
-				}
-				//Both positive:
-				else if ((~inOutInt) & (~inInt) & signMask) {
-					if ((inOutInt + inInt + carryInt) >= signMask) outRes |= overflowMask;
 				}
 				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
@@ -1480,10 +1457,7 @@ namespace Qrack {
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
-			}
-			else if ((((~edgeMask) & i) | carryMask) == i) {
+			if ((((~edgeMask) & i) | carryMask) == i) {
 				nStateVec[i | inOutMask] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 			else {
@@ -1523,32 +1497,27 @@ namespace Qrack {
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			inOutRes = (i & inOutMask);
+			inOutInt = inOutRes>>inOutStart;
+			inInt = toSub;
+			outInt = inOutInt - toSub + lengthPower;
+			if (outInt < lengthPower) {
+				outRes = (outInt<<inOutStart) | otherRes;
 			}
 			else {
-				inOutRes = (i & inOutMask);
-				inOutInt = inOutRes>>inOutStart;
-				inInt = toSub;
-				outInt = inOutInt - toSub + lengthPower;
-				if (outInt < lengthPower) {
-					outRes = (outInt<<inOutStart) | otherRes;
-				}
-				else {
-					outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
-				}
-				//First negative:
-				if (inOutInt & (~inInt) & signMask) {
-					inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-					if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
-				}
-				//First positive:
-				else if (inOutInt & (~inInt) & signMask) {
-					inInt = ((~inInt) & (lengthPower - 1)) + 1;
-					if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
-				}
-				nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+				outRes = ((outInt - lengthPower)<<inOutStart) | otherRes;
 			}
+			//First negative:
+			if (inOutInt & (~inInt) & signMask) {
+				inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+				if ((inOutInt + inInt) > signMask) outRes |= overflowMask;
+			}
+			//First positive:
+			else if (inOutInt & (~inInt) & signMask) {
+				inInt = ((~inInt) & (lengthPower - 1)) + 1;
+				if ((inOutInt + inInt) >= signMask) outRes |= overflowMask;
+			}
+			nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
 		}
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
@@ -1575,10 +1544,7 @@ namespace Qrack {
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 		for (i = 0; i < maxQPower; i++) {
 			otherRes = (i & otherMask);
-			if (otherRes == i) {
-				nStateVec[i] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
-			}
-			else if ((((~edgeMask) & i) | carryMask) == i) {
+			if ((((~edgeMask) & i) | carryMask) == i) {
 				nStateVec[i | inOutMask] = Complex16(norm(stateVec[i]), arg(stateVec[i]));
 			}
 			else {
