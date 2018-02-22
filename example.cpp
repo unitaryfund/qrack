@@ -159,7 +159,7 @@ int main() {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<"->";
-	qftReg.OR(0, 3, 6, 3);
+	qftReg.CLOR(0, 255, 0, 8);
 	for (j = 0; j < 9; j++) {
 		std::cout<<qftReg.Prob(j);
 	}

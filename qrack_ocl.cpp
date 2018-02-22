@@ -3662,31 +3662,18 @@ namespace Qrack {
 		bitCapInt inOutRes = value<<start;
 		bitCapInt inOutMask = 0;
 		bitCapInt otherMask = (1<<qubitCount) - 1;
-		bitCapInt i;
+		bitCapInt otherRes, outRes, i;
 		for (i = 0; i < length; i++) {
 			inOutMask += 1<<(start + i);
 		}
 		otherMask ^= inOutMask;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[5] = {otherMask, inOutRes, length, (bitCapInt)(1<<start), start};
-		par_for_copy(0, maxQPower>>length, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-				bitCapInt iHigh = lcv;
-				bitCapInt i = 0;
-				bitCapInt iLow = iHigh % bciArgs[3];
-				i += iLow;
-				iHigh = (iHigh - iLow)<<(bciArgs[2]);						
-				i += iHigh;
-				bitCapInt outRes = i | bciArgs[1];
-				bitCapInt maxLCV = 1<<(bciArgs[2]);
-				bitCapInt inRes;
-				for (unsigned int j = 0; j < maxLCV; j++) {
-					inRes =  i | (j<<(bciArgs[4]));
-					nStateVec[outRes] += Complex16(norm(stateVec[inRes]), arg(stateVec[inRes]));
-				}
-			}
-		);
+		for (i = 0; i < maxQPower; i++) {
+			otherRes = (i & otherMask);
+			outRes = inOutRes | otherRes;
+			nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+		}
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
