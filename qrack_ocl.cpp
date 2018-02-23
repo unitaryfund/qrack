@@ -1563,7 +1563,7 @@ namespace Qrack {
 		bool cBit;
 		for (bitLenInt i = 0; i < length; i++) {
 			cBit = (1<<i) & classicalInput;
-			CLAND(qInputStart, cBit, outputStart + i);
+			CLAND(qInputStart + i, cBit, outputStart + i);
 		}
 	}
 	///"OR" compare two bit ranges in CoherentUnit, and store result in range starting at output
@@ -1579,7 +1579,7 @@ namespace Qrack {
 		bool cBit;
 		for (bitLenInt i = 0; i < length; i++) {
 			cBit = (1<<i) & classicalInput;
-			CLOR(qInputStart, cBit, outputStart + i);
+			CLOR(qInputStart + i, cBit, outputStart + i);
 		}
 	}
 	///"XOR" compare two bit ranges in CoherentUnit, and store result in range starting at output
@@ -1595,7 +1595,7 @@ namespace Qrack {
 		bool cBit;
 		for (bitLenInt i = 0; i < length; i++) {
 			cBit = (1<<i) & classicalInput;
-			CLXOR(qInputStart, cBit, outputStart + i);
+			CLXOR(qInputStart + i, cBit, outputStart + i);
 		}
 	}
 	///Arithmetic shift left, with last 2 bits as sign and carry
@@ -3656,6 +3656,43 @@ namespace Qrack {
 		stateVec.reset();
 		stateVec = std::move(nStateVec);
 	}
+
+	///Set register bits to given permutation
+	/*void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
+		bitCapInt inOutRes = value<<start;
+		bitCapInt inOutMask = 0;
+		bitCapInt otherMask = (1<<qubitCount) - 1;
+		bitCapInt i;
+		for (i = 0; i < length; i++) {
+			inOutMask += 1<<(start + i);
+		}
+		otherMask ^= inOutMask;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		bitCapInt bciArgs[5] = {otherMask, inOutRes, length, (bitCapInt)(1<<start), start};
+		par_for_copy(0, maxQPower>>length, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
+				bitCapInt iHigh = lcv;
+				bitCapInt i = 0;
+				bitCapInt iLow = iHigh % bciArgs[3];
+				i += iLow;
+				iHigh = (iHigh - iLow)<<(bciArgs[2]);						
+				i += iHigh;
+				bitCapInt outRes = i | bciArgs[1];
+				bitCapInt maxLCV = 1<<(bciArgs[2]);
+				bitCapInt inRes;
+				for (unsigned int j = 0; j < maxLCV; j++) {
+					inRes =  i | (j<<(bciArgs[4]));
+					nStateVec[outRes] += Complex16(norm(stateVec[inRes]), arg(stateVec[inRes]));
+				}
+			}
+		);
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}*/
 
 	///Set register bits to given permutation
 	void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {

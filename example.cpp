@@ -131,12 +131,12 @@ int main() {
 	std::cout<<"AND Test:"<<std::endl;
 	qftReg.SetPermutation(46);
 	std::cout<<"[6,9) = [0,3) & [3,6):"<<std::endl;
-	for (j = 0; j < 9; j++) {
+	for (j = 0; j < 20; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<"->";
-	qftReg.AND(0, 3, 6, 3);
-	for (j = 0; j < 9; j++) {
+	qftReg.CLAND(0, 255, 0, 8);
+	for (j = 0; j < 20; j++) {
 		std::cout<<qftReg.Prob(j);
 	}
 	std::cout<<std::endl;

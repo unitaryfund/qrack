@@ -919,7 +919,7 @@ namespace Qrack {
 		bool cBit;
 		for (bitLenInt i = 0; i < length; i++) {
 			cBit = (1<<i) & classicalInput;
-			CLAND(qInputStart, cBit, outputStart + i);
+			CLAND(qInputStart + i, cBit, outputStart + i);
 		}
 	}
 	///"OR" compare two bit ranges in CoherentUnit, and store result in range starting at output
@@ -935,7 +935,7 @@ namespace Qrack {
 		bool cBit;
 		for (bitLenInt i = 0; i < length; i++) {
 			cBit = (1<<i) & classicalInput;
-			CLOR(qInputStart, cBit, outputStart + i);
+			CLOR(qInputStart + i, cBit, outputStart + i);
 		}
 	}
 	///"XOR" compare two bit ranges in CoherentUnit, and store result in range starting at output
@@ -951,7 +951,7 @@ namespace Qrack {
 		bool cBit;
 		for (bitLenInt i = 0; i < length; i++) {
 			cBit = (1<<i) & classicalInput;
-			CLXOR(qInputStart, cBit, outputStart + i);
+			CLXOR(qInputStart + i, cBit, outputStart + i);
 		}
 	}
 	///Arithmetic shift left, with last 2 bits as sign and carry
