@@ -929,11 +929,12 @@ namespace Qrack {
 	}
 	///"AND" compare a qubit in CoherentUnit with a classical bit, and store result in outputBit
 	void CoherentUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-		if (!(inputClassicalBit && inputQBit == outputBit)) {
+		if (!inputClassicalBit) {
 			SetBit(outputBit, false);
-			if (inputClassicalBit) {
-				CNOT(inputQBit, outputBit);
-			}
+		}
+		else if (inputQBit != outputBit) {
+			SetBit(outputBit, false);
+			CNOT(inputQBit, outputBit);
 		}
 	}
 	///"OR" compare two bits in CoherentUnit, and store result in outputBit
@@ -959,14 +960,12 @@ namespace Qrack {
 	}
 	///"OR" compare a qubit in CoherentUnit with a classical bit, and store result in outputBit
 	void CoherentUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-		if (!(!inputClassicalBit && inputQBit == outputBit)) {
-			if (inputClassicalBit) {
-				SetBit(outputBit, true);
-			}
-			else {
-				SetBit(outputBit, false);
-				CNOT(inputQBit, outputBit);
-			}
+		if (inputClassicalBit) {
+			SetBit(outputBit, true);
+		}
+		else if (inputQBit != outputBit) {
+			SetBit(outputBit, false);
+			CNOT(inputQBit, outputBit);
 		}
 	}
 	///"XOR" compare two bits in CoherentUnit, and store result in outputBit
@@ -992,15 +991,12 @@ namespace Qrack {
 	}
 	///"XOR" compare a qubit in CoherentUnit with a classical bit, and store result in outputBit
 	void CoherentUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-		if (!(!inputClassicalBit && inputQBit == outputBit)) {
-			if (inputClassicalBit) {
-				SetBit(outputBit, true);
-				CNOT(inputQBit, outputBit);
-			}
-			else {
-				SetBit(outputBit, false);
-				CNOT(inputQBit, outputBit);
-			}
+		if (inputQBit != outputBit) {
+			SetBit(outputBit, inputClassicalBit);
+			CNOT(inputQBit, outputBit);
+		}
+		else if (inputClassicalBit) {
+			X(outputBit);
 		}
 	}
 	/// Doubly-controlled not
