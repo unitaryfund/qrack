@@ -1087,16 +1087,37 @@ namespace Qrack {
 	}
 	///Add integer (without sign)
 	void CoherentUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-		par_for_reg(start, length, qubitCount, toAdd, &(stateVec[0]),
-			       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
-				     const bitCapInt lengthPower, const bitCapInt toAdd, Complex16* stateArray) {
-					rotate(stateArray + k,
-						  stateArray + ((lengthPower - toAdd) * startPower) + k,
-						  stateArray + endPower + k,
+		bitCapInt lengthPower = 1<<length;
+		toAdd %= lengthPower;
+		if ((length > 0) && (toAdd > 0)) {
+			bitCapInt i, j;
+			bitLenInt end = start + length;
+			bitCapInt startPower = 1<<start;
+			bitCapInt endPower = 1<<end;
+			bitCapInt iterPower = 1<<(qubitCount - end);
+			bitCapInt maxLCV = iterPower * endPower;
+			for (i = 0; i < startPower; i++) {
+				for (j = 0; j < maxLCV; j+=endPower) {
+					rotate(&(stateVec[0]) + i + j,
+						  &(stateVec[0]) + ((lengthPower - toAdd) * startPower) + i + j,
+						  &(stateVec[0]) + endPower + i + j,
 						  startPower);
 				}
-		);
+			}
+		}
 	}
+	///Add integer (without sign)
+	//void CoherentUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
+	//	par_for_reg(start, length, qubitCount, toAdd, &(stateVec[0]),
+	//		       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
+	//			     const bitCapInt lengthPower, const bitCapInt toAdd, Complex16* stateArray) {
+	//				rotate(stateArray + k,
+	//					  stateArray + ((lengthPower - toAdd) * startPower) + k,
+	//					  stateArray + endPower + k,
+	//					  startPower);
+	//			}
+	//	);
+	//}
 	///Add BCD integer (without sign)
 	void CoherentUnit::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length) {
 		bitCapInt nibbleCount = length / 4;
@@ -1492,16 +1513,37 @@ namespace Qrack {
 	}
 	///Subtract integer (without sign)
 	void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
-		par_for_reg(start, length, qubitCount, toSub, &(stateVec[0]),
-			       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
-				     const bitCapInt lengthPower, const bitCapInt toSub, Complex16* stateArray) {
-					rotate(stateArray + k,
-						  stateArray + (toSub * startPower) + k,
-						  stateArray + endPower + k,
+		bitCapInt lengthPower = 1<<length;
+		toSub %= lengthPower;
+		if ((length > 0) && (toSub > 0)) {
+			bitCapInt i, j;
+			bitLenInt end = start + length;
+			bitCapInt startPower = 1<<start;
+			bitCapInt endPower = 1<<end;
+			bitCapInt iterPower = 1<<(qubitCount - end);
+			bitCapInt maxLCV = iterPower * endPower;
+			for (i = 0; i < startPower; i++) {
+				for (j = 0; j < maxLCV; j+=endPower) {
+					rotate(&(stateVec[0]) + i + j,
+						  &(stateVec[0]) + (toSub * startPower) + i + j,
+						  &(stateVec[0]) + endPower + i + j,
 						  startPower);
 				}
-		);
+			}
+		}
 	}
+	///Subtract integer (without sign)
+	//void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
+	//	par_for_reg(start, length, qubitCount, toSub, &(stateVec[0]),
+	//		       [](const bitCapInt k, const int cpu, const bitCapInt startPower, const bitCapInt endPower,
+	//			     const bitCapInt lengthPower, const bitCapInt toSub, Complex16* stateArray) {
+	//				rotate(stateArray + k,
+	//					  stateArray + (toSub * startPower) + k,
+	//					  stateArray + endPower + k,
+	//					  startPower);
+	//			}
+	//	);
+	//}
 	///Subtract BCD integer (without sign)
 	void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length) {
 		bitCapInt nibbleCount = length / 4;
