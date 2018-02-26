@@ -98,8 +98,7 @@ namespace Qrack {
 		// create the program that we want to execute on the device
 		cl::Program::Sources sources;
 
-		std::string kernel_code=qrackcl;
-		sources.push_back({kernel_code.c_str(), kernel_code.length()});
+		sources.push_back({qrack_cl, qrack_cl_len});
 
 		program = cl::Program(context, sources);
 		if (program.build({default_device}) != CL_SUCCESS) {
