@@ -2386,6 +2386,28 @@ namespace Qrack {
 		stateVec = std::move(nStateVec);
 	}
 
+	/// For chips with a sign flag, set the sign flag after a register operation.
+	void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet) {
+		bitCapInt testMask = 1<<toTest;
+		bitCapInt flagMask = 1<<toSet;
+		bitCapInt i;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			if ((i & testMask) == testMask) {
+				nStateVec[i | flagMask] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+			else {
+				nStateVec[i & (~flagMask)] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
+	}
+
 	///Set register bits to given permutation
 	void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
 		bitCapInt inOutRes = value<<start;

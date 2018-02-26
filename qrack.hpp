@@ -375,6 +375,8 @@ namespace Qrack {
 			void QFT(bitLenInt start, bitLenInt length);
 			/// For chips with a zero flag, set the zero flag after a register operation.
 			void SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag);
+			/// For chips with a sign flag, set the sign flag after a register operation.
+			void SetSignFlag(bitLenInt toTest, bitLenInt toSet);
 			///Set register bits to given permutation
 			void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 			///Measure permutation state of a register

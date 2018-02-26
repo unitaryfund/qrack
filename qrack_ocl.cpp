@@ -3325,24 +3325,41 @@ namespace Qrack {
 		bitCapInt i;
 		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-		bitCapInt bciArgs[2] = {otherMask, flagMask};
-		par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-				[](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt *bciArgs, Complex16* nStateVec) {
-					if (((lcv & bciArgs[0]) == lcv) || (((lcv & bciArgs[0]) | bciArgs[1]) == lcv)) {
-						nStateVec[lcv | bciArgs[1]] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
-					}
-					else {
-						nStateVec[lcv & (~(bciArgs[1]))] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
-					}
-				}
-		);
+		for (i = 0; i < maxQPower; i++) {
+			if (((i & otherMask) == i) || (((i & otherMask) | flagMask) == i)) {
+				nStateVec[i | flagMask] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+			else {
+				nStateVec[i & (~flagMask)] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+		}
 		for (i = 0; i < maxQPower; i++) {
 			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
 		}
-		queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-		stateVec.reset(); 
+		stateVec.reset();
 		stateVec = std::move(nStateVec);
-		ReInitOCL();
+	}
+
+	/// For chips with a sign flag, set the sign flag after a register operation.
+	void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet) {
+		bitCapInt testMask = 1<<toTest;
+		bitCapInt flagMask = 1<<toSet;
+		bitCapInt i;
+		std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+		std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+		for (i = 0; i < maxQPower; i++) {
+			if ((i & testMask) == testMask) {
+				nStateVec[i | flagMask] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+			else {
+				nStateVec[i & (~flagMask)] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+			}
+		}
+		for (i = 0; i < maxQPower; i++) {
+			nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
+		}
+		stateVec.reset();
+		stateVec = std::move(nStateVec);
 	}
 
 	///Set register bits to given permutation

@@ -18,7 +18,7 @@ int main() {
 
 	int i, j;
 
-	Qrack::CoherentUnit qftReg(20, 0);
+	Qrack::CoherentUnit qftReg(21, 0);
 
 	double qftProbs[20];
 
