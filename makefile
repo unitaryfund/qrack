@@ -2,6 +2,7 @@
 ENABLE_OPENCL ?= 1
 
 CPP      = g++
+XXD      = xxd
 OBJ      = complex16simd.o qrack.o example.o
 LINKOBJ  = complex16simd.o qrack.o example.o
 BIN      = example
@@ -35,3 +36,10 @@ complex16simd.o: complex16simd.cpp
 
 qrack.o: $(QRACKVER)
 	$(CPP) -c $(QRACKVER) -o qrack.o $(CXXFLAGS)	
+
+ifeq (${ENABLE_OPENCL},1)
+qrackcl.hpp: qrack.cl
+	${XXD} -i qrack.cl > qrackcl.hpp
+
+qrack.o: qrackcl.hpp
+endif
