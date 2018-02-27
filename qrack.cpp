@@ -1006,7 +1006,7 @@ void CoherentUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt o
     }
 }
 ///"AND" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at
-///output
+/// output
 void CoherentUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
     bool cBit;
@@ -1025,7 +1025,7 @@ void CoherentUnit::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt ou
     }
 }
 ///"OR" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at
-///output
+/// output
 void CoherentUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
     bool cBit;
@@ -1044,7 +1044,7 @@ void CoherentUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt o
     }
 }
 ///"XOR" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at
-///output
+/// output
 void CoherentUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
     bool cBit;

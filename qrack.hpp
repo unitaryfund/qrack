@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <thread>
 
-#ifdef ENABLE_OPENCL
+#if ENABLE_OPENCL
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
 #else
@@ -45,7 +45,7 @@ void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt 
 template <class BidirectionalIterator>
 void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
 
-#ifdef ENABLE_OPENCL
+#if ENABLE_OPENCL
 /// "Qrack::OCLSingleton" manages the single OpenCL context
 /** "Qrack::OCLSingleton" manages the single OpenCL context. */
 class OCLSingleton {
@@ -339,17 +339,17 @@ public:
     ///"AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
     void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
     ///"AND" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting
-    ///at output
+    /// at output
     void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     ///"OR" compare two bit ranges in CoherentUnit, and store result in range starting at output
     void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
     ///"OR" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting at
-    ///output
+    /// output
     void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     ///"XOR" compare two bit ranges in CoherentUnit, and store result in range starting at output
     void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
     ///"XOR" compare a bit range in CoherentUnit with a classical unsigned integer, and store result in range starting
-    ///at output
+    /// at output
     void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     /// Arithmetic shift left, with last 2 bits as sign and carry
     void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -482,7 +482,7 @@ private:
     std::default_random_engine rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
-#ifdef ENABLE_OPENCL
+#if ENABLE_OPENCL
     OCLSingleton* clObj;
     cl::CommandQueue queue;
     cl::Buffer stateBuffer;
