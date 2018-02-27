@@ -12,7 +12,6 @@
 // for details.
 
 #include "qrack.hpp"
-#include "par_for.hpp"
 #include <iostream>
 
 //#define Complex16 std::complex<double>
@@ -20,6 +19,8 @@
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
+
+#include "par_for.hpp"
 
 namespace Qrack {
 template <class BidirectionalIterator>

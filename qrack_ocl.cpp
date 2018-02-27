@@ -11,17 +11,18 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "par_for.hpp"
 #include "qrack.hpp"
 #include "qrackcl.hpp"
 #include <iostream>
 
-//#define Complex16 std::complex<double>
 #define Complex16 Complex16Simd
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
 
+#include "par_for.hpp"
+
+//#define Complex16 std::complex<double>
 namespace Qrack {
 template <class BidirectionalIterator>
 void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride)
