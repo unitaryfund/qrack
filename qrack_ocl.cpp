@@ -11,6 +11,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
+#define ENABLE_OPENCL
+
 #include "qrack.hpp"
 #include "qrackcl.hpp"
 #include <iostream>

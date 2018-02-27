@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <thread>
 
-#if ENABLE_OPENCL
+#ifdef ENABLE_OPENCL
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
 #else
@@ -45,7 +45,7 @@ void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt 
 template <class BidirectionalIterator>
 void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
 
-#if ENABLE_OPENCL
+#ifdef ENABLE_OPENCL
 /// "Qrack::OCLSingleton" manages the single OpenCL context
 /** "Qrack::OCLSingleton" manages the single OpenCL context. */
 class OCLSingleton {
@@ -482,7 +482,7 @@ private:
     std::default_random_engine rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
-#if ENABLE_OPENCL
+#ifdef ENABLE_OPENCL
     OCLSingleton* clObj;
     cl::CommandQueue queue;
     cl::Buffer stateBuffer;
