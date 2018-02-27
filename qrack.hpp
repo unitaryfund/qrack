@@ -22,10 +22,12 @@
 #include <thread>
 #include <future>
 
+#if ENABLE_OPENCL
 #ifdef __APPLE__
     #include <OpenCL/cl.hpp>
 #else
     #include <CL/cl.hpp>
+#endif
 #endif
 
 #include "complex16simd.hpp"
@@ -43,6 +45,7 @@ namespace Qrack {
 	template <class BidirectionalIterator>
 	void rotate (BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last,  bitCapInt stride);
 
+#if ENABLE_OPENCL
 	/// "Qrack::OCLSingleton" manages the single OpenCL context
 	/** "Qrack::OCLSingleton" manages the single OpenCL context. */
 	class OCLSingleton{
@@ -106,6 +109,8 @@ namespace Qrack {
 
 			void InitOCL(int plat, int dev);
 	};
+#endif  /* ENABLE_OPENCL */
+
 	/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers		
 	/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit logic gates and (abstract) opcodes-like methods. */
 	class CoherentUnit {
@@ -395,6 +400,7 @@ namespace Qrack {
 			std::default_random_engine rand_generator;
 			std::uniform_real_distribution<double> rand_distribution;
 
+#if ENABLE_OPENCL
 			OCLSingleton* clObj;
 			cl::CommandQueue queue;
 			cl::Buffer stateBuffer;
@@ -403,14 +409,16 @@ namespace Qrack {
 			cl::Buffer nrmBuffer;
 			cl::Buffer maxBuffer;
 
+			void InitOCL();
+			void ReInitOCL();
+#endif /* ENABLE_OPENCL */
+
 			void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx,
 					const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
 			void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
 			void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
 			void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
 			void Carry(bitLenInt integerStart, bitLenInt integerLength, bitLenInt carryBit);
-			void InitOCL();
-			void ReInitOCL();
 			void NormalizeState();
 			void Reverse(bitLenInt first, bitLenInt last);
 			void UpdateRunningNorm();
