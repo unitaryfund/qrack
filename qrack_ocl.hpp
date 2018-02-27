@@ -45,11 +45,10 @@ protected:
 
     virtual void InitOCL();
     virtual void ReInitOCL();
-    virtual void ResetStateVec(std::unique_ptr<Complex16[]> &nStateVec);
+    virtual void ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec);
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
-
 };
 
 /** "Qrack::OCLSingleton" manages the single OpenCL context. */

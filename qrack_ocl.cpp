@@ -11,8 +11,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qrack.hpp"
 #include "qrack_ocl.hpp"
+#include "qrack.hpp"
 #include "qrackcl.hpp"
 #include <iostream>
 
@@ -317,8 +317,9 @@ void CoherentUnitOCL::ReInitOCL()
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
-void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]> &nStateVec)
+void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
 {
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     CoherentUnit::ResetStateVec(nStateVec);
-}}
+}
+}

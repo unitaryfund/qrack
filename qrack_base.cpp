@@ -111,9 +111,9 @@ void CoherentUnit::CloneRawState(Complex16* output)
     if (runningNorm != 1.0)
         NormalizeState();
     std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(output[0]));
-} 
+}
 
-void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]> &nStateVec)
+void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
 {
     stateVec.reset();
     stateVec = std::move(nStateVec);
