@@ -49,8 +49,8 @@ void CoherentUnitOCL::InitOCL()
     cl::Context context = *(clObj->GetContextPtr());
 
     // create buffers on device (allocate space on GPU)
-    stateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
+    stateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
     nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
@@ -67,8 +67,8 @@ void CoherentUnitOCL::ReInitOCL()
     cl::Context context = *(clObj->GetContextPtr());
 
     // create buffers on device (allocate space on GPU)
-    stateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
+    stateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
 
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
@@ -131,8 +131,8 @@ void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     cl::Context context = *(clObj->GetContextPtr());
-    cl::Buffer nStateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
     cl::Kernel rol = *(clObj->GetROLPtr());
     rol.setArg(0, stateBuffer);
     rol.setArg(1, ulongBuffer);
@@ -164,8 +164,8 @@ void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     cl::Context context = *(clObj->GetContextPtr());
-    cl::Buffer nStateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
     cl::Kernel ror = *(clObj->GetRORPtr());
     ror.setArg(0, stateBuffer);
     ror.setArg(1, ulongBuffer);
@@ -201,8 +201,8 @@ void CoherentUnitOCL::ADD(const bitLenInt inOutStart, const bitLenInt inStart, c
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     cl::Context context = *(clObj->GetContextPtr());
-    cl::Buffer nStateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
     cl::Kernel add = *(clObj->GetADDPtr());
     add.setArg(0, stateBuffer);
     add.setArg(1, ulongBuffer);
@@ -238,8 +238,8 @@ void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, con
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     cl::Context context = *(clObj->GetContextPtr());
-    cl::Buffer nStateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
     cl::Kernel sub = *(clObj->GetSUBPtr());
     sub.setArg(0, stateBuffer);
     sub.setArg(1, ulongBuffer);

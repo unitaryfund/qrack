@@ -56,4 +56,4 @@ protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
 };
-}
+} // namespace Qrack

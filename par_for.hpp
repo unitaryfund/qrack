@@ -116,21 +116,21 @@ void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt sk
     int num_cpus = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(num_cpus);
     for (int cpu = 0; cpu != num_cpus; ++cpu) {
-        futures[cpu]
-            = std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateVec, &fn]() {
-                  bitCapInt i, iLow, iHigh;
-                  for (;;) {
-                      iHigh = idx++;
-                      i = 0;
-                      iLow = iHigh % skipPower;
-                      i += iLow;
-                      iHigh = (iHigh - iLow) << 1;
-                      i += iHigh;
-                      if (i >= end)
-                          break;
-                      fn(i, cpu, stateArray, bciArgs, nStateVec);
-                  }
-              });
+        futures[cpu] =
+            std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateVec, &fn]() {
+                bitCapInt i, iLow, iHigh;
+                for (;;) {
+                    iHigh = idx++;
+                    i = 0;
+                    iLow = iHigh % skipPower;
+                    i += iLow;
+                    iHigh = (iHigh - iLow) << 1;
+                    i += iHigh;
+                    if (i >= end)
+                        break;
+                    fn(i, cpu, stateArray, bciArgs, nStateVec);
+                }
+            });
     }
 
     for (int cpu = 0; cpu != num_cpus; ++cpu) {

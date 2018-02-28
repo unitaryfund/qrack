@@ -133,8 +133,8 @@ void CoherentUnit::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const 
                 bitCapInt inOutInt = inOutRes >> (bciArgs[4]);
                 bitCapInt inRes = (lcv & (bciArgs[1]));
                 bitCapInt inInt = inRes >> (bciArgs[5]);
-                nStateVec[(((inOutInt - inInt + (bciArgs[3])) & bciArgs[3]) << (bciArgs[4])) + otherRes + inRes]
-                    = stateVec[lcv];
+                nStateVec[(((inOutInt - inInt + (bciArgs[3])) & bciArgs[3]) << (bciArgs[4])) + otherRes + inRes] =
+                    stateVec[lcv];
             }
         });
     stateVec.reset();
