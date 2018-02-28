@@ -82,7 +82,7 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
     stateVec.reset();
     stateVec = std::move(sv);
-    SetQuantumState(pqs.stateVec);
+    SetQuantumState(&pqs.stateVec[0]);
 }
 
 /// Get the count of bits in this register
