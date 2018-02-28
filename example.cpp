@@ -2,104 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CATCH_CONFIG_RUNNER /* Access to the configuration. */
 #include "catch.hpp"
 #include "qregister.hpp"
 
+#include "tests.hpp"
+
 using namespace Qrack;
-
-#if ENABLE_OPENCL
-#include "qregister_opencl.hpp"
-#endif
-
-/*
- * Enumerated list of supported engines.
- *
- * Not currently published since selection isn't supported by the API.
- */
-enum CoherentUnitEngine {
-    COHERENT_UNIT_ENGINE_SOFTWARE = 0,
-    COHERENT_UNIT_ENGINE_OPENCL,
-
-    COHERENT_UNIT_ENGINE_MAX
-};
-
-/* Default engine type to run the tests with. */
-enum CoherentUnitEngine testEngineType = COHERENT_UNIT_ENGINE_SOFTWARE;
-
-/*
- * A fixture to create a unique CoherentUnit test, of the appropriate type, for
- * each executing test case.
- */
-class CoherentUnitTestFixture {
-protected:
-    std::unique_ptr<CoherentUnit> qftReg;
-
-public:
-    CoherentUnitTestFixture()
-    {
-        uint32_t rngSeed = Catch::getCurrentContext().getConfig()->rngSeed();
-
-        if (testEngineType == COHERENT_UNIT_ENGINE_SOFTWARE) {
-            qftReg.reset(new CoherentUnit(21, 0));
-        }
-#if ENABLE_OPENCL
-        else if (testEngineType == COHERENT_UNIT_ENGINE_OPENCL) {
-            qftReg.reset(new CoherentUnitOCL(21, 0));
-        }
-#endif
-        else {
-            FAIL("Unsupported CoherentUnit Engine selection: " <<
-                    testEngineType);
-        }
-    }
-};
-
-/*
- * Normally this would be in a separate file, but since access to the config
- * and rngSeed are necessary, it's all packed in here to avoid duplicating
- * symbols.
- */
-int main(int argc, char *argv[])
-{
-    Catch::Session session;
-
-    bool disable_opencl = false;
-
-    using namespace Catch::clara;
-
-    /*
-     * Allow disabling running OpenCL tests on the command line, even if
-     * supported.
-     */
-    auto cli = session.cli() | Opt(disable_opencl)
-        ["--disable-opencl"]
-        ("Disable OpenCL even if supported");
-    session.cli(cli);
-
-    /* Set some defaults for convenience. */
-    session.configData().useColour = Catch::UseColour::No;
-    session.configData().reporterNames = { "compact" };
-
-    /* Parse the command line. */
-    int returnCode = session.applyCommandLine(argc, argv);
-    if (returnCode != 0) {
-        return returnCode;
-    }
-
-    /* Perform the run against the default (software) variant. */
-    int num_failed = session.run();
-
-#if ENABLE_OPENCL
-    if (num_failed == 0 && !disable_opencl) {
-        session.config().stream() << "Executing test suite using OpenCL" << std::endl;
-        testEngineType = COHERENT_UNIT_ENGINE_OPENCL;
-        num_failed = session.run();
-    }
-#endif
-
-    return num_failed;
-}
 
 /* Begin Test Cases. */
 

@@ -3,7 +3,7 @@ ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o example.o qregister.o par_for.o
+OBJ      = complex16simd.o example.o qregister.o par_for.o tests.o
 BIN      = example
 LIBS     = -lm -lpthread
 INCS     =
