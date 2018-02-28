@@ -55,6 +55,9 @@ public:
     /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
     CoherentUnit(const CoherentUnit& pqs);
 
+    /// Set the random seed (primarily used for testing)
+    void SetRandomSeed(uint32_t seed);
+
     /// Get the count of bits in this register
     int GetQubitCount();
 

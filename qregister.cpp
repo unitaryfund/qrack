@@ -85,6 +85,12 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     SetQuantumState(&pqs.stateVec[0]);
 }
 
+/// Set the random seed (primarily used for testing)
+void CoherentUnit::SetRandomSeed(uint32_t seed)
+{
+    rand_generator.seed(seed);
+}
+
 /// Get the count of bits in this register
 int CoherentUnit::GetQubitCount() { return qubitCount; }
 

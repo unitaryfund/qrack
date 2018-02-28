@@ -2,360 +2,539 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define CATCH_CONFIG_RUNNER /* Access to the configuration. */
+#include "catch.hpp"
 #include "qregister.hpp"
 
 using namespace Qrack;
 
 #if ENABLE_OPENCL
 #include "qregister_opencl.hpp"
-
-#define CoherentUnit CoherentUnitOCL
 #endif
 
-int main()
+/*
+ * Enumerated list of supported engines.
+ *
+ * Not currently published since selection isn't supported by the API.
+ */
+enum CoherentUnitEngine {
+    COHERENT_UNIT_ENGINE_SOFTWARE = 0,
+    COHERENT_UNIT_ENGINE_OPENCL,
+
+    COHERENT_UNIT_ENGINE_MAX
+};
+
+/* Default engine type to run the tests with. */
+enum CoherentUnitEngine testEngineType = COHERENT_UNIT_ENGINE_SOFTWARE;
+
+/*
+ * A fixture to create a unique CoherentUnit test, of the appropriate type, for
+ * each executing test case.
+ */
+class CoherentUnitTestFixture {
+protected:
+    std::unique_ptr<CoherentUnit> qftReg;
+
+public:
+    CoherentUnitTestFixture()
+    {
+        uint32_t rngSeed = Catch::getCurrentContext().getConfig()->rngSeed();
+
+        if (testEngineType == COHERENT_UNIT_ENGINE_SOFTWARE) {
+            qftReg.reset(new CoherentUnit(21, 0));
+        }
+#if ENABLE_OPENCL
+        else if (testEngineType == COHERENT_UNIT_ENGINE_OPENCL) {
+            qftReg.reset(new CoherentUnitOCL(21, 0));
+        }
+#endif
+        else {
+            FAIL("Unsupported CoherentUnit Engine selection: " <<
+                    testEngineType);
+        }
+    }
+};
+
+/*
+ * Normally this would be in a separate file, but since access to the config
+ * and rngSeed are necessary, it's all packed in here to avoid duplicating
+ * symbols.
+ */
+int main(int argc, char *argv[])
 {
+    Catch::Session session;
 
-    /// Choose OpenCL platform 0, device 0:
-    // Qrack::OCLSingleton::Instance(0, 0);
+    bool disable_opencl = false;
 
-    // char testKey;
+    using namespace Catch::clara;
 
-    const int planckTimes = 65500;
-    const int mpPowerOfTwo = 16;
-    const int maxTrials = 1000;
+    /*
+     * Allow disabling running OpenCL tests on the command line, even if
+     * supported.
+     */
+    auto cli = session.cli() | Opt(disable_opencl)
+        ["--disable-opencl"]
+        ("Disable OpenCL even if supported");
+    session.cli(cli);
 
-    int i, j;
+    /* Set some defaults for convenience. */
+    session.configData().useColour = Catch::UseColour::No;
+    session.configData().reporterNames = { "compact" };
 
-    Qrack::CoherentUnit qftReg(21, 0);
+    /* Parse the command line. */
+    int returnCode = session.applyCommandLine(argc, argv);
+    if (returnCode != 0) {
+        return returnCode;
+    }
 
-    double qftProbs[20];
+    /* Perform the run against the default (software) variant. */
+    int num_failed = session.run();
 
-    std::cout << "Set Reg Test:" << std::endl;
+#if ENABLE_OPENCL
+    if (num_failed == 0 && !disable_opencl) {
+        session.config().stream() << "Executing test suite using OpenCL" << std::endl;
+        testEngineType = COHERENT_UNIT_ENGINE_OPENCL;
+        num_failed = session.run();
+    }
+#endif
+
+    return num_failed;
+}
+
+/* Begin Test Cases. */
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
+{
+    int j;
+
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.SetReg(0, 8, 10);
+    qftReg->SetReg(0, 8, 10);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
+{
+    int j;
 
     std::cout << "Superpose Reg Test:" << std::endl;
-    qftReg.SetReg(0, 8, 768);
+    qftReg->SetReg(0, 8, 768);
     unsigned char testPage[256];
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
     for (j = 0; j < 20; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.SuperposeReg8(8, 0, testPage);
+    qftReg->SuperposeReg8(8, 0, testPage);
     for (j = 0; j < 20; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
+{
     std::cout << "M Reg Test:" << std::endl;
-    std::cout << qftReg.MReg(0, 8) << std::endl;
+    std::cout << qftReg->MReg(0, 8) << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
+{
+    int j;
 
     std::cout << "Set Zero Flag Test:" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.SetZeroFlag(0, 8, 8);
+    qftReg->SetZeroFlag(0, 8, 8);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
 
-    qftReg.SetPermutation(127);
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
+{
+    int i, j;
+
+    qftReg->SetPermutation(127);
     std::cout << "INCSC Test:" << std::endl;
     for (i = 0; i < 8; i++) {
         for (j = 0; j < 20; j++) {
-            std::cout << qftReg.Prob(j);
+            std::cout << qftReg->Prob(j);
         }
         std::cout << "->";
-        qftReg.INCSC(1, 8, 8, 18, 19);
+        qftReg->INCSC(1, 8, 8, 18, 19);
         for (j = 0; j < 20; j++) {
-            std::cout << qftReg.Prob(j);
+            std::cout << qftReg->Prob(j);
         }
         std::cout << std::endl;
     }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
+{
+    int i, j;
+
     std::cout << "DECSC Test:" << std::endl;
-    qftReg.SetPermutation(128);
+    qftReg->SetPermutation(128);
     for (i = 0; i < 8; i++) {
         for (j = 0; j < 10; j++) {
-            std::cout << qftReg.Prob(j);
+            std::cout << qftReg->Prob(j);
         }
         std::cout << "->";
-        qftReg.DECSC(9, 0, 8, 8, 9);
+        qftReg->DECSC(9, 0, 8, 8, 9);
         for (j = 0; j < 10; j++) {
-            std::cout << qftReg.Prob(j);
+            std::cout << qftReg->Prob(j);
         }
         std::cout << std::endl;
     }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
+{
+    int j;
 
     std::cout << "NOT Test:" << std::endl;
-    qftReg.SetPermutation(31);
+    qftReg->SetPermutation(31);
     std::cout << "[0,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.X(0, 8);
+    qftReg->X(0, 8);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
+{
+    int j;
 
     std::cout << "ROL Test:" << std::endl;
-    qftReg.SetPermutation(160);
+    qftReg->SetPermutation(160);
     std::cout << "[4,8) by 1:" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.ROL(1, 4, 4);
+    qftReg->ROL(1, 4, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
+{
+    int j;
 
     std::cout << "ROR Test:" << std::endl;
     std::cout << "[4,8) by 1:" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.ROL(1, 4, 4);
+    qftReg->ROL(1, 4, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
+{
+    int j;
 
     std::cout << "AND Test:" << std::endl;
-    qftReg.SetPermutation(46);
+    qftReg->SetPermutation(46);
     std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
     for (j = 0; j < 20; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.CLAND(0, 255, 0, 8);
+    qftReg->CLAND(0, 255, 0, 8);
     for (j = 0; j < 20; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
-    qftReg.SetPermutation(62);
+    qftReg->SetPermutation(62);
     std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.AND(0, 4, 0, 4);
+    qftReg->AND(0, 4, 0, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
+{
+    int j;
 
     std::cout << "OR Test:" << std::endl;
-    qftReg.SetPermutation(38);
+    qftReg->SetPermutation(38);
     std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.CLOR(0, 255, 0, 8);
+    qftReg->CLOR(0, 255, 0, 8);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
-    qftReg.SetPermutation(58);
+    qftReg->SetPermutation(58);
     std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.OR(0, 4, 0, 4);
+    qftReg->OR(0, 4, 0, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
+{
+    int j;
 
     std::cout << "XOR Test:" << std::endl;
-    qftReg.SetPermutation(38);
+    qftReg->SetPermutation(38);
     std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.XOR(0, 3, 6, 3);
+    qftReg->XOR(0, 3, 6, 3);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
-    qftReg.SetPermutation(58);
+    qftReg->SetPermutation(58);
     std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.XOR(0, 4, 0, 4);
+    qftReg->XOR(0, 4, 0, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_add")
+{
+    int i, j;
 
     std::cout << "ADD Test:" << std::endl;
-    qftReg.SetPermutation(38);
+    qftReg->SetPermutation(38);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.ADD(0, 4, 4);
+    qftReg->ADD(0, 4, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
 
-    qftReg.SetPermutation(0);
+    qftReg->SetPermutation(0);
     for (i = 0; i < 8; i++) {
-        qftReg.H(i);
+        qftReg->H(i);
     }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sub")
+{
+    int j;
 
     std::cout << "SUB Test:" << std::endl;
-    qftReg.SetPermutation(38);
+    qftReg->SetPermutation(38);
     std::cout << "[0,4) = [0,4) - [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.SUB(0, 4, 4);
+    qftReg->SUB(0, 4, 4);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
 
-    // qftReg.SetPermutation(0);
+    // qftReg->SetPermutation(0);
     // for (i = 0; i < 8; i++) {
-    //	qftReg.H(i);
+    //	qftReg->H(i);
     //}
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addsc")
+{
+    int j;
 
     std::cout << "ADDSC Test:" << std::endl;
-    qftReg.SetPermutation(55);
-    // qftReg.H(0);
-    // qftReg.H(8);
+    qftReg->SetPermutation(55);
+    // qftReg->H(0);
+    // qftReg->H(8);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
     for (j = 0; j < 10; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.ADDSC(0, 4, 4, 8, 9);
+    qftReg->ADDSC(0, 4, 4, 8, 9);
     for (j = 0; j < 10; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
 
-    // qftReg.SetPermutation(0);
+    // qftReg->SetPermutation(0);
     // for (i = 0; i < 8; i++) {
-    //	qftReg.H(i);
+    //	qftReg->H(i);
     //}
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subsc")
+{
+    int i, j;
 
     std::cout << "SUBSC Test:" << std::endl;
-    qftReg.SetPermutation(56);
+    qftReg->SetPermutation(56);
     std::cout << "[0,4) = [0,4) - [4,8):" << std::endl;
     for (j = 0; j < 10; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.SUBSC(0, 4, 4, 8, 9);
+    qftReg->SUBSC(0, 4, 4, 8, 9);
     for (j = 0; j < 10; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
 
-    qftReg.SetPermutation(0);
+    qftReg->SetPermutation(0);
     for (i = 0; i < 8; i++) {
-        qftReg.H(i);
+        qftReg->H(i);
     }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addbcdc")
+{
+    int j;
 
     std::cout << "ADDBCDC Test:" << std::endl;
-    qftReg.SetPermutation(265);
+    qftReg->SetPermutation(265);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.ADDBCDC(0, 4, 4, 8);
+    qftReg->ADDBCDC(0, 4, 4, 8);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subbcdc")
+{
+    int j;
 
     std::cout << "SUBBCDC Test:" << std::endl;
-    qftReg.SetPermutation(256);
+    qftReg->SetPermutation(256);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << "->";
-    qftReg.SUBBCDC(0, 4, 4, 8);
+    qftReg->SUBBCDC(0, 4, 4, 8);
     for (j = 0; j < 9; j++) {
-        std::cout << qftReg.Prob(j);
+        std::cout << qftReg->Prob(j);
     }
     std::cout << std::endl;
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m_reg")
+{
+    int j;
 
     std::cout << "M Test:" << std::endl;
     std::cout << "Initial:" << std::endl;
-    for (i = 0; i < 8; i++) {
-        std::cout << "Bit " << i << ", Chance of 1:" << qftReg.Prob(i) << std::endl;
+    for (j = 0; j < 8; j++) {
+        std::cout << "Bit " << j << ", Chance of 1:" << qftReg->Prob(j) << std::endl;
     }
 
-    qftReg.M(0);
+    qftReg->M(0);
     std::cout << "Final:" << std::endl;
-    for (i = 0; i < 8; i++) {
-        std::cout << "Bit " << i << ", Chance of 1:" << qftReg.Prob(i) << std::endl;
+    for (j = 0; j < 8; j++) {
+        std::cout << "Bit " << j << ", Chance of 1:" << qftReg->Prob(j) << std::endl;
     }
+}
 
-    qftReg.SetPermutation(85);
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
+{
+    double qftProbs[20];
+    qftReg->SetPermutation(85);
+
+    int i, j;
 
     std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
               << std::endl;
 
     for (i = 0; i < 8; i += 2) {
-        qftReg.H(i);
+        qftReg->H(i);
     }
 
     std::cout << "Initial:" << std::endl;
     for (i = 0; i < 8; i++) {
-        std::cout << "Bit " << i << ", Chance of 1:" << qftReg.Prob(i) << std::endl;
+        std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
     }
 
-    qftReg.QFT(0, 8);
+    qftReg->QFT(0, 8);
 
     std::cout << "Final:" << std::endl;
     for (i = 0; i < 8; i++) {
-        qftProbs[i] = qftReg.Prob(i);
+        qftProbs[i] = qftReg->Prob(i);
         std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
     }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
+{
+    int j;
 
     std::cout << "Decohere test:" << std::endl;
 
     Qrack::CoherentUnit qftReg2(4, 0);
 
-    qftReg.Decohere(0, 4, qftReg2);
+    qftReg->Decohere(0, 4, qftReg2);
 
-    for (i = 0; i < 4; i++) {
-        std::cout << "Bit " << i << ", Chance of 1:" << qftReg.Prob(i) << std::endl;
+    for (j = 0; j < 4; j++) {
+        std::cout << "Bit " << j << ", Chance of 1:" << qftReg->Prob(j) << std::endl;
     }
 
-    for (i = 0; i < 4; i++) {
-        std::cout << "Bit " << (i + 4) << ", Chance of 1:" << qftReg2.Prob(i) << std::endl;
+    for (j = 0; j < 4; j++) {
+        std::cout << "Bit " << (j + 4) << ", Chance of 1:" << qftReg2.Prob(j) << std::endl;
     }
+}
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
+{
     /*unsigned char toSearch[] = {
             0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
             0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8, 0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0,
@@ -377,21 +556,30 @@ int main()
 
     std::cout<<"Grover's test:"<<std::endl;
     std::cout<<"(255 to 0 indexed backwards from 0 to 255. Find 100. Should equal 155, 10011011.)"<<std::endl;
-    qftReg.SetPermutation(256);
-    qftReg.H(0, 9);
+    qftReg->SetPermutation(256);
+    qftReg->H(0, 9);
     for (i = 0; i < 16; i++) {
-            qftReg.DEC(100, 0, 8);
-            qftReg.SetZeroFlag(0, 8, 9);
-            qftReg.CNOT(9, 8);
-            qftReg.INC(100, 0, 8);
-            qftReg.H(0, 8);
-            qftReg.R1(M_PI, 0, 8);
-            qftReg.H(0, 8);
+            qftReg->DEC(100, 0, 8);
+            qftReg->SetZeroFlag(0, 8, 9);
+            qftReg->CNOT(9, 8);
+            qftReg->INC(100, 0, 8);
+            qftReg->H(0, 8);
+            qftReg->R1(M_PI, 0, 8);
+            qftReg->H(0, 8);
     }
     for (i = 0; i < 8; i++) {
-            std::cout<<qftReg.M(i);
+            std::cout<<qftReg->M(i);
     }
     std::cout<<std::endl;*/
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
+{
+    const int planckTimes = 65500;
+    const int mpPowerOfTwo = 16;
+    const int maxTrials = 1000;
+
+    int i, j;
 
     std::cout << "Next step might take a while..." << std::endl;
 
