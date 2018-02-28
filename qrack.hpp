@@ -11,6 +11,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
+#pragma once
+
 #include <algorithm>
 #include <atomic>
 #include <ctime>
@@ -21,14 +23,6 @@
 #include <stdexcept>
 #include <stdint.h>
 #include <thread>
-
-#if ENABLE_OPENCL
-#ifdef __APPLE__
-#include <OpenCL/cl.hpp>
-#else
-#include <CL/cl.hpp>
-#endif
-#endif
 
 #include "complex16simd.hpp"
 
@@ -45,75 +39,11 @@ void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt 
 template <class BidirectionalIterator>
 void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
 
-#if ENABLE_OPENCL
-/// "Qrack::OCLSingleton" manages the single OpenCL context
-/** "Qrack::OCLSingleton" manages the single OpenCL context. */
-class OCLSingleton {
-public:
-    /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
-    static OCLSingleton* Instance();
-    /// If this is the first time instantiating the OpenCL context, you may specify platform number and device number.
-    static OCLSingleton* Instance(int plat, int dev);
-    /// Get a pointer to the OpenCL context
-    cl::Context* GetContextPtr();
-    /// Get a pointer to the OpenCL queue
-    cl::CommandQueue* GetQueuePtr();
-    /// Get a pointer to the Apply2x2 function kernel
-    cl::Kernel* GetApply2x2Ptr();
-    /// Get a pointer to the ROL function kernel
-    cl::Kernel* GetROLPtr();
-    /// Get a pointer to the ROR function kernel
-    cl::Kernel* GetRORPtr();
-    /// Get a pointer to the ADD function kernel
-    cl::Kernel* GetADDPtr();
-    /// Get a pointer to the SUB function kernel
-    cl::Kernel* GetSUBPtr();
-    /// Get a pointer to the ADDBCD function kernel
-    cl::Kernel* GetADDBCDPtr();
-    /// Get a pointer to the SUBBCD function kernel
-    cl::Kernel* GetSUBBCDPtr();
-    /// Get a pointer to the ADDC function kernel
-    cl::Kernel* GetADDCPtr();
-    /// Get a pointer to the SUBC function kernel
-    cl::Kernel* GetSUBCPtr();
-    /// Get a pointer to the ADDBCDC function kernel
-    cl::Kernel* GetADDBCDCPtr();
-    /// Get a pointer to the SUBBCDC function kernel
-    cl::Kernel* GetSUBBCDCPtr();
-
-private:
-    std::vector<cl::Platform> all_platforms;
-    cl::Platform default_platform;
-    std::vector<cl::Device> all_devices;
-    cl::Device default_device;
-    cl::Context context;
-    cl::Program program;
-    cl::CommandQueue queue;
-    cl::Kernel apply2x2;
-    cl::Kernel rol;
-    cl::Kernel ror;
-    cl::Kernel add;
-    cl::Kernel sub;
-    cl::Kernel addbcd;
-    cl::Kernel subbcd;
-    cl::Kernel addc;
-    cl::Kernel subc;
-    cl::Kernel addbcdc;
-    cl::Kernel subbcdc;
-
-    OCLSingleton(); // Private so that it can  not be called
-    OCLSingleton(int plat, int dev); // Private so that it can  not be called
-    OCLSingleton(OCLSingleton const&); // copy constructor is private
-    OCLSingleton& operator=(OCLSingleton const& rhs); // assignment operator is private
-    static OCLSingleton* m_pInstance;
-
-    void InitOCL(int plat, int dev);
-};
-#endif /* ENABLE_OPENCL */
-
-/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers
-/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit
- * logic gates and (abstract) opcodes-like methods. */
+/**
+ * The "Qrack::CoherentUnit" class represents one or more coherent quantum
+ * processor registers, including primitive bit logic gates and (abstract)
+ * opcodes-like methods.
+ */
 class CoherentUnit {
 public:
     /// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
@@ -360,9 +290,9 @@ public:
     /// Logical shift right, filling the extra bits with |0>
     void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
     /// "Circular shift left" - shift bits left, and carry last bits.
-    void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     /// "Circular shift right" - shift bits right, and carry first bits.
-    void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
     /// Add integer (without sign)
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     /// Add integer (without sign, with carry)
@@ -405,7 +335,7 @@ public:
     /// Add two quantum integers
     /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." */
-    void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+    virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
     /// Add two quantum integers with carry bit
     /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. */
@@ -433,7 +363,7 @@ public:
     /// Subtract two quantum integers
     /** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." */
-    void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
+    virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
     /// Subtract two quantum binary coded decimal numbers
     /** Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store
      * result in "inOutStart." */
@@ -473,7 +403,12 @@ public:
     /// Set 8 bit register bits based on read from classical memory
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
-private:
+protected:
+#if ENABLE_OPENCL
+    virtual void InitOCL();
+    virtual void ReInitOCL();
+#endif
+
     double runningNorm;
     bitLenInt qubitCount;
     bitCapInt maxQPower;
@@ -482,20 +417,8 @@ private:
     std::default_random_engine rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
-#if ENABLE_OPENCL
-    OCLSingleton* clObj;
-    cl::CommandQueue queue;
-    cl::Buffer stateBuffer;
-    cl::Buffer cmplxBuffer;
-    cl::Buffer ulongBuffer;
-    cl::Buffer nrmBuffer;
-    cl::Buffer maxBuffer;
-
-    void InitOCL();
-    void ReInitOCL();
-#endif /* ENABLE_OPENCL */
-
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
+    virtual void ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec);
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
     void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
     void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
