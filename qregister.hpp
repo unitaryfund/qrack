@@ -290,7 +290,8 @@ public:
      * Add signed integer of "length" bits in "inStart" to signed integer of "length" bits in "inOutStart," and store
      * result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
      */
-    void ADDS(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
+    void ADDS(
+        const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 
     /**
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
@@ -310,7 +311,8 @@ public:
      * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
      * "inOutStart," with carry in/out.
      */
-    void ADDBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
+    void ADDBCDC(
+        const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 
     /**
      * Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
@@ -328,7 +330,8 @@ public:
      * Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store
      * result in "inOutStart," with carry in/out.
      */
-    void SUBBCDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
+    void SUBBCDC(
+        const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 
     /**
      * Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
@@ -340,7 +343,8 @@ public:
      * Subtract signed integer of "length" bits in "inStart" from signed integer of "length" bits in "inOutStart," and
      * store result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
      */
-    void SUBS(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
+    void SUBS(
+        const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 
     /**
      *Subtract integer of "length" bits in "inStart" from integer of "length" bits in "inOutStart," and store result

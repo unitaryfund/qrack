@@ -23,20 +23,20 @@
 namespace Qrack {
 
 /* Modified constructors with the addition of InitOCL(). */
-CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount) :
-    CoherentUnit(qBitCount)
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount)
+    : CoherentUnit(qBitCount)
 {
     InitOCL();
 }
 
-CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState) :
-    CoherentUnit(qBitCount, initState)
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState)
+    : CoherentUnit(qBitCount, initState)
 {
     InitOCL();
 }
 
-CoherentUnitOCL::CoherentUnitOCL(const CoherentUnitOCL& pqs) :
-    CoherentUnit(pqs)
+CoherentUnitOCL::CoherentUnitOCL(const CoherentUnitOCL& pqs)
+    : CoherentUnit(pqs)
 {
     InitOCL();
 }
