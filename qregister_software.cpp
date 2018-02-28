@@ -11,12 +11,13 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qrack.hpp"
+#include "qregister.hpp"
 #include <iostream>
 
 #include "par_for.hpp"
 
 namespace Qrack {
+
 /// "Circular shift left" - shift bits left, and carry last bits.
 void CoherentUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {

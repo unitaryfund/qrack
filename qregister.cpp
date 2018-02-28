@@ -11,7 +11,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qrack.hpp"
+#include "qregister.hpp"
 #include <iostream>
 
 #include "par_for.hpp"
@@ -36,10 +36,12 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
-/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers
-/** The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit
- * logic gates and (abstract) opcodes-like methods. */
-// Public CoherentUnit Methods:
+/**
+ * The "Qrack::CoherentUnit" class represents one or more coherent quantum
+ * processor registers, including primitive bit logic gates and (abstract)
+ * opcodes-like methods.
+ */
+
 /// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
 CoherentUnit::CoherentUnit(bitLenInt qBitCount)
     : rand_distribution(0.0, 1.0)
@@ -59,11 +61,8 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
     stateVec = std::move(sv);
     std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     stateVec[0] = Complex16(cos(angle), sin(angle));
-
-#if ENABLE_OPENCL
-    InitOCL();
-#endif
 }
+
 /// Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
     : rand_distribution(0.0, 1.0)
@@ -79,11 +78,8 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
     stateVec = std::move(sv);
     std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     stateVec[initState] = Complex16(cos(angle), sin(angle));
-
-#if ENABLE_OPENCL
-    InitOCL();
-#endif
 }
+
 /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
@@ -97,10 +93,6 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     stateVec.reset();
     stateVec = std::move(sv);
     std::copy(&(pqs.stateVec[0]), &(pqs.stateVec[0]) + maxQPower, &(stateVec[0]));
-
-#if ENABLE_OPENCL
-    InitOCL();
-#endif
 }
 
 /// Get the count of bits in this register
@@ -113,17 +105,14 @@ void CoherentUnit::CloneRawState(Complex16* output)
     std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(output[0]));
 }
 
+/// Generate a random double from 0 to 1
+double CoherentUnit::Rand() { return rand_distribution(rand_generator); }
+
 void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
 {
     stateVec.reset();
     stateVec = std::move(nStateVec);
-#if ENABLE_OPENCL
-    ReInitOCL();
-#endif
 }
-
-/// Generate a random double from 0 to 1
-double CoherentUnit::Rand() { return rand_distribution(rand_generator); }
 
 /// Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
 void CoherentUnit::SetPermutation(bitCapInt perm)

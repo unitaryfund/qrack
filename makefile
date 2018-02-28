@@ -1,9 +1,9 @@
 # 1 to use OpenCL-based optimizations
-ENABLE_OPENCL ?= 0
+ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o example.o qrack_base.o par_for.o
+OBJ      = complex16simd.o example.o qregister.o par_for.o
 BIN      = example
 LIBS     = -lm -lpthread
 INCS     =
@@ -14,10 +14,10 @@ RM       = rm -f
 ifeq (${ENABLE_OPENCL},1)
   LIBS += -lOpenCL
   CXXFLAGS += -DENABLE_OPENCL=1
-  OBJ += qrack_ocl.o qrack.o
+  OBJ += qregister_opencl.o oclengine.o
 else
   CXXFLAGS += -DENABLE_OPENCL=0
-  OBJ += qrack.o
+  OBJ += qregister_software.o
 endif
 
 .PHONY: all all-before all-after clean clean-custom
@@ -25,14 +25,14 @@ endif
 all: all-before $(BIN) all-after
 
 clean: clean-custom
-	$(RM) $(OBJ) qrackcl.hpp
+	$(RM) $(OBJ) qregistercl.hpp
 
 $(BIN): $(OBJ)
 	$(CPP) $(OBJ) -o $(BIN) $(LIBS)
 
 ifeq (${ENABLE_OPENCL},1)
-qrackcl.hpp: qrack.cl
-	${XXD} -i qrack.cl > qrackcl.hpp
+qregistercl.hpp: qregister.cl
+	${XXD} -i qregister.cl > qregistercl.hpp
 
-qrack_ocl.o: qrackcl.hpp
+qregister_opencl.o: qregistercl.hpp
 endif

@@ -16,12 +16,15 @@ Direct measurement of qubit probability and phase are implemented for debugging,
 
 Qrack compiles like a library. To include in your project:
 
-1)In your source code:
-#include "qrack.hpp"
-2)On the command line, in the project directory
-make all
+1. In your source code:
+```
+#include "qregister.hpp"
+```
 
-Make will link against math, pthreads, and OpenCL. Modify the makefile as necessary for inclusion in your project. Set the makefile QRACKVER variable to "qrack_ocl.cpp" for the OpenCL version, "qrack.cpp" for CPU parallelism only (without OpenCL), or "qrack_serial.cpp" for a totally non-parallel version. If you aren't using the OpenCL version, you should remove OpenCL linkage from the makefile. 
+2. On the command line, in the project directory
+```
+make all
+```
 
 Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
 

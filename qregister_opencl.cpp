@@ -11,107 +11,109 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qrack_ocl.hpp"
-#include "qrack.hpp"
-#include "qrackcl.hpp"
 #include <iostream>
+
+#include "qregister.hpp"
+#include "qregister_opencl.hpp"
+
+#include "oclengine.hpp"
 
 #include "par_for.hpp"
 
 namespace Qrack {
 
-/// "Qrack::OCLSingleton" manages the single OpenCL context
-/** "Qrack::OCLSingleton" manages the single OpenCL context. */
-// Public singleton methods:
-/// Get a pointer to the OpenCL context
-cl::Context* OCLSingleton::GetContextPtr() { return &context; }
-/// Get a pointer to the OpenCL queue
-cl::CommandQueue* OCLSingleton::GetQueuePtr() { return &queue; }
-/// Get a pointer to the Apply2x2 function kernel
-cl::Kernel* OCLSingleton::GetApply2x2Ptr() { return &apply2x2; }
-/// Get a pointer to the ROL function kernel
-cl::Kernel* OCLSingleton::GetROLPtr() { return &rol; }
-/// Get a pointer to the ROR function kernel
-cl::Kernel* OCLSingleton::GetRORPtr() { return &ror; }
-/// Get a pointer to the ADD function kernel
-cl::Kernel* OCLSingleton::GetADDPtr() { return &add; }
-/// Get a pointer to the SUB function kernel
-cl::Kernel* OCLSingleton::GetSUBPtr() { return &sub; }
-/// Get a pointer to the ADDC function kernel
-cl::Kernel* OCLSingleton::GetADDCPtr() { return &addc; }
-/// Get a pointer to the SUBC function kernel
-cl::Kernel* OCLSingleton::GetSUBCPtr() { return &subc; }
-
-// Private singleton methods:
-OCLSingleton::OCLSingleton() { InitOCL(0, 0); } // Private so that it can  not be called
-OCLSingleton::OCLSingleton(int plat, int dev) { InitOCL(plat, dev); } // Private so that it can  not be called
-OCLSingleton::OCLSingleton(OCLSingleton const&) {} // copy constructor is private
-OCLSingleton& OCLSingleton::operator=(OCLSingleton const& rhs) { return *this; } // assignment operator is private
-void OCLSingleton::InitOCL(int plat, int dev)
+/* Modified constructors with the addition of InitOCL(). */
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount) :
+    CoherentUnit(qBitCount)
 {
-    // get all platforms (drivers), e.g. NVIDIA
-
-    cl::Platform::get(&all_platforms);
-
-    if (all_platforms.size() == 0) {
-        std::cout << " No platforms found. Check OpenCL installation!\n";
-        exit(1);
-    }
-    default_platform = all_platforms[plat];
-    std::cout << "Using platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
-
-    // get default device (CPUs, GPUs) of the default platform
-    default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
-    if (all_devices.size() == 0) {
-        std::cout << " No devices found. Check OpenCL installation!\n";
-        exit(1);
-    }
-
-    // use device[1] because that's a GPU; device[0] is the CPU
-    default_device = all_devices[dev];
-    std::cout << "Using device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-
-    // a context is like a "runtime link" to the device and platform;
-    // i.e. communication is possible
-    context = cl::Context({ default_device });
-
-    // create the program that we want to execute on the device
-    cl::Program::Sources sources;
-
-    sources.push_back({ (const char*)qrack_cl, (long unsigned int)qrack_cl_len });
-
-    program = cl::Program(context, sources);
-    if (program.build({ default_device }) != CL_SUCCESS) {
-        std::cout << "Error building: " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << std::endl;
-        exit(1);
-    }
-
-    queue = cl::CommandQueue(context, default_device);
-    apply2x2 = cl::Kernel(program, "apply2x2");
-    rol = cl::Kernel(program, "rol");
-    ror = cl::Kernel(program, "ror");
-    add = cl::Kernel(program, "add");
-    sub = cl::Kernel(program, "sub");
-    addc = cl::Kernel(program, "addc");
-    subc = cl::Kernel(program, "subc");
+    InitOCL();
 }
 
-OCLSingleton* OCLSingleton::m_pInstance = NULL;
-OCLSingleton* OCLSingleton::Instance()
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState) :
+    CoherentUnit(qBitCount, initState)
 {
-    if (!m_pInstance)
-        m_pInstance = new OCLSingleton();
-    return m_pInstance;
+    InitOCL();
 }
-OCLSingleton* OCLSingleton::Instance(int plat, int dev)
+
+CoherentUnitOCL::CoherentUnitOCL(const CoherentUnitOCL& pqs) :
+    CoherentUnit(pqs)
 {
-    if (!m_pInstance) {
-        m_pInstance = new OCLSingleton(plat, dev);
+    InitOCL();
+}
+
+void CoherentUnitOCL::InitOCL()
+{
+    clObj = OCLEngine::Instance();
+
+    queue = *(clObj->GetQueuePtr());
+    cl::Context context = *(clObj->GetContextPtr());
+
+    // create buffers on device (allocate space on GPU)
+    stateBuffer
+        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
+    cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
+    ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
+    nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+    maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
+
+    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+}
+
+void CoherentUnitOCL::ReInitOCL()
+{
+    clObj = OCLEngine::Instance();
+
+    queue = *(clObj->GetQueuePtr());
+    cl::Context context = *(clObj->GetContextPtr());
+
+    // create buffers on device (allocate space on GPU)
+    stateBuffer
+        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
+
+    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+}
+
+void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
+{
+    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+    CoherentUnit::ResetStateVec(nStateVec);
+    ReInitOCL();
+}
+
+void CoherentUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
+    const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
+{
+    Complex16 cmplx[5];
+    for (int i = 0; i < 4; i++) {
+        cmplx[i] = mtrx[i];
+    }
+    cmplx[4] = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
+    bitCapInt ulong[10] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    for (int i = 0; i < bitCount; i++) {
+        ulong[4 + i] = qPowersSorted[i];
+    }
+
+    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+    queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, ulong);
+
+    cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
+    queue.finish();
+    apply2x2.setArg(0, stateBuffer);
+    apply2x2.setArg(1, cmplxBuffer);
+    apply2x2.setArg(2, ulongBuffer);
+    queue.enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    if (doCalcNorm) {
+        UpdateRunningNorm();
     } else {
-        std::cout << "Warning: Tried to reinitialize OpenCL environment with platform and device." << std::endl;
+        runningNorm = 1.0;
     }
-    return m_pInstance;
 }
+
 /// "Circular shift left" - shift bits left, and carry last bits.
 void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
@@ -144,6 +146,7 @@ void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     ResetStateVec(nStateVec);
 }
+
 /// "Circular shift right" - shift bits right, and carry first bits.
 void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
@@ -251,75 +254,4 @@ void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, con
     ResetStateVec(nStateVec);
 }
 
-// Private CoherentUnitOCL methods
-void CoherentUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
-{
-    Complex16 cmplx[5];
-    for (int i = 0; i < 4; i++) {
-        cmplx[i] = mtrx[i];
-    }
-    cmplx[4] = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
-    bitCapInt ulong[10] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
-    for (int i = 0; i < bitCount; i++) {
-        ulong[4 + i] = qPowersSorted[i];
-    }
-
-    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-    queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * 5, cmplx);
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, ulong);
-
-    cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
-    queue.finish();
-    apply2x2.setArg(0, stateBuffer);
-    apply2x2.setArg(1, cmplxBuffer);
-    apply2x2.setArg(2, ulongBuffer);
-    queue.enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
-
-    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    if (doCalcNorm) {
-        UpdateRunningNorm();
-    } else {
-        runningNorm = 1.0;
-    }
-}
-
-void CoherentUnitOCL::InitOCL()
-{
-    clObj = OCLSingleton::Instance();
-
-    queue = *(clObj->GetQueuePtr());
-    cl::Context context = *(clObj->GetContextPtr());
-
-    // create buffers on device (allocate space on GPU)
-    stateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
-    cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
-    ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
-    nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
-    maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
-
-    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-}
-void CoherentUnitOCL::ReInitOCL()
-{
-    clObj = OCLSingleton::Instance();
-
-    queue = *(clObj->GetQueuePtr());
-    cl::Context context = *(clObj->GetContextPtr());
-
-    // create buffers on device (allocate space on GPU)
-    stateBuffer
-        = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(stateVec[0]));
-
-    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-}
-
-void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
-{
-    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-    CoherentUnit::ResetStateVec(nStateVec);
-}
-}
+} // namespace Qrack

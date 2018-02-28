@@ -1,9 +1,16 @@
-#include "qrack.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "qregister.hpp"
+
 using namespace Qrack;
+
+#if ENABLE_OPENCL
+#include "qregister_opencl.hpp"
+
+#define CoherentUnit CoherentUnitOCL
+#endif
 
 int main()
 {

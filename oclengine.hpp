@@ -25,39 +25,13 @@
 
 namespace Qrack {
 
-class OCLSingleton;
-
-class CoherentUnitOCL : public CoherentUnit {
-public:
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
-    virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
-
-protected:
-    OCLSingleton* clObj;
-    cl::CommandQueue queue;
-    cl::Buffer stateBuffer;
-    cl::Buffer cmplxBuffer;
-    cl::Buffer ulongBuffer;
-    cl::Buffer nrmBuffer;
-    cl::Buffer maxBuffer;
-
-    virtual void InitOCL();
-    virtual void ReInitOCL();
-    virtual void ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec);
-
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
-};
-
-/** "Qrack::OCLSingleton" manages the single OpenCL context. */
-class OCLSingleton {
+/** "Qrack::OCLEngine" manages the single OpenCL context. */
+class OCLEngine {
 public:
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
-    static OCLSingleton* Instance();
+    static OCLEngine* Instance();
     /// If this is the first time instantiating the OpenCL context, you may specify platform number and device number.
-    static OCLSingleton* Instance(int plat, int dev);
+    static OCLEngine* Instance(int plat, int dev);
     /// Get a pointer to the OpenCL context
     cl::Context* GetContextPtr();
     /// Get a pointer to the OpenCL queue
@@ -105,12 +79,13 @@ private:
     cl::Kernel addbcdc;
     cl::Kernel subbcdc;
 
-    OCLSingleton(); // Private so that it can  not be called
-    OCLSingleton(int plat, int dev); // Private so that it can  not be called
-    OCLSingleton(OCLSingleton const&); // copy constructor is private
-    OCLSingleton& operator=(OCLSingleton const& rhs); // assignment operator is private
-    static OCLSingleton* m_pInstance;
+    OCLEngine(); // Private so that it can  not be called
+    OCLEngine(int plat, int dev); // Private so that it can  not be called
+    OCLEngine(OCLEngine const&); // copy constructor is private
+    OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
+    static OCLEngine* m_pInstance;
 
     void InitOCL(int plat, int dev);
 };
-}
+
+} // namespace Qrack
