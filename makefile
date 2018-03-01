@@ -4,6 +4,10 @@ ENABLE_OPENCL ?= 1
 CPP      = g++
 XXD      = xxd
 OBJ      = complex16simd.o example.o qregister.o par_for.o tests.o
+SRC      = $(wildcard *.cpp)
+HDRS     = $(wildcard *.hpp)
+FORMAT_SRC = ${SRC}
+FORMAT_HDRS = $(filter-out catch.hpp, ${HDRS})
 BIN      = example
 LIBS     = -lm -lpthread
 INCS     =
@@ -26,6 +30,9 @@ all: all-before $(BIN) all-after
 
 clean: clean-custom
 	$(RM) $(OBJ) qregistercl.hpp
+
+format:
+	clang-format-5.0 -style=file -i ${FORMAT_SRC} ${FORMAT_HDRS}
 
 example.o : tests.hpp
 tests.o : tests.hpp
