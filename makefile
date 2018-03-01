@@ -3,7 +3,7 @@ ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o example.o qregister.o par_for.o tests.o
+OBJ      = complex16simd.o example.o qregister.o par_for.o tests.o qregister_software.o
 SRC      = $(wildcard *.cpp)
 HDRS     = $(wildcard *.hpp)
 FORMAT_SRC = ${SRC}
@@ -21,7 +21,6 @@ ifeq (${ENABLE_OPENCL},1)
   OBJ += qregister_opencl.o oclengine.o
 else
   CXXFLAGS += -DENABLE_OPENCL=0
-  OBJ += qregister_software.o
 endif
 
 .PHONY: all all-before all-after clean clean-custom

@@ -379,11 +379,6 @@ public:
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
 protected:
-#if ENABLE_OPENCL
-    virtual void InitOCL();
-    virtual void ReInitOCL();
-#endif
-
     double runningNorm;
     bitLenInt qubitCount;
     bitCapInt maxQPower;
