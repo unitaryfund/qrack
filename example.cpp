@@ -21,82 +21,56 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
-    std::cout << "Superpose Reg Test:" << std::endl;
-    qftReg->SetReg(0, 8, 768);
+
+    qftReg->SetReg(0, 8, 0x300);
+    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x300));
+
     unsigned char testPage[256];
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    CAPTURE(*qftReg);
-    for (j = 0; j < 20; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
     qftReg->SuperposeReg8(8, 0, testPage);
-    for (j = 0; j < 20; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    CAPTURE(*qftReg);
-    std::cout << std::endl;
+    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x303));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
 {
-    std::cout << "M Reg Test:" << std::endl;
-    std::cout << qftReg->MReg(0, 8) << std::endl;
+    REQUIRE(qftReg->MReg(0, 8) == 0);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
 {
-    int j;
-
-    std::cout << "Set Zero Flag Test:" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0));
     qftReg->SetZeroFlag(0, 8, 8);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
 {
-    int i, j;
+    int i;
 
-    qftReg->SetPermutation(127);
-    std::cout << "INCSC Test:" << std::endl;
+    qftReg->SetPermutation(0x07f);
     for (i = 0; i < 8; i++) {
-        for (j = 0; j < 20; j++) {
-            std::cout << qftReg->Prob(j);
-        }
-        std::cout << "->";
         qftReg->INCSC(1, 8, 8, 18, 19);
-        for (j = 0; j < 20; j++) {
-            std::cout << qftReg->Prob(j);
-        }
-        std::cout << std::endl;
+        REQUIRE_THAT(*qftReg, HasProbability(0, 19, 0x07f + ((i + 1) << 8)));
     }
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
 {
-    int i, j;
+    int i;
+    int start = 0x80;
 
-    std::cout << "DECSC Test:" << std::endl;
-    qftReg->SetPermutation(128);
+    qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
-        for (j = 0; j < 10; j++) {
-            std::cout << qftReg->Prob(j);
-        }
-        std::cout << "->";
         qftReg->DECSC(9, 0, 8, 8, 9);
-        for (j = 0; j < 10; j++) {
-            std::cout << qftReg->Prob(j);
+        start -= 9;
+        if (i == 0) {
+            /* First subtraction flips the flag. */
+             REQUIRE_THAT(*qftReg, HasProbability(0, 19, start | 0x100));
+        } else {
+             REQUIRE_THAT(*qftReg, HasProbability(0, 19, start));
         }
-        std::cout << std::endl;
     }
 }
 

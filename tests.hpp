@@ -2,6 +2,9 @@
 
 #include <sstream>
 
+/* A quick-and-dirty epsilon for clamping floating point values. */
+#define QRACK_TEST_EPSILON 0.5
+
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
 inline std::ostream& operator<<(std::ostream& os, Qrack::CoherentUnit const& constReg)
@@ -9,7 +12,7 @@ inline std::ostream& operator<<(std::ostream& os, Qrack::CoherentUnit const& con
     Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
     os << "" << qftReg.GetQubitCount() << "/";
     for (int j = qftReg.GetQubitCount(); j >= 0; j--) {
-        os << qftReg.Prob(j);
+        os << (int)(qftReg.Prob(j) > QRACK_TEST_EPSILON);
     }
     return os;
 }
@@ -58,14 +61,14 @@ public:
     {
         Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
 
-        if (length > sizeof(mask * 8)) {
-            WARN("requested length larger than possible bitmap");
+        if (length > sizeof(mask) * 8) {
+            WARN("requested length " << length << " larger than possible bitmap " << sizeof(mask) * 8);
             return false;
         }
 
         for (int j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
-            bool bit = (qftReg.Prob(j + start) > 0.5);
+            bool bit = (qftReg.Prob(j + start) > QRACK_TEST_EPSILON);
             if (bit != !!(mask & (1 << j))) {
                 return false;
             }
