@@ -392,7 +392,7 @@ protected:
     std::default_random_engine rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
-    virtual void ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec);
+    virtual void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
     void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);

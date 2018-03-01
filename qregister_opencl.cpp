@@ -73,10 +73,10 @@ void CoherentUnitOCL::ReInitOCL()
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
-void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
+void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-    CoherentUnit::ResetStateVec(nStateVec);
+    CoherentUnit::ResetStateVec(std::move(nStateVec));
     ReInitOCL();
 }
 
@@ -144,7 +144,7 @@ void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
@@ -177,7 +177,7 @@ void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// Add two quantum integers
@@ -214,7 +214,7 @@ void CoherentUnitOCL::ADD(const bitLenInt inOutStart, const bitLenInt inStart, c
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// Subtract two quantum integers
@@ -251,7 +251,7 @@ void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, con
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 } // namespace Qrack
