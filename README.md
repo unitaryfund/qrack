@@ -39,3 +39,12 @@ This is a simple example of quantum mechanics simulation in quantum computationa
 We assume a fixed length time step. During each time step, we step through an equal superposition of either standing still or taking one fixed length step from our current position toward our fixed destination.
 
 This is equivalent to a physical body having a 50% chance of emitting a fixed unit of energy per a fixed unit of time, in a pure quantum state. Hence, it might be considered a simple quantum mechanics simulation.
+
+## Installing OpenCL on VMWare
+
+1.  Download the [AMD APP SDK](https://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
+1.  Install it.
+1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libOpenCL.so.1` to `/usr/lib`
+1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libamdocl64.so` to `/usr/lib`
+1.  Make sure `clinfo` reports back that there is a valid backend to use (anything other than an error should be fine).
+1.  Adjust the `makefile` to have the appropriate search paths
