@@ -13,29 +13,21 @@ using namespace Qrack;
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
-    int j;
-
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0));
     qftReg->SetReg(0, 8, 10);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 10));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
-
     std::cout << "Superpose Reg Test:" << std::endl;
     qftReg->SetReg(0, 8, 768);
     unsigned char testPage[256];
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
+    CAPTURE(*qftReg);
     for (j = 0; j < 20; j++) {
         std::cout << qftReg->Prob(j);
     }
@@ -44,6 +36,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     for (j = 0; j < 20; j++) {
         std::cout << qftReg->Prob(j);
     }
+    CAPTURE(*qftReg);
     std::cout << std::endl;
 }
 

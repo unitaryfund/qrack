@@ -1,5 +1,20 @@
 #pragma once
 
+#include <sstream>
+
+/* Declare the stream-to-probability prior to including catch.hpp. */
+namespace Qrack {
+inline std::ostream& operator<<(std::ostream& os, Qrack::CoherentUnit const& constReg)
+{
+    Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
+    os << "" << qftReg.GetQubitCount() << "/";
+    for (int j = qftReg.GetQubitCount(); j >= 0; j--) {
+        os << qftReg.Prob(j);
+    }
+    return os;
+}
+} // namespace Qrack
+
 #include "catch.hpp"
 
 /*
@@ -26,4 +41,47 @@ public:
     CoherentUnitTestFixture();
 };
 
+class ProbPattern : public Catch::MatcherBase<Qrack::CoherentUnit> {
+    bitLenInt start;
+    bitLenInt length;
+    uint64_t mask;
 
+public:
+    ProbPattern(bitLenInt s, bitLenInt l, uint64_t m)
+        : start(s)
+        , length(l)
+        , mask(m)
+    {
+    }
+
+    virtual bool match(Qrack::CoherentUnit const& constReg) const override
+    {
+        Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
+
+        if (length > sizeof(mask * 8)) {
+            WARN("requested length larger than possible bitmap");
+            return false;
+        }
+
+        for (int j = 0; j < length; j++) {
+            /* Consider anything more than a 50% probability as a '1'. */
+            bool bit = (qftReg.Prob(j + start) > 0.5);
+            if (bit != !!(mask & (1 << j))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    virtual std::string describe() const
+    {
+        std::ostringstream ss;
+        ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
+        for (int j = length; j >= 0; j--) {
+            ss << !!((int)(mask & (1 << j)));
+        }
+        return ss.str();
+    }
+};
+
+inline ProbPattern HasProbability(bitLenInt s, bitLenInt l, uint64_t m) { return ProbPattern(s, l, m); }

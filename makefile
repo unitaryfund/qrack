@@ -27,6 +27,11 @@ all: all-before $(BIN) all-after
 clean: clean-custom
 	$(RM) $(OBJ) qregistercl.hpp
 
+example.o : tests.hpp
+tests.o : tests.hpp
+qregister.o : qregister.hpp
+qregister_opencl.o : qregister.hpp
+
 $(BIN): $(OBJ)
 	$(CPP) $(OBJ) -o $(BIN) $(LIBS)
 
@@ -34,5 +39,7 @@ ifeq (${ENABLE_OPENCL},1)
 qregistercl.hpp: qregister.cl
 	${XXD} -i qregister.cl > qregistercl.hpp
 
-qregister_opencl.o: qregistercl.hpp
+qregister_opencl.o: qregistercl.hpp oclengine.hpp
+tests.o : oclengine.hpp
+example.o : oclengine.hpp
 endif

@@ -86,10 +86,7 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
 }
 
 /// Set the random seed (primarily used for testing)
-void CoherentUnit::SetRandomSeed(uint32_t seed)
-{
-    rand_generator.seed(seed);
-}
+void CoherentUnit::SetRandomSeed(uint32_t seed) { rand_generator.seed(seed); }
 
 /// Get the count of bits in this register
 int CoherentUnit::GetQubitCount() { return qubitCount; }
