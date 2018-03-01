@@ -16,6 +16,14 @@ inline std::ostream& operator<<(std::ostream& os, Qrack::CoherentUnit const& con
     }
     return os;
 }
+
+inline std::ostream& operator<<(std::ostream& os, const std::unique_ptr<Qrack::CoherentUnit>& constReg)
+{
+    Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)*constReg;
+    os << qftReg;
+    return os;
+}
+
 } // namespace Qrack
 
 #include "catch.hpp"
