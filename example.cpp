@@ -33,10 +33,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x303));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
-{
-    REQUIRE(qftReg->MReg(0, 8) == 0);
-}
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8) == 0); }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
 {
@@ -67,192 +64,107 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
         start -= 9;
         if (i == 0) {
             /* First subtraction flips the flag. */
-             REQUIRE_THAT(*qftReg, HasProbability(0, 19, start | 0x100));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 19, start | 0x100));
         } else {
-             REQUIRE_THAT(*qftReg, HasProbability(0, 19, start));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 19, start));
         }
     }
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
-    int j;
-
-    std::cout << "NOT Test:" << std::endl;
     qftReg->SetPermutation(31);
-    std::cout << "[0,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
     qftReg->X(0, 8);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0xe0));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
 {
-    int j;
-
-    std::cout << "ROL Test:" << std::endl;
     qftReg->SetPermutation(160);
-    std::cout << "[4,8) by 1:" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160));
     qftReg->ROL(1, 4, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160 >> 1));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
 {
-    int j;
-
-    std::cout << "ROR Test:" << std::endl;
-    std::cout << "[4,8) by 1:" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    qftReg->SetPermutation(160);
+    REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160));
     qftReg->ROL(1, 4, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160 << 1));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
 {
-    int j;
-
     std::cout << "AND Test:" << std::endl;
     qftReg->SetPermutation(46);
     std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
-    for (j = 0; j < 20; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->CLAND(0, 255, 0, 8);
-    for (j = 0; j < 20; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
     qftReg->SetPermutation(62);
     std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->AND(0, 4, 0, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
 {
-    int j;
-
     std::cout << "OR Test:" << std::endl;
     qftReg->SetPermutation(38);
     std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->CLOR(0, 255, 0, 8);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
     qftReg->SetPermutation(58);
     std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->OR(0, 4, 0, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
 {
-    int j;
-
     std::cout << "XOR Test:" << std::endl;
     qftReg->SetPermutation(38);
     std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->XOR(0, 3, 6, 3);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
     qftReg->SetPermutation(58);
     std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->XOR(0, 4, 0, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_add")
 {
-    int i, j;
+    int i;
 
     std::cout << "ADD Test:" << std::endl;
     qftReg->SetPermutation(38);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->ADD(0, 4, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 
     qftReg->SetPermutation(0);
     for (i = 0; i < 8; i++) {
         qftReg->H(i);
     }
+    WARN(qftReg);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sub")
 {
-    int j;
-
     std::cout << "SUB Test:" << std::endl;
     qftReg->SetPermutation(38);
     std::cout << "[0,4) = [0,4) - [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->SUB(0, 4, 4);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 
     // qftReg->SetPermutation(0);
     // for (i = 0; i < 8; i++) {
@@ -262,22 +174,14 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sub")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addsc")
 {
-    int j;
-
     std::cout << "ADDSC Test:" << std::endl;
     qftReg->SetPermutation(55);
     // qftReg->H(0);
     // qftReg->H(8);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
-    for (j = 0; j < 10; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->ADDSC(0, 4, 4, 8, 9);
-    for (j = 0; j < 10; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 
     // qftReg->SetPermutation(0);
     // for (i = 0; i < 8; i++) {
@@ -287,20 +191,14 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addsc")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subsc")
 {
-    int i, j;
+    int i;
 
     std::cout << "SUBSC Test:" << std::endl;
     qftReg->SetPermutation(56);
     std::cout << "[0,4) = [0,4) - [4,8):" << std::endl;
-    for (j = 0; j < 10; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->SUBSC(0, 4, 4, 8, 9);
-    for (j = 0; j < 10; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 
     qftReg->SetPermutation(0);
     for (i = 0; i < 8; i++) {
@@ -310,38 +208,22 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subsc")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addbcdc")
 {
-    int j;
-
     std::cout << "ADDBCDC Test:" << std::endl;
     qftReg->SetPermutation(265);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->ADDBCDC(0, 4, 4, 8);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subbcdc")
 {
-    int j;
-
     std::cout << "SUBBCDC Test:" << std::endl;
     qftReg->SetPermutation(256);
     std::cout << "[0,4) = [0,4) + [4,8):" << std::endl;
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << "->";
+    WARN(qftReg);
     qftReg->SUBBCDC(0, 4, 4, 8);
-    for (j = 0; j < 9; j++) {
-        std::cout << qftReg->Prob(j);
-    }
-    std::cout << std::endl;
+    WARN(qftReg);
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m_reg")
@@ -431,8 +313,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
             0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00
     };*/
 
-    std::cout<<"Grover's test:"<<std::endl;
-    std::cout<<"(Search function is true only for an input of 100. Should output 11011001.)"<<std::endl;
+    std::cout << "Grover's test:" << std::endl;
+    std::cout << "(Search function is true only for an input of 100. Should output 11011001.)" << std::endl;
     qftReg->SetPermutation(0);
     qftReg->SetBit(8, true);
     qftReg->H(0, 9);
@@ -456,16 +338,15 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
             greatestProbIndex = i;
         }
     }
-    std::cout<<"Most likely outcome: ";
+    std::cout << "Most likely outcome: ";
     for (i = 0; i < 21; i++) {
-        if (1<<i & greatestProbIndex) {
-            std::cout<<"1";
-        }
-        else {
-            std::cout<<"0";
+        if (1 << i & greatestProbIndex) {
+            std::cout << "1";
+        } else {
+            std::cout << "0";
         }
     }
-    std::cout<<std::endl;
+    std::cout << std::endl;
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
