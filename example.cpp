@@ -410,6 +410,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
+    int i;
+
     /*unsigned char toSearch[] = {
             0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
             0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8, 0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0,
@@ -427,25 +429,43 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
             0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21, 0x20,
             0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
             0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00
-    };
+    };*/
 
     std::cout<<"Grover's test:"<<std::endl;
-    std::cout<<"(255 to 0 indexed backwards from 0 to 255. Find 100. Should equal 155, 10011011.)"<<std::endl;
-    qftReg->SetPermutation(256);
+    std::cout<<"(Search function is true only for an input of 100. Should output 11011001.)"<<std::endl;
+    qftReg->SetPermutation(0);
+    qftReg->SetBit(8, true);
     qftReg->H(0, 9);
     for (i = 0; i < 16; i++) {
-            qftReg->DEC(100, 0, 8);
-            qftReg->SetZeroFlag(0, 8, 9);
-            qftReg->CNOT(9, 8);
-            qftReg->INC(100, 0, 8);
-            qftReg->H(0, 8);
-            qftReg->R1(M_PI, 0, 8);
-            qftReg->H(0, 8);
+        qftReg->DEC(100, 0, 8);
+        qftReg->SetZeroFlag(0, 8, 9);
+        qftReg->CNOT(9, 8);
+        qftReg->INC(100, 0, 8);
+        qftReg->H(0, 8);
+        qftReg->X(0, 8);
+        qftReg->R1(M_PI, 0, 8);
+        qftReg->X(0, 8);
+        qftReg->H(0, 8);
     }
-    for (i = 0; i < 8; i++) {
-            std::cout<<qftReg->M(i);
+    qftReg->X(0, 8);
+    int greatestProbIndex = 0;
+    double greatestProb = 0;
+    for (i = 0; i < 2097152; i++) {
+        if (qftReg->ProbAll(i) > greatestProb) {
+            greatestProb = qftReg->ProbAll(i);
+            greatestProbIndex = i;
+        }
     }
-    std::cout<<std::endl;*/
+    std::cout<<"Most likely outcome: ";
+    for (i = 0; i < 21; i++) {
+        if (1<<i & greatestProbIndex) {
+            std::cout<<"1";
+        }
+        else {
+            std::cout<<"0";
+        }
+    }
+    std::cout<<std::endl;
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
