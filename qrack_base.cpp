@@ -113,7 +113,7 @@ void CoherentUnit::CloneRawState(Complex16* output)
     std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(output[0]));
 }
 
-void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]>& nStateVec)
+void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
     stateVec.reset();
     stateVec = std::move(nStateVec);
@@ -169,7 +169,7 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     }
     qubitCount = nQubitCount;
     maxQPower = 1 << nQubitCount;
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 
     UpdateRunningNorm();
 }
@@ -210,7 +210,7 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
     std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
-    ResetStateVec(sv);
+    ResetStateVec(std::move(sv));
 
     double angle = Rand() * 2.0 * M_PI;
     Complex16 phaseFac(cos(angle), sin(angle));
@@ -268,7 +268,7 @@ void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
     std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
-    ResetStateVec(sv);
+    ResetStateVec(std::move(sv));
 
     double angle = Rand() * 2.0 * M_PI;
     Complex16 phaseFac(cos(angle), sin(angle));
@@ -815,7 +815,7 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
             bitCapInt inOutRes = ((~lcv) & bciArgs[0]);
             nStateVec[inOutRes | otherRes] = stateVec[lcv];
         });
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 void CoherentUnit::H(bitLenInt start, bitLenInt length)
@@ -1224,7 +1224,7 @@ void CoherentUnit::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
             }
             delete[] nibbles;
         });
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add BCD integer (without sign, with carry)
 void CoherentUnit::INCBCDC(
@@ -1360,7 +1360,7 @@ void CoherentUnit::INCBCDC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add integer (without sign, with carry)
 void CoherentUnit::INCC(
@@ -1416,7 +1416,7 @@ void CoherentUnit::INCC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add integer (with sign, without carry)
 /** Add an integer to the register, with sign and without carry. Because the register length is an arbitrary number of
@@ -1468,7 +1468,7 @@ void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length,
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add integer (with sign, with carry)
 /** Add an integer to the register, with sign and with carry. Because the register length is an arbitrary number of
@@ -1556,7 +1556,7 @@ void CoherentUnit::INCSC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract integer (without sign)
 void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
@@ -1644,7 +1644,7 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
             }
             delete[] nibbles;
         });
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract integer (without sign, with carry)
 void CoherentUnit::DECC(
@@ -1700,7 +1700,7 @@ void CoherentUnit::DECC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract integer (with sign, without carry)
 /** Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
@@ -1752,7 +1752,7 @@ void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length,
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract integer (with sign, with carry)
 /** Subtract an integer from the register, with sign and with carry. Because the register length is an arbitrary number
@@ -1840,7 +1840,7 @@ void CoherentUnit::DECSC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract BCD integer (without sign, with carry)
 void CoherentUnit::DECBCDC(
@@ -1976,7 +1976,7 @@ void CoherentUnit::DECBCDC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// Add two binary-coded decimal numbers.
@@ -2040,7 +2040,7 @@ void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, c
                 delete[] nibbles;
             }
         });
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add two quantum integers with carry bit
 /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
@@ -2111,7 +2111,7 @@ void CoherentUnit::ADDC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add two signed quantum integers with overflow bit
 /** Add signed integer of "length" bits in "inStart" to signed integer of "length" bits in "inOutStart," and store
@@ -2170,7 +2170,7 @@ void CoherentUnit::ADDS(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add two quantum integers with carry bit and overflow bit
 /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
@@ -2268,7 +2268,7 @@ void CoherentUnit::ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, co
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add two binary-coded decimal numbers.
 /** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
@@ -2410,7 +2410,7 @@ void CoherentUnit::ADDBCDC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// Subtract two binary-coded decimal numbers.
@@ -2474,7 +2474,7 @@ void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, c
                 delete[] nibbles;
             }
         });
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract two quantum integers with carry bit
 /** Subtract integer of "length" - 1 bits in "toSub" from integer of "length" - 1 bits in "inOutStart," and store result
@@ -2543,7 +2543,7 @@ void CoherentUnit::SUBC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract two signed quantum integers with overflow bit
 /** Subtract signed integer of "length" bits in "inStart" from signed integer of "length" bits in "inOutStart," and
@@ -2602,7 +2602,7 @@ void CoherentUnit::SUBS(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Subtract two quantum integers with carry bit and overflow bit
 /** Subtract integer of "length" bits in "inStart" from integer of "length" bits in "inOutStart," and store result in
@@ -2698,7 +2698,7 @@ void CoherentUnit::SUBSC(const bitLenInt inOutStart, const bitLenInt toSub, cons
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Add two binary-coded decimal numbers.
 /** Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
@@ -2841,7 +2841,7 @@ void CoherentUnit::SUBBCDC(
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
@@ -2878,8 +2878,7 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    stateVec.reset();
-    stateVec = std::move(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// For chips with a sign flag, set the sign flag after a register operation.
@@ -2900,8 +2899,7 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    stateVec.reset();
-    stateVec = std::move(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// Set register bits to given permutation
@@ -2925,7 +2923,7 @@ void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     for (i = 0; i < maxQPower; i++) {
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 }
 
 /// Measure permutation state of a register
@@ -2991,7 +2989,7 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
         average += prob * outputInt;
         nStateVec[i] = polar(sqrt(prob), imag(nStateVec[i]));
     }
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
 
     return (unsigned char)(average + 0.5);
 }
