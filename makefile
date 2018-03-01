@@ -3,8 +3,11 @@ ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o qrack.o example.o
-LINKOBJ  = complex16simd.o qrack.o example.o
+OBJ      = complex16simd.o example.o qregister.o par_for.o tests.o qregister_software.o
+SRC      = $(wildcard *.cpp)
+HDRS     = $(wildcard *.hpp)
+FORMAT_SRC = ${SRC}
+FORMAT_HDRS = $(filter-out catch.hpp, ${HDRS})
 BIN      = example
 LIBS     = -lm -lpthread
 INCS     =
@@ -15,10 +18,9 @@ RM       = rm -f
 ifeq (${ENABLE_OPENCL},1)
   LIBS += -lOpenCL
   CXXFLAGS += -DENABLE_OPENCL=1
-  QRACKVER = qrack_ocl.cpp
+  OBJ += qregister_opencl.o oclengine.o
 else
   CXXFLAGS += -DENABLE_OPENCL=0
-  QRACKVER = qrack.cpp
 endif
 
 .PHONY: all all-before all-after clean clean-custom
@@ -26,20 +28,24 @@ endif
 all: all-before $(BIN) all-after
 
 clean: clean-custom
-	$(RM) $(OBJ) qrackcl.hpp
+	$(RM) $(OBJ) qregistercl.hpp
+
+format:
+	clang-format-5.0 -style=file -i ${FORMAT_SRC} ${FORMAT_HDRS}
+
+example.o : tests.hpp
+tests.o : tests.hpp
+qregister.o : qregister.hpp
+qregister_opencl.o : qregister.hpp
 
 $(BIN): $(OBJ)
-	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
-
-complex16simd.o: complex16simd.cpp
-	$(CPP) -c complex16simd.cpp -o complex16simd.o $(CXXFLAGS)	
-
-qrack.o: $(QRACKVER)
-	$(CPP) -c $(QRACKVER) -o qrack.o $(CXXFLAGS)	
+	$(CPP) $(OBJ) -o $(BIN) $(LIBS)
 
 ifeq (${ENABLE_OPENCL},1)
-qrackcl.hpp: qrack.cl
-	${XXD} -i qrack.cl > qrackcl.hpp
+qregistercl.hpp: qregister.cl
+	${XXD} -i qregister.cl > qregistercl.hpp
 
-qrack.o: qrackcl.hpp
+qregister_opencl.o: qregistercl.hpp oclengine.hpp
+tests.o : oclengine.hpp
+example.o : oclengine.hpp
 endif

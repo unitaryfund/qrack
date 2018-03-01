@@ -45,4 +45,4 @@ Complex16Simd conj(const Complex16Simd& cmplx);
 double norm(const Complex16Simd& cmplx);
 double abs(const Complex16Simd& cmplx);
 Complex16Simd polar(const double rho, const double theta);
-}
+} // namespace Qrack

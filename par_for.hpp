@@ -116,21 +116,21 @@ void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt sk
     int num_cpus = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(num_cpus);
     for (int cpu = 0; cpu != num_cpus; ++cpu) {
-        futures[cpu]
-            = std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateVec, &fn]() {
-                  bitCapInt i, iLow, iHigh;
-                  for (;;) {
-                      iHigh = idx++;
-                      i = 0;
-                      iLow = iHigh % skipPower;
-                      i += iLow;
-                      iHigh = (iHigh - iLow) << 1;
-                      i += iHigh;
-                      if (i >= end)
-                          break;
-                      fn(i, cpu, stateArray, bciArgs, nStateVec);
-                  }
-              });
+        futures[cpu] =
+            std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateVec, &fn]() {
+                bitCapInt i, iLow, iHigh;
+                for (;;) {
+                    iHigh = idx++;
+                    i = 0;
+                    iLow = iHigh % skipPower;
+                    i += iLow;
+                    iHigh = (iHigh - iLow) << 1;
+                    i += iHigh;
+                    if (i >= end)
+                        break;
+                    fn(i, cpu, stateArray, bciArgs, nStateVec);
+                }
+            });
     }
 
     for (int cpu = 0; cpu != num_cpus; ++cpu) {
@@ -175,50 +175,9 @@ void par_for_reg(const bitLenInt start, const bitLenInt length, const bitLenInt 
     }
 }
 
-double par_norm(const bitCapInt maxQPower, const Complex16* stateArray)
-{
-    // const double* sAD = reinterpret_cast<const double*>(stateArray);
-    // double* sSAD = new double[maxQPower * 2];
-    // std::partial_sort_copy(sAD, sAD + (maxQPower * 2), sSAD, sSAD + (maxQPower * 2));
-    // Complex16* sorted = reinterpret_cast<Complex16*>(sSAD);
+double par_norm(const bitCapInt maxQPower, const Complex16* stateArray);
 
-    std::atomic<bitCapInt> idx;
-    idx = 0;
-    int num_cpus = std::thread::hardware_concurrency();
-    double* nrmPart = new double[num_cpus];
-    std::vector<std::future<void>> futures(num_cpus);
-    for (int cpu = 0; cpu != num_cpus; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
-            double sqrNorm = 0.0;
-            // double smallSqrNorm = 0.0;
-            bitCapInt i;
-            for (;;) {
-                i = idx++;
-                // if (i >= maxQPower) {
-                //	sqrNorm += smallSqrNorm;
-                //	break;
-                //}
-                // smallSqrNorm += norm(sorted[i]);
-                // if (smallSqrNorm > sqrNorm) {
-                //	sqrNorm += smallSqrNorm;
-                //	smallSqrNorm = 0;
-                //}
-                if (i >= maxQPower)
-                    break;
-                sqrNorm += norm(stateArray[i]);
-            }
-            nrmPart[cpu] = sqrNorm;
-        });
-    }
-
-    double nrmSqr = 0;
-    for (int cpu = 0; cpu != num_cpus; ++cpu) {
-        futures[cpu].get();
-        nrmSqr += nrmPart[cpu];
-    }
-    return sqrt(nrmSqr);
-}
-}
+} // namespace Qrack
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // THIS ENDS THE EXCERPTED SECTION FROM "GILGAMESH."
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

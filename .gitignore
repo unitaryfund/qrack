@@ -1,3 +1,7 @@
 /doc/*
 *.o
-qrackcl.hpp
+qregistercl.hpp
+.*.swp
+.*.swo
+example
+tags

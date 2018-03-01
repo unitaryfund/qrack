@@ -114,4 +114,4 @@ Complex16Simd polar(const double rho, const double theta = 0)
 {
     return Complex16Simd(_mm_set1_pd(rho) * _mm_set_pd(cos(theta), sin(theta)));
 }
-}
+} // namespace Qrack
