@@ -1,9 +1,10 @@
 # 1 to use OpenCL-based optimizations
-ENABLE_OPENCL ?= 0
+ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o example.o qrack_base.o par_for.o
+OBJ      = complex16simd.o qrack.o example.o
+LINKOBJ  = complex16simd.o qrack.o example.o
 BIN      = example
 LIBS     = -lm -lpthread
 INCS     =
@@ -14,10 +15,10 @@ RM       = rm -f
 ifeq (${ENABLE_OPENCL},1)
   LIBS += -lOpenCL
   CXXFLAGS += -DENABLE_OPENCL=1
-  OBJ += qrack_ocl.o qrack.o
+  QRACKVER = qrack_ocl.cpp
 else
   CXXFLAGS += -DENABLE_OPENCL=0
-  OBJ += qrack.o
+  QRACKVER = qrack.cpp
 endif
 
 .PHONY: all all-before all-after clean clean-custom
@@ -28,11 +29,17 @@ clean: clean-custom
 	$(RM) $(OBJ) qrackcl.hpp
 
 $(BIN): $(OBJ)
-	$(CPP) $(OBJ) -o $(BIN) $(LIBS)
+	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
+
+complex16simd.o: complex16simd.cpp
+	$(CPP) -c complex16simd.cpp -o complex16simd.o $(CXXFLAGS)	
+
+qrack.o: $(QRACKVER)
+	$(CPP) -c $(QRACKVER) -o qrack.o $(CXXFLAGS)	
 
 ifeq (${ENABLE_OPENCL},1)
 qrackcl.hpp: qrack.cl
 	${XXD} -i qrack.cl > qrackcl.hpp
 
-qrack_ocl.o: qrackcl.hpp
+qrack.o: qrackcl.hpp
 endif
