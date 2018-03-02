@@ -13,9 +13,9 @@ using namespace Qrack;
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
-    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
     qftReg->SetReg(0, 8, 10);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 10));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
@@ -23,23 +23,23 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     int j;
 
     qftReg->SetReg(0, 8, 0x300);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x300));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x300));
 
     unsigned char testPage[256];
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
     qftReg->SuperposeReg8(8, 0, testPage);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x303));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x303));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8) == 0); }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
 {
-    REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0));
+    REQUIRE_THAT(qftReg, HasProbability(0, 9, 0));
     qftReg->SetZeroFlag(0, 8, 8);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
+    REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
@@ -49,7 +49,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
     qftReg->SetPermutation(0x07f);
     for (i = 0; i < 8; i++) {
         qftReg->INCSC(1, 8, 8, 18, 19);
-        REQUIRE_THAT(*qftReg, HasProbability(0, 19, 0x07f + ((i + 1) << 8)));
+        REQUIRE_THAT(qftReg, HasProbability(0x07f + ((i + 1) << 8)));
     }
 }
 
@@ -64,9 +64,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
         start -= 9;
         if (i == 0) {
             /* First subtraction flips the flag. */
-            REQUIRE_THAT(*qftReg, HasProbability(0, 19, start | 0x100));
+            REQUIRE_THAT(qftReg, HasProbability(start | 0x100));
         } else {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 19, start));
+            REQUIRE_THAT(qftReg, HasProbability(start));
         }
     }
 }
@@ -75,38 +75,35 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
     qftReg->SetPermutation(31);
     qftReg->X(0, 8);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0xe0));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
 {
     qftReg->SetPermutation(160);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160));
+    REQUIRE_THAT(qftReg, HasProbability(160));
     qftReg->ROL(1, 4, 4);
-    REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160 >> 1));
+    REQUIRE_THAT(qftReg, HasProbability(160 << 1));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
 {
     qftReg->SetPermutation(160);
-    //REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160));
-    qftReg->ROL(1, 4, 4);
-    //REQUIRE_THAT(*qftReg, HasProbability(0, 19, 160 << 1));
+    REQUIRE_THAT(qftReg, HasProbability(160));
+    qftReg->ROR(1, 4, 4);
+    REQUIRE_THAT(qftReg, HasProbability(160 >> 1));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
 {
     std::cout << "AND Test:" << std::endl;
-    qftReg->SetPermutation(46);
-    std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
-    WARN(qftReg);
-    qftReg->CLAND(0, 255, 0, 8);
-    WARN(qftReg);
-    qftReg->SetPermutation(62);
-    std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
-    WARN(qftReg);
-    qftReg->AND(0, 4, 0, 4);
-    WARN(qftReg);
+    qftReg->SetPermutation(0x2e);
+    REQUIRE_THAT(qftReg, HasProbability(0x2e));
+    qftReg->CLAND(0, 0xff, 0, 8);   // 0x2e & 0xff
+    REQUIRE_THAT(qftReg, HasProbability(0x2e));
+    qftReg->SetPermutation(0x3e);
+    qftReg->AND(0, 4, 0, 4);        // 0xe & 0x3
+    REQUIRE_THAT(qftReg, HasProbability(0x32));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")

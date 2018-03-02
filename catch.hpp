@@ -4025,6 +4025,8 @@ namespace Catch {
 
         bool assertionEnded(AssertionStats const& _assertionStats) override;
 
+        void sectionStarting(SectionInfo const& _sectionInfo) override;
+
         void sectionEnded(SectionStats const& _sectionStats) override;
 
         void testRunEnded(TestRunStats const& _testRunStats) override;
@@ -11291,11 +11293,18 @@ private:
             return true;
         }
 
+        void CompactReporter::sectionStarting(SectionInfo const& _sectionInfo) {
+            stream << ">>> '" << _sectionInfo.name << "': ";
+        }
+
         void CompactReporter::sectionEnded(SectionStats const& _sectionStats) {
+            stream << std::endl;
+
             if (m_config->showDurations() == ShowDurations::Always) {
                 stream << getFormattedDuration(_sectionStats.durationInSeconds) << " s: " << _sectionStats.sectionInfo.name << std::endl;
             }
         }
+
 
         void CompactReporter::testRunEnded( TestRunStats const& _testRunStats ) {
             printTotals( stream, _testRunStats.totals );
