@@ -29,18 +29,6 @@ inline std::ostream& operator<<(std::ostream& os, const std::unique_ptr<Qrack::C
 #include "catch.hpp"
 
 /*
- * Enumerated list of supported engines.
- *
- * Not currently published since selection isn't supported by the API.
- */
-enum CoherentUnitEngine {
-    COHERENT_UNIT_ENGINE_SOFTWARE = 0,
-    COHERENT_UNIT_ENGINE_OPENCL,
-
-    COHERENT_UNIT_ENGINE_MAX
-};
-
-/*
  * A fixture to create a unique CoherentUnit test, of the appropriate type, for
  * each executing test case.
  */

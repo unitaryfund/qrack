@@ -33,11 +33,21 @@
 
 namespace Qrack {
 
-template <class BidirectionalIterator>
-void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride);
+class CoherentUnit;
 
-template <class BidirectionalIterator>
-void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
+/*
+ * Enumerated list of supported engines.
+ *
+ * Not currently published since selection isn't supported by the API.
+ */
+enum CoherentUnitEngine {
+    COHERENT_UNIT_ENGINE_SOFTWARE = 0,
+    COHERENT_UNIT_ENGINE_OPENCL,
+
+    COHERENT_UNIT_ENGINE_MAX
+};
+
+CoherentUnit* CreateCoherentUnit(CoherentUnitEngine engine, bitLenInt qBitCount, bitCapInt initState);
 
 /**
  * The "Qrack::CoherentUnit" class represents one or more coherent quantum
@@ -398,4 +408,11 @@ protected:
     void Reverse(bitLenInt first, bitLenInt last);
     void UpdateRunningNorm();
 };
+
+template <class BidirectionalIterator>
+void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride);
+
+template <class BidirectionalIterator>
+void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
+
 } // namespace Qrack
