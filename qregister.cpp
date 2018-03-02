@@ -50,7 +50,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    rand_generator.seed(std::time(0));
+    SetRandomSeed(std::time(0));
 
     double angle = Rand() * 2.0 * M_PI;
     runningNorm = 1.0;
@@ -73,7 +73,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
 {
-    rand_generator.seed(std::time(0));
+    SetRandomSeed(std::time(0));
 
     runningNorm = pqs.runningNorm;
     qubitCount = pqs.qubitCount;

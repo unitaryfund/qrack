@@ -63,5 +63,11 @@ CoherentUnitTestFixture::CoherentUnitTestFixture()
 {
     uint32_t rngSeed = Catch::getCurrentContext().getConfig()->rngSeed();
 
+    if (rngSeed == 0) {
+        rngSeed = std::time(0);
+    }
+
+    WARN("Random Seed: " << rngSeed);
     qftReg.reset(CreateCoherentUnit(testEngineType, 21, 0));
+    qftReg->SetRandomSeed(rngSeed);
 }
