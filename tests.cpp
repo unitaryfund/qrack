@@ -63,15 +63,5 @@ CoherentUnitTestFixture::CoherentUnitTestFixture()
 {
     uint32_t rngSeed = Catch::getCurrentContext().getConfig()->rngSeed();
 
-    if (testEngineType == COHERENT_UNIT_ENGINE_SOFTWARE) {
-        qftReg.reset(new CoherentUnit(21, 0));
-    }
-#if ENABLE_OPENCL
-    else if (testEngineType == COHERENT_UNIT_ENGINE_OPENCL) {
-        qftReg.reset(new CoherentUnitOCL(21, 0));
-    }
-#endif
-    else {
-        FAIL("Unsupported CoherentUnit Engine selection: " << testEngineType);
-    }
+    qftReg.reset(CreateCoherentUnit(testEngineType, 21, 0));
 }
