@@ -321,8 +321,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     qftReg->H(8, 9);
     qftReg->SuperposeReg8(8, 0, toSearch);
     qftReg->DEC(100, 0, 8);
-    for (i = 0; i < 12; i++) {
+    //Literature value for Grover's should be 12, but 8 gives a higher chance of "getting lucky" on the zero bit:
+    for (i = 0; i < 8; i++) {
         qftReg->SetZeroFlag(0, 8, 17);
+        std::cout << "Iteration "<<i<<", Bit 17, Chance of 1:" << qftReg->Prob(17) << std::endl;
         qftReg->CNOT(17, 16);
         qftReg->H(0, 8);
         qftReg->X(0, 8);
@@ -330,18 +332,37 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         qftReg->X(0, 8);
         qftReg->H(0, 8);
     }
+    std::cout << "Final, Bit 17, Chance of 1:" << qftReg->Prob(17) << std::endl;
+    qftReg->SetZeroFlag(0, 8, 17);
     qftReg->INC(100, 0, 8);
     int greatestProbIndex = 0;
     double greatestProb = 0;
+    int greatestZeroProbIndex = 0;
+    double greatestZeroProb = 0;
     for (i = 0; i < 2097152; i++) {
         if (qftReg->ProbAll(i) > greatestProb) {
             greatestProb = qftReg->ProbAll(i);
             greatestProbIndex = i;
         }
+        if (i & (1<<17)) {
+            if (qftReg->ProbAll(i) > greatestZeroProb) {
+                greatestZeroProb = qftReg->ProbAll(i);
+                greatestZeroProbIndex = i;
+            }
+        }
     }
     std::cout << "Most likely outcome: ";
     for (i = 0; i < 21; i++) {
         if (1 << i & greatestProbIndex) {
+            std::cout << "1";
+        } else {
+            std::cout << "0";
+        }
+    }
+    std::cout << std::endl;
+    std::cout << "Most likely zero bit set outcome: ";
+    for (i = 0; i < 21; i++) {
+        if (1 << i & greatestZeroProbIndex) {
             std::cout << "1";
         } else {
             std::cout << "0";
