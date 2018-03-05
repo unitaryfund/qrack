@@ -1689,7 +1689,7 @@ void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
         bitCapInt maxLCV = iterPower * endPower;
         for (i = 0; i < startPower; i++) {
             for (j = 0; j < maxLCV; j += endPower) {
-                rotate(&(stateVec[0]) + i + j, &(stateVec[0]) + (toSub * startPower) + i + j,
+                rotate(&(stateVec[0]) + i + j, &(stateVec[0]) + ((toSub + 1) * startPower) + i + j,
                     &(stateVec[0]) + endPower + i + j, startPower);
             }
         }
@@ -3002,12 +3002,11 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt flagMask = 1 << zeroFlag;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ (regMask | flagMask);
     bitCapInt i;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     for (i = 0; i < maxQPower; i++) {
-        if (((i & otherMask) == i) || (((i & otherMask) | flagMask) == i)) {
+        if ((i & (~regMask)) == i) {
             nStateVec[i | flagMask] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
         } else {
             nStateVec[i & (~flagMask)] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
