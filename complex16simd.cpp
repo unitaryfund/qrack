@@ -80,6 +80,9 @@ Complex16Simd Complex16Simd::operator/=(const double rhs)
     _val = _mm_div_pd(_val, _mm_set1_pd(rhs));
     return Complex16Simd(_val);
 }
+Complex16Simd Complex16Simd::operator-() {
+	return -1.0 * _val;
+}
 
 // Imperative function definitions:
 Complex16Simd operator*(const double lhs, const Complex16Simd& rhs) { return _mm_mul_pd(_mm_set1_pd(lhs), rhs._val); }

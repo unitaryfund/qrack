@@ -33,6 +33,7 @@ struct Complex16Simd {
     Complex16Simd operator/=(const Complex16Simd& other);
     Complex16Simd operator/(const double rhs) const;
     Complex16Simd operator/=(const double rhs);
+    Complex16Simd operator-();
 };
 
 Complex16Simd operator*(const double lhs, const Complex16Simd& rhs);

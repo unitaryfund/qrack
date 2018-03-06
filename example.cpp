@@ -42,6 +42,35 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
     REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
 }
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
+{
+    int i;
+
+    qftReg->SetPermutation(250);
+    for (i = 0; i < 8; i++) {
+        qftReg->INC(1, 0, 8);
+        if (i < 5) {
+        	REQUIRE_THAT(*qftReg, HasProbability(0, 8, 251 + i));
+        }
+        else {
+		REQUIRE_THAT(*qftReg, HasProbability(0, 8, i - 5));
+	}
+    }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_dec")
+{
+    int i;
+    int start = 0x08;
+
+    qftReg->SetPermutation(start);
+    for (i = 0; i < 8; i++) {
+        qftReg->DEC(9, 0, 8);
+        start -= 9;
+        REQUIRE_THAT(*qftReg, HasProbability(0, 19, 0xff - i * 9));
+    }
+}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
 {
     int i;
@@ -290,7 +319,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
     int i;
 
@@ -317,24 +346,27 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     std::cout << "Grover's test:" << std::endl;
     std::cout << "(Search function is true only for an input of 100 (0x64). 100 is in position 155. First 16 bits should output 00100110 11011001.)" << std::endl;
     qftReg->SetPermutation(0);
+
     qftReg->SetBit(16, true);
-    qftReg->H(8, 9);
-    qftReg->SuperposeReg8(8, 0, toSearch);
-    qftReg->DEC(100, 0, 8);
+    qftReg->H(16);
+    qftReg->H(0, 8);
+    //qftReg->H(8, 8);
+    //qftReg->SuperposeReg8(8, 0, toSearch);
+
     //Literature value for Grover's should be 12, but 8 gives a higher chance of "getting lucky" on the zero bit:
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 12; i++) {
+        qftReg->DEC(100, 0, 8);
         qftReg->SetZeroFlag(0, 8, 17);
-        std::cout << "Iteration "<<i<<", Bit 17, Chance of 1:" << qftReg->Prob(17) << std::endl;
         qftReg->CNOT(17, 16);
+        qftReg->INC(100, 0, 8);
         qftReg->H(0, 8);
-        qftReg->X(0, 8);
-        qftReg->R1(M_PI, 0, 8);
-        qftReg->X(0, 8);
+        qftReg->SetZeroFlag(0, 8, 17);
+        qftReg->CNOT(17, 16);
+        qftReg->X(16);
         qftReg->H(0, 8);
     }
-    std::cout << "Final, Bit 17, Chance of 1:" << qftReg->Prob(17) << std::endl;
     qftReg->SetZeroFlag(0, 8, 17);
-    qftReg->INC(100, 0, 8);
+    std::cout << "Final, Bit 17, Chance of 1:" << qftReg->Prob(17) << std::endl;
     int greatestProbIndex = 0;
     double greatestProb = 0;
     int greatestZeroProbIndex = 0;
@@ -374,7 +406,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
     }
 
-}
+}*/
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
 {
