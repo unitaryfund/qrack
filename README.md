@@ -32,7 +32,7 @@ If you are using the OpenCL version of the headers, the OpenCL platform and devi
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
-The included EXAMPLE.CPP is headed by a bit test. Then, the following example is run:)
+The included EXAMPLE.CPP is headed by a bit test. Then, the following example is run:
 
 This is a simple example of quantum mechanics simulation in quantum computational logic. It is essentially a unidirectional binary quantum random walk algorithm, from a positive starting point, heading toward zero.
 
