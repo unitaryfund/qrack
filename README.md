@@ -12,7 +12,7 @@ Qrack has already been integrated with a MOS 6502 emulator, (see https://github.
 
 Virtual machines created with Qrack can be abstracted from the code that runs on them, and need not necessarily be packaged with each other. Qrack can be used to create a virtual machine that translates opcodes into instructions for a virtual quantum processor. Then, software that runs on the virtual machine could be abstracted from the machine itself as any higher-level software could. All that is necessary to run the quantum binary is any virtual machine with the same instruction set.
 
-Direct measurement of qubit probability and phase are implemented for debugging, but also for potential speed-up, by allowing the classical emulation to leverage nonphysical exceptions to quantum logic, like by cloning a quantum state. In practice, though, opcode might not rely on this (nonphysical) functionality at all. (The MOS 6502 emulator referenced above does not.)
+Direct measurement of qubit probability and phase are implemented for debugging, but also for potential speed-up, by allowing the classical emulation to leverage nonphysical exceptions to quantum logic, like by cloning a quantum state. In practice, though, opcodes might not rely on this (nonphysical) functionality at all. (The MOS 6502 emulator referenced above does not.)
 
 Qrack compiles like a library. To include in your project:
 
@@ -32,7 +32,7 @@ If you are using the OpenCL version of the headers, the OpenCL platform and devi
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
-The included EXAMPLE.CPP is headed by a bit test. Then, the following example is run:)
+The included EXAMPLE.CPP is headed by a bit test. Then, the following example is run:
 
 This is a simple example of quantum mechanics simulation in quantum computational logic. It is essentially a unidirectional binary quantum random walk algorithm, from a positive starting point, heading toward zero.
 
@@ -48,3 +48,10 @@ This is equivalent to a physical body having a 50% chance of emitting a fixed un
 1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libamdocl64.so` to `/usr/lib`
 1.  Make sure `clinfo` reports back that there is a valid backend to use (anything other than an error should be fine).
 1.  Adjust the `makefile` to have the appropriate search paths
+
+
+## Note about unitarity and arithmetic
+
+The project's original author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD, SUB, carry, and overflow operations are provisional and will be corrected. Similar, AND/OR/XOR only preserve unitarity when the output bit indices differ from the input bit indices, functionining like Toffoli gates with X operations on the input bits, but the nonunitary input/output overlap cases are left for convenience. Their application could be valid if overwritten bits are guaranteed to be separable. Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable.
+
+Qrack is an experimental work in progress, and the author aims for both utility and correctness, but the project cannot be guaranteed to be fit for any purpose, explicit or implied. (See LICENSE.md for details.)
