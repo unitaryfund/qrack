@@ -139,16 +139,16 @@ void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt sk
 }
 
 template <class F>
-void par_for_skip2(const bitCapInt begin, const bitCapInt end, const bitCapInt* skipPowers, const bitLenInt skipCount, const Complex16* stateArray,
-    const bitCapInt* bciArgs, Complex16* nStateVec, F fn)
+void par_for_skip2(const bitCapInt begin, const bitCapInt end, const bitCapInt* skipPowers, const bitLenInt skipCount,
+    const Complex16* stateArray, const bitCapInt* bciArgs, Complex16* nStateVec, F fn)
 {
     std::atomic<bitCapInt> idx;
     idx = begin;
     int num_cpus = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(num_cpus);
     for (int cpu = 0; cpu != num_cpus; ++cpu) {
-        futures[cpu] =
-            std::async(std::launch::async, [cpu, &idx, end, skipPowers, skipCount, stateArray, bciArgs, nStateVec, &fn]() {
+        futures[cpu] = std::async(
+            std::launch::async, [cpu, &idx, end, skipPowers, skipCount, stateArray, bciArgs, nStateVec, &fn]() {
                 bitCapInt p, i, iLow, iHigh;
                 for (;;) {
                     iHigh = idx++;

@@ -893,7 +893,7 @@ void CoherentUnit::CZ(bitLenInt control, bitLenInt target)
 /// Apply X ("not") gate to each bit in "length," starting from bit index "start"
 void CoherentUnit::X(bitLenInt start, bitLenInt length)
 {
-    //for (bitLenInt lcv = 0; lcv < length; lcv++) {
+    // for (bitLenInt lcv = 0; lcv < length; lcv++) {
     //    X(start + lcv);
     //}
 
@@ -1336,7 +1336,7 @@ void CoherentUnit::INCBCDC(
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
-	X(carryIndex);
+        X(carryIndex);
         toAdd++;
     }
     bitCapInt nibbleCount = length / 4;
@@ -1405,12 +1405,11 @@ void CoherentUnit::INCBCDC(
 }
 
 /// Add integer (without sign, with carry)
-void CoherentUnit::INCC(
-    bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+void CoherentUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
-	X(carryIndex);
+        X(carryIndex);
         toAdd++;
     }
     bitCapInt carryMask = 1 << carryIndex;
@@ -1504,7 +1503,7 @@ void CoherentUnit::INCSC(
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
-	X(carryIndex);
+        X(carryIndex);
         toAdd++;
     }
     bitCapInt inOutMask = 0;
@@ -1632,12 +1631,11 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
 }
 
 /// Subtract integer (without sign, with carry)
-void CoherentUnit::DECC(
-    bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
-	X(carryIndex);
+        X(carryIndex);
         toSub++;
     }
     bitCapInt inOutMask = 0;
@@ -1733,7 +1731,7 @@ void CoherentUnit::DECSC(
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
-	X(carryIndex);
+        X(carryIndex);
         toSub++;
     }
     SetBit(overflowIndex, false);
@@ -1789,7 +1787,7 @@ void CoherentUnit::DECBCDC(
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
-	X(carryIndex);
+        X(carryIndex);
         toSub++;
     }
     bitCapInt nibbleCount = length / 4;
