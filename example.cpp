@@ -37,9 +37,12 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8)
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
 {
+    qftReg->SetPermutation(0);
     REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0));
     qftReg->SetZeroFlag(0, 8, 8);
     REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
+    qftReg->SetZeroFlag(0, 8, 8);
+    REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
@@ -319,7 +322,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
     }
 }
 
-/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
     int i;
 
@@ -348,7 +351,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
     qftReg->SetPermutation(0);
 
     qftReg->SetBit(16, true);
-    qftReg->H(16);
+    //qftReg->H(16);
     qftReg->H(0, 8);
     //qftReg->H(8, 8);
     //qftReg->SuperposeReg8(8, 0, toSearch);
@@ -356,17 +359,14 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
     //Literature value for Grover's should be 12, but 8 gives a higher chance of "getting lucky" on the zero bit:
     for (i = 0; i < 12; i++) {
         qftReg->DEC(100, 0, 8);
-        qftReg->SetZeroFlag(0, 8, 17);
-        qftReg->CNOT(17, 16);
+        qftReg->SetZeroFlag(0, 8, 16);
         qftReg->INC(100, 0, 8);
         qftReg->H(0, 8);
-        qftReg->SetZeroFlag(0, 8, 17);
-        qftReg->CNOT(17, 16);
+        qftReg->SetZeroFlag(0, 8, 16);
         qftReg->X(16);
         qftReg->H(0, 8);
+        std::cout << "Iteration " << i << ", chance of 100:" << qftReg->ProbAll(100) << std::endl;
     }
-    qftReg->SetZeroFlag(0, 8, 17);
-    std::cout << "Final, Bit 17, Chance of 1:" << qftReg->Prob(17) << std::endl;
     int greatestProbIndex = 0;
     double greatestProb = 0;
     int greatestZeroProbIndex = 0;
@@ -375,12 +375,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
         if (qftReg->ProbAll(i) > greatestProb) {
             greatestProb = qftReg->ProbAll(i);
             greatestProbIndex = i;
-        }
-        if (i & (1<<17)) {
-            if (qftReg->ProbAll(i) > greatestZeroProb) {
-                greatestZeroProb = qftReg->ProbAll(i);
-                greatestZeroProbIndex = i;
-            }
         }
     }
     std::cout << "Most likely outcome: ";
@@ -392,21 +386,12 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
         }
     }
     std::cout << std::endl;
-    std::cout << "Most likely zero bit set outcome: ";
-    for (i = 0; i < 21; i++) {
-        if (1 << i & greatestZeroProbIndex) {
-            std::cout << "1";
-        } else {
-            std::cout << "0";
-        }
-    }
-    std::cout << std::endl;
     std::cout << "Bit probabilities:" << std::endl;
     for (i = 0; i < 21; i++) {
         std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
     }
 
-}*/
+}
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
 {
