@@ -350,7 +350,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     std::cout << "(Search function is true only for an input of 100 (0x64). 100 is in position 155. First 16 bits should output 00100110 11011001.)" << std::endl;
     qftReg->SetPermutation(0);
 
-    qftReg->SetBit(16, true);
+    //qftReg->SetBit(16, true);
     //qftReg->H(16);
     qftReg->H(0, 8);
     //qftReg->H(8, 8);
@@ -365,7 +365,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         qftReg->SetZeroFlag(0, 8, 16);
         qftReg->X(16);
         qftReg->H(0, 8);
-        std::cout << "Iteration " << i << ", chance of 100:" << qftReg->ProbAll(100) << std::endl;
+        std::cout << "Iteration " << i << ", chance of 100:" << (qftReg->ProbAll(100) + qftReg->ProbAll(100 + (1<<16))) << std::endl;
     }
     int greatestProbIndex = 0;
     double greatestProb = 0;
