@@ -37,13 +37,17 @@ int main(int argc, char* argv[])
     /* Set some defaults for convenience. */
     session.configData().useColour = Catch::UseColour::No;
     session.configData().reporterNames = { "compact" };
-    session.configData().abortAfter = 1;
+    session.configData().rngSeed = std::time(0);
+
+    // session.configData().abortAfter = 1;
 
     /* Parse the command line. */
     int returnCode = session.applyCommandLine(argc, argv);
     if (returnCode != 0) {
         return returnCode;
     }
+
+    session.config().stream() << "Random Seed: " << session.configData().rngSeed << std::endl;
 
     /* Perform the run against the default (software) variant. */
     int num_failed = session.run();
@@ -52,6 +56,7 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && !disable_opencl) {
         session.config().stream() << "Executing test suite using OpenCL" << std::endl;
         testEngineType = COHERENT_UNIT_ENGINE_OPENCL;
+        delete CreateCoherentUnit(testEngineType, 1, 0); /* Get the OpenCL banner out of the way. */
         num_failed = session.run();
     }
 #endif
@@ -67,7 +72,6 @@ CoherentUnitTestFixture::CoherentUnitTestFixture()
         rngSeed = std::time(0);
     }
 
-    WARN("Random Seed: " << rngSeed);
     qftReg.reset(CreateCoherentUnit(testEngineType, 21, 0));
     qftReg->SetRandomSeed(rngSeed);
 }
