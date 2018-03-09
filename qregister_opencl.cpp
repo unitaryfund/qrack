@@ -183,7 +183,7 @@ void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Add two quantum integers
 /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
  * "inOutStart." */
-void CoherentUnitOCL::ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
+/*void CoherentUnitOCL::ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
 {
     bitCapInt inOutMask = 0;
     bitCapInt inMask = 0;
@@ -215,12 +215,12 @@ void CoherentUnitOCL::ADD(const bitLenInt inOutStart, const bitLenInt inStart, c
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /// Subtract two quantum integers
 /** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
  * "inOutStart." */
-void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)
+/*void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)
 {
     bitCapInt inOutMask = 0;
     bitCapInt inMask = 0;
@@ -252,6 +252,6 @@ void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, con
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 } // namespace Qrack

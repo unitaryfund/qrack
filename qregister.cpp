@@ -1474,19 +1474,25 @@ void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length,
             } else {
                 outRes = ((outInt - bciArgs[4]) << (bciArgs[5])) | otherRes;
             }
+            bool isOverflow = false;
             // Both negative:
             if (inOutInt & inInt & (bciArgs[6])) {
                 inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
                 inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
                 if ((inOutInt + inInt) > (bciArgs[6]))
-                    outRes ^= bciArgs[2];
+                    isOverflow = true;
             }
             // Both positive:
             else if ((~inOutInt) & (~inInt) & (bciArgs[6])) {
                 if ((inOutInt + inInt) >= (bciArgs[6]))
-                    outRes ^= bciArgs[2];
+                    isOverflow = true;
             }
-            nStateVec[outRes] = stateVec[lcv];
+            if (isOverflow && ((outRes & bciArgs[2]) == bciArgs[2])) {
+                nStateVec[outRes] = -stateVec[lcv];
+            }
+            else {
+                nStateVec[outRes] = stateVec[lcv];
+            }
         });
     ResetStateVec(std::move(nStateVec));
 }
@@ -1535,19 +1541,25 @@ void CoherentUnit::INCSC(
             } else {
                 outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes | (bciArgs[2]);
             }
+            bool isOverflow = false;
             // Both negative:
             if (inOutInt & inInt & (bciArgs[9])) {
                 inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
                 inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
                 if ((inOutInt + inInt) > (bciArgs[9]))
-                    outRes ^= bciArgs[8];
+                    isOverflow = true;
             }
             // Both positive:
             else if ((~inOutInt) & (~inInt) & (bciArgs[9])) {
                 if ((inOutInt + inInt) >= (bciArgs[9]))
-                    outRes ^= bciArgs[8];
+                    isOverflow = true;
             }
-            nStateVec[outRes] = stateVec[lcv];
+            if (isOverflow && ((outRes & bciArgs[8]) == bciArgs[8])) {
+                nStateVec[outRes] = -stateVec[lcv];
+            }
+            else {
+                nStateVec[outRes] = stateVec[lcv];
+            }
         });
     ResetStateVec(std::move(nStateVec));
 }
@@ -1702,19 +1714,25 @@ void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length,
             } else {
                 outRes = ((outInt - bciArgs[4]) << (bciArgs[5])) | otherRes;
             }
+            bool isOverflow = false;
             // First negative:
             if (inOutInt & (~inInt) & (bciArgs[6])) {
                 inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
                 if ((inOutInt + inInt) > bciArgs[6])
-                    outRes ^= bciArgs[2];
+                    isOverflow = true;
             }
             // First positive:
             else if (inOutInt & (~inInt) & (bciArgs[6])) {
                 inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
                 if ((inOutInt + inInt) >= bciArgs[6])
-                    outRes ^= bciArgs[2];
+                    isOverflow = true;
             }
-            nStateVec[outRes] = stateVec[lcv];
+            if (isOverflow && ((outRes & bciArgs[2]) == bciArgs[2])) {
+                nStateVec[outRes] = -stateVec[lcv];
+            }
+            else {
+                nStateVec[outRes] = stateVec[lcv];
+            }
         });
     ResetStateVec(std::move(nStateVec));
 }
@@ -1764,19 +1782,25 @@ void CoherentUnit::DECSC(
             } else {
                 outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes;
             }
+            bool isOverflow = false;
             // First negative:
             if (inOutInt & (~inInt) & (bciArgs[9])) {
                 inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
                 if ((inOutInt + inInt) > bciArgs[9])
-                    outRes ^= bciArgs[8];
+                    isOverflow = true;
             }
             // First positive:
             else if (inOutInt & (~inInt) & (bciArgs[9])) {
                 inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
                 if ((inOutInt + inInt) >= bciArgs[9])
-                    outRes ^= bciArgs[8];
+                    isOverflow = true;
             }
-            nStateVec[outRes] = stateVec[lcv];
+            if (isOverflow && ((outRes & bciArgs[8]) == bciArgs[8])) {
+                nStateVec[outRes] = -stateVec[lcv];
+            }
+            else {
+                nStateVec[outRes] = stateVec[lcv];
+            }
         });
     ResetStateVec(std::move(nStateVec));
 }
@@ -1859,7 +1883,7 @@ void CoherentUnit::DECBCDC(
  * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
  * "inOutStart."
  */
-void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
+/*void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
 {
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
@@ -1918,14 +1942,14 @@ void CoherentUnit::ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, c
             }
         });
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Add integer of "length" bits in "inStart" to integer of "length" bits in
  * "inOutStart," and store result in "inOutStart." Get carry value from bit at
  * "carryIndex" and place end result into this bit.
  */
-void CoherentUnit::ADDC(
+/*void CoherentUnit::ADDC(
     const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bitCapInt inOutMask = 0;
@@ -1992,14 +2016,14 @@ void CoherentUnit::ADDC(
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Add signed integer of "length" bits in "inStart" to signed integer of
  * "length" bits in "inOutStart," and store result in "inOutStart." Set
  * overflow bit when input to output wraps past minimum or maximum integer.
  */
-void CoherentUnit::ADDS(
+/*void CoherentUnit::ADDS(
     const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex)
 {
     bitCapInt inOutMask = 0;
@@ -2054,7 +2078,7 @@ void CoherentUnit::ADDS(
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Add integer of "length" bits in "inStart" to integer of "length" bits in
@@ -2062,7 +2086,7 @@ void CoherentUnit::ADDS(
  * "carryIndex" and place end result into this bit. Set overflow for signed
  * addition if result wraps past the minimum or maximum signed integer.
  */
-void CoherentUnit::ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length,
+/*void CoherentUnit::ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length,
     const bitLenInt overflowIndex, const bitLenInt carryIndex)
 {
     bitCapInt inOutMask = 0;
@@ -2155,13 +2179,13 @@ void CoherentUnit::ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, co
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits
  * in "inOutStart," and store result in "inOutStart."
  */
-void CoherentUnit::ADDBCDC(
+/*void CoherentUnit::ADDBCDC(
     const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bitCapInt nibbleCount = length / 4;
@@ -2299,13 +2323,13 @@ void CoherentUnit::ADDBCDC(
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store result
  * in "inOutStart."
  */
-void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
+/*void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
 {
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
@@ -2364,14 +2388,14 @@ void CoherentUnit::SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, c
             }
         });
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Subtract integer of "length" - 1 bits in "toSub" from integer of "length" -
  * 1 bits in "inOutStart," and store result in "inOutStart." Get carry value
  * from bit at "carryIndex" and place end result into this bit.
  */
-void CoherentUnit::SUBC(
+/*void CoherentUnit::SUBC(
     const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex)
 {
     bitCapInt inOutMask = 0;
@@ -2436,13 +2460,13 @@ void CoherentUnit::SUBC(
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Subtract signed integer of "length" bits in "inStart" from signed integer of "length" bits in "inOutStart," and
  * $store result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
  */
-void CoherentUnit::SUBS(
+/*void CoherentUnit::SUBS(
     const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt overflowIndex)
 {
     bitCapInt inOutMask = 0;
@@ -2497,7 +2521,7 @@ void CoherentUnit::SUBS(
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Subtract integer of "length" bits in "inStart" from integer of "length" bits
@@ -2505,7 +2529,7 @@ void CoherentUnit::SUBS(
  * at "carryIndex" and place end result into this bit. Set overflow for signed
  * addition if result wraps past the minimum or maximum signed integer.
  */
-void CoherentUnit::SUBSC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length,
+/*void CoherentUnit::SUBSC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length,
     const bitLenInt overflowIndex, const bitLenInt carryIndex)
 {
     bitCapInt inOutMask = 0;
@@ -2596,13 +2620,13 @@ void CoherentUnit::SUBSC(const bitLenInt inOutStart, const bitLenInt toSub, cons
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /**
  * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits
  * in "inOutStart," and store result in "inOutStart."
  */
-void CoherentUnit::SUBBCDC(
+/*void CoherentUnit::SUBBCDC(
     const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bitCapInt nibbleCount = length / 4;
@@ -2741,7 +2765,7 @@ void CoherentUnit::SUBBCDC(
         nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
-}
+}*/
 
 /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
@@ -2768,7 +2792,12 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     for (bitCapInt i = 0; i < maxQPower; i++) {
         if ((i & (~regMask)) == i) {
-            nStateVec[i ^ flagMask] = stateVec[i];
+            if (((i & flagMask) == flagMask)) {
+                nStateVec[i] = -stateVec[i];
+	    }
+            else {
+                nStateVec[i] = stateVec[i];
+            }
         } else {
             nStateVec[i] = stateVec[i];
         }
@@ -2786,7 +2815,12 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     for (i = 0; i < maxQPower; i++) {
         if ((i & testMask) == testMask) {
-            nStateVec[i ^ flagMask] = stateVec[i];
+            if (((i & flagMask) == flagMask)) {
+                nStateVec[i] = -stateVec[i];
+	    }
+            else {
+                nStateVec[i] = stateVec[i];
+            }
         } else {
             nStateVec[i] = stateVec[i];
         }

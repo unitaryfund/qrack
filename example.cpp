@@ -35,7 +35,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8) == 0); }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
 {
     qftReg->SetPermutation(0);
     REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0));
@@ -43,7 +43,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_zero_flag")
     REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
     qftReg->SetZeroFlag(0, 8, 8);
     REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0));
-}
+}*/
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
 {
@@ -84,7 +84,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
 {
     int i;
     int start = 0x80;
@@ -94,13 +94,13 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decsc")
         qftReg->DECSC(9, 0, 8, 8, 9);
         start -= 9;
         if (i == 0) {
-            /* First subtraction flips the flag. */
+            // First subtraction flips the flag.
             REQUIRE_THAT(*qftReg, HasProbability(0, 19, start | 0x100));
         } else {
             REQUIRE_THAT(*qftReg, HasProbability(0, 19, start));
         }
     }
-}
+}*/
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
@@ -170,7 +170,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
     WARN(qftReg);
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_add")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_add")
 {
     int i;
 
@@ -186,9 +186,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_add")
         qftReg->H(i);
     }
     WARN(qftReg);
-}
+}*/
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sub")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sub")
 {
     std::cout << "SUB Test:" << std::endl;
     qftReg->SetPermutation(38);
@@ -201,9 +201,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sub")
     // for (i = 0; i < 8; i++) {
     //	qftReg->H(i);
     //}
-}
+}*/
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addsc")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addsc")
 {
     std::cout << "ADDSC Test:" << std::endl;
     qftReg->SetPermutation(55);
@@ -218,9 +218,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addsc")
     // for (i = 0; i < 8; i++) {
     //	qftReg->H(i);
     //}
-}
+}*/
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subsc")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subsc")
 {
     int i;
 
@@ -235,9 +235,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subsc")
     for (i = 0; i < 8; i++) {
         qftReg->H(i);
     }
-}
+}*/
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addbcdc")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addbcdc")
 {
     std::cout << "ADDBCDC Test:" << std::endl;
     qftReg->SetPermutation(265);
@@ -245,9 +245,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_addbcdc")
     WARN(qftReg);
     qftReg->ADDBCDC(0, 4, 4, 8);
     WARN(qftReg);
-}
+}*/
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subbcdc")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subbcdc")
 {
     std::cout << "SUBBCDC Test:" << std::endl;
     qftReg->SetPermutation(256);
@@ -255,7 +255,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_subbcdc")
     WARN(qftReg);
     qftReg->SUBBCDC(0, 4, 4, 8);
     WARN(qftReg);
-}
+}*/
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m_reg")
 {
@@ -348,8 +348,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
               << std::endl;
     qftReg->SetPermutation(0);
 
-    // qftReg->SetBit(16, true);
-    // qftReg->H(16);
+    qftReg->SetBit(16, true);
+    //qftReg->H(16);
     qftReg->H(0, 8);
     // qftReg->H(8, 8);
     // qftReg->SuperposeReg8(8, 0, toSearch);
@@ -361,7 +361,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         qftReg->INC(100, 0, 8);
         qftReg->H(0, 8);
         qftReg->SetZeroFlag(0, 8, 16);
-        qftReg->X(16);
+        qftReg->Z(16);
         qftReg->H(0, 8);
         std::cout << "Iteration " << i
                   << ", chance of 100:" << (qftReg->ProbAll(100) + qftReg->ProbAll(100 + (1 << 16))) << std::endl;
