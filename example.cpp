@@ -219,7 +219,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     // qftReg->H(8, 8);
     // qftReg->SuperposeReg8(8, 0, toSearch);
 
-    // Literature value for Grover's should be 12, but 8 gives a higher chance of "getting lucky" on the zero bit:
+    //Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         qftReg->DEC(100, 0, 8);
         qftReg->SetZeroFlag(0, 8, 16);
@@ -254,6 +254,11 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     for (i = 0; i < 21; i++) {
         std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
     }
+
+    qftReg->MReg8(0);
+    qftReg->SetBit(16, false);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
