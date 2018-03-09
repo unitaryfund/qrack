@@ -73,7 +73,7 @@ void CoherentUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Add two quantum integers
 /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
  * "inOutStart." */
-void CoherentUnit::ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
+/*void CoherentUnit::ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
 {
     bitCapInt inOutMask = 0;
     bitCapInt inMask = 0;
@@ -103,12 +103,12 @@ void CoherentUnit::ADD(const bitLenInt inOutStart, const bitLenInt inStart, cons
         });
     stateVec.reset();
     stateVec = std::move(nStateVec);
-}
+}*/
 
 /// Subtract two quantum integers
 /** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
  * "inOutStart." */
-void CoherentUnit::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)
+/*void CoherentUnit::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)
 {
     bitCapInt inOutMask = 0;
     bitCapInt inMask = 0;
@@ -139,7 +139,7 @@ void CoherentUnit::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const 
         });
     stateVec.reset();
     stateVec = std::move(nStateVec);
-}
+}*/
 
 // Private CoherentUnit methods
 void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,

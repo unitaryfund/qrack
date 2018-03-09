@@ -37,8 +37,8 @@ public:
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
-    virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
+    //virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+    //virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
 
 protected:
     OCLEngine* clObj;
