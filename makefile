@@ -14,7 +14,7 @@ TEST_BIN = example
 QRACK_LIB=libqrack.a
 LIBS     = -lm -lpthread
 CXXINCS  = 
-CXXFLAGS = $(CXXINCS) -std=c++11 -Wall -Werror
+CXXFLAGS = $(CXXINCS) -ggdb -std=c++11 -Wall -Werror
 LDFLAGS  =
 RM       = rm -f
 
@@ -43,8 +43,8 @@ clean: clean-custom
 format:
 	clang-format-5.0 -style=file -i $(FORMAT_SRC) $(FORMAT_HDRS)
 
-example.o : tests.hpp
-tests.o : tests.hpp
+example.o : tests.hpp catch.hpp
+tests.o : tests.hpp catch.hpp
 qregister.o : qregister.hpp
 qregister_opencl.o : qregister.hpp
 
@@ -59,6 +59,6 @@ qregistercl.hpp: qregister.cl
 	${XXD} -i qregister.cl > qregistercl.hpp
 
 qregister_opencl.o: qregistercl.hpp oclengine.hpp
-tests.o : oclengine.hpp
-example.o : oclengine.hpp
+tests.o : oclengine.hpp catch.hpp
+example.o : oclengine.hpp catch.hpp
 endif
