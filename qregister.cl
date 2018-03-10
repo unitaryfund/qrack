@@ -148,7 +148,7 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
     ulong carryMask = ulongPtr[4];
     ulong inOutStart = ulongPtr[5];
     ulong toSub = ulongPtr[6];
-    ulong otherRes, inOutRes, outInt, i, iHigh, iLow;
+    ulong otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         i = 0;
