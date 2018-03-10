@@ -72,6 +72,6 @@ CoherentUnitTestFixture::CoherentUnitTestFixture()
         rngSeed = std::time(0);
     }
 
-    qftReg.reset(CreateCoherentUnit(testEngineType, 21, 0));
+    qftReg.reset(CreateCoherentUnit(testEngineType, 20, 0));
     qftReg->SetRandomSeed(rngSeed);
 }
