@@ -70,6 +70,74 @@ void CoherentUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     stateVec = std::move(nStateVec);
 }
 
+/// Add integer (without sign, with carry)
+void CoherentUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    otherMask ^= inOutMask;
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt bciArgs[7] = { inOutMask, toAdd, carryMask, otherMask, lengthPower, inOutStart, carryIndex };
+    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            Complex16* nStateVec) {
+            bitCapInt otherRes = (lcv & (bciArgs[3]));
+            bitCapInt inOutRes = (lcv & (bciArgs[0]));
+            bitCapInt inOutInt = inOutRes >> (bciArgs[5]);
+            bitCapInt outInt = inOutInt + bciArgs[1];
+            bitCapInt outRes;
+            if (outInt < (bciArgs[4])) {
+                outRes = (outInt << (bciArgs[5])) | otherRes;
+            } else {
+                outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes | (bciArgs[2]);
+            }
+            nStateVec[outRes] = stateVec[lcv];
+        });
+    ResetStateVec(std::move(nStateVec));
+}
+
+/// Subtract integer (without sign, with carry)
+void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toSub++;
+    }
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    otherMask ^= inOutMask;
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt bciArgs[7] = { inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex };
+    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            Complex16* nStateVec) {
+            bitCapInt otherRes = (lcv & (bciArgs[3]));
+            bitCapInt inOutRes = (lcv & (bciArgs[0]));
+            bitCapInt inOutInt = inOutRes >> (bciArgs[5]);
+            bitCapInt outInt = (inOutInt + bciArgs[4]) - bciArgs[1];
+            bitCapInt outRes;
+            if (outInt < (bciArgs[4])) {
+                outRes = (outInt << (bciArgs[5])) | otherRes | (bciArgs[2]);
+            } else {
+                outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes;
+            }
+            nStateVec[outRes] = stateVec[lcv];
+        });
+    ResetStateVec(std::move(nStateVec));
+}
+
 /// Add two quantum integers
 /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
  * "inOutStart." */
