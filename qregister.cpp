@@ -2784,23 +2784,13 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt flagMask = 1 << zeroFlag;
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[2] = { regMask, flagMask };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
-            if ((lcv & (~(bciArgs[0]))) == lcv) {
-                if (((lcv & bciArgs[1]) == bciArgs[1])) {
-                    nStateVec[lcv] = -stateVec[lcv];
-                } else {
-                    nStateVec[lcv] = stateVec[lcv];
-                }
-            } else {
-                nStateVec[lcv] = stateVec[lcv];
-            }
+            if (((lcv & (~(bciArgs[0]))) == lcv) & ((lcv & bciArgs[1]) == bciArgs[1]))
+                stateVec[lcv] = -stateVec[lcv];
         });
-    ResetStateVec(std::move(nStateVec));
 }
 
 /// For chips with a sign flag, set the sign flag after a register operation.
@@ -2808,23 +2798,13 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
 {
     bitCapInt testMask = 1 << toTest;
     bitCapInt flagMask = 1 << toSet;
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[2] = { testMask, flagMask };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
-            if ((lcv & bciArgs[0]) == bciArgs[0]) {
-                if (((lcv & bciArgs[1]) == bciArgs[1])) {
-                    nStateVec[lcv] = -stateVec[lcv];
-                } else {
-                    nStateVec[lcv] = stateVec[lcv];
-                }
-            } else {
-                nStateVec[lcv] = stateVec[lcv];
-            }
+            if (((lcv & bciArgs[0]) == bciArgs[0]) & ((lcv & bciArgs[1]) == bciArgs[1]))
+                stateVec[lcv] = -stateVec[lcv];
         });
-    ResetStateVec(std::move(nStateVec));
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
@@ -2832,23 +2812,13 @@ void CoherentUnit::SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLe
 {
     bitCapInt regMask = ((1 << length) - 1) << start;
     bitCapInt flagMask = 1 << flagIndex;
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[4] = { regMask, flagMask, start, greaterPerm };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
-            if (((lcv & bciArgs[0]) >> (bciArgs[2])) < bciArgs[3]) {
-                if (((lcv & bciArgs[1]) == bciArgs[1])) {
-                    nStateVec[lcv] = -stateVec[lcv];
-                } else {
-                    nStateVec[lcv] = stateVec[lcv];
-                }
-            } else {
-                nStateVec[lcv] = stateVec[lcv];
-            }
+            if ((((lcv & bciArgs[0]) >> (bciArgs[2])) < bciArgs[3]) & ((lcv & bciArgs[1]) == bciArgs[1]))
+                stateVec[lcv] = -stateVec[lcv];
         });
-    ResetStateVec(std::move(nStateVec));
 }
 
 /// Set register bits to given permutation
