@@ -115,15 +115,55 @@ void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global doub
     ulong carryMask = ulongPtr[4];
     ulong inOutStart = ulongPtr[5];
     ulong toAdd = ulongPtr[6];
-    ulong otherRes, inOutRes, outInt;
+    ulong otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = (lcv & otherMask);
-        inOutRes = (lcv & inOutMask);
+        iHigh = lcv;
+        i = 0;
+        iLow = iHigh & (carryMask - 1);
+        i += iLow;
+        iHigh = (iHigh - iLow) << 1;
+        i += iHigh;
+        otherRes = (i & otherMask);
+        inOutRes = (i & inOutMask);
         outInt = (inOutRes >> inOutStart) + toAdd;
+        outRes = outInt << inOutStart;
         if (outInt > lengthMask) {
-            outInt = (outRes & lengthMask) | carryMask;
+            outInt &= lengthMask;
+            outRes = (outInt << inOutStart) | carryMask;
 	}
-        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[lcv];
+        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[i];
+    }
+}
+
+void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxI = ulongPtr[0];
+    ulong inOutMask = ulongPtr[1];
+    ulong otherMask = ulongPtr[2];
+    ulong lengthMask = ulongPtr[3] - 1;
+    ulong carryMask = ulongPtr[4];
+    ulong inOutStart = ulongPtr[5];
+    ulong toSub = ulongPtr[6];
+    ulong otherRes, inOutRes, outInt, i, iHigh, iLow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0;
+        iLow = iHigh & (carryMask - 1);
+        i += iLow;
+        iHigh = (iHigh - iLow) << 1;
+        i += iHigh;
+        otherRes = (i & otherMask);
+        outInt = (lengthMask + (inOutRes >> inOutStart)) - toSub;
+        outRes = (outInt << inOutStart) | carryMask;
+        if (outInt > lengthMask) {
+            outInt &= lengthMask;
+            outRes = (outInt << inOutStart);
+	}
+        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[i];
     }
 }
 

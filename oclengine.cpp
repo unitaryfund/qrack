@@ -28,6 +28,7 @@ cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
 cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
 cl::Kernel* OCLEngine::GetRORPtr() { return &ror; }
 cl::Kernel* OCLEngine::GetINCCPtr() { return &incc; }
+cl::Kernel* OCLEngine::GetDECCPtr() { return &decc; }
 cl::Kernel* OCLEngine::GetADDPtr() { return &add; }
 cl::Kernel* OCLEngine::GetSUBPtr() { return &sub; }
 cl::Kernel* OCLEngine::GetADDCPtr() { return &addc; }
@@ -82,6 +83,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     rol = cl::Kernel(program, "rol");
     ror = cl::Kernel(program, "ror");
     incc = cl::Kernel(program, "incc");
+    decc = cl::Kernel(program, "decc");
     add = cl::Kernel(program, "add");
     sub = cl::Kernel(program, "sub");
     addc = cl::Kernel(program, "addc");

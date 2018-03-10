@@ -267,7 +267,7 @@ public:
     void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /// Subtract integer (without sign, with carry)
-    void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /**
      * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary

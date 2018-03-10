@@ -71,12 +71,30 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incc")
     for (i = 0; i < 10; i++) {
         qftReg->INCC(1, 0, 8, 8);
         if (i < 7) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 8, 249 + i));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 249 + i));
         } else if (i == 7) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x100));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
         }
         else {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 8, 2 + i - 8));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 2 + i - 8));
+        }
+    }
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decc")
+{
+    int i;
+
+    qftReg->SetPermutation(7 + 256);
+    for (i = 0; i < 10; i++) {
+        qftReg->DECC(1, 0, 8, 8);
+        if (i < 6) {
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 5 - i));
+        } else if (i == 6) {
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x1ff));
+        }
+        else {
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 253 - i + 7));
         }
     }
 }

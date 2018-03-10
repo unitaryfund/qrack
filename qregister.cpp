@@ -1606,44 +1606,6 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
     ResetStateVec(std::move(nStateVec));
 }
 
-/// Subtract integer (without sign, with carry)
-void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toSub++;
-    }
-    bitCapInt inOutMask = 0;
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
-    otherMask ^= inOutMask;
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    bitCapInt bciArgs[7] = { inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex };
-    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
-            Complex16* nStateVec) {
-            bitCapInt otherRes = (lcv & (bciArgs[3]));
-            bitCapInt inOutRes = (lcv & (bciArgs[0]));
-            bitCapInt inOutInt = inOutRes >> (bciArgs[5]);
-            bitCapInt outInt = (inOutInt - bciArgs[1]) + (bciArgs[4]);
-            bitCapInt outRes;
-            if (outInt < (bciArgs[4])) {
-                outRes = (outInt << (bciArgs[5])) | otherRes | (bciArgs[2]);
-            } else {
-                outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes;
-            }
-            nStateVec[outRes] = stateVec[lcv];
-        });
-    ResetStateVec(std::move(nStateVec));
-}
-
 /**
  * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as

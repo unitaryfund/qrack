@@ -194,11 +194,12 @@ void CoherentUnitOCL::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bi
     bitCapInt otherMask = (1 << qubitCount) - 1;
     otherMask ^= inOutMask;
 
-    bitCapInt bciArgs[10] = { maxQPower, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0, 0 };
+    bitCapInt bciArgs[10] = { maxQPower<<1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
@@ -209,6 +210,43 @@ void CoherentUnitOCL::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bi
     queue.finish();
 
     queue.enqueueNDRangeKernel(incc, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    ResetStateVec(std::move(nStateVec));
+}
+
+/// Subtract integer (without sign, with carry)
+void CoherentUnitOCL::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toSub++;
+    }
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    otherMask ^= inOutMask;
+
+    bitCapInt bciArgs[10] = { maxQPower<<1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toSub, 0, 0, 0 };
+
+    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    cl::Context context = *(clObj->GetContextPtr());
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Kernel decc = *(clObj->GetINCCPtr());
+    decc.setArg(0, stateBuffer);
+    decc.setArg(1, ulongBuffer);
+    decc.setArg(2, nStateBuffer);
+    queue.finish();
+
+    queue.enqueueNDRangeKernel(decc, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
