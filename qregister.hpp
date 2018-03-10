@@ -293,19 +293,20 @@ public:
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart."
      */
-    //virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+    // virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 
     /**
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit.
      */
-    //void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
+    // void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt
+    // carryIndex);
 
     /**
      * Add signed integer of "length" bits in "inStart" to signed integer of "length" bits in "inOutStart," and store
      * result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
      */
-    //void ADDS(
+    // void ADDS(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 
     /**
@@ -313,52 +314,52 @@ public:
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. Set overflow for
      * signed addition if result wraps past the minimum or maximum signed integer.
      */
-    //void ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length,
+    // void ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length,
     //    const bitLenInt overflowIndex, const bitLenInt carryIndex);
 
     /**
      * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
      * "inOutStart."
      */
-    //void ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+    // void ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 
     /**
      * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
      * "inOutStart," with carry in/out.
      */
-    //void ADDBCDC(
+    // void ADDBCDC(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 
     /**
      * Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
      * "inOutStart."
      */
-    //virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
+    // virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
 
     /**
      * Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store
      * result in "inOutStart."
      */
-    //void SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
+    // void SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 
     /**
      * Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store
      * result in "inOutStart," with carry in/out.
      */
-    //void SUBBCDC(
+    // void SUBBCDC(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 
     /**
      * Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit.
      */
-    //void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
+    // void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
 
     /**
      * Subtract signed integer of "length" bits in "inStart" from signed integer of "length" bits in "inOutStart," and
      * store result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
      */
-    //void SUBS(
+    // void SUBS(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 
     /**
@@ -366,7 +367,8 @@ public:
      * in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. Set overflow for
      * signed addition if result wraps past the minimum or maximum signed integer.
      */
-    //void SUBSC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt overflowIndex,
+    // void SUBSC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt
+    // overflowIndex,
     //    const bitLenInt carryIndex);
 
     /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
@@ -377,6 +379,9 @@ public:
 
     /// For chips with a sign flag, set the sign flag after a register operation.
     void SetSignFlag(bitLenInt toTest, bitLenInt toSet);
+
+    /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
+    void SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
     /// Set register bits to given permutation
     void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
