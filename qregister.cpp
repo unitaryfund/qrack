@@ -1489,8 +1489,7 @@ void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length,
             }
             if (isOverflow && ((outRes & bciArgs[2]) == bciArgs[2])) {
                 nStateVec[outRes] = -stateVec[lcv];
-            }
-            else {
+            } else {
                 nStateVec[outRes] = stateVec[lcv];
             }
         });
@@ -1556,8 +1555,7 @@ void CoherentUnit::INCSC(
             }
             if (isOverflow && ((outRes & bciArgs[8]) == bciArgs[8])) {
                 nStateVec[outRes] = -stateVec[lcv];
-            }
-            else {
+            } else {
                 nStateVec[outRes] = stateVec[lcv];
             }
         });
@@ -1729,8 +1727,7 @@ void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length,
             }
             if (isOverflow && ((outRes & bciArgs[2]) == bciArgs[2])) {
                 nStateVec[outRes] = -stateVec[lcv];
-            }
-            else {
+            } else {
                 nStateVec[outRes] = stateVec[lcv];
             }
         });
@@ -1797,8 +1794,7 @@ void CoherentUnit::DECSC(
             }
             if (isOverflow && ((outRes & bciArgs[8]) == bciArgs[8])) {
                 nStateVec[outRes] = -stateVec[lcv];
-            }
-            else {
+            } else {
                 nStateVec[outRes] = stateVec[lcv];
             }
         });
@@ -2790,18 +2786,20 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
     bitCapInt flagMask = 1 << zeroFlag;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        if ((i & (~regMask)) == i) {
-            if (((i & flagMask) == flagMask)) {
-                nStateVec[i] = -stateVec[i];
-	    }
-            else {
-                nStateVec[i] = stateVec[i];
+    bitCapInt bciArgs[2] = { regMask, flagMask };
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            Complex16* nStateVec) {
+            if ((lcv & (~(bciArgs[0]))) == lcv) {
+                if (((lcv & bciArgs[1]) == bciArgs[1])) {
+                    nStateVec[lcv] = -stateVec[lcv];
+                } else {
+                    nStateVec[lcv] = stateVec[lcv];
+                }
+            } else {
+                nStateVec[lcv] = stateVec[lcv];
             }
-        } else {
-            nStateVec[i] = stateVec[i];
-        }
-    }
+        });
     ResetStateVec(std::move(nStateVec));
 }
 
@@ -2810,21 +2808,46 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
 {
     bitCapInt testMask = 1 << toTest;
     bitCapInt flagMask = 1 << toSet;
-    bitCapInt i;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    for (i = 0; i < maxQPower; i++) {
-        if ((i & testMask) == testMask) {
-            if (((i & flagMask) == flagMask)) {
-                nStateVec[i] = -stateVec[i];
-	    }
-            else {
-                nStateVec[i] = stateVec[i];
+    bitCapInt bciArgs[2] = { testMask, flagMask };
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            Complex16* nStateVec) {
+            if ((lcv & bciArgs[0]) == bciArgs[0]) {
+                if (((lcv & bciArgs[1]) == bciArgs[1])) {
+                    nStateVec[lcv] = -stateVec[lcv];
+                } else {
+                    nStateVec[lcv] = stateVec[lcv];
+                }
+            } else {
+                nStateVec[lcv] = stateVec[lcv];
             }
-        } else {
-            nStateVec[i] = stateVec[i];
-        }
-    }
+        });
+    ResetStateVec(std::move(nStateVec));
+}
+
+/// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
+void CoherentUnit::SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    bitCapInt regMask = ((1 << length) - 1) << start;
+    bitCapInt flagMask = 1 << flagIndex;
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt bciArgs[4] = { regMask, flagMask, start, greaterPerm };
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            Complex16* nStateVec) {
+            if (((lcv & bciArgs[0]) >> (bciArgs[2])) < bciArgs[3]) {
+                if (((lcv & bciArgs[1]) == bciArgs[1])) {
+                    nStateVec[lcv] = -stateVec[lcv];
+                } else {
+                    nStateVec[lcv] = stateVec[lcv];
+                }
+            } else {
+                nStateVec[lcv] = stateVec[lcv];
+            }
+        });
     ResetStateVec(std::move(nStateVec));
 }
 
