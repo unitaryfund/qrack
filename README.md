@@ -28,11 +28,9 @@ make all
 
 Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
 
-If you are using the OpenCL version of the headers, the OpenCL platform and device can be selected in the first call to the OpenCL context instance. (See "example.cpp" for details. The OpenCL context is managed by a singleton, shared between an arbitrary number of CoherentUnit objects.)
-
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
-The included EXAMPLE.CPP is headed by a bit test. Then, the following example is run:
+The included EXAMPLE.CPP is headed by a unit tests. Then, the following example is run:
 
 This is a simple example of quantum mechanics simulation in quantum computational logic. It is essentially a unidirectional binary quantum random walk algorithm, from a positive starting point, heading toward zero.
 
