@@ -242,7 +242,7 @@ public:
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /// Add integer (without sign, with carry)
-    void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /**
      * Add an integer to the register, with sign and without carry. Because the register length is an arbitrary number

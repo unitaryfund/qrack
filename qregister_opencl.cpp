@@ -180,6 +180,42 @@ void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     ResetStateVec(std::move(nStateVec));
 }
 
+/// Add integer (without sign, with carry)
+void CoherentUnitOCL::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    otherMask ^= inOutMask;
+
+    bitCapInt bciArgs[10] = { maxQPower, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0, 0 };
+
+    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    cl::Context context = *(clObj->GetContextPtr());
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Kernel incc = *(clObj->GetINCCPtr());
+    incc.setArg(0, stateBuffer);
+    incc.setArg(1, ulongBuffer);
+    incc.setArg(2, nStateBuffer);
+    queue.finish();
+
+    queue.enqueueNDRangeKernel(incc, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    ResetStateVec(std::move(nStateVec));
+}
+
 /// Add two quantum integers
 /** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
  * "inOutStart." */

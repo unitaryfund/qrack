@@ -102,6 +102,31 @@ void kernel ror(global double2* stateVec, constant ulong* ulongPtr, global doubl
     }
 }
 
+void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxI = ulongPtr[0];
+    ulong inOutMask = ulongPtr[1];
+    ulong otherMask = ulongPtr[2];
+    ulong lengthMask = ulongPtr[3] - 1;
+    ulong carryMask = ulongPtr[4];
+    ulong inOutStart = ulongPtr[5];
+    ulong toAdd = ulongPtr[6];
+    ulong otherRes, inOutRes, outInt;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = (lcv & otherMask);
+        inOutRes = (lcv & inOutMask);
+        outInt = (inOutRes >> inOutStart) + toAdd;
+        if (outInt > lengthMask) {
+            outInt = (outRes & lengthMask) | carryMask;
+	}
+        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[lcv];
+    }
+}
+
 void kernel add(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
 {
     ulong ID, Nthreads, lcv;

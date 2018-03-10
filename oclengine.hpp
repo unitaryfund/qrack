@@ -42,6 +42,8 @@ public:
     cl::Kernel* GetROLPtr();
     /// Get a pointer to the ROR function kernel
     cl::Kernel* GetRORPtr();
+    /// Get a pointer to the INCC function kernel
+    cl::Kernel* GetINCCPtr();
     /// Get a pointer to the ADD function kernel
     cl::Kernel* GetADDPtr();
     /// Get a pointer to the SUB function kernel
@@ -70,6 +72,7 @@ private:
     cl::Kernel apply2x2;
     cl::Kernel rol;
     cl::Kernel ror;
+    cl::Kernel incc;
     cl::Kernel add;
     cl::Kernel sub;
     cl::Kernel addbcd;
