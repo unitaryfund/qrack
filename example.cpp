@@ -289,7 +289,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     qftReg->MReg8(0);
     qftReg->SetBit(16, false);
 
-    // REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
