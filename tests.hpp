@@ -77,10 +77,7 @@ public:
         return true;
     }
 
-    virtual bool match(const std::unique_ptr<Qrack::CoherentUnit>& constReg) const
-    {
-        return match(*constReg);
-    }
+    virtual bool match(const std::unique_ptr<Qrack::CoherentUnit>& constReg) const { return match(*constReg); }
 
     virtual std::string describe() const
     {

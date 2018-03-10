@@ -74,8 +74,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incc")
             REQUIRE_THAT(*qftReg, HasProbability(0, 9, 249 + i));
         } else if (i == 7) {
             REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
-        }
-        else {
+        } else {
             REQUIRE_THAT(*qftReg, HasProbability(0, 9, 2 + i - 8));
         }
     }
@@ -92,8 +91,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decc")
             REQUIRE_THAT(*qftReg, HasProbability(0, 9, 5 - i));
         } else if (i == 6) {
             REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x1ff));
-        }
-        else {
+        } else {
             REQUIRE_THAT(*qftReg, HasProbability(0, 9, 253 - i + 7));
         }
     }
@@ -138,10 +136,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
     std::cout << "AND Test:" << std::endl;
     qftReg->SetPermutation(0x2e);
     REQUIRE_THAT(qftReg, HasProbability(0x2e));
-    qftReg->CLAND(0, 0xff, 0, 8);   // 0x2e & 0xff
+    qftReg->CLAND(0, 0xff, 0, 8); // 0x2e & 0xff
     REQUIRE_THAT(qftReg, HasProbability(0x2e));
     qftReg->SetPermutation(0x3e);
-    qftReg->AND(0, 4, 0, 4);        // 0xe & 0x3
+    qftReg->AND(0, 4, 0, 4); // 0xe & 0x3
     REQUIRE_THAT(qftReg, HasProbability(0x32));
 }
 
@@ -252,7 +250,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     qftReg->SetBit(16, true);
     qftReg->H(0, 8);
 
-    //Twelve iterations maximizes the probablity for 256 searched elements.
+    // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         qftReg->DEC(100, 0, 8);
         qftReg->SetZeroFlag(0, 8, 16);
@@ -291,7 +289,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     qftReg->MReg8(0);
     qftReg->SetBit(16, false);
 
-    //REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
+    // REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")

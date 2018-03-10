@@ -181,7 +181,8 @@ void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Add integer (without sign, with carry)
-void CoherentUnitOCL::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+void CoherentUnitOCL::INCC(
+    bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -194,7 +195,8 @@ void CoherentUnitOCL::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bi
     bitCapInt otherMask = (1 << qubitCount) - 1;
     otherMask ^= inOutMask;
 
-    bitCapInt bciArgs[10] = { maxQPower<<1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0, 0 };
+    bitCapInt bciArgs[10] = { maxQPower << 1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0,
+        0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
@@ -218,7 +220,8 @@ void CoherentUnitOCL::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bi
 }
 
 /// Subtract integer (without sign, with carry)
-void CoherentUnitOCL::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+void CoherentUnitOCL::DECC(
+    bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -231,7 +234,8 @@ void CoherentUnitOCL::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bi
     bitCapInt otherMask = (1 << qubitCount) - 1;
     otherMask ^= inOutMask;
 
-    bitCapInt bciArgs[10] = { maxQPower<<1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toSub, 0, 0, 0 };
+    bitCapInt bciArgs[10] = { maxQPower << 1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toSub, 0, 0,
+        0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
