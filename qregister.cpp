@@ -1794,7 +1794,7 @@ void CoherentUnit::DECBCDC(
                     outInt |= nibbles[j] << (j * 4);
                 }
                 outRes = (outInt << (bciArgs[4])) | otherRes | carryRes;
-                nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
+                nStateVec[outRes] = stateVec[lcv];
             } else {
                 nStateVec[lcv] = stateVec[lcv];
             }
