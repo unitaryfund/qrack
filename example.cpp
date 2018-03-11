@@ -22,15 +22,15 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
 
-    qftReg->SetReg(0, 8, 0x300);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x300));
+    qftReg->SetReg(0, 8, 0x03);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x03));
 
     unsigned char testPage[256];
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    qftReg->SuperposeReg8(8, 0, testPage);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x303));
+    qftReg->SuperposeReg8(0, 8, testPage);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8) == 0); }
@@ -257,8 +257,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         qftReg->INC(100, 0, 8);
         qftReg->H(0, 8);
         qftReg->SetZeroFlag(0, 8, 16);
-        qftReg->Z(16);
         qftReg->H(0, 8);
+        qftReg->Z(16);
         std::cout << "Iteration " << i
                   << ", chance of 100:" << (qftReg->ProbAll(100) + qftReg->ProbAll(100 + (1 << 16))) << std::endl;
     }

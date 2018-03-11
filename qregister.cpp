@@ -2752,22 +2752,11 @@ void CoherentUnit::SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLe
 /// Set register bits to given permutation
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
-    bitCapInt inOutRes = value << start;
-    bitCapInt inOutMask = ((1 << length) - 1) << start;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    otherMask ^= inOutMask;
-    bitCapInt otherRes, outRes, i;
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    for (i = 0; i < maxQPower; i++) {
-        otherRes = (i & otherMask);
-        outRes = inOutRes | otherRes;
-        nStateVec[outRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
+    bool bitVal;
+    for (bitLenInt i = 0; i < length; i++) {
+        bitVal = M(start + i);
+        if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i)))) X(start + i);
     }
-    for (i = 0; i < maxQPower; i++) {
-        nStateVec[i] = polar(sqrt(real(nStateVec[i])), imag(nStateVec[i]));
-    }
-    ResetStateVec(std::move(nStateVec));
 }
 
 /// Measure permutation state of a register
@@ -2800,38 +2789,33 @@ unsigned char CoherentUnit::MReg8(bitLenInt start)
 /// Set 8 bit register bits based on read from classical memory
 unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
+    SetReg(outputStart, 8, 0);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    bitCapInt inputMask = 255 << inputStart;
-    bitCapInt outputMask = 255 << outputStart;
-    bitCapInt otherMask = (~inputMask) & (~outputMask);
-    bitCapInt inputRes, outputRes, otherRes, regRes, inputInt, outputInt, regInt, i;
-    if (inputStart == outputStart) {
-        for (i = 0; i < maxQPower; i++) {
-            otherRes = i & otherMask;
-            regRes = i & inputMask;
-            regInt = regRes >> inputStart;
-            regInt = values[regInt];
-            regRes = regInt << inputStart;
-            nStateVec[regRes | otherRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
-        }
-    } else {
-        for (i = 0; i < maxQPower; i++) {
-            otherRes = i & otherMask;
-            inputRes = i & inputMask;
-            inputInt = inputRes >> inputStart;
-            outputInt = values[inputInt];
-            outputRes = outputInt << outputStart;
-            nStateVec[outputRes | inputRes | otherRes] += Complex16(norm(stateVec[i]), arg(stateVec[i]));
-        }
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt skipPower = 1 << outputStart;
+    bitCapInt inputRes, outputRes, inputInt, outputInt, lcv, i, iLow, iHigh;
+    bitCapInt maxLCV = maxQPower >> 8;
+    for (lcv = 0; lcv < maxLCV; lcv++) { 
+        iHigh = lcv;
+        i = 0;
+        iLow = iHigh % skipPower;
+        i += iLow;
+        iHigh = (iHigh - iLow) << 8;
+        i += iHigh;
+        inputRes = i & inputMask;
+        inputInt = inputRes >> inputStart;
+        outputInt = values[inputInt];
+        outputRes = outputInt << outputStart;
+        nStateVec[outputRes | i] = stateVec[i];
     }
     double prob, average;
     for (i = 0; i < maxQPower; i++) {
         outputRes = i & outputMask;
         outputInt = outputRes >> outputStart;
-        prob = real(nStateVec[i]);
+        prob = norm(nStateVec[i]);
         average += prob * outputInt;
-        nStateVec[i] = polar(sqrt(prob), imag(nStateVec[i]));
     }
     ResetStateVec(std::move(nStateVec));
 
