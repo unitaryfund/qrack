@@ -2826,7 +2826,7 @@ void CoherentUnit::ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, b
 {
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubitIndex;
-    Apply2x2(qPowers[0], 0, mtrx, 1, qPowers, true, doCalcNorm);
+    Apply2x2(0, qPowers[0], mtrx, 1, qPowers, true, doCalcNorm);
 }
 
 void CoherentUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
