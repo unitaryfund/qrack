@@ -2709,72 +2709,52 @@ void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
 
 /// "Entangled Hadamard" - perform an operation on two entangled registers like a bitwise Hadamard on a single unentangled register.
 void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length) {
-    runningNorm = 0.0;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    bitCapInt i, j, k, kLow, kHigh, l;
-    bitLenInt len, bitCount;
+    bitCapInt i, j;
+    bitLenInt len;
     bool isOdd;
-    bitCapInt allMask = maxQPower - 1;
     bitCapInt lengthMask = (1 << length) - 1;
     bitCapInt targetMask = lengthMask << targetStart;
     bitCapInt entangledMask = lengthMask << entangledStart;
-    bitCapInt flipMask = targetMask | entangledMask;
-    bitCapInt otherMask = allMask & (~flipMask);
-    bitCapInt rowInt, colInt, interInt;
+    bitCapInt otherMask = (maxQPower - 1) & (~(targetMask | entangledMask)); 
+    bitCapInt rowInt, colInt, interInt, otherRes;
 
-    bitCapInt otherBitOffsets[2] = { 0, 0 };
-    i = 0;
-    bitCount = 0;
-    while (otherMask & (1 << i)) {
-        bitCount++;
-    }
-    otherBitOffsets[0] = bitCount;
-    i = 0;
-    while (otherMask & (1 << i)) {
-        bitCount++;
-    }
-    otherBitOffsets[1] = bitCount;
-
-    std::unique_ptr<bool[]> nonZero(new bool[maxQPower]);
-    const Complex16 zeroComplex = Complex16(0.0, 0.0);
-    for (i = 0; i < maxQPower; i++) {
-        nonZero[i] = (stateVec[i] != zeroComplex);
-    }
     bitLenInt twiceLength = length * 2;
-    bitCapInt maxJ = 1 << twiceLength;
+    const Complex16 zeroComplex(0.0, 0.0);
 
     //As if multiplying a matrix times the state vector, we want to interate over every element of the array to multiply the state vector.
-    for (j = 0; j < maxJ; j++) {
-        //The matrix entry is zero if the qubits not involved in the operation in the CoherentUnit is not the same, so the point here is to skip all zero entries.
-        kHigh = j << otherBitOffsets[0];
-        kLow = kHigh % (1 << (otherBitOffsets[0] + length));
-        kHigh = (kHigh - kLow) << otherBitOffsets[1];
-        k = kLow | kHigh;
+    for (i = 0; i < maxQPower; i++) {
+        if (stateVec[i] != zeroComplex) {
+            otherRes = i & otherMask;
+            colInt = ((i & targetMask) >> targetStart) | (((i & entangledMask) >> entangledStart) << length);
 
-        colInt = ((k & targetMask) >> targetStart) | (((k & entangledMask) >> entangledStart) << length);
+            for (j = 0; j < maxQPower; j++) {       
+                if (otherRes == (j & otherMask)) {
+                    //If l points to a state with zero probability, this is unnecessary.
+                    rowInt = ((j & targetMask) >> targetStart) | (((j & entangledMask) >> entangledStart) << length);
 
-        for (i = 0; i < maxQPower; i++) {
-            l = k | (i & otherMask);
-            //If l points to a state with zero probability, this is unnecessary.
-            if (nonZero[l]) { 
-                rowInt = ((i & targetMask) >> targetStart) | (((i & entangledMask) >> entangledStart) << length);
-
-                //Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit evenness/oddness.
-                interInt = rowInt & colInt;
-                isOdd = false;
-                for (len = 0; len < twiceLength; len++) {
-                    if (interInt & (1 << len)) isOdd = !isOdd;
+                    //Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit evenness/oddness.
+                    interInt = rowInt & colInt;
+                    isOdd = false;
+                    for (len = 0; len < twiceLength; len++) {
+                        if (interInt & (1 << len)) isOdd = !isOdd;
+                    }
+                    //Based on the above test, we either add or subtract the input state vector component from a running total for the output.
+                    nStateVec[j] += (isOdd ? -stateVec[i] : stateVec[i]);
                 }
-                //Based on the above test, we either add or subtract the input state vector component from a running total for the output.
-                nStateVec[i] += (isOdd ? -stateVec[l] : stateVec[l]);
             }
         }
-        //We calculate this to normalize at the end.
+        
+    }
+
+    runningNorm = 0.0;
+    for (i = 0; i < maxQPower; i++) {
         runningNorm += norm(nStateVec[i]);
     }
-    //Replace the state vector and normalize:
     runningNorm = sqrt(runningNorm);
+
+    //Replace the state vector and normalize:
     ResetStateVec(std::move(nStateVec));
     NormalizeState();
 }
@@ -2941,6 +2921,9 @@ void CoherentUnit::NormalizeState()
     bitCapInt lcv;
     for (lcv = 0; lcv < maxQPower; lcv++) {
         stateVec[lcv] /= runningNorm;
+        if (norm(stateVec[lcv]) < 1e-15) {
+            stateVec[lcv] = Complex16(0.0, 0.0);
+        }
     }
     runningNorm = 1.0;
 }
