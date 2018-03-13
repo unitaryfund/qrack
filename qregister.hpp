@@ -374,6 +374,9 @@ public:
     /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
     void QFT(bitLenInt start, bitLenInt length);
 
+    /// "Entangled Hadamard" - perform an operation on two entangled registers like a bitwise Hadamard on a single unentangled register.
+    void EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length);
+
     /// For chips with a zero flag, set the zero flag after a register operation.
     void SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag);
 

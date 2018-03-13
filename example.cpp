@@ -246,22 +246,29 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
                  "should output 00100110 11011001.)"
               << std::endl;
 
+    unsigned char toSearch[256];
+    for (i = 0; i < 256; i++) {
+        toSearch[i] = i;
+    }
+
     qftReg->SetPermutation(0);
     qftReg->SetBit(16, true);
     qftReg->H(0, 8);
+    qftReg->SuperposeReg8(0, 8, toSearch);
+    qftReg->EntangledH(0, 8, 8);
 
     // Twelve iterations maximizes the probablity for 256 searched elements.
-    for (i = 0; i < 12; i++) {
-        qftReg->DEC(100, 0, 8);
-        qftReg->SetZeroFlag(0, 8, 16);
-        qftReg->INC(100, 0, 8);
-        qftReg->H(0, 8);
-        qftReg->SetZeroFlag(0, 8, 16);
-        qftReg->H(0, 8);
+    /*for (i = 0; i < 12; i++) {
+        qftReg->DEC(100 + (100<<8), 0, 16);
+        qftReg->SetZeroFlag(0, 16, 16);
+        qftReg->INC(100 + (100<<8), 0, 16);
+        qftReg->H(0, 16);
+        qftReg->SetZeroFlag(0, 16, 16);
+        qftReg->H(0, 16);
         qftReg->Z(16);
         std::cout << "Iteration " << i
                   << ", chance of 100:" << (qftReg->ProbAll(100) + qftReg->ProbAll(100 + (1 << 16))) << std::endl;
-    }
+    }*/
     int greatestProbIndex = 0;
     double greatestProb = 0;
     int greatestZeroProbIndex = 0;
