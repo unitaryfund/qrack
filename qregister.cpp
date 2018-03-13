@@ -2712,7 +2712,7 @@ void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, b
     runningNorm = 0.0;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    bitCapInt i, j, k, kLow, kHigh;
+    bitCapInt i, j, k, kLow, kHigh, l;
     bitLenInt len, bitCount;
     bool isOdd;
     bitCapInt allMask = maxQPower - 1;
@@ -2721,7 +2721,7 @@ void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, b
     bitCapInt entangledMask = lengthMask << entangledStart;
     bitCapInt flipMask = targetMask | entangledMask;
     bitCapInt otherMask = allMask & (~flipMask);
-    bitCapInt otherRes, rowInt, colInt, interInt;
+    bitCapInt rowInt, colInt, interInt;
 
     bitCapInt otherBitOffsets[2] = { 0, 0 };
     i = 0;
@@ -2736,28 +2736,39 @@ void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, b
     }
     otherBitOffsets[1] = bitCount;
 
-    bitCapInt maxJ = maxQPower >> (qubitCount - (2 * length));
+    std::unique_ptr<bool[]> nonZero(new bool[maxQPower]);
+    const Complex16 zeroComplex = Complex16(0.0, 0.0);
+    for (i = 0; i < maxQPower; i++) {
+        nonZero[i] = (stateVec[i] != zeroComplex);
+    }
+    bitLenInt twiceLength = length * 2;
+    bitCapInt maxJ = 1 << twiceLength;
 
     //As if multiplying a matrix times the state vector, we want to interate over every element of the array to multiply the state vector.
-    for (i = 0; i < maxQPower; i++) {
-	otherRes = i & otherMask;
-        rowInt = ((i & targetMask) >> targetStart) | (((i & entangledMask) >> entangledStart) << length);
-        for (j = 0; j < maxJ; j++) {
-            //The matrix entry is zero if the qubits not involved in the operation in the CoherentUnit is not the same, so the point here is to skip all zero entries.
-            kHigh = j << otherBitOffsets[0];
-            kLow = kHigh % (1 << (otherBitOffsets[0] + length));
-            kHigh = (kHigh - kLow) << otherBitOffsets[1];
-            k = otherRes | kLow | kHigh;
+    for (j = 0; j < maxJ; j++) {
+        //The matrix entry is zero if the qubits not involved in the operation in the CoherentUnit is not the same, so the point here is to skip all zero entries.
+        kHigh = j << otherBitOffsets[0];
+        kLow = kHigh % (1 << (otherBitOffsets[0] + length));
+        kHigh = (kHigh - kLow) << otherBitOffsets[1];
+        k = kLow | kHigh;
 
-            //Then, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit evenness/oddness.
-            colInt = ((k & targetMask) >> targetStart) | (((k & entangledMask) >> entangledStart) << length);
-            interInt = rowInt & colInt;
-            isOdd = false;
-            for (len = 0; len < (length * 2); len++) {
-                if (interInt & (1 << len)) isOdd = !isOdd;
+        colInt = ((k & targetMask) >> targetStart) | (((k & entangledMask) >> entangledStart) << length);
+
+        for (i = 0; i < maxQPower; i++) {
+            l = k | (i & otherMask);
+            //If l points to a state with zero probability, this is unnecessary.
+            if (nonZero[l]) { 
+                rowInt = ((i & targetMask) >> targetStart) | (((i & entangledMask) >> entangledStart) << length);
+
+                //Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit evenness/oddness.
+                interInt = rowInt & colInt;
+                isOdd = false;
+                for (len = 0; len < twiceLength; len++) {
+                    if (interInt & (1 << len)) isOdd = !isOdd;
+                }
+                //Based on the above test, we either add or subtract the input state vector component from a running total for the output.
+                nStateVec[i] += (isOdd ? -stateVec[l] : stateVec[l]);
             }
-            //Based on the above test, we either add or subtract the input state vector component from a running total for the output.
-            nStateVec[i] = (isOdd ? -stateVec[k] : stateVec[k]);
         }
         //We calculate this to normalize at the end.
         runningNorm += norm(nStateVec[i]);

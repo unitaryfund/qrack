@@ -81,6 +81,8 @@ Complex16Simd Complex16Simd::operator/=(const double rhs)
     return Complex16Simd(_val);
 }
 Complex16Simd Complex16Simd::operator-() const { return -1.0 * _val; }
+bool Complex16Simd::operator==(const Complex16Simd& rhs) const { return (real(*this) == real(rhs)) && (imag(*this) == imag(rhs)); }
+bool Complex16Simd::operator!=(const Complex16Simd& rhs) const { return (real(*this) != real(rhs)) || (imag(*this) != imag(rhs)); }
 
 // Imperative function definitions:
 Complex16Simd operator*(const double lhs, const Complex16Simd& rhs) { return _mm_mul_pd(_mm_set1_pd(lhs), rhs._val); }
