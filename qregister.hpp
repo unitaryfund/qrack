@@ -71,7 +71,10 @@ public:
     void SetRandomSeed(uint32_t seed);
 
     /// Get the count of bits in this register
-    int GetQubitCount();
+    int GetQubitCount() { return qubitCount; }
+
+    /// Get the 1 << GetQubitCount()
+    int GetMaxQPower() { return maxQPower; }
 
     /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
     void CloneRawState(Complex16* output);
@@ -373,6 +376,10 @@ public:
 
     /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
     void QFT(bitLenInt start, bitLenInt length);
+
+    /// "Entangled Hadamard" - perform an operation on two entangled registers like a bitwise Hadamard on a single
+    /// unentangled register.
+    void EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length);
 
     /// For chips with a zero flag, set the zero flag after a register operation.
     void SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag);

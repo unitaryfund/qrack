@@ -12,6 +12,7 @@
 // for details.
 
 #include "qregister.hpp"
+#include <bitset>
 #include <iostream>
 
 #include "par_for.hpp"
@@ -87,9 +88,6 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
 
 /// Set the random seed (primarily used for testing)
 void CoherentUnit::SetRandomSeed(uint32_t seed) { rand_generator.seed(seed); }
-
-/// Get the count of bits in this register
-int CoherentUnit::GetQubitCount() { return qubitCount; }
 
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 void CoherentUnit::CloneRawState(Complex16* output)
@@ -2706,6 +2704,63 @@ void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
+/// "Entangled Hadamard" - perform an operation on two entangled registers like a bitwise Hadamard on a single
+/// unentangled register.
+void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length)
+{
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt i, j, k;
+    bitLenInt len;
+    bool isOdd;
+    bitCapInt lengthPower = (1 << length);
+    bitCapInt lengthMask = lengthPower - 1;
+    bitCapInt targetMask = lengthMask << targetStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~targetMask);
+    bitCapInt rowInt, colInt, interInt, otherRes;
+
+    const Complex16 zeroComplex(0.0, 0.0);
+
+    // As if multiplying a matrix times the state vector, we want to interate over every element of the array to
+    // multiply the state vector.
+    for (i = 0; i < maxQPower; i++) {
+        // State has 0 probability, continue.
+        if (stateVec[i] == zeroComplex) {
+            continue;
+        }
+
+        otherRes = i & otherMask;
+        colInt = (i & targetMask) >> targetStart;
+        for (j = 0; j < lengthPower; j++) {
+            rowInt = j;
+            k = (j << targetStart) | (otherRes ^ ((rowInt ^ colInt) << entangledStart));
+
+            // Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit
+            // evenness/oddness.
+            interInt = rowInt & colInt;
+            isOdd = false;
+            for (len = 0; len < length; len++) {
+                if (interInt & (1 << len)) {
+                    isOdd = !isOdd;
+                }
+            }
+            // Based on the above test, we either add or subtract the input state vector component from a running
+            // total for the output.
+            nStateVec[k] += (isOdd ? -stateVec[i] : stateVec[i]);
+        }
+    }
+
+    runningNorm = 0.0;
+    for (i = 0; i < maxQPower; i++) {
+        runningNorm += norm(nStateVec[i]);
+    }
+    runningNorm = sqrt(runningNorm);
+
+    // Replace the state vector and normalize:
+    ResetStateVec(std::move(nStateVec));
+    NormalizeState();
+}
+
 /// For chips with a zero flag, set the zero flag after a register operation.
 void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag)
 {
@@ -2714,8 +2769,7 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
     bitCapInt flagMask = 1 << zeroFlag;
     bitCapInt bciArgs[2] = { regMask, flagMask };
     par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
-        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs,
-            Complex16* nStateVec) {
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             if (((lcv & (~(bciArgs[0]))) == lcv) & ((lcv & bciArgs[1]) == bciArgs[1]))
                 stateVec[lcv] = -stateVec[lcv];
         });
@@ -2728,8 +2782,7 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
     bitCapInt flagMask = 1 << toSet;
     bitCapInt bciArgs[2] = { testMask, flagMask };
     par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
-        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs,
-            Complex16* nStateVec) {
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             if (((lcv & bciArgs[0]) == bciArgs[0]) & ((lcv & bciArgs[1]) == bciArgs[1]))
                 stateVec[lcv] = -stateVec[lcv];
         });
@@ -2742,8 +2795,7 @@ void CoherentUnit::SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLe
     bitCapInt flagMask = 1 << flagIndex;
     bitCapInt bciArgs[4] = { regMask, flagMask, start, greaterPerm };
     par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
-        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs,
-            Complex16* nStateVec) {
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             if ((((lcv & bciArgs[0]) >> (bciArgs[2])) < bciArgs[3]) & ((lcv & bciArgs[1]) == bciArgs[1]))
                 stateVec[lcv] = -stateVec[lcv];
         });
@@ -2755,7 +2807,8 @@ void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     bool bitVal;
     for (bitLenInt i = 0; i < length; i++) {
         bitVal = M(start + i);
-        if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i)))) X(start + i);
+        if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
+            X(start + i);
     }
 }
 
@@ -2797,7 +2850,7 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
     bitCapInt skipPower = 1 << outputStart;
     bitCapInt inputRes, outputRes, inputInt, outputInt, lcv, i, iLow, iHigh;
     bitCapInt maxLCV = maxQPower >> 8;
-    for (lcv = 0; lcv < maxLCV; lcv++) { 
+    for (lcv = 0; lcv < maxLCV; lcv++) {
         iHigh = lcv;
         i = 0;
         iLow = iHigh % skipPower;
@@ -2868,6 +2921,9 @@ void CoherentUnit::NormalizeState()
     bitCapInt lcv;
     for (lcv = 0; lcv < maxQPower; lcv++) {
         stateVec[lcv] /= runningNorm;
+        if (norm(stateVec[lcv]) < 1e-15) {
+            stateVec[lcv] = Complex16(0.0, 0.0);
+        }
     }
     runningNorm = 1.0;
 }

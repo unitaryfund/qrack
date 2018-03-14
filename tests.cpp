@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
     Catch::Session session;
 
     bool disable_opencl = false;
+    bool disable_software = false;
 
     using namespace Catch::clara;
 
@@ -31,7 +32,10 @@ int main(int argc, char* argv[])
      * Allow disabling running OpenCL tests on the command line, even if
      * supported.
      */
-    auto cli = session.cli() | Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported");
+    auto cli = session.cli() |
+        Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
+        Opt(disable_software)["--disable-software"]("Disable the software implementation tests");
+
     session.cli(cli);
 
     /* Set some defaults for convenience. */
@@ -49,12 +53,17 @@ int main(int argc, char* argv[])
 
     session.config().stream() << "Random Seed: " << session.configData().rngSeed << std::endl;
 
+    int num_failed = 0;
+
     /* Perform the run against the default (software) variant. */
-    int num_failed = session.run();
+    if (!disable_software) {
+        session.config().stream() << "Executing test suite using the Software Implementation" << std::endl;
+        num_failed = session.run();
+    }
 
 #if ENABLE_OPENCL
     if (num_failed == 0 && !disable_opencl) {
-        session.config().stream() << "Executing test suite using OpenCL" << std::endl;
+        session.config().stream() << "Executing test suite using the OpenCL Implementation" << std::endl;
         testEngineType = COHERENT_UNIT_ENGINE_OPENCL;
         delete CreateCoherentUnit(testEngineType, 1, 0); /* Get the OpenCL banner out of the way. */
         num_failed = session.run();
