@@ -14,7 +14,7 @@ TEST_BIN = example
 QRACK_LIB=libqrack.a
 LIBS     = -lm -lpthread
 CXXINCS  = 
-CXXFLAGS = $(CXXINCS) -ggdb -std=c++11 -Wall -Werror
+CXXFLAGS = $(CXXINCS) -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE
 LDFLAGS  =
 RM       = rm -f
 
