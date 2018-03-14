@@ -248,7 +248,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 
     unsigned char toSearch[256];
     for (i = 0; i < 256; i++) {
-        toSearch[i] = i;
+        toSearch[i] = 255 - i;
     }
 
     qftReg->SetPermutation(0);
@@ -265,8 +265,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         qftReg->SetZeroFlag(8, 8, 16);
         qftReg->EntangledH(8, 0, 8);
         qftReg->Z(16);
-        std::cout << "Iteration " << i << ", chance of 100:"
-                  << (qftReg->ProbAll(100 + (100 << 8)) + qftReg->ProbAll(100 + (100 << 8) + (1 << 16))) << std::endl;
+        std::cout << "Iteration " << i << ", chance of match:"
+                  << (qftReg->ProbAll(100 + (155 << 8)) + qftReg->ProbAll(100 + (155 << 8) + (1 << 16))) << std::endl;
     }
     int greatestProbIndex = 0;
     double greatestProb = 0;
@@ -292,10 +292,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
     }
 
-    // qftReg->MReg8(0);
-    // qftReg->SetBit(16, false);
+    qftReg->MReg8(0);
+    qftReg->SetBit(16, false);
 
-    // REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100 + (155 << 8)));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
