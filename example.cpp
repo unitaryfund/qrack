@@ -246,30 +246,28 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
                  "should output 00100110 11011001.)"
               << std::endl;
 
-    //unsigned char toSearch[256];
-    //for (i = 0; i < 256; i++) {
-    //    toSearch[i] = i;
-    //}
+    unsigned char toSearch[256];
+    for (i = 0; i < 256; i++) {
+        toSearch[i] = i;
+    }
 
-    qftReg->SetPermutation(15);
+    qftReg->SetPermutation(0);
     qftReg->SetBit(16, true);
-    //qftReg->H(0, 8);
-    //qftReg->SuperposeReg8(0, 8, toSearch);
-    qftReg->EntangledH(0, 2, 2);
-    qftReg->EntangledH(0, 2, 2);
+    qftReg->H(8, 8);
+    qftReg->SuperposeReg8(8, 0, toSearch);
 
     // Twelve iterations maximizes the probablity for 256 searched elements.
-    /*for (i = 0; i < 12; i++) {
-        qftReg->DEC(100 + (100<<8), 0, 16);
-        qftReg->SetZeroFlag(0, 16, 16);
-        qftReg->INC(100 + (100<<8), 0, 16);
-        qftReg->H(0, 16);
-        qftReg->SetZeroFlag(0, 16, 16);
-        qftReg->H(0, 16);
+    for (i = 0; i < 12; i++) {
+        qftReg->DEC(100, 0, 8);
+        qftReg->SetZeroFlag(0, 8, 16);
+        qftReg->INC(100, 0, 8);
+        qftReg->EntangledH(8, 0, 8);
+        qftReg->SetZeroFlag(8, 8, 16);
+        qftReg->EntangledH(8, 0, 8);
         qftReg->Z(16);
-        std::cout << "Iteration " << i
-                  << ", chance of 100:" << (qftReg->ProbAll(100) + qftReg->ProbAll(100 + (1 << 16))) << std::endl;
-    }*/
+        std::cout << "Iteration " << i << ", chance of 100:"
+                  << (qftReg->ProbAll(100 + (100 << 8)) + qftReg->ProbAll(100 + (100 << 8) + (1 << 16))) << std::endl;
+    }
     int greatestProbIndex = 0;
     double greatestProb = 0;
     int greatestZeroProbIndex = 0;
@@ -294,10 +292,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
     }
 
-    qftReg->MReg8(0);
-    qftReg->SetBit(16, false);
+    // qftReg->MReg8(0);
+    // qftReg->SetBit(16, false);
 
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
+    // REQUIRE_THAT(qftReg, HasProbability(0, 8, 100));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
