@@ -1,19 +1,87 @@
 #pragma once
 
 #include <sstream>
+#include <iomanip>
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.5
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
+inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::CoherentUnit const& constReg);
+inline std::ostream& outputProbableResult(std::ostream& os, Qrack::CoherentUnit const& constReg);
+inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::CoherentUnit const& constReg);
+
 inline std::ostream& operator<<(std::ostream& os, Qrack::CoherentUnit const& constReg)
 {
-    Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
-    os << "" << qftReg.GetQubitCount() << "/";
-    for (int j = qftReg.GetQubitCount(); j >= 0; j--) {
-        os << (int)(qftReg.Prob(j) > QRACK_TEST_EPSILON);
+    if (os.flags() & std::ios_base::showpoint) {
+        os.unsetf(std::ios_base::showpoint);
+        return outputPerBitProbs(os, constReg);
     }
+    // Super expensive and slow.
+    if (os.flags() & std::ios_base::showbase) {
+        os.unsetf(std::ios_base::showbase);
+        return outputIndependentBits(os, constReg);
+	}
+    return outputProbableResult(os, constReg);
+}
+
+inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::CoherentUnit const& constReg)
+{
+    Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
+    os << "[\n";
+
+    for (int i = qftReg.GetQubitCount() - 1; i >= 0; i--) {
+        os << "\t " << std::setw(2) << i << "]: " << qftReg.Prob(i) << std::endl;
+    }
+    return os;
+}
+
+inline std::ostream& outputProbableResult(std::ostream& os, Qrack::CoherentUnit const& constReg)
+{
+    int i;
+
+    Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
+    double maxProb = 0;
+    int maxProbIdx = 0;
+
+    // Iterate through all possible values of the bit array, starting at the
+    // max.
+    for (i = qftReg.GetMaxQPower() - 1; i >= 0; i--) {
+        double prob = qftReg.ProbAll(i);
+        if (prob > maxProb) {
+            maxProb = prob;
+            maxProbIdx = i;
+        }
+    }
+
+    os << qftReg.GetQubitCount() << "/";
+
+    // Print the resulting maximum probability bit pattern.
+    for (i = qftReg.GetMaxQPower() >> 1; i > 0; i >>= 1) {
+        // printf("%08X & %08X\n", i, maxProbIdx);
+        if (i & maxProbIdx) {
+            os << "1";
+        } else {
+            os << "0";
+        }
+    }
+
+    // And print the probability, for interest.
+    os << ":" << maxProb;
+
+    return os;
+}
+
+inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::CoherentUnit const& constReg)
+{
+	Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
+	os << "" << qftReg.GetQubitCount() << "/";
+
+	for (int j = qftReg.GetQubitCount() - 1; j >= 0; j--) {
+		os << (int)(qftReg.Prob(j) > QRACK_TEST_EPSILON);
+	}
+
     return os;
 }
 

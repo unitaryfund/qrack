@@ -241,21 +241,31 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
     int i;
 
-    std::cout << "Grover's test:" << std::endl;
-    std::cout << "(Search function is true only for an input of 100 (0x64). 100 is in position 155. First 16 bits "
-                 "should output 00100110 11011001.)"
-              << std::endl;
+    // Search function is true only for an input of 100 (0x64). 100 is in
+    // position 155. First 16 bits should output 00100110 11011001.
+    //
+    // The target probability here is looking for 100 in the low 8 bits, and
+    // expecting to find 155 in the upper register.
+    const int TARGET_PROB = 100 + (155 << 8);
 
+    // Create a table with decreasing values to search through
     unsigned char toSearch[256];
+
+    // Create the lookup table
     for (i = 0; i < 256; i++) {
         toSearch[i] = 255 - i;
     }
 
+    // Make sure the value being searched for is in the targetted location.
+    REQUIRE(toSearch[155] == 100);
+
+    // Divide qftReg into two registers of 8 bits each
     qftReg->SetPermutation(0);
     qftReg->SetBit(16, true);
     qftReg->H(8, 8);
     qftReg->SuperposeReg8(8, 0, toSearch);
 
+    std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         qftReg->DEC(100, 0, 8);
@@ -265,37 +275,19 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         qftReg->SetZeroFlag(8, 8, 16);
         qftReg->EntangledH(8, 0, 8);
         qftReg->Z(16);
-        std::cout << "Iteration " << i << ", chance of match:"
-                  << (qftReg->ProbAll(100 + (155 << 8)) + qftReg->ProbAll(100 + (155 << 8) + (1 << 16))) << std::endl;
+        std::cout << "\t" << std::setw(2) << i
+                  << "> chance of match:" << (qftReg->ProbAll(TARGET_PROB) + qftReg->ProbAll(TARGET_PROB + (1 << 16)))
+                  << std::endl;
     }
-    int greatestProbIndex = 0;
-    double greatestProb = 0;
-    int greatestZeroProbIndex = 0;
-    double greatestZeroProb = 0;
-    for (i = 0; i < 1048576; i++) {
-        if (qftReg->ProbAll(i) > greatestProb) {
-            greatestProb = qftReg->ProbAll(i);
-            greatestProbIndex = i;
-        }
-    }
-    std::cout << "Most likely outcome: ";
-    for (i = 0; i < 20; i++) {
-        if (1 << i & greatestProbIndex) {
-            std::cout << "1";
-        } else {
-            std::cout << "0";
-        }
-    }
-    std::cout << std::endl;
-    std::cout << "Bit probabilities:" << std::endl;
-    for (i = 0; i < 20; i++) {
-        std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
-    }
+
+    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    std::cout << "Full Result:    " << qftReg << std::endl;
+    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
     qftReg->MReg8(0);
     qftReg->SetBit(16, false);
 
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100 + (155 << 8)));
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")

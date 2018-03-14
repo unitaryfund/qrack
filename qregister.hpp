@@ -71,7 +71,10 @@ public:
     void SetRandomSeed(uint32_t seed);
 
     /// Get the count of bits in this register
-    int GetQubitCount();
+    int GetQubitCount() { return qubitCount; }
+
+    /// Get the 1 << GetQubitCount()
+    int GetMaxQPower() { return maxQPower; }
 
     /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
     void CloneRawState(Complex16* output);
