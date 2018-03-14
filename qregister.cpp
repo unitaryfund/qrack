@@ -89,9 +89,6 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
 /// Set the random seed (primarily used for testing)
 void CoherentUnit::SetRandomSeed(uint32_t seed) { rand_generator.seed(seed); }
 
-/// Get the count of bits in this register
-int CoherentUnit::GetQubitCount() { return qubitCount; }
-
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 void CoherentUnit::CloneRawState(Complex16* output)
 {
@@ -2727,26 +2724,29 @@ void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, b
     // As if multiplying a matrix times the state vector, we want to interate over every element of the array to
     // multiply the state vector.
     for (i = 0; i < maxQPower; i++) {
-        // If i points to a state with zero probability, the body is unnecessary.
-        if (stateVec[i] != zeroComplex) {
-            otherRes = i & otherMask;
-            colInt = (i & targetMask) >> targetStart;
-            for (j = 0; j < lengthPower; j++) {
-                rowInt = j;
-                k = (j << targetStart) | (otherRes ^ ((rowInt ^ colInt) << entangledStart));
+        // State has 0 probability, continue.
+        if (stateVec[i] == zeroComplex) {
+            continue;
+        }
 
-                // Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit
-                // evenness/oddness.
-                interInt = rowInt & colInt;
-                isOdd = false;
-                for (len = 0; len < length; len++) {
-                    if (interInt & (1 << len))
-                        isOdd = !isOdd;
+        otherRes = i & otherMask;
+        colInt = (i & targetMask) >> targetStart;
+        for (j = 0; j < lengthPower; j++) {
+            rowInt = j;
+            k = (j << targetStart) | (otherRes ^ ((rowInt ^ colInt) << entangledStart));
+
+            // Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit
+            // evenness/oddness.
+            interInt = rowInt & colInt;
+            isOdd = false;
+            for (len = 0; len < length; len++) {
+                if (interInt & (1 << len)) {
+                    isOdd = !isOdd;
                 }
-                // Based on the above test, we either add or subtract the input state vector component from a running
-                // total for the output.
-                nStateVec[k] += (isOdd ? -stateVec[i] : stateVec[i]);
             }
+            // Based on the above test, we either add or subtract the input state vector component from a running
+            // total for the output.
+            nStateVec[k] += (isOdd ? -stateVec[i] : stateVec[i]);
         }
     }
 
