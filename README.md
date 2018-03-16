@@ -49,6 +49,10 @@ This is equivalent to a physical body having a 50% chance of emitting a fixed un
 
 ## Note about unitarity and arithmetic
 
-The project's original author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected. Similar, AND/OR/XOR only preserve unitarity when the output bit indices differ from the input bit indices, functionining like Toffoli gates with X operations on the input bits, but the nonunitary input/output overlap cases are left for convenience. Their application could be valid if overwritten bits are guaranteed to be separable. Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable.
+The project's original author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected.
+
+Similarly, AND/OR/XOR are only provided for convenience and generally entail a measurement of the output bit. For register-based virtual quantum processors, we suspect it will be a common requirement that an output register be measured, cleared, and loaded with the output logical comparison operations, but this will generally require meassurement and therefore introduce a random phase factor. CCNOT and X gates (composed for convenience as "AntiCCNOT" gates) could instead be operated on a target bit with a known input state to achieve a similar result in a unitary fashion.
+
+Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable.
 
 Qrack is an experimental work in progress, and the author aims for both utility and correctness, but the project cannot be guaranteed to be fit for any purpose, express or implied. (See LICENSE.md for details.)
