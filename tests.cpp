@@ -32,8 +32,7 @@ int main(int argc, char* argv[])
      * Allow disabling running OpenCL tests on the command line, even if
      * supported.
      */
-    auto cli = session.cli() |
-        Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
+    auto cli = session.cli() | Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
         Opt(disable_software)["--disable-software"]("Disable the software implementation tests");
 
     session.cli(cli);
