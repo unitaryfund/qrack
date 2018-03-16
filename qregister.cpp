@@ -307,19 +307,15 @@ void CoherentUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outpu
         return;
     }
 
-    if ((inputBit1 == outputBit) || (inputBit2 == outputBit)) {
-        CoherentUnit extraBit(1, 0);
-        Cohere(extraBit);
-        CCNOT(inputBit1, inputBit2, qubitCount - 1);
-        Swap(qubitCount - 1, outputBit);
-        Dispose(qubitCount - 1, 1);
-    } else {
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
         SetBit(outputBit, false);
         if (inputBit1 == inputBit2) {
             CNOT(inputBit1, outputBit);
         } else {
             CCNOT(inputBit1, inputBit2, outputBit);
         }
+    } else {
+        throw std::invalid_argument("Invalid AND arguments.");
     }
 }
 
@@ -342,19 +338,15 @@ void CoherentUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt output
         return;
     }
 
-    if ((inputBit1 == outputBit) || (inputBit2 == outputBit)) {
-        CoherentUnit extraBit(1, 1);
-        Cohere(extraBit);
-        AntiCCNOT(inputBit1, inputBit2, qubitCount - 1);
-        Swap(qubitCount - 1, outputBit);
-        Dispose(qubitCount - 1, 1);
-    } else {
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
         SetBit(outputBit, true);
         if (inputBit1 == inputBit2) {
             AntiCNOT(inputBit1, outputBit);
         } else {
             AntiCCNOT(inputBit1, inputBit2, outputBit);
         }
+    } else {
+        throw std::invalid_argument("Invalid OR arguments.");
     }
 }
 
@@ -373,17 +365,14 @@ void CoherentUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt o
 void CoherentUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
-        SetBit(outputBit, false);
-        return;
+	SetBit(outputBit, false);
+	return;
     }
 
-    if ((inputBit1 == outputBit) || (inputBit2 == outputBit)) {
-        CoherentUnit extraBit(1, 0);
-        Cohere(extraBit);
-        CNOT(inputBit1, qubitCount - 1);
-        CNOT(inputBit2, qubitCount - 1);
-        Swap(qubitCount - 1, outputBit);
-        Dispose(qubitCount - 1, 1);
+    if (inputBit1 == outputBit) {
+        CNOT(inputBit2, outputBit);
+    } else if (inputBit2 == outputBit) {
+        CNOT(inputBit1, outputBit);
     } else {
         SetBit(outputBit, false);
         CNOT(inputBit1, outputBit);
