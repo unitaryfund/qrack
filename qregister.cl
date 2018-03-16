@@ -118,20 +118,18 @@ void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global doub
     ulong otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        i = 0;
         iLow = iHigh & (carryMask - 1);
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-        i += iHigh;
+        i = iLow + ((iHigh - iLow) << 1);
         otherRes = (i & otherMask);
         inOutRes = (i & inOutMask);
         outInt = (inOutRes >> inOutStart) + toAdd;
-        outRes = outInt << inOutStart;
+        outRes = 0;
         if (outInt > lengthMask) {
             outInt &= lengthMask;
-            outRes = (outInt << inOutStart) | carryMask;
+            outRes = carryMask;
 	}
-        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[i];
+	outRes |= outInt << inOutStart;
+        nStateVec[outRes | otherRes] = stateVec[i];
     }
 }
 
@@ -151,19 +149,18 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
     ulong otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        i = 0;
         iLow = iHigh & (carryMask - 1);
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-        i += iHigh;
+        i = iLow + ((iHigh - iLow) << 1);
         otherRes = (i & otherMask);
-        outInt = (lengthMask + (inOutRes >> inOutStart)) - toSub;
-        outRes = (outInt << inOutStart) | carryMask;
+        inOutRes = (i & inOutMask);
+        outInt = (lengthMask + 1 + (inOutRes >> inOutStart)) - toSub;
+        outRes = carryMask;
         if (outInt > lengthMask) {
             outInt &= lengthMask;
-            outRes = (outInt << inOutStart);
+            outRes = 0;
 	}
-        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[i];
+        outRes |= outInt << inOutStart;
+        nStateVec[outRes | otherRes] = stateVec[i];
     }
 }
 

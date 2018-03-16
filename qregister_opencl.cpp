@@ -117,14 +117,9 @@ void CoherentUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Compl
 /// "Circular shift left" - shift bits left, and carry last bits.
 void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    bitCapInt regMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        regMask += 1 << (start + i);
-    }
-    otherMask -= regMask;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt otherMask = (maxQPower - 1) & (~regMask);
     bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
@@ -150,14 +145,10 @@ void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// "Circular shift right" - shift bits right, and carry first bits.
 void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    bitCapInt regMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        regMask += 1 << (start + i);
-    }
-    otherMask -= regMask;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt otherMask = (maxQPower - 1) & (~regMask);
+
     bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
@@ -191,11 +182,10 @@ void CoherentUnitOCL::INCC(
     }
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    otherMask ^= inOutMask;
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inOutMask | carryMask));
 
-    bitCapInt bciArgs[10] = { maxQPower << 1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0,
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toAdd, 0, 0,
         0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
@@ -230,11 +220,10 @@ void CoherentUnitOCL::DECC(
     }
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    otherMask ^= inOutMask;
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inOutMask | carryMask));
 
-    bitCapInt bciArgs[10] = { maxQPower << 1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toSub, 0, 0,
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inOutMask, otherMask, lengthPower, carryMask, inOutStart, toSub, 0, 0,
         0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
@@ -244,7 +233,7 @@ void CoherentUnitOCL::DECC(
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Kernel decc = *(clObj->GetINCCPtr());
+    cl::Kernel decc = *(clObj->GetDECCPtr());
     decc.setArg(0, stateBuffer);
     decc.setArg(1, ulongBuffer);
     decc.setArg(2, nStateBuffer);
