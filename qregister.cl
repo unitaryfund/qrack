@@ -127,8 +127,8 @@ void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global doub
         if (outInt > lengthMask) {
             outInt &= lengthMask;
             outRes = carryMask;
-	}
-	outRes |= outInt << inOutStart;
+        }
+        outRes |= outInt << inOutStart;
         nStateVec[outRes | otherRes] = stateVec[i];
     }
 }
@@ -158,7 +158,7 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
         if (outInt > lengthMask) {
             outInt &= lengthMask;
             outRes = 0;
-	}
+        }
         outRes |= outInt << inOutStart;
         nStateVec[outRes | otherRes] = stateVec[i];
     }
@@ -208,8 +208,8 @@ void kernel sub(global double2* stateVec, constant ulong* ulongPtr, global doubl
         inOutInt = inOutRes >> inOutStart;
         inRes = (lcv & inMask);
         inInt = inRes >> inStart;
-        nStateVec[(((inOutInt - inInt + lengthPower) & (lengthPower - 1)) << inOutStart) | otherRes | inRes]
-            = stateVec[lcv];
+        nStateVec[(((inOutInt - inInt + lengthPower) & (lengthPower - 1)) << inOutStart) | otherRes | inRes] =
+            stateVec[lcv];
     }
 }
 

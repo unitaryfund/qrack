@@ -1,7 +1,7 @@
 #pragma once
 
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.5
@@ -22,7 +22,7 @@ inline std::ostream& operator<<(std::ostream& os, Qrack::CoherentUnit const& con
     if (os.flags() & std::ios_base::showbase) {
         os.unsetf(std::ios_base::showbase);
         return outputIndependentBits(os, constReg);
-	}
+    }
     return outputProbableResult(os, constReg);
 }
 
@@ -75,12 +75,12 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::CoherentUnit 
 
 inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::CoherentUnit const& constReg)
 {
-	Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
-	os << "" << qftReg.GetQubitCount() << "/";
+    Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
+    os << "" << qftReg.GetQubitCount() << "/";
 
-	for (int j = qftReg.GetQubitCount() - 1; j >= 0; j--) {
-		os << (int)(qftReg.Prob(j) > QRACK_TEST_EPSILON);
-	}
+    for (int j = qftReg.GetQubitCount() - 1; j >= 0; j--) {
+        os << (int)(qftReg.Prob(j) > QRACK_TEST_EPSILON);
+    }
 
     return os;
 }
@@ -125,17 +125,16 @@ public:
     {
         Qrack::CoherentUnit& qftReg = (Qrack::CoherentUnit&)constReg;
 
-        bitLenInt len = length;
-        if (len == 0) {
-            len = qftReg.GetQubitCount();
+        if (length == 0) {
+            ((ProbPattern*)this)->length = qftReg.GetQubitCount();
         }
 
-        if (len > sizeof(mask) * 8) {
-            WARN("requested length " << len << " larger than possible bitmap " << sizeof(mask) * 8);
+        if (length > sizeof(mask) * 8) {
+            WARN("requested length " << length << " larger than possible bitmap " << sizeof(mask) * 8);
             return false;
         }
 
-        for (int j = 0; j < len; j++) {
+        for (int j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg.Prob(j + start) > QRACK_TEST_EPSILON);
             if (bit != !!(mask & (1 << j))) {

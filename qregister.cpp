@@ -365,8 +365,8 @@ void CoherentUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt o
 void CoherentUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
-	SetBit(outputBit, false);
-	return;
+        SetBit(outputBit, false);
+        return;
     }
 
     if (inputBit1 == outputBit) {
