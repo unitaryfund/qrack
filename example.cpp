@@ -145,7 +145,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
 {
-    std::cout << "OR Test:" << std::endl;
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
     qftReg->CLOR(0, 0x0f, 4, 4); // 0x0e | 0x0f
@@ -157,7 +156,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
 {
-    std::cout << "XOR Test:" << std::endl;
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
     qftReg->CLXOR(0, 0x0f, 4, 4); // 0x0e ^ 0x0f
