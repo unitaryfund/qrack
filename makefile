@@ -6,7 +6,7 @@ XXD      = xxd
 OBJ      = complex16simd.o qregister.o par_for.o qregister_software.o qregister_factory.o
 SRC      = $(wildcard *.cpp)
 HDRS     = $(wildcard *.hpp)
-FORMAT_SRC = ${SRC}
+FORMAT_SRC = ${SRC} qregister.cl
 FORMAT_HDRS = $(filter-out catch.hpp, ${HDRS})
 
 TEST_OBJ = example.o tests.o
