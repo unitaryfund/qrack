@@ -134,43 +134,37 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
 {
     std::cout << "AND Test:" << std::endl;
-    qftReg->SetPermutation(0x2e);
-    REQUIRE_THAT(qftReg, HasProbability(0x2e));
-    qftReg->CLAND(0, 0xff, 0, 8); // 0x2e & 0xff
-    REQUIRE_THAT(qftReg, HasProbability(0x2e));
+    qftReg->SetPermutation(0x0e);
+    REQUIRE_THAT(qftReg, HasProbability(0x0e));
+    qftReg->CLAND(0, 0x0f, 4, 4); // 0x0e & 0x0f
+    REQUIRE_THAT(qftReg, HasProbability(0xee));
     qftReg->SetPermutation(0x3e);
-    qftReg->AND(0, 4, 0, 4); // 0xe & 0x3
-    REQUIRE_THAT(qftReg, HasProbability(0x32));
+    qftReg->AND(0, 4, 8, 4); // 0xe & 0x3
+    REQUIRE_THAT(qftReg, HasProbability(0x23e));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
 {
     std::cout << "OR Test:" << std::endl;
-    qftReg->SetPermutation(38);
-    std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
-    WARN(qftReg);
-    qftReg->CLOR(0, 255, 0, 8);
-    WARN(qftReg);
-    qftReg->SetPermutation(58);
-    std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
-    WARN(qftReg);
-    qftReg->OR(0, 4, 0, 4);
-    WARN(qftReg);
+    qftReg->SetPermutation(0x0e);
+    REQUIRE_THAT(qftReg, HasProbability(0x0e));
+    qftReg->CLOR(0, 0x0f, 4, 4); // 0x0e | 0x0f
+    REQUIRE_THAT(qftReg, HasProbability(0xfe));
+    qftReg->SetPermutation(0x3e);
+    qftReg->OR(0, 4, 8, 4); // 0xe | 0x3
+    REQUIRE_THAT(qftReg, HasProbability(0xe3e));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
 {
     std::cout << "XOR Test:" << std::endl;
-    qftReg->SetPermutation(38);
-    std::cout << "[6,9) = [0,3) & [3,6):" << std::endl;
-    WARN(qftReg);
-    qftReg->XOR(0, 3, 6, 3);
-    WARN(qftReg);
-    qftReg->SetPermutation(58);
-    std::cout << "[0,4) = [0,4) & [4,8):" << std::endl;
-    WARN(qftReg);
-    qftReg->XOR(0, 4, 0, 4);
-    WARN(qftReg);
+    qftReg->SetPermutation(0x0e);
+    REQUIRE_THAT(qftReg, HasProbability(0x0e));
+    qftReg->CLXOR(0, 0x0f, 4, 4); // 0x0e ^ 0x0f
+    REQUIRE_THAT(qftReg, HasProbability(0x1e));
+    qftReg->SetPermutation(0x3e);
+    qftReg->XOR(0, 4, 8, 4); // 0xe ^ 0x3
+    REQUIRE_THAT(qftReg, HasProbability(0x23e));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m_reg")

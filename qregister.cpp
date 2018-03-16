@@ -339,7 +339,7 @@ void CoherentUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt output
     }
 
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetBit(outputBit, false);
+        SetBit(outputBit, true);
         if (inputBit1 == inputBit2) {
             AntiCNOT(inputBit1, outputBit);
         } else {
@@ -368,7 +368,7 @@ void CoherentUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outpu
 	throw std::invalid_argument("Invalid XOR arguments.");
     }
 
-    if ((inputBit1 == outputBit) && (inputBit2 != outputBit)) {
+    if (inputBit1 == outputBit) {
         CNOT(inputBit2, outputBit);
     } else if (inputBit2 == outputBit) {
         CNOT(inputBit1, outputBit);
