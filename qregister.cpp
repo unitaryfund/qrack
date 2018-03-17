@@ -2864,8 +2864,7 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
     }
     double prob, average;
     for (i = 0; i < maxQPower; i++) {
-        outputRes = i & outputMask;
-        outputInt = outputRes >> outputStart;
+        outputInt = (i & outputMask) >> outputStart;
         prob = norm(nStateVec[i]);
         average += prob * outputInt;
     }
@@ -2884,6 +2883,10 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
     // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
     // are ADded with Carry (ADC) to values entangled in the "outputStart" register with the "inputStart" register.
 
+    //"inputStart" and "outputStart" point to the beginning of two quantum registers. The carry qubit is at index
+    //"carryIndex." "values" is a page of key-value pairs of classical memory to load based on offset by the
+    //"inputStart" register.
+
     // The carry has to first to be measured for its input value.
     bitCapInt carryIn = 0;
     if (M(carryIndex)) {
@@ -2891,8 +2894,14 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
         carryIn = 1;
         X(carryIndex);
     }
+
+    // We calloc a new stateVector for output.
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+
+    // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
+    // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
+    // other bits that aren't involved in the operation.
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt inputMask = 0xff << inputStart;
@@ -2902,37 +2911,50 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
     bitCapInt otherRes, inputRes, outputRes, carryRes, inputInt, outputInt, lcv, i, iLow, iHigh;
     bitCapInt maxLCV = maxQPower >> 1;
     for (lcv = 0; lcv < maxLCV; lcv++) {
+        // We can save a factor of 2 iterations by skipping the carry bit, since we know it's already zero. This
+        // algorithm lets us iterate over all states except ones where the carry is set.
         iHigh = lcv;
         i = 0;
         iLow = iHigh % skipPower;
         i += iLow;
         iHigh = (iHigh - iLow) << 1;
         i += iHigh;
+        // Now, i runs over all permutations where the carry is fixed as zero.
+
+        // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
+        // but their input value matches their output value:
         otherRes = i & otherMask;
+        // These are bits that index the classical memory we're loading from:
         inputRes = i & inputMask;
+        // If we read these as a char type, this is their value as a char:
         inputInt = inputRes >> inputStart;
+        // This is the initial value that's entangled with the "inputStart" register in "outputStart."
         outputRes = i & outputMask;
-        // See SuperposeReg8. This is where we load an entangled state into the output register. Instead, we add in
-        // quantum parallel based on entanglement between the input and output registers, analagous to SuperposeReg8.
+        // Maintaining the entanglement, we add the classical input value corresponding with the state of the
+        // "inputStart" register to "outputStart" register value its entangled with in this iteration of the loop.
         outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
+        // If we exceed max char, we subtract 256 and entangle the carry as set.
         carryRes = 0;
         if (outputInt >= lengthPower) {
             outputInt -= lengthPower;
             carryRes = carryMask;
         }
+        // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
+        // carry, and shunt the uninvoled "other" bits from input to output.
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
     }
     // At the end, just as a convenience, we return the expectation value for the addition result.
     double prob, average;
     for (i = 0; i < maxQPower; i++) {
-        outputRes = i & outputMask;
-        outputInt = outputRes >> outputStart;
+        outputInt = (i & outputMask) >> outputStart;
         prob = norm(nStateVec[i]);
         average += prob * outputInt;
     }
+    // Finally, we dealloc the old state vector and replace it with the one we just calculated.
     ResetStateVec(std::move(nStateVec));
 
+    // Return the expectation value.
     return (unsigned char)(average + 0.5);
 }
 
@@ -2946,6 +2968,10 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     // are SuBtracted with Carry (SBC) from values entangled in the "outputStart" register with the "inputStart"
     // register.
 
+    //"inputStart" and "outputStart" point to the beginning of two quantum registers. The carry qubit is at index
+    //"carryIndex." "values" is a page of key-value pairs of classical memory to load based on offset by the
+    //"inputStart" register.
+
     // The carry (or "borrow") has to first to be measured for its input value.
     bitCapInt carryIn = 0;
     if (M(carryIndex)) {
@@ -2953,8 +2979,14 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
         carryIn = 1;
         X(carryIndex);
     }
+
+    // We calloc a new stateVector for output.
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+
+    // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
+    // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
+    // other bits that aren't involved in the operation.
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt inputMask = 0xff << inputStart;
@@ -2964,37 +2996,52 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     bitCapInt otherRes, inputRes, outputRes, carryRes, inputInt, outputInt, lcv, i, iLow, iHigh;
     bitCapInt maxLCV = maxQPower >> 1;
     for (lcv = 0; lcv < maxLCV; lcv++) {
+        // We can save a factor of 2 iterations by skipping the carry bit, since we know it's already zero. This
+        // algorithm lets us iterate over all states except ones where the carry is set.
         iHigh = lcv;
         i = 0;
         iLow = iHigh % skipPower;
         i += iLow;
         iHigh = (iHigh - iLow) << 1;
         i += iHigh;
+        // Now, i runs over all permutations where the carry is fixed as zero.
+
+        // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
+        // but their input value matches their output value:
         otherRes = i & otherMask;
+        // These are bits that index the classical memory we're loading from:
         inputRes = i & inputMask;
+        // If we read these as a char type, this is their value as a char:
         inputInt = inputRes >> inputStart;
+        // This is the initial value that's entangled with the "inputStart" register in "outputStart."
         outputRes = i & outputMask;
-        // See SuperposeReg8. This is where we load an entangled state into the output register. Instead, we subtract in
-        // quantum parallel based on entanglement between the input and output registers, analagous to SuperposeReg8.
+        // Maintaining the entanglement, we add the classical input value corresponding with the state of the
+        // "inputStart" register to "outputStart" register value its entangled with in this iteration of the loop.
         outputInt = (lengthPower + (outputRes >> outputStart)) - (values[inputInt] + carryIn);
+        // If our subtractions results in less than 0, we add 256 and entangle the carry as set.
+        // (Since we're using unsigned types, we start by adding 256 with the carry, and then subtract 256 and clear the
+        // carry if we don't have a borrow-out.)
         carryRes = carryMask;
         if (outputInt >= lengthPower) {
             outputInt -= lengthPower;
             carryRes = 0;
         }
+        // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
+        // carry, and shunt the uninvoled "other" bits from input to output.
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
     }
     double prob, average;
     // At the end, just as a convenience, we return the expectation value for the subtraction result.
     for (i = 0; i < maxQPower; i++) {
-        outputRes = i & outputMask;
-        outputInt = outputRes >> outputStart;
+        outputInt = (i & outputMask) >> outputStart;
         prob = norm(nStateVec[i]);
         average += prob * outputInt;
     }
+    // Finally, we dealloc the old state vector and replace it with the one we just calculated.
     ResetStateVec(std::move(nStateVec));
 
+    // Return the expectation value.
     return (unsigned char)(average + 0.5);
 }
 
