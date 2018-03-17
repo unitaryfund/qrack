@@ -2864,6 +2864,106 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
     return (unsigned char)(average + 0.5);
 }
 
+/// Add based on an indexed load from classical memory
+unsigned char CoherentUnit::AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    bitCapInt carryIn = 0;
+    if (M(carryIndex)) {
+	carryIn = 1;
+	X(carryIndex);
+    }
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt lengthPower = 1 << 8;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt skipPower = 1 << carryIndex;
+    bitCapInt otherRes, inputRes, outputRes, carryRes, inputInt, outputInt, lcv, i, iLow, iHigh;
+    bitCapInt maxLCV = maxQPower >> 1;
+    for (lcv = 0; lcv < maxLCV; lcv++) {
+	iHigh = lcv;
+        i = 0;
+        iLow = iHigh % skipPower;
+        i += iLow;
+        iHigh = (iHigh - iLow) << 1;
+        i += iHigh;
+	otherRes = i & otherMask;
+        inputRes = i & inputMask;
+        inputInt = inputRes >> inputStart;
+	outputRes = i & outputMask;
+        outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
+	carryRes = 0;
+	if (outputInt >= lengthPower) {
+		outputInt -= lengthPower;
+		carryRes = carryMask;
+	}
+        outputRes = outputInt << outputStart;
+        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
+    }
+    double prob, average;
+    for (i = 0; i < maxQPower; i++) {
+        outputRes = i & outputMask;
+        outputInt = outputRes >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    ResetStateVec(std::move(nStateVec));
+
+    return (unsigned char)(average + 0.5);
+}
+
+/// Subtract based on an indexed load from classical memory
+unsigned char CoherentUnit::SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    bitCapInt carryIn = 0;
+    if (M(carryIndex)) {
+	carryIn = 1;
+	X(carryIndex);
+    }
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt lengthPower = 1 << 8;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt skipPower = 1 << carryIndex;
+    bitCapInt otherRes, inputRes, outputRes, carryRes, inputInt, outputInt, lcv, i, iLow, iHigh;
+    bitCapInt maxLCV = maxQPower >> 1;
+    for (lcv = 0; lcv < maxLCV; lcv++) {
+	iHigh = lcv;
+        i = 0;
+        iLow = iHigh % skipPower;
+        i += iLow;
+        iHigh = (iHigh - iLow) << 1;
+        i += iHigh;
+	otherRes = i & otherMask;
+        inputRes = i & inputMask;
+        inputInt = inputRes >> inputStart;
+	outputRes = i & outputMask;
+        outputInt = (lengthPower + (outputRes >> outputStart)) - (values[inputInt] + carryIn);
+	carryRes = carryMask;
+	if (outputInt >= lengthPower) {
+		outputInt -= lengthPower;
+		carryRes = 0;
+	}
+        outputRes = outputInt << outputStart;
+        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
+    }
+    double prob, average;
+    for (i = 0; i < maxQPower; i++) {
+        outputRes = i & outputMask;
+        outputInt = outputRes >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    ResetStateVec(std::move(nStateVec));
+
+    return (unsigned char)(average + 0.5);
+}
+
 void CoherentUnit::ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[1];

@@ -402,6 +402,12 @@ public:
     /// Set 8 bit register bits based on read from classical memory
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
+    /// Add based on an indexed load from classical memory
+    unsigned char AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+
+    /// Subtract based on an indexed load from classical memory
+    unsigned char SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+
 protected:
     double runningNorm;
     bitLenInt qubitCount;

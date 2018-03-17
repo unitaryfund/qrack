@@ -33,6 +33,47 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
 }
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
+{
+    int j;
+
+    qftReg->SetPermutation(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
+
+    qftReg->H(8, 8);
+    unsigned char testPage[256];
+    for (j = 0; j < 256; j++) {
+        testPage[j] = j;
+    }
+    qftReg->SuperposeReg8(8, 0, testPage);
+
+    for (j = 0; j < 256; j++) {
+        testPage[j] = 255 - j;
+    }
+    qftReg->AdcSuperposeReg8(8, 0, 16, testPage);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff));
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
+{
+    int j;
+
+    qftReg->SetPermutation(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
+
+    qftReg->H(8, 8);
+    unsigned char testPage[256];
+    for (j = 0; j < 256; j++) {
+        testPage[j] = j;
+    }
+    qftReg->SuperposeReg8(8, 0, testPage);
+
+    qftReg->SbcSuperposeReg8(8, 0, 16, testPage);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8) == 0); }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
