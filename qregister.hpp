@@ -197,6 +197,7 @@ public:
     void Y(bitLenInt start, bitLenInt length);
     void Z(bitLenInt start, bitLenInt length);
 
+    void CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length);
     void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
     void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);

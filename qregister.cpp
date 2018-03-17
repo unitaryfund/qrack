@@ -1093,6 +1093,16 @@ void CoherentUnit::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
     }
 }
 
+/// Bit-parallel "CNOT" two bit ranges in CoherentUnit, and store result in range starting at output
+void CoherentUnit::CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length)
+{
+    if (inputStart1 != inputStart2) {
+        for (bitLenInt i = 0; i < length; i++) {
+            CNOT(inputStart1 + i, inputStart2 + i);
+        }
+    }
+}
+
 /// "AND" compare two bit ranges in CoherentUnit, and store result in range starting at output
 void CoherentUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
