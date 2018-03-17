@@ -2878,8 +2878,16 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
 unsigned char CoherentUnit::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
+
+    // This a quantum/classical interface method, similar to SuperposeReg8.
+    // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
+    // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
+    // are ADded with Carry (ADC) to values entangled in the "outputStart" register with the "inputStart" register.
+
+    // The carry has to first to be measured for its input value.
     bitCapInt carryIn = 0;
     if (M(carryIndex)) {
+        // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
         carryIn = 1;
         X(carryIndex);
     }
@@ -2904,6 +2912,8 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
+        // See SuperposeReg8. This is where we load an entangled state into the output register. Instead, we add in
+        // quantum parallel based on entanglement between the input and output registers, analagous to SuperposeReg8.
         outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
         carryRes = 0;
         if (outputInt >= lengthPower) {
@@ -2913,6 +2923,7 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
     }
+    // At the end, just as a convenience, we return the expectation value for the addition result.
     double prob, average;
     for (i = 0; i < maxQPower; i++) {
         outputRes = i & outputMask;
@@ -2929,8 +2940,16 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
 unsigned char CoherentUnit::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
+    // This a quantum/classical interface method, similar to SuperposeReg8.
+    // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
+    // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
+    // are SuBtracted with Carry (SBC) from values entangled in the "outputStart" register with the "inputStart"
+    // register.
+
+    // The carry (or "borrow") has to first to be measured for its input value.
     bitCapInt carryIn = 0;
     if (M(carryIndex)) {
+        // If the carry is set, we borrow 1 going in. We always initially clear the carry after testing for borrow in.
         carryIn = 1;
         X(carryIndex);
     }
@@ -2955,6 +2974,8 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
+        // See SuperposeReg8. This is where we load an entangled state into the output register. Instead, we subtract in
+        // quantum parallel based on entanglement between the input and output registers, analagous to SuperposeReg8.
         outputInt = (lengthPower + (outputRes >> outputStart)) - (values[inputInt] + carryIn);
         carryRes = carryMask;
         if (outputInt >= lengthPower) {
@@ -2965,6 +2986,7 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
     }
     double prob, average;
+    // At the end, just as a convenience, we return the expectation value for the subtraction result.
     for (i = 0; i < maxQPower; i++) {
         outputRes = i & outputMask;
         outputInt = outputRes >> outputStart;
