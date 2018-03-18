@@ -1460,11 +1460,10 @@ void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length,
 }
 
 /**
- * Add an integer to the register, with sign and with carry. Because the
- * register length is an arbitrary number of bits, the sign bit position on the
- * integer to add is variable. Hence, the integer to add is specified as cast
- * to an unsigned format, with the sign bit assumed to be set at the
- * appropriate position before the cast.
+ * Add an integer to the register, with sign and with carry. If the overflow is set, flip phase on overflow. Because the
+ * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the
+ * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
+ * position before the cast.
  */
 void CoherentUnit::INCSC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
@@ -1517,6 +1516,69 @@ void CoherentUnit::INCSC(
                     isOverflow = true;
             }
             if (isOverflow && ((outRes & bciArgs[8]) == bciArgs[8])) {
+                nStateVec[outRes] = -stateVec[lcv];
+            } else {
+                nStateVec[outRes] = stateVec[lcv];
+            }
+        });
+    ResetStateVec(std::move(nStateVec));
+}
+
+/**
+ * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is an
+ * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
+ * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
+ * cast.
+ */
+void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+    bitCapInt inOutMask = 0;
+    bitCapInt signMask = 1 << (length - 1);
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt i;
+    for (i = 0; i < length; i++) {
+        inOutMask += 1 << (inOutStart + i);
+    }
+    bitCapInt edgeMask = inOutMask | carryMask;
+    otherMask ^= inOutMask | carryMask;
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt bciArgs[9] = { inOutMask, toAdd, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask,
+        signMask };
+    par_for_skip(0, maxQPower, carryMask, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
+            bitCapInt otherRes = (lcv & (bciArgs[3]));
+            bitCapInt inOutRes = (lcv & (bciArgs[0]));
+            bitCapInt inOutInt = inOutRes >> (bciArgs[5]);
+            bitCapInt inInt = bciArgs[1];
+            bitCapInt outInt = inOutInt + bciArgs[1];
+            bitCapInt outRes;
+            if (outInt < (bciArgs[4])) {
+                outRes = (outInt << (bciArgs[5])) | otherRes;
+            } else {
+                outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes | (bciArgs[2]);
+            }
+            bool isOverflow = false;
+            // Both negative:
+            if (inOutInt & inInt & (bciArgs[9])) {
+                inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
+                inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
+                if ((inOutInt + inInt) > (bciArgs[9]))
+                    isOverflow = true;
+            }
+            // Both positive:
+            else if ((~inOutInt) & (~inInt) & (bciArgs[9])) {
+                if ((inOutInt + inInt) >= (bciArgs[9]))
+                    isOverflow = true;
+            }
+            if (isOverflow) {
                 nStateVec[outRes] = -stateVec[lcv];
             } else {
                 nStateVec[outRes] = stateVec[lcv];
@@ -1660,10 +1722,9 @@ void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length,
 }
 
 /**
- * Subtract an integer from the register, with sign and with carry. Because the
- * register length is an arbitrary number of bits, the sign bit position on the
- * integer to add is variable. Hence, the integer to add is specified as cast
- * to an unsigned format, with the sign bit assumed to be set at the
+ * Subtract an integer from the register, with sign and with carry. If the overflow is set, flip phase on overflow.
+ * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable.
+ * Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
  * appropriate position before the cast.
  */
 void CoherentUnit::DECSC(
@@ -1674,7 +1735,6 @@ void CoherentUnit::DECSC(
         X(carryIndex);
         toSub++;
     }
-    SetBit(overflowIndex, false);
     bitCapInt inOutMask = 0;
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
@@ -1718,6 +1778,69 @@ void CoherentUnit::DECSC(
                     isOverflow = true;
             }
             if (isOverflow && ((outRes & bciArgs[8]) == bciArgs[8])) {
+                nStateVec[outRes] = -stateVec[lcv];
+            } else {
+                nStateVec[outRes] = stateVec[lcv];
+            }
+        });
+    ResetStateVec(std::move(nStateVec));
+}
+
+/**
+ * Subtract an integer from the register, with sign and with carry. Flip phase on overflow. Because the register length
+ * is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
+ * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
+ * cast.
+ */
+void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toSub++;
+    }
+    bitCapInt inOutMask = 0;
+    bitCapInt signMask = 1 << (length - 1);
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt i;
+    for (i = 0; i < length; i++) {
+        inOutMask += 1 << (inOutStart + i);
+    }
+    bitCapInt edgeMask = inOutMask | carryMask;
+    otherMask ^= inOutMask | carryMask;
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt bciArgs[9] = { inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask,
+        signMask };
+    par_for_skip(0, maxQPower, carryMask, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
+            bitCapInt otherRes = (lcv & (bciArgs[3]));
+            bitCapInt inOutRes = (lcv & (bciArgs[0]));
+            bitCapInt inOutInt = inOutRes >> (bciArgs[5]);
+            bitCapInt inInt = bciArgs[1];
+            bitCapInt outInt = (inOutInt - bciArgs[1]) + (bciArgs[4]);
+            bitCapInt outRes;
+            if (outInt < (bciArgs[4])) {
+                outRes = (outInt << (bciArgs[5])) | otherRes | (bciArgs[2]);
+            } else {
+                outRes = ((outInt - (bciArgs[4])) << (bciArgs[5])) | otherRes;
+            }
+            bool isOverflow = false;
+            // First negative:
+            if (inOutInt & (~inInt) & (bciArgs[9])) {
+                inOutInt = ((~inOutInt) & (bciArgs[4] - 1)) + 1;
+                if ((inOutInt + inInt) > bciArgs[9])
+                    isOverflow = true;
+            }
+            // First positive:
+            else if (inOutInt & (~inInt) & (bciArgs[9])) {
+                inInt = ((~inInt) & (bciArgs[4] - 1)) + 1;
+                if ((inOutInt + inInt) >= bciArgs[9])
+                    isOverflow = true;
+            }
+            if (isOverflow) {
                 nStateVec[outRes] = -stateVec[lcv];
             } else {
                 nStateVec[outRes] = stateVec[lcv];
@@ -2805,7 +2928,7 @@ void CoherentUnit::PhaseFlip()
 {
     par_for_copy(0, maxQPower, &(stateVec[0]), NULL, NULL,
         [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
-             stateVec[lcv] = -stateVec[lcv];
+            stateVec[lcv] = -stateVec[lcv];
         });
 }
 

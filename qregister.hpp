@@ -256,10 +256,19 @@ public:
     void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /**
-     * Add an integer to the register, with sign and with carry. Because the register length is an arbitrary number of
-     * bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as cast to
-     * an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast. */
+     * Add an integer to the register, with sign and with carry. If oveflow is set, flip phase on overflow. Because the
+     * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence,
+     * the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
+     * appropriate position before the cast.
+     */
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    /**
+     * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is
+     * an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add
+     * is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position
+     * before the cast.
+     */
+    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Add BCD integer (without sign)
     void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
@@ -281,11 +290,19 @@ public:
     void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /**
-     * Subtract an integer from the register, with sign and with carry. Because the register length is an arbitrary
-     * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified
-     * as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
+     * Subtract an integer from the register, with sign and with carry. If oveflow is set, flip phase on overflow.
+     * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is
+     * variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be
+     * set at the appropriate position before the cast.
      */
     void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    /**
+     * Subtract an integer from the register, with sign and with carry. Flip phase on overflow. Because the register
+     * length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the
+     * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
+     * position before the cast.
+     */
+    void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Subtract BCD integer (without sign)
     void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);

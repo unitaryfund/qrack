@@ -13,7 +13,6 @@ using namespace Qrack;
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
-    qftReg->PhaseFlip();
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
     qftReg->SetReg(0, 8, 10);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
@@ -32,7 +31,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     }
     unsigned char expectation = qftReg->SuperposeReg8(0, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
-    std::cout << (int)expectation << std::endl;
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
