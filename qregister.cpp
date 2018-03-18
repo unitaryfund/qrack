@@ -2800,6 +2800,15 @@ void CoherentUnit::SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLe
         });
 }
 
+/// Phase flip always - equivalent to Z X Z X on any bit in the CoherentUnit
+void CoherentUnit::PhaseFlip()
+{
+    par_for_copy(0, maxQPower, &(stateVec[0]), NULL, NULL,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
+             stateVec[lcv] = -stateVec[lcv];
+        });
+}
+
 /// Set register bits to given permutation
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {

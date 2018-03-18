@@ -391,6 +391,9 @@ public:
     /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
     void SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
+    /// Phase flip always - equivalent to Z X Z X on any bit in the CoherentUnit
+    void PhaseFlip();
+
     /// Set register bits to given permutation
     void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
