@@ -2883,7 +2883,7 @@ void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, b
     NormalizeState();
 }
 
-/// For chips with a zero flag, set the zero flag after a register operation.
+/// For chips with a zero flag, apply a Z to the zero flag, entangled with the state where the register equals zero.
 void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag)
 {
     bitCapInt lengthPower = 1 << length;
@@ -2897,7 +2897,20 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zero
         });
 }
 
-/// For chips with a sign flag, set the sign flag after a register operation.
+/// For chips with a zero flag, flip the phase of the state where the register equals zero.
+void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length)
+{
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt bciArgs[1] = { regMask };
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
+            if ((lcv & (~(bciArgs[0]))) == lcv)
+                stateVec[lcv] = -stateVec[lcv];
+        });
+}
+
+/// For chips with a sign flag, apply a Z to the sign flag, entangled with the states where the register is negative.
 void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
 {
     bitCapInt testMask = 1 << toTest;
@@ -2906,6 +2919,18 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
     par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
         [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             if (((lcv & bciArgs[0]) == bciArgs[0]) & ((lcv & bciArgs[1]) == bciArgs[1]))
+                stateVec[lcv] = -stateVec[lcv];
+        });
+}
+
+/// For chips with a sign flag, flip the phase of states where the register is negative.
+void CoherentUnit::SetSignFlag(bitLenInt toTest)
+{
+    bitCapInt testMask = 1 << toTest;
+    bitCapInt bciArgs[1] = { testMask };
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
+            if ((lcv & bciArgs[0]) == bciArgs[0])
                 stateVec[lcv] = -stateVec[lcv];
         });
 }

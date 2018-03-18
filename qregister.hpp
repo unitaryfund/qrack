@@ -399,11 +399,18 @@ public:
     /// unentangled register.
     void EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length);
 
-    /// For chips with a zero flag, set the zero flag after a register operation.
+    /// For chips with a zero flag, apply a Z to the zero flag, entangled with the state where the register equals zero.
     void SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag);
 
-    /// For chips with a sign flag, set the sign flag after a register operation.
+    /// For chips with a zero flag, flip the phase of the state where the register equals zero.
+    void SetZeroFlag(bitLenInt start, bitLenInt length);
+
+    /// For chips with a sign flag, apply a Z to the sign flag, entangled with the states where the register is
+    /// negative.
     void SetSignFlag(bitLenInt toTest, bitLenInt toSet);
+
+    /// For chips with a sign flag, flip the phase of states where the register is negative.
+    void SetSignFlag(bitLenInt toTest);
 
     /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
     void SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
