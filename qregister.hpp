@@ -49,10 +49,63 @@ enum CoherentUnitEngine {
 
 CoherentUnit* CreateCoherentUnit(CoherentUnitEngine engine, bitLenInt qBitCount, bitCapInt initState);
 
+/// The "Qrack::CoherentUnit" class represents one or more coherent quantum processor registers, including primitive bit
+/// logic gates and (abstract) opcodes-like methods.
 /**
- * The "Qrack::CoherentUnit" class represents one or more coherent quantum
- * processor registers, including primitive bit logic gates and (abstract)
- * opcodes-like methods.
+ * A "Qrack::CoherentUnit" is a qubit permutation state vector with methods to operate on it as by gates and
+register-like instructions. In brief: All directly interacting qubits must be contained in a single CoherentUnit object,
+by requirement of quantum mechanics, unless a certain collection of bits represents a "separable quantum subsystem." All
+registers of a virtual chip will usually be contained in a single CoherentUnit, and they are accesible similar to a
+one-dimensional array of qubits.
+
+Introduction: Like classical bits, a set of qubits has a maximal respresentation as the permutation of bits. (An 8 bit
+byte has 256 permutations, commonly numbered 0 to 255, as does an 8 bit qubyte.) Additionally, the state of a qubyte is
+fully specified in terms of probability and phase of each permutation of qubits. This is the "|0>/|1>" "permutation
+basis." There are other fully descriptive bases, such as the |+>/|-> permutation basis, which is characteristic of
+Hadamard gates. The notation "|x>" represents a "ket" of the "x" state in the quantum "bra-ket" notation of Dirac. It is
+a quantum state vector as described by Schrödinger's equation. When we say |01>, we mean the qubit equivalent of the
+binary bit pemutation "01."
+
+The state of a two bit permutation can be described as follows: where one in the set of variables "x_0, x_1, x_2, and
+x_3" is equal to 1 and the rest are equal to zero, the state of the bit permutation can always be described by
+
+|psi> = x_0 * |00> + x_1 * |01> + x_2 * |10> + x_3 * |11>
+
+One of the leading variables is always 1 and the rest are always 0. That is, the state of the classical bit combination
+is always exactly one of |00>, |01>, |10>, or |11>, and never a mix of them at once, however we would mix them. One way
+to mix them is probabilistically, in which the sum of probabilities of states should be 100% or 1. This suggests
+splitting for example x_0 and x_1 into 1/2 and 1/2 to represent a potential |psi>, but Schrödinger's equation actually
+requires us to split into 1/sqrt(2) and 1/sqrt(2) to get 100% probability, like so,
+
+|psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |10>,
+
+where the leading coefficients are ultimately squared to give probabilities. This is a valid description of a 2 qubit
+permutation. The first equation given before it above encompasses all possible states of a 2 qubit combination, when the
+x_n variables are constrained so that the total probability of all states adds up to one. However, the domain of the x_n
+variables must also be the complex numbers. This is also a valid state, for example:
+
+|psi> = (1+i)/ 2 * sqrt(2) * |00> + (1-i) / 2 * sqrt(2) * |10>
+
+
+where "i" is defined as the sqrt(-1). This imparts "phase" to each permutation state vector component like |00> or |10>,
+(which are "eigenstates"). Phase and probability of permutation state fully (but not uniquely) specify the state of a
+coherent set of qubits.
+
+For N bits, there are 2^N permutation basis "eigenstates" that with probability normalization and phase fully describe
+every possible quantum state of the N qubits. A CoherentUnit tracks the 2^N dimensional state vector of eigenstate
+components. It optimizes certain register-like methods by operating in parallel over the "entanglements" of these
+permutation basis states. For example, the state "|psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>" has a probablity of
+both bits being 1 or neither bit being 1, but it has no independent probability for the bits being different, when
+measured. If this state is acted on by an X or NOT gate on the left qubit, for example, we need only act on the states
+entangled into the original state:
+
+|psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>
+(When acted on by an X gate on the left bit, goes to:)
+|psi> = 1 / sqrt(2) * |10> + 1 / sqrt(2) * |01>
+
+In the permutation basis, "entanglement" is as simple as the ability to restrain bit combinations in specificying an
+arbitrary "|psi>" state, as we have just described at length.
+
  */
 class CoherentUnit {
 public:
