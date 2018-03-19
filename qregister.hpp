@@ -84,7 +84,7 @@ permutation. The first equation given before it above encompasses all possible s
 x_n variables are constrained so that the total probability of all states adds up to one. However, the domain of the x_n
 variables must also be the complex numbers. This is also a valid state, for example:
 
-|psi> = (1+i) / sqrt(4) * |00> + (1-i) / sqrt(4) * |10>
+|psi> = (1+i)/ (2 * sqrt(2)) * |00> + (1-i) / (2 * sqrt(2)) * |10>
 
 
 where "i" is defined as the sqrt(-1). This imparts "phase" to each permutation state vector component like |00> or |10>,
