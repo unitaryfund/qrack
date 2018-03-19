@@ -2,13 +2,13 @@ Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for ad
 Licensed under the GNU General Public License V3.
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
-This is a multithreaded framework for developing virtual universal quantum processors.
+This is a multithreaded framework for developing classically emulated virtual universal quantum processors.
 
 The intent of "Qrack" is to provide a framework for developing classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::CoherentUnit," assuming all the memory in the quantum memory in the QCPU is quantum mechanically "coherent" for quantum computation.
 
 A CoherentUnit can be thought of as like simply a one-dimensional array of qubits. Bits can manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
-Qrack has already been integrated with a MOS 6502 emulator, (see https://github.com/WrathfulSpatula/vm6502 ) which demonstrates Qrack's primary purpose. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502 .)
+Qrack has already been integrated with a MOS 6502 emulator, (see https://github.com/vm6502q/vm6502q,) which demonstrates Qrack's primary purpose. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
 
 Virtual machines created with Qrack can be abstracted from the code that runs on them, and need not necessarily be packaged with each other. Qrack can be used to create a virtual machine that translates opcodes into instructions for a virtual quantum processor. Then, software that runs on the virtual machine could be abstracted from the machine itself as any higher-level software could. All that is necessary to run the quantum binary is any virtual machine with the same instruction set.
 
@@ -26,7 +26,7 @@ Qrack compiles like a library. To include in your project:
 make all
 ```
 
-Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
+Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence of separable subsystems between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
@@ -49,9 +49,9 @@ This is equivalent to a physical body having a 50% chance of emitting a fixed un
 
 ## Note about unitarity and arithmetic
 
-The project's original author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected.
+The project's author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected.
 
-Similarly, AND/OR/XOR are only provided for convenience and generally entail a measurement of the output bit. For register-based virtual quantum processors, we suspect it will be a common requirement that an output register be measured, cleared, and loaded with the output logical comparison operations, but this will generally require meassurement and therefore introduce a random phase factor. CCNOT and X gates (composed for convenience as "AntiCCNOT" gates) could instead be operated on a target bit with a known input state to achieve a similar result in a unitary fashion.
+Similarly, AND/OR/XOR are only provided for convenience and generally entail a measurement of the output bit. For register-based virtual quantum processors, we suspect it will be a common requirement that an output register be measured, cleared, and loaded with the output logical comparison operations, but this will generally require measurement and therefore introduce a random phase factor. CCNOT and X gates (composed for convenience as "AntiCCNOT" gates) could instead be operated on a target bit with a known input state to achieve a similar result in a unitary fashion, but this is left to the particular virtual machine implementation.
 
 Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable.
 
