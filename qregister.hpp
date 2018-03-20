@@ -58,7 +58,13 @@ by requirement of quantum mechanics, unless a certain collection of bits represe
 registers of a virtual chip will usually be contained in a single CoherentUnit, and they are accesible similar to a
 one-dimensional array of qubits.
 
-Introduction: Like classical bits, a set of qubits has a maximal respresentation as the permutation of bits. (An 8 bit
+Introduction: The Doxygen reference in this project serves two primary purposes. Secondarily, it is a quick reference
+for the "Qrack" API. Primarily, it is meant to teach enough about practical quantum computation and emulation that one
+can understand the implementation of all methods in Qrack to the point of being able to reimplement the algorithms
+equivalently on one's own. This entry contains an overview of the general method whereby Qrack implements basically all
+of its gate and register functionality.
+
+Like classical bits, a set of qubits has a maximal respresentation as the permutation of bits. (An 8 bit
 byte has 256 permutations, commonly numbered 0 to 255, as does an 8 bit qubyte.) Additionally, the state of a qubyte is
 fully specified in terms of probability and phase of each permutation of qubits. This is the "|0>/|1>" "permutation
 basis." There are other fully descriptive bases, such as the |+>/|-> permutation basis, which is characteristic of
@@ -73,8 +79,8 @@ x_3" is equal to 1 and the rest are equal to zero, the state of the bit permutat
 
 One of the leading variables is always 1 and the rest are always 0. That is, the state of the classical bit combination
 is always exactly one of |00>, |01>, |10>, or |11>, and never a mix of them at once, however we would mix them. One way
-to mix them is probabilistically, in which the sum of probabilities of states should be 100% or 1. This suggests
-splitting for example x_0 and x_1 into 1/2 and 1/2 to represent a potential |psi>, but Schrödinger's equation actually
+to mix them is probabilistically, in which the sum of probabilities of states should be 100% or 1. For example, this
+suggests splitting x_0 and x_1 into 1/2 and 1/2 to represent a potential |psi>, but Schrödinger's equation actually
 requires us to split into 1/sqrt(2) and 1/sqrt(2) to get 100% probability, like so,
 
 |psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |10>,
@@ -93,18 +99,115 @@ coherent set of qubits.
 
 For N bits, there are 2^N permutation basis "eigenstates" that with probability normalization and phase fully describe
 every possible quantum state of the N qubits. A CoherentUnit tracks the 2^N dimensional state vector of eigenstate
-components. It optimizes certain register-like methods by operating in parallel over the "entanglements" of these
-permutation basis states. For example, the state "|psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>" has a probablity of
-both bits being 1 or neither bit being 1, but it has no independent probability for the bits being different, when
-measured. If this state is acted on by an X or NOT gate on the left qubit, for example, we need only act on the states
-entangled into the original state:
+components, each permutation carrying probability and phase. It optimizes certain register-like methods by operating in
+parallel over the "entanglements" of these permutation basis states. For example, the state
 
 |psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>
+
+has a probablity of both bits being 1 or neither bit being 1, but it has no independent probability for the bits being
+different, when measured. If this state is acted on by an X or NOT gate on the left qubit, for example, we need only act
+on the states entangled into the original state:
+
+|psi_0> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>
 (When acted on by an X gate on the left bit, goes to:)
-|psi> = 1 / sqrt(2) * |10> + 1 / sqrt(2) * |01>
+|psi_1> = 1 / sqrt(2) * |10> + 1 / sqrt(2) * |01>
 
 In the permutation basis, "entanglement" is as simple as the ability to restrain bit combinations in specificying an
 arbitrary "|psi>" state, as we have just described at length.
+
+In Qrack, simple gates are represented by small complex number matrices, generally 2x2 components, that act on pairings
+of state vector components with the target qubit being 0 or 1 and all other qubits being held fixed in a loop iteration.
+For example, in an 8 qubit system, acting a single bit gate on the leftmost qubit, these two states become paired:
+
+|00101111>
+and
+|10101111>.
+
+Similarly, these states also become paired:
+
+|00101100>
+and
+|10101100>,
+
+And so on for all states in which the seven uninvolved bits are kept the same, but 0 and 1 states are paired for the bit
+acted on by the gate. This covers the entire permutation basis, a full description of all possible quantum states of the
+CoherentUnit, with pairs of two state vector components acted on by a 2x2 matrix. For example, for the Z gate, acting it
+on a single bit is equivalent to multiplying a single bit state vector by this matrix:
+
+[  1  0 ] <br/>
+[  0 -1 ] (is a Z gate)
+
+The single qubit state vector has two components:
+
+[ x_0 ] <br/>
+[ x_1 ] (represents the permutations of a single qubit).
+
+These "x_0" and "x_1" are the same type of coefficients described above,
+
+|psi> = x_0 * |0> + x_1 * |1>
+
+and the action of a gate is a matrix multiplication:
+
+[  1  0 ] * [ x_0 ] = [ x_0 ] <br/>
+[  0 -1 ]   [ x_1 ]   [-x_1 ].
+
+For 2 qubits, we can form 4x4 matrices to act on 4 permutation eigenstates. For 3 qubits, we can form 8x8 matrices to
+act on 8 permutation eigenstates, and so on. However, for gates acting on single bits in states with large numbers of
+qubits, it is actually not necessary to carry out any matrix multiplication larger than a 2x2 matrix acting acting on a
+sub-state vector of 2 components. Again, we pair all permutation state vector components where all qubits are the same
+same, except for the one bit being acted on, for which we pair 0 and 1. Again, for example, acting on the leftmost
+qubit,
+
+|00100011>
+is paired with
+|10100011>,
+
+and
+|00101011>
+is paired with
+|10101011>,
+
+and
+|01101011>
+is paired with
+|11101011>,
+
+and we can carry out the gate in terms of only 2x2 complex number matrix multiplications, which is a massive
+optimization and "embarrassingly parallel." (Further, Qrack already employs POSIX thread type parallelism, SIMD
+parallelism for complex number operations, and kernel-type GPU parallelism.)
+
+For register-like operations, we can optimize beyond this level for single bit gates. If a virtual quantum chip has
+multiple registers that can be entangled, by requirements of the minimum full physical description of a quantum
+mechanical state, the registers must usually be all contained in a single CoherentUnit. So, for 2 8 bit registers, we
+might have one 16 bit CoherentUnit. For a bitwise NOT or X operation on the left register, we can take an initial
+entangled state and sieve out initial register states to be mapped to final register states. For example, say we start
+with an entangled state:
+
+|psi> = 1/sqrt(2) * |01010101 11111110> - 1/sqrt(2) |10101010 00000000>.
+
+The registers are "entangled" so that only two possible states can result from measurement; if we measure any single
+bit, (except the right-most, in this example,) we collapse into one of these two states, adjusting the normalization so
+that only state remains in the full description of the quantum state.. (In general, measuring a single bit might only
+partially collapse the entanglement, as more than one state could potentially be consistent with the same qubit
+measurement outcome as 0 or 1. This is the case for the right-most bit; measuring it from this example initial state
+will always yield "0" and tell us nothing else about the overall permutation state, leaving the state uncollapsed.
+Measuring any bit except the right-most will collapse the entire set of bits into a single permutation.)
+
+Say we want to act a bitwise NOT or X operation on the right-hand register of 8 bits. We simply act the NOT operation
+simultaneously on all of the right-hand bits in all entangled input states:
+
+|psi_0> = 1/sqrt(2) * |01010101 11111110> - 1/sqrt(2) |10101010 00000000>
+<br/>(acted on by a bitwise NOT or X on the right-hand 8 bit register becomes)<br/>
+|psi_1> = 1/sqrt(2) * |01010101 00000001> - 1/sqrt(2) |10101010 11111111>
+
+This is again "embarrassingly parallel." Some bits are completely uninvolved, (the left-hand 8 bits, in this case,) and
+these bits are passed unchanged in each state from input to output. Bits acted on by the register operation have a
+one-to-one mapping between input and states. This can all be handled via transformation via bit masks on the input state
+permutation index. And, in fact, bits are not rearranged in the state vector at all; it is the "x_n" complex number
+coefficients which are rearranged according to this bitmask transformation and mapping of the input state to the output
+state! (The coefficient "x_i" of state |01010101 11111110> is switched for the coefficient "x_j" of state |01010101
+00000001>, and only the coefficients are rearranged, with a mapping that's determined via bitmask transformations.)
+This is almost the entire principle behind the algorithms for optimized register-like methods in Qrack.
 
  */
 class CoherentUnit {
