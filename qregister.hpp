@@ -108,9 +108,9 @@ has a probablity of both bits being 1 or neither bit being 1, but it has no inde
 different, when measured. If this state is acted on by an X or NOT gate on the left qubit, for example, we need only act
 on the states entangled into the original state:
 
-|psi_0> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>
-(When acted on by an X gate on the left bit, goes to:)
-|psi_1> = 1 / sqrt(2) * |10> + 1 / sqrt(2) * |01>
+|psi_0> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11> <br/>
+(When acted on by an X gate on the left bit, goes to:) <br/>
+|psi_1> = 1 / sqrt(2) * |10> + 1 / sqrt(2) * |01> <br/>
 
 In the permutation basis, "entanglement" is as simple as the ability to restrain bit combinations in specificying an
 arbitrary "|psi>" state, as we have just described at length.
@@ -119,9 +119,9 @@ In Qrack, simple gates are represented by small complex number matrices, general
 of state vector components with the target qubit being 0 or 1 and all other qubits being held fixed in a loop iteration.
 For example, in an 8 qubit system, acting a single bit gate on the leftmost qubit, these two states become paired:
 
-|00101111>
-and
-|10101111>.
+|00101111> <br/>
+and <br/>
+|10101111>. <br/>
 
 Similarly, these states also become paired:
 
@@ -148,8 +148,8 @@ These "x_0" and "x_1" are the same type of coefficients described above,
 
 and the action of a gate is a matrix multiplication:
 
-[  1  0 ] * [ x_0 ] = [ x_0 ] <br/>
-[  0 -1 ]   [ x_1 ]   [-x_1 ].
+[  1  0 ] *      [ x_0 ] =       [ x_0 ] <br/>
+[  0 -1 ] &nbsp; [ x_1 ] &nbsp;  [-x_1 ].
 
 For 2 qubits, we can form 4x4 matrices to act on 4 permutation eigenstates. For 3 qubits, we can form 8x8 matrices to
 act on 8 permutation eigenstates, and so on. However, for gates acting on single bits in states with large numbers of
@@ -158,19 +158,19 @@ sub-state vector of 2 components. Again, we pair all permutation state vector co
 same, except for the one bit being acted on, for which we pair 0 and 1. Again, for example, acting on the leftmost
 qubit,
 
-|00100011>
-is paired with
-|10100011>,
+|00100011><br/>
+is paired with<br/>
+|10100011>,<br/>
 
-and
-|00101011>
-is paired with
-|10101011>,
+and<br/>
+|00101011><br/>
+is paired with<br/>
+|10101011>,<br/>
 
-and
-|01101011>
-is paired with
-|11101011>,
+and<br/>
+|01101011><br/>
+is paired with<br/>
+|11101011>,<br/>
 
 and we can carry out the gate in terms of only 2x2 complex number matrix multiplications, which is a massive
 optimization and "embarrassingly parallel." (Further, Qrack already employs POSIX thread type parallelism, SIMD
@@ -179,7 +179,7 @@ parallelism for complex number operations, and kernel-type GPU parallelism.)
 For register-like operations, we can optimize beyond this level for single bit gates. If a virtual quantum chip has
 multiple registers that can be entangled, by requirements of the minimum full physical description of a quantum
 mechanical state, the registers must usually be all contained in a single CoherentUnit. So, for 2 8 bit registers, we
-might have one 16 bit CoherentUnit. For a bitwise NOT or X operation on the left register, we can take an initial
+might have one 16 bit CoherentUnit. For a bitwise NOT or X operation on one register, we can take an initial
 entangled state and sieve out initial register states to be mapped to final register states. For example, say we start
 with an entangled state:
 
