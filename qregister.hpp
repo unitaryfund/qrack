@@ -215,12 +215,13 @@ public:
     /// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
     CoherentUnit(bitLenInt qBitCount);
 
-    /// Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
+    /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
     CoherentUnit(bitLenInt qBitCount, bitCapInt initState);
 
     /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
     CoherentUnit(const CoherentUnit& pqs);
 
+    /// Destructor of CoherentUnit. (Permutation state vector is declared on heap, as well as some OpenCL objects.)
     virtual ~CoherentUnit() {}
 
     /// Set the random seed (primarily used for testing)
@@ -244,19 +245,23 @@ public:
     /// Set arbitrary pure quantum state, in unsigned int permutation basis
     void SetQuantumState(Complex16* inputState);
 
+    /// Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
     /**
      * Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer
      * doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added.
      */
     void Cohere(CoherentUnit& toCopy);
 
+    /// Minimally decohere a set of contigious bits from the full coherent unit, into "destination."
     /**
      * Minimally decohere a set of contigious bits from the full coherent unit. The length of this coherent unit is
      * reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer.
-     * The destination object must be initialized to the correct number of bits, in 0 permutation state.
+     * The destination object must be initialized to the correct number of bits, in 0 permutation state. For quantum
+     * mechanical accuracy, the bit set removed and the bit set left behind should be quantum mechanically "separable."
      */
     void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
 
+    /// Minimally decohere a set of contigious bits from the full coherent unit, throwing these qubits away.
     void Dispose(bitLenInt start, bitLenInt length);
 
     // Logic Gates
@@ -264,30 +269,47 @@ public:
     // Each bit is paired with a CL* variant that utilizes a classical bit as
     // an input.
 
+    /// Quantum analog of classical "AND" gate. Measures the outputBit, then overwrites it with result.
     void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    /// Quantum analog of classical "AND" gate. Takes one qubit input and one classical bit input. Measures the outputBit, then overwrites it with result.
     void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
+    /// Quantum analog of classical "OR" gate. Measures the outputBit, then overwrites it with result.
     void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    /// Quantum analog of classical "AND" gate. Takes one qubit input and one classical bit input. Measures the outputBit, then overwrites it with result.
     void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
+    /// Quantum analog of classical "exclusive-OR" or "XOR" gate. Measures the outputBit, then overwrites it with result.
     void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    /// Quantum analog of classical "exclusive-OR" or "XOR" gate. Takes one qubit input and one classical bit input. Measures the outputBit, then overwrites it with result.
     void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
+    /// "Doubly-controlled NOT gate." If both controls are set to 1, the target bit is NOT-ed or X-ed.
     void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    /// "Anti doubly-controlled NOT gate." If both controls are set to 0, the target bit is NOT-ed or X-ed.
     void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
+    /// "Controlled NOT gate." If the control is set to 1, the target bit is NOT-ed or X-ed.
     void CNOT(bitLenInt control, bitLenInt target);
+    /// "Anti controlled NOT gate." If the control is set to 0, the target bit is NOT-ed or X-ed.
     void AntiCNOT(bitLenInt control, bitLenInt target);
 
+    /// Hadamard gate. Applies a Hadamard gate on qubit at "qubitIndex."
     void H(bitLenInt qubitIndex);
+    /// "Measurement gate." Measures the qubit at "qubitIndex" and returns either "true" or "false." (This "gate" breaks unitarity.)
     bool M(bitLenInt qubitIndex);
 
+    /// "X gate." Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli "X" operator is equivalent to a logical "NOT." 
     void X(bitLenInt qubitIndex);
+    /// "Y gate." Applies the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli "Y" operator is similar to a logical "NOT" with permutation phase effects.
     void Y(bitLenInt qubitIndex);
+    /// "Z gate." Applies the Pauli "Z" operator to the qubit at "qubitIndex." The Pauli "Z" operator reverses the phase of |1> and leaves |0> unchanged.
     void Z(bitLenInt qubitIndex);
 
     // Controlled variants
+    /// "Controlled Y gate." If the "control" bit is set to 1, then the Pauli "Y" operator is applied to "target."
     void CY(bitLenInt control, bitLenInt target);
+    /// "Controlled Z gate." If the "control" bit is set to 1, then the Pauli "Z" operator is applied to "target."
     void CZ(bitLenInt control, bitLenInt target);
 
     /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
@@ -313,24 +335,30 @@ public:
     void R1Dyad(int numerator, int denominator, bitLenInt qubitIndex);
 
     /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
-    /// Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis.
     void RX(double radians, bitLenInt qubitIndex);
+    /// Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis.
     void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    /// Controlled x axis rotation gate - If "control" is set to 1, rotates as e^(-i*\theta/2) around Pauli x axis
     void CRX(double radians, bitLenInt control, bitLenInt target);
+    /// Controlled dyadic fraction x axis rotation gate - If "control" is set to 1, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis.
     void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
-    /// Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis.
     void RY(double radians, bitLenInt qubitIndex);
+    /// Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis.
     void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    /// Controlled y axis rotation gate - If "control" is set to 1, rotates as e^(-i*\theta/2) around Pauli y axis
     void CRY(double radians, bitLenInt control, bitLenInt target);
+    /// Controlled dyadic fraction y axis rotation gate - If "control" is set to 1, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis.
     void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
-    /// Dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis.
     void RZ(double radians, bitLenInt qubitIndex);
+    /// Dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis.
     void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    /// Controlled z axis rotation gate - If "control" is set to 1, rotates as e^(-i*\theta/2) around Pauli z axis
     void CRZ(double radians, bitLenInt control, bitLenInt target);
+    /// Controlled dyadic fraction z axis rotation gate - If "control" is set to 1, rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis.
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /// Set individual bit to pure |0> (false) or |1> (true) state
@@ -339,8 +367,9 @@ public:
     /// Swap values of two bits in register
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
+    /// Controlled "phase shift gate" - if control bit is set to 1, rotates target bit as e^(-i*\theta/2) around |1> state
     void CRT(double radians, bitLenInt control, bitLenInt target);
+    /// Controlled dyadic fraction "phase shift gate" - if control bit is set to 1, rotates target bit as e^(i*(M_PI * numerator) / denominator) around |1> state
     void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     // Register-spanning gates
@@ -348,36 +377,65 @@ public:
     // Convienence functions implementing gates are applied from the bit
     // 'start' for 'length' bits for the register.
 
+    /// Bitwise Hadamard
     void H(bitLenInt start, bitLenInt length);
+    /// Bitwise Pauli X (or logical "NOT") operator
     void X(bitLenInt start, bitLenInt length);
+    /// Bitwise Pauli Y operator
     void Y(bitLenInt start, bitLenInt length);
+    /// Bitwise Pauli Z operator
     void Z(bitLenInt start, bitLenInt length);
 
+    /// Bitwise controlled-not with "inputStart1" bits as controls and "inputStart2" bits as targets, with registers of "length" bits.
     void CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length);
+    /// Bitwise "AND" between registers at "inputStart1" and "inputStart2," with registers of "length" bits.
     void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+    /// Bitwise "AND" between qubit register at "qInputStart" and the classical bits of "classicalInput," with registers of "length" bits.
     void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    /// Bitwise "OR" between registers at "inputStart1" and "inputStart2," with registers of "length" bits.
     void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+    /// Bitwise "OR" between qubit register at "qInputStart" and the classical bits of "classicalInput," with registers of "length" bits.
     void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+    /// Bitwise "exclusive OR" or "XOR" between registers at "inputStart1" and "inputStart2," with registers of "length" bits.
     void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+    /// Bitwise "exclusive OR" or "XOR" between qubit register at "qInputStart" and the classical bits of "classicalInput," with registers of "length" bits.
     void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
+    /// Bitwise |1> axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the |1> state.
     void R1(double radians, bitLenInt start, bitLenInt length);
+    /// Bitwise dyadic |1> axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) / denominator) around the |1> state.
     void R1Dyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    /// Bitwise x axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli x axis.
     void RX(double radians, bitLenInt start, bitLenInt length);
+    /// Bitwise dyadic x axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) / denominator) around the Pauli x axis.
     void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    /// Bitwise controlled x axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(-i*\theta/2) around the Pauli x axis.
     void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise dyadic controlled x axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(i*(M_PI * numerator) / denominator) around the Pauli x axis.
     void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise y axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli y axis.
     void RY(double radians, bitLenInt start, bitLenInt length);
+    /// Bitwise dyadic y axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) / denominator) around the Pauli y axis.
     void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    /// Bitwise controlled y axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(-i*\theta/2) around the Pauli y axis.
     void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise dyadic controlled y axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(i*(M_PI * numerator) / denominator) around the Pauli y axis.
     void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise z axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli z axis.
     void RZ(double radians, bitLenInt start, bitLenInt length);
+    /// Bitwise dyadic z axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) / denominator) around the Pauli z axis.
     void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    /// Bitwise controlled z axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(-i*\theta/2) around the Pauli z axis.
     void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise dyadic controlled z axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(i*(M_PI * numerator) / denominator) around the Pauli z axis.
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise controlled |1> axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(-i*\theta/2) around the |1> state.
     void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise dyadic controlled |1> axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates "target" as e^(i*(M_PI * numerator) / denominator) around the |1> state.
     void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise controlled y for registers of "length" bits
     void CY(bitLenInt control, bitLenInt target, bitLenInt length);
+    /// Bitwise controlled z for registers of "length" bits
     void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /// Arithmetic shift left, with last 2 bits as sign and carry
@@ -404,59 +462,67 @@ public:
     /// Add integer (without sign, with carry)
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
+    /// Add a classical integer to the register, with sign and without carry.
     /**
-     * Add an integer to the register, with sign and without carry. Because the register length is an arbitrary number
-     * of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as cast
-     * to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.s
+     * Add a classical integer to the register, with sign and without carry. Because the register length is an arbitrary
+     * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
+     * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
      */
     void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
+    /// Add a classical integer to the register, with sign and with carry.
     /**
-     * Add an integer to the register, with sign and with carry. If oveflow is set, flip phase on overflow. Because the
-     * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence,
-     * the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
-     * appropriate position before the cast.
+     * Add a classical integer to the register, with sign and with carry. If oveflow is set, flip phase on overflow.
+     * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is
+     * variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set
+     * at the appropriate position before the cast.
      */
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    /// Add a classical integer to the register, with sign and with (phase-based) carry.
     /**
-     * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is
-     * an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add
-     * is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position
-     * before the cast.
+     * Add a classical integer to the register, with sign and with carry. Always flip phase on overflow.
+     * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is
+     * variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set
+     * at the appropriate position before the cast.
      */
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    /// Add BCD integer (without sign)
+    /// Add classical BCD integer (without sign)
     void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
-    /// Add BCD integer (without sign, with carry)
+    /// Add classical BCD integer (without sign, with carry)
     void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    /// Subtract integer (without sign)
+    /// Subtract classical integer (without sign)
     void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
-    /// Subtract integer (without sign, with carry)
+    /// Subtract classical integer (without sign, with carry)
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
+    /// Subtract a classical integer from the register, with sign and without carry.
     /**
-     * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
-     * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified
-     * as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
+     * Subtract a classical integer from the register, with sign and without carry. Because the register length is an
+     * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
+     * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before
+     * the cast.
      */
     void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
+    /// Subtract a classical integer from the register, with sign and with carry.
     /**
-     * Subtract an integer from the register, with sign and with carry. If oveflow is set, flip phase on overflow.
-     * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is
-     * variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be
-     * set at the appropriate position before the cast.
+     * Subtract a classical integer from the register, with sign and with carry. If oveflow is set, flip phase on
+     * overflow.Because the register length is an arbitrary number of bits, the sign bit position on the integer to
+     * add is variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit
+     * assumed to be set at the appropriate position before the cast.
      */
     void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+
+    /// Subtract a classical integer from the register, with sign and with carry.
     /**
-     * Subtract an integer from the register, with sign and with carry. Flip phase on overflow. Because the register
-     * length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the
-     * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
-     * position before the cast.
+     * Subtract a classical integer from the register, with sign and with carry. Flip phase on overflow. Because the
+     * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence,
+     * the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
+     * appropriate position before the cast.
      */
     void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
