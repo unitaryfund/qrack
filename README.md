@@ -1,8 +1,10 @@
+##Qrack
+
 Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for additional information.)
 Licensed under the GNU General Public License V3.
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
-This is a multithreaded framework for developing classically emulated virtual universal quantum processors.
+This is a multithreaded framework for developing classically emulated virtual universal quantum processors. (See the doxygen entry for "CoherentUnit" for an outline of the algorithms by which Qrack is implemented.)
 
 The intent of "Qrack" is to provide a framework for developing classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::CoherentUnit," assuming all the memory in the quantum memory in the QCPU is quantum mechanically "coherent" for quantum computation.
 
