@@ -1,6 +1,6 @@
 ## Qrack
 
-Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for additional information.)
+Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool chain development in particular, and also Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept). All rights reserved. (See "par_for.hpp" for additional information.)
 Licensed under the GNU General Public License V3.
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
