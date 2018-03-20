@@ -1,4 +1,4 @@
-##Qrack
+## Qrack
 
 Copyright (c) Daniel Strano 2017. All rights reserved. (See "par_for.hpp" for additional information.)
 Licensed under the GNU General Public License V3.
