@@ -830,11 +830,41 @@ this model to write in quantum parallel to more than one address of classical me
      */
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
-    /// Add based on an indexed load from classical memory
+    /// Add to entangled 8 bit register state with a superposed index-offset-based read from classical memory
+    /**
+      * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
+"outputStart" bits would usually already be entangled with the "inputStart" bits via a ::SuperposeReg8 operation. With
+the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key, value> is
+mapped to |key, value + values[key]>. This is similar to classical parallel addition of two arrays. However, when either
+of the registers are measured, both registers will collapse into one random VALID key-value pair, with any addition or
+subtraction done to the "value." See ::SuperposeReg8 for context.
+
+While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the registers
+need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar to the X
+addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it loads from
+RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state usually
+initially prepared with ::SuperposeReg8.
+
+     */
     unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
-    /// Subtract based on an indexed load from classical memory
+    /// Subtract from an entangled 8 bit register state with a superposed index-offset-based read from classical memory
+    /**
+      * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
+"outputStart" bits would usually already be entangled with the "inputStart" bits via a SuperposeReg8() operation. With
+the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key, value> is
+mapped to |key, value - values[key]>. This is similar to classical parallel addition of two arrays. However, when either
+of the registers are measured, both registers will collapse into one random VALID key-value pair, with any addition or
+subtraction done to the "value." See ::SuperposeReg8 for context.
+
+While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the registers
+need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar to the X
+addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it loads from
+RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state usually
+initially prepared with SuperposeReg8().
+
+     */
     unsigned char SbcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
