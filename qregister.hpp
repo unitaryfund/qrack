@@ -320,6 +320,33 @@ public:
     void H(bitLenInt qubitIndex);
     /// "Measurement gate." Measures the qubit at "qubitIndex" and returns either "true" or "false." (This "gate" breaks
     /// unitarity.)
+    /**
+        All physical evolution of a quantum state should be "unitary," except measurement. Measurement of a qubit
+"collapses" the quantum state into either only permutation states consistent with a |0> state for the bit, or else only
+permutation states consistent with a |1> state for the bit. Measurement also effectively multiplies the overall quantum
+state vector of the system by a random phase factor, equiprobable over all possible phase angles.
+
+Effectively, when a bit measurement is emulated, Qrack calculates the norm of all permutation state components, to find
+their respective probabilities. The probabilities of all states in which the measured bit is "0" can be summed to give
+the probability of the bit being "0," and separately the probabilities of all states in which the measured bit is "1"
+can be summed to give the probability of the bit being "1." To simulate measurement, a random float between 0 and 1 is
+compared to the sum of the probability of all permutation states in which the bit is equal to "1". Depending on whether
+the random float is higher or lower than the probability, the qubit is determined to be either |0> or |1>, (up to
+phase). If the bit is determined to be |1>, then all permutation eigenstates in which the bit would be equal to |0> have
+their probability set to zero, and vice versa if the bit is determined to be |0>. Then, all remaining permutation states
+with nonzero probability are linearly rescaled so that the total probability of all permutation states is again
+"normalized" to exactly 100% or 1, (within double precision rounding error). Physically, the act of measurement should
+introduce an overall random phase factor on the state vector, which is emulated by generating another constantly
+distributed random float to select a phase angle between 0 and 2 * Pi.
+
+Measurement breaks unitary evolution of state. All quantum gates except measurement should generally act as a unitary
+matrix on a permutation state vector. (Note that Boolean comparison convenience methods in Qrack such as "AND," "OR,"
+and "XOR" employ the measurement operation in the act of first clearing output bits before filling them with the result
+of comparison, and these convenience methods therefore break unitary evolution of state, but in a physically realistic
+way. Comparable unitary operations would be performed with a combination of X and CCNOT gates, also called "Toffoli"
+gates, but the output bits would have to be assumed to be in a known fixed state, like all |0>, ahead of time to produce
+unitary logical comparison operations.)
+      */
     bool M(bitLenInt qubitIndex);
 
     /// "X gate." Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli "X" operator is equivalent to a
@@ -391,6 +418,11 @@ public:
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /// Set individual bit to pure |0> (false) or |1> (true) state
+    /**
+     * To set a bit, the bit is first measured. If the result of measurement matches "value," the bit is considered set.
+     * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
+     * entirely in the "value" state, with a random phase factor.
+     */
     void SetBit(bitLenInt qubitIndex1, bool value);
 
     /// Swap values of two bits in register
@@ -584,27 +616,27 @@ public:
     /// Subtract BCD integer (without sign, with carry)
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    /**
+    /*
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart."
      */
     // virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 
-    /**
+    /*
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit.
      */
     // void ADDC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt
     // carryIndex);
 
-    /**
+    /*
      * Add signed integer of "length" bits in "inStart" to signed integer of "length" bits in "inOutStart," and store
      * result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
      */
     // void ADDS(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 
-    /**
+    /*
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. Set overflow for
      * signed addition if result wraps past the minimum or maximum signed integer.
@@ -612,52 +644,52 @@ public:
     // void ADDSC(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length,
     //    const bitLenInt overflowIndex, const bitLenInt carryIndex);
 
-    /**
+    /*
      * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
      * "inOutStart."
      */
     // void ADDBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 
-    /**
+    /*
      * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in
      * "inOutStart," with carry in/out.
      */
     // void ADDBCDC(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 
-    /**
+    /*
      * Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
      * "inOutStart."
      */
     // virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
 
-    /**
+    /*
      * Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store
      * result in "inOutStart."
      */
     // void SUBBCD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
 
-    /**
+    /*
      * Subtract BCD number of "length" bits in "inStart" from BCD number of "length" bits in "inOutStart," and store
      * result in "inOutStart," with carry in/out.
      */
     // void SUBBCDC(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt carryIndex);
 
-    /**
+    /*
      * Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
      * "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit.
      */
     // void SUBC(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length, const bitLenInt carryIndex);
 
-    /**
+    /*
      * Subtract signed integer of "length" bits in "inStart" from signed integer of "length" bits in "inOutStart," and
      * store result in "inOutStart." Set overflow bit when input to output wraps past minimum or maximum integer.
      */
     // void SUBS(
     //    const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length, const bitLenInt overflowIndex);
 
-    /**
+    /*
      *Subtract integer of "length" bits in "inStart" from integer of "length" bits in "inOutStart," and store result
      * in "inOutStart." Get carry value from bit at "carryIndex" and place end result into this bit. Set overflow for
      * signed addition if result wraps past the minimum or maximum signed integer.
