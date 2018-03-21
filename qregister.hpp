@@ -301,13 +301,16 @@ state of <b>separable</b> subsystems, those which are not entangled with other s
 from the description of state.
 
 If we have for example 5 qubits, and we wish to separate into "left" and "right" subsystems of 3 and 2 qubits, we sum
-probabilities one permutation of the "left" three over ALL permutations of the "right" two, for all permutations, and
+probabilities of one permutation of the "left" three over ALL permutations of the "right" two, for all permutations, and
 vice versa, like so:
 
 prob(|(left) 1000>) = prob(|1000 00>) + prob(|1000 10>) + prob(|1000 01>) + prob(|1000 11>).
 
 If the subsystems are not "separable," i.e. if they are entangled, this operation is not well-motivated, and its output
-is not necessarily defined.
+is not necessarily defined. (The summing of probabilities over permutations of subsytems will be performed as described
+above, but this is not quantum mechanically meaningful.) To ensure that the subsystem is "separable," i.e. that it has
+no entanglements to other subsystems in the CoherentUnit, it can be measured with M(), or else all qubits <i>other
+than</i> the subsystem can be measured.
      */
     void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
 
@@ -324,13 +327,16 @@ basis, and the descriptions of state of <b>separable</b> subsystems, those which
 subsystems, are just as easily removed from the description of state.
 
 If we have for example 5 qubits, and we wish to separate into "left" and "right" subsystems of 3 and 2 qubits, we sum
-probabilities one permutation of the "left" three over ALL permutations of the "right" two, for all permutations, and
+probabilities of one permutation of the "left" three over ALL permutations of the "right" two, for all permutations, and
 vice versa, like so:
 
 prob(|(left) 1000>) = prob(|1000 00>) + prob(|1000 10>) + prob(|1000 01>) + prob(|1000 11>).
 
 If the subsystems are not "separable," i.e. if they are entangled, this operation is not well-motivated, and its output
-is not necessarily defined.
+is not necessarily defined. (The summing of probabilities over permutations of subsytems will be performed as described
+above, but this is not quantum mechanically meaningful.) To ensure that the subsystem is "separable," i.e. that it has
+no entanglements to other subsystems in the CoherentUnit, it can be measured with M(), or else all qubits <i>other
+than</i> the subsystem can be measured.
      */
     void Dispose(bitLenInt start, bitLenInt length);
 
