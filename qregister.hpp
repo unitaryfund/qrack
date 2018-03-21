@@ -265,21 +265,73 @@ public:
 
     /// Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
     /**
-     * Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one. (If the programmer
-     * doesn't want to "cheat," it is left up to them to delete the old coherent unit that was added.
+     * "Cohere" is combines the quantum description of state of two independent CoherentUnit objects into one object,
+containing the full permutation basis of the full object. The "inputState" bits are added after the last qubit index of
+the CoherentUnit to which we "Cohere." Informally, "Cohere" is equivalent to "just setting another group of qubits down
+next to the first" without interacting them. Schroedinger's equation can form a description of state for two independent
+subsystems at once or "separable quantum subsystems" without interacting them. Once the description of state of the
+independent systems is combined, we can interact them, and we can describe their entanglements to each other, in which
+case they are no longer independent. A full entangled description of quantum state is not possible for two independent
+quantum subsystems until we "Cohere" them.
+
+"Cohere" multiplies the probabilities of the indepedent permutation states of the two subsystems to find the
+probabilites of the entire set of combined permutations, by simple combinatorial reasoning. If the probablity of the
+"left-hand" subsystem being in |00> is 1/4, and the probablity of the "right-hand" subsystem being in |101> is 1/8, than
+the probability of the combined |00101> permutation state is 1/32, and so on for all permutations of the new combined
+state.
+
+If the programmer doesn't want to "cheat" quantum mechanically, then the original copy of the state which is duplicated
+into the larger CoherentUnit should be "thrown away" to satisfy "no clone theorem." This is not semantically enforced in
+Qrack, because optimization of an emulator might be acheived by "cloning" "under-the-hood" while only exposing a quantum
+mechanically consistent API or instruction set.
      */
     void Cohere(CoherentUnit& toCopy);
 
-    /// Minimally decohere a set of contigious bits from the full coherent unit, into "destination."
+    /// Minimally decohere a set of contiguous bits from the full coherent unit, into "destination."
     /**
      * Minimally decohere a set of contigious bits from the full coherent unit. The length of this coherent unit is
-     * reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer.
-     * The destination object must be initialized to the correct number of bits, in 0 permutation state. For quantum
-     * mechanical accuracy, the bit set removed and the bit set left behind should be quantum mechanically "separable."
+reduced by the length of bits decohered, and the bits removed are output in the destination CoherentUnit pointer. The
+destination object must be initialized to the correct number of bits, in 0 permutation state. For quantum mechanical
+accuracy, the bit set removed and the bit set left behind should be quantum mechanically "separable."
+
+Like how "Cohere" is like "just setting another group of qubits down next to the first," <b><i>if two sets of qubits are
+not entangled,</i></b> then "Decohere" is like "just moving a few qubits away from the rest." Schroedinger's equation
+does not require bits to be explicitly interacted in order to describe their permutation basis, and the descriptions of
+state of <b>separable</b> subsystems, those which are not entangled with other subsystems, are just as easily removed
+from the description of state.
+
+If we have for example 5 qubits, and we wish to separate into "left" and "right" subsystems of 3 and 2 qubits, we sum
+probabilities one permutation of the "left" three over ALL permutations of the "right" two, for all permutations, and
+vice versa, like so:
+
+prob(|(left) 1000>) = prob(|1000 00>) + prob(|1000 10>) + prob(|1000 01>) + prob(|1000 11>).
+
+If the subsystems are not "separable," i.e. if they are entangled, this operation is not well-motivated, and its output
+is not necessarily defined.
      */
     void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
 
     /// Minimally decohere a set of contigious bits from the full coherent unit, throwing these qubits away.
+    /**
+     * Minimally decohere a set of contigious bits from the full coherent unit, discarding these bits. The length of
+this coherent unit is reduced by the length of bits decohered. For quantum mechanical accuracy, the bit set removed and
+the bit set left behind should be quantum mechanically "separable."
+
+Like how "Cohere" is like "just setting another group of qubits down next to the first," <b><i>if two sets of qubits are
+not entangled,</i></b> then "Dispose" is like "just moving a few qubits away from the rest, and throwing them in the
+trash." Schroedinger's equation does not require bits to be explicitly interacted in order to describe their permutation
+basis, and the descriptions of state of <b>separable</b> subsystems, those which are not entangled with other
+subsystems, are just as easily removed from the description of state.
+
+If we have for example 5 qubits, and we wish to separate into "left" and "right" subsystems of 3 and 2 qubits, we sum
+probabilities one permutation of the "left" three over ALL permutations of the "right" two, for all permutations, and
+vice versa, like so:
+
+prob(|(left) 1000>) = prob(|1000 00>) + prob(|1000 10>) + prob(|1000 01>) + prob(|1000 11>).
+
+If the subsystems are not "separable," i.e. if they are entangled, this operation is not well-motivated, and its output
+is not necessarily defined.
+     */
     void Dispose(bitLenInt start, bitLenInt length);
 
     // Logic Gates
