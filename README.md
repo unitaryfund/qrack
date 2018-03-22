@@ -1,4 +1,4 @@
-# Quantum Rack
+# Qrack
 
 [![Quantum Rack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
 
