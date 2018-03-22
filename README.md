@@ -5,12 +5,7 @@
 This is a multithreaded framework for developing classically emulated virtual
 universal quantum processors.
 
-The intent of "Qrack" is to provide a framework for developing classically
-emulated universal quantum virtual machines. In addition to quantum gates,
-Qrack provides optimized versions of multi-bit, register-wise, opcode-like
-"instructions." A chip-like quantum CPU (QCPU) is instantiated as a
-"Qrack::CoherentUnit," assuming all the quantum memory in the
-QCPU is quantum mechanically "coherent" for quantum computation.
+The intent of "Qrack" is to provide a framework for developing pratical, computationally efficient, classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::CoherentUnit," assuming all the quantum memory in the QCPU is quantum mechanically "coherent" for quantum computation.
 
 A CoherentUnit can be thought of as like simply a one-dimensional array of qubits. Bits can manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
@@ -35,6 +30,8 @@ make all
 Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence of separable subsystems between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
+
+## EXAMPLE.CPP
 
 The included EXAMPLE.CPP is headed by a unit tests. Then, the following example is run:
 
@@ -67,7 +64,7 @@ One of the leading variables is always 1 and the rest are always 0. That is, the
 
 |psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |10>,
 
-where the leading coefficients are ultimately squared to give probabilities. This is a valid description of a 2 qubit permutation. The first equation given before it above encompasses all possible states of a 2 qubit combination, when the x_n variables are constrained so that the total probability of all states adds up to one. However, the domain of the x_n variables must also be the complex numbers. This is also a valid state, for example:
+where the leading coefficients are ultimately squared, (or actually multiplied by their complex conjugate,) to give probabilities. This is a valid description of a 2 qubit permutation. The first equation given before it above encompasses all possible states of a 2 qubit combination, when the x_n variables are constrained so that the total probability of all states adds up to one. However, the domain of the x_n variables must also be the complex numbers. This is also a valid state, for example:
 
 |psi> = (1+i)/ (2 * sqrt(2)) * |00> + (1-i) / (2 * sqrt(2)) * |10>
 
@@ -77,7 +74,7 @@ For N bits, there are 2^N permutation basis "eigenstates" that with probability 
 
 |psi> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>
 
-has a probablity of both bits being 1 or neither bit being 1, but it has no independent probability for the bits being different, when measured. If this state is acted on by an X or NOT gate on the left qubit, for example, we need only act on the states entangled into the original state:
+has a probablity of both bits being 1 or else both bits being 0, but it has no independent probability for the bits being different, when measured. If this state is acted on by an X or NOT gate on the left qubit, for example, we need only act on the states entangled into the original state:
 
 |psi_0> = 1 / sqrt(2) * |00> + 1 / sqrt(2) * |11>
 (When acted on by an X gate on the left bit, goes to:)
@@ -85,7 +82,7 @@ has a probablity of both bits being 1 or neither bit being 1, but it has no inde
 
 In the permutation basis, "entanglement" is as simple as the ability to restrain bit combinations in specificying an arbitrary "|psi>" state, as we have just described at length.
 
-In Qrack, simple gates are represented by small complex number matrices, generally 2x2 components, that act on pairings of state vector components with the target qubit being 0 or 1 and all other qubits being held fixed in a loop iteration. For example, in an 8 qubit system, acting a single bit gate on the leftmost qubit, these two states become paired:
+In Qrack, simple gates are represented by small complex number matrices, generally with 2x2 components, that act on pairings of state vector components with the target qubit being 0 or 1 and all other qubits being held fixed in a loop iteration. For example, in an 8 qubit system, acting a single bit gate on the leftmost qubit, these two states become paired:
 
 |00101111>
 and
@@ -116,7 +113,7 @@ and the action of a gate is a matrix multiplication:
 [  1  0 ] * [ x_0 ] = [ x_0 ]
 [  0 -1 ]   [ x_1 ]   [-x_1 ].
 
-For 2 qubits, we can form 4x4 matrices to act on 4 permutation eigenstates. For 3 qubits, we can form 8x8 matrices to act on 8 permutation eigenstates, and so on. However, for gates acting on single bits in states with large numbers of qubits, it is actually not necessary to carry out any matrix multiplication larger than a 2x2 matrix acting acting on a sub-state vector of 2 components. Again, we pair all permutation state vector components where all qubits are the same same, except for the one bit being acted on, for which we pair 0 and 1. Again, for example, acting on the leftmost qubit,
+For 2 qubits, we can form 4x4 matrices to act on 4 permutation eigenstates. For 3 qubits, we can form 8x8 matrices to act on 8 permutation eigenstates, and so on. However, for gates acting on single bits in states with large numbers of qubits, it is actually not necessary to carry out any matrix multiplication larger than a 2x2 matrix acting acting on a sub-state vector of 2 components. Again, we pair all permutation state vector components where all qubits are the same same, except for the one bit being acted on, for which we pair 0 and 1. For example, acting on the leftmost qubit,
 
 |00100011>
 is paired with
@@ -146,7 +143,7 @@ Say we want to act a bitwise NOT or X operation on the right-hand register of 8 
 (acted on by a bitwise NOT or X on the right-hand 8 bit register becomes)
 |psi_1> = 1/sqrt(2) * |01010101 00000001> - 1/sqrt(2) |10101010 11111111>
 
-This is again "embarrassingly parallel." Some bits are completely uninvolved, (the left-hand 8 bits, in this case,) and these bits are passed unchanged in each state from input to output. Bits acted on by the register operation have a one-to-one mapping between input and states. This can all be handled via transformation via bit masks on the input state permutation index. And, in fact, bits are not rearranged in the state vector at all; it is the "x_n" complex number coefficients which are rearranged according to this bitmask transformation and mapping of the input state to the output state! (The coefficient "x_i" of state |01010101 11111110> is switched for the coefficient "x_j" of state |01010101 00000001>, and only the coefficients are rearranged, with a mapping that's determined via bitmask transformations.) This is almost the entire principle behind the algorithms for optimized register-like methods in Qrack. See also the register-wise "CoherentUnit::X" gate implementation in "qregister.cpp" for inline documentation on this general algorithm by which basically all register-wise gates operate.
+This is again "embarrassingly parallel." Some bits are completely uninvolved, (the left-hand 8 bits, in this case,) and these bits are passed unchanged in each state from input to output. Bits acted on by the register operation have a one-to-one mapping between input and states. This can all be handled via transformation via bit masks on the input state permutation index. And, in fact, bits are not rearranged in the state vector at all; it is the "x_n" complex number coefficients which are rearranged according to this bitmask transformation and mapping of the input state to the output state. (The coefficient "x_i" of state |01010101 11111110> is switched for the coefficient "x_j" of state |01010101 00000001>, and only the coefficients are rearranged, with a mapping that's determined via bitmask transformations.) This is almost the entire principle behind the algorithms for optimized register-like methods in Qrack. Also, as a point of algorithmic optimization, if N bits are known to have a fixed value like 0, we can often also completely skip permutations where their value would be 1, dividing the number of permutation states we need to iterate over in total by a factor of 2^N. This optimization is again handled in terms of bitmasks and bitshifts. See also the register-wise "CoherentUnit::X" gate implementation in "qregister.cpp" for inline documentation on this general algorithm by which basically all register-wise gates operate.
 
 Quantum gates are represented by "unitary" matrices. Unitary matrices preserve the norm (length) of state vectors. Quantum physically observable quantities are associated with "Hermitian" unitary matrices, which are equal to their own conjugate transpose. Not all gates are Hermitian or associated with quantum observables, like general rotation operators. (Three dimensions of spin can be physically measured; the act of rotating spin along these axes is not associated with independent measurable quantities.) The Qrack project is targeted to efficient and practical classical emulation of ideal, noiseless systems of qubits, and so does not concern itself with hardware noise, error correction, or restraining emulation to gates which have already been realized in physical hardware. If a hypothetical gate is at least unitary, and if it is logically expedient for quantum emulation, the design intent of Qrack permits it as a method in the API.
 
@@ -156,20 +153,17 @@ Additionally, as Qrack targets classical emulation of quantum hardware, certain 
 
 ## Note about unitarity and arithmetic
 
-The project's author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected.
+The project's author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project (commented out) as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected.
 
-Similarly, AND/OR/XOR are only provided for convenience and generally entail a measurement of the output bit. For register-based virtual quantum processors, we suspect it will be a common requirement that an output register be measured, cleared, and loaded with the output logical comparison operations, but this will generally require measurement and therefore introduce a random phase factor. CCNOT and X gates (composed for convenience as "AntiCCNOT" gates) could instead be operated on a target bit with a known input state to achieve a similar result in a unitary fashion, but this is left to the particular virtual machine implementation.
+Similarly, AND/OR/XOR are only provided for convenience and generally entail a measurement of the output bit. For register-based virtual quantum processors, we suspect it will be a common requirement that an output register be measured, cleared, and loaded with the output logical comparison operations, but this will generally require measurement and therefore break unitarity and introduce a random phase factor. CCNOT and X gates (composed for convenience as "AntiCCNOT" gates) could instead be operated on a target bit with a known input state to achieve a similar result in a unitary fashion, but this is left to the particular virtual machine implementation.
 
-Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable.
+Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable. (Meauring a set of qubits "breaks" its entanglements.)
 
 Qrack is an experimental work in progress, and the author aims for both utility and correctness, but the project cannot be guaranteed to be fit for any purpose, express or implied. (See LICENSE.md for details.)
 
 ## Copyright and License
 
-Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool
-chain development in particular, and also Marek Karcz for supplying an awesome
-base classical 6502 emulator for proof-of-concept). All rights reserved. (See
-"par_for.hpp" for additional information.)
+Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool chain development in particular, and also Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept). All rights reserved. (See "par_for.hpp" for additional information.)
 
 Licensed under the GNU General Public License V3.
 
