@@ -1,12 +1,17 @@
-## Qrack
+# Quantum Rack
 
-Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool chain development in particular, and also Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept). All rights reserved. (See "par_for.hpp" for additional information.)
-Licensed under the GNU General Public License V3.
-See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
+[![Quantum Rack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
 
-This is a multithreaded framework for developing classically emulated virtual universal quantum processors. (See the doxygen entry for "CoherentUnit" for an outline of the algorithms by which Qrack is implemented.)
+This is a multithreaded framework for developing classically emulated virtual
+universal quantum processors. (See the doxygen entry for "CoherentUnit" for an
+outline of the algorithms by which Qrack is implemented.)
 
-The intent of "Qrack" is to provide a framework for developing classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::CoherentUnit," assuming all the memory in the quantum memory in the QCPU is quantum mechanically "coherent" for quantum computation.
+The intent of "Qrack" is to provide a framework for developing classically
+emulated universal quantum virtual machines. In addition to quantum gates,
+Qrack provides optimized versions of multi-bit, register-wise, opcode-like
+"instructions." A chip-like quantum CPU (QCPU) is instantiated as a
+"Qrack::CoherentUnit," assuming all the memory in the quantum memory in the
+QCPU is quantum mechanically "coherent" for quantum computation.
 
 A CoherentUnit can be thought of as like simply a one-dimensional array of qubits. Bits can manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
@@ -58,3 +63,16 @@ Similarly, AND/OR/XOR are only provided for convenience and generally entail a m
 Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable.
 
 Qrack is an experimental work in progress, and the author aims for both utility and correctness, but the project cannot be guaranteed to be fit for any purpose, express or implied. (See LICENSE.md for details.)
+
+## Copyright and License
+
+Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool
+chain development in particular, and also Marek Karcz for supplying an awesome
+base classical 6502 emulator for proof-of-concept). All rights reserved. (See
+"par_for.hpp" for additional information.)
+
+Licensed under the GNU General Public License V3.
+
+See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
+
+
