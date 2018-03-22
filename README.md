@@ -95,12 +95,12 @@ and
 
 And so on for all states in which the seven uninvolved bits are kept the same, but 0 and 1 states are paired for the bit acted on by the gate. This covers the entire permutation basis, a full description of all possible quantum states of the CoherentUnit, with pairs of two state vector components acted on by a 2x2 matrix. For example, for the Z gate, acting it on a single bit is equivalent to multiplying a single bit state vector by this matrix:
 
-[  1  0 ] <br/>
+[  1  0 ]
 [  0 -1 ] (is a Z gate)
 
 The single qubit state vector has two components:
 
-[ x_0 ] <br/>
+[ x_0 ]
 [ x_1 ] (represents the permutations of a single qubit).
 
 These "x_0" and "x_1" are the same type of coefficients described above,
@@ -109,24 +109,24 @@ These "x_0" and "x_1" are the same type of coefficients described above,
 
 and the action of a gate is a matrix multiplication:
 
-[  1  0 ] *      [ x_0 ] =       [ x_0 ] <br/>
-[  0 -1 ] &nbsp; [ x_1 ] &nbsp;  [-x_1 ].
+[  1  0 ] * [ x_0 ] = [ x_0 ]
+[  0 -1 ]   [ x_1 ]   [-x_1 ].
 
 For 2 qubits, we can form 4x4 matrices to act on 4 permutation eigenstates. For 3 qubits, we can form 8x8 matrices to act on 8 permutation eigenstates, and so on. However, for gates acting on single bits in states with large numbers of qubits, it is actually not necessary to carry out any matrix multiplication larger than a 2x2 matrix acting acting on a sub-state vector of 2 components. Again, we pair all permutation state vector components where all qubits are the same same, except for the one bit being acted on, for which we pair 0 and 1. Again, for example, acting on the leftmost qubit,
 
-|00100011><br/>
-is paired with<br/>
-|10100011>,<br/>
+|00100011>
+is paired with
+|10100011>,
 
-and<br/>
-|00101011><br/>
-is paired with<br/>
-|10101011>,<br/>
+and
+|00101011>
+is paired with
+|10101011>,
 
-and<br/>
-|01101011><br/>
-is paired with<br/>
-|11101011>,<br/>
+and
+|01101011>
+is paired with
+|11101011>,
 
 and we can carry out the gate in terms of only 2x2 complex number matrix multiplications, which is a massive optimization and "embarrassingly parallel." (Further, Qrack already employs POSIX thread type parallelism, SIMD parallelism for complex number operations, and kernel-type GPU parallelism.)
 
