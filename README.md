@@ -3,8 +3,7 @@
 [![Quantum Rack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
 
 This is a multithreaded framework for developing classically emulated virtual
-universal quantum processors. (See the doxygen entry for "CoherentUnit" for an
-outline of the algorithms by which Qrack is implemented.)
+universal quantum processors.
 
 The intent of "Qrack" is to provide a framework for developing classically
 emulated universal quantum virtual machines. In addition to quantum gates,
