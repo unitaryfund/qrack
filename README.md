@@ -9,7 +9,7 @@ The intent of "Qrack" is to provide a framework for developing classically
 emulated universal quantum virtual machines. In addition to quantum gates,
 Qrack provides optimized versions of multi-bit, register-wise, opcode-like
 "instructions." A chip-like quantum CPU (QCPU) is instantiated as a
-"Qrack::CoherentUnit," assuming all the memory in the quantum memory in the
+"Qrack::CoherentUnit," assuming all the quantum memory in the
 QCPU is quantum mechanically "coherent" for quantum computation.
 
 A CoherentUnit can be thought of as like simply a one-dimensional array of qubits. Bits can manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
