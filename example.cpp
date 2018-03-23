@@ -294,7 +294,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 
     // Divide qftReg into two registers of 8 bits each
     qftReg->SetPermutation(0);
-    qftReg->SetBit(16, true);
     qftReg->H(8, 8);
     qftReg->SuperposeReg8(8, 0, toSearch);
 
@@ -302,10 +301,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         qftReg->DEC(100, 0, 8);
-        qftReg->SetZeroFlag(0, 8, 16);
+        qftReg->ZeroPhaseFlip(0, 8);
         qftReg->INC(100, 0, 8);
         qftReg->EntangledH(8, 0, 8);
-        qftReg->SetZeroFlag(8, 8, 16);
+        qftReg->ZeroPhaseFlip(8, 8);
         qftReg->EntangledH(8, 0, 8);
         qftReg->Z(16);
         std::cout << "\t" << std::setw(2) << i

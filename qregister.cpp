@@ -584,7 +584,7 @@ void CoherentUnit::ProbArray(double* probArray)
 }
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
-void CoherentUnit::R1(double radians, bitLenInt qubitIndex)
+void CoherentUnit::RT(double radians, bitLenInt qubitIndex)
 {
     // if (qubitIndex >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total // bits.");
@@ -601,11 +601,11 @@ void CoherentUnit::R1(double radians, bitLenInt qubitIndex)
  * NOTE THAT * DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO.
  */
-void CoherentUnit::R1Dyad(int numerator, int denominator, bitLenInt qubitIndex)
+void CoherentUnit::RTDyad(int numerator, int denominator, bitLenInt qubitIndex)
 {
     // if (qubitIndex >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    R1((M_PI * numerator * 2) / denominator, qubitIndex);
+    RT((M_PI * numerator * 2) / denominator, qubitIndex);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
@@ -939,10 +939,10 @@ void CoherentUnit::H(bitLenInt start, bitLenInt length)
 }
 
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-void CoherentUnit::R1(double radians, bitLenInt start, bitLenInt length)
+void CoherentUnit::RT(double radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        R1(radians, start + lcv);
+        RT(radians, start + lcv);
     }
 }
 
@@ -952,10 +952,10 @@ void CoherentUnit::R1(double radians, bitLenInt start, bitLenInt length)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
  * TWO.
  */
-void CoherentUnit::R1Dyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+void CoherentUnit::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        R1Dyad(numerator, denominator, start + lcv);
+        RTDyad(numerator, denominator, start + lcv);
     }
 }
 
@@ -2914,22 +2914,8 @@ void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, b
     NormalizeState();
 }
 
-/// For chips with a zero flag, apply a Z to the zero flag, entangled with the state where the register equals zero.
-void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag)
-{
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt regMask = (lengthPower - 1) << start;
-    bitCapInt flagMask = 1 << zeroFlag;
-    bitCapInt bciArgs[2] = { regMask, flagMask };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
-        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
-            if (((lcv & (~(bciArgs[0]))) == lcv) & ((lcv & bciArgs[1]) == bciArgs[1]))
-                stateVec[lcv] = -stateVec[lcv];
-        });
-}
-
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
-void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length)
+void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
@@ -2941,21 +2927,8 @@ void CoherentUnit::SetZeroFlag(bitLenInt start, bitLenInt length)
         });
 }
 
-/// For chips with a sign flag, apply a Z to the sign flag, entangled with the states where the register is negative.
-void CoherentUnit::SetSignFlag(bitLenInt toTest, bitLenInt toSet)
-{
-    bitCapInt testMask = 1 << toTest;
-    bitCapInt flagMask = 1 << toSet;
-    bitCapInt bciArgs[2] = { testMask, flagMask };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, NULL,
-        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
-            if (((lcv & bciArgs[0]) == bciArgs[0]) & ((lcv & bciArgs[1]) == bciArgs[1]))
-                stateVec[lcv] = -stateVec[lcv];
-        });
-}
-
 /// For chips with a sign flag, flip the phase of states where the register is negative.
-void CoherentUnit::SetSignFlag(bitLenInt toTest)
+void CoherentUnit::CPhaseFlip(bitLenInt toTest)
 {
     bitCapInt testMask = 1 << toTest;
     bitCapInt bciArgs[1] = { testMask };
@@ -2967,7 +2940,7 @@ void CoherentUnit::SetSignFlag(bitLenInt toTest)
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
-void CoherentUnit::SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+void CoherentUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     bitCapInt regMask = ((1 << length) - 1) << start;
     bitCapInt flagMask = 1 << flagIndex;

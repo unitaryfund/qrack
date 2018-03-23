@@ -272,10 +272,10 @@ unitary logical comparison operations.)
      */
 
     /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
-    void R1(double radians, bitLenInt qubitIndex);
+    void RT(double radians, bitLenInt qubitIndex);
 
     /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state.
-    void R1Dyad(int numerator, int denominator, bitLenInt qubitIndex);
+    void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
     /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
     void RX(double radians, bitLenInt qubitIndex);
@@ -361,10 +361,10 @@ unitary logical comparison operations.)
 
     /// Bitwise |1> axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the |1>
     /// state.
-    void R1(double radians, bitLenInt start, bitLenInt length);
+    void RT(double radians, bitLenInt start, bitLenInt length);
     /// Bitwise dyadic |1> axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) /
     /// denominator) around the |1> state.
-    void R1Dyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    void RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
     /// Bitwise x axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli x
     /// axis.
     void RX(double radians, bitLenInt start, bitLenInt length);
@@ -614,21 +614,14 @@ realization of this gate, as Qrack is a practical emulator designed for computat
       */
     void EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length);
 
-    /// For chips with a zero flag, apply a Z to the zero flag, entangled with the state where the register equals zero.
-    void SetZeroFlag(bitLenInt start, bitLenInt length, bitLenInt zeroFlag);
+    /// Reverse the phase of the state where the register equals zero.
+    void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
-    /// For chips with a zero flag, flip the phase of the state where the register equals zero.
-    void SetZeroFlag(bitLenInt start, bitLenInt length);
-
-    /// For chips with a sign flag, apply a Z to the sign flag, entangled with the states where the register is
-    /// negative.
-    void SetSignFlag(bitLenInt toTest, bitLenInt toSet);
-
-    /// For chips with a sign flag, flip the phase of states where the register is negative.
-    void SetSignFlag(bitLenInt toTest);
+    /// Reverse the phase of permutations where the bit at index "toTest" is 1.
+    void CPhaseFlip(bitLenInt toTest);
 
     /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
-    void SetLessThanFlag(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
     /// Phase flip always - equivalent to Z X Z X on any bit in the CoherentUnit
     void PhaseFlip();
