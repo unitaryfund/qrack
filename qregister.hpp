@@ -97,7 +97,7 @@ public:
 
     /// Combine (a copy of) another CoherentUnit with this one, after the last bit index of this one.
     /**
-     * "Cohere" is combines the quantum description of state of two independent CoherentUnit objects into one object,
+     * "Cohere" combines the quantum description of state of two independent CoherentUnit objects into one object,
 containing the full permutation basis of the full object. The "inputState" bits are added after the last qubit index of
 the CoherentUnit to which we "Cohere." Informally, "Cohere" is equivalent to "just setting another group of qubits down
 next to the first" without interacting them. Schroedinger's equation can form a description of state for two independent
@@ -437,28 +437,11 @@ unitary logical comparison operations.)
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Add a classical integer to the register, with sign and without carry.
-    /**
-     * Add a classical integer to the register, with sign and without carry. Because the register length is an arbitrary
-     * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified
-     * as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
-     */
     void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /// Add a classical integer to the register, with sign and with carry.
-    /**
-     * Add a classical integer to the register, with sign and with carry. If oveflow is set, flip phase on overflow.
-     * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is
-     * variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be
-     * set at the appropriate position before the cast.
-     */
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     /// Add a classical integer to the register, with sign and with (phase-based) carry.
-    /**
-     * Add a classical integer to the register, with sign and with carry. Always flip phase on overflow.
-     * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is
-     * variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be
-     * set at the appropriate position before the cast.
-     */
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Add classical BCD integer (without sign)
@@ -474,30 +457,12 @@ unitary logical comparison operations.)
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Subtract a classical integer from the register, with sign and without carry.
-    /**
-     * Subtract a classical integer from the register, with sign and without carry. Because the register length is an
-     * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
-     * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before
-     * the cast.
-     */
     void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /// Subtract a classical integer from the register, with sign and with carry.
-    /**
-     * Subtract a classical integer from the register, with sign and with carry. If oveflow is set, flip phase on
-     * overflow.Because the register length is an arbitrary number of bits, the sign bit position on the integer to
-     * add is variable. Hence, the integer to add is specified as cast to an unsigned format, with the sign bit
-     * assumed to be set at the appropriate position before the cast.
-     */
     void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /// Subtract a classical integer from the register, with sign and with carry.
-    /**
-     * Subtract a classical integer from the register, with sign and with carry. Flip phase on overflow. Because the
-     * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence,
-     * the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
-     * appropriate position before the cast.
-     */
     void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Subtract BCD integer (without sign)
@@ -677,17 +642,17 @@ this model to write in quantum parallel to more than one address of classical me
     /// Add to entangled 8 bit register state with a superposed index-offset-based read from classical memory
     /**
       * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
-"outputStart" bits would usually already be entangled with the "inputStart" bits via a ::SuperposeReg8 operation. With
+"outputStart" bits would usually already be entangled with the "inputStart" bits via a SuperposeReg8() operation. With
 the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key, value> is
 mapped to |key, value + values[key]>. This is similar to classical parallel addition of two arrays. However, when either
 of the registers are measured, both registers will collapse into one random VALID key-value pair, with any addition or
-subtraction done to the "value." See ::SuperposeReg8 for context.
+subtraction done to the "value." See SuperposeReg8() for context.
 
 While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the registers
 need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar to the X
 addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it loads from
 RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state usually
-initially prepared with ::SuperposeReg8.
+initially prepared with SuperposeReg8().
 
      */
     unsigned char AdcSuperposeReg8(
