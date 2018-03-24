@@ -896,15 +896,15 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
     bitCapInt inOutMask = ((1 << length) - 1) << start;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     otherMask ^= inOutMask;
-    // We want to parallelize where possible, so we most of the arguments we need in looping into an array, to be passed
-    // into a parallel "for" loop.
+    // We want to parallelize where possible, so we pack most of the arguments we need in looping into an array, to be
+    // passed into a parallel "for" loop.
     bitCapInt bciArgs[2] = { inOutMask, otherMask };
     // Sometimes we transform the state in place. Alternatively, we often allocate a new permutation state vector to
     // transfer old probabilities and phases into.
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    // This function call is a parallel for loop. We have several variants of the parallel for loop. Some skip certain
-    // permutations in order to optimize. Some take a new permutation state vector for output, and some just transform
-    // the permutation state vector in place.
+    // This function call is a parallel "for" loop. We have several variants of the parallel for loop. Some skip
+    // certain permutations in order to optimize. Some take a new permutation state vector for output, and some just
+    // transform the permutation state vector in place.
     par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
@@ -914,7 +914,7 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
             // involved in the operation.
             bitCapInt otherRes = (lcv & bciArgs[1]);
             // These are the bits in the register that is being operated on. In all permutation states, the bits acted
-            // on be the gate should be transformed in the logically appropriate way from input permutation to output
+            // on by the gate should be transformed in the logically appropriate way from input permutation to output
             // permutation. Since this is an X gate, we take the involved bits and bitwise NOT them.
             bitCapInt inOutRes = ((~lcv) & bciArgs[0]);
             // Now, we just transfer the untransformed input state's phase and probability to the transformed output
