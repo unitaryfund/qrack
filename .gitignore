@@ -1,7 +1,9 @@
 /doc/*
 *.o
+*.a
 qregistercl.hpp
 .*.swp
 .*.swo
 example
 tags
+
