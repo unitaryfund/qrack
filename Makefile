@@ -9,8 +9,8 @@ HDRS     = $(wildcard *.hpp)
 FORMAT_SRC = ${SRC} qregister.cl
 FORMAT_HDRS = $(filter-out catch.hpp, ${HDRS})
 
-TEST_OBJ = example.o tests.o
-TEST_BIN = example
+TEST_OBJ = test_main.o tests.o
+TEST_BIN = unittests
 QRACK_LIB=libqrack.a
 LIBS     = -lm -lpthread
 CXXINCS  = 
@@ -33,18 +33,21 @@ else
   CXXFLAGS += -DENABLE_OPENCL=0
 endif
 
-.PHONY: all all-before all-after clean clean-custom
+.PHONY: all clean test format
 
 all: $(QRACK_LIB) $(TEST_BIN)
 
-clean: clean-custom
+clean:
 	$(RM) $(OBJ) qregistercl.hpp $(TEST_BIN) $(TEST_OBJ) $(QRACK_LIB)
 
 format:
 	clang-format-5.0 -style=file -i $(FORMAT_SRC) $(FORMAT_HDRS)
 
-example.o : tests.hpp catch.hpp
+test: $(TEST_BIN)
+	./$(TEST_BIN)
+
 tests.o : tests.hpp catch.hpp
+test_main.o : tests.hpp catch.hpp
 qregister.o : qregister.hpp
 qregister_opencl.o : qregister.hpp
 
