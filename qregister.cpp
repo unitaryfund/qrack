@@ -2857,63 +2857,6 @@ void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
-/// "Entangled Hadamard" - perform an operation on two entangled registers like a bitwise Hadamard on a single
-/// unentangled register.
-void CoherentUnit::EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length)
-{
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    bitCapInt i, j, k;
-    bitLenInt len;
-    bool isOdd;
-    bitCapInt lengthPower = (1 << length);
-    bitCapInt lengthMask = lengthPower - 1;
-    bitCapInt targetMask = lengthMask << targetStart;
-    bitCapInt otherMask = (maxQPower - 1) & (~targetMask);
-    bitCapInt rowInt, colInt, interInt, otherRes;
-
-    const Complex16 zeroComplex(0.0, 0.0);
-
-    // As if multiplying a matrix times the state vector, we want to interate over every element of the array to
-    // multiply the state vector.
-    for (i = 0; i < maxQPower; i++) {
-        // State has 0 probability, continue.
-        if (stateVec[i] == zeroComplex) {
-            continue;
-        }
-
-        otherRes = i & otherMask;
-        colInt = (i & targetMask) >> targetStart;
-        for (j = 0; j < lengthPower; j++) {
-            rowInt = j;
-            k = (j << targetStart) | (otherRes ^ ((rowInt ^ colInt) << entangledStart));
-
-            // Now, we determine which of 1 or -1 the entry of the matrix is, (up to normalization,) based on bit
-            // evenness/oddness.
-            interInt = rowInt & colInt;
-            isOdd = false;
-            for (len = 0; len < length; len++) {
-                if (interInt & (1 << len)) {
-                    isOdd = !isOdd;
-                }
-            }
-            // Based on the above test, we either add or subtract the input state vector component from a running
-            // total for the output.
-            nStateVec[k] += (isOdd ? -stateVec[i] : stateVec[i]);
-        }
-    }
-
-    runningNorm = 0.0;
-    for (i = 0; i < maxQPower; i++) {
-        runningNorm += norm(nStateVec[i]);
-    }
-    runningNorm = sqrt(runningNorm);
-
-    // Replace the state vector and normalize:
-    ResetStateVec(std::move(nStateVec));
-    NormalizeState();
-}
-
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
