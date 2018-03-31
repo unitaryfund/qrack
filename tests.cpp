@@ -274,50 +274,35 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
     int i;
 
-    // Search function is true only for an input of 100 (0x64). 100 is in
-    // position 155. First 16 bits should output 00100110 11011001.
-    //
-    // The target probability here is looking for 100 in the low 8 bits, and
-    // expecting to find 155 in the upper register.
-    const int TARGET_PROB = 100 + (155 << 8);
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
 
-    // Create a table with decreasing values to search through
-    unsigned char toSearch[256];
-
-    // Create the lookup table
-    for (i = 0; i < 256; i++) {
-        toSearch[i] = 255 - i;
-    }
-
-    // Make sure the value being searched for is in the targetted location.
-    REQUIRE(toSearch[155] == 100);
-
-    // Divide qftReg into two registers of 8 bits each
+    const int TARGET_PROB = 100;
+    
+    // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
-    qftReg->H(8, 8);
-    qftReg->SuperposeReg8(8, 0, toSearch);
+    qftReg->H(0, 8);
 
     std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
+        // Our "oracle" is true for an input of "100" and false for all other inputs.
         qftReg->DEC(100, 0, 8);
         qftReg->ZeroPhaseFlip(0, 8);
         qftReg->INC(100, 0, 8);
-        qftReg->EntangledH(8, 0, 8);
-        qftReg->ZeroPhaseFlip(8, 8);
-        qftReg->EntangledH(8, 0, 8);
-        qftReg->Z(16);
-        std::cout << "\t" << std::setw(2) << i
-                  << "> chance of match:" << (qftReg->ProbAll(TARGET_PROB) + qftReg->ProbAll(TARGET_PROB + (1 << 16)))
-                  << std::endl;
+        // This ends the "oracle."
+        qftReg->H(0, 8);
+        qftReg->ZeroPhaseFlip(0, 8);
+        qftReg->H(0, 8);
+        qftReg->PhaseFlip();
+        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
     }
 
     std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
     std::cout << "Full Result:    " << qftReg << std::endl;
     std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
-    qftReg->MReg8(0);
-    qftReg->SetBit(16, false);
+    qftReg->MReg(0, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
