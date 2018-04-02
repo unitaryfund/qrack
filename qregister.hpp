@@ -338,6 +338,8 @@ unitary logical comparison operations.)
     void Y(bitLenInt start, bitLenInt length);
     /// Bitwise Pauli Z operator
     void Z(bitLenInt start, bitLenInt length);
+    /// Bitwise swap
+    void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /// Bitwise controlled-not with "inputStart1" bits as controls and "inputStart2" bits as targets, with registers of
     /// "length" bits.
@@ -472,7 +474,7 @@ unitary logical comparison operations.)
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /// Multiply a quantum register by a classical integer, without sign and without carry.
-    // void CMUL(bitCapInt toMul, bitLenInt start, bitLenInt length);
+    void CMUL(bitCapInt toMul, bitLenInt start, bitLenInt length);
 
     /*
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in

@@ -145,16 +145,8 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     bitCapInt i;
     bitCapInt nQubitCount = qubitCount + toCopy.qubitCount;
     bitCapInt nMaxQPower = 1 << nQubitCount;
-    bitCapInt startMask = 0;
-    bitCapInt endMask = 0;
-
-    for (i = 0; i < qubitCount; i++) {
-        startMask += (1 << i);
-    }
-
-    for (i = qubitCount; i < nQubitCount; i++) {
-        endMask += (1 << i);
-    }
+    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt endMask = ((1 << (toCopy.qubitCount)) - 1) << qubitCount;
 
     double angle = Rand() * 2.0 * M_PI;
     Complex16 phaseFac(cos(angle), sin(angle));
@@ -165,7 +157,7 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     }
 
     qubitCount = nQubitCount;
-    maxQPower = 1 << nQubitCount;
+    maxQPower = nMaxQPower;
 
     ResetStateVec(std::move(nStateVec));
     UpdateRunningNorm();
@@ -184,23 +176,12 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
         NormalizeState();
     }
 
-    bitLenInt end = start + length;
-    bitCapInt mask = 0;
-    bitCapInt startMask = 0;
-    bitCapInt endMask = 0;
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
+    bitCapInt mask = (partPower - 1) << start;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
-
-    for (i = start; i < end; i++) {
-        mask += (1 << i);
-    }
-    for (i = 0; i < start; i++) {
-        startMask += (1 << i);
-    }
-    for (i = end; i < qubitCount; i++) {
-        endMask += (1 << i);
-    }
 
     std::unique_ptr<double[]> partStateProb(new double[partPower]());
     std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
@@ -209,7 +190,7 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
         partStateProb[(i & mask) >> start] += prob;
-        remainderStateProb[(i & startMask) + ((i & endMask) >> length)] += prob;
+        remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
     }
 
     qubitCount = qubitCount - length;
@@ -220,34 +201,16 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
 
     double angle = Rand() * 2.0 * M_PI;
     Complex16 phaseFac(cos(angle), sin(angle));
-    double totProb = 0.0;
 
     for (i = 0; i < partPower; i++) {
-        totProb += partStateProb[i];
-    }
-
-    if (totProb == 0.0) {
-        destination.stateVec[0] = phaseFac;
-    } else {
-        for (i = 0; i < partPower; i++) {
-            destination.stateVec[i] = sqrt(partStateProb[i] / totProb) * phaseFac;
-        }
+        destination.stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
     }
 
     angle = Rand() * 2.0 * M_PI;
     phaseFac = Complex16(cos(angle), sin(angle));
-    totProb = 0.0;
 
     for (i = 0; i < remainderPower; i++) {
-        totProb += remainderStateProb[i];
-    }
-
-    if (totProb == 0.0) {
-        stateVec[0] = phaseFac;
-    } else {
-        for (i = 0; i < remainderPower; i++) {
-            stateVec[i] = sqrt(remainderStateProb[i] / totProb) * phaseFac;
-        }
+        stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
     }
 
     UpdateRunningNorm();
@@ -260,23 +223,21 @@ void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
         NormalizeState();
     }
 
-    bitLenInt end = start + length;
-    bitCapInt startMask = 0;
-    bitCapInt endMask = 0;
+    bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
+    bitCapInt mask = (partPower - 1) << start;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    for (i = 0; i < start; i++) {
-        startMask += (1 << i);
-    }
-    for (i = end; i < qubitCount; i++) {
-        endMask += (1 << i);
+    std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
+    double prob;
+
+    for (i = 0; i < maxQPower; i++) {
+        prob = norm(stateVec[i]);
+        remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
     }
 
-    std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    for (i = 0; i < maxQPower; i++) {
-        remainderStateProb[(i & startMask) + ((i & endMask) >> length)] += norm(stateVec[i]);
-    }
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
 
@@ -285,17 +246,9 @@ void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
 
     double angle = Rand() * 2.0 * M_PI;
     Complex16 phaseFac(cos(angle), sin(angle));
-    double totProb = 0.0;
 
     for (i = 0; i < remainderPower; i++) {
-        totProb += remainderStateProb[i];
-    }
-    if (totProb == 0.0) {
-        stateVec[0] = phaseFac;
-    } else {
-        for (i = 0; i < remainderPower; i++) {
-            stateVec[i] = sqrt(remainderStateProb[i] / totProb) * phaseFac;
-        }
+        stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
     }
 
     UpdateRunningNorm();
@@ -928,6 +881,38 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
         });
     // We replace our old permutation state vector with the new one we just filled, at the end.
     ResetStateVec(std::move(nStateVec));
+}
+
+/// Bitwise swap
+void CoherentUnit::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    int distance = start1 - start2;
+    if (distance < 0) {
+        distance *= -1;
+    }
+    if (distance < length) {
+        bitLenInt i;
+        for (i = 0; i < length; i++) {
+            Swap(start1 + i, start2 + i);
+        }
+    } else {
+        bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+        bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+        bitCapInt otherMask = maxQPower - 1;
+        otherMask ^= reg1Mask | reg2Mask;
+        bitCapInt bciArgs[5] = { reg1Mask, start1, reg2Mask, start2, otherMask };
+        std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+        par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+            [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+                Complex16* nStateVec) {
+                bitCapInt otherRes = (lcv & bciArgs[4]);
+                bitCapInt reg1Res = ((lcv & bciArgs[0]) >> (bciArgs[1])) << (bciArgs[3]);
+                bitCapInt reg2Res = ((lcv & bciArgs[2]) >> (bciArgs[3])) << (bciArgs[1]);
+                nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+            });
+        // We replace our old permutation state vector with the new one we just filled, at the end.
+        ResetStateVec(std::move(nStateVec));
+    }
 }
 
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
@@ -1927,16 +1912,32 @@ void CoherentUnit::DECBCDC(
 }
 
 /// Multiply a quantum register by a classical integer, with sign and without carry.
-/*void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
+/*
+void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
 {
+    if (toMul == 0) {
+        SetPermutation(0);
+        return;
+    }
+    else if (toMul == 1) {
+        return;
+    }
 
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
-    bitCapInt otherMask = (maxQPower - 1) ^ inOutMask;
+    bitCapInt origPermCount = maxQPower;
+    bitCapInt origQubitCount = qubitCount;
+    if ((inOutStart + length) != origQubitCount) {
+        Swap(inOutStart, origQubitCount - length, length);
+    }
+    CoherentUnit carry = CoherentUnit(length, 0);
+    Cohere(carry);
+
+    bitCapInt lengthPower = 1 << (length * 2);
+    bitCapInt inOutMask = (lengthPower - 1) << (origQubitCount - length);
+    bitCapInt otherMask = (origPermCount - 1) ^ ((1 << length) - 1);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    bitCapInt bciArgs[5] = { inOutMask, toMul, otherMask, lengthPower, inOutStart };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + (1 << (origQubitCount + length)), Complex16(0.0, 0.0));
+    bitCapInt bciArgs[5] = { inOutMask, toMul, otherMask, lengthPower, (origQubitCount - length) };
+    par_for_copy(0, origPermCount, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[2]));
             bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1944,9 +1945,19 @@ void CoherentUnit::DECBCDC(
             bitCapInt outInt = (inOutInt * bciArgs[1]) & bciArgs[3];
             bitCapInt outRes = (outInt << (bciArgs[4])) | otherRes;
             nStateVec[outRes] += stateVec[lcv];
+            if (norm(stateVec[lcv]) > 0.0) {
+                std::cout<<(int)lcv<<", "<<(int)outRes<<std::endl;
+            }
         });
     ResetStateVec(std::move(nStateVec));
-}*/
+
+    MReg(origQubitCount, length);
+    Dispose(origQubitCount, length);
+    if ((inOutStart + length) != origQubitCount) {
+        Swap(inOutStart, origQubitCount - length, length);
+    }
+}
+*/
 
 /**
  * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in

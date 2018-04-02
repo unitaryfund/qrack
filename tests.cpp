@@ -153,6 +153,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
 //{
 //    int i, j;
 //
+//    qftReg->Dispose(0, 12);
 //    qftReg->SetPermutation(2);
 //    j = 2;
 //    for (i = 0; i < 8; i++) {
@@ -167,6 +168,13 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
     qftReg->SetPermutation(31);
     qftReg->X(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_swap")
+{
+    qftReg->SetPermutation(0xb2);
+    qftReg->Swap(0, 4, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
@@ -264,23 +272,39 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
     }
 }
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_cohere")
+{
+    int j;
+
+    Qrack::CoherentUnit qftReg2(4, 0x0b);
+    Qrack::CoherentUnit qftReg3(4, 0x02);
+
+    qftReg2.Cohere(qftReg3);
+
+    REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x2b));
+}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
 {
     int j;
 
-    std::cout << "Decohere test:" << std::endl;
-
     Qrack::CoherentUnit qftReg2(4, 0);
 
+    qftReg->SetPermutation(0x2b);
     qftReg->Decohere(0, 4, qftReg2);
 
-    for (j = 0; j < 4; j++) {
-        std::cout << "Bit " << j << ", Chance of 1:" << qftReg->Prob(j) << std::endl;
-    }
+    REQUIRE_THAT(*qftReg, HasProbability(0, 4, 0x2));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
+}
 
-    for (j = 0; j < 4; j++) {
-        std::cout << "Bit " << (j + 4) << ", Chance of 1:" << qftReg2.Prob(j) << std::endl;
-    }
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_dispose")
+{
+    int j;
+
+    qftReg->SetPermutation(0x2b);
+    qftReg->Dispose(0, 4);
+
+    REQUIRE_THAT(*qftReg, HasProbability(0, 4, 0x2));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
@@ -320,7 +344,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 {
     int i;
     unsigned char toSearch[256];
@@ -345,7 +369,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
     }
 
     REQUIRE(((bool)(expectation > 94.25) && (bool)(expectation < 98.25)));
-}
+}*/
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
 {
