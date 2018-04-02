@@ -1441,15 +1441,11 @@ void CoherentUnit::INCBCDC(
  */
 void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
-    bitCapInt inOutMask = 0;
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
     otherMask ^= inOutMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
@@ -1504,16 +1500,12 @@ void CoherentUnit::INCSC(
         X(carryIndex);
         toAdd++;
     }
-    bitCapInt inOutMask = 0;
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
     bitCapInt edgeMask = inOutMask | carryMask;
     otherMask ^= inOutMask | carryMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1568,15 +1560,11 @@ void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length
         X(carryIndex);
         toAdd++;
     }
-    bitCapInt inOutMask = 0;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
     bitCapInt edgeMask = inOutMask | carryMask;
     otherMask ^= inOutMask | carryMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1646,12 +1634,8 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
-    bitCapInt inOutMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
     otherMask ^= inOutMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
@@ -1703,15 +1687,11 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
  */
 void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
-    bitCapInt inOutMask = 0;
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
     otherMask ^= inOutMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
@@ -1766,16 +1746,12 @@ void CoherentUnit::DECSC(
         X(carryIndex);
         toSub++;
     }
-    bitCapInt inOutMask = 0;
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
     bitCapInt edgeMask = inOutMask | carryMask;
     otherMask ^= inOutMask | carryMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1830,15 +1806,11 @@ void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length
         X(carryIndex);
         toSub++;
     }
-    bitCapInt inOutMask = 0;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-    }
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
     bitCapInt edgeMask = inOutMask | carryMask;
     otherMask ^= inOutMask | carryMask;
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -1953,6 +1925,28 @@ void CoherentUnit::DECBCDC(
         });
     ResetStateVec(std::move(nStateVec));
 }
+
+/// Multiply a quantum register by a classical integer, with sign and without carry.
+/*void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
+{
+
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
+    bitCapInt otherMask = (maxQPower - 1) ^ inOutMask;
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt bciArgs[5] = { inOutMask, toMul, otherMask, lengthPower, inOutStart };
+    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
+            bitCapInt otherRes = (lcv & (bciArgs[2]));
+            bitCapInt inOutRes = (lcv & (bciArgs[0]));
+            bitCapInt inOutInt = inOutRes >> (bciArgs[4]);
+            bitCapInt outInt = (inOutInt * bciArgs[1]) & bciArgs[3];
+            bitCapInt outRes = (outInt << (bciArgs[4])) | otherRes;
+            nStateVec[outRes] += stateVec[lcv];
+        });
+    ResetStateVec(std::move(nStateVec));
+}*/
 
 /**
  * Add BCD number of "length" bits in "inStart" to BCD number of "length" bits in "inOutStart," and store result in

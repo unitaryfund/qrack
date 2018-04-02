@@ -149,6 +149,19 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
     }
 }
 
+// TEST_CASE_METHOD(CoherentUnitTestFixture, "test_cmul")
+//{
+//    int i, j;
+//
+//    qftReg->SetPermutation(2);
+//    j = 2;
+//    for (i = 0; i < 8; i++) {
+//        j *= 3;
+//        qftReg->CMUL(3, 0, 8);
+//        REQUIRE_THAT(*qftReg, HasProbability(0, 8, j & 0xFF));
+//    }
+//}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
     qftReg->SetPermutation(31);
@@ -278,7 +291,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     // Our subroutine returns true only for an input of 100.
 
     const int TARGET_PROB = 100;
-    
+
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
@@ -305,6 +318,33 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     qftReg->MReg(0, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
+{
+    int i;
+    unsigned char toSearch[256];
+    double expectation;
+    const int ITERATIONS = 128;
+
+    // Create the lookup table
+    for (i = 0; i < 128; i++) {
+        toSearch[i] = 1;
+    }
+    for (i = 128; i < 256; i++) {
+        toSearch[i] = i;
+    }
+
+    // Divide qftReg into two registers of 8 bits each
+    for (i = 0; i < ITERATIONS; i++) {
+        qftReg->SetPermutation(0);
+        qftReg->H(8, 8);
+        qftReg->SuperposeReg8(8, 0, toSearch);
+        qftReg->H(8, 8);
+        expectation += qftReg->MReg8(8) / ((double)ITERATIONS);
+    }
+
+    REQUIRE(((bool)(expectation > 94.25) && (bool)(expectation < 98.25)));
 }
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")

@@ -471,6 +471,9 @@ unitary logical comparison operations.)
     /// Subtract BCD integer (without sign, with carry)
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
+    /// Multiply a quantum register by a classical integer, without sign and without carry.
+    // void CMUL(bitCapInt toMul, bitLenInt start, bitLenInt length);
+
     /*
      * Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
      * "inOutStart."
