@@ -1190,22 +1190,16 @@ void CoherentUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLen
 void CoherentUnit::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
-        int i;
         bitLenInt end = start + length;
         if (shift >= length) {
-            for (i = start; i < end; i++) {
-                SetBit(i, false);
-            }
+            SetReg(start, length, 0);
         } else {
             Swap(end - 1, end - 2);
             Reverse(start, end);
             Reverse(start, start + shift);
             Reverse(start + shift, end);
             Swap(end - 1, end - 2);
-
-            for (i = 0; i < shift; i++) {
-                SetBit(i, false);
-            }
+            SetReg(start, shift, 0);
         }
     }
 }
@@ -1214,12 +1208,9 @@ void CoherentUnit::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
 void CoherentUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
-        int i;
         bitLenInt end = start + length;
         if (shift >= length) {
-            for (i = start; i < end; i++) {
-                SetBit(i, false);
-            }
+            SetReg(start, length, 0);
         } else {
             Swap(end - 1, end - 2);
             Reverse(start + shift, end);
@@ -1227,9 +1218,7 @@ void CoherentUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
             Reverse(start, end);
             Swap(end - 1, end - 2);
 
-            for (i = start; i < shift; i++) {
-                SetBit(end - i - 1, false);
-            }
+            SetReg(end - shift, shift, 0);
         }
     }
 }
@@ -1238,17 +1227,11 @@ void CoherentUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
 void CoherentUnit::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
-        int i;
-        bitLenInt end = start + length;
         if (shift >= length) {
-            for (i = start; i < end; i++) {
-                SetBit(i, false);
-            }
+            SetReg(start, length, 0);
         } else {
             ROL(shift, start, length);
-            for (i = start; i < shift; i++) {
-                SetBit(i, false);
-            }
+            SetReg(start, shift, 0);
         }
     }
 }
@@ -1257,17 +1240,12 @@ void CoherentUnit::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
 void CoherentUnit::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
-        int i;
         bitLenInt end = start + length;
         if (shift >= length) {
-            for (i = start; i < end; i++) {
-                SetBit(i, false);
-            }
+            SetReg(start, length, 0);
         } else {
             ROR(shift, start, length);
-            for (i = start; i < shift; i++) {
-                SetBit(end - i - 1, false);
-            }
+            SetReg(end - shift, shift, 0);
         }
     }
 }
@@ -1367,7 +1345,7 @@ void CoherentUnit::INCBCDC(
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[6] = { inOutMask, toAdd, carryMask, otherMask, inOutStart, nibbleCount };
-    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -1501,7 +1479,7 @@ void CoherentUnit::INCSC(
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[10] = { inOutMask, toAdd, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask,
         overflowMask, signMask };
-    par_for_skip(0, maxQPower, carryMask, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, carryMask, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
             bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1560,7 +1538,7 @@ void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[9] = { inOutMask, toAdd, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask,
         signMask };
-    par_for_skip(0, maxQPower, carryMask, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, carryMask, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
             bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1747,7 +1725,7 @@ void CoherentUnit::DECSC(
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[10] = { inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask,
         overflowMask, signMask };
-    par_for_skip(0, maxQPower, carryMask, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, carryMask, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
             bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1806,7 +1784,7 @@ void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[9] = { inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex, edgeMask,
         signMask };
-    par_for_skip(0, maxQPower, carryMask, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, carryMask, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
             bitCapInt inOutRes = (lcv & (bciArgs[0]));
@@ -1861,7 +1839,7 @@ void CoherentUnit::DECBCDC(
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[8] = { inOutMask, toSub, carryMask, otherMask, inOutStart, nibbleCount };
-    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2052,7 +2030,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[9] = { inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex,
         edgeMask };
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2074,7 +2052,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
                 nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
             }
         });
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             lcv |= bciArgs[2];
             bitCapInt otherRes = lcv & (bciArgs[3]);
@@ -2191,7 +2169,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[11] = { inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, inStart, carryIndex,
         edgeMask, overflowMask, signMask };
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2225,7 +2203,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
                 nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
             }
         });
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             lcv |= bciArgs[2];
             bitCapInt otherRes = lcv & (bciArgs[3]);
@@ -2295,7 +2273,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[8] = { inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask };
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2349,7 +2327,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
                 delete[] nibbles;
             }
         });
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             lcv |= bciArgs[2];
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2498,7 +2476,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[9] = { inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex,
         edgeMask };
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2519,7 +2497,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
                 nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
             }
         });
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             lcv |= bciArgs[2];
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2634,7 +2612,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[11] = { inOutMask, inMask, carryMask, otherMask, lengthPower, inOutStart, toSub, carryIndex,
         edgeMask, overflowMask, signMask };
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2667,7 +2645,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
                 nStateVec[outRes] += Complex16(norm(stateVec[lcv]), arg(stateVec[lcv]));
             }
         });
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             lcv |= bciArgs[2];
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2737,7 +2715,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[9] = { inOutMask, inMask, carryMask, otherMask, inOutStart, inStart, nibbleCount, edgeMask,
         maxMask };
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2791,7 +2769,7 @@ void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
                 delete[] nibbles;
             }
         });
-    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower >> 1, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
             lcv |= bciArgs[2];
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -2917,8 +2895,9 @@ void CoherentUnit::PhaseFlip()
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     bool bitVal;
+    bitCapInt regVal = MReg(start, length);
     for (bitLenInt i = 0; i < length; i++) {
-        bitVal = M(start + i);
+        bitVal = regVal & (1 << i);
         if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
             X(start + i);
     }
@@ -2954,27 +2933,23 @@ unsigned char CoherentUnit::MReg8(bitLenInt start)
 /// Set 8 bit register bits based on read from classical memory
 unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
+    bitCapInt i, outputInt;
     SetReg(outputStart, 8, 0);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt skipPower = 1 << outputStart;
-    bitCapInt inputRes, outputRes, inputInt, outputInt, lcv, i, iLow, iHigh;
-    bitCapInt maxLCV = maxQPower >> 8;
-    for (lcv = 0; lcv < maxLCV; lcv++) {
-        iHigh = lcv;
-        i = 0;
-        iLow = iHigh % skipPower;
-        i += iLow;
-        iHigh = (iHigh - iLow) << 8;
-        i += iHigh;
-        inputRes = i & inputMask;
-        inputInt = inputRes >> inputStart;
-        outputInt = values[inputInt];
-        outputRes = outputInt << outputStart;
-        nStateVec[outputRes | i] = stateVec[i];
-    }
+    bitCapInt bciArgs[3] = { inputStart, inputMask, outputStart };
+    par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
+            Complex16* nStateVec) {
+            bitCapInt inputRes = lcv & (bciArgs[1]);
+            bitCapInt inputInt = inputRes >> (bciArgs[0]);
+            bitCapInt outputInt = values[inputInt];
+            bitCapInt outputRes = outputInt << (bciArgs[2]);
+            nStateVec[outputRes | lcv] = stateVec[lcv];
+        });
     double prob, average;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> outputStart;
@@ -3015,48 +2990,40 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
     // other bits that aren't involved in the operation.
+    bitCapInt i, outputInt;
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
-    bitCapInt otherRes, inputRes, outputRes, carryRes, inputInt, outputInt, lcv, i, iLow, iHigh;
-    bitCapInt maxLCV = maxQPower >> 1;
-    for (lcv = 0; lcv < maxLCV; lcv++) {
-        // We can save a factor of 2 iterations by skipping the carry bit, since we know it's already zero. This
-        // algorithm lets us iterate over all states except ones where the carry is set.
-        iHigh = lcv;
-        i = 0;
-        iLow = iHigh % skipPower;
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-        i += iHigh;
-        // Now, i runs over all permutations where the carry is fixed as zero.
-
-        // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
-        // but their input value matches their output value:
-        otherRes = i & otherMask;
-        // These are bits that index the classical memory we're loading from:
-        inputRes = i & inputMask;
-        // If we read these as a char type, this is their value as a char:
-        inputInt = inputRes >> inputStart;
-        // This is the initial value that's entangled with the "inputStart" register in "outputStart."
-        outputRes = i & outputMask;
-        // Maintaining the entanglement, we add the classical input value corresponding with the state of the
-        // "inputStart" register to "outputStart" register value its entangled with in this iteration of the loop.
-        outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
-        // If we exceed max char, we subtract 256 and entangle the carry as set.
-        carryRes = 0;
-        if (outputInt >= lengthPower) {
-            outputInt -= lengthPower;
-            carryRes = carryMask;
-        }
-        // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
-        // carry, and shunt the uninvoled "other" bits from input to output.
-        outputRes = outputInt << outputStart;
-        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
-    }
+    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower };
+    par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
+            Complex16* nStateVec) {
+            // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
+            // but their input value matches their output value:
+            bitCapInt otherRes = lcv & (bciArgs[4]);
+            // These are bits that index the classical memory we're loading from:
+            bitCapInt inputRes = lcv & (bciArgs[1]);
+            // If we read these as a char type, this is their value as a char:
+            bitCapInt inputInt = inputRes >> (bciArgs[0]);
+            // This is the initial value that's entangled with the "inputStart" register in "outputStart."
+            bitCapInt outputRes = lcv & (bciArgs[3]);
+            // Maintaining the entanglement, we add the classical input value corresponding with the state of the
+            // "inputStart" register to "outputStart" register value its entangled with in this iteration of the loop.
+            bitCapInt outputInt = (outputRes >> (bciArgs[2])) + values[inputInt] + bciArgs[5];
+            // If we exceed max char, we subtract 256 and entangle the carry as set.
+            bitCapInt carryRes = 0;
+            if (outputInt >= bciArgs[7]) {
+                outputInt -= bciArgs[7];
+                carryRes = bciArgs[6];
+            }
+            // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
+            // carry, and shunt the uninvoled "other" bits from input to output.
+            outputRes = outputInt << (bciArgs[2]);
+            nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
+        });
     // At the end, just as a convenience, we return the expectation value for the addition result.
     double prob, average;
     for (i = 0; i < maxQPower; i++) {
@@ -3100,50 +3067,42 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
     // other bits that aren't involved in the operation.
+    bitCapInt i, outputInt;
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
-    bitCapInt otherRes, inputRes, outputRes, carryRes, inputInt, outputInt, lcv, i, iLow, iHigh;
-    bitCapInt maxLCV = maxQPower >> 1;
-    for (lcv = 0; lcv < maxLCV; lcv++) {
-        // We can save a factor of 2 iterations by skipping the carry bit, since we know it's already zero. This
-        // algorithm lets us iterate over all states except ones where the carry is set.
-        iHigh = lcv;
-        i = 0;
-        iLow = iHigh % skipPower;
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-        i += iHigh;
-        // Now, i runs over all permutations where the carry is fixed as zero.
-
-        // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
-        // but their input value matches their output value:
-        otherRes = i & otherMask;
-        // These are bits that index the classical memory we're loading from:
-        inputRes = i & inputMask;
-        // If we read these as a char type, this is their value as a char:
-        inputInt = inputRes >> inputStart;
-        // This is the initial value that's entangled with the "inputStart" register in "outputStart."
-        outputRes = i & outputMask;
-        // Maintaining the entanglement, we add the classical input value corresponding with the state of the
-        // "inputStart" register to "outputStart" register value its entangled with in this iteration of the loop.
-        outputInt = (lengthPower + (outputRes >> outputStart)) - (values[inputInt] + carryIn);
-        // If our subtractions results in less than 0, we add 256 and entangle the carry as set.
-        // (Since we're using unsigned types, we start by adding 256 with the carry, and then subtract 256 and clear the
-        // carry if we don't have a borrow-out.)
-        carryRes = carryMask;
-        if (outputInt >= lengthPower) {
-            outputInt -= lengthPower;
-            carryRes = 0;
-        }
-        // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
-        // carry, and shunt the uninvoled "other" bits from input to output.
-        outputRes = outputInt << outputStart;
-        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
-    }
+    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower };
+    par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
+            Complex16* nStateVec) {
+            // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
+            // but their input value matches their output value:
+            bitCapInt otherRes = lcv & (bciArgs[4]);
+            // These are bits that index the classical memory we're loading from:
+            bitCapInt inputRes = lcv & (bciArgs[1]);
+            // If we read these as a char type, this is their value as a char:
+            bitCapInt inputInt = inputRes >> (bciArgs[0]);
+            // This is the initial value that's entangled with the "inputStart" register in "outputStart."
+            bitCapInt outputRes = lcv & (bciArgs[3]);
+            // Maintaining the entanglement, we subtract the classical input value corresponding with the state of the
+            // "inputStart" register from "outputStart" register value its entangled with in this iteration of the loop.
+            bitCapInt outputInt = (outputRes >> (bciArgs[2])) - (values[inputInt] + bciArgs[5]);
+            // If our subtractions results in less than 0, we add 256 and entangle the carry as set.
+            // (Since we're using unsigned types, we start by adding 256 with the carry, and then subtract 256 and clear the
+            // carry if we don't have a borrow-out.)
+            bitCapInt carryRes = bciArgs[6];
+            if (outputInt >= bciArgs[7]) {
+                outputInt -= bciArgs[7];
+                carryRes = 0;
+            }
+            // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
+            // carry, and shunt the uninvoled "other" bits from input to output.
+            outputRes = outputInt << (bciArgs[3]);
+            nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
+        });
     double prob, average;
     // At the end, just as a convenience, we return the expectation value for the subtraction result.
     for (i = 0; i < maxQPower; i++) {

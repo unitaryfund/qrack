@@ -86,7 +86,7 @@ void CoherentUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLe
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[7] = { inOutMask, toAdd, carryMask, otherMask, lengthPower, inOutStart, carryIndex };
-    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
@@ -120,7 +120,7 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     bitCapInt bciArgs[7] = { inOutMask, toSub, carryMask, otherMask, lengthPower, inOutStart, carryIndex };
-    par_for_skip(0, maxQPower, 1 << carryIndex, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, &(stateVec[0]), bciArgs, &(nStateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             Complex16* nStateVec) {
             bitCapInt otherRes = (lcv & (bciArgs[3]));
