@@ -357,7 +357,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
     }
 
     // Divide qftReg into two registers of 8 bits each
-    
+
     qftReg->SetPermutation(0);
     qftReg->H(8, 8);
     qftReg->SuperposeReg8(8, 0, toSearch);
@@ -450,7 +450,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
         // superpositions and entanglements. Quantum measurement is nondeterministic and introduces randomness,
         // so we would repeat the simulation many times in the driver code and average the results.
 
-        // (With Qrack, we can "cheat" and measure the probability directly. Then, we check the probability directly against as many random numbers as we would perform iterative runs.)
+        // (With Qrack, we can "cheat" and measure the probability directly. Then, we check the probability directly
+        // against as many random numbers as we would perform iterative runs.)
 
         for (j = 0; j < mpPowerOfTwo; j++) {
             zeroProbs[j] = 1.0 - qReg.Prob(j);

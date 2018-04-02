@@ -154,8 +154,9 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     par_for_cohere(0, nMaxQPower, &(stateVec[0]), bciArgs, phaseFac, &(nStateVec[0]), &(toCopy.stateVec[0]),
         [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
             const Complex16 phaseFac, Complex16* nStateVec, Complex16* toCopyStateVec) {
-            nStateVec[lcv] =
-                phaseFac * sqrt(norm(stateVec[(lcv & (bciArgs[0]))]) * norm(toCopyStateVec[((lcv & (bciArgs[1])) >> (bciArgs[2]))]));
+            nStateVec[lcv] = phaseFac *
+                sqrt(norm(stateVec[(lcv & (bciArgs[0]))]) *
+                    norm(toCopyStateVec[((lcv & (bciArgs[1])) >> (bciArgs[2]))]));
         });
 
     qubitCount = nQubitCount;
