@@ -164,6 +164,30 @@ void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt sk
     }
 }
 
+template <class F>
+void par_for_mult(const bitCapInt begin, const bitCapInt end, const double toMult, Complex16* stateArray, F fn)
+{
+    std::atomic<bitCapInt> idx;
+    idx = begin;
+    int num_cpus = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> futures(num_cpus);
+    for (int cpu = 0; cpu < num_cpus; cpu++) {
+        futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, toMult, stateArray, &fn]() {
+            bitCapInt i;
+            for (;;) {
+                i = idx++;
+                if (i >= end)
+                    break;
+                fn(i, cpu, toMult, stateArray);
+            }
+        });
+    }
+
+    for (int cpu = 0; cpu < num_cpus; cpu++) {
+        futures[cpu].get();
+    }
+}
+
 double par_norm(const bitCapInt maxQPower, const Complex16* stateArray);
 
 } // namespace Qrack

@@ -3201,13 +3201,13 @@ void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, c
 
 void CoherentUnit::NormalizeState()
 {
-    bitCapInt lcv;
-    for (lcv = 0; lcv < maxQPower; lcv++) {
-        stateVec[lcv] /= runningNorm;
-        if (norm(stateVec[lcv]) < 1e-15) {
-            stateVec[lcv] = Complex16(0.0, 0.0);
-        }
-    }
+    par_for_mult(0, maxQPower, runningNorm, &(stateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const double runningNorm, Complex16* stateVec) {
+            stateVec[lcv] /= runningNorm;
+            if (norm(stateVec[lcv]) < 1e-15) {
+                stateVec[lcv] = Complex16(0.0, 0.0);
+            }
+        });
     runningNorm = 1.0;
 }
 
