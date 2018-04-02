@@ -344,32 +344,27 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
-/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 {
     int i;
     unsigned char toSearch[256];
-    double expectation;
+    unsigned char output[256];
     const int ITERATIONS = 128;
 
     // Create the lookup table
     for (i = 0; i < 128; i++) {
-        toSearch[i] = 1;
-    }
-    for (i = 128; i < 256; i++) {
-        toSearch[i] = i;
+        toSearch[i] = 100;
     }
 
     // Divide qftReg into two registers of 8 bits each
-    for (i = 0; i < ITERATIONS; i++) {
-        qftReg->SetPermutation(0);
-        qftReg->H(8, 8);
-        qftReg->SuperposeReg8(8, 0, toSearch);
-        qftReg->H(8, 8);
-        expectation += qftReg->MReg8(8) / ((double)ITERATIONS);
-    }
+    
+    qftReg->SetPermutation(0);
+    qftReg->H(8, 8);
+    qftReg->SuperposeReg8(8, 0, toSearch);
+    qftReg->H(8, 8);
 
-    REQUIRE(((bool)(expectation > 94.25) && (bool)(expectation < 98.25)));
-}*/
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
+}
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
 {
@@ -453,7 +448,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
         // The qubits are now in their fully simulated, superposed and entangled end state.
         // Ultimately, we have to measure a final state in the |0>/|1> basis for each bit, breaking the
         // superpositions and entanglements. Quantum measurement is nondeterministic and introduces randomness,
-        // so we repeat the simulation many times in the driver code and average the results.
+        // so we would repeat the simulation many times in the driver code and average the results.
+
+        // (With Qrack, we can "cheat" and measure the probability directly. Then, we check the probability directly against as many random numbers as we would perform iterative runs.)
 
         for (j = 0; j < mpPowerOfTwo; j++) {
             zeroProbs[j] = 1.0 - qReg.Prob(j);

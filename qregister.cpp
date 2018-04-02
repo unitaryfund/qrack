@@ -142,7 +142,6 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
         toCopy.NormalizeState();
     }
 
-    bitCapInt i;
     bitCapInt nQubitCount = qubitCount + toCopy.qubitCount;
     bitCapInt nMaxQPower = 1 << nQubitCount;
     bitCapInt startMask = (1 << qubitCount) - 1;
@@ -151,16 +150,20 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     double angle = Rand() * 2.0 * M_PI;
     Complex16 phaseFac(cos(angle), sin(angle));
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
-    for (i = 0; i < nMaxQPower; i++) {
-        nStateVec[i] =
-            phaseFac * sqrt(norm(stateVec[(i & startMask)]) * norm(toCopy.stateVec[((i & endMask) >> qubitCount)]));
-    }
+    bitCapInt bciArgs[3] = { startMask, endMask, qubitCount };
+    par_for_cohere(0, nMaxQPower, &(stateVec[0]), bciArgs, phaseFac, &(nStateVec[0]), &(toCopy.stateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            const Complex16 phaseFac, Complex16* nStateVec, Complex16* toCopyStateVec) {
+            nStateVec[lcv] =
+                phaseFac * sqrt(norm(stateVec[(lcv & (bciArgs[0]))]) * norm(toCopyStateVec[((lcv & (bciArgs[1])) >> (bciArgs[2]))]));
+        });
 
     qubitCount = nQubitCount;
     maxQPower = nMaxQPower;
 
     ResetStateVec(std::move(nStateVec));
     UpdateRunningNorm();
+    toCopy.UpdateRunningNorm();
 }
 
 /**
