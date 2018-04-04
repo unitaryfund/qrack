@@ -2906,13 +2906,61 @@ void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 /// Measure permutation state of a register
 bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
 {
-    bitCapInt toRet = 0;
-    for (bitLenInt i = 0; i < length; i++) {
-        if (M(i + start)) {
-            toRet |= 1 << i;
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
+
+    bool foundPerm;
+    double prob = Rand();
+    double angle = Rand() * 2.0 * M_PI;
+    double cosine = cos(angle);
+    double sine = sin(angle);
+    bitCapInt lengthPower = 1<<length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    double probArray[lengthPower] = { 0.0 };
+    double lowerProb, largestProb, nrmlzr;
+    bitCapInt lcv, result;
+
+    for (lcv = 0; lcv < maxQPower; lcv++) {
+        probArray[(lcv & regMask) >> start] += norm(stateVec[lcv]);
+    }
+
+    lcv = 0;
+    foundPerm = false;
+    lowerProb = 0.0;
+    largestProb = 0.0;
+    result = lengthPower - 1;
+    while ((!foundPerm) && (lcv < lengthPower)) {
+        if ((probArray[lcv] + lowerProb) > prob) {
+            foundPerm = true;
+            result = lcv;
+            nrmlzr = probArray[lcv];
+        }
+        else {
+            if (largestProb <= probArray[lcv]) {
+                largestProb = probArray[lcv];
+                result = lcv;
+                nrmlzr = largestProb;
+            }
+            lowerProb += probArray[lcv];
+            lcv++;
         }
     }
-    return toRet;
+
+    bitCapInt resultPtr[1] = { result << start };
+    par_for_all(0, maxQPower, &(stateVec[0]), Complex16(cosine, sine) / nrmlzr, NULL, resultPtr,
+        [](const bitCapInt lcv, const int cpu, Complex16* stateVec, const Complex16 nrm, const Complex16* mtrx,
+            const bitCapInt* resultPtr) {
+            if ((lcv & (*resultPtr)) == (*resultPtr)) {
+                stateVec[lcv] = nrm * stateVec[lcv];
+            } else {
+                stateVec[lcv] = Complex16(0.0, 0.0);
+            }
+        });
+
+    UpdateRunningNorm();
+
+    return result;
 }
 
 /// Measure permutation state of an 8 bit register
