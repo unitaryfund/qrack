@@ -271,40 +271,55 @@ unitary logical comparison operations.)
      * operators and lacks a division by a factor of two.
      */
 
-    /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
+    /// "Phase shift gate" - Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
     void RT(double radians, bitLenInt qubitIndex);
 
-    /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / denominator) around |1> state.
+    /// Dyadic fraction "phase shift gate" - Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around |1> state.
     void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
-    /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
+    /// x axis rotation gate - Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli x axis
     void RX(double radians, bitLenInt qubitIndex);
-    /// Dyadic fraction x axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli x axis.
+
+    /// Dyadic fraction x axis rotation gate - Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli x
+    /// axis.
     void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
-    /// Controlled x axis rotation gate - If "control" is set to 1, rotates as e^(-i*\theta/2) around Pauli x axis
+
+    /// Controlled x axis rotation gate - If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around Pauli x
+    /// axis
     void CRX(double radians, bitLenInt control, bitLenInt target);
-    /// Controlled dyadic fraction x axis rotation gate - If "control" is set to 1, rotates as e^(i*(M_PI * numerator) /
-    /// denominator) around Pauli x axis.
+
+    /// Controlled dyadic fraction x axis rotation gate - If "control" is set to 1, rotates as \f$ e^{i*{\pi *
+    /// numerator} / denominator} \f$ around Pauli x axis.
     void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
-    /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
+    /// y axis rotation gate - Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis
     void RY(double radians, bitLenInt qubitIndex);
-    /// Dyadic fraction y axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli y axis.
+
+    /// Dyadic fraction y axis rotation gate - Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli y
+    /// axis.
     void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
-    /// Controlled y axis rotation gate - If "control" is set to 1, rotates as e^(-i*\theta/2) around Pauli y axis
+
+    /// Controlled y axis rotation gate - If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y
+    /// axis
     void CRY(double radians, bitLenInt control, bitLenInt target);
-    /// Controlled dyadic fraction y axis rotation gate - If "control" is set to 1, rotates as e^(i*(M_PI * numerator) /
-    /// denominator) around Pauli y axis.
+
+    /// Controlled dyadic fraction y axis rotation gate - If "control" is set to 1, rotates as \f$ e^{i*{\pi *
+    /// numerator} / denominator} \f$ around Pauli y axis.
     void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
-    /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
+    /// z axis rotation gate - Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli z axis
     void RZ(double radians, bitLenInt qubitIndex);
-    /// Dyadic fraction z axis rotation gate - Rotates as e^(i*(M_PI * numerator) / denominator) around Pauli z axis.
+
+    /// Dyadic fraction z axis rotation gate - Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli z
+    /// axis.
     void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
-    /// Controlled z axis rotation gate - If "control" is set to 1, rotates as e^(-i*\theta/2) around Pauli z axis
+
+    /// Controlled z axis rotation gate - If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around Pauli z
+    /// axis
     void CRZ(double radians, bitLenInt control, bitLenInt target);
-    /// Controlled dyadic fraction z axis rotation gate - If "control" is set to 1, rotates as e^(i*(M_PI * numerator) /
-    /// denominator) around Pauli z axis.
+
+    /// Controlled dyadic fraction z axis rotation gate - If "control" is set to 1, rotates as \f$ e^{i*{\pi *
+    /// numerator} / denominator} \f$ around Pauli z axis.
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /// Set individual bit to pure |0> (false) or |1> (true) state
@@ -318,11 +333,12 @@ unitary logical comparison operations.)
     /// Swap values of two bits in register
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /// Controlled "phase shift gate" - if control bit is set to 1, rotates target bit as e^(-i*\theta/2) around |1>
-    /// state
+    /// Controlled "phase shift gate" - if control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2} \f$ around
+    /// |1> state
     void CRT(double radians, bitLenInt control, bitLenInt target);
-    /// Controlled dyadic fraction "phase shift gate" - if control bit is set to 1, rotates target bit as e^(i*(M_PI *
-    /// numerator) / denominator) around |1> state
+
+    /// Controlled dyadic fraction "phase shift gate" - if control bit is set to 1, rotates target bit as \f$ e^{i*{\pi
+    /// * numerator} / denominator} \f$ around |1> state
     void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     // Register-spanning gates
@@ -332,85 +348,112 @@ unitary logical comparison operations.)
 
     /// Bitwise Hadamard
     void H(bitLenInt start, bitLenInt length);
+
     /// Bitwise Pauli X (or logical "NOT") operator
     void X(bitLenInt start, bitLenInt length);
+
     /// Bitwise Pauli Y operator
     void Y(bitLenInt start, bitLenInt length);
+
     /// Bitwise Pauli Z operator
     void Z(bitLenInt start, bitLenInt length);
+
     /// Bitwise swap
     void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /// Bitwise controlled-not with "inputStart1" bits as controls and "inputStart2" bits as targets, with registers of
     /// "length" bits.
     void CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length);
+
     /// Bitwise "AND" between registers at "inputStart1" and "inputStart2," with registers of "length" bits.
     void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
     /// Bitwise "AND" between qubit register at "qInputStart" and the classical bits of "classicalInput," with registers
     /// of "length" bits.
     void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
     /// Bitwise "OR" between registers at "inputStart1" and "inputStart2," with registers of "length" bits.
     void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
     /// Bitwise "OR" between qubit register at "qInputStart" and the classical bits of "classicalInput," with registers
     /// of "length" bits.
     void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
     /// Bitwise "exclusive OR" or "XOR" between registers at "inputStart1" and "inputStart2," with registers of "length"
     /// bits.
     void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
     /// Bitwise "exclusive OR" or "XOR" between qubit register at "qInputStart" and the classical bits of
     /// "classicalInput," with registers of "length" bits.
     void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
-    /// Bitwise |1> axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the |1>
-    /// state.
+    /// Bitwise |1> axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{-i*\theta/2} \f$ around
+    /// the |1> state.
     void RT(double radians, bitLenInt start, bitLenInt length);
-    /// Bitwise dyadic |1> axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) /
-    /// denominator) around the |1> state.
+
+    /// Bitwise dyadic |1> axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{i*{\pi * numerator}
+    /// / denominator} \f$ around the |1> state.
     void RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-    /// Bitwise x axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli x
-    /// axis.
+
+    /// Bitwise x axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{-i*\theta/2} \f$ around the
+    /// Pauli x axis.
     void RX(double radians, bitLenInt start, bitLenInt length);
-    /// Bitwise dyadic x axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) /
-    /// denominator) around the Pauli x axis.
+
+    /// Bitwise dyadic x axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{i*{\pi * numerator} /
+    /// denominator} \f$ around the Pauli x axis.
     void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+
     /// Bitwise controlled x axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates
-    /// "target" as e^(-i*\theta/2) around the Pauli x axis.
+    /// "target" as \f$ e^{-i*\theta/2} \f$ around the Pauli x axis.
     void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise dyadic controlled x axis rotation gate - For each bit pair in "length," if "control" bit is set to 1,
-    /// rotates "target" as e^(i*(M_PI * numerator) / denominator) around the Pauli x axis.
+    /// rotates "target" as \f$ e^{i*{\pi * numerator} / denominator} \f$ around the Pauli x axis.
     void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
-    /// Bitwise y axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli y
-    /// axis.
+
+    /// Bitwise y axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{-i*\theta/2} \f$ around the
+    /// Pauli y axis.
     void RY(double radians, bitLenInt start, bitLenInt length);
-    /// Bitwise dyadic y axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) /
-    /// denominator) around the Pauli y axis.
+
+    /// Bitwise dyadic y axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{i*{\pi * numerator} /
+    /// denominator} \f$ around the Pauli y axis.
     void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+
     /// Bitwise controlled y axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates
-    /// "target" as e^(-i*\theta/2) around the Pauli y axis.
+    /// "target" as \f$ e^{-i*\theta/2} \f$ around the Pauli y axis.
     void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise dyadic controlled y axis rotation gate - For each bit pair in "length," if "control" bit is set to 1,
-    /// rotates "target" as e^(i*(M_PI * numerator) / denominator) around the Pauli y axis.
+    /// rotates "target" as \f$ e^{i*{\pi * numerator} / denominator} \f$ around the Pauli y axis.
     void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
-    /// Bitwise z axis rotation gate - Rotates each bit from "start" for "length" as e^(-i*\theta/2) around the Pauli z
-    /// axis.
+
+    /// Bitwise z axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{-i*\theta/2} \f$ around the
+    /// Pauli z axis.
     void RZ(double radians, bitLenInt start, bitLenInt length);
-    /// Bitwise dyadic z axis rotation gate - Rotates each bit from "start" for "length" as e^(i*(M_PI * numerator) /
-    /// denominator) around the Pauli z axis.
+
+    /// Bitwise dyadic z axis rotation gate - Rotates each bit from "start" for "length" as \f$ e^{i*{\pi * numerator} /
+    /// denominator} \f$ around the Pauli z axis.
     void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+
     /// Bitwise controlled z axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates
-    /// "target" as e^(-i*\theta/2) around the Pauli z axis.
+    /// "target" as \f$ e^{-i*\theta/2} \f$ around the Pauli z axis.
     void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise dyadic controlled z axis rotation gate - For each bit pair in "length," if "control" bit is set to 1,
-    /// rotates "target" as e^(i*(M_PI * numerator) / denominator) around the Pauli z axis.
+    /// rotates "target" as \f$ e^{i*{\pi * numerator} / denominator} \f$ around the Pauli z axis.
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise controlled |1> axis rotation gate - For each bit pair in "length," if "control" bit is set to 1, rotates
-    /// "target" as e^(-i*\theta/2) around the |1> state.
+    /// "target" as \f$ e^{-i*\theta/2} \f$ around the |1> state.
     void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise dyadic controlled |1> axis rotation gate - For each bit pair in "length," if "control" bit is set to 1,
-    /// rotates "target" as e^(i*(M_PI * numerator) / denominator) around the |1> state.
+    /// rotates "target" as \f$ e^{i*{\pi * numerator} / denominator} \f$ around the |1> state.
     void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise controlled y for registers of "length" bits
     void CY(bitLenInt control, bitLenInt target, bitLenInt length);
+
     /// Bitwise controlled z for registers of "length" bits
     void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -443,6 +486,7 @@ unitary logical comparison operations.)
 
     /// Add a classical integer to the register, with sign and with carry.
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+
     /// Add a classical integer to the register, with sign and with (phase-based) carry.
     void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
@@ -561,6 +605,29 @@ unitary logical comparison operations.)
     /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
     void QFT(bitLenInt start, bitLenInt length);
 
+    /// "Entangled Hadamard" - perform an operation on two entangled registers like a bitwise Hadamard on a single
+    /// unentangled register.
+    /**
+      * The "entangled Hadamard" register operation is an important logical expedient to Qrack. It is a unitary
+    operation, which may be complicated in terms of fundamental gates. For two entangled registers, starting with
+    "targetStart" and "entangledStart," of "length" bits, it transforms the "targetStart" register as if a bitwise
+    Hadamard was applied to a register which is not entangled. It maintains the entanglement to the "entangledStart"
+    register in this process, affecting that register as if it were unentangled register to which a bitwise Hadamard
+    gate variant, without phase reversal, was applied.
+
+    When this gate is applied to a state loaded by SuperposeReg8(), it becomes possible to perform general "amplitude
+    amplification" algorithms, generalizations of Grover's search, on entangled key-value pairs in two registers. This
+    allows us to do things like "Grover's search" for the key index of an array value element which matches a target
+    value, or search for the key index of an array value element which is greater than or less than a target value. See
+    the "Grover's search" variants assembler examples in the examples project for practical examples of its application,
+    or see the Grover's search unit test in "example.cpp." (The relevant examples are actually properly "amplitude
+    amplification" generalizations of Grover's search.)
+
+    As this operation is unitary and extremely expedient, Qrack does not concern itself with the physical hardware
+    realization of this gate, as Qrack is a practical emulator designed for computational efficiency foremost.
+      */
+    void EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length);
+
     /// Reverse the phase of the state where the register equals zero.
     void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
@@ -585,38 +652,39 @@ unitary logical comparison operations.)
     /// Set 8 bit register bits by a superposed index-offset-based read from classical memory
     /**
       * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
-"outputStart" bits are first cleared, then the separable |input, 00000000> permutation state is mapped to |input,
-values[input]>, with "values[input]" placed in the "outputStart" register.
+    "outputStart" bits are first cleared, then the separable |input, 00000000> permutation state is mapped to |input,
+    values[input]>, with "values[input]" placed in the "outputStart" register.
 
-While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the registers
-need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar to the X
-addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it loads from
-RAM.
+    While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the
+    registers need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar
+    to the X addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it
+    loads from RAM.
 
-The physical motivation for this addressing mode can be explained as follows: say that we have a superconducting quantum
-interface device (SQUID) based chip. SQUIDs have already been demonstrated passing coherently superposed electrical
-currents. In a sufficiently quantum-mechanically isolated qubit chip with a classical cache, with both classical RAM and
-registers likely cryogenically isolated from the environment, SQUIDs could (hopefully) pass coherently superposed
-electrical currents into the classical RAM cache to load values into a qubit register. The state loaded would be a
-superposition of the values of all RAM to which coherently superposed electrical currents were passed.
+    The physical motivation for this addressing mode can be explained as follows: say that we have a superconducting
+    quantum interface device (SQUID) based chip. SQUIDs have already been demonstrated passing coherently superposed
+    electrical currents. In a sufficiently quantum-mechanically isolated qubit chip with a classical cache, with both
+    classical RAM and registers likely cryogenically isolated from the environment, SQUIDs could (hopefully) pass
+    coherently superposed electrical currents into the classical RAM cache to load values into a qubit register. The
+    state loaded would be a superposition of the values of all RAM to which coherently superposed electrical currents
+    were passed.
 
-In qubit system similar to the MOS 6502, say we have qubit-based "accumulator" and "X index" registers, and say that we
-start with a superposed X index register. In (classical) X addressing mode, the X index register value acts an offset
-into RAM from a specified starting address. The X addressing mode of a LoaD Accumulator (LDA) instruction, by the
-physical mechanism described above, should load the accumulator in quantum parallel with the values of every different
-address of RAM pointed to in superposition by the X index register. The superposed values in the accumulator are
-entangled with those in the X index register, by way of whatever values the classical RAM pointed to by X held at the
-time of the load. (If the RAM at index "36" held an unsigned char value of "27," then the value "36" in the X index
-register becomes entangled with the value "27" in the accumulator, and so on in quantum parallel for all superposed
-values of the X index register, at once.) If the X index register or accumulator are then measured, the two registers
-will both always collapse into a random but valid key-value pair of X index offset and value at that classical RAM
-address.
+    In qubit system similar to the MOS 6502, say we have qubit-based "accumulator" and "X index" registers, and say that
+    we start with a superposed X index register. In (classical) X addressing mode, the X index register value acts an
+    offset into RAM from a specified starting address. The X addressing mode of a LoaD Accumulator (LDA) instruction, by
+    the physical mechanism described above, should load the accumulator in quantum parallel with the values of every
+    different address of RAM pointed to in superposition by the X index register. The superposed values in the
+    accumulator are entangled with those in the X index register, by way of whatever values the classical RAM pointed to
+    by X held at the time of the load. (If the RAM at index "36" held an unsigned char value of "27," then the value
+    "36" in the X index register becomes entangled with the value "27" in the accumulator, and so on in quantum parallel
+    for all superposed values of the X index register, at once.) If the X index register or accumulator are then
+    measured, the two registers will both always collapse into a random but valid key-value pair of X index offset and
+    value at that classical RAM address.
 
-Note that a "superposed store operation in classical RAM" is not possible by analagous reasoning. Classical RAM would
-become entangled with both the accumulator and the X register. When the state of the registers was collapsed, we would
-find that only one "store" operation to a single memory address had actually been carried out, consistent with the
-address offset in the collapsed X register and the byte value in the collapsed accumulator. It would not be possible by
-this model to write in quantum parallel to more than one address of classical memory at a time.
+    Note that a "superposed store operation in classical RAM" is not possible by analagous reasoning. Classical RAM
+    would become entangled with both the accumulator and the X register. When the state of the registers was collapsed,
+    we would find that only one "store" operation to a single memory address had actually been carried out, consistent
+    with the address offset in the collapsed X register and the byte value in the collapsed accumulator. It would not be
+    possible by this model to write in quantum parallel to more than one address of classical memory at a time.
 
      */
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
@@ -624,17 +692,17 @@ this model to write in quantum parallel to more than one address of classical me
     /// Add to entangled 8 bit register state with a superposed index-offset-based read from classical memory
     /**
       * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
-"outputStart" bits would usually already be entangled with the "inputStart" bits via a SuperposeReg8() operation. With
-the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key, value> is
-mapped to |key, value + values[key]>. This is similar to classical parallel addition of two arrays. However, when either
-of the registers are measured, both registers will collapse into one random VALID key-value pair, with any addition or
-subtraction done to the "value." See SuperposeReg8() for context.
+    "outputStart" bits would usually already be entangled with the "inputStart" bits via a SuperposeReg8() operation.
+    With the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key,
+    value> is mapped to |key, value + values[key]>. This is similar to classical parallel addition of two arrays.
+    However, when either of the registers are measured, both registers will collapse into one random VALID key-value
+    pair, with any addition or subtraction done to the "value." See SuperposeReg8() for context.
 
-While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the registers
-need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar to the X
-addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it loads from
-RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state usually
-initially prepared with SuperposeReg8().
+    While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the
+    registers need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar
+    to the X addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it
+    loads from RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state
+    usually initially prepared with SuperposeReg8().
 
      */
     unsigned char AdcSuperposeReg8(
@@ -643,17 +711,17 @@ initially prepared with SuperposeReg8().
     /// Subtract from an entangled 8 bit register state with a superposed index-offset-based read from classical memory
     /**
       * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
-"outputStart" bits would usually already be entangled with the "inputStart" bits via a SuperposeReg8() operation. With
-the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key, value> is
-mapped to |key, value - values[key]>. This is similar to classical parallel addition of two arrays. However, when either
-of the registers are measured, both registers will collapse into one random VALID key-value pair, with any addition or
-subtraction done to the "value." See ::SuperposeReg8 for context.
+    "outputStart" bits would usually already be entangled with the "inputStart" bits via a SuperposeReg8() operation.
+    With the "inputStart" bits being a "key" and the "outputStart" bits being a value, the permutation state |key,
+    value> is mapped to |key, value - values[key]>. This is similar to classical parallel addition of two arrays.
+    However, when either of the registers are measured, both registers will collapse into one random VALID key-value
+    pair, with any addition or subtraction done to the "value." See CoherentUnit::SuperposeReg8 for context.
 
-While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the registers
-need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar to the X
-addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it loads from
-RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state usually
-initially prepared with SuperposeReg8().
+    While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the
+    registers need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar
+    to the X addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it
+    loads from RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract (with carry) operations on a state
+    usually initially prepared with SuperposeReg8().
 
      */
     unsigned char SbcSuperposeReg8(
@@ -678,7 +746,7 @@ protected:
     void NormalizeState();
     void Reverse(bitLenInt first, bitLenInt last);
     void UpdateRunningNorm();
-};
+}; // namespace Qrack
 
 template <class BidirectionalIterator>
 void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride);
