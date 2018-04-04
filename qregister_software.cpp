@@ -138,76 +138,192 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
     ResetStateVec(std::move(nStateVec));
 }
 
-/// Add two quantum integers
-/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
- * "inOutStart." */
-/*void CoherentUnit::ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
+/// Set 8 bit register bits based on read from classical memory
+unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
-    bitCapInt inOutMask = 0;
-    bitCapInt inMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-        inMask += 1 << (inStart + i);
-    }
-    otherMask -= inOutMask + inMask;
-    bitCapInt bciArgs[6] = { inOutMask, inMask, otherMask, lengthPower - 1, inOutStart, inStart };
+    bitCapInt i, outputInt;
+    SetReg(outputStart, 8, 0);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt skipPower = 1 << outputStart;
+    bitCapInt bciArgs[3] = { inputStart, inputMask, outputStart };
+    par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
             Complex16* nStateVec) {
-            bitCapInt otherRes = (lcv & (bciArgs[2]));
-            if (otherRes == lcv) {
-                nStateVec[lcv] = stateVec[lcv];
-            } else {
-                bitCapInt inOutRes = (lcv & (bciArgs[0]));
-                bitCapInt inOutInt = inOutRes >> (bciArgs[4]);
-                bitCapInt inRes = (lcv & (bciArgs[1]));
-                bitCapInt inInt = inRes >> (bciArgs[5]);
-                nStateVec[(((inOutInt + inInt) & bciArgs[3]) << (bciArgs[4])) | otherRes | inRes] = stateVec[lcv];
-            }
+            bitCapInt inputRes = lcv & (bciArgs[1]);
+            bitCapInt inputInt = inputRes >> (bciArgs[0]);
+            bitCapInt outputInt = values[inputInt];
+            bitCapInt outputRes = outputInt << (bciArgs[2]);
+            nStateVec[outputRes | lcv] = stateVec[lcv];
         });
-    stateVec.reset();
-    stateVec = std::move(nStateVec);
-}*/
+    double prob, average;
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    ResetStateVec(std::move(nStateVec));
 
-/// Subtract two quantum integers
-/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
- * "inOutStart." */
-/*void CoherentUnit::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)
+    return (unsigned char)(average + 0.5);
+}
+
+/// Add based on an indexed load from classical memory
+unsigned char CoherentUnit::AdcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
-    bitCapInt inOutMask = 0;
-    bitCapInt inMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-        inMask += 1 << (toSub + i);
+
+    // This a quantum/classical interface method, similar to SuperposeReg8.
+    // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
+    // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
+    // are ADded with Carry (ADC) to values entangled in the "outputStart" register with the "inputStart" register.
+
+    //"inputStart" and "outputStart" point to the beginning of two quantum registers. The carry qubit is at index
+    //"carryIndex." "values" is a page of key-value pairs of classical memory to load based on offset by the
+    //"inputStart" register.
+
+    // The carry has to first to be measured for its input value.
+    bitCapInt carryIn = 0;
+    if (M(carryIndex)) {
+        // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
+        carryIn = 1;
+        X(carryIndex);
     }
-    otherMask ^= inOutMask | inMask;
+
+    // We calloc a new stateVector for output.
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    bitCapInt bciArgs[6] = { inOutMask, inMask, otherMask, lengthPower - 1, inOutStart, toSub };
-    par_for_copy(0, maxQPower, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+
+    // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
+    // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
+    // other bits that aren't involved in the operation.
+    bitCapInt i, outputInt;
+    bitCapInt lengthPower = 1 << 8;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt skipPower = 1 << carryIndex;
+    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower };
+    par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
             Complex16* nStateVec) {
-            bitCapInt otherRes = (lcv & (bciArgs[2]));
-            if (otherRes == lcv) {
-                nStateVec[lcv] = stateVec[lcv];
-            } else {
-                bitCapInt inOutRes = (lcv & (bciArgs[0]));
-                bitCapInt inOutInt = inOutRes >> (bciArgs[4]);
-                bitCapInt inRes = (lcv & (bciArgs[1]));
-                bitCapInt inInt = inRes >> (bciArgs[5]);
-                nStateVec[(((inOutInt - inInt + (bciArgs[3])) & bciArgs[3]) << (bciArgs[4])) + otherRes + inRes] =
-                    stateVec[lcv];
+            // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
+            // but their input value matches their output value:
+            bitCapInt otherRes = lcv & (bciArgs[4]);
+            // These are bits that index the classical memory we're loading from:
+            bitCapInt inputRes = lcv & (bciArgs[1]);
+            // If we read these as a char type, this is their value as a char:
+            bitCapInt inputInt = inputRes >> (bciArgs[0]);
+            // This is the initial value that's entangled with the "inputStart" register in "outputStart."
+            bitCapInt outputRes = lcv & (bciArgs[3]);
+            // Maintaining the entanglement, we add the classical input value corresponding with the state of the
+            // "inputStart" register to "outputStart" register value its entangled with in this iteration of the loop.
+            bitCapInt outputInt = (outputRes >> (bciArgs[2])) + values[inputInt] + bciArgs[5];
+            // If we exceed max char, we subtract 256 and entangle the carry as set.
+            bitCapInt carryRes = 0;
+            if (outputInt >= bciArgs[7]) {
+                outputInt -= bciArgs[7];
+                carryRes = bciArgs[6];
             }
+            // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
+            // carry, and shunt the uninvoled "other" bits from input to output.
+            outputRes = outputInt << (bciArgs[2]);
+            nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
         });
-    stateVec.reset();
-    stateVec = std::move(nStateVec);
-}*/
+    // At the end, just as a convenience, we return the expectation value for the addition result.
+    double prob, average;
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    // Finally, we dealloc the old state vector and replace it with the one we just calculated.
+    ResetStateVec(std::move(nStateVec));
+
+    // Return the expectation value.
+    return (unsigned char)(average + 0.5);
+}
+
+/// Subtract based on an indexed load from classical memory
+unsigned char CoherentUnit::SbcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    // This a quantum/classical interface method, similar to SuperposeReg8.
+    // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
+    // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
+    // are SuBtracted with Carry (SBC) from values entangled in the "outputStart" register with the "inputStart"
+    // register.
+
+    //"inputStart" and "outputStart" point to the beginning of two quantum registers. The carry qubit is at index
+    //"carryIndex." "values" is a page of key-value pairs of classical memory to load based on offset by the
+    //"inputStart" register.
+
+    // The carry (or "borrow") has to first to be measured for its input value.
+    bitCapInt carryIn = 0;
+    if (M(carryIndex)) {
+        // If the carry is set, we borrow 1 going in. We always initially clear the carry after testing for borrow in.
+        carryIn = 1;
+        X(carryIndex);
+    }
+
+    // We calloc a new stateVector for output.
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+
+    // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
+    // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
+    // other bits that aren't involved in the operation.
+    bitCapInt i, outputInt;
+    bitCapInt lengthPower = 1 << 8;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt skipPower = 1 << carryIndex;
+    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower };
+    par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
+            Complex16* nStateVec) {
+            // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
+            // but their input value matches their output value:
+            bitCapInt otherRes = lcv & (bciArgs[4]);
+            // These are bits that index the classical memory we're loading from:
+            bitCapInt inputRes = lcv & (bciArgs[1]);
+            // If we read these as a char type, this is their value as a char:
+            bitCapInt inputInt = inputRes >> (bciArgs[0]);
+            // This is the initial value that's entangled with the "inputStart" register in "outputStart."
+            bitCapInt outputRes = lcv & (bciArgs[3]);
+            // Maintaining the entanglement, we subtract the classical input value corresponding with the state of the
+            // "inputStart" register from "outputStart" register value its entangled with in this iteration of the loop.
+            bitCapInt outputInt = ((outputRes >> (bciArgs[2])) + bciArgs[7]) - (values[inputInt] + bciArgs[5]);
+            // If our subtractions results in less than 0, we add 256 and entangle the carry as set.
+            // (Since we're using unsigned types, we start by adding 256 with the carry, and then subtract 256 and clear the
+            // carry if we don't have a borrow-out.)
+            bitCapInt carryRes = bciArgs[6];
+            if (outputInt >= bciArgs[7]) {
+                outputInt -= bciArgs[7];
+                carryRes = 0;
+            }
+            // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
+            // carry, and shunt the uninvoled "other" bits from input to output.
+            outputRes = outputInt << (bciArgs[3]);
+            nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
+        });
+    double prob, average;
+    // At the end, just as a convenience, we return the expectation value for the subtraction result.
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    // Finally, we dealloc the old state vector and replace it with the one we just calculated.
+    ResetStateVec(std::move(nStateVec));
+
+    // Return the expectation value.
+    return (unsigned char)(average + 0.5);
+}
 
 // Private CoherentUnit methods
 void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,

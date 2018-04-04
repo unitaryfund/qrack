@@ -46,22 +46,12 @@ public:
     cl::Kernel* GetINCCPtr();
     /// Get a pointer to the DECC function kernel
     cl::Kernel* GetDECCPtr();
-    /// Get a pointer to the ADD function kernel
-    cl::Kernel* GetADDPtr();
-    /// Get a pointer to the SUB function kernel
-    cl::Kernel* GetSUBPtr();
-    /// Get a pointer to the ADDBCD function kernel
-    cl::Kernel* GetADDBCDPtr();
-    /// Get a pointer to the SUBBCD function kernel
-    cl::Kernel* GetSUBBCDPtr();
-    /// Get a pointer to the ADDC function kernel
-    cl::Kernel* GetADDCPtr();
-    /// Get a pointer to the SUBC function kernel
-    cl::Kernel* GetSUBCPtr();
-    /// Get a pointer to the ADDBCDC function kernel
-    cl::Kernel* GetADDBCDCPtr();
-    /// Get a pointer to the SUBBCDC function kernel
-    cl::Kernel* GetSUBBCDCPtr();
+    /// Get a pointer to the SuperposeReg8 function kernel
+    cl::Kernel* GetSR8Ptr();
+    /// Get a pointer to the AdcSuperposeReg8 function kernel
+    cl::Kernel* GetADC8Ptr();
+    /// Get a pointer to the SbcSuperposeReg8 function kernel
+    cl::Kernel* GetSBC8Ptr();
 
 private:
     std::vector<cl::Platform> all_platforms;
@@ -76,14 +66,9 @@ private:
     cl::Kernel ror;
     cl::Kernel incc;
     cl::Kernel decc;
-    cl::Kernel add;
-    cl::Kernel sub;
-    cl::Kernel addbcd;
-    cl::Kernel subbcd;
-    cl::Kernel addc;
-    cl::Kernel subc;
-    cl::Kernel addbcdc;
-    cl::Kernel subbcdc;
+    cl::Kernel superposeReg8;
+    cl::Kernel adcReg8;
+    cl::Kernel sbcReg8;
 
     OCLEngine(); // Private so that it can  not be called
     OCLEngine(int plat, int dev); // Private so that it can  not be called

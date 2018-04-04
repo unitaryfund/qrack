@@ -352,7 +352,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
     const int ITERATIONS = 128;
 
     // Create the lookup table
-    for (i = 0; i < 128; i++) {
+    for (i = 0; i < 256; i++) {
         toSearch[i] = 100;
     }
 
