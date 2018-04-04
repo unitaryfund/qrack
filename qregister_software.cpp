@@ -150,8 +150,8 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
     bitCapInt skipPower = 1 << outputStart;
     bitCapInt bciArgs[3] = { inputStart, inputMask, outputStart };
     par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
-            Complex16* nStateVec) {
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            const unsigned char* values, Complex16* nStateVec) {
             bitCapInt inputRes = lcv & (bciArgs[1]);
             bitCapInt inputInt = inputRes >> (bciArgs[0]);
             bitCapInt outputInt = values[inputInt];
@@ -205,12 +205,13 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
-    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower };
+    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask,
+        lengthPower };
     par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
-            Complex16* nStateVec) {
-            // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
-            // but their input value matches their output value:
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            const unsigned char* values, Complex16* nStateVec) {
+            // These are qubits that are not directly involved in the operation. We iterate over all of their
+            // possibilities, but their input value matches their output value:
             bitCapInt otherRes = lcv & (bciArgs[4]);
             // These are bits that index the classical memory we're loading from:
             bitCapInt inputRes = lcv & (bciArgs[1]);
@@ -227,8 +228,8 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
                 outputInt -= bciArgs[7];
                 carryRes = bciArgs[6];
             }
-            // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
-            // carry, and shunt the uninvoled "other" bits from input to output.
+            // We shift the output integer back to correspondence with its register bits, and entangle it with the input
+            // and carry, and shunt the uninvoled "other" bits from input to output.
             outputRes = outputInt << (bciArgs[2]);
             nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
         });
@@ -282,12 +283,13 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
-    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower };
+    bitCapInt bciArgs[8] = { inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask,
+        lengthPower };
     par_for_load(0, maxQPower, skipPower, 8, values, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, const unsigned char* values,
-            Complex16* nStateVec) {
-            // These are qubits that are not directly involved in the operation. We iterate over all of their possibilities,
-            // but their input value matches their output value:
+        [](const bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs,
+            const unsigned char* values, Complex16* nStateVec) {
+            // These are qubits that are not directly involved in the operation. We iterate over all of their
+            // possibilities, but their input value matches their output value:
             bitCapInt otherRes = lcv & (bciArgs[4]);
             // These are bits that index the classical memory we're loading from:
             bitCapInt inputRes = lcv & (bciArgs[1]);
@@ -299,15 +301,15 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
             // "inputStart" register from "outputStart" register value its entangled with in this iteration of the loop.
             bitCapInt outputInt = ((outputRes >> (bciArgs[2])) + bciArgs[7]) - (values[inputInt] + bciArgs[5]);
             // If our subtractions results in less than 0, we add 256 and entangle the carry as set.
-            // (Since we're using unsigned types, we start by adding 256 with the carry, and then subtract 256 and clear the
-            // carry if we don't have a borrow-out.)
+            // (Since we're using unsigned types, we start by adding 256 with the carry, and then subtract 256 and clear
+            // the carry if we don't have a borrow-out.)
             bitCapInt carryRes = bciArgs[6];
             if (outputInt >= bciArgs[7]) {
                 outputInt -= bciArgs[7];
                 carryRes = 0;
             }
-            // We shift the output integer back to correspondence with its register bits, and entangle it with the input and
-            // carry, and shunt the uninvoled "other" bits from input to output.
+            // We shift the output integer back to correspondence with its register bits, and entangle it with the input
+            // and carry, and shunt the uninvoled "other" bits from input to output.
             outputRes = outputInt << (bciArgs[3]);
             nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
         });

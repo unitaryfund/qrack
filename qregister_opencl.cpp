@@ -262,8 +262,7 @@ unsigned char CoherentUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt out
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Buffer loadBuffer =
-        cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
+    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
     cl::Kernel sr8 = *(clObj->GetSR8Ptr());
     sr8.setArg(0, stateBuffer);
     sr8.setArg(1, ulongBuffer);
@@ -307,7 +306,8 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
-    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower, 0 };
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn,
+        carryMask, lengthPower, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
@@ -315,8 +315,7 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Buffer loadBuffer =
-        cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
+    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
     cl::Kernel adc8 = *(clObj->GetADC8Ptr());
     adc8.setArg(0, stateBuffer);
     adc8.setArg(1, ulongBuffer);
@@ -363,7 +362,8 @@ unsigned char CoherentUnitOCL::SbcSuperposeReg8(
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
-    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn, carryMask, lengthPower, 0 };
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn,
+        carryMask, lengthPower, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
@@ -371,8 +371,7 @@ unsigned char CoherentUnitOCL::SbcSuperposeReg8(
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Buffer loadBuffer =
-        cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
+    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
     cl::Kernel sbc8 = *(clObj->GetSBC8Ptr());
     sbc8.setArg(0, stateBuffer);
     sbc8.setArg(1, ulongBuffer);

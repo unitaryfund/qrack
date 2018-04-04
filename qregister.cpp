@@ -2027,11 +2027,15 @@ bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
     double angle = Rand() * 2.0 * M_PI;
     double cosine = cos(angle);
     double sine = sin(angle);
-    bitCapInt lengthPower = 1<<length;
+    bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
-    double probArray[lengthPower] = { 0.0 };
+    double probArray[lengthPower];
     double lowerProb, largestProb, nrmlzr;
     bitCapInt lcv, result;
+
+    for (lcv = 0; lcv < lengthPower; lcv++) {
+        probArray[lcv] = 0.0;
+    }
 
     for (lcv = 0; lcv < maxQPower; lcv++) {
         probArray[(lcv & regMask) >> start] += norm(stateVec[lcv]);
@@ -2047,8 +2051,7 @@ bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
             foundPerm = true;
             result = lcv;
             nrmlzr = probArray[lcv];
-        }
-        else {
+        } else {
             if (largestProb <= probArray[lcv]) {
                 largestProb = probArray[lcv];
                 result = lcv;

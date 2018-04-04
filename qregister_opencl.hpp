@@ -40,8 +40,10 @@ public:
     virtual void INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
     virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
-    virtual unsigned char AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-    virtual unsigned char SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual unsigned char AdcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual unsigned char SbcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
     OCLEngine* clObj;
