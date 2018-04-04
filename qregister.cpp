@@ -2079,19 +2079,7 @@ bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
 }
 
 /// Measure permutation state of an 8 bit register
-unsigned char CoherentUnit::MReg8(bitLenInt start)
-{
-    unsigned char toRet = 0;
-    unsigned char power = 1;
-    for (bitLenInt i = 0; i < 8; i++) {
-        if (M(i + start)) {
-            toRet += power;
-        }
-        power <<= 1;
-    }
-
-    return toRet;
-}
+unsigned char CoherentUnit::MReg8(bitLenInt start) { return MReg(start, 8); }
 
 void CoherentUnit::ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm)
 {
