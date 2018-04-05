@@ -29,6 +29,12 @@ struct QbLookup {
     bitLenInt qb;
 };
 
+struct QbListEntry {
+    bitLenInt cu;
+    bitLenInt start;
+    bitLenInt length;
+};
+
 class SeparatedUnit;
 
 class SeparatedUnit {
@@ -39,11 +45,21 @@ public:
     /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
+    /// Get a count of qubits in the SeparatedUnit
+    bitLenInt GetQubitCount();
+
     /// Measure a bit
     bool M(bitLenInt qubitIndex);
 
+    /// Measure permutation state of a register
+    bitCapInt MReg(bitLenInt start, bitLenInt length);
+
 protected:
+    bitLenInt qubitCount;
     std::unique_ptr<QbLookup[]> qubitLookup;
     std::vector<CoherentUnit> coherentUnits;
+
+    void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList);
+    void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList);
 };
 } // namespace Qrack
