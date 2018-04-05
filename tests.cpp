@@ -34,7 +34,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
 
@@ -360,6 +360,13 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
+{
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+    qftReg->SetReg(0, 8, 10);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
+}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 {
     int i;
@@ -508,4 +515,4 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
     std::cout << "Distance left std. dev.:" << stdDev << std::endl;
 
     //("Hello, Universe!")
-}
+}*/

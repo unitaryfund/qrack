@@ -37,7 +37,7 @@ struct QbListEntry {
 
 class SeparatedUnit;
 
-class SeparatedUnit {
+class SeparatedUnit : public CoherentUnit {
 public:
     /// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
     SeparatedUnit(bitLenInt qBitCount);
@@ -45,8 +45,8 @@ public:
     /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
-    /// Get a count of qubits in the SeparatedUnit
-    bitLenInt GetQubitCount();
+    /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+    double Prob(bitLenInt qubitIndex);
 
     /// Measure a bit
     bool M(bitLenInt qubitIndex);
@@ -54,20 +54,38 @@ public:
     /// Measure permutation state of a register
     bitCapInt MReg(bitLenInt start, bitLenInt length);
 
+    /// Set individual bit to pure |0> (false) or |1> (true) state
+    /**
+     * To set a bit, the bit is first measured. If the result of measurement matches "value," the bit is considered set.
+     * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
+     * entirely in the "value" state, with a random phase factor.
+     */
+    void SetBit(bitLenInt qubitIndex1, bool value);
+
+    /// Set register bits to given permutation
+    void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+
 protected:
-    bitLenInt qubitCount;
     std::unique_ptr<QbLookup[]> qubitLookup;
     std::vector<CoherentUnit> coherentUnits;
 
     /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
     /**
-      * This operation optimizes compiling a list out of qubit pile when bit order is important. We apply register-wise operations over a pile of arbitrarily entangled and separated qubits. Entangled qubits are stored together in single CoherentUnit objects, but their mapping to SeparatedUnit bit indices can be generally random. Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does not depend on the ordering of bits in the list.
-      */
+     * This operation optimizes compiling a list out of qubit pile when bit order is important. We apply register-wise
+     * operations over a pile of arbitrarily entangled and separated qubits. Entangled qubits are stored together in
+     * single CoherentUnit objects, but their mapping to SeparatedUnit bit indices can be generally random. Sometimes,
+     * we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise
+     * parallel and does not depend on the ordering of bits in the list.
+     */
     void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList);
     /// Compile a list of CoherentUnit bit strings for applying a bitwise-parallel operation
     /**
-      * This operation optimizes compiling a list out of qubit pile when bit order is not important. We apply register-wise operations over a pile of arbitrarily entangled and separated qubits. Entangled qubits are stored together in single CoherentUnit objects, but their mapping to SeparatedUnit bit indices can be generally random. Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does not depend on the ordering of bits in the list.
-      */
+     * This operation optimizes compiling a list out of qubit pile when bit order is not important. We apply
+     * register-wise operations over a pile of arbitrarily entangled and separated qubits. Entangled qubits are stored
+     * together in single CoherentUnit objects, but their mapping to SeparatedUnit bit indices can be generally random.
+     * Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is
+     * bitwise parallel and does not depend on the ordering of bits in the list.
+     */
     void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList);
 };
 } // namespace Qrack

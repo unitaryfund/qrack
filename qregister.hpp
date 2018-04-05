@@ -84,8 +84,8 @@ public:
     /** Destructor of CoherentUnit */
     virtual ~CoherentUnit() {}
 
-    /** Set the random seed (primarily used for testing) */
-    void SetRandomSeed(uint32_t seed);
+    /* Set the random seed (primarily used for testing) */
+    virtual void SetRandomSeed(uint32_t seed);
 
     /** Get the count of bits in this register */
     int GetQubitCount() { return qubitCount; }
@@ -356,7 +356,7 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    bool M(bitLenInt qubitIndex);
+    virtual bool M(bitLenInt qubitIndex);
 
     /**
      * X gate
@@ -518,6 +518,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
      * \f$ around |1> state.
      */
+
     void CRT(double radians, bitLenInt control, bitLenInt target);
 
     /**
@@ -834,10 +835,10 @@ public:
     void PhaseFlip();
 
     /** Set register bits to given permutation */
-    void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /** Measure permutation state of an 8 bit register */
     unsigned char MReg8(bitLenInt start);
@@ -960,7 +961,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    double Prob(bitLenInt qubitIndex);
+    virtual double Prob(bitLenInt qubitIndex);
 
     /**
      * Direct measure of full register probability to be in permutation state
@@ -985,7 +986,7 @@ public:
      * The state ends up entirely in the "value" state, with a random phase
      * factor.
      */
-    void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /** Swap values of two bits in register */
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
@@ -994,6 +995,10 @@ public:
     void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
 protected:
+    ///Constructor for SeparatedUnit
+    CoherentUnit();
+
+    uint32_t randomSeed;
     double runningNorm;
     bitLenInt qubitCount;
     bitCapInt maxQPower;

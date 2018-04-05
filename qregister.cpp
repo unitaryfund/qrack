@@ -41,11 +41,11 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
-/**
- * The "Qrack::CoherentUnit" class represents one or more coherent quantum
- * processor registers, including primitive bit logic gates and (abstract)
- * opcodes-like methods.
- */
+/** Protected constructor for SeparatedUnit */
+CoherentUnit::CoherentUnit() : rand_distribution(0.0, 1.0) {
+    //This method body left intentionally empty
+    randomSeed = std::time(0);
+}
 
 /**
  * Initialize a coherent unit with qBitCount number pf bits, to initState
@@ -81,7 +81,8 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    SetRandomSeed(std::time(0));
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
 
     double angle = Rand() * 2.0 * M_PI;
     runningNorm = 1.0;
@@ -104,7 +105,8 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
 {
-    SetRandomSeed(std::time(0));
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
 
     runningNorm = pqs.runningNorm;
     qubitCount = pqs.qubitCount;
@@ -117,7 +119,10 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
 }
 
 /// Set the random seed (primarily used for testing)
-void CoherentUnit::SetRandomSeed(uint32_t seed) { rand_generator.seed(seed); }
+void CoherentUnit::SetRandomSeed(uint32_t seed) {
+    randomSeed = seed;
+    rand_generator.seed(seed);
+}
 
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 void CoherentUnit::CloneRawState(Complex16* output)
@@ -2006,8 +2011,7 @@ bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
     if (length == 1) {
         if (M(start)) {
             return 1;
-        }
-        else {
+        } else {
             return 0;
         }
     }

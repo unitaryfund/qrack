@@ -1,4 +1,5 @@
 #include "qregister.hpp"
+#include "separatedunit.hpp"
 
 #if ENABLE_OPENCL
 #include "qregister_opencl.hpp"
@@ -9,7 +10,7 @@ CoherentUnit* CreateCoherentUnit(CoherentUnitEngine engine, bitLenInt qBitCount,
 {
     switch (engine) {
     case COHERENT_UNIT_ENGINE_SOFTWARE:
-        return new CoherentUnit(qBitCount, initState);
+        return new SeparatedUnit(qBitCount, initState);
 #if ENABLE_OPENCL
     case COHERENT_UNIT_ENGINE_OPENCL:
         return new CoherentUnitOCL(qBitCount, initState);
