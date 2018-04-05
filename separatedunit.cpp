@@ -15,7 +15,6 @@
 #include "separatedunit.hpp"
 #include <iostream>
 
-
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -33,28 +32,15 @@ bool compare(QbListEntry i, QbListEntry j)
     return lessThan;
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
-{
-    qubitCount = qBitCount;
-
-    bitLenInt i;
-    std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
-    qubitLookup.reset();
-    qubitLookup = std::move(ql);
-    for (i = 0; i < qBitCount; i++) {
-        qubitLookup[i].cu = i;
-        qubitLookup[i].qb = 0;
-        coherentUnits.push_back(CoherentUnit(1));
-    }
-}
-
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
 {
+    rand_generator_ptr[0] = std::default_random_engine();
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
     qubitCount = qBitCount;
-    bool setBit;
 
+    bool setBit;
     bitLenInt i;
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
     qubitLookup.reset();
@@ -63,12 +49,19 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
         setBit = (initState & (1 << i)) > 0;
         qubitLookup[i].cu = i;
         qubitLookup[i].qb = 0;
-        coherentUnits.push_back(CoherentUnit(1, setBit ? 1 : 0));
+        coherentUnits.push_back(CoherentUnit(1, (setBit ? 1 : 0), rand_generator_ptr));
     }
 }
 
+/// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
+    : SeparatedUnit(qBitCount, 0)
+{
+}
+
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-double SeparatedUnit::Prob(bitLenInt qubitIndex) {
+double SeparatedUnit::Prob(bitLenInt qubitIndex)
+{
     QbLookup qbl = qubitLookup[qubitIndex];
     CoherentUnit cu = coherentUnits[qbl.cu];
     return cu.Prob(qbl.qb);
@@ -83,7 +76,7 @@ bool SeparatedUnit::M(bitLenInt qubitIndex)
     result = cu.M(qbl.qb);
 
     if (cu.GetQubitCount() > 1) {
-        CoherentUnit ncu = CoherentUnit(1);
+        CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
         cu.Decohere(qbl.qb, 1, ncu);
 
         qbl.cu = coherentUnits.size();
@@ -116,7 +109,7 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
     for (i = 0; i < length; i++) {
         qbl = qubitLookup[start + i];
         if (coherentUnits[qbe.cu].GetQubitCount() > 1) {
-            CoherentUnit ncu = CoherentUnit(1);
+            CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
             coherentUnits[qbe.cu].Decohere(qbe.start, 1, ncu);
 
             qbl.cu = coherentUnits.size();
@@ -134,14 +127,16 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
  * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
  * entirely in the "value" state, with a random phase factor.
  */
-void SeparatedUnit::SetBit(bitLenInt qubitIndex, bool value) {
+void SeparatedUnit::SetBit(bitLenInt qubitIndex, bool value)
+{
     QbLookup qbl = qubitLookup[qubitIndex];
     CoherentUnit cu = coherentUnits[qbl.cu];
     cu.SetBit(qbl.qb, value);
 }
 
 /// Set register bits to given permutation
-void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
+void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+{
     bitLenInt i;
     QbLookup qbl;
 
@@ -151,14 +146,14 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
         qbl = qubitLookup[start + i];
         coherentUnits[qbl.cu].SetBit(0, ((value & (1 << i)) > 0) ? true : false);
         if (coherentUnits[qbl.cu].GetQubitCount() > 1) {
-            CoherentUnit ncu = CoherentUnit(1);
+            CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
             coherentUnits[qbl.cu].Decohere(qbl.qb, 1, ncu);
 
             qbl.cu = coherentUnits.size();
             qbl.qb = 0;
             coherentUnits.push_back(ncu);
         }
-    }    
+    }
 }
 
 /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation

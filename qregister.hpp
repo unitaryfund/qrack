@@ -75,6 +75,12 @@ public:
     CoherentUnit(bitLenInt qBitCount, bitCapInt initState);
 
     /**
+     * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
+     * a shared random number generator
+     */
+    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine* rgp);
+
+    /**
      * Initialize a cloned register with same exact quantum state as pqs
      *
      * \warning PSEUDO-QUANTUM
@@ -995,7 +1001,7 @@ public:
     void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
 protected:
-    ///Constructor for SeparatedUnit
+    /// Constructor for SeparatedUnit
     CoherentUnit();
 
     uint32_t randomSeed;
@@ -1004,7 +1010,7 @@ protected:
     bitCapInt maxQPower;
     std::unique_ptr<Complex16[]> stateVec;
 
-    std::default_random_engine rand_generator;
+    std::default_random_engine rand_generator_ptr[1];
     std::uniform_real_distribution<double> rand_distribution;
 
     virtual void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
