@@ -3,7 +3,7 @@
 // (C) Daniel Strano 2018. All rights reserved.
 //
 // This is an abstraction on "CoherentUnit" per https://arxiv.org/abs/1710.05867
-// 
+//
 // "SeparatedUnit" keeps representation of qubit states separated until explicitly
 // entangled. This makes for large gains in memory and speed optimization in the
 // best case scenario. "CoherentUnit" has been optimized for the worst case scenario.
@@ -46,4 +46,4 @@ protected:
     std::unique_ptr<QbLookup[]> qubitLookup;
     std::vector<CoherentUnit> coherentUnits;
 };
-}
+} // namespace Qrack
