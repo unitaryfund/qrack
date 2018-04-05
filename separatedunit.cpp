@@ -22,7 +22,7 @@ namespace Qrack {
 
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount) {
     bitLenInt i;
-    std::unique_ptr<qbLookup[]> ql(new qbLookup[qBitCount]);
+    std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
     qubitLookup.reset();
     qubitLookup = std::move(ql);
     for (i = 0; i < qBitCount; i++) {
@@ -35,7 +35,7 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount) {
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) {
     bitLenInt i;
-    std::unique_ptr<qbLookup[]> ql(new qbLookup[qBitCount]);
+    std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
     qubitLookup.reset();
     qubitLookup = std::move(ql);
     for (i = 0; i < qBitCount; i++) {
@@ -44,4 +44,21 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) {
         coherentUnits.push_back(CoherentUnit(1));
     }
 }
+
+bool SeparatedUnit::M(bitLenInt qubitIndex) {
+    bool result;
+    QbLookup qbl = qubitLookup[qubitIndex];
+    CoherentUnit cu = coherentUnits[qbl.cu];
+    result = cu.M(qbl.qb);
+
+    CoherentUnit ncu = CoherentUnit(1);
+    cu.Decohere(qbl.qb, 1, ncu);
+   
+    qbl.cu = coherentUnits.size();
+    qbl.qb = 0;
+    coherentUnits.push_back(ncu);
+
+    return result;
+}
+
 }

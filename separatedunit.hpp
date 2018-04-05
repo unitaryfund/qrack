@@ -24,7 +24,7 @@
 
 namespace Qrack {
 
-struct qbLookup {
+struct QbLookup {
     bitLenInt cu;
     bitLenInt qb;
 };
@@ -39,8 +39,11 @@ public:
     /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
+    /// Measure a bit
+    bool M(bitLenInt qubitIndex);
+
 protected:
-    std::unique_ptr<qbLookup[]> qubitLookup;
+    std::unique_ptr<QbLookup[]> qubitLookup;
     std::vector<CoherentUnit> coherentUnits;
 };
 }
