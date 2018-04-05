@@ -865,11 +865,16 @@ void CoherentUnit::CZ(bitLenInt control, bitLenInt target)
 // "start"
 void CoherentUnit::X(bitLenInt start, bitLenInt length)
 {
-    // As a fundamental gate, the register-wise X could proceed like so:
-    //
-    //     for (bitLenInt lcv = 0; lcv < length; lcv++) {
-    //         X(start + lcv);
-    //     }
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        X(start);
+        return;
+    }
+
+    // As fundamental gate, the register-wise X could proceed like so:
+    // for (bitLenInt lcv = 0; lcv < length; lcv++) {
+    //    X(start + lcv);
+    //}
 
     // Basically ALL register-wise gates proceed by essentially the same
     // algorithm as this simple X gate.
@@ -930,6 +935,12 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
 /// Bitwise swap
 void CoherentUnit::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        Swap(start1, start2);
+        return;
+    }
+
     int distance = start1 - start2;
     if (distance < 0) {
         distance *= -1;
@@ -1973,6 +1984,12 @@ void CoherentUnit::PhaseFlip()
 /// Set register bits to given permutation
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        SetBit(start, (value == 1));
+        return;
+    }
+
     bool bitVal;
     bitCapInt regVal = MReg(start, length);
     for (bitLenInt i = 0; i < length; i++) {
@@ -1985,6 +2002,16 @@ void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 /// Measure permutation state of a register
 bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
 {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        if (M(start)) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
