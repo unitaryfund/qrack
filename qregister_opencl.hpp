@@ -39,8 +39,11 @@ public:
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
-    // virtual void ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length);
-    // virtual void SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length);
+    virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
+    virtual unsigned char AdcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual unsigned char SbcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
     OCLEngine* clObj;
@@ -50,6 +53,7 @@ protected:
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
     cl::Buffer maxBuffer;
+    cl::Buffer loadBuffer;
 
     virtual void InitOCL();
     virtual void ReInitOCL();

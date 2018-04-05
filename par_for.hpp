@@ -134,23 +134,23 @@ void par_for(const bitCapInt begin, const bitCapInt end, Complex16* stateArray, 
 }
 
 template <class F>
-void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower, const Complex16* stateArray,
-    const bitCapInt* bciArgs, Complex16* nStateVec, F fn)
+void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower, const bitLenInt skipBitCount,
+    const Complex16* stateArray, const bitCapInt* bciArgs, Complex16* nStateVec, F fn)
 {
     std::atomic<bitCapInt> idx;
     idx = begin;
     int num_cpus = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(num_cpus);
     for (int cpu = 0; cpu != num_cpus; ++cpu) {
-        futures[cpu] =
-            std::async(std::launch::async, [cpu, &idx, end, skipPower, stateArray, bciArgs, nStateVec, &fn]() {
+        futures[cpu] = std::async(
+            std::launch::async, [cpu, &idx, end, skipPower, skipBitCount, stateArray, bciArgs, nStateVec, &fn]() {
                 bitCapInt i, iLow, iHigh;
                 for (;;) {
                     iHigh = idx++;
                     i = 0;
                     iLow = iHigh % skipPower;
                     i += iLow;
-                    iHigh = (iHigh - iLow) << 1;
+                    iHigh = (iHigh - iLow) << skipBitCount;
                     i += iHigh;
                     if (i >= end)
                         break;
@@ -160,6 +160,61 @@ void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt sk
     }
 
     for (int cpu = 0; cpu != num_cpus; ++cpu) {
+        futures[cpu].get();
+    }
+}
+
+template <class F>
+void par_for_load(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower, const bitLenInt skipBitCount,
+    const unsigned char* values, const Complex16* stateArray, const bitCapInt* bciArgs, Complex16* nStateVec, F fn)
+{
+    std::atomic<bitCapInt> idx;
+    idx = begin;
+    int num_cpus = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> futures(num_cpus);
+    for (int cpu = 0; cpu != num_cpus; ++cpu) {
+        futures[cpu] = std::async(std::launch::async,
+            [cpu, &idx, end, skipPower, skipBitCount, values, stateArray, bciArgs, nStateVec, &fn]() {
+                bitCapInt i, iLow, iHigh;
+                for (;;) {
+                    iHigh = idx++;
+                    i = 0;
+                    iLow = iHigh % skipPower;
+                    i += iLow;
+                    iHigh = (iHigh - iLow) << skipBitCount;
+                    i += iHigh;
+                    if (i >= end)
+                        break;
+                    fn(i, cpu, stateArray, bciArgs, values, nStateVec);
+                }
+            });
+    }
+
+    for (int cpu = 0; cpu != num_cpus; ++cpu) {
+        futures[cpu].get();
+    }
+}
+
+template <class F>
+void par_for_mult(const bitCapInt begin, const bitCapInt end, const double toMult, Complex16* stateArray, F fn)
+{
+    std::atomic<bitCapInt> idx;
+    idx = begin;
+    int num_cpus = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> futures(num_cpus);
+    for (int cpu = 0; cpu < num_cpus; cpu++) {
+        futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, toMult, stateArray, &fn]() {
+            bitCapInt i;
+            for (;;) {
+                i = idx++;
+                if (i >= end)
+                    break;
+                fn(i, cpu, toMult, stateArray);
+            }
+        });
+    }
+
+    for (int cpu = 0; cpu < num_cpus; cpu++) {
         futures[cpu].get();
     }
 }

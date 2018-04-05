@@ -29,10 +29,9 @@ cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
 cl::Kernel* OCLEngine::GetRORPtr() { return &ror; }
 cl::Kernel* OCLEngine::GetINCCPtr() { return &incc; }
 cl::Kernel* OCLEngine::GetDECCPtr() { return &decc; }
-cl::Kernel* OCLEngine::GetADDPtr() { return &add; }
-cl::Kernel* OCLEngine::GetSUBPtr() { return &sub; }
-cl::Kernel* OCLEngine::GetADDCPtr() { return &addc; }
-cl::Kernel* OCLEngine::GetSUBCPtr() { return &subc; }
+cl::Kernel* OCLEngine::GetSR8Ptr() { return &superposeReg8; }
+cl::Kernel* OCLEngine::GetADC8Ptr() { return &adcReg8; }
+cl::Kernel* OCLEngine::GetSBC8Ptr() { return &sbcReg8; }
 
 OCLEngine::OCLEngine() { InitOCL(0, 0); }
 OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
@@ -84,10 +83,9 @@ void OCLEngine::InitOCL(int plat, int dev)
     ror = cl::Kernel(program, "ror");
     incc = cl::Kernel(program, "incc");
     decc = cl::Kernel(program, "decc");
-    add = cl::Kernel(program, "add");
-    sub = cl::Kernel(program, "sub");
-    addc = cl::Kernel(program, "addc");
-    subc = cl::Kernel(program, "subc");
+    superposeReg8 = cl::Kernel(program, "superposeReg8");
+    adcReg8 = cl::Kernel(program, "adcReg8");
+    sbcReg8 = cl::Kernel(program, "sbcReg8");
 }
 
 OCLEngine* OCLEngine::m_pInstance = NULL;

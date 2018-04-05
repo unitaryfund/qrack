@@ -164,165 +164,109 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
     }
 }
 
-void kernel add(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel superposeReg8(
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
     ulong maxI = ulongPtr[0];
-    ulong inOutMask = ulongPtr[1];
-    ulong inMask = ulongPtr[2];
-    ulong otherMask = ulongPtr[3];
-    ulong lengthMask = ulongPtr[4] - 1;
-    ulong inOutStart = ulongPtr[5];
-    ulong inStart = ulongPtr[6];
-    ulong otherRes, inOutRes, inOutInt, inRes, inInt;
+    ulong inputStart = ulongPtr[1];
+    ulong inputMask = ulongPtr[2];
+    ulong outputStart = ulongPtr[3];
+    ulong outputPower = 1 << outputStart;
+    ulong inputRes, inputInt, outputRes, outputInt;
+    ulong i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = (lcv & otherMask);
-        inOutRes = (lcv & inOutMask);
-        inOutInt = inOutRes >> inOutStart;
-        inRes = (lcv & inMask);
-        inInt = inRes >> inStart;
-        nStateVec[(((inOutInt + inInt) & lengthMask) << inOutStart) | otherRes | inRes] = stateVec[lcv];
+        iHigh = lcv;
+        iLow = iHigh & (outputPower - 1);
+        i = iLow + ((iHigh - iLow) << 8);
+
+        inputRes = i & inputMask;
+        inputInt = inputRes >> inputStart;
+        outputInt = values[inputInt];
+        outputRes = outputInt << outputStart;
+        nStateVec[outputRes | i] = stateVec[i];
     }
 }
 
-void kernel sub(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel adcReg8(
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
     ulong maxI = ulongPtr[0];
-    ulong inOutMask = ulongPtr[1];
-    ulong inMask = ulongPtr[2];
-    ulong otherMask = ulongPtr[3];
-    ulong lengthPower = ulongPtr[4];
-    ulong inOutStart = ulongPtr[5];
-    ulong inStart = ulongPtr[6];
-    ulong otherRes, inOutRes, inOutInt, inRes, inInt;
+    ulong inputStart = ulongPtr[1];
+    ulong inputMask = ulongPtr[2];
+    ulong outputStart = ulongPtr[3];
+    ulong outputMask = ulongPtr[4];
+    ulong otherMask = ulongPtr[5];
+    ulong carryIn = ulongPtr[6];
+    ulong carryMask = ulongPtr[7];
+    ulong lengthPower = ulongPtr[8];
+    ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    ulong i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = (lcv & otherMask);
-        inOutRes = (lcv & inOutMask);
-        inOutInt = inOutRes >> inOutStart;
-        inRes = (lcv & inMask);
-        inInt = inRes >> inStart;
-        nStateVec[(((inOutInt - inInt + lengthPower) & (lengthPower - 1)) << inOutStart) | otherRes | inRes] =
-            stateVec[lcv];
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        inputRes = i & inputMask;
+        inputInt = inputRes >> inputStart;
+        outputRes = i & outputMask;
+        outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
+
+        carryRes = 0;
+        if (outputInt >= lengthPower) {
+            outputInt -= lengthPower;
+            carryRes = carryMask;
+        }
+
+        outputRes = outputInt << outputStart;
+        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
     }
 }
 
-void kernel addc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel sbcReg8(
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxQPower = ulongPtr[0];
-    ulong maxI = ulongPtr[0] >> 1;
-    ulong inOutMask = ulongPtr[1];
-    ulong inMask = ulongPtr[2];
-    ulong carryMask = ulongPtr[3];
-    ulong otherMask = ulongPtr[4];
-    ulong lengthPower = ulongPtr[5];
-    ulong inOutStart = ulongPtr[6];
-    ulong inStart = ulongPtr[7];
-    ulong carryIndex = ulongPtr[8];
-    ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt, outRes;
-    ulong iHigh, iLow, i, j;
-    double2 tempX, temp1, temp2, tempY;
+    ulong maxI = ulongPtr[0];
+    ulong inputStart = ulongPtr[1];
+    ulong inputMask = ulongPtr[2];
+    ulong outputStart = ulongPtr[3];
+    ulong outputMask = ulongPtr[4];
+    ulong otherMask = ulongPtr[5];
+    ulong carryIn = ulongPtr[6];
+    ulong carryMask = ulongPtr[7];
+    ulong lengthPower = ulongPtr[8];
+    ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    ulong i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        i = 0;
         iLow = iHigh & (carryMask - 1);
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-        i += iHigh;
-        otherRes = (i & otherMask);
-        if (otherRes == i) {
-            nStateVec[i] = stateVec[i];
-        } else {
-            inOutRes = (i & inOutMask);
-            inOutInt = inOutRes >> inOutStart;
-            inRes = (i & inMask);
-            inInt = inRes >> inStart;
-            outInt = (inOutInt + inInt);
-            j = inOutInt - 1 + lengthPower;
-            j %= lengthPower;
-            j = (j << inOutStart) | (i ^ inOutRes) | carryMask;
-            outRes = 0;
-            if (outInt >= lengthPower) {
-                outRes = carryMask;
-                outInt ^= lengthPower;
-            }
-            outRes |= (outInt << inOutStart) | otherRes | inRes;
-            temp1 = stateVec[i] * stateVec[i];
-            temp2 = stateVec[j] * stateVec[j];
-            tempX = temp1 + temp2;
-            if ((temp1.x + temp1.y) > 0.0)
-                temp1 = atan2(stateVec[i].x, stateVec[i].y);
-            if ((temp2.x + temp2.y) > 0.0)
-                temp2 = atan2(stateVec[j].x, stateVec[j].y);
-            tempY = temp1 + temp2;
-            nStateVec[outRes] = (double2)(tempX.x + tempX.y, tempY.x + tempY.y);
-        }
-    }
-}
+        i = iLow + ((iHigh - iLow) << 1);
 
-void kernel subc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
-{
-    ulong ID, Nthreads, lcv;
+        otherRes = i & otherMask;
+        inputRes = i & inputMask;
+        inputInt = inputRes >> inputStart;
+        outputRes = i & outputMask;
+        outputInt = (outputRes >> outputStart) + lengthPower - (values[inputInt] + carryIn);
 
-    ID = get_global_id(0);
-    Nthreads = get_global_size(0);
-    ulong maxQPower = ulongPtr[0];
-    ulong maxI = ulongPtr[0] >> 1;
-    ulong inOutMask = ulongPtr[1];
-    ulong inMask = ulongPtr[2];
-    ulong carryMask = ulongPtr[3];
-    ulong otherMask = ulongPtr[4];
-    ulong lengthPower = ulongPtr[5];
-    ulong inOutStart = ulongPtr[6];
-    ulong inStart = ulongPtr[7];
-    ulong carryIndex = ulongPtr[8];
-    ulong otherRes, inOutRes, inOutInt, inRes, carryInt, inInt, outInt, outRes;
-    ulong iHigh, iLow, i, j;
-    double2 tempX, temp1, temp2, tempY;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        i = 0;
-        iLow = iHigh & (carryMask - 1);
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-        i += iHigh;
-        otherRes = (i & otherMask);
-        if (otherRes == i) {
-            nStateVec[i] = stateVec[i];
-        } else {
-            inOutRes = (i & inOutMask);
-            inOutInt = inOutRes >> inOutStart;
-            inRes = (i & inMask);
-            inInt = inRes >> inStart;
-            outInt = (inOutInt - inInt) + lengthPower;
-            j = inOutInt + 1;
-            j %= lengthPower;
-            j = (j << inOutStart) | (i ^ inOutRes) | carryMask;
-            outRes = 0;
-            if (outInt >= lengthPower) {
-                outRes = carryMask;
-                outInt ^= lengthPower;
-            }
-            outRes |= (outInt << inOutStart) | otherRes | inRes;
-            temp1 = stateVec[i] * stateVec[i];
-            temp2 = stateVec[j] * stateVec[j];
-            tempX = temp1 + temp2;
-            if ((temp1.x + temp1.y) > 0.0)
-                temp1 = atan2(stateVec[i].x, stateVec[i].y);
-            if ((temp2.x + temp2.y) > 0.0)
-                temp2 = atan2(stateVec[j].x, stateVec[j].y);
-            tempY = temp1 + temp2;
-            nStateVec[outRes] = (double2)(tempX.x + tempX.y, tempY.x + tempY.y);
+        carryRes = carryMask;
+        if (outputInt >= lengthPower) {
+            outputInt -= lengthPower;
+            carryRes = 0;
         }
+
+        outputRes = outputInt << outputStart;
+        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
     }
 }

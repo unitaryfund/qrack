@@ -55,6 +55,7 @@ void CoherentUnitOCL::InitOCL()
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
     nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
+    loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256);
 
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
@@ -247,22 +248,13 @@ void CoherentUnitOCL::DECC(
     ResetStateVec(std::move(nStateVec));
 }
 
-/// Add two quantum integers
-/** Add integer of "length" bits in "inStart" to integer of "length" bits in "inOutStart," and store result in
- * "inOutStart." */
-/*void CoherentUnitOCL::ADD(const bitLenInt inOutStart, const bitLenInt inStart, const bitLenInt length)
+/// Set 8 bit register bits based on read from classical memory
+unsigned char CoherentUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
-    bitCapInt inOutMask = 0;
-    bitCapInt inMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-        inMask += 1 << (inStart + i);
-    }
-    otherMask -= inOutMask + inMask;
-    bitCapInt bciArgs[10] = { maxQPower, inOutMask, inMask, otherMask, lengthPower, inOutStart, inStart, 0, 0, 0 };
+    SetReg(outputStart, 8, 0);
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt bciArgs[10] = { maxQPower, inputStart, inputMask, outputStart, 0, 0, 0, 0, 0, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
@@ -270,36 +262,52 @@ void CoherentUnitOCL::DECC(
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Kernel add = *(clObj->GetADDPtr());
-    add.setArg(0, stateBuffer);
-    add.setArg(1, ulongBuffer);
-    add.setArg(2, nStateBuffer);
+    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
+    cl::Kernel sr8 = *(clObj->GetSR8Ptr());
+    sr8.setArg(0, stateBuffer);
+    sr8.setArg(1, ulongBuffer);
+    sr8.setArg(2, nStateBuffer);
+    sr8.setArg(3, loadBuffer);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(add, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(sr8, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     ResetStateVec(std::move(nStateVec));
-}*/
 
-/// Subtract two quantum integers
-/** Subtract integer of "length" bits in "toSub" from integer of "length" bits in "inOutStart," and store result in
- * "inOutStart." */
-/*void CoherentUnitOCL::SUB(const bitLenInt inOutStart, const bitLenInt toSub, const bitLenInt length)
-{
-    bitCapInt inOutMask = 0;
-    bitCapInt inMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        inOutMask += 1 << (inOutStart + i);
-        inMask += 1 << (toSub + i);
+    bitCapInt i, outputInt;
+    double prob, average;
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
     }
-    otherMask -= inOutMask + inMask;
-    bitCapInt bciArgs[10] = { maxQPower, inOutMask, inMask, otherMask, lengthPower, inOutStart, toSub, 0, 0, 0 };
+    ResetStateVec(std::move(nStateVec));
+
+    return (unsigned char)(average + 0.5);
+}
+
+/// Add based on an indexed load from classical memory
+unsigned char CoherentUnitOCL::AdcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    // The carry has to first to be measured for its input value.
+    bitCapInt carryIn = 0;
+    if (M(carryIndex)) {
+        // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
+        carryIn = 1;
+        X(carryIndex);
+    }
+
+    bitCapInt lengthPower = 1 << 8;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn,
+        carryMask, lengthPower, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
@@ -307,18 +315,90 @@ void CoherentUnitOCL::DECC(
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Kernel sub = *(clObj->GetSUBPtr());
-    sub.setArg(0, stateBuffer);
-    sub.setArg(1, ulongBuffer);
-    sub.setArg(2, nStateBuffer);
+    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
+    cl::Kernel adc8 = *(clObj->GetADC8Ptr());
+    adc8.setArg(0, stateBuffer);
+    adc8.setArg(1, ulongBuffer);
+    adc8.setArg(2, nStateBuffer);
+    adc8.setArg(3, loadBuffer);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(sub, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(adc8, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     ResetStateVec(std::move(nStateVec));
-}*/
+
+    // At the end, just as a convenience, we return the expectation value for the addition result.
+    double prob, average;
+    bitCapInt i, outputInt;
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    // Finally, we dealloc the old state vector and replace it with the one we just calculated.
+    ResetStateVec(std::move(nStateVec));
+
+    // Return the expectation value.
+    return (unsigned char)(average + 0.5);
+}
+
+/// Subtract based on an indexed load from classical memory
+unsigned char CoherentUnitOCL::SbcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    // The carry has to first to be measured for its input value.
+    bitCapInt carryIn = 0;
+    if (M(carryIndex)) {
+        // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
+        carryIn = 1;
+        X(carryIndex);
+    }
+
+    bitCapInt lengthPower = 1 << 8;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt inputMask = 0xff << inputStart;
+    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn,
+        carryMask, lengthPower, 0 };
+
+    queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    cl::Context context = *(clObj->GetContextPtr());
+    cl::Buffer nStateBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
+    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
+    cl::Kernel sbc8 = *(clObj->GetSBC8Ptr());
+    sbc8.setArg(0, stateBuffer);
+    sbc8.setArg(1, ulongBuffer);
+    sbc8.setArg(2, nStateBuffer);
+    sbc8.setArg(3, loadBuffer);
+    queue.finish();
+
+    queue.enqueueNDRangeKernel(sbc8, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    ResetStateVec(std::move(nStateVec));
+
+    // At the end, just as a convenience, we return the expectation value for the addition result.
+    double prob, average;
+    bitCapInt i, outputInt;
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> outputStart;
+        prob = norm(nStateVec[i]);
+        average += prob * outputInt;
+    }
+    // Finally, we dealloc the old state vector and replace it with the one we just calculated.
+    ResetStateVec(std::move(nStateVec));
+
+    // Return the expectation value.
+    return (unsigned char)(average + 0.5);
+}
 
 } // namespace Qrack
