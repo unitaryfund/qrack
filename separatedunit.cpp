@@ -3,7 +3,7 @@
 // (C) Daniel Strano 2018. All rights reserved.
 //
 // This is an abstraction on "CoherentUnit" per https://arxiv.org/abs/1710.05867
-// 
+//
 // "SeparatedUnit" keeps representation of qubit states separated until explicitly
 // entangled. This makes for large gains in memory and speed optimization in the
 // best case scenario. "CoherentUnit" has been optimized for the worst case scenario.
@@ -20,7 +20,8 @@
 
 namespace Qrack {
 
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount) {
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
+{
     bitLenInt i;
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
     qubitLookup.reset();
@@ -33,7 +34,8 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount) {
 }
 
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) {
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
+{
     bitLenInt i;
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
     qubitLookup.reset();
@@ -45,20 +47,23 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) {
     }
 }
 
-bool SeparatedUnit::M(bitLenInt qubitIndex) {
+bool SeparatedUnit::M(bitLenInt qubitIndex)
+{
     bool result;
     QbLookup qbl = qubitLookup[qubitIndex];
     CoherentUnit cu = coherentUnits[qbl.cu];
     result = cu.M(qbl.qb);
 
-    CoherentUnit ncu = CoherentUnit(1);
-    cu.Decohere(qbl.qb, 1, ncu);
-   
-    qbl.cu = coherentUnits.size();
-    qbl.qb = 0;
-    coherentUnits.push_back(ncu);
+    if (cu.GetQubitCount() > 1) {
+        CoherentUnit ncu = CoherentUnit(1);
+        cu.Decohere(qbl.qb, 1, ncu);
+
+        qbl.cu = coherentUnits.size();
+        qbl.qb = 0;
+        coherentUnits.push_back(ncu);
+    }
 
     return result;
 }
 
-}
+} // namespace Qrack
