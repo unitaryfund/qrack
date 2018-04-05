@@ -61,6 +61,30 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
+    (*rand_generator_ptr) = std::default_random_engine();
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
+
+    double angle = Rand() * 2.0 * M_PI;
+    runningNorm = 1.0;
+    qubitCount = qBitCount;
+    maxQPower = 1 << qBitCount;
+    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
+    stateVec.reset();
+    stateVec = std::move(sv);
+    std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    stateVec[initState] = Complex16(cos(angle), sin(angle));
+}
+
+/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a shared random number generator
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine rgp[])
+    : rand_distribution(0.0, 1.0)
+{
+    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
+        throw std::invalid_argument(
+            "Cannot instantiate a register with greater capacity than native types on emulating system.");
+
+    rand_generator_ptr[0] = rgp[0];
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
 
@@ -85,6 +109,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
 {
+    (*rand_generator_ptr) = std::default_random_engine();
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
 
@@ -101,7 +126,7 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
 /// Set the random seed (primarily used for testing)
 void CoherentUnit::SetRandomSeed(uint32_t seed) {
     randomSeed = seed;
-    rand_generator.seed(seed);
+    rand_generator_ptr->seed(seed);
 }
 
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
@@ -114,7 +139,7 @@ void CoherentUnit::CloneRawState(Complex16* output)
 }
 
 /// Generate a random double from 0 to 1
-double CoherentUnit::Rand() { return rand_distribution(rand_generator); }
+double CoherentUnit::Rand() { return rand_distribution(*rand_generator_ptr); }
 
 void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
