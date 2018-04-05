@@ -75,7 +75,7 @@ public:
     virtual ~CoherentUnit() {}
 
     /// Set the random seed (primarily used for testing)
-    void SetRandomSeed(uint32_t seed);
+    virtual void SetRandomSeed(uint32_t seed);
 
     /// Get the count of bits in this register
     int GetQubitCount() { return qubitCount; }
@@ -237,7 +237,7 @@ way. Comparable unitary operations would be performed with a combination of X an
 gates, but the output bits would have to be assumed to be in a known fixed state, like all |0>, ahead of time to produce
 unitary logical comparison operations.)
       */
-    bool M(bitLenInt qubitIndex);
+    virtual bool M(bitLenInt qubitIndex);
 
     /// "X gate." Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli "X" operator is equivalent to a
     /// logical "NOT."
@@ -256,7 +256,7 @@ unitary logical comparison operations.)
     void CZ(bitLenInt control, bitLenInt target);
 
     /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-    double Prob(bitLenInt qubitIndex);
+    virtual double Prob(bitLenInt qubitIndex);
 
     /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
     double ProbAll(bitCapInt fullRegister);
@@ -328,7 +328,7 @@ unitary logical comparison operations.)
      * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
      * entirely in the "value" state, with a random phase factor.
      */
-    void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /// Swap values of two bits in register
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
@@ -641,10 +641,10 @@ unitary logical comparison operations.)
     void PhaseFlip();
 
     /// Set register bits to given permutation
-    void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /// Measure permutation state of a register
-    bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /// Measure permutation state of an 8 bit register
     unsigned char MReg8(bitLenInt start);
@@ -728,6 +728,10 @@ unitary logical comparison operations.)
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
+    ///Constructor for SeparatedUnit
+    CoherentUnit();
+
+    uint32_t randomSeed;
     double runningNorm;
     bitLenInt qubitCount;
     bitCapInt maxQPower;

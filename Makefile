@@ -1,5 +1,5 @@
 # 1 to use OpenCL-based optimizations
-ENABLE_OPENCL ?= 1
+ENABLE_OPENCL ?= 0
 
 CPP      = g++
 XXD      = xxd
