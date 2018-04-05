@@ -121,7 +121,12 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
     return result;
 }
 
+/// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
+/**
+  * This operation optimizes compiling a list out of qubit pile when bit order is important. We apply register-wise operations over a pile of arbitrarily entangled and separated qubits. Entangled qubits are stored together in single CoherentUnit objects, but their mapping to SeparatedUnit bit indices can be generally random. Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does not depend on the ordering of bits in the list.
+  */
 void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList) {
+    //Start by getting a list (of sublists) of all the bits we need, with bit sublist length of 1.
     bitLenInt i, j;
     QbLookup qbl;
     QbListEntry qbe;
@@ -133,6 +138,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
         qbList.push_back(qbe);
     }
 
+    //If contiguous sublists in the list we just made are also contiguous in the same coherent unit, we can combine them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
@@ -145,7 +151,12 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
     }
 }
 
+/// Compile a list of CoherentUnit bit strings for applying a bitwise-parallel operation
+/**
+  * This operation optimizes compiling a list out of qubit pile when bit order is not important. We apply register-wise operations over a pile of arbitrarily entangled and separated qubits. Entangled qubits are stored together in single CoherentUnit objects, but their mapping to SeparatedUnit bit indices can be generally random. Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does not depend on the ordering of bits in the list.
+  */
 void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList) {
+    //Start by getting a list (of sublists) of all the bits we need, with bit sublist length of 1.
     bitLenInt i, j;
     QbLookup qbl;
     QbListEntry qbe;
@@ -156,7 +167,9 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
         qbe.length = 1;
         qbList.push_back(qbe);
     }
+    //The ordering of bits returned is unimportant, so we can better optimize by sorting this list by CoherentUnit index and qubit index, to maximize the reduction of the list.
     std::sort(qbList.begin(), qbList.end(), compare);
+    //If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
