@@ -24,6 +24,11 @@
 
 namespace Qrack {
 
+struct qbLookup {
+    bitLenInt cu;
+    bitLenInt qb;
+};
+
 class SeparatedUnit;
 
 class SeparatedUnit {
@@ -35,7 +40,7 @@ public:
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
 protected:
-    std::unique_ptr<bitLenInt[]> qubitLookup;
+    std::unique_ptr<qbLookup[]> qubitLookup;
     std::vector<CoherentUnit> coherentUnits;
 };
 }

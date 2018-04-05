@@ -22,12 +22,12 @@ namespace Qrack {
 
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount) {
     bitLenInt i;
-    std::unique_ptr<bitLenInt[]> ql(new bitLenInt[qBitCount * 2]);
+    std::unique_ptr<qbLookup[]> ql(new qbLookup[qBitCount]);
     qubitLookup.reset();
     qubitLookup = std::move(ql);
     for (i = 0; i < qBitCount; i++) {
-        qubitLookup[2 * i] = i;
-        qubitLookup[2 * i + 1] = 0;
+        qubitLookup[i].cu = i;
+        qubitLookup[i].qb = 0;
         coherentUnits.push_back(CoherentUnit(1));
     }
 }
@@ -35,12 +35,12 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount) {
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) {
     bitLenInt i;
-    std::unique_ptr<bitLenInt[]> ql(new bitLenInt[qBitCount * 2]);
+    std::unique_ptr<qbLookup[]> ql(new qbLookup[qBitCount]);
     qubitLookup.reset();
     qubitLookup = std::move(ql);
     for (i = 0; i < qBitCount; i++) {
-        qubitLookup[2 * i] = i;
-        qubitLookup[2 * i + 1] = 0;
+        qubitLookup[i].cu = i;
+        qubitLookup[i].qb = 0;
         coherentUnits.push_back(CoherentUnit(1));
     }
 }
