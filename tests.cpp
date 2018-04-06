@@ -27,8 +27,8 @@ TEST_CASE("test_par_for")
     });
 }
 
-/*
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
+
+/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
 
@@ -41,8 +41,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     }
     unsigned char expectation = qftReg->SuperposeReg8(0, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
-}
-
+}*/
+/*
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
 {
     int j;

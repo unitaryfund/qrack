@@ -906,7 +906,7 @@ public:
      * write in quantum parallel to more than one address of classical memory
      * at a time.
      */
-    unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
+    virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
     /**
      * Add to entangled 8 bit register state with a superposed

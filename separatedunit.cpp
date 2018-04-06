@@ -43,17 +43,15 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
     bool setBit;
     bitLenInt i;
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
-    std::vector<std::vector<bitLenInt>> qil(qBitCount);
+    std::unique_ptr<bitLenInt[]> qil(new bitLenInt[qBitCount * qBitCount]);
     qubitLookup = std::move(ql);
     qubitInverseLookup = std::move(qil);
     for (i = 0; i < qBitCount; i++) {
         setBit = (initState & (1 << i)) > 0;
         qubitLookup[i].cu = i;
         qubitLookup[i].qb = 0;
-        std::vector<bitLenInt> subQil(1);
-        qubitInverseLookup[i] = subQil;
-        qubitInverseLookup[i][0] = i;
-        coherentUnits.push_back(CoherentUnit(1, (setBit ? 1 : 0), rand_generator_ptr));
+        qubitInverseLookup[i * qBitCount] = i;
+        coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(1, (setBit ? 1 : 0), rand_generator_ptr)));
     }
 }
 
@@ -67,8 +65,7 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
 double SeparatedUnit::Prob(bitLenInt qubitIndex)
 {
     QbLookup qbl = qubitLookup[qubitIndex];
-    CoherentUnit cu = coherentUnits[qbl.cu];
-    return cu.Prob(qbl.qb);
+    return coherentUnits[qbl.cu]->Prob(qbl.qb);
 }
 
 /// Measure a bit
@@ -76,12 +73,11 @@ bool SeparatedUnit::M(bitLenInt qubitIndex)
 {
     bool result;
     QbLookup qbl = qubitLookup[qubitIndex];
-    CoherentUnit cu = coherentUnits[qbl.cu];
-    result = cu.M(qbl.qb);
+    result = coherentUnits[qbl.cu]->M(qbl.qb);
 
-    if (cu.GetQubitCount() > 1) {
-        CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
-        cu.Decohere(qbl.qb, 1, ncu);
+    if (coherentUnits[qbl.cu]->GetQubitCount() > 1) {
+        std::shared_ptr<CoherentUnit> ncu(new CoherentUnit(1, 0, rand_generator_ptr));
+        coherentUnits[qbl.cu]->Decohere(qbl.qb, 1, *ncu);
 
         qbl.cu = coherentUnits.size();
         qbl.qb = 0;
@@ -99,21 +95,21 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
     QbListEntry qbe;
     QbLookup qbl;
 
-    std::vector<QbListEntry> qbList;
+    std::vector<QbListEntry> qbList(length);
     GetOrderedBitList(start, length, &qbList);
 
     j = 0;
     for (i = 0; i < qbList.size(); i++) {
         qbe = qbList[i];
-        result |= (coherentUnits[qbe.cu].MReg(qbe.start, qbe.length)) << j;
+        result |= (coherentUnits[qbe.cu]->MReg(qbe.start, qbe.length)) << j;
         j += qbe.length;
     }
 
     for (i = 0; i < length; i++) {
         qbl = qubitLookup[start + i];
-        if (coherentUnits[qbl.cu].GetQubitCount() > 1) {
-            CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
-            coherentUnits[qbl.cu].Decohere(qbl.qb, 1, ncu);
+        if (coherentUnits[qbl.cu]->GetQubitCount() > 1) {
+            std::shared_ptr<CoherentUnit> ncu(new CoherentUnit(1, 0, rand_generator_ptr));
+            coherentUnits[qbl.cu]->Decohere(qbl.qb, 1, *ncu);
 
             qbl.cu = coherentUnits.size();
             qbl.qb = 0;
@@ -133,8 +129,7 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
 void SeparatedUnit::SetBit(bitLenInt qubitIndex, bool value)
 {
     QbLookup qbl = qubitLookup[qubitIndex];
-    CoherentUnit cu = coherentUnits[qbl.cu];
-    cu.SetBit(qbl.qb, value);
+    coherentUnits[qbl.cu]->SetBit(qbl.qb, value);
 }
 
 /// Set register bits to given permutation
@@ -145,7 +140,7 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     MReg(start, length);
 
     for (i = 0; i < length; i++) {
-        coherentUnits[qubitLookup[start + i].cu].SetPermutation(((value & (1 << i)) > 0) ? 1 : 0);
+        coherentUnits[qubitLookup[start + i].cu]->SetPermutation(((value & (1 << i)) > 0) ? 1 : 0);
     }    
 }
 
@@ -186,52 +181,55 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     with the address offset in the collapsed X register and the byte value in the collapsed accumulator. It would not be
     possible by this model to write in quantum parallel to more than one address of classical memory at a time.
 */
-/*
-unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values) {
 
-    bitLenInt i, j;
-    bitLenit firstCu, cuLen, invLookup;
+unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values) {
+
+    bitLenInt i, j, k;
+    bitLenInt firstCu, cuLen, invLookup;
     QbListEntry qbe;
-    QbLookup qbl;
+    unsigned char toReturn;
 
-    // TODO: Combine input and output lists
-    std::vector<QbListEntry> qbList;
-    GetParallelBitList(inputStart, length, &qbList);
+    std::vector<QbListEntry> qbList(16);
+    GetParallelBitList(inputStart, 8, &qbList);
+    std::vector<QbListEntry> qbListOutput(8);
+    GetParallelBitList(outputStart, 8, &qbListOutput);
+    qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
+    OptimizeParallelBitList(&qbList);
 
-    firstCu = qbList[0].cu
+    firstCu = qbList[0].cu;
+    k = coherentUnits[firstCu]->GetQubitCount();
     for (i = 1; i < qbList.size(); i++) {
         qbe = qbList[i];
-        cuLen = coherentUnits[qbe.cu].GetQubitCount();
+        cuLen = coherentUnits[qbe.cu]->GetQubitCount();
         for (j = 0; j < cuLen; j++) {
-            invLookup = qbInverseLookup[qbe.cu][j];
-            qbLookup[invLookup].cu = firstCu;
-            qbLookup[invLookup].qb = coherentUnits[firstCu].GetQubitCount() + j;
-            qbInverseLookup[firstCu].insert(qbInverseLookup[firstCu].end(), invLookup.begin(), invLookup.end());
-            qbInverseLookup.erase(qbInverseLookup.begin() + qbe.cu);
+            invLookup = qubitInverseLookup[qbe.cu * qubitCount + j];
+            qubitLookup[invLookup].cu = firstCu;
+            qubitLookup[invLookup].qb = k + j;
+            qubitInverseLookup[firstCu * qubitCount + k] = invLookup;
         }
-        coherentUnits[firstCu].Cohere(coherentUnits[qbe.cu]);
+        coherentUnits[firstCu]->Cohere(*(coherentUnits[qbe.cu]));
+        k += cuLen;
     }
 
-    // Lookup table and inverse have now been updated, but coherentUnits list is still the old one.
     // Swap qubits into appropriate order, then update coherentUnits list.
+    //QuickSortQubits(&(qubitInverseLookup[firstCu * qubitCount]), 0, coherentUnits[firstCu]->GetQubitCount(), coherentUnits[firstCu]);
 
-    cuLen = coherentUnits[firstCu].GetQubitCount();
+    toReturn = coherentUnits[firstCu]->SuperposeReg8(qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, values);
+
+    // Update coherentUnit list and inverse lookup at end
+    cuLen = qbList.size() - 1;
+    std::vector<bitLenInt> cuToDelete(cuLen);
     for (i = 0; i < cuLen; i++) {
-        //TODO: Swap qubits
+        cuToDelete[i] = qbList[i].cu;
+    }
+    std::sort(cuToDelete.begin(), cuToDelete.end());
+    for (i = 1; i < cuLen; i++) {
+        coherentUnits.erase(coherentUnits.begin() + cuToDelete[cuToDelete.size() - i]);
     }
 
-    // Update coherentUnit list at end
-    if (qbList.size() > 1) {
-        j = qbList[1].cu;
-        for (i = 1; i < qbList.size(); i++) {
-            coherentUnits.erase(coherentUnits.begin() + j);
-            if ((i + 1) < qbList.size()) {
-                j += qbList[i + 1].cu - qbList[i].cu;
-            }
-        }
-    }
+    return toReturn;
 }
-*/
+
 /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
 /**
  * This operation optimizes compiling a list out of qubit pile when bit order is important. We apply register-wise
@@ -251,7 +249,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
         qbe.cu = qbl.cu;
         qbe.start = qbl.qb;
         qbe.length = 1;
-        qbList->push_back(qbe);
+        (*qbList)[i] = qbe;
     }
 
     // If contiguous sublists in the list we just made are also contiguous in the same coherent unit, we can combine
@@ -286,7 +284,7 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
         qbe.cu = qbl.cu;
         qbe.start = qbl.qb;
         qbe.length = 1;
-        qbList->push_back(qbe);
+        (*qbList)[i] = qbe;
     }
     // The ordering of bits returned is unimportant, so we can better optimize by sorting this list by CoherentUnit
     // index and qubit index, to maximize the reduction of the list.
@@ -301,6 +299,70 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
         } else {
             j++;
         }
+    }
+}
+
+/// Combines two lists returned by GetParallelBitList() by the same logic as that algorithm
+void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>* qbList) {
+    bitLenInt i, j;
+    bitLenInt length = qbList->size();
+    // The ordering of bits returned is unimportant, so we can better optimize by sorting this list by CoherentUnit
+    // index and qubit index, to maximize the reduction of the list.
+    std::sort(qbList->begin(), qbList->end(), compare);
+    // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
+    // them to optimize with register-wise gate methods.
+    j = 0;
+    for (i = 0; i < length; i++) {
+        if (((*qbList)[j].cu == (*qbList)[j + 1].cu) && (((*qbList)[j].start + (*qbList)[j].length) == (*qbList)[j + 1].start)) {
+            (*qbList)[j].length++;
+            qbList->erase(qbList->begin() + j + 1);
+        } else {
+            j++;
+        }
+    }
+}
+
+// This function takes last element as pivot, places the pivot element at its correct position in sorted array, and places all smaller (smaller than pivot) to left of pivot and all greater elements to right of pivot.
+bitLenInt SeparatedUnit::PartitionQubits (bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cuWeak)
+{
+    std::shared_ptr<CoherentUnit> cu = cuWeak.lock();
+    // pivot
+    bitLenInt pivot = arr[high];
+    // Index of smaller element
+    bitLenInt i = (low - 1);
+ 
+    for (bitLenInt j = low; j <= high- 1; j++)
+    {
+        // If current element is smaller than or
+        // equal to pivot
+        if (arr[j] <= pivot)
+        {
+            // increment index of smaller element
+            i++;
+            std::swap(arr[i], arr[j]);
+            cu->Swap(i, j);
+        }
+    }
+    std::swap(arr[i + 1], arr[high]);
+    cu->Swap(i + 1, high);
+    return (i + 1);
+}
+ 
+// The main function that implements QuickSort
+// arr[] --> Array to be sorted,
+// low  --> Starting index,
+// high  --> Ending index 
+void SeparatedUnit::QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cuWeak)
+{
+    if (low < high)
+    {
+        // pi is partitioning index, arr[p] is not at right place
+        bitLenInt pi = PartitionQubits(arr, low, high, cuWeak);
+ 
+        // Separately sort elements before
+        // partition and after partition
+        QuickSortQubits(arr, low, pi - 1, cuWeak);
+        QuickSortQubits(arr, pi + 1, high, cuWeak);
     }
 }
 
