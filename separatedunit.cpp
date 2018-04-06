@@ -102,16 +102,16 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
     j = 0;
     for (i = 0; i < qbList.size(); i++) {
         qbe = qbList[i];
-        qbl = qubitLookup[j];
+        qbl = qubitLookup[start + j];
         result |= (coherentUnits[qbe.cu].MReg(qbe.start, qbe.length)) << j;
         j += qbe.length;
     }
 
     for (i = 0; i < length; i++) {
         qbl = qubitLookup[start + i];
-        if (coherentUnits[qbe.cu].GetQubitCount() > 1) {
+        if (coherentUnits[qbl.cu].GetQubitCount() > 1) {
             CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
-            coherentUnits[qbe.cu].Decohere(qbe.start, 1, ncu);
+            coherentUnits[qbl.cu].Decohere(qbl.qb, 1, ncu);
 
             qbl.cu = coherentUnits.size();
             qbl.qb = 0;
@@ -137,21 +137,11 @@ void SeparatedUnit::SetBit(bitLenInt qubitIndex, bool value) {
 /// Set register bits to given permutation
 void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
     bitLenInt i;
-    QbLookup qbl;
 
-    std::vector<QbListEntry> qbList;
+    MReg(start, length);
 
     for (i = 0; i < length; i++) {
-        qbl = qubitLookup[start + i];
-        coherentUnits[qbl.cu].SetBit(0, ((value & (1 << i)) > 0) ? true : false);
-        if (coherentUnits[qbl.cu].GetQubitCount() > 1) {
-            CoherentUnit ncu = CoherentUnit(1, 0, rand_generator_ptr);
-            coherentUnits[qbl.cu].Decohere(qbl.qb, 1, ncu);
-
-            qbl.cu = coherentUnits.size();
-            qbl.qb = 0;
-            coherentUnits.push_back(ncu);
-        }
+        coherentUnits[qubitLookup[start + i].cu].SetBit(0, ((value & (1 << i)) > 0) ? true : false);
     }    
 }
 
