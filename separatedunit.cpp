@@ -44,12 +44,17 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
     bool setBit;
     bitLenInt i;
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
-    qubitLookup.reset();
+    std::unique_ptr<std::unique_ptr<bitLenInt[]>[]> qil(new std::unique_ptr<bitLenInt[]>[qBitCount]);
     qubitLookup = std::move(ql);
+    qubitInverseLookup.reset();
+    qubitInverseLookup = std::move(qil);
     for (i = 0; i < qBitCount; i++) {
         setBit = (initState & (1 << i)) > 0;
         qubitLookup[i].cu = i;
         qubitLookup[i].qb = 0;
+        std::unique_ptr<bitLenInt[]> subQil(new bitLenInt[1]);
+        qubitInverseLookup[i] = std::move(subQil);
+        qubitInverseLookup[i][0] = i;
         coherentUnits.push_back(CoherentUnit(1, (setBit ? 1 : 0), rand_generator_ptr));
     }
 }
@@ -144,6 +149,68 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
     }    
 }
 
+/// Set 8 bit register bits by a superposed index-offset-based read from classical memory
+/**
+  * "inputStart" is the start index of 8 qubits that act as an index into the 256 byte "values" array. The
+    "outputStart" bits are first cleared, then the separable |input, 00000000> permutation state is mapped to |input,
+    values[input]>, with "values[input]" placed in the "outputStart" register.
+
+    While a CoherentUnit represents an interacting set of qubit-based registers, or a virtual quantum chip, the
+    registers need to interact in some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access method similar
+    to the X addressing mode of the MOS 6502 chip, if the X register can be in a state of coherent superposition when it
+    loads from RAM.
+
+    The physical motivation for this addressing mode can be explained as follows: say that we have a superconducting
+    quantum interface device (SQUID) based chip. SQUIDs have already been demonstrated passing coherently superposed
+    electrical currents. In a sufficiently quantum-mechanically isolated qubit chip with a classical cache, with both
+    classical RAM and registers likely cryogenically isolated from the environment, SQUIDs could (hopefully) pass
+    coherently superposed electrical currents into the classical RAM cache to load values into a qubit register. The
+    state loaded would be a superposition of the values of all RAM to which coherently superposed electrical currents
+    were passed.
+
+    In qubit system similar to the MOS 6502, say we have qubit-based "accumulator" and "X index" registers, and say that
+    we start with a superposed X index register. In (classical) X addressing mode, the X index register value acts an
+    offset into RAM from a specified starting address. The X addressing mode of a LoaD Accumulator (LDA) instruction, by
+    the physical mechanism described above, should load the accumulator in quantum parallel with the values of every
+    different address of RAM pointed to in superposition by the X index register. The superposed values in the
+    accumulator are entangled with those in the X index register, by way of whatever values the classical RAM pointed to
+    by X held at the time of the load. (If the RAM at index "36" held an unsigned char value of "27," then the value
+    "36" in the X index register becomes entangled with the value "27" in the accumulator, and so on in quantum parallel
+    for all superposed values of the X index register, at once.) If the X index register or accumulator are then
+    measured, the two registers will both always collapse into a random but valid key-value pair of X index offset and
+    value at that classical RAM address.
+
+    Note that a "superposed store operation in classical RAM" is not possible by analagous reasoning. Classical RAM
+    would become entangled with both the accumulator and the X register. When the state of the registers was collapsed,
+    we would find that only one "store" operation to a single memory address had actually been carried out, consistent
+    with the address offset in the collapsed X register and the byte value in the collapsed accumulator. It would not be
+    possible by this model to write in quantum parallel to more than one address of classical memory at a time.
+*/
+/*
+unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values) {
+
+    bitLenInt i, j;
+    bitLenit firstCu, cuLen, invLookup;
+    QbListEntry qbe;
+    QbLookup qbl;
+
+    std::vector<QbListEntry> qbList;
+    GetParallelBitList(start, length, &qbList);
+
+    firstCu = qbList[0].cu
+    for (i = 1; i < qbList.size(); i++) {
+        qbe = qbList[i];
+        cuLen = coherentUnits[qbe.cu].GetQubitCount();
+        for (j = 0; j < cuLen; j++) {
+            invLookup = qbInverseLookup[qbe.cu][j];
+            qbLookup[invLookup].cu = firstCu;
+            qbLookup[invLookup].qb = coherentUnits[firstCu].GetQubitCount() + j;
+            //TODO: Swap bits into correct order to apply SuperposeReg8
+        }
+        coherentUnits[firstCu].Cohere(coherentUnits[qbe.cu]);
+    }
+}
+*/
 /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
 /**
  * This operation optimizes compiling a list out of qubit pile when bit order is important. We apply register-wise
