@@ -65,10 +65,13 @@ public:
     /// Set register bits to given permutation
     void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
+    /// Set register bits to given permutation
+    unsigned char SuperposeReg8(bitLenInt start, bitLenInt length, unsigned char* values);
+
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;
-    std::vector<std::vector<bitLenInt>> qubitInverseLookup;
-    std::vector<CoherentUnit> coherentUnits;
+    std::unique_ptr<bitLenInt[]> qubitInverseLookup;
+    std::vector<std::shared_ptr<CoherentUnit>> coherentUnits;
 
     /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
     /**
@@ -88,5 +91,12 @@ protected:
      * bitwise parallel and does not depend on the ordering of bits in the list.
      */
     void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList);
+    /// Optimizes combined lists returned by GetParallelBitList() by the same logic as that algorithm
+    void OptimizeParallelBitList(std::vector<QbListEntry>* qbList);
+
+    /// Quicksort entangled bits - partition function
+    bitLenInt PartitionQubits (bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
+    /// Quicksort entangled bits
+    void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
 };
 } // namespace Qrack
