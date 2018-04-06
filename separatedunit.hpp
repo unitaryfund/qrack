@@ -67,7 +67,7 @@ public:
 
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;
-    std::unique_ptr<std::unique_ptr<bitLenInt[]>[]> qubitInverseLookup;
+    std::vector<std::vector<bitLenInt>> qubitInverseLookup;
     std::vector<CoherentUnit> coherentUnits;
 
     /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation

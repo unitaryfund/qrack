@@ -43,16 +43,15 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
     bool setBit;
     bitLenInt i;
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qBitCount]);
-    std::unique_ptr<std::unique_ptr<bitLenInt[]>[]> qil(new std::unique_ptr<bitLenInt[]>[qBitCount]);
+    std::vector<std::vector<bitLenInt>> qil(qBitCount);
     qubitLookup = std::move(ql);
-    qubitInverseLookup.reset();
     qubitInverseLookup = std::move(qil);
     for (i = 0; i < qBitCount; i++) {
         setBit = (initState & (1 << i)) > 0;
         qubitLookup[i].cu = i;
         qubitLookup[i].qb = 0;
-        std::unique_ptr<bitLenInt[]> subQil(new bitLenInt[1]);
-        qubitInverseLookup[i] = std::move(subQil);
+        std::vector<bitLenInt> subQil(1);
+        qubitInverseLookup[i] = subQil;
         qubitInverseLookup[i][0] = i;
         coherentUnits.push_back(CoherentUnit(1, (setBit ? 1 : 0), rand_generator_ptr));
     }
@@ -195,8 +194,9 @@ unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigne
     QbListEntry qbe;
     QbLookup qbl;
 
+    // TODO: Combine input and output lists
     std::vector<QbListEntry> qbList;
-    GetParallelBitList(start, length, &qbList);
+    GetParallelBitList(inputStart, length, &qbList);
 
     firstCu = qbList[0].cu
     for (i = 1; i < qbList.size(); i++) {
@@ -206,9 +206,29 @@ unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigne
             invLookup = qbInverseLookup[qbe.cu][j];
             qbLookup[invLookup].cu = firstCu;
             qbLookup[invLookup].qb = coherentUnits[firstCu].GetQubitCount() + j;
-            //TODO: Swap bits into correct order to apply SuperposeReg8
+            qbInverseLookup[firstCu].insert(qbInverseLookup[firstCu].end(), invLookup.begin(), invLookup.end());
+            qbInverseLookup.erase(qbInverseLookup.begin() + qbe.cu);
         }
         coherentUnits[firstCu].Cohere(coherentUnits[qbe.cu]);
+    }
+
+    // Lookup table and inverse have now been updated, but coherentUnits list is still the old one.
+    // Swap qubits into appropriate order, then update coherentUnits list.
+
+    cuLen = coherentUnits[firstCu].GetQubitCount();
+    for (i = 0; i < cuLen; i++) {
+        //TODO: Swap qubits
+    }
+
+    // Update coherentUnit list at end
+    if (qbList.size() > 1) {
+        j = qbList[1].cu;
+        for (i = 1; i < qbList.size(); i++) {
+            coherentUnits.erase(coherentUnits.begin() + j);
+            if ((i + 1) < qbList.size()) {
+                j += qbList[i + 1].cu - qbList[i].cu;
+            }
+        }
     }
 }
 */
