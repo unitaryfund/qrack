@@ -17,12 +17,74 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include "par_for.hpp"
 #include "qregister.hpp"
-#include <atomic>
-#include <future>
-#include <thread>
 
 namespace Qrack {
+
+void par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn)
+{
+    std::atomic<bitCapInt> idx;
+    idx = begin;
+
+    int num_cpus = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> futures(num_cpus);
+
+    for (int cpu = 0; cpu < num_cpus; cpu++) {
+        futures[cpu] = std::async(std::launch::async, [&]() {
+            for (bitCapInt i = idx++; i < end; i = idx++) {
+                fn(i);
+            }
+        });
+    }
+
+    for (int cpu = 0; cpu < num_cpus; cpu++) {
+        futures[cpu].get();
+    }
+}
+
+void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower, const bitLenInt skipBitCount,
+    ParallelFunc fn)
+{
+    par_for(begin, end, [&](const bitCapInt idx) {
+        bitCapInt iHigh = idx;
+        bitCapInt iLow = iHigh % skipPower;
+        bitCapInt i = iLow;
+
+        iHigh = (iHigh - iLow) << skipBitCount;
+        i += iHigh;
+
+        if (i >= end) {
+            return;
+        }
+
+        fn(i);
+    });
+}
+
+void par_for_mask(
+    const bitCapInt begin, const bitCapInt end, const bitCapInt* maskArray, const bitLenInt bitCount, ParallelFunc fn)
+{
+    par_for(begin, end, [&](const bitCapInt idx) {
+        bitCapInt iHigh = idx;
+        bitCapInt iLow;
+        bitCapInt i = 0;
+
+        for (bitLenInt p = 0; p < bitCount; p++) {
+            iLow = iHigh % maskArray[p];
+            i += iLow;
+            iHigh = (iHigh - iLow) << 1;
+        }
+
+        i += iHigh;
+
+        if (i >= end) {
+            return;
+        }
+
+        fn(i);
+    });
+}
 
 double par_norm(const bitCapInt maxQPower, const Complex16* stateArray)
 {

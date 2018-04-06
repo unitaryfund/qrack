@@ -94,7 +94,8 @@ public:
     int GetMaxQPower() { return maxQPower; }
 
     /**
-     * Output the exact quantum state of this register as a permutation basis array of complex numbers
+     * Output the exact quantum state of this register as a permutation basis
+     * array of complex numbers
      *
      * \warning PSEUDO-QUANTUM
      */
@@ -186,7 +187,8 @@ public:
     void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
 
     /**
-     * Minimally decohere a set of contigious bits from the full coherent unit, throwing these qubits away.
+     * Minimally decohere a set of contigious bits from the full coherent unit,
+     * throwing these qubits away.
      *
      * Minimally decohere a set of contigious bits from the full coherent unit,
      * discarding these bits. The length of this coherent unit is reduced by
@@ -310,7 +312,8 @@ public:
     /**
      * Measurement gate
      *
-     * Measures the qubit at "qubitIndex" and returns either "true" or "false." (This "gate" breaks unitarity.)
+     * Measures the qubit at "qubitIndex" and returns either "true" or "false."
+     * (This "gate" breaks unitarity.)
      *
      * All physical evolution of a quantum state should be "unitary," except
      * measurement. Measurement of a qubit "collapses" the quantum state into
@@ -786,7 +789,8 @@ public:
     /**
      * Entangled Hadamard
      *
-     * Perform an operation on two entangled registers like a bitwise Hadamard on a single
+     * Perform an operation on two entangled registers like a bitwise Hadamard
+     * on a single
      *
      * The "entangled Hadamard" register operation is an important logical
      * expedient to Qrack. It is a unitary operation, which may be complicated
@@ -839,7 +843,8 @@ public:
     unsigned char MReg8(bitLenInt start);
 
     /**
-     * Set 8 bit register bits by a superposed index-offset-based read from classical memory
+     * Set 8 bit register bits by a superposed index-offset-based read from
+     * classical memory
      *
      * "inputStart" is the start index of 8 qubits that act as an index into
      * the 256 byte "values" array. The "outputStart" bits are first cleared,
@@ -897,7 +902,8 @@ public:
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
     /**
-     * Add to entangled 8 bit register state with a superposed index-offset-based read from classical memory
+     * Add to entangled 8 bit register state with a superposed
+     * index-offset-based read from classical memory
      *
      * inputStart" is the start index of 8 qubits that act as an index into the
      * 256 byte "values" array. The "outputStart" bits would usually already be
@@ -923,7 +929,8 @@ public:
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
     /**
-     * Subtract from an entangled 8 bit register state with a superposed index-offset-based read from classical memory
+     * Subtract from an entangled 8 bit register state with a superposed
+     * index-offset-based read from classical memory
      *
      * "inputStart" is the start index of 8 qubits that act as an index into
      * the 256 byte "values" array. The "outputStart" bits would usually
@@ -972,9 +979,11 @@ public:
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state
      *
-     * To set a bit, the bit is first measured. If the result of measurement matches "value," the bit is considered set.
-     * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
-     * entirely in the "value" state, with a random phase factor.
+     * To set a bit, the bit is first measured. If the result of measurement
+     * matches "value," the bit is considered set.  If the result of
+     * measurement is the opposite of "value," an X gate is applied to the bit.
+     * The state ends up entirely in the "value" state, with a random phase
+     * factor.
      */
     void SetBit(bitLenInt qubitIndex1, bool value);
 

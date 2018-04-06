@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "catch.hpp"
+#include "par_for.hpp"
 #include "qregister.hpp"
 
 #include "tests.hpp"
@@ -10,6 +11,21 @@
 using namespace Qrack;
 
 /* Begin Test Cases. */
+TEST_CASE("test_par_for")
+{
+    size_t NUM_ENTRIES = 2000;
+    std::atomic_bool hit[NUM_ENTRIES];
+
+    for (int i = 0; i < 2000; i++) {
+        hit[i].store(false);
+    }
+
+    par_for(0, NUM_ENTRIES, [&hit](const bitCapInt lcv) {
+        bool old = true;
+        old = hit[lcv].exchange(old);
+        REQUIRE(old == false);
+    });
+}
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
@@ -165,7 +181,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
-    qftReg->SetPermutation(31);
+    qftReg->SetPermutation(0x1f);
     qftReg->X(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
 }
