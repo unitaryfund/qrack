@@ -47,7 +47,33 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  * opcodes-like methods.
  */
 
-/// Initialize a coherent unit with qBitCount number pf bits, to initState unsigned integer permutation state
+/**
+ * Initialize a coherent unit with qBitCount number pf bits, to initState
+ * unsigned integer permutation state.  The `initState` parameter is,
+ * effectively, the initial pattern of |0> and |1>'s that the qubits should be
+ * initialized to.
+ *
+ * For example, in a two qubit system, there are the following values:
+ *
+ *    |00>
+ *    |01>
+ *    |10>
+ *    |11>
+ *
+ * If the desired initial state is |10>, then the index value of 2
+ * will be passed in to initState.  The constructor will then,
+ * using a random \f$ \theta \f$, initialize that state to
+ * Complex16Simd(\f$cos(\theta)\f$, \f$sin(\theta)\f$).  It's worth
+ * noting that this is still a unit vector:
+ *
+ * \f$
+ *   cos(\theta)^2 + sin(\theta)^2 = 1
+ * \f$
+ *
+ * Broadly speaking, a non-random \f$\theta\f$ could be used, but doing so
+ * replicates the unknowable initial phase of a physical QM system, and has
+ * impacts on subsequent operations accordingly.
+ */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
     : rand_distribution(0.0, 1.0)
 {
@@ -1892,54 +1918,6 @@ void CoherentUnit::DECBCDC(
         });
     ResetStateVec(std::move(nStateVec));
 }
-
-/// Multiply a quantum register by a classical integer, with sign and without carry.
-/*
-void CoherentUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length)
-{
-    if (toMul == 0) {
-        SetPermutation(0);
-        return;
-    }
-    else if (toMul == 1) {
-        return;
-    }
-
-    bitCapInt origPermCount = maxQPower;
-    bitCapInt origQubitCount = qubitCount;
-    if ((inOutStart + length) != origQubitCount) {
-        Swap(inOutStart, origQubitCount - length, length);
-    }
-    CoherentUnit carry = CoherentUnit(length, 0);
-    Cohere(carry);
-
-    bitCapInt lengthPower = 1 << (length * 2);
-    bitCapInt inOutMask = (lengthPower - 1) << (origQubitCount - length);
-    bitCapInt otherMask = (origPermCount - 1) ^ ((1 << length) - 1);
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-    std::fill(&(nStateVec[0]), &(nStateVec[0]) + (1 << (origQubitCount + length)), Complex16(0.0, 0.0));
-    bitCapInt bciArgs[5] = { inOutMask, toMul, otherMask, lengthPower, (origQubitCount - length) };
-    par_for_copy(0, origPermCount, &(stateVec[0]), bciArgs, &(nStateVec[0]),
-        [](bitCapInt lcv, const int cpu, const Complex16* stateVec, const bitCapInt* bciArgs, Complex16* nStateVec) {
-            bitCapInt otherRes = (lcv & (bciArgs[2]));
-            bitCapInt inOutRes = (lcv & (bciArgs[0]));
-            bitCapInt inOutInt = inOutRes >> (bciArgs[4]);
-            bitCapInt outInt = (inOutInt * bciArgs[1]) & bciArgs[3];
-            bitCapInt outRes = (outInt << (bciArgs[4])) | otherRes;
-            nStateVec[outRes] += stateVec[lcv];
-            if (norm(stateVec[lcv]) > 0.0) {
-                std::cout<<(int)lcv<<", "<<(int)outRes<<std::endl;
-            }
-        });
-    ResetStateVec(std::move(nStateVec));
-
-    MReg(origQubitCount, length);
-    Dispose(origQubitCount, length);
-    if ((inOutStart + length) != origQubitCount) {
-        Swap(inOutStart, origQubitCount - length, length);
-    }
-}
-*/
 
 /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 void CoherentUnit::QFT(bitLenInt start, bitLenInt length)

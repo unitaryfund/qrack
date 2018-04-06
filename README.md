@@ -48,6 +48,7 @@ This is equivalent to a physical body having a 50% chance of emitting a fixed un
 1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libOpenCL.so.1` to `/usr/lib`
 1.  Add symlinks for `/opt/AMDAPPSDK-3.0/lib/x86_64/sdk/libamdocl64.so` to `/usr/lib`
 1.  Make sure `clinfo` reports back that there is a valid backend to use (anything other than an error should be fine).
+1.  Install OpenGL headers: `$ sudo apt install mesa-common-dev`
 1.  Adjust the `makefile` to have the appropriate search paths
 
 ## Note about unitarity and arithmetic
