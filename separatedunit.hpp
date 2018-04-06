@@ -77,7 +77,7 @@ protected:
      * we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise
      * parallel and does not depend on the ordering of bits in the list.
      */
-    void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList);
+    void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList);
     /// Compile a list of CoherentUnit bit strings for applying a bitwise-parallel operation
     /**
      * This operation optimizes compiling a list out of qubit pile when bit order is not important. We apply
@@ -86,6 +86,6 @@ protected:
      * Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is
      * bitwise parallel and does not depend on the ordering of bits in the list.
      */
-    void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList);
+    void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList);
 };
 } // namespace Qrack
