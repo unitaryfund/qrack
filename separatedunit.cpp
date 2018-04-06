@@ -96,12 +96,11 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
     QbLookup qbl;
 
     std::vector<QbListEntry> qbList;
-    GetOrderedBitList(start, length, qbList);
+    GetOrderedBitList(start, length, &qbList);
 
     j = 0;
     for (i = 0; i < qbList.size(); i++) {
         qbe = qbList[i];
-        qbl = qubitLookup[start + j];
         result |= (coherentUnits[qbe.cu].MReg(qbe.start, qbe.length)) << j;
         j += qbe.length;
     }
@@ -142,8 +141,8 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     MReg(start, length);
 
     for (i = 0; i < length; i++) {
-        coherentUnits[qubitLookup[start + i].cu].SetBit(0, ((value & (1 << i)) > 0) ? true : false);
-    }
+        coherentUnits[qubitLookup[start + i].cu].SetPermutation(((value & (1 << i)) > 0) ? 1 : 0);
+    }    
 }
 
 /// Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
@@ -154,7 +153,7 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
  * preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does
  * not depend on the ordering of bits in the list.
  */
-void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList)
+void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList)
 {
     // Start by getting a list (of sublists) of all the bits we need, with bit sublist length of 1.
     bitLenInt i, j;
@@ -165,16 +164,16 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
         qbe.cu = qbl.cu;
         qbe.start = qbl.qb;
         qbe.length = 1;
-        qbList.push_back(qbe);
+        qbList->push_back(qbe);
     }
 
     // If contiguous sublists in the list we just made are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
-            qbList[j].length++;
-            qbList.erase(qbList.begin() + j + 1);
+        if (((*qbList)[j].cu == (*qbList)[j + 1].cu) && (((*qbList)[j].start + (*qbList)[j].length) == (*qbList)[j + 1].start)) {
+            (*qbList)[j].length++;
+            qbList->erase(qbList->begin() + j + 1);
         } else {
             j++;
         }
@@ -189,7 +188,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
  * preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does
  * not depend on the ordering of bits in the list.
  */
-void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry> qbList)
+void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList)
 {
     // Start by getting a list (of sublists) of all the bits we need, with bit sublist length of 1.
     bitLenInt i, j;
@@ -200,18 +199,18 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
         qbe.cu = qbl.cu;
         qbe.start = qbl.qb;
         qbe.length = 1;
-        qbList.push_back(qbe);
+        qbList->push_back(qbe);
     }
     // The ordering of bits returned is unimportant, so we can better optimize by sorting this list by CoherentUnit
     // index and qubit index, to maximize the reduction of the list.
-    std::sort(qbList.begin(), qbList.end(), compare);
+    std::sort(qbList->begin(), qbList->end(), compare);
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
-            qbList[j].length++;
-            qbList.erase(qbList.begin() + j + 1);
+        if (((*qbList)[j].cu == (*qbList)[j + 1].cu) && (((*qbList)[j].start + (*qbList)[j].length) == (*qbList)[j + 1].start)) {
+            (*qbList)[j].length++;
+            qbList->erase(qbList->begin() + j + 1);
         } else {
             j++;
         }

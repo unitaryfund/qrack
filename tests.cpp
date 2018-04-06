@@ -27,14 +27,8 @@ TEST_CASE("test_par_for")
     });
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
-{
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
-    qftReg->SetReg(0, 8, 10);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
-}
-
-/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
+/*
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
 
@@ -89,9 +83,14 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
     REQUIRE(expectation == 0x00);
 }
+*/
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") { REQUIRE(qftReg->MReg(0, 8) == 0); }
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m") {
+    qftReg->SetReg(0, 8, 0x2b);
+    REQUIRE(qftReg->MReg(0, 8) == 0x2b);
+}
 
+/*
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
 {
     int i;
@@ -243,23 +242,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
     REQUIRE_THAT(qftReg, HasProbability(0xd3e));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m_reg")
-{
-    int j;
-
-    std::cout << "M Test:" << std::endl;
-    std::cout << "Initial:" << std::endl;
-    for (j = 0; j < 8; j++) {
-        std::cout << "Bit " << j << ", Chance of 1:" << qftReg->Prob(j) << std::endl;
-    }
-
-    qftReg->M(0);
-    std::cout << "Final:" << std::endl;
-    for (j = 0; j < 8; j++) {
-        std::cout << "Bit " << j << ", Chance of 1:" << qftReg->Prob(j) << std::endl;
-    }
-}
-
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
 {
     double qftProbs[20];
@@ -359,6 +341,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
+*/
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
@@ -367,6 +350,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
 }
 
+/*
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 {
     int i;
