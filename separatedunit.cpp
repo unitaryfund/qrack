@@ -32,8 +32,25 @@ bool compare(QbListEntry i, QbListEntry j)
     return lessThan;
 }
 
-void SeparatedUnit::CloneRawState(Complex16* output) { throw NotImplemented(); }
-void SeparatedUnit::SetQuantumState(Complex16* inputState) { throw NotImplemented(); }
+void SeparatedUnit::CloneRawState(Complex16* output) {
+    SeparatedUnit dupe(*this);
+    std::vector<QbListEntry> qbList(qubitCount);
+    dupe.GetParallelBitList(0, qubitCount, qbList);
+    dupe.EntangleBitList(qbList);
+    dupe.coherentUnits[0]->CloneRawState(output);
+}
+void SeparatedUnit::SetQuantumState(Complex16* inputState)
+{
+    bitLenInt i;
+    for (i = 0; i < qubitCount; i++) {
+        qubitLookup[i].cu = 0;
+        qubitLookup[i].qb = i;
+        qubitInverseLookup[i] = i;
+        coherentUnits.erase(coherentUnits.end() - i - 1);
+    }
+    coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(qubitCount, 0, rand_generator_ptr)));
+    coherentUnits[0]->SetQuantumState(inputState);
+}
 
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
@@ -63,6 +80,24 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
     : SeparatedUnit(qBitCount, 0)
 {
+}
+
+SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs) {
+    rand_generator_ptr[0] = std::default_random_engine();
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
+    qubitCount = pqs.qubitCount;
+
+    std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount]);
+    std::copy(&(pqs.qubitLookup[0]), &(pqs.qubitLookup[0]) + qubitCount, &(ql[0]));
+    qubitLookup = std::move(ql);
+    std::unique_ptr<bitLenInt[]> qil(new bitLenInt[qubitCount * qubitCount]());
+    std::copy(&(pqs.qubitInverseLookup[0]), &(pqs.qubitInverseLookup[0]) + qubitCount, &(qil[0]));
+    qubitLookup = std::move(ql);
+
+    for (bitLenInt i = 0; i < pqs.coherentUnits.size(); i++) {
+        coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(*(pqs.coherentUnits[pqs.coherentUnits.size() - i - 1]))));
+    }
 }
 
 void SeparatedUnit::Cohere(CoherentUnit& toCopy) {

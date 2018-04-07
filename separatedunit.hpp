@@ -43,16 +43,19 @@ public:
     SeparatedUnit(bitLenInt qBitCount);
     /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state */
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
+    /**
+     * Initialize a cloned register with same exact quantum state as pqs
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    SeparatedUnit(const SeparatedUnit& pqs);
 
+    void CloneRawState(Complex16* output);
+    void SetQuantumState(Complex16* inputState);
     void Cohere(CoherentUnit& toCopy);
     void Cohere(SeparatedUnit& toCopy);
     void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
     void Dispose(bitLenInt start, bitLenInt length);
-
-    /* These throw not-implemented exceptions: */
-    void CloneRawState(Complex16* output);
-    void SetQuantumState(Complex16* inputState);
-    /* The above are not implemented. */
 
     double Prob(bitLenInt qubitIndex);
     bool M(bitLenInt qubitIndex);
