@@ -113,7 +113,7 @@ public:
     double Rand();
 
     /** Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int */
-    void SetPermutation(bitCapInt perm);
+    virtual void SetPermutation(bitCapInt perm);
 
     /** Set an arbitrary pure quantum state */
     void SetQuantumState(Complex16* inputState);
@@ -245,7 +245,7 @@ public:
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate
@@ -565,7 +565,7 @@ public:
      * "AND" registers at "inputStart1" and "inputStart2," of "length" bits,
      * placing the result in "outputStart".
      */
-    void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+    virtual void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /**
      * Classical bitwise "AND"
