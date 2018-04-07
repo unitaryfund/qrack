@@ -263,12 +263,12 @@ unsigned char CoherentUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt out
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+    queue.enqueueWriteBuffer(loadBuffer, CL_FALSE, 0, sizeof(unsigned char) * 256, values);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
     cl::Kernel sr8 = *(clObj->GetSR8Ptr());
     sr8.setArg(0, stateBuffer);
     sr8.setArg(1, ulongBuffer);
@@ -281,7 +281,6 @@ unsigned char CoherentUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt out
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(std::move(nStateVec));
 
     bitCapInt i, outputInt;
     double prob, average;
@@ -317,11 +316,11 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+    queue.enqueueWriteBuffer(loadBuffer, CL_FALSE, 0, sizeof(unsigned char) * 256, values);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
     cl::Kernel adc8 = *(clObj->GetADC8Ptr());
     adc8.setArg(0, stateBuffer);
     adc8.setArg(1, ulongBuffer);
@@ -334,7 +333,6 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(std::move(nStateVec));
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     double prob, average;
@@ -373,11 +371,11 @@ unsigned char CoherentUnitOCL::SbcSuperposeReg8(
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
+    queue.enqueueWriteBuffer(loadBuffer, CL_FALSE, 0, sizeof(unsigned char) * 256, values);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
-    cl::Buffer loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256, values);
     cl::Kernel sbc8 = *(clObj->GetSBC8Ptr());
     sbc8.setArg(0, stateBuffer);
     sbc8.setArg(1, ulongBuffer);
@@ -390,7 +388,6 @@ unsigned char CoherentUnitOCL::SbcSuperposeReg8(
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-    ResetStateVec(std::move(nStateVec));
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     double prob, average;

@@ -165,7 +165,7 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
 }
 
 void kernel superposeReg8(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values)
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
 {
     ulong ID, Nthreads, lcv;
 
@@ -178,6 +178,10 @@ void kernel superposeReg8(
     ulong lowMask = (1 << outputStart) - 1;
     ulong inputRes, inputInt, outputRes, outputInt;
     ulong i, iLow, iHigh;
+    unsigned char values[256];
+    for (lcv = 0; lcv < 256; lcv++) {
+        values[lcv] = values_global[lcv];
+    }
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
@@ -192,7 +196,7 @@ void kernel superposeReg8(
 }
 
 void kernel adcReg8(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values)
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
 {
     ulong ID, Nthreads, lcv;
 
@@ -209,6 +213,10 @@ void kernel adcReg8(
     ulong lengthPower = ulongPtr[8];
     ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
     ulong i, iLow, iHigh;
+    unsigned char values[256];
+    for (lcv = 0; lcv < 256; lcv++) {
+        values[lcv] = values_global[lcv];
+    }
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
@@ -232,7 +240,7 @@ void kernel adcReg8(
 }
 
 void kernel sbcReg8(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values)
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
 {
     ulong ID, Nthreads, lcv;
 
@@ -249,6 +257,10 @@ void kernel sbcReg8(
     ulong lengthPower = ulongPtr[8];
     ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
     ulong i, iLow, iHigh;
+    unsigned char values[256];
+    for (lcv = 0; lcv < 256; lcv++) {
+        values[lcv] = values_global[lcv];
+    }
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
