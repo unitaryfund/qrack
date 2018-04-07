@@ -793,41 +793,6 @@ public:
     /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register. */
     void QFT(bitLenInt start, bitLenInt length);
 
-    /**
-     * Entangled Hadamard
-     *
-     * Perform an operation on two entangled registers like a bitwise Hadamard
-     * on a single
-     *
-     * The "entangled Hadamard" register operation is an important logical
-     * expedient to Qrack. It is a unitary operation, which may be complicated
-     * in terms of fundamental gates. For two entangled registers, starting
-     * with "targetStart" and "entangledStart," of "length" bits, it transforms
-     * the "targetStart" register as if a bitwise Hadamard was applied to a
-     * register which is not entangled. It maintains the entanglement to the
-     * "entangledStart" register in this process, affecting that register as if
-     * it were unentangled register to which a bitwise Hadamard gate variant,
-     * without phase reversal, was applied.
-     *
-     * When this gate is applied to a state loaded by SuperposeReg8(), it
-     * becomes possible to perform general "amplitude amplification"
-     * algorithms, generalizations of Grover's search, on entangled key-value
-     * pairs in two registers. This allows us to do things like "Grover's
-     * search" for the key index of an array value element which matches a
-     * target value, or search for the key index of an array value element
-     * which is greater than or less than a target value. See the "Grover's
-     * search" variants assembler examples in the examples project for
-     * practical examples of its application, or see the Grover's search unit
-     * test in "example.cpp." (The relevant examples are actually properly
-     * "amplitude amplification" generalizations of Grover's search.)
-     *
-     * As this operation is unitary and extremely expedient, Qrack does not
-     * concern itself with the physical hardware realization of this gate, as
-     * Qrack is a practical emulator designed for computational efficiency
-     * foremost.
-     */
-    void EntangledH(bitLenInt targetStart, bitLenInt entangledStart, bitLenInt length);
-
     /** Reverse the phase of the state where the register equals zero. */
     void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 

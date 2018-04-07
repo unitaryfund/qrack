@@ -98,7 +98,8 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
     stateVec[initState] = Complex16(cos(angle), sin(angle));
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a shared random number generator
+/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
+/// shared random number generator
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine rgp[])
     : rand_distribution(0.0, 1.0)
 {
@@ -220,7 +221,6 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
 
     ResetStateVec(std::move(nStateVec));
     UpdateRunningNorm();
-    toCopy.UpdateRunningNorm();
 }
 
 /**

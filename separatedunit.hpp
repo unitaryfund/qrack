@@ -95,7 +95,7 @@ protected:
     void OptimizeParallelBitList(std::vector<QbListEntry>* qbList);
 
     /// Quicksort entangled bits - partition function
-    bitLenInt PartitionQubits (bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
+    bitLenInt PartitionQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
     /// Quicksort entangled bits
     void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
 };

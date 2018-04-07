@@ -175,12 +175,12 @@ void kernel superposeReg8(
     ulong inputStart = ulongPtr[1];
     ulong inputMask = ulongPtr[2];
     ulong outputStart = ulongPtr[3];
-    ulong outputPower = 1 << outputStart;
+    ulong lowMask = (1 << outputStart) - 1;
     ulong inputRes, inputInt, outputRes, outputInt;
     ulong i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        iLow = iHigh & (outputPower - 1);
+        iLow = iHigh & lowMask;
         i = iLow + ((iHigh - iLow) << 8);
 
         inputRes = i & inputMask;

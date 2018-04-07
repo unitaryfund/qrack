@@ -254,11 +254,12 @@ unsigned char CoherentUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt out
     SetReg(outputStart, 8, 0);
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
-    bitCapInt bciArgs[10] = { maxQPower, inputStart, inputMask, outputStart, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[10] = { maxQPower >> 8, inputStart, inputMask, outputStart, 0, 0, 0, 0, 0, 0 };
 
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
