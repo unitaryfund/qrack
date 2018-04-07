@@ -34,6 +34,7 @@ public:
     CoherentUnitOCL(bitLenInt qBitCount);
     CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState);
     CoherentUnitOCL(const CoherentUnitOCL& pqs);
+    CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine* rgp);
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -46,6 +47,8 @@ public:
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
+    CoherentUnitOCL();
+
     OCLEngine* clObj;
     cl::CommandQueue queue;
     cl::Buffer stateBuffer;

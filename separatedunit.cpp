@@ -185,7 +185,6 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
 unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
-
     bitLenInt i, j, k;
     bitLenInt firstCu, cuLen, invLookup;
     QbListEntry qbe;

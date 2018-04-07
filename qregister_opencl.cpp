@@ -41,6 +41,11 @@ CoherentUnitOCL::CoherentUnitOCL(const CoherentUnitOCL& pqs)
     InitOCL();
 }
 
+CoherentUnitOCL::CoherentUnitOCL()
+    : CoherentUnit()
+{
+}
+
 void CoherentUnitOCL::InitOCL()
 {
     clObj = OCLEngine::Instance();

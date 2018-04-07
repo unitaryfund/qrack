@@ -46,13 +46,13 @@ public:
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
     /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-    double Prob(bitLenInt qubitIndex);
+    virtual double Prob(bitLenInt qubitIndex);
 
     /// Measure a bit
-    bool M(bitLenInt qubitIndex);
+    virtual bool M(bitLenInt qubitIndex);
 
     /// Measure permutation state of a register
-    bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /// Set individual bit to pure |0> (false) or |1> (true) state
     /**
@@ -60,13 +60,13 @@ public:
      * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
      * entirely in the "value" state, with a random phase factor.
      */
-    void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /// Set register bits to given permutation
-    void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /// Set register bits to given permutation
-    unsigned char SuperposeReg8(bitLenInt start, bitLenInt length, unsigned char* values);
+    virtual unsigned char SuperposeReg8(bitLenInt start, bitLenInt length, unsigned char* values);
 
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;

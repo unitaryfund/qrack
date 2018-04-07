@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
     Catch::Session session;
 
     bool disable_opencl = false;
+    bool disable_optimized = false;
     bool disable_software = false;
 
     using namespace Catch::clara;
@@ -33,7 +34,9 @@ int main(int argc, char* argv[])
      * supported.
      */
     auto cli = session.cli() | Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
-        Opt(disable_software)["--disable-software"]("Disable the software implementation tests");
+        Opt(disable_software)["--disable-software"]("Disable the software implementation tests") |
+        Opt(disable_optimized)["--disable-optimized"]("Disable the optimized implementation tests");
+    ;
 
     session.cli(cli);
 
@@ -57,6 +60,12 @@ int main(int argc, char* argv[])
     /* Perform the run against the default (software) variant. */
     if (!disable_software) {
         session.config().stream() << "Executing test suite using the Software Implementation" << std::endl;
+        num_failed = session.run();
+    }
+
+    if (num_failed == 0 && !disable_optimized) {
+        session.config().stream() << "Executing test suite using the Optimized Implementation" << std::endl;
+        testEngineType = COHERENT_UNIT_ENGINE_OPTIMIZED;
         num_failed = session.run();
     }
 
