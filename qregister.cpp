@@ -76,17 +76,6 @@ CoherentUnit::CoherentUnit()
  * replicates the unknowable initial phase of a physical QM system, and has
  * impacts on subsequent operations accordingly.
  */
-<<<<<<< HEAD
-=======
-
-///Protected constructor for SeparatedUnit
-CoherentUnit::CoherentUnit() : rand_distribution(0.0, 1.0) {
-    //This method body left intentionally empty
-    randomSeed = std::time(0);
-}
-
-/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
-/// shared random number generator
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
     : rand_distribution(0.0, 1.0)
 {
