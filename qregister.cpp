@@ -15,10 +15,10 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include <bitset>
-#include <iostream>
 #include <atomic>
+#include <bitset>
 #include <future>
+#include <iostream>
 #include <thread>
 
 #include "qregister.hpp"
@@ -77,7 +77,8 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  * impacts on subsequent operations accordingly.
  */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
-    : rand_distribution(0.0, 1.0), numCores(std::thread::hardware_concurrency())
+    : rand_distribution(0.0, 1.0)
+    , numCores(std::thread::hardware_concurrency())
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
@@ -104,7 +105,8 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 
 /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
-    : rand_distribution(0.0, 1.0), numCores(std::thread::hardware_concurrency())
+    : rand_distribution(0.0, 1.0)
+    , numCores(std::thread::hardware_concurrency())
 {
     SetRandomSeed(std::time(0));
 
@@ -2147,8 +2149,8 @@ void CoherentUnit::par_for(const bitCapInt begin, const bitCapInt end, ParallelF
     par_for_inc(begin, end, [](const bitCapInt i) { return i; }, fn);
 }
 
-void CoherentUnit::par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipMask, const bitLenInt maskWidth,
-    ParallelFunc fn)
+void CoherentUnit::par_for_skip(
+    const bitCapInt begin, const bitCapInt end, const bitCapInt skipMask, const bitLenInt maskWidth, ParallelFunc fn)
 {
     /*
      * Add maskWidth bits by shifting the incrementor up that number of
@@ -2161,9 +2163,8 @@ void CoherentUnit::par_for_skip(const bitCapInt begin, const bitCapInt end, cons
     bitCapInt lowMask = skipMask - 1;
     bitCapInt highMask = (~(lowMask + skipMask)) << (maskWidth - 1);
 
-    IncrementFunc incFn = [lowMask, highMask, maskWidth](bitCapInt i) {
-            return ((i << maskWidth) & highMask) | (i & lowMask);
-        };
+    IncrementFunc incFn = [lowMask, highMask, maskWidth](
+                              bitCapInt i) { return ((i << maskWidth) & highMask) | (i & lowMask); };
 
     par_for_inc(begin, end, incFn, fn);
 }
@@ -2185,17 +2186,17 @@ void CoherentUnit::par_for_mask(
     bitCapInt masks[maskLen][2];
 
     for (int i = 0; i < maskLen; i++) {
-        masks[i][0] = maskArray[i] - 1;                 // low mask
-        masks[i][1] = (~(masks[i][0] + maskArray[i]));  // high mask
+        masks[i][0] = maskArray[i] - 1; // low mask
+        masks[i][1] = (~(masks[i][0] + maskArray[i])); // high mask
     }
 
     IncrementFunc incFn = [&masks, maskLen](bitCapInt i) {
-            /* Push i apart, one mask at a time. */
-            for (int m = 0; m < maskLen; m++) {
-                i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
-            }
-            return i;
-        };
+        /* Push i apart, one mask at a time. */
+        for (int m = 0; m < maskLen; m++) {
+            i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
+        }
+        return i;
+    };
 
     par_for_inc(begin, end, incFn, fn);
 }

@@ -45,7 +45,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip")
 
     calls.store(0);
 
-    int skipBit = 0x4;      // Skip 0b100 when counting upwards.
+    int skipBit = 0x4; // Skip 0b100 when counting upwards.
 
     for (int i = 0; i < NUM_ENTRIES; i++) {
         hit[i].store(false);
@@ -73,7 +73,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip_wide")
 
     calls.store(0);
 
-    int skipBit = 0x4;      // Skip 0b100 when counting upwards.
+    int skipBit = 0x4; // Skip 0b100 when counting upwards.
 
     for (int i = 0; i < NUM_ENTRIES; i++) {
         hit[i].store(false);
@@ -103,7 +103,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_mask")
 
     calls.store(0);
 
-     for (int i = 0; i < NUM_ENTRIES; i++) {
+    for (int i = 0; i < NUM_ENTRIES; i++) {
         hit[i].store(false);
     }
 
