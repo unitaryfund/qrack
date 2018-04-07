@@ -45,43 +45,24 @@ public:
     /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state */
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
-    /** Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int */
-    //void SetPermutation(bitCapInt perm);
+    /* These throw not-implemented exceptions: */
+    virtual void CloneRawState(Complex16* output);
+    virtual void SetQuantumState(Complex16* inputState);
+    /* The above are not implemented. */
 
-    /** PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state */
     virtual double Prob(bitLenInt qubitIndex);
-
-    /** Measure a bit */
     virtual bool M(bitLenInt qubitIndex);
-
-    /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-
-    /**
-     * Set individual bit to pure |0> (false) or |1> (true) state
-     *
-     * To set a bit, the bit is first measured. If the result of measurement matches "value," the bit is considered set.
-     * If the result of measurement is the opposite of "value," an X gate is applied to the bit. The state ends up
-     * entirely in the "value" state, with a random phase factor.
-     */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
-
-    /** Set register bits to given permutation */
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
-    /** Set permutation state of entire SeparatedUnit */
-    virtual void SetPermutation(bitCapInt value);
 
     virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
-    virtual unsigned char AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-    virtual unsigned char SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual unsigned char AdcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual unsigned char SbcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
-    /**
-     * Quantum analog of classical "AND" gate
-     *
-     * Measures the outputBit, then overwrites it with result.
-     */
     virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;

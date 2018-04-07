@@ -77,29 +77,12 @@ CoherentUnit::CoherentUnit()
  * impacts on subsequent operations accordingly.
  */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
-    : rand_distribution(0.0, 1.0)
+    : CoherentUnit(qBitCount, initState, NULL)
 {
-    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
-        throw std::invalid_argument(
-            "Cannot instantiate a register with greater capacity than native types on emulating system.");
-
-    (*rand_generator_ptr) = std::default_random_engine();
-    randomSeed = std::time(0);
-    SetRandomSeed(randomSeed);
-
-    double angle = Rand() * 2.0 * M_PI;
-    runningNorm = 1.0;
-    qubitCount = qBitCount;
-    maxQPower = 1 << qBitCount;
-    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
-    stateVec.reset();
-    stateVec = std::move(sv);
-    std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    stateVec[initState] = Complex16(cos(angle), sin(angle));
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
-/// shared random number generator
+/** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
+ * shared random number generator */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine rgp[])
     : rand_distribution(0.0, 1.0)
 {
@@ -107,9 +90,14 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::defaul
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    rand_generator_ptr[0] = rgp[0];
-    randomSeed = std::time(0);
-    SetRandomSeed(randomSeed);
+    if (rgp == NULL) {
+        rand_generator_ptr[0] = { std::default_random_engine() };
+        randomSeed = std::time(0);
+        SetRandomSeed(randomSeed);
+    }
+    else {
+        rand_generator_ptr[0] = rgp[0];
+    }
 
     double angle = Rand() * 2.0 * M_PI;
     runningNorm = 1.0;
@@ -122,7 +110,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::defaul
     stateVec[initState] = Complex16(cos(angle), sin(angle));
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
+/** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount)
     : CoherentUnit(qBitCount, 0)
 {
@@ -172,14 +160,7 @@ void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 }
 
 /// Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
-void CoherentUnit::SetPermutation(bitCapInt perm)
-{
-    double angle = Rand() * 2.0 * M_PI;
-
-    runningNorm = 1.0;
-    std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    stateVec[perm] = Complex16(cos(angle), sin(angle));
-}
+void CoherentUnit::SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void CoherentUnit::SetQuantumState(Complex16* inputState)
@@ -2020,15 +2001,20 @@ void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
         SetBit(start, (value == 1));
-        return;
-    }
+    } else if ((start == 0) && (length == qubitCount)) {
+        double angle = Rand() * 2.0 * M_PI;
 
-    bool bitVal;
-    bitCapInt regVal = MReg(start, length);
-    for (bitLenInt i = 0; i < length; i++) {
-        bitVal = regVal & (1 << i);
-        if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
-            X(start + i);
+        runningNorm = 1.0;
+        std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+        stateVec[value] = Complex16(cos(angle), sin(angle));
+    } else {
+        bool bitVal;
+        bitCapInt regVal = MReg(start, length);
+        for (bitLenInt i = 0; i < length; i++) {
+            bitVal = regVal & (1 << i);
+            if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
+                X(start + i);
+        }
     }
 }
 

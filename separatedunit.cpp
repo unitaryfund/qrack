@@ -32,6 +32,9 @@ bool compare(QbListEntry i, QbListEntry j)
     return lessThan;
 }
 
+void SeparatedUnit::CloneRawState(Complex16* output) { throw NotImplemented(); }
+void SeparatedUnit::SetQuantumState(Complex16* inputState) { throw NotImplemented(); }
+
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
 {
@@ -133,13 +136,6 @@ void SeparatedUnit::SetBit(bitLenInt qubitIndex, bool value)
     coherentUnits[qbl.cu]->SetBit(qbl.qb, value);
 }
 
-/// Set entire SeparatedUnit to given permutation
-void SeparatedUnit::SetPermutation(bitCapInt value)
-{
-    SetReg(0, qubitCount, value);
-}
-
-
 /// Set register bits to given permutation
 void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
@@ -221,7 +217,8 @@ unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outpu
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[inputStart].cu]->SuperposeReg8(qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, values);
+    return coherentUnits[qubitLookup[inputStart].cu]->SuperposeReg8(
+        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, values);
 }
 
 /**
@@ -248,7 +245,8 @@ unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outpu
  * (with carry) operations on a state usually initially prepared with
  * SuperposeReg8().
  */
-unsigned char SeparatedUnit::AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+unsigned char SeparatedUnit::AdcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     QbListEntry carryQbe;
     std::vector<QbListEntry> qbList(8);
@@ -264,7 +262,8 @@ unsigned char SeparatedUnit::AdcSuperposeReg8(bitLenInt inputStart, bitLenInt ou
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[inputStart].cu]->AdcSuperposeReg8(qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
+    return coherentUnits[qubitLookup[inputStart].cu]->AdcSuperposeReg8(
+        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
 }
 
 /**
@@ -291,7 +290,8 @@ unsigned char SeparatedUnit::AdcSuperposeReg8(bitLenInt inputStart, bitLenInt ou
  * (with carry) operations on a state usually initially prepared with
  * SuperposeReg8().
  */
-unsigned char SeparatedUnit::SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+unsigned char SeparatedUnit::SbcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     QbListEntry carryQbe;
     std::vector<QbListEntry> qbList(8);
@@ -307,10 +307,12 @@ unsigned char SeparatedUnit::SbcSuperposeReg8(bitLenInt inputStart, bitLenInt ou
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[inputStart].cu]->SbcSuperposeReg8(qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
+    return coherentUnits[qubitLookup[inputStart].cu]->SbcSuperposeReg8(
+        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
 }
 
-void SeparatedUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+void SeparatedUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
     QbListEntry qbe;
     std::vector<QbListEntry> qbList(3);
     qbe.cu = qubitLookup[inputBit1].cu;
@@ -329,14 +331,8 @@ void SeparatedUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outp
 
     EntangleBitList(qbList);
 
-    coherentUnits[qubitLookup[inputBit1].cu]->AND(qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
-}
-
-void SeparatedUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) {
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        AND(inputStart1 + i, inputStart2 + i, outputStart + i);
-    }
+    coherentUnits[qubitLookup[inputBit1].cu]->AND(
+        qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
 }
 
 /**
@@ -437,7 +433,8 @@ void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>* qbList)
 }
 
 /// Entangle and sort the indices of a list of CoherentUnit objects
-void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList) {
+void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
+{
     if (qbList.size() < 2) {
         return;
     }
@@ -464,8 +461,7 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList) {
 
     // Swap qubits into appropriate order, then update coherentUnits list.
     cuLen = coherentUnits[firstCu]->GetQubitCount();
-    QuickSortQubits(&(qubitInverseLookup[firstCu * qubitCount]), 0, cuLen - 1,
-        coherentUnits[firstCu]);
+    QuickSortQubits(&(qubitInverseLookup[firstCu * qubitCount]), 0, cuLen - 1, coherentUnits[firstCu]);
     // Update lookup table
     for (i = 0; i < cuLen; i++) {
         invLookup = qubitInverseLookup[firstCu * qubitCount + i];
@@ -493,7 +489,7 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList) {
                 for (k = 0; k < qubitCount; k++) {
                     qubitInverseLookup[j * qubitCount + k] = qubitInverseLookup[(j + 1) * qubitCount + k];
                 }
-            } 
+            }
         }
     }
 }

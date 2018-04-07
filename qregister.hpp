@@ -33,6 +33,12 @@
 
 namespace Qrack {
 
+class NotImplemented : public std::logic_error {
+public:
+    NotImplemented()
+        : std::logic_error("Function not yet implemented"){};
+};
+
 class CoherentUnit;
 
 /** Enumerated list of supported engines. */
@@ -107,16 +113,16 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    void CloneRawState(Complex16* output);
+    virtual void CloneRawState(Complex16* output);
 
     /** Generate a random double from 0 to 1 */
     double Rand();
 
     /** Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int */
-    virtual void SetPermutation(bitCapInt perm);
+    void SetPermutation(bitCapInt perm);
 
     /** Set an arbitrary pure quantum state */
-    void SetQuantumState(Complex16* inputState);
+    virtual void SetQuantumState(Complex16* inputState);
 
     /**
      * Combine (a copy of) another CoherentUnit with this one, after the last
@@ -565,7 +571,7 @@ public:
      * "AND" registers at "inputStart1" and "inputStart2," of "length" bits,
      * placing the result in "outputStart".
      */
-    virtual void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+    void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /**
      * Classical bitwise "AND"
