@@ -72,7 +72,6 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::CoherentUnit 
 
     // Print the resulting maximum probability bit pattern.
     for (i = qftReg.GetMaxQPower() >> 1; i > 0; i >>= 1) {
-        // printf("%08X & %08X\n", i, maxProbIdx);
         if (i & maxProbIdx) {
             os << "1";
         } else {

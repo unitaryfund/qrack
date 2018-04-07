@@ -13,7 +13,6 @@
 
 #include <iostream>
 
-#include "par_for.hpp"
 #include "qregister.hpp"
 
 namespace Qrack {

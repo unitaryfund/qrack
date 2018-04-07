@@ -18,8 +18,6 @@
 
 #include "oclengine.hpp"
 
-#include "par_for.hpp"
-
 namespace Qrack {
 
 /* Modified constructors with the addition of InitOCL(). */

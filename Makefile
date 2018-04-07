@@ -3,7 +3,7 @@ ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o qregister.o par_for.o qregister_software.o qregister_factory.o
+OBJ      = complex16simd.o qregister.o qregister_software.o qregister_factory.o
 SRC      = $(wildcard *.cpp)
 HDRS     = $(wildcard *.hpp)
 FORMAT_SRC = ${SRC} qregister.cl
@@ -48,9 +48,9 @@ test: $(TEST_BIN)
 
 tests.o : tests.hpp catch.hpp
 test_main.o : tests.hpp catch.hpp
-qregister.o : qregister.hpp par_for.hpp
-qregister_opencl.o : qregister.hpp par_for.hpp
-qregister_software.o : qregister.hpp par_for.hpp
+qregister.o : qregister.hpp
+qregister_opencl.o : qregister.hpp
+qregister_software.o : qregister.hpp
 
 $(TEST_BIN): $(TEST_OBJ) $(QRACK_LIB)
 	$(CPP) $(TEST_OBJ) $(QRACK_LIB) -o $(TEST_BIN) $(LDFLAGS) $(LIBS)
