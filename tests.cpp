@@ -27,7 +27,6 @@ TEST_CASE("test_par_for")
     });
 }
 
-
 /*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;

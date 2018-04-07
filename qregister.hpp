@@ -74,6 +74,7 @@ public:
      */
     CoherentUnit(bitLenInt qBitCount, bitCapInt initState);
 
+<<<<<<< HEAD
     /**
      * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
      * a shared random number generator
@@ -85,12 +86,22 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
+=======
+    /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a shared random number generator
+    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine* rgp);
+
+    /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
     CoherentUnit(const CoherentUnit& pqs);
 
     /** Destructor of CoherentUnit */
     virtual ~CoherentUnit() {}
 
+<<<<<<< HEAD
     /* Set the random seed (primarily used for testing) */
+=======
+    /// Set the random seed (primarily used for testing)
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
     virtual void SetRandomSeed(uint32_t seed);
 
     /** Get the count of bits in this register */
@@ -314,6 +325,7 @@ public:
      * Applies a Hadamard gate on qubit at "qubitIndex."
      */
     void H(bitLenInt qubitIndex);
+<<<<<<< HEAD
 
     /**
      * Measurement gate
@@ -370,6 +382,41 @@ public:
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
+=======
+    /// "Measurement gate." Measures the qubit at "qubitIndex" and returns either "true" or "false." (This "gate" breaks
+    /// unitarity.)
+    /**
+        All physical evolution of a quantum state should be "unitary," except measurement. Measurement of a qubit
+"collapses" the quantum state into either only permutation states consistent with a |0> state for the bit, or else only
+permutation states consistent with a |1> state for the bit. Measurement also effectively multiplies the overall quantum
+state vector of the system by a random phase factor, equiprobable over all possible phase angles.
+
+Effectively, when a bit measurement is emulated, Qrack calculates the norm of all permutation state components, to find
+their respective probabilities. The probabilities of all states in which the measured bit is "0" can be summed to give
+the probability of the bit being "0," and separately the probabilities of all states in which the measured bit is "1"
+can be summed to give the probability of the bit being "1." To simulate measurement, a random float between 0 and 1 is
+compared to the sum of the probability of all permutation states in which the bit is equal to "1". Depending on whether
+the random float is higher or lower than the probability, the qubit is determined to be either |0> or |1>, (up to
+phase). If the bit is determined to be |1>, then all permutation eigenstates in which the bit would be equal to |0> have
+their probability set to zero, and vice versa if the bit is determined to be |0>. Then, all remaining permutation states
+with nonzero probability are linearly rescaled so that the total probability of all permutation states is again
+"normalized" to exactly 100% or 1, (within double precision rounding error). Physically, the act of measurement should
+introduce an overall random phase factor on the state vector, which is emulated by generating another constantly
+distributed random float to select a phase angle between 0 and 2 * Pi.
+
+Measurement breaks unitary evolution of state. All quantum gates except measurement should generally act as a unitary
+matrix on a permutation state vector. (Note that Boolean comparison convenience methods in Qrack such as "AND," "OR,"
+and "XOR" employ the measurement operation in the act of first clearing output bits before filling them with the result
+of comparison, and these convenience methods therefore break unitary evolution of state, but in a physically realistic
+way. Comparable unitary operations would be performed with a combination of X and CCNOT gates, also called "Toffoli"
+gates, but the output bits would have to be assumed to be in a known fixed state, like all |0>, ahead of time to produce
+unitary logical comparison operations.)
+      */
+    virtual bool M(bitLenInt qubitIndex);
+
+    /// "X gate." Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli "X" operator is equivalent to a
+    /// logical "NOT."
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
     void X(bitLenInt qubitIndex);
 
     /**
@@ -396,6 +443,17 @@ public:
      * to "target."
      */
     void CY(bitLenInt control, bitLenInt target);
+<<<<<<< HEAD
+=======
+    /// "Controlled Z gate." If the "control" bit is set to 1, then the Pauli "Z" operator is applied to "target."
+    void CZ(bitLenInt control, bitLenInt target);
+
+    /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+    virtual double Prob(bitLenInt qubitIndex);
+
+    /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
+    double ProbAll(bitCapInt fullRegister);
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
 
     /**
      * Controlled Z gate
@@ -524,6 +582,13 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
      * \f$ around |1> state.
      */
+<<<<<<< HEAD
+=======
+    virtual void SetBit(bitLenInt qubitIndex1, bool value);
+
+    /// Swap values of two bits in register
+    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
 
     void CRT(double radians, bitLenInt control, bitLenInt target);
 
@@ -840,10 +905,17 @@ public:
     /** Phase flip always - equivalent to Z X Z X on any bit in the CoherentUnit */
     void PhaseFlip();
 
+<<<<<<< HEAD
     /** Set register bits to given permutation */
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
+=======
+    /// Set register bits to given permutation
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+
+    /// Measure permutation state of a register
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /** Measure permutation state of an 8 bit register */
@@ -1001,7 +1073,11 @@ public:
     void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
 protected:
+<<<<<<< HEAD
     /// Constructor for SeparatedUnit
+=======
+    ///Constructor for SeparatedUnit
+>>>>>>> 1a591a48773896c56d463b1a9ee7c05d1833a9a0
     CoherentUnit();
 
     uint32_t randomSeed;
