@@ -41,28 +41,32 @@ class SeparatedUnit : public CoherentUnit {
 public:
     /** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
     SeparatedUnit(bitLenInt qBitCount);
-
     /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state */
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
 
+    void Cohere(CoherentUnit& toCopy);
+    void Cohere(SeparatedUnit& toCopy);
+    void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
+    void Dispose(bitLenInt start, bitLenInt length);
+
     /* These throw not-implemented exceptions: */
-    virtual void CloneRawState(Complex16* output);
-    virtual void SetQuantumState(Complex16* inputState);
+    void CloneRawState(Complex16* output);
+    void SetQuantumState(Complex16* inputState);
     /* The above are not implemented. */
 
-    virtual double Prob(bitLenInt qubitIndex);
-    virtual bool M(bitLenInt qubitIndex);
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-    virtual void SetBit(bitLenInt qubitIndex1, bool value);
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    double Prob(bitLenInt qubitIndex);
+    bool M(bitLenInt qubitIndex);
+    bitCapInt MReg(bitLenInt start, bitLenInt length);
+    void SetBit(bitLenInt qubitIndex1, bool value);
+    void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
-    virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
-    virtual unsigned char AdcSuperposeReg8(
+    unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
+    unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-    virtual unsigned char SbcSuperposeReg8(
+    unsigned char SbcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;
@@ -78,7 +82,7 @@ protected:
      * we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise
      * parallel and does not depend on the ordering of bits in the list.
      */
-    void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList);
+    void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList);
 
     /**
      * Compile a list of CoherentUnit bit strings for applying a bitwise-parallel operation
@@ -89,10 +93,10 @@ protected:
      * Sometimes, we must preserve bit order to correctly carry out the operation, whereas sometimes our operation is
      * bitwise parallel and does not depend on the ordering of bits in the list.
      */
-    void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList);
+    void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList);
 
     /** Optimizes combined lists returned by GetParallelBitList() by the same logic as that algorithm */
-    void OptimizeParallelBitList(std::vector<QbListEntry>* qbList);
+    void OptimizeParallelBitList(std::vector<QbListEntry>& qbList);
 
     /** Entangle and sort the indices of a list of CoherentUnit objects */
     void EntangleBitList(std::vector<QbListEntry> qbList);

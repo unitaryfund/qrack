@@ -157,7 +157,7 @@ public:
      * emulator might be acheived by "cloning" "under-the-hood" while only
      * exposing a quantum mechanically consistent API or instruction set.
      */
-    void Cohere(CoherentUnit& toCopy);
+    virtual void Cohere(CoherentUnit& toCopy);
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,
@@ -198,7 +198,7 @@ public:
      * CoherentUnit, it can be measured with M(), or else all qubits <i>other
      * than</i> the subsystem can be measured.
      */
-    void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
+    virtual void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
 
     /**
      * Minimally decohere a set of contigious bits from the full coherent unit,
@@ -237,7 +237,7 @@ public:
      * CoherentUnit, it can be measured with M(), or else all qubits <i>other
      * than</i> the subsystem can be measured.
      */
-    void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /*
      * Logic Gates

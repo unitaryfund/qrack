@@ -65,6 +65,61 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
 {
 }
 
+void SeparatedUnit::Cohere(CoherentUnit& toCopy) {
+    bitLenInt i, cuLen;
+    bitLenInt qubitsToAdd = toCopy.GetQubitCount();
+    std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount + qubitsToAdd]);
+    std::unique_ptr<bitLenInt[]> qil(new bitLenInt[(qubitCount + qubitsToAdd) * (qubitCount + qubitsToAdd)]());
+    std::copy(&(qubitLookup[0]), &(qubitLookup[0]) + qubitCount, &(ql[0]));
+    for (i = 0; i < qubitCount; i++) {
+        std::copy(&(qubitInverseLookup[i * qubitCount]), &(qubitInverseLookup[i * qubitCount]) + qubitCount, &(qil[i * (qubitCount + qubitsToAdd)]));
+    }
+    cuLen = coherentUnits.size();
+    for (i = 0; i < qubitsToAdd; i++) {
+        qubitLookup[i].cu = cuLen;
+        qubitLookup[i].qb = i;
+        qubitInverseLookup[cuLen * qubitCount + i] = qubitCount + i;
+    }
+    coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(toCopy)));
+}
+
+void SeparatedUnit::Cohere(SeparatedUnit& toCopy) {
+    bitLenInt i;
+    bitLenInt toAddCuLen = toCopy.coherentUnits.size();
+    for (i = 0; i < toAddCuLen; i++) {
+        Cohere(*(toCopy.coherentUnits[i]));
+    }
+}
+
+void SeparatedUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination) {
+    std::vector<QbListEntry> qbList(length);
+    GetOrderedBitList(start, length, qbList);
+    if (qbList.size() == 1) {
+        if (length == coherentUnits[qbList[0].cu]->GetQubitCount()) {
+            bitCapInt destMaxPower = 1 << (coherentUnits[qbList[0].cu]->GetQubitCount());
+            std::unique_ptr<Complex16[]> sv(new Complex16[destMaxPower]);
+            coherentUnits[qbList[0].cu]->CloneRawState(&(sv[0]));
+            destination.SetQuantumState(&(sv[0]));
+        }
+        else {
+            CoherentUnit cuCopy(*coherentUnits[qbList[0].cu]);
+            bitLenInt cuLen = cuCopy.GetQubitCount();
+            cuCopy.Dispose(0, qbList[0].start);
+            cuCopy.Dispose(qbList[0].start + qbList[0].length, cuLen - (qbList[0].start + qbList[0].length));
+            std::unique_ptr<Complex16[]> sv(new Complex16[cuCopy.GetQubitCount()]);
+            cuCopy.CloneRawState(&(sv[0]));
+            destination.SetQuantumState(&(sv[0]));
+        }
+    }
+    else {
+        //TODO: other cases.
+    }
+}
+
+void SeparatedUnit::Dispose(bitLenInt start, bitLenInt length) {
+
+}
+
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 double SeparatedUnit::Prob(bitLenInt qubitIndex)
 {
@@ -100,7 +155,7 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
     QbLookup qbl;
 
     std::vector<QbListEntry> qbList(length);
-    GetOrderedBitList(start, length, &qbList);
+    GetOrderedBitList(start, length, qbList);
 
     j = 0;
     for (i = 0; i < qbList.size(); i++) {
@@ -209,11 +264,11 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
     std::vector<QbListEntry> qbList(8);
-    GetParallelBitList(inputStart, 8, &qbList);
+    GetParallelBitList(inputStart, 8, qbList);
     std::vector<QbListEntry> qbListOutput(8);
-    GetParallelBitList(outputStart, 8, &qbListOutput);
+    GetParallelBitList(outputStart, 8, qbListOutput);
     qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
-    OptimizeParallelBitList(&qbList);
+    OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
 
@@ -250,15 +305,15 @@ unsigned char SeparatedUnit::AdcSuperposeReg8(
 {
     QbListEntry carryQbe;
     std::vector<QbListEntry> qbList(8);
-    GetParallelBitList(inputStart, 8, &qbList);
+    GetParallelBitList(inputStart, 8, qbList);
     std::vector<QbListEntry> qbListOutput(8);
-    GetParallelBitList(outputStart, 8, &qbListOutput);
+    GetParallelBitList(outputStart, 8, qbListOutput);
     qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
     carryQbe.cu = qubitLookup[carryIndex].cu;
     carryQbe.start = qubitLookup[carryIndex].qb;
     carryQbe.length = 1;
     qbList.push_back(carryQbe);
-    OptimizeParallelBitList(&qbList);
+    OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
 
@@ -295,15 +350,15 @@ unsigned char SeparatedUnit::SbcSuperposeReg8(
 {
     QbListEntry carryQbe;
     std::vector<QbListEntry> qbList(8);
-    GetParallelBitList(inputStart, 8, &qbList);
+    GetParallelBitList(inputStart, 8, qbList);
     std::vector<QbListEntry> qbListOutput(8);
-    GetParallelBitList(outputStart, 8, &qbListOutput);
+    GetParallelBitList(outputStart, 8, qbListOutput);
     qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
     carryQbe.cu = qubitLookup[carryIndex].cu;
     carryQbe.start = qubitLookup[carryIndex].qb;
     carryQbe.length = 1;
     qbList.push_back(carryQbe);
-    OptimizeParallelBitList(&qbList);
+    OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
 
@@ -327,7 +382,7 @@ void SeparatedUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outp
     qbe.start = qubitLookup[outputBit].qb;
     qbe.length = 1;
     qbList[2] = qbe;
-    OptimizeParallelBitList(&qbList);
+    OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
 
@@ -344,7 +399,7 @@ void SeparatedUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outp
  * preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does
  * not depend on the ordering of bits in the list.
  */
-void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList)
+void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList)
 {
     // Start by getting a list (of sublists) of all the bits we need, with bit sublist length of 1.
     bitLenInt i, j;
@@ -355,17 +410,17 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
         qbe.cu = qbl.cu;
         qbe.start = qbl.qb;
         qbe.length = 1;
-        (*qbList)[i] = qbe;
+        qbList[i] = qbe;
     }
 
     // If contiguous sublists in the list we just made are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if (((*qbList)[j].cu == (*qbList)[j + 1].cu) &&
-            (((*qbList)[j].start + (*qbList)[j].length) == (*qbList)[j + 1].start)) {
-            (*qbList)[j].length++;
-            qbList->erase(qbList->begin() + j + 1);
+        if ((qbList[j].cu == qbList[j + 1].cu) &&
+            ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
+            qbList[j].length++;
+            qbList.erase(qbList.begin() + j + 1);
         } else {
             j++;
         }
@@ -380,7 +435,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
  * preserve bit order to correctly carry out the operation, whereas sometimes our operation is bitwise parallel and does
  * not depend on the ordering of bits in the list.
  */
-void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>* qbList)
+void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList)
 {
     // Start by getting a list (of sublists) of all the bits we need, with bit sublist length of 1.
     bitLenInt i, j;
@@ -391,19 +446,19 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
         qbe.cu = qbl.cu;
         qbe.start = qbl.qb;
         qbe.length = 1;
-        (*qbList)[i] = qbe;
+        qbList[i] = qbe;
     }
     // The ordering of bits returned is unimportant, so we can better optimize by sorting this list by CoherentUnit
     // index and qubit index, to maximize the reduction of the list.
-    std::sort(qbList->begin(), qbList->end(), compare);
+    std::sort(qbList.begin(), qbList.end(), compare);
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if (((*qbList)[j].cu == (*qbList)[j + 1].cu) &&
-            (((*qbList)[j].start + (*qbList)[j].length) == (*qbList)[j + 1].start)) {
-            (*qbList)[j].length++;
-            qbList->erase(qbList->begin() + j + 1);
+        if ((qbList[j].cu == qbList[j + 1].cu) &&
+            ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
+            qbList[j].length++;
+            qbList.erase(qbList.begin() + j + 1);
         } else {
             j++;
         }
@@ -411,21 +466,21 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
 }
 
 /// Combines two lists returned by GetParallelBitList() by the same logic as that algorithm
-void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>* qbList)
+void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>& qbList)
 {
     bitLenInt i, j;
-    bitLenInt length = qbList->size();
+    bitLenInt length = qbList.size();
     // The ordering of bits returned is unimportant, so we can better optimize by sorting this list by CoherentUnit
     // index and qubit index, to maximize the reduction of the list.
-    std::sort(qbList->begin(), qbList->end(), compare);
+    std::sort(qbList.begin(), qbList.end(), compare);
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if (((*qbList)[j].cu == (*qbList)[j + 1].cu) &&
-            (((*qbList)[j].start + (*qbList)[j].length) == (*qbList)[j + 1].start)) {
-            (*qbList)[j].length++;
-            qbList->erase(qbList->begin() + j + 1);
+        if ((qbList[j].cu == qbList[j + 1].cu) &&
+            ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
+            qbList[j].length++;
+            qbList.erase(qbList.begin() + j + 1);
         } else {
             j++;
         }

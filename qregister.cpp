@@ -213,6 +213,10 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
  */
 void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination)
 {
+    if (length == 0) {
+        return;
+    }
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -260,6 +264,10 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
 
 void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
 {
+    if (length == 0) {
+        return;
+    }
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
