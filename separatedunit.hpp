@@ -62,6 +62,7 @@ public:
     bitCapInt MReg(bitLenInt start, bitLenInt length);
     void SetBit(bitLenInt qubitIndex1, bool value);
     void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    void SetPermutation(bitCapInt value);
 
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
     unsigned char AdcSuperposeReg8(
@@ -123,7 +124,6 @@ protected:
      * parallel and does not depend on the ordering of bits in the list.
      */
     void GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList);
-
     /**
      * Compile a list of CoherentUnit bit strings for applying a bitwise-parallel operation
      *
@@ -134,15 +134,10 @@ protected:
      * bitwise parallel and does not depend on the ordering of bits in the list.
      */
     void GetParallelBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList);
-
     /** Optimizes combined lists returned by GetParallelBitList() by the same logic as that algorithm */
     void OptimizeParallelBitList(std::vector<QbListEntry>& qbList);
-
     /** Entangle and sort the indices of a list of CoherentUnit objects */
     void EntangleBitList(std::vector<QbListEntry> qbList);
-
-    /** Quicksort entangled bits - partition function */
-    bitLenInt PartitionQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
     /** Quicksort entangled bits */
     void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
     /** Convenience method for three bit gate */
