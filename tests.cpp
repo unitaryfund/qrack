@@ -90,7 +90,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
 
-/*
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
 {
     int i;
@@ -163,7 +163,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
         REQUIRE_THAT(qftReg, HasProbability(0x07f + ((i + 1) << 8)));
     }
 }
-*/
+
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
@@ -178,7 +178,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_swap")
     qftReg->Swap(0, 4, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
-/*
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
 {
     qftReg->SetPermutation(6);
@@ -194,7 +194,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
     qftReg->ROR(1, 0, 8);
     REQUIRE_THAT(qftReg, HasProbability(160 >> 1));
 }
-*/
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
 {
     qftReg->SetPermutation(0x0e);

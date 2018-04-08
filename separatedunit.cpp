@@ -541,6 +541,218 @@ void SeparatedUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 }
 
+void SeparatedUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INC(toAdd, qubitLookup[start].qb, length);
+}
+
+void SeparatedUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry carryQbe;
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList.push_back(carryQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INCC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry overflowQbe;
+    overflowQbe.cu = qubitLookup[overflowIndex].cu;
+    overflowQbe.start = qubitLookup[overflowIndex].qb;
+    overflowQbe.length = 1;
+    qbList.push_back(overflowQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INCS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
+}
+
+void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    std::vector<QbListEntry> qbExtra(2);
+    QbListEntry extraQbe;
+    extraQbe.cu = qubitLookup[overflowIndex].cu;
+    extraQbe.start = qubitLookup[overflowIndex].qb;
+    extraQbe.length = 1;
+    qbExtra[0] = extraQbe;
+    extraQbe.cu = qubitLookup[carryIndex].cu;
+    extraQbe.start = qubitLookup[carryIndex].qb;
+    extraQbe.length = 1;
+    qbExtra[1] = extraQbe;
+    qbList.insert(qbList.end(), qbExtra.begin(), qbExtra.end());
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry carryQbe;
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList.push_back(carryQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INCBCD(toAdd, qubitLookup[start].qb, length);
+}
+
+void SeparatedUnit::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry carryQbe;
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList.push_back(carryQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->INCBCDC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DEC(toAdd, qubitLookup[start].qb, length);
+}
+
+void SeparatedUnit::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry carryQbe;
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList.push_back(carryQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DECC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry overflowQbe;
+    overflowQbe.cu = qubitLookup[overflowIndex].cu;
+    overflowQbe.start = qubitLookup[overflowIndex].qb;
+    overflowQbe.length = 1;
+    qbList.push_back(overflowQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DECS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
+}
+
+void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    std::vector<QbListEntry> qbExtra(2);
+    QbListEntry extraQbe;
+    extraQbe.cu = qubitLookup[overflowIndex].cu;
+    extraQbe.start = qubitLookup[overflowIndex].qb;
+    extraQbe.length = 1;
+    qbExtra[0] = extraQbe;
+    extraQbe.cu = qubitLookup[carryIndex].cu;
+    extraQbe.start = qubitLookup[carryIndex].qb;
+    extraQbe.length = 1;
+    qbExtra[1] = extraQbe;
+    qbList.insert(qbList.end(), qbExtra.begin(), qbExtra.end());
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry carryQbe;
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList.push_back(carryQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DECBCD(toAdd, qubitLookup[start].qb, length);
+}
+
+void SeparatedUnit::DECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry carryQbe;
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList.push_back(carryQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[start].cu]->DECBCDC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
 /**
  * Set 8 bit register bits by a superposed index-offset-based read from
  * classical memory

@@ -747,49 +747,46 @@ public:
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign) */
-    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign, with carry) */
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Add a classical integer to the register, with sign and without carry. */
-    void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Add a classical integer to the register, with sign and with carry. */
-    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /** Add a classical integer to the register, with sign and with (phase-based) carry. */
-    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Add classical BCD integer (without sign) */
-    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Add classical BCD integer (without sign, with carry) */
-    void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Subtract classical integer (without sign) */
-    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /** Subtract classical integer (without sign, with carry) */
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Subtract a classical integer from the register, with sign and without carry. */
-    void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
-    void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
-    void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Subtract BCD integer (without sign) */
-    void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Subtract BCD integer (without sign, with carry) */
-    void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-
-    /** Multiply a quantum register by a classical integer, without sign and without carry. */
-    void CMUL(bitCapInt toMul, bitLenInt start, bitLenInt length);
+    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register. */
     void QFT(bitLenInt start, bitLenInt length);

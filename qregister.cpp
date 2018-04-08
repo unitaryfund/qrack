@@ -1265,9 +1265,7 @@ void CoherentUnit::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
             SetReg(start, length, 0);
         } else {
             Swap(end - 1, end - 2);
-            Reverse(start, end);
-            Reverse(start, start + shift);
-            Reverse(start + shift, end);
+            ROL(shift, start, length);
             Swap(end - 1, end - 2);
             SetReg(start, shift, 0);
         }
@@ -1283,11 +1281,8 @@ void CoherentUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
             SetReg(start, length, 0);
         } else {
             Swap(end - 1, end - 2);
-            Reverse(start + shift, end);
-            Reverse(start, start + shift);
-            Reverse(start, end);
+            ROR(shift, start, length);
             Swap(end - 1, end - 2);
-
             SetReg(end - shift, shift, 0);
         }
     }

@@ -106,6 +106,21 @@ public:
     void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
+    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
+    void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
     unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
