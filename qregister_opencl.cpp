@@ -318,6 +318,7 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     queue.enqueueWriteBuffer(loadBuffer, CL_FALSE, 0, sizeof(unsigned char) * 256, values);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));
@@ -373,6 +374,7 @@ unsigned char CoherentUnitOCL::SbcSuperposeReg8(
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs);
     queue.enqueueWriteBuffer(loadBuffer, CL_FALSE, 0, sizeof(unsigned char) * 256, values);
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
     cl::Context context = *(clObj->GetContextPtr());
     cl::Buffer nStateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, &(nStateVec[0]));

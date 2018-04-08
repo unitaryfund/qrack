@@ -209,7 +209,7 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
 
-    par_for_skip(0, maxQPower, skipPower, 8, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -301,7 +301,7 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
 
-    par_for_skip(0, maxQPower, skipPower, 8, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:

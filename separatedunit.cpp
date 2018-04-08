@@ -491,7 +491,7 @@ void SeparatedUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outp
 
 void SeparatedUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
 {
-    std::vector<bitLenInt> indices(3);
+    std::vector<bitLenInt> indices(2);
     indices[0] = inputQBit;
     indices[1] = outputQBit;
     EntangleIndices(indices);
@@ -502,7 +502,7 @@ void SeparatedUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt
 
 void SeparatedUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
 {
-    std::vector<bitLenInt> indices(3);
+    std::vector<bitLenInt> indices(2);
     indices[0] = inputQBit;
     indices[1] = outputQBit;
     EntangleIndices(indices);
@@ -513,7 +513,7 @@ void SeparatedUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt 
 
 void SeparatedUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
 {
-    std::vector<bitLenInt> indices(3);
+    std::vector<bitLenInt> indices(2);
     indices[0] = inputQBit;
     indices[1] = outputQBit;
     EntangleIndices(indices);
