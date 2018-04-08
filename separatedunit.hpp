@@ -64,12 +64,6 @@ public:
     void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     void SetPermutation(bitCapInt value);
 
-    unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
-    unsigned char AdcSuperposeReg8(
-        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-    unsigned char SbcSuperposeReg8(
-        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2, bitLenInt length);
 
@@ -109,6 +103,15 @@ public:
     void CRZ(double radians, bitLenInt control, bitLenInt target);
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
+    void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+    void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+
+    unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
+    unsigned char AdcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    unsigned char SbcSuperposeReg8(
+        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;
     std::unique_ptr<bitLenInt[]> qubitInverseLookup;
@@ -138,9 +141,9 @@ protected:
     void OptimizeParallelBitList(std::vector<QbListEntry>& qbList);
     /** Entangle and sort the indices of a list of CoherentUnit objects */
     void EntangleBitList(std::vector<QbListEntry> qbList);
-    /** Quicksort entangled bits */
-    void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
     /** Convenience method for three bit gate */
     void EntangleIndices(std::vector<bitLenInt> indices);
+    /** Quicksort entangled bits */
+    void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
 };
 } // namespace Qrack

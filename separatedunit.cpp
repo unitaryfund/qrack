@@ -284,175 +284,6 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     }
 }
 
-/**
- * Set 8 bit register bits by a superposed index-offset-based read from
- * classical memory
- *
- * "inputStart" is the start index of 8 qubits that act as an index into
- * the 256 byte "values" array. The "outputStart" bits are first cleared,
- * then the separable |input, 00000000> permutation state is mapped to
- * |input, values[input]>, with "values[input]" placed in the "outputStart"
- * register.
- *
- * While a CoherentUnit represents an interacting set of qubit-based
- * registers, or a virtual quantum chip, the registers need to interact in
- * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
- * method similar to the X addressing mode of the MOS 6502 chip, if the X
- * register can be in a state of coherent superposition when it loads from
- * RAM.
- *
- * The physical motivation for this addressing mode can be explained as
- * follows: say that we have a superconducting quantum interface device
- * (SQUID) based chip. SQUIDs have already been demonstrated passing
- * coherently superposed electrical currents. In a sufficiently
- * quantum-mechanically isolated qubit chip with a classical cache, with
- * both classical RAM and registers likely cryogenically isolated from the
- * environment, SQUIDs could (hopefully) pass coherently superposed
- * electrical currents into the classical RAM cache to load values into a
- * qubit register. The state loaded would be a superposition of the values
- * of all RAM to which coherently superposed electrical currents were
- * passed.
- *
- * In qubit system similar to the MOS 6502, say we have qubit-based
- * "accumulator" and "X index" registers, and say that we start with a
- * superposed X index register. In (classical) X addressing mode, the X
- * index register value acts an offset into RAM from a specified starting
- * address. The X addressing mode of a LoaD Accumulator (LDA) instruction,
- * by the physical mechanism described above, should load the accumulator
- * in quantum parallel with the values of every different address of RAM
- * pointed to in superposition by the X index register. The superposed
- * values in the accumulator are entangled with those in the X index
- * register, by way of whatever values the classical RAM pointed to by X
- * held at the time of the load. (If the RAM at index "36" held an unsigned
- * char value of "27," then the value "36" in the X index register becomes
- * entangled with the value "27" in the accumulator, and so on in quantum
- * parallel for all superposed values of the X index register, at once.) If
- * the X index register or accumulator are then measured, the two registers
- * will both always collapse into a random but valid key-value pair of X
- * index offset and value at that classical RAM address.
- *
- * Note that a "superposed store operation in classical RAM" is not
- * possible by analagous reasoning. Classical RAM would become entangled
- * with both the accumulator and the X register. When the state of the
- * registers was collapsed, we would find that only one "store" operation
- * to a single memory address had actually been carried out, consistent
- * with the address offset in the collapsed X register and the byte value
- * in the collapsed accumulator. It would not be possible by this model to
- * write in quantum parallel to more than one address of classical memory
- * at a time.
- */
-
-unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
-{
-    std::vector<QbListEntry> qbListInput(8);
-    GetParallelBitList(inputStart, 8, qbListInput);
-    std::vector<QbListEntry> qbListOutput(8);
-    GetParallelBitList(outputStart, 8, qbListOutput);
-    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size());
-    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
-    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
-    OptimizeParallelBitList(qbList);
-
-    EntangleBitList(qbList);
-
-    return coherentUnits[qubitLookup[inputStart].cu]->SuperposeReg8(
-        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, values);
-}
-
-/**
- * Add to entangled 8 bit register state with a superposed
- * index-offset-based read from classical memory
- *
- * inputStart" is the start index of 8 qubits that act as an index into the
- * 256 byte "values" array. The "outputStart" bits would usually already be
- * entangled with the "inputStart" bits via a SuperposeReg8() operation.
- * With the "inputStart" bits being a "key" and the "outputStart" bits
- * being a value, the permutation state |key, value> is mapped to |key,
- * value + values[key]>. This is similar to classical parallel addition of
- * two arrays.  However, when either of the registers are measured, both
- * registers will collapse into one random VALID key-value pair, with any
- * addition or subtraction done to the "value." See SuperposeReg8() for
- * context.
- *
- * While a CoherentUnit represents an interacting set of qubit-based
- * registers, or a virtual quantum chip, the registers need to interact in
- * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
- * method similar to the X addressing mode of the MOS 6502 chip, if the X
- * register can be in a state of coherent superposition when it loads from
- * RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract
- * (with carry) operations on a state usually initially prepared with
- * SuperposeReg8().
- */
-unsigned char SeparatedUnit::AdcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
-{
-    QbListEntry carryQbe;
-    std::vector<QbListEntry> qbListInput(8);
-    GetParallelBitList(inputStart, 8, qbListInput);
-    std::vector<QbListEntry> qbListOutput(8);
-    GetParallelBitList(outputStart, 8, qbListOutput);
-    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size() + 1);
-    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
-    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
-    carryQbe.cu = qubitLookup[carryIndex].cu;
-    carryQbe.start = qubitLookup[carryIndex].qb;
-    carryQbe.length = 1;
-    qbList[qbList.size() - 1] = carryQbe;
-    OptimizeParallelBitList(qbList);
-
-    EntangleBitList(qbList);
-
-    return coherentUnits[qubitLookup[inputStart].cu]->AdcSuperposeReg8(
-        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
-}
-
-/**
- * Subtract from an entangled 8 bit register state with a superposed
- * index-offset-based read from classical memory
- *
- * "inputStart" is the start index of 8 qubits that act as an index into
- * the 256 byte "values" array. The "outputStart" bits would usually
- * already be entangled with the "inputStart" bits via a SuperposeReg8()
- * operation.  With the "inputStart" bits being a "key" and the
- * "outputStart" bits being a value, the permutation state |key, value> is
- * mapped to |key, value - values[key]>. This is similar to classical
- * parallel addition of two arrays.  However, when either of the registers
- * are measured, both registers will collapse into one random VALID
- * key-value pair, with any addition or subtraction done to the "value."
- * See CoherentUnit::SuperposeReg8 for context.
- *
- * While a CoherentUnit represents an interacting set of qubit-based
- * registers, or a virtual quantum chip, the registers need to interact in
- * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
- * method similar to the X addressing mode of the MOS 6502 chip, if the X
- * register can be in a state of coherent superposition when it loads from
- * RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract
- * (with carry) operations on a state usually initially prepared with
- * SuperposeReg8().
- */
-unsigned char SeparatedUnit::SbcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
-{
-    QbListEntry carryQbe;
-    std::vector<QbListEntry> qbListInput(8);
-    GetParallelBitList(inputStart, 8, qbListInput);
-    std::vector<QbListEntry> qbListOutput(8);
-    GetParallelBitList(outputStart, 8, qbListOutput);
-    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size() + 1);
-    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
-    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
-    carryQbe.cu = qubitLookup[carryIndex].cu;
-    carryQbe.start = qubitLookup[carryIndex].qb;
-    carryQbe.length = 1;
-    qbList[qbList.size() - 1] = carryQbe;
-    OptimizeParallelBitList(qbList);
-
-    EntangleBitList(qbList);
-
-    return coherentUnits[qubitLookup[inputStart].cu]->SbcSuperposeReg8(
-        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
-}
-
 void SeparatedUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
     std::swap(qubitLookup[qubitIndex1], qubitLookup[qubitIndex2]);
@@ -680,6 +511,206 @@ void SeparatedUnit::CRZDyad(int numerator, int denominator, bitLenInt control, b
         numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
+/// "Circular shift right" - shift bits right, and carry first bits.
+void SeparatedUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            Reverse(start, end);
+            Reverse(start, start + shift);
+            Reverse(start + shift, end);
+        }
+    }
+}
+
+/// "Circular shift right" - shift bits right, and carry first bits.
+void SeparatedUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            Reverse(start + shift, end);
+            Reverse(start, start + shift);
+            Reverse(start, end);
+        }
+    }
+}
+
+/**
+ * Set 8 bit register bits by a superposed index-offset-based read from
+ * classical memory
+ *
+ * "inputStart" is the start index of 8 qubits that act as an index into
+ * the 256 byte "values" array. The "outputStart" bits are first cleared,
+ * then the separable |input, 00000000> permutation state is mapped to
+ * |input, values[input]>, with "values[input]" placed in the "outputStart"
+ * register.
+ *
+ * While a CoherentUnit represents an interacting set of qubit-based
+ * registers, or a virtual quantum chip, the registers need to interact in
+ * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
+ * method similar to the X addressing mode of the MOS 6502 chip, if the X
+ * register can be in a state of coherent superposition when it loads from
+ * RAM.
+ *
+ * The physical motivation for this addressing mode can be explained as
+ * follows: say that we have a superconducting quantum interface device
+ * (SQUID) based chip. SQUIDs have already been demonstrated passing
+ * coherently superposed electrical currents. In a sufficiently
+ * quantum-mechanically isolated qubit chip with a classical cache, with
+ * both classical RAM and registers likely cryogenically isolated from the
+ * environment, SQUIDs could (hopefully) pass coherently superposed
+ * electrical currents into the classical RAM cache to load values into a
+ * qubit register. The state loaded would be a superposition of the values
+ * of all RAM to which coherently superposed electrical currents were
+ * passed.
+ *
+ * In qubit system similar to the MOS 6502, say we have qubit-based
+ * "accumulator" and "X index" registers, and say that we start with a
+ * superposed X index register. In (classical) X addressing mode, the X
+ * index register value acts an offset into RAM from a specified starting
+ * address. The X addressing mode of a LoaD Accumulator (LDA) instruction,
+ * by the physical mechanism described above, should load the accumulator
+ * in quantum parallel with the values of every different address of RAM
+ * pointed to in superposition by the X index register. The superposed
+ * values in the accumulator are entangled with those in the X index
+ * register, by way of whatever values the classical RAM pointed to by X
+ * held at the time of the load. (If the RAM at index "36" held an unsigned
+ * char value of "27," then the value "36" in the X index register becomes
+ * entangled with the value "27" in the accumulator, and so on in quantum
+ * parallel for all superposed values of the X index register, at once.) If
+ * the X index register or accumulator are then measured, the two registers
+ * will both always collapse into a random but valid key-value pair of X
+ * index offset and value at that classical RAM address.
+ *
+ * Note that a "superposed store operation in classical RAM" is not
+ * possible by analagous reasoning. Classical RAM would become entangled
+ * with both the accumulator and the X register. When the state of the
+ * registers was collapsed, we would find that only one "store" operation
+ * to a single memory address had actually been carried out, consistent
+ * with the address offset in the collapsed X register and the byte value
+ * in the collapsed accumulator. It would not be possible by this model to
+ * write in quantum parallel to more than one address of classical memory
+ * at a time.
+ */
+
+unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
+{
+    std::vector<QbListEntry> qbListInput(8);
+    GetParallelBitList(inputStart, 8, qbListInput);
+    std::vector<QbListEntry> qbListOutput(8);
+    GetParallelBitList(outputStart, 8, qbListOutput);
+    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size());
+    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
+    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[inputStart].cu]->SuperposeReg8(
+        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, values);
+}
+
+/**
+ * Add to entangled 8 bit register state with a superposed
+ * index-offset-based read from classical memory
+ *
+ * inputStart" is the start index of 8 qubits that act as an index into the
+ * 256 byte "values" array. The "outputStart" bits would usually already be
+ * entangled with the "inputStart" bits via a SuperposeReg8() operation.
+ * With the "inputStart" bits being a "key" and the "outputStart" bits
+ * being a value, the permutation state |key, value> is mapped to |key,
+ * value + values[key]>. This is similar to classical parallel addition of
+ * two arrays.  However, when either of the registers are measured, both
+ * registers will collapse into one random VALID key-value pair, with any
+ * addition or subtraction done to the "value." See SuperposeReg8() for
+ * context.
+ *
+ * While a CoherentUnit represents an interacting set of qubit-based
+ * registers, or a virtual quantum chip, the registers need to interact in
+ * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
+ * method similar to the X addressing mode of the MOS 6502 chip, if the X
+ * register can be in a state of coherent superposition when it loads from
+ * RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract
+ * (with carry) operations on a state usually initially prepared with
+ * SuperposeReg8().
+ */
+unsigned char SeparatedUnit::AdcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    QbListEntry carryQbe;
+    std::vector<QbListEntry> qbListInput(8);
+    GetParallelBitList(inputStart, 8, qbListInput);
+    std::vector<QbListEntry> qbListOutput(8);
+    GetParallelBitList(outputStart, 8, qbListOutput);
+    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size() + 1);
+    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
+    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList[qbList.size() - 1] = carryQbe;
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[inputStart].cu]->AdcSuperposeReg8(
+        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
+}
+
+/**
+ * Subtract from an entangled 8 bit register state with a superposed
+ * index-offset-based read from classical memory
+ *
+ * "inputStart" is the start index of 8 qubits that act as an index into
+ * the 256 byte "values" array. The "outputStart" bits would usually
+ * already be entangled with the "inputStart" bits via a SuperposeReg8()
+ * operation.  With the "inputStart" bits being a "key" and the
+ * "outputStart" bits being a value, the permutation state |key, value> is
+ * mapped to |key, value - values[key]>. This is similar to classical
+ * parallel addition of two arrays.  However, when either of the registers
+ * are measured, both registers will collapse into one random VALID
+ * key-value pair, with any addition or subtraction done to the "value."
+ * See CoherentUnit::SuperposeReg8 for context.
+ *
+ * While a CoherentUnit represents an interacting set of qubit-based
+ * registers, or a virtual quantum chip, the registers need to interact in
+ * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
+ * method similar to the X addressing mode of the MOS 6502 chip, if the X
+ * register can be in a state of coherent superposition when it loads from
+ * RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract
+ * (with carry) operations on a state usually initially prepared with
+ * SuperposeReg8().
+ */
+unsigned char SeparatedUnit::SbcSuperposeReg8(
+    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+{
+    QbListEntry carryQbe;
+    std::vector<QbListEntry> qbListInput(8);
+    GetParallelBitList(inputStart, 8, qbListInput);
+    std::vector<QbListEntry> qbListOutput(8);
+    GetParallelBitList(outputStart, 8, qbListOutput);
+    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size() + 1);
+    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
+    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
+    carryQbe.cu = qubitLookup[carryIndex].cu;
+    carryQbe.start = qubitLookup[carryIndex].qb;
+    carryQbe.length = 1;
+    qbList[qbList.size() - 1] = carryQbe;
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    return coherentUnits[qubitLookup[inputStart].cu]->SbcSuperposeReg8(
+        qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
+}
+
+
 /**
  * Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation
  *
@@ -838,6 +869,20 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
     }
 }
 
+void SeparatedUnit::EntangleIndices(std::vector<bitLenInt> indices)
+{
+    QbListEntry qbe;
+    std::vector<QbListEntry> qbList(indices.size());
+    for (bitLenInt i = 0; i < indices.size(); i++) {
+        qbe.cu = qubitLookup[indices[i]].cu;
+        qbe.start = qubitLookup[indices[i]].qb;
+        qbe.length = 1;
+        qbList[i] = qbe;
+    }
+    OptimizeParallelBitList(qbList);
+    EntangleBitList(qbList);
+}
+
 void SeparatedUnit::QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cuWeak)
 {
     std::shared_ptr<CoherentUnit> cu = cuWeak.lock();
@@ -864,20 +909,6 @@ void SeparatedUnit::QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt hig
     if (i < high) {
         QuickSortQubits(arr, i, high, cuWeak);
     }
-}
-
-void SeparatedUnit::EntangleIndices(std::vector<bitLenInt> indices)
-{
-    QbListEntry qbe;
-    std::vector<QbListEntry> qbList(indices.size());
-    for (bitLenInt i = 0; i < indices.size(); i++) {
-        qbe.cu = qubitLookup[indices[i]].cu;
-        qbe.start = qubitLookup[indices[i]].qb;
-        qbe.length = 1;
-        qbList[i] = qbe;
-    }
-    OptimizeParallelBitList(qbList);
-    EntangleBitList(qbList);
 }
 
 } // namespace Qrack
