@@ -692,7 +692,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
     // If contiguous sublists in the list we just made are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < length - 1; i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length++;
             qbList.erase(qbList.begin() + j + 1);
@@ -729,7 +729,7 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < length - 1; i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length++;
             qbList.erase(qbList.begin() + j + 1);
@@ -750,7 +750,7 @@ void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>& qbList)
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < length - 1; i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length++;
             qbList.erase(qbList.begin() + j + 1);
