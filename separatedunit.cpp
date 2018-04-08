@@ -53,14 +53,15 @@ void SeparatedUnit::SetQuantumState(Complex16* inputState)
     coherentUnits[0]->SetQuantumState(inputState);
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a specific phase.
+/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
+/// specific phase.
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
 {
     rand_generator_ptr[0] = std::default_random_engine();
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = qBitCount;
-    maxQPower = 1<<qubitCount;
+    maxQPower = 1 << qubitCount;
 
     if (phaseFac == Complex16(-999.0, -999.0)) {
         double angle = Rand() * 2.0 * M_PI;
@@ -83,8 +84,10 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16
     }
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a specific phase.
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) : SeparatedUnit(qBitCount, initState, Complex16(-999.0, -999.0))
+/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
+/// specific phase.
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
+    : SeparatedUnit(qBitCount, initState, Complex16(-999.0, -999.0))
 {
 }
 
@@ -106,7 +109,7 @@ SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs)
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = pqs.qubitCount;
-    maxQPower = 1<<qubitCount;
+    maxQPower = 1 << qubitCount;
 
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount]);
     std::copy(&(pqs.qubitLookup[0]), &(pqs.qubitLookup[0]) + qubitCount, &(ql[0]));
@@ -214,16 +217,19 @@ double SeparatedUnit::Prob(bitLenInt qubitIndex)
 
 double SeparatedUnit::ProbAll(bitCapInt perm)
 {
-    bitLenInt i;
+    bitLenInt i, j;
+    bitLenInt cuLen, qb;
+    bitCapInt partPerm;
     double result = 1.0;
 
-    for (i = 0; i < qubitCount; i++) {
-        if ((perm & (1 << i)) > 0) {
-            result *= Prob(i);
+    for (i = 0; i < coherentUnits.size(); i++) {
+        cuLen = coherentUnits[i]->GetQubitCount();
+        partPerm = 0;
+        for (j = 0; j < cuLen; j++) {
+            qb = qubitInverseLookup[i * qubitCount + j];
+            partPerm |= (perm & (1 << qb)) >> (qb - j);
         }
-        else {
-            result *= (1.0 - Prob(i));
-        }
+        result *= coherentUnits[i]->ProbAll(partPerm);
     }
 
     return result;

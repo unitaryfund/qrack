@@ -221,8 +221,7 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
-        nStateVec[lcv] =
-            stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
+        nStateVec[lcv] = stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
     });
 
     qubitCount = nQubitCount;
