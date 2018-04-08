@@ -53,13 +53,18 @@ void SeparatedUnit::SetQuantumState(Complex16* inputState)
     coherentUnits[0]->SetQuantumState(inputState);
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
+/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a specific phase.
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
 {
     rand_generator_ptr[0] = std::default_random_engine();
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = qBitCount;
+
+    if (phaseFac == Complex16(-999.0, -999.0)) {
+        double angle = Rand() * 2.0 * M_PI;
+        phaseFac = Complex16(cos(angle), sin(angle));
+    }
 
     bool setBit;
     bitLenInt i;
@@ -73,13 +78,24 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
         qubitLookup[i].qb = 0;
         qubitInverseLookup[i * qBitCount] = i;
         coherentUnits.push_back(
-            std::shared_ptr<CoherentUnit>(new CoherentUnit(1, (setBit ? 1 : 0), rand_generator_ptr)));
+            std::shared_ptr<CoherentUnit>(new CoherentUnit(1, (setBit ? 1 : 0), phaseFac, rand_generator_ptr)));
     }
+}
+
+/// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a specific phase.
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState) : SeparatedUnit(qBitCount, initState, Complex16(-999.0, -999.0))
+{
 }
 
 /// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
-    : SeparatedUnit(qBitCount, 0)
+    : SeparatedUnit(qBitCount, 0, Complex16(-999.0, -999.0))
+{
+}
+
+/// Initialize a coherent unit with qBitCount number of bits, all to |0> state, with a specific phase.
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac)
+    : SeparatedUnit(qBitCount, 0, phaseFac)
 {
 }
 
@@ -613,7 +629,8 @@ void SeparatedUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
     coherentUnits[qubitLookup[start].cu]->INCS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
 }
 
-void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void SeparatedUnit::INCSC(
+    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     std::vector<QbListEntry> qbList(length);
     GetParallelBitList(start, length, qbList);
@@ -632,7 +649,8 @@ void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 
     EntangleBitList(qbList);
 
-    coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->INCSC(
+        toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -719,7 +737,8 @@ void SeparatedUnit::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
     coherentUnits[qubitLookup[start].cu]->DECS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
 }
 
-void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void SeparatedUnit::DECSC(
+    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     std::vector<QbListEntry> qbList(length);
     GetParallelBitList(start, length, qbList);
@@ -738,7 +757,8 @@ void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 
     EntangleBitList(qbList);
 
-    coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->DECSC(
+        toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -793,7 +813,8 @@ void SeparatedUnit::QFT(bitLenInt start, bitLenInt length)
     coherentUnits[qubitLookup[start].cu]->QFT(qubitLookup[start].qb, length);
 }
 
-void SeparatedUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length) {
+void SeparatedUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
     std::vector<QbListEntry> qbList(length);
     GetParallelBitList(start, length, qbList);
 
@@ -801,10 +822,12 @@ void SeparatedUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length) {
 
     coherentUnits[qubitLookup[start].cu]->ZeroPhaseFlip(qubitLookup[start].qb, length);
 }
-void SeparatedUnit::CPhaseFlip(bitLenInt toTest) {
+void SeparatedUnit::CPhaseFlip(bitLenInt toTest)
+{
     coherentUnits[qubitLookup[toTest].cu]->CPhaseFlip(qubitLookup[toTest].qb);
 }
-void SeparatedUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) {
+void SeparatedUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
     std::vector<QbListEntry> qbList(length);
     GetParallelBitList(start, length, qbList);
     QbListEntry flagQbe;
@@ -816,11 +839,10 @@ void SeparatedUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bit
 
     EntangleBitList(qbList);
 
-    coherentUnits[qubitLookup[start].cu]->CPhaseFlipIfLess(greaterPerm, qubitLookup[start].qb, length, qubitLookup[flagIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->CPhaseFlipIfLess(
+        greaterPerm, qubitLookup[start].qb, length, qubitLookup[flagIndex].qb);
 }
-void SeparatedUnit::PhaseFlip() {
-    coherentUnits[0]->PhaseFlip();
-}
+void SeparatedUnit::PhaseFlip() { coherentUnits[0]->PhaseFlip(); }
 
 /**
  * Set 8 bit register bits by a superposed index-offset-based read from
@@ -990,7 +1012,6 @@ unsigned char SeparatedUnit::SbcSuperposeReg8(
     return coherentUnits[qubitLookup[inputStart].cu]->SbcSuperposeReg8(
         qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
 }
-
 
 /**
  * Compile an order-preserving list of CoherentUnit bit strings for applying an register-wise operation

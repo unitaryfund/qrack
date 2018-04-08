@@ -43,6 +43,18 @@ public:
     SeparatedUnit(bitLenInt qBitCount);
     /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state */
     SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
+    /** Initialize a coherent unit with qBitCount number of bits, all to |0> state, with a specific phase.
+     *
+     * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+     * phase usually makes sense only if they are initialized at the same time.  
+     */
+    SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac);
+    /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a specific phase.
+     *
+     * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+     * phase usually makes sense only if they are initialized at the same time.  
+     */
+    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac);
     /**
      * Initialize a cloned register with same exact quantum state as pqs
      *

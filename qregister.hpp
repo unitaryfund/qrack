@@ -70,16 +70,43 @@ public:
     CoherentUnit(bitLenInt qBitCount);
 
     /**
+     * Initialize a coherent unit with qBitCount number of bits, all to |0>
+     * state, with a specific phase
+     *
+     * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+     * phase usually makes sense only if they are initialized at the same time.
+     */
+    CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac);
+
+    /**
      * Initialize a coherent unit with qBitCount number of bits, to initState
      * unsigned integer permutation state.
      */
     CoherentUnit(bitLenInt qBitCount, bitCapInt initState);
 
     /**
+     * Initialize a coherent unit with qBitCount number of bits, to initState
+     * unsigned integer permutation state, with a specific phase.
+     *
+     * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+     * phase usually makes sense only if they are initialized at the same time.
+     */
+    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac);
+
+    /**
      * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
-     * a shared random number generator
+     * a shared random number generator.
      */
     CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine* rgp);
+
+    /**
+     * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
+     * a shared random number generator, with a specific phase.
+     *
+     * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+     * phase usually makes sense only if they are initialized at the same time.
+     */
+    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::default_random_engine* rgp);
 
     /**
      * Initialize a cloned register with same exact quantum state as pqs
@@ -756,7 +783,8 @@ public:
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Add a classical integer to the register, with sign and with carry. */
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /** Add a classical integer to the register, with sign and with (phase-based) carry. */
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -777,7 +805,8 @@ public:
     virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
-    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void DECSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);

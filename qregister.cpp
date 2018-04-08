@@ -77,13 +77,26 @@ CoherentUnit::CoherentUnit()
  * impacts on subsequent operations accordingly.
  */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
-    : CoherentUnit(qBitCount, initState, NULL)
+    : CoherentUnit(qBitCount, initState, Complex16(-999.0, -999.0), NULL)
 {
 }
 
 /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
  * shared random number generator */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine rgp[])
+    : CoherentUnit(qBitCount, initState, Complex16(-999.0, -999.0), rgp)
+{
+}
+
+/**
+ * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
+ * a shared random number generator, with a specific phase.
+ *
+ * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+ * phase usually makes sense only if they are initialized at the same time.
+ */
+CoherentUnit::CoherentUnit(
+    bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::default_random_engine rgp[])
     : rand_distribution(0.0, 1.0)
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -98,7 +111,6 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::defaul
         rand_generator_ptr[0] = rgp[0];
     }
 
-    double angle = Rand() * 2.0 * M_PI;
     runningNorm = 1.0;
     qubitCount = qBitCount;
     maxQPower = 1 << qBitCount;
@@ -106,12 +118,29 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::defaul
     stateVec.reset();
     stateVec = std::move(sv);
     std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    stateVec[initState] = Complex16(cos(angle), sin(angle));
+    if (phaseFac == Complex16(-999.0, -999.0)) {
+        double angle = Rand() * 2.0 * M_PI;
+        stateVec[initState] = Complex16(cos(angle), sin(angle));
+    } else {
+        stateVec[initState] = phaseFac;
+    }
+}
+
+/**
+ * Initialize a coherent unit with qBitCount number of bits, to initState
+ * unsigned integer permutation state, with a specific phase.
+ *
+ * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+ * phase usually makes sense only if they are initialized at the same time.
+ */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
+    : CoherentUnit(qBitCount, initState, phaseFac, NULL)
+{
 }
 
 /** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount)
-    : CoherentUnit(qBitCount, 0)
+    : CoherentUnit(qBitCount, 0, Complex16(-999.0, -999.0), NULL)
 {
 }
 
@@ -193,7 +222,7 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
         nStateVec[lcv] =
-            phaseFac * sqrt(norm(stateVec[lcv & startMask]) * norm(toCopy.stateVec[(lcv & endMask) >> qubitCount]));
+            stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
     });
 
     qubitCount = nQubitCount;
@@ -229,12 +258,17 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
 
     std::unique_ptr<double[]> partStateProb(new double[partPower]());
     std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    double prob;
+    std::unique_ptr<double[]> partStateAngle(new double[partPower]());
+    std::unique_ptr<double[]> remainderStateAngle(new double[remainderPower]());
+    double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
+        angle = arg(stateVec[i]);
         partStateProb[(i & mask) >> start] += prob;
+        partStateAngle[(i & mask) >> start] = angle;
         remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
+        remainderStateAngle[(i & mask) >> start] = angle;
     }
 
     qubitCount = qubitCount - length;
@@ -243,18 +277,12 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
     std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
     ResetStateVec(std::move(sv));
 
-    double angle = Rand() * 2.0 * M_PI;
-    Complex16 phaseFac(cos(angle), sin(angle));
-
     for (i = 0; i < partPower; i++) {
-        destination.stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
+        destination.stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
-    angle = Rand() * 2.0 * M_PI;
-    phaseFac = Complex16(cos(angle), sin(angle));
-
     for (i = 0; i < remainderPower; i++) {
-        stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
+        stateVec[i] = sqrt(remainderStateProb[i]) * Complex16(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
     }
 
     UpdateRunningNorm();
@@ -272,31 +300,25 @@ void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
     }
 
     bitCapInt partPower = 1 << length;
-    bitCapInt remainderPower = 1 << (qubitCount - length);
     bitCapInt mask = (partPower - 1) << start;
-    bitCapInt startMask = (1 << start) - 1;
-    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    double prob;
+    std::unique_ptr<double[]> partStateProb(new double[partPower]());
+    std::unique_ptr<double[]> partStateAngle(new double[partPower]());
+    double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
-        remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
+        angle = arg(stateVec[i]);
+        partStateProb[(i & mask) >> start] += prob;
+        partStateAngle[(i & mask) >> start] = angle;
     }
 
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
 
-    std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
-    ResetStateVec(std::move(sv));
-
-    double angle = Rand() * 2.0 * M_PI;
-    Complex16 phaseFac(cos(angle), sin(angle));
-
-    for (i = 0; i < remainderPower; i++) {
-        stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
+    for (i = 0; i < partPower; i++) {
+        stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
     UpdateRunningNorm();

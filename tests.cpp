@@ -90,7 +90,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
 
-
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
 {
     int i;
@@ -164,7 +163,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
     }
 }
 
-
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
 {
     qftReg->SetPermutation(0x1f);
@@ -227,7 +225,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
     qftReg->XOR(0, 4, 8, 4); // 0xe ^ 0x3
     REQUIRE_THAT(qftReg, HasProbability(0xd3e));
 }
-/*
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
 {
     double qftProbs[20];
@@ -255,7 +253,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
         std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
     }
 }
-*/
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_cohere")
 {
     int j;
