@@ -32,7 +32,8 @@ bool compare(QbListEntry i, QbListEntry j)
     return lessThan;
 }
 
-void SeparatedUnit::CloneRawState(Complex16* output) {
+void SeparatedUnit::CloneRawState(Complex16* output)
+{
     SeparatedUnit dupe(*this);
     std::vector<QbListEntry> qbList(qubitCount);
     dupe.GetParallelBitList(0, qubitCount, qbList);
@@ -82,7 +83,8 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
 {
 }
 
-SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs) {
+SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs)
+{
     rand_generator_ptr[0] = std::default_random_engine();
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
@@ -96,18 +98,21 @@ SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs) {
     qubitLookup = std::move(ql);
 
     for (bitLenInt i = 0; i < pqs.coherentUnits.size(); i++) {
-        coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(*(pqs.coherentUnits[pqs.coherentUnits.size() - i - 1]))));
+        coherentUnits.push_back(
+            std::shared_ptr<CoherentUnit>(new CoherentUnit(*(pqs.coherentUnits[pqs.coherentUnits.size() - i - 1]))));
     }
 }
 
-void SeparatedUnit::Cohere(CoherentUnit& toCopy) {
+void SeparatedUnit::Cohere(CoherentUnit& toCopy)
+{
     bitLenInt i, cuLen;
     bitLenInt qubitsToAdd = toCopy.GetQubitCount();
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount + qubitsToAdd]);
     std::unique_ptr<bitLenInt[]> qil(new bitLenInt[(qubitCount + qubitsToAdd) * (qubitCount + qubitsToAdd)]());
     std::copy(&(qubitLookup[0]), &(qubitLookup[0]) + qubitCount, &(ql[0]));
     for (i = 0; i < qubitCount; i++) {
-        std::copy(&(qubitInverseLookup[i * qubitCount]), &(qubitInverseLookup[i * qubitCount]) + qubitCount, &(qil[i * (qubitCount + qubitsToAdd)]));
+        std::copy(&(qubitInverseLookup[i * qubitCount]), &(qubitInverseLookup[i * qubitCount]) + qubitCount,
+            &(qil[i * (qubitCount + qubitsToAdd)]));
     }
     cuLen = coherentUnits.size();
     for (i = 0; i < qubitsToAdd; i++) {
@@ -118,7 +123,8 @@ void SeparatedUnit::Cohere(CoherentUnit& toCopy) {
     coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(toCopy)));
 }
 
-void SeparatedUnit::Cohere(SeparatedUnit& toCopy) {
+void SeparatedUnit::Cohere(SeparatedUnit& toCopy)
+{
     bitLenInt i;
     bitLenInt toAddCuLen = toCopy.coherentUnits.size();
     for (i = 0; i < toAddCuLen; i++) {
@@ -126,34 +132,60 @@ void SeparatedUnit::Cohere(SeparatedUnit& toCopy) {
     }
 }
 
-void SeparatedUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination) {
+void SeparatedUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination)
+{
+    /*
+    bitLenInt i, j, k, cuLen;
     std::vector<QbListEntry> qbList(length);
     GetOrderedBitList(start, length, qbList);
-    if (qbList.size() == 1) {
-        if (length == coherentUnits[qbList[0].cu]->GetQubitCount()) {
-            bitCapInt destMaxPower = 1 << (coherentUnits[qbList[0].cu]->GetQubitCount());
-            std::unique_ptr<Complex16[]> sv(new Complex16[destMaxPower]);
-            coherentUnits[qbList[0].cu]->CloneRawState(&(sv[0]));
-            destination.SetQuantumState(&(sv[0]));
-        }
-        else {
-            CoherentUnit cuCopy(*coherentUnits[qbList[0].cu]);
+    if ((qbList.size() == 1) && (length == coherentUnits[qbList[0].cu]->GetQubitCount())) {
+        bitCapInt destMaxPower = 1 << (coherentUnits[qbList[0].cu]->GetQubitCount());
+        std::unique_ptr<Complex16[]> sv(new Complex16[destMaxPower]);
+        coherentUnits[qbList[0].cu]->CloneRawState(&(sv[0]));
+        coherentUnits.erase(coherentUnits.begin() + qbList[0].cu);
+        destination.SetQuantumState(&(sv[0]));
+    } else {
+        CoherentUnit cuCopy(*coherentUnits[qbList[0].cu]);
+        bitLenInt cuLen = cuCopy.GetQubitCount();
+        cuCopy.Dispose(0, qbList[0].start);
+        cuCopy.Dispose(qbList[0].start + qbList[0].length, cuLen - (qbList[0].start + qbList[0].length));
+        for (bitLenInt i = 1; i < qbList.size(); i++) {
+            CoherentUnit cuCopy2(*coherentUnits[qbList[i].cu]);
             bitLenInt cuLen = cuCopy.GetQubitCount();
-            cuCopy.Dispose(0, qbList[0].start);
-            cuCopy.Dispose(qbList[0].start + qbList[0].length, cuLen - (qbList[0].start + qbList[0].length));
-            std::unique_ptr<Complex16[]> sv(new Complex16[cuCopy.GetQubitCount()]);
-            cuCopy.CloneRawState(&(sv[0]));
-            destination.SetQuantumState(&(sv[0]));
+            cuCopy.Dispose(0, qbList[i].start);
+            cuCopy.Dispose(qbList[i].start + qbList[i].length, cuLen - (qbList[i].start + qbList[i].length));
+            cuCopy.Cohere(cuCopy2);
+        }
+        std::unique_ptr<Complex16[]> sv(new Complex16[cuCopy.GetQubitCount()]);
+        cuCopy.CloneRawState(&(sv[0]));
+        destination.SetQuantumState(&(sv[0]));
+    }
+
+    // Update coherentUnit list and inverse lookup at end
+    cuLen = qbList.size();
+    std::vector<bitLenInt> cuToDelete(cuLen);
+    for (i = 0; i < cuLen; i++) {
+        cuToDelete[i] = qbList[i + 1].cu;
+    }
+    std::sort(cuToDelete.begin(), cuToDelete.end());
+    for (i = 0; i < cuLen; i++) {
+        cuRemoved = cuToDelete[cuLen - i - 1];
+        coherentUnits.erase(coherentUnits.begin() + cuRemoved);
+        for (j = 0; j < qubitCount; j++) {
+            if (qubitLookup[j].cu >= cuRemoved) {
+                qubitLookup[j].cu--;
+            }
+        }
+        for (j = cuRemoved; j < (coherentUnits.size() - 1); j++) {
+            for (k = 0; k < qubitCount; k++) {
+                qubitInverseLookup[j * qubitCount + k] = qubitInverseLookup[(j + 1) * qubitCount + k];
+            }
         }
     }
-    else {
-        //TODO: other cases.
-    }
+    */
 }
 
-void SeparatedUnit::Dispose(bitLenInt start, bitLenInt length) {
-
-}
+void SeparatedUnit::Dispose(bitLenInt start, bitLenInt length) {}
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 double SeparatedUnit::Prob(bitLenInt qubitIndex)
@@ -298,11 +330,13 @@ void SeparatedUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
 unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
-    std::vector<QbListEntry> qbList(8);
-    GetParallelBitList(inputStart, 8, qbList);
+    std::vector<QbListEntry> qbListInput(8);
+    GetParallelBitList(inputStart, 8, qbListInput);
     std::vector<QbListEntry> qbListOutput(8);
     GetParallelBitList(outputStart, 8, qbListOutput);
-    qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
+    std::vector<QbListEntry> qbList(qbListInput.size() +  qbListOutput.size());
+    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
+    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
     OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
@@ -339,15 +373,17 @@ unsigned char SeparatedUnit::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     QbListEntry carryQbe;
-    std::vector<QbListEntry> qbList(8);
-    GetParallelBitList(inputStart, 8, qbList);
+    std::vector<QbListEntry> qbListInput(8);
+    GetParallelBitList(inputStart, 8, qbListInput);
     std::vector<QbListEntry> qbListOutput(8);
     GetParallelBitList(outputStart, 8, qbListOutput);
-    qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
+    std::vector<QbListEntry> qbList(qbListInput.size() +  qbListOutput.size() + 1);
+    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
+    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
     carryQbe.cu = qubitLookup[carryIndex].cu;
     carryQbe.start = qubitLookup[carryIndex].qb;
     carryQbe.length = 1;
-    qbList.push_back(carryQbe);
+    qbList[qbList.size() - 1] = carryQbe;
     OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
@@ -384,15 +420,17 @@ unsigned char SeparatedUnit::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     QbListEntry carryQbe;
-    std::vector<QbListEntry> qbList(8);
-    GetParallelBitList(inputStart, 8, qbList);
+    std::vector<QbListEntry> qbListInput(8);
+    GetParallelBitList(inputStart, 8, qbListInput);
     std::vector<QbListEntry> qbListOutput(8);
     GetParallelBitList(outputStart, 8, qbListOutput);
-    qbList.insert(qbList.end(), qbListOutput.begin(), qbListOutput.end());
+    std::vector<QbListEntry> qbList(qbListInput.size() +  qbListOutput.size() + 1);
+    std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
+    std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
     carryQbe.cu = qubitLookup[carryIndex].cu;
     carryQbe.start = qubitLookup[carryIndex].qb;
     carryQbe.length = 1;
-    qbList.push_back(carryQbe);
+    qbList[qbList.size() - 1] = carryQbe;
     OptimizeParallelBitList(qbList);
 
     EntangleBitList(qbList);
@@ -401,28 +439,231 @@ unsigned char SeparatedUnit::SbcSuperposeReg8(
         qubitLookup[inputStart].qb, qubitLookup[outputStart].qb, qubitLookup[carryIndex].qb, values);
 }
 
+void SeparatedUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    std::swap(qubitLookup[qubitIndex1], qubitLookup[qubitIndex2]);
+    std::swap(qubitInverseLookup[qubitLookup[qubitIndex2].cu * qubitCount + qubitLookup[qubitIndex2].qb],
+        qubitInverseLookup[qubitLookup[qubitIndex1].cu * qubitCount + qubitLookup[qubitIndex1].qb]);
+}
+
+void SeparatedUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2, bitLenInt length)
+{
+    for (bitLenInt i = 0; i < length; i++) {
+        Swap(qubitIndex1 + i, qubitIndex2 + i);
+    }
+}
+
 void SeparatedUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    QbListEntry qbe;
-    std::vector<QbListEntry> qbList(3);
-    qbe.cu = qubitLookup[inputBit1].cu;
-    qbe.start = qubitLookup[inputBit1].qb;
-    qbe.length = 1;
-    qbList[0] = qbe;
-    qbe.cu = qubitLookup[inputBit2].cu;
-    qbe.start = qubitLookup[inputBit2].qb;
-    qbe.length = 1;
-    qbList[1] = qbe;
-    qbe.cu = qubitLookup[outputBit].cu;
-    qbe.start = qubitLookup[outputBit].qb;
-    qbe.length = 1;
-    qbList[2] = qbe;
-    OptimizeParallelBitList(qbList);
-
-    EntangleBitList(qbList);
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputBit1;
+    indices[1] = inputBit2;
+    indices[2] = outputBit;
+    EntangleIndices(indices);
 
     coherentUnits[qubitLookup[inputBit1].cu]->AND(
         qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
+}
+
+void SeparatedUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputBit1;
+    indices[1] = inputBit2;
+    indices[2] = outputBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputBit1].cu]->OR(
+        qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
+}
+
+void SeparatedUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputBit1;
+    indices[1] = inputBit2;
+    indices[2] = outputBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputBit1].cu]->XOR(
+        qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
+}
+
+void SeparatedUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputQBit;
+    indices[1] = outputQBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputQBit].cu]->CLAND(
+        qubitLookup[inputQBit].qb, inputClassicalBit, qubitLookup[outputQBit].qb);
+}
+
+void SeparatedUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputQBit;
+    indices[1] = outputQBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputQBit].cu]->CLOR(
+        qubitLookup[inputQBit].qb, inputClassicalBit, qubitLookup[outputQBit].qb);
+}
+
+void SeparatedUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputQBit;
+    indices[1] = outputQBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputQBit].cu]->CLXOR(
+        qubitLookup[inputQBit].qb, inputClassicalBit, qubitLookup[outputQBit].qb);
+}
+
+void SeparatedUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputBit1;
+    indices[1] = inputBit2;
+    indices[2] = outputBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputBit1].cu]->CCNOT(
+        qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
+}
+
+void SeparatedUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    std::vector<bitLenInt> indices(3);
+    indices[0] = inputBit1;
+    indices[1] = inputBit2;
+    indices[2] = outputBit;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[inputBit1].cu]->AntiCCNOT(
+        qubitLookup[inputBit1].qb, qubitLookup[inputBit2].qb, qubitLookup[outputBit].qb);
+}
+
+void SeparatedUnit::H(bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->H(qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::X(bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->X(qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::Y(bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->X(qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::Z(bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->X(qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::X(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt i = 0; i < length; i++) {
+        X(start + i);
+    }
+}
+
+void SeparatedUnit::CY(bitLenInt control, bitLenInt target)
+{
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[control].cu]->CY(qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::CZ(bitLenInt control, bitLenInt target)
+{
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
+    coherentUnits[qubitLookup[control].cu]->CZ(qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::RT(double radians, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RT(radians, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RTDyad(int numerator, int denominator, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RTDyad(numerator, denominator, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RX(double radians, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RX(radians, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RXDyad(int numerator, int denominator, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RXDyad(numerator, denominator, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RY(double radians, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RY(radians, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RYDyad(int numerator, int denominator, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RYDyad(numerator, denominator, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RZ(double radians, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RZ(radians, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::RZDyad(int numerator, int denominator, bitLenInt qubitIndex)
+{
+    coherentUnits[qubitLookup[qubitIndex].cu]->RZDyad(numerator, denominator, qubitLookup[qubitIndex].qb);
+}
+
+void SeparatedUnit::CRT(double radians, bitLenInt control, bitLenInt target)
+{
+    coherentUnits[qubitLookup[control].cu]->CRT(radians, qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+{
+    coherentUnits[qubitLookup[control].cu]->CRTDyad(
+        numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::CRY(double radians, bitLenInt control, bitLenInt target)
+{
+    coherentUnits[qubitLookup[control].cu]->CRY(radians, qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+{
+    coherentUnits[qubitLookup[control].cu]->CRYDyad(
+        numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
+{
+    coherentUnits[qubitLookup[control].cu]->CRZ(radians, qubitLookup[control].qb, qubitLookup[target].qb);
+}
+
+void SeparatedUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+{
+    coherentUnits[qubitLookup[control].cu]->CRZDyad(
+        numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
 /**
@@ -452,8 +693,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if ((qbList[j].cu == qbList[j + 1].cu) &&
-            ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
+        if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length++;
             qbList.erase(qbList.begin() + j + 1);
         } else {
@@ -490,8 +730,7 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if ((qbList[j].cu == qbList[j + 1].cu) &&
-            ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
+        if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length++;
             qbList.erase(qbList.begin() + j + 1);
         } else {
@@ -512,8 +751,7 @@ void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>& qbList)
     // them to optimize with register-wise gate methods.
     j = 0;
     for (i = 0; i < length; i++) {
-        if ((qbList[j].cu == qbList[j + 1].cu) &&
-            ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
+        if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length++;
             qbList.erase(qbList.begin() + j + 1);
         } else {
@@ -625,6 +863,20 @@ void SeparatedUnit::QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt hig
         QuickSortQubits(arr, low, pi - 1, cuWeak);
         QuickSortQubits(arr, pi + 1, high, cuWeak);
     }
+}
+
+void SeparatedUnit::EntangleIndices(std::vector<bitLenInt> indices)
+{
+    QbListEntry qbe;
+    std::vector<QbListEntry> qbList(indices.size());
+    for (bitLenInt i = 0; i < indices.size(); i++) {
+        qbe.cu = qubitLookup[indices[i]].cu;
+        qbe.start = qubitLookup[indices[i]].qb;
+        qbe.length = 1;
+        qbList[i] = qbe;
+    }
+    OptimizeParallelBitList(qbList);
+    EntangleBitList(qbList);
 }
 
 } // namespace Qrack

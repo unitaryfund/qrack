@@ -69,7 +69,44 @@ public:
     unsigned char SbcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
+    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2, bitLenInt length);
+
     void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    void CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    void AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    void H(bitLenInt qubitIndex);
+    void X(bitLenInt qubitIndex);
+    void Y(bitLenInt qubitIndex);
+    void Z(bitLenInt qubitIndex);
+
+    void X(bitLenInt start, bitLenInt length);
+
+    void CY(bitLenInt control, bitLenInt target);
+    void CZ(bitLenInt control, bitLenInt target);
+
+    void RT(double radians, bitLenInt qubitIndex);
+    void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    void RX(double radians, bitLenInt qubitIndex);
+    void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    void RY(double radians, bitLenInt qubitIndex);
+    void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    void RZ(double radians, bitLenInt qubitIndex);
+    void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
+
+    void CRT(double radians, bitLenInt control, bitLenInt target);
+    void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+    void CRY(double radians, bitLenInt control, bitLenInt target);
+    void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+    void CRZ(double radians, bitLenInt control, bitLenInt target);
+    void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
 protected:
     std::unique_ptr<QbLookup[]> qubitLookup;
@@ -108,5 +145,7 @@ protected:
     bitLenInt PartitionQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
     /** Quicksort entangled bits */
     void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
+    /** Convenience method for three bit gate */
+    void EntangleIndices(std::vector<bitLenInt> indices);
 };
 } // namespace Qrack

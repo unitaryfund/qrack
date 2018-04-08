@@ -34,7 +34,6 @@
 namespace Qrack {
 
 class CoherentUnit;
-
 /** Enumerated list of supported engines. */
 enum CoherentUnitEngine {
     COHERENT_UNIT_ENGINE_SOFTWARE_SERIAL = 0,
@@ -252,70 +251,70 @@ public:
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      *  Quantum analog of classical "AND" gate. Takes one qubit input and one
      *  classical bit input. Measures the outputBit, then overwrites it with
      *  result.
      */
-    void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate. Takes one qubit input and one
      * classical bit input. Measures the outputBit, then overwrites it with
      * result.
      */
-    void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate. Takes one qubit input and one
      * classical bit input. Measures the outputBit, then overwrites it with
      * result.
      */
-    void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Doubly-controlled NOT gate
      *
      * If both controls are set to 1, the target bit is NOT-ed or X-ed.
      */
-    void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Anti doubly-controlled NOT gate
      *
      * If both controls are set to 0, the target bit is NOT-ed or X-ed.
      */
-    void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Controlled NOT gate
      *
      * If the control is set to 1, the target bit is NOT-ed or X-ed.
      */
-    void CNOT(bitLenInt control, bitLenInt target);
+    virtual void CNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Anti controlled NOT gate
      *
      * If the control is set to 0, the target bit is NOT-ed or X-ed.
      */
-    void AntiCNOT(bitLenInt control, bitLenInt target);
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Hadamard gate
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
      */
-    void H(bitLenInt qubitIndex);
+    virtual void H(bitLenInt qubitIndex);
 
     /**
      * Measurement gate
@@ -372,7 +371,7 @@ public:
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
-    void X(bitLenInt qubitIndex);
+    virtual void X(bitLenInt qubitIndex);
 
     /**
      * Y gate
@@ -381,7 +380,7 @@ public:
      * "Y" operator is similar to a logical "NOT" with permutation phase
      * effects.
      */
-    void Y(bitLenInt qubitIndex);
+    virtual void Y(bitLenInt qubitIndex);
 
     /**
      * Z gate
@@ -389,7 +388,7 @@ public:
      * Applies the Pauli "Z" operator to the qubit at "qubitIndex." The Pauli
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
-    void Z(bitLenInt qubitIndex);
+    virtual void Z(bitLenInt qubitIndex);
 
     /**
      * Controlled Y gate
@@ -397,7 +396,7 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
      * to "target."
      */
-    void CY(bitLenInt control, bitLenInt target);
+    virtual void CY(bitLenInt control, bitLenInt target);
 
     /**
      * Controlled Z gate
@@ -405,7 +404,7 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
      * to "target."
      */
-    void CZ(bitLenInt control, bitLenInt target);
+    virtual void CZ(bitLenInt control, bitLenInt target);
 
     /*
      * Rotational gates:
@@ -419,7 +418,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    void RT(double radians, bitLenInt qubitIndex);
+    virtual void RT(double radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction phase shift gate
@@ -427,28 +426,28 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around |1>
      * state.
      */
-    void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
     /**
      * X axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    void RX(double radians, bitLenInt qubitIndex);
+    virtual void RX(double radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction X axis rotation gate
      *
      * Rotates \f$ e^{i*{\pi * numerator} / denominator} \f$ on Pauli x axis.
      */
-    void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
     /**
      * Controlled X axis rotation gate
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    void CRX(double radians, bitLenInt control, bitLenInt target);
+    virtual void CRX(double radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction X axis rotation gate
@@ -456,14 +455,14 @@ public:
      * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
      * denominator} \f$ around Pauli x axis.
      */
-    void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /**
      * Y axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    void RY(double radians, bitLenInt qubitIndex);
+    virtual void RY(double radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Y axis rotation gate
@@ -471,7 +470,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Y
      * axis.
      */
-    void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
     /**
      * Controlled Y axis rotation gate
@@ -479,7 +478,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    void CRY(double radians, bitLenInt control, bitLenInt target);
+    virtual void CRY(double radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction y axis rotation gate
@@ -487,14 +486,14 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
      * denominator} \f$ around Pauli Y axis.
      */
-    void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /**
      * Z axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    void RZ(double radians, bitLenInt qubitIndex);
+    virtual void RZ(double radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Z axis rotation gate
@@ -502,7 +501,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Z
      * axis.
      */
-    void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
     /**
      * Controlled Z axis rotation gate
@@ -510,7 +509,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    void CRZ(double radians, bitLenInt control, bitLenInt target);
+    virtual void CRZ(double radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction Z axis rotation gate
@@ -518,7 +517,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
      * denominator} \f$ around Pauli Z axis.
      */
-    void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled "phase shift gate"
@@ -527,7 +526,7 @@ public:
      * \f$ around |1> state.
      */
 
-    void CRT(double radians, bitLenInt control, bitLenInt target);
+    virtual void CRT(double radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction "phase shift gate"
@@ -535,7 +534,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
      * numerator} / denominator} \f$ around |1> state.
      */
-    void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /*
      * Register-spanning gates
@@ -548,7 +547,7 @@ public:
     void H(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli X (or logical "NOT") operator */
-    void X(bitLenInt start, bitLenInt length);
+    virtual void X(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Y operator */
     void Y(bitLenInt start, bitLenInt length);
@@ -962,10 +961,10 @@ public:
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /** Swap values of two bits in register */
-    void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Bitwise swap */
-    void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
 protected:
     /// Constructor for SeparatedUnit

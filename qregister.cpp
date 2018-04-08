@@ -94,8 +94,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::defaul
         rand_generator_ptr[0] = { std::default_random_engine() };
         randomSeed = std::time(0);
         SetRandomSeed(randomSeed);
-    }
-    else {
+    } else {
         rand_generator_ptr[0] = rgp[0];
     }
 
