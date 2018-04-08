@@ -480,33 +480,63 @@ void SeparatedUnit::RZDyad(int numerator, int denominator, bitLenInt qubitIndex)
 
 void SeparatedUnit::CRT(double radians, bitLenInt control, bitLenInt target)
 {
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
     coherentUnits[qubitLookup[control].cu]->CRT(radians, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
 void SeparatedUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
     coherentUnits[qubitLookup[control].cu]->CRTDyad(
         numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
 void SeparatedUnit::CRY(double radians, bitLenInt control, bitLenInt target)
 {
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
     coherentUnits[qubitLookup[control].cu]->CRY(radians, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
 void SeparatedUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
     coherentUnits[qubitLookup[control].cu]->CRYDyad(
         numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
 void SeparatedUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
     coherentUnits[qubitLookup[control].cu]->CRZ(radians, qubitLookup[control].qb, qubitLookup[target].qb);
 }
 
 void SeparatedUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
+    std::vector<bitLenInt> indices(2);
+    indices[0] = control;
+    indices[1] = target;
+    EntangleIndices(indices);
+
     coherentUnits[qubitLookup[control].cu]->CRZDyad(
         numerator, denominator, qubitLookup[control].qb, qubitLookup[target].qb);
 }
@@ -548,7 +578,7 @@ void SeparatedUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INC(toAdd, qubitLookup[start].qb, length);
+    coherentUnits[qubitLookup[start].cu]->INC(toAdd, qubitLookup[start].qb, length);
 }
 
 void SeparatedUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -564,7 +594,7 @@ void SeparatedUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INCC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->INCC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
@@ -580,7 +610,7 @@ void SeparatedUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INCS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->INCS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
 }
 
 void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
@@ -602,7 +632,7 @@ void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -618,7 +648,7 @@ void SeparatedUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->INCSC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -628,7 +658,7 @@ void SeparatedUnit::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INCBCD(toAdd, qubitLookup[start].qb, length);
+    coherentUnits[qubitLookup[start].cu]->INCBCD(toAdd, qubitLookup[start].qb, length);
 }
 
 void SeparatedUnit::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -644,7 +674,7 @@ void SeparatedUnit::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, 
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->INCBCDC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->INCBCDC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -654,7 +684,7 @@ void SeparatedUnit::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DEC(toAdd, qubitLookup[start].qb, length);
+    coherentUnits[qubitLookup[start].cu]->DEC(toAdd, qubitLookup[start].qb, length);
 }
 
 void SeparatedUnit::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -670,7 +700,7 @@ void SeparatedUnit::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DECC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->DECC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
@@ -686,7 +716,7 @@ void SeparatedUnit::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DECS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->DECS(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb);
 }
 
 void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
@@ -708,7 +738,7 @@ void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[overflowIndex].qb, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -724,7 +754,7 @@ void SeparatedUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bi
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->DECSC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
 }
 
 void SeparatedUnit::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -734,7 +764,7 @@ void SeparatedUnit::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DECBCD(toAdd, qubitLookup[start].qb, length);
+    coherentUnits[qubitLookup[start].cu]->DECBCD(toAdd, qubitLookup[start].qb, length);
 }
 
 void SeparatedUnit::DECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -750,7 +780,46 @@ void SeparatedUnit::DECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, 
 
     EntangleBitList(qbList);
 
-    return coherentUnits[qubitLookup[start].cu]->DECBCDC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+    coherentUnits[qubitLookup[start].cu]->DECBCDC(toAdd, qubitLookup[start].qb, length, qubitLookup[carryIndex].qb);
+}
+
+void SeparatedUnit::QFT(bitLenInt start, bitLenInt length)
+{
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+
+    EntangleBitList(qbList);
+
+    coherentUnits[qubitLookup[start].cu]->QFT(qubitLookup[start].qb, length);
+}
+
+void SeparatedUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length) {
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+
+    EntangleBitList(qbList);
+
+    coherentUnits[qubitLookup[start].cu]->ZeroPhaseFlip(qubitLookup[start].qb, length);
+}
+void SeparatedUnit::CPhaseFlip(bitLenInt toTest) {
+    coherentUnits[qubitLookup[toTest].cu]->CPhaseFlip(qubitLookup[toTest].qb);
+}
+void SeparatedUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) {
+    std::vector<QbListEntry> qbList(length);
+    GetParallelBitList(start, length, qbList);
+    QbListEntry flagQbe;
+    flagQbe.cu = qubitLookup[flagIndex].cu;
+    flagQbe.start = qubitLookup[flagIndex].qb;
+    flagQbe.length = 1;
+    qbList.push_back(flagQbe);
+    OptimizeParallelBitList(qbList);
+
+    EntangleBitList(qbList);
+
+    coherentUnits[qubitLookup[start].cu]->CPhaseFlipIfLess(greaterPerm, qubitLookup[start].qb, length, qubitLookup[flagIndex].qb);
+}
+void SeparatedUnit::PhaseFlip() {
+    coherentUnits[0]->PhaseFlip();
 }
 
 /**

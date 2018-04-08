@@ -121,6 +121,12 @@ public:
     void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
+    void QFT(bitLenInt start, bitLenInt length);
+    void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
+    void CPhaseFlip(bitLenInt toTest);
+    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    void PhaseFlip();
+
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
     unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);

@@ -789,19 +789,19 @@ public:
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register. */
-    void QFT(bitLenInt start, bitLenInt length);
+    virtual void QFT(bitLenInt start, bitLenInt length);
 
     /** Reverse the phase of the state where the register equals zero. */
-    void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
     /** Reverse the phase of permutations where the bit at index "toTest" is 1. */
-    void CPhaseFlip(bitLenInt toTest);
+    virtual void CPhaseFlip(bitLenInt toTest);
 
     /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
-    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
     /** Phase flip always - equivalent to Z X Z X on any bit in the CoherentUnit */
-    void PhaseFlip();
+    virtual void PhaseFlip();
 
     /** Set register bits to given permutation */
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);

@@ -255,7 +255,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
         std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
     }
 }
-
+*/
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_cohere")
 {
     int j;
@@ -267,7 +267,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_cohere")
 
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x2b));
 }
-
+/*
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
 {
     int j;
@@ -328,7 +328,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 */
-
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
