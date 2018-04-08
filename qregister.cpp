@@ -268,7 +268,7 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
         partStateProb[(i & mask) >> start] += prob;
         partStateAngle[(i & mask) >> start] = angle;
         remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
-        remainderStateAngle[(i & mask) >> start] = angle;
+        remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
     qubitCount = qubitCount - length;
@@ -1986,17 +1986,6 @@ void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     bitCapInt regMask = (lengthPower - 1) << start;
     par_for(0, maxQPower, [&](const bitCapInt lcv) {
         if ((lcv & (~(regMask))) == lcv)
-            stateVec[lcv] = -stateVec[lcv];
-    });
-}
-
-/// For chips with a sign flag, flip the phase of states where the register is negative.
-void CoherentUnit::CPhaseFlip(bitLenInt toTest)
-{
-    bitCapInt testMask = 1 << toTest;
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
-        if ((lcv & testMask) == testMask)
             stateVec[lcv] = -stateVec[lcv];
     });
 }

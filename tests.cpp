@@ -288,7 +288,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_dispose")
 
     REQUIRE_THAT(*qftReg, HasProbability(0, 4, 0x2));
 }
-
+*/
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
     int i;
@@ -317,15 +317,16 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
         std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
     }
 
-    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    std::cout << "Full Result:    " << qftReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+    //std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    //std::cout << "Full Result:    " << qftReg << std::endl;
+    //std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
     qftReg->MReg(0, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+
 }
-*/
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));

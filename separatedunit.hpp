@@ -70,6 +70,8 @@ public:
     void Dispose(bitLenInt start, bitLenInt length);
 
     double Prob(bitLenInt qubitIndex);
+    double ProbAll(bitCapInt perm);
+    void ProbArray(double* probArray);
     bool M(bitLenInt qubitIndex);
     bitCapInt MReg(bitLenInt start, bitLenInt length);
     void SetBit(bitLenInt qubitIndex1, bool value);
@@ -135,7 +137,6 @@ public:
 
     void QFT(bitLenInt start, bitLenInt length);
     void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
-    void CPhaseFlip(bitLenInt toTest);
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     void PhaseFlip();
 

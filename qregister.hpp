@@ -823,9 +823,6 @@ public:
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
-    /** Reverse the phase of permutations where the bit at index "toTest" is 1. */
-    virtual void CPhaseFlip(bitLenInt toTest);
-
     /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
@@ -966,14 +963,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    double ProbAll(bitCapInt fullRegister);
+    virtual double ProbAll(bitCapInt fullRegister);
 
     /**
      * Direct measure of all bit probabilities in register to be in |1> state
      *
      * \warning PSEUDO-QUANTUM
      */
-    void ProbArray(double* probArray);
+    virtual void ProbArray(double* probArray);
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state

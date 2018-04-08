@@ -60,6 +60,7 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = qBitCount;
+    maxQPower = 1<<qubitCount;
 
     if (phaseFac == Complex16(-999.0, -999.0)) {
         double angle = Rand() * 2.0 * M_PI;
@@ -105,6 +106,7 @@ SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs)
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = pqs.qubitCount;
+    maxQPower = 1<<qubitCount;
 
     std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount]);
     std::copy(&(pqs.qubitLookup[0]), &(pqs.qubitLookup[0]) + qubitCount, &(ql[0]));
@@ -210,6 +212,32 @@ double SeparatedUnit::Prob(bitLenInt qubitIndex)
     return coherentUnits[qbl.cu]->Prob(qbl.qb);
 }
 
+double SeparatedUnit::ProbAll(bitCapInt perm)
+{
+    bitLenInt i;
+    double result = 1.0;
+
+    for (i = 0; i < qubitCount; i++) {
+        if ((perm & (1 << i)) > 0) {
+            result *= Prob(i);
+        }
+        else {
+            result *= (1.0 - Prob(i));
+        }
+    }
+
+    return result;
+}
+
+void SeparatedUnit::ProbArray(double* probArray)
+{
+    bitLenInt i;
+
+    for (i = 0; i < qubitCount; i++) {
+        probArray[i] = Prob(i);
+    }
+}
+
 /// Measure a bit
 bool SeparatedUnit::M(bitLenInt qubitIndex)
 {
@@ -226,6 +254,7 @@ bool SeparatedUnit::M(bitLenInt qubitIndex)
         bitLenInt i;
         bitLenInt invLookup = qubitInverseLookup[qbl.cu * qubitCount + qbl.qb];
         for (i = qubitLookup[invLookup].qb; i < (qbCount - 1); i++) {
+            qubitLookup[qubitInverseLookup[qbl.cu * qubitCount + i]].qb--;
             qubitInverseLookup[qbl.cu * qubitCount + i] = qubitInverseLookup[qbl.cu * qubitCount + i + 1];
         }
         qubitLookup[invLookup].cu = coherentUnits.size() - 1;
@@ -265,6 +294,7 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
 
             invLookup = qubitInverseLookup[qbl.cu * qubitCount + qbl.qb];
             for (j = qubitLookup[invLookup].qb; j < (qbCount - 1); j++) {
+                qubitLookup[qubitInverseLookup[qbl.cu * qubitCount + j]].qb--;
                 qubitInverseLookup[qbl.cu * qubitCount + j] = qubitInverseLookup[qbl.cu * qubitCount + j + 1];
             }
             qubitLookup[invLookup].cu = coherentUnits.size() - 1;
@@ -822,10 +852,7 @@ void SeparatedUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
     coherentUnits[qubitLookup[start].cu]->ZeroPhaseFlip(qubitLookup[start].qb, length);
 }
-void SeparatedUnit::CPhaseFlip(bitLenInt toTest)
-{
-    coherentUnits[qubitLookup[toTest].cu]->CPhaseFlip(qubitLookup[toTest].qb);
-}
+
 void SeparatedUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     std::vector<QbListEntry> qbList(length);
@@ -842,7 +869,13 @@ void SeparatedUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bit
     coherentUnits[qubitLookup[start].cu]->CPhaseFlipIfLess(
         greaterPerm, qubitLookup[start].qb, length, qubitLookup[flagIndex].qb);
 }
-void SeparatedUnit::PhaseFlip() { coherentUnits[0]->PhaseFlip(); }
+
+void SeparatedUnit::PhaseFlip()
+{
+    for (bitLenInt i = 0; i < coherentUnits.size(); i++) {
+        coherentUnits[i]->PhaseFlip();
+    }
+}
 
 /**
  * Set 8 bit register bits by a superposed index-offset-based read from
@@ -1039,7 +1072,7 @@ void SeparatedUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::ve
     // If contiguous sublists in the list we just made are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
-    for (i = 0; i < length - 1; i++) {
+    for (i = 0; i < (length - 1); i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length += qbList[j + 1].length;
             qbList.erase(qbList.begin() + j + 1);
@@ -1076,7 +1109,7 @@ void SeparatedUnit::GetParallelBitList(bitLenInt start, bitLenInt length, std::v
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
-    for (i = 0; i < length - 1; i++) {
+    for (i = 0; i < (length - 1); i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length += qbList[j + 1].length;
             qbList.erase(qbList.begin() + j + 1);
@@ -1101,7 +1134,7 @@ void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>& qbList)
     // If contiguous sublists in the list we just sorted are also contiguous in the same coherent unit, we can combine
     // them to optimize with register-wise gate methods.
     j = 0;
-    for (i = 0; i < length - 1; i++) {
+    for (i = 0; i < (length - 1); i++) {
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length += qbList[j + 1].length;
             qbList.erase(qbList.begin() + j + 1);
