@@ -43,7 +43,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
 }
 
-/*TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
 {
     int j;
 
@@ -82,7 +82,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
     unsigned char expectation = qftReg->SbcSuperposeReg8(8, 0, 16, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
     REQUIRE(expectation == 0x00);
-}*/
+}
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
 {
@@ -336,7 +336,6 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
     qftReg->SetReg(0, 8, 10);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
 }
-
 
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 {

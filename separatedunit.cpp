@@ -334,7 +334,7 @@ unsigned char SeparatedUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outpu
     GetParallelBitList(inputStart, 8, qbListInput);
     std::vector<QbListEntry> qbListOutput(8);
     GetParallelBitList(outputStart, 8, qbListOutput);
-    std::vector<QbListEntry> qbList(qbListInput.size() +  qbListOutput.size());
+    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size());
     std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
     std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
     OptimizeParallelBitList(qbList);
@@ -377,7 +377,7 @@ unsigned char SeparatedUnit::AdcSuperposeReg8(
     GetParallelBitList(inputStart, 8, qbListInput);
     std::vector<QbListEntry> qbListOutput(8);
     GetParallelBitList(outputStart, 8, qbListOutput);
-    std::vector<QbListEntry> qbList(qbListInput.size() +  qbListOutput.size() + 1);
+    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size() + 1);
     std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
     std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
     carryQbe.cu = qubitLookup[carryIndex].cu;
@@ -424,7 +424,7 @@ unsigned char SeparatedUnit::SbcSuperposeReg8(
     GetParallelBitList(inputStart, 8, qbListInput);
     std::vector<QbListEntry> qbListOutput(8);
     GetParallelBitList(outputStart, 8, qbListOutput);
-    std::vector<QbListEntry> qbList(qbListInput.size() +  qbListOutput.size() + 1);
+    std::vector<QbListEntry> qbList(qbListInput.size() + qbListOutput.size() + 1);
     std::copy(qbListInput.begin(), qbListInput.end(), qbList.begin());
     std::copy(qbListOutput.begin(), qbListOutput.end(), qbList.begin() + qbListInput.size());
     carryQbe.cu = qubitLookup[carryIndex].cu;

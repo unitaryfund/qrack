@@ -898,7 +898,7 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    unsigned char AdcSuperposeReg8(
+    virtual unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
     /**
@@ -925,7 +925,7 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    unsigned char SbcSuperposeReg8(
+    virtual unsigned char SbcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
     /**
