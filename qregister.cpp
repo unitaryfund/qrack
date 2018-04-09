@@ -300,23 +300,28 @@ void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
 
     bitCapInt partPower = 1 << length;
     bitCapInt mask = (partPower - 1) << start;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> partStateProb(new double[partPower]());
-    std::unique_ptr<double[]> partStateAngle(new double[partPower]());
+    std::unique_ptr<double[]> partStateProb(new double[maxQPower - partPower]());
+    std::unique_ptr<double[]> partStateAngle(new double[maxQPower - partPower]());
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
         angle = arg(stateVec[i]);
-        partStateProb[(i & mask) >> start] += prob;
-        partStateAngle[(i & mask) >> start] = angle;
+        partStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
+        partStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
 
-    for (i = 0; i < partPower; i++) {
+    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]());
+    ResetStateVec(std::move(sv));
+
+    for (i = 0; i < maxQPower; i++) {
         stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 

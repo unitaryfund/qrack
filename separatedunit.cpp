@@ -137,11 +137,13 @@ void SeparatedUnit::Cohere(CoherentUnit& toCopy)
     }
     cuLen = coherentUnits.size();
     for (i = 0; i < qubitsToAdd; i++) {
-        qubitLookup[i].cu = cuLen;
-        qubitLookup[i].qb = i;
+        ql[qubitCount + i].cu = cuLen;
+        ql[qubitCount + i].qb = i;
         qubitInverseLookup[cuLen * qubitCount + i] = qubitCount + i;
     }
     coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(toCopy)));
+    qubitLookup = std::move(ql);
+    qubitInverseLookup = std::move(qil);
 
     qubitCount += qubitsToAdd;
     maxQPower = 1 << qubitCount;
