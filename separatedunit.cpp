@@ -142,6 +142,9 @@ void SeparatedUnit::Cohere(CoherentUnit& toCopy)
         qubitInverseLookup[cuLen * qubitCount + i] = qubitCount + i;
     }
     coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(toCopy)));
+
+    qubitCount += qubitsToAdd;
+    maxQPower = 1 << qubitCount;
 }
 
 void SeparatedUnit::Cohere(SeparatedUnit& toCopy)
@@ -155,58 +158,10 @@ void SeparatedUnit::Cohere(SeparatedUnit& toCopy)
 
 void SeparatedUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination)
 {
-    /*
-    bitLenInt i, j, k, cuLen;
-    std::vector<QbListEntry> qbList(length);
-    GetOrderedBitList(start, length, qbList);
-    if ((qbList.size() == 1) && (length == coherentUnits[qbList[0].cu]->GetQubitCount())) {
-        bitCapInt destMaxPower = 1 << (coherentUnits[qbList[0].cu]->GetQubitCount());
-        std::unique_ptr<Complex16[]> sv(new Complex16[destMaxPower]);
-        coherentUnits[qbList[0].cu]->CloneRawState(&(sv[0]));
-        coherentUnits.erase(coherentUnits.begin() + qbList[0].cu);
-        destination.SetQuantumState(&(sv[0]));
-    } else {
-        CoherentUnit cuCopy(*coherentUnits[qbList[0].cu]);
-        bitLenInt cuLen = cuCopy.GetQubitCount();
-        cuCopy.Dispose(0, qbList[0].start);
-        cuCopy.Dispose(qbList[0].start + qbList[0].length, cuLen - (qbList[0].start + qbList[0].length));
-        for (bitLenInt i = 1; i < qbList.size(); i++) {
-            CoherentUnit cuCopy2(*coherentUnits[qbList[i].cu]);
-            bitLenInt cuLen = cuCopy.GetQubitCount();
-            cuCopy.Dispose(0, qbList[i].start);
-            cuCopy.Dispose(qbList[i].start + qbList[i].length, cuLen - (qbList[i].start + qbList[i].length));
-            cuCopy.Cohere(cuCopy2);
-        }
-        std::unique_ptr<Complex16[]> sv(new Complex16[cuCopy.GetQubitCount()]);
-        cuCopy.CloneRawState(&(sv[0]));
-        destination.SetQuantumState(&(sv[0]));
-    }
-
-    // Update coherentUnit list and inverse lookup at end
-    cuLen = qbList.size();
-    std::vector<bitLenInt> cuToDelete(cuLen);
-    for (i = 0; i < cuLen; i++) {
-        cuToDelete[i] = qbList[i + 1].cu;
-    }
-    std::sort(cuToDelete.begin(), cuToDelete.end());
-    for (i = 0; i < cuLen; i++) {
-        cuRemoved = cuToDelete[cuLen - i - 1];
-        coherentUnits.erase(coherentUnits.begin() + cuRemoved);
-        for (j = 0; j < qubitCount; j++) {
-            if (qubitLookup[j].cu >= cuRemoved) {
-                qubitLookup[j].cu--;
-            }
-        }
-        for (j = cuRemoved; j < (coherentUnits.size() - 1); j++) {
-            for (k = 0; k < qubitCount; k++) {
-                qubitInverseLookup[j * qubitCount + k] = qubitInverseLookup[(j + 1) * qubitCount + k];
-            }
-        }
-    }
-    */
+    DecohereOrDispose(true, start, length, &destination);
 }
 
-void SeparatedUnit::Dispose(bitLenInt start, bitLenInt length) {}
+void SeparatedUnit::Dispose(bitLenInt start, bitLenInt length) { DecohereOrDispose(false, start, length, NULL); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 double SeparatedUnit::Prob(bitLenInt qubitIndex)
@@ -1250,6 +1205,80 @@ void SeparatedUnit::QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt hig
     if (i < high) {
         QuickSortQubits(arr, i, high, cuWeak);
     }
+}
+
+void SeparatedUnit::DecohereOrDispose(bool isDecohere, bitLenInt start, bitLenInt length, CoherentUnit* destination)
+{
+    bitLenInt i, j, k;
+    std::vector<QbListEntry> qbList(length);
+    GetOrderedBitList(start, length, qbList);
+    EntangleBitList(qbList);
+
+    bitLenInt cu = qubitLookup[start].cu;
+    bitLenInt cuStart = qubitLookup[start].qb;
+    bitLenInt cuLen = coherentUnits[cu]->GetQubitCount();
+    if (cuLen == length) {
+        if (isDecohere) {
+            std::unique_ptr<Complex16[]> sv(new Complex16[1 << cuLen]);
+            coherentUnits[cu]->CloneRawState(&(sv[0]));
+            destination->SetQuantumState(&(sv[0]));
+        }
+        coherentUnits.erase(coherentUnits.begin() + cu);
+
+        for (i = cu; i < (qubitCount - 1); i++) {
+            std::copy(&(qubitInverseLookup[0]) + (i + 1) * qubitCount, &(qubitInverseLookup[0]) + (i + 2) * qubitCount,
+                &(qubitInverseLookup[0]) + i * qubitCount);
+        }
+        k = 0;
+        for (i = 0; i < qubitCount; i++) {
+            if (qubitLookup[k].cu == cu) {
+                for (j = k; j < (qubitCount - 1); j++) {
+                    qubitLookup[j] = qubitLookup[j + 1];
+                }
+            } else {
+                if (qubitLookup[k].cu > cu) {
+                    qubitLookup[k].cu--;
+                }
+                k++;
+            }
+        }
+    } else {
+        if (isDecohere) {
+            coherentUnits[cu]->Decohere(qubitLookup[start].qb, length, *destination);
+        } else {
+            coherentUnits[cu]->Dispose(qubitLookup[start].qb, length);
+        }
+
+        k = 0;
+        for (i = 0; i < qubitCount; i++) {
+            if (qubitLookup[k].cu == cu) {
+                if ((qubitLookup[k].qb >= cuStart) && (qubitLookup[k].qb < (cuStart + length))) {
+                    for (j = k; j < (qubitCount - 1); j++) {
+                        qubitLookup[j] = qubitLookup[j + 1];
+                    }
+                } else {
+                    if (qubitLookup[k].qb > cuStart) {
+                        qubitLookup[k].qb -= length;
+                    }
+                    k++;
+                }
+            }
+        }
+    }
+
+    qubitCount -= length;
+    maxQPower = 1 << qubitCount;
+
+    std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount]);
+    std::copy(&(qubitLookup[0]), &(qubitLookup[0]) + qubitCount, &(ql[0]));
+    qubitLookup = std::move(ql);
+
+    std::unique_ptr<bitLenInt[]> qil(new bitLenInt[qubitCount * qubitCount]());
+    for (i = 0; i < coherentUnits.size(); i++) {
+        std::copy(&(qubitInverseLookup[i * (qubitCount + length)]),
+            &(qubitInverseLookup[i * (qubitCount + length)]) + qubitCount, &(qil[i * qubitCount]));
+    }
+    qubitInverseLookup = std::move(qil);
 }
 
 } // namespace Qrack

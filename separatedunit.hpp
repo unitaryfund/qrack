@@ -180,5 +180,6 @@ protected:
     void EntangleIndices(std::vector<bitLenInt> indices);
     /** Quicksort entangled bits */
     void QuickSortQubits(bitLenInt* arr, bitLenInt low, bitLenInt high, std::weak_ptr<CoherentUnit> cu);
+    void DecohereOrDispose(bool isDecohere, bitLenInt start, bitLenInt length, CoherentUnit* destination);
 };
 } // namespace Qrack

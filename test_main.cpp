@@ -63,11 +63,11 @@ int main(int argc, char* argv[])
         num_failed = session.run();
     }
 
-    if (num_failed == 0 && !disable_optimized) {
-        session.config().stream() << "Executing test suite using the Optimized Implementation" << std::endl;
-        testEngineType = COHERENT_UNIT_ENGINE_OPTIMIZED;
-        num_failed = session.run();
-    }
+    // if (num_failed == 0 && !disable_optimized) {
+    session.config().stream() << "Executing test suite using the Optimized Implementation" << std::endl;
+    testEngineType = COHERENT_UNIT_ENGINE_OPTIMIZED;
+    num_failed = session.run();
+    //}
 
 #if ENABLE_OPENCL
     if (num_failed == 0 && !disable_opencl) {
