@@ -109,6 +109,8 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    }
+    else {
         toSub++;
     }
     bitCapInt carryMask = 1 << carryIndex;
@@ -128,9 +130,9 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
         bitCapInt outInt = (inOutInt + lengthPower) - toSub;
         bitCapInt outRes;
         if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes | (carryMask);
+            outRes = (outInt << (inOutStart)) | otherRes;
         } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes;
+            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | carryMask;
         }
         nStateVec[outRes] = stateVec[lcv];
     });
@@ -279,10 +281,10 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     //"inputStart" register.
 
     // The carry (or "borrow") has to first to be measured for its input value.
-    bitCapInt carryIn = 0;
+    bitCapInt carryIn = 1;
     if (M(carryIndex)) {
         // If the carry is set, we borrow 1 going in. We always initially clear the carry after testing for borrow in.
-        carryIn = 1;
+        carryIn = 0;
         X(carryIndex);
     }
 
@@ -328,11 +330,11 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
         // entangle the carry as set.  (Since we're using unsigned types,
         // we start by adding 256 with the carry, and then subtract 256 and
         // clear the carry if we don't have a borrow-out.)
-        bitCapInt carryRes = carryMask;
+        bitCapInt carryRes = 0;
 
         if (outputInt >= lengthPower) {
             outputInt -= lengthPower;
-            carryRes = 0;
+            carryRes = carryMask;
         }
 
         // We shift the output integer back to correspondence with its

@@ -154,10 +154,10 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
         otherRes = (i & otherMask);
         inOutRes = (i & inOutMask);
         outInt = (lengthMask + 1 + (inOutRes >> inOutStart)) - toSub;
-        outRes = carryMask;
+        outRes = 0;
         if (outInt > lengthMask) {
             outInt &= lengthMask;
-            outRes = 0;
+            outRes = carryMask;
         }
         outRes |= outInt << inOutStart;
         nStateVec[outRes | otherRes] = stateVec[i];
@@ -272,10 +272,10 @@ void kernel sbcReg8(
         outputRes = i & outputMask;
         outputInt = (outputRes >> outputStart) + lengthPower - (values[inputInt] + carryIn);
 
-        carryRes = carryMask;
+        carryRes = 0;
         if (outputInt >= lengthPower) {
             outputInt -= lengthPower;
-            carryRes = 0;
+            carryRes = carryMask;
         }
 
         outputRes = outputInt << outputStart;

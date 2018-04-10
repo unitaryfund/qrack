@@ -1791,6 +1791,8 @@ void CoherentUnit::DECSC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    }
+    else {
         toSub++;
     }
     bitCapInt overflowMask = 1 << overflowIndex;
@@ -1812,9 +1814,9 @@ void CoherentUnit::DECSC(
         bitCapInt outInt = (inOutInt - toSub) + (lengthPower);
         bitCapInt outRes;
         if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes | (carryMask);
+            outRes = (outInt << (inOutStart)) | otherRes;
         } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes;
+            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | carryMask;
         }
         bool isOverflow = false;
         // First negative:

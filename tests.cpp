@@ -69,8 +69,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
 {
     int j;
 
-    qftReg->SetPermutation(0);
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
+    qftReg->SetPermutation(1<<16);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 1<<16));
 
     qftReg->H(8, 8);
     unsigned char testPage[256];
@@ -80,7 +80,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
     qftReg->SuperposeReg8(8, 0, testPage);
 
     unsigned char expectation = qftReg->SbcSuperposeReg8(8, 0, 16, testPage);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1<<16));
     REQUIRE(expectation == 0x00);
 }
 
@@ -139,15 +139,15 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decc")
 {
     int i;
 
-    qftReg->SetPermutation(7 + 256);
+    qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
         qftReg->DECC(1, 0, 8, 8);
         if (i < 6) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 5 - i));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x1ff));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0xff));
         } else {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 253 - i + 7));
+            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 253 - i + 7 + 256));
         }
     }
 }

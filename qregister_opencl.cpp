@@ -222,6 +222,8 @@ void CoherentUnitOCL::DECC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    }
+    else {
         toSub++;
     }
     bitCapInt carryMask = 1 << carryIndex;
@@ -355,10 +357,10 @@ unsigned char CoherentUnitOCL::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     // The carry has to first to be measured for its input value.
-    bitCapInt carryIn = 0;
+    bitCapInt carryIn = 1;
     if (M(carryIndex)) {
         // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
-        carryIn = 1;
+        carryIn = 0;
         X(carryIndex);
     }
 
