@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <stdint.h>
 #include <thread>
+#include <vector>
 
 #include "complex16simd.hpp"
 
@@ -178,6 +179,8 @@ public:
      * exposing a quantum mechanically consistent API or instruction set.
      */
     virtual void Cohere(CoherentUnit& toCopy);
+
+    virtual void Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy);
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,

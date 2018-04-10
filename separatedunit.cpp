@@ -153,6 +153,24 @@ void SeparatedUnit::Cohere(SeparatedUnit& toCopy)
     }
 }
 
+void SeparatedUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
+{
+    bitLenInt i;
+    bitLenInt toAddCuLen = toCopy.size();
+    for (i = 0; i < toAddCuLen; i++) {
+        Cohere(*(toCopy[i]));
+    }
+}
+
+void SeparatedUnit::Cohere(std::vector<std::shared_ptr<SeparatedUnit>> toCopy)
+{
+    bitLenInt i;
+    bitLenInt toAddCuLen = toCopy.size();
+    for (i = 0; i < toAddCuLen; i++) {
+        Cohere(*(toCopy[i]));
+    }
+}
+
 void SeparatedUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination)
 {
     DecohereOrDispose(true, start, length, &destination);
@@ -1124,9 +1142,15 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
             qubitLookup[invLookup].qb = k + j;
             qubitInverseLookup[firstCu * qubitCount + k + j] = invLookup;
         }
-        coherentUnits[firstCu]->Cohere(*(coherentUnits[qbe.cu]));
         k += cuLen;
     }
+
+    OptimizeParallelBitList(qbList);
+    std::vector<std::shared_ptr<CoherentUnit>> cuToCohere(qbList.size() - 1); 
+    for (i = 1; i < qbList.size(); i++) {
+        cuToCohere[i - 1] = coherentUnits[qbList[i].cu];
+    }
+    coherentUnits[qbList[0].cu]->Cohere(cuToCohere);
 
     // Swap qubits into appropriate order, then update coherentUnits list.
     cuLen = coherentUnits[firstCu]->GetQubitCount();
@@ -1140,24 +1164,22 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
 
     // Update coherentUnit list and inverse lookup at end
     cuLen = qbList.size() - 1;
-    if (cuLen > 0) {
-        std::vector<bitLenInt> cuToDelete(cuLen);
-        for (i = 0; i < cuLen; i++) {
-            cuToDelete[i] = qbList[i + 1].cu;
+    std::vector<bitLenInt> cuToDelete(cuLen);    
+    for (i = 0; i < cuLen; i++) {
+        cuToDelete[i] = qbList[i + 1].cu;
+    }
+    std::sort(cuToDelete.begin(), cuToDelete.end());
+    for (i = 0; i < cuLen; i++) {
+        cuRemoved = cuToDelete[cuLen - i - 1];
+        coherentUnits.erase(coherentUnits.begin() + cuRemoved);
+        for (j = 0; j < qubitCount; j++) {
+            if (qubitLookup[j].cu >= cuRemoved) {
+                qubitLookup[j].cu--;
+            }
         }
-        std::sort(cuToDelete.begin(), cuToDelete.end());
-        for (i = 0; i < cuLen; i++) {
-            cuRemoved = cuToDelete[cuLen - i - 1];
-            coherentUnits.erase(coherentUnits.begin() + cuRemoved);
-            for (j = 0; j < qubitCount; j++) {
-                if (qubitLookup[j].cu >= cuRemoved) {
-                    qubitLookup[j].cu--;
-                }
-            }
-            for (j = cuRemoved; j < coherentUnits.size(); j++) {
-                std::copy(&(qubitInverseLookup[0]) + (j + 1) * qubitCount,
-                    &(qubitInverseLookup[0]) + (j + 2) * qubitCount, &(qubitInverseLookup[0]) + j * qubitCount);
-            }
+        for (j = cuRemoved; j < coherentUnits.size(); j++) {
+            std::copy(&(qubitInverseLookup[0]) + (j + 1) * qubitCount,
+                &(qubitInverseLookup[0]) + (j + 2) * qubitCount, &(qubitInverseLookup[0]) + j * qubitCount);
         }
     }
 }

@@ -15,7 +15,6 @@
 #pragma once
 
 #include "qregister.hpp"
-#include <vector>
 
 namespace Qrack {
 
@@ -69,6 +68,10 @@ public:
     void Cohere(CoherentUnit& toCopy);
 
     void Cohere(SeparatedUnit& toCopy);
+
+    void Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy);
+
+    void Cohere(std::vector<std::shared_ptr<SeparatedUnit>> toCopy);
 
     void Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination);
 

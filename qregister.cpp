@@ -217,12 +217,58 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy.qubitCount)) - 1) << qubitCount;
 
-    double angle = Rand() * 2.0 * M_PI;
-    Complex16 phaseFac(cos(angle), sin(angle));
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
+    });
+
+    qubitCount = nQubitCount;
+    maxQPower = nMaxQPower;
+
+    ResetStateVec(std::move(nStateVec));
+    UpdateRunningNorm();
+}
+
+/**
+ * Combine (copies) each CoherentUnit in the vector with this one, after the last bit
+ * index of this one. (If the programmer doesn't want to "cheat," it is left up
+ * to them to delete the old coherent unit that was added.
+ */
+void CoherentUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
+{
+    bitLenInt i;
+    bitLenInt toCohereCount = toCopy.size();
+
+    std::vector<bitLenInt> offset(toCohereCount);
+    std::vector<bitCapInt> mask(toCohereCount);
+
+    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt nQubitCount = qubitCount;
+    bitCapInt nMaxQPower;
+
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
+    
+    for (i = 0; i < toCohereCount; i++) {
+        if (toCopy[i]->runningNorm != 1.0) {
+            toCopy[i]->NormalizeState();
+        }
+        mask[i] = ((1 << toCopy[i]->GetQubitCount()) - 1) << nQubitCount;
+        offset[i] = nQubitCount;
+        nQubitCount += toCopy[i]->GetQubitCount();
+    }
+
+    nMaxQPower = 1 << nQubitCount;
+
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+        nStateVec[lcv] = stateVec[lcv & startMask];
+        for (bitLenInt j = 0; j < toCohereCount; j++) {
+            nStateVec[lcv] *= toCopy[j]->stateVec[(lcv & mask[j]) >> offset[j]];
+        }
     });
 
     qubitCount = nQubitCount;
