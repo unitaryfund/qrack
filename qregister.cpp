@@ -83,7 +83,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
 
 /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
  * shared random number generator */
-CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine rgp[])
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
     : CoherentUnit(qBitCount, initState, Complex16(-999.0, -999.0), rgp)
 {
 }
@@ -96,7 +96,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::defaul
  * phase usually makes sense only if they are initialized at the same time.
  */
 CoherentUnit::CoherentUnit(
-    bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::default_random_engine rgp[])
+    bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
     : rand_distribution(0.0, 1.0)
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -104,11 +104,12 @@ CoherentUnit::CoherentUnit(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
     if (rgp == NULL) {
-        rand_generator_ptr[0] = { std::default_random_engine() };
+        rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine[1]);
+        *rand_generator_ptr = std::default_random_engine();
         randomSeed = std::time(0);
         SetRandomSeed(randomSeed);
     } else {
-        rand_generator_ptr[0] = rgp[0];
+        rand_generator_ptr = rgp;
     }
 
     runningNorm = 1.0;
@@ -148,7 +149,7 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
 {
-    (*rand_generator_ptr) = std::default_random_engine();
+    rand_generator_ptr = pqs.rand_generator_ptr;
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
 

@@ -23,13 +23,7 @@ namespace Qrack {
 
 bool compare(QbListEntry i, QbListEntry j)
 {
-    bool lessThan;
-    if (i.cu == j.cu) {
-        lessThan = (i.start < j.start);
-    } else {
-        lessThan = (i.cu < j.cu);
-    }
-    return lessThan;
+    return i.cu == j.cu ? i.start < j.start : i.cu < j.cu;
 }
 
 void SeparatedUnit::CloneRawState(Complex16* output)
@@ -57,7 +51,8 @@ void SeparatedUnit::SetQuantumState(Complex16* inputState)
 /// specific phase.
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
 {
-    rand_generator_ptr[0] = std::default_random_engine();
+    rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine[1]);
+    *rand_generator_ptr = std::default_random_engine();
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = qBitCount;
@@ -105,7 +100,7 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac)
 
 SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs)
 {
-    rand_generator_ptr[0] = std::default_random_engine();
+    rand_generator_ptr = pqs.rand_generator_ptr;
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
     qubitCount = pqs.qubitCount;

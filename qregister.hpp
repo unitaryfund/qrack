@@ -97,7 +97,7 @@ public:
      * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
      * a shared random number generator.
      */
-    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::default_random_engine* rgp);
+    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp);
 
     /**
      * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
@@ -106,7 +106,7 @@ public:
      * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
      * phase usually makes sense only if they are initialized at the same time.
      */
-    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::default_random_engine* rgp);
+    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
 
     /**
      * Initialize a cloned register with same exact quantum state as pqs
@@ -118,7 +118,7 @@ public:
     /** Destructor of CoherentUnit */
     virtual ~CoherentUnit() {}
 
-    /* Set the random seed (primarily used for testing) */
+    /** Set the random seed (primarily used for testing) */
     virtual void SetRandomSeed(uint32_t seed);
 
     /** Get the count of bits in this register */
@@ -999,7 +999,7 @@ protected:
     bitCapInt maxQPower;
     std::unique_ptr<Complex16[]> stateVec;
 
-    std::default_random_engine rand_generator_ptr[1];
+    std::shared_ptr<std::default_random_engine> rand_generator_ptr;
     std::uniform_real_distribution<double> rand_distribution;
 
     virtual void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);

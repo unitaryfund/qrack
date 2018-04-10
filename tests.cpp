@@ -354,5 +354,3 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
 }
-
-//("Hello, Universe!")
