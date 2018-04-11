@@ -69,8 +69,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
 {
     int j;
 
-    qftReg->SetPermutation(1<<16);
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, 1<<16));
+    qftReg->SetPermutation(1 << 16);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 << 16));
 
     qftReg->H(8, 8);
     unsigned char testPage[256];
@@ -80,7 +80,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
     qftReg->SuperposeReg8(8, 0, testPage);
 
     unsigned char expectation = qftReg->SbcSuperposeReg8(8, 0, 16, testPage);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1<<16));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 << 16));
     REQUIRE(expectation == 0x00);
 }
 

@@ -41,9 +41,11 @@ enum CoherentUnitEngine {
     COHERENT_UNIT_ENGINE_SOFTWARE_PARALLEL,
     COHERENT_UNIT_ENGINE_SOFTWARE = COHERENT_UNIT_ENGINE_SOFTWARE_PARALLEL,
 
-    COHERENT_UNIT_ENGINE_OPTIMIZED,
+    COHERENT_UNIT_ENGINE_SOFTWARE_SEPARATED,
 
     COHERENT_UNIT_ENGINE_OPENCL,
+
+    COHERENT_UNIT_ENGINE_OPENCL_SEPARATED,
 
     COHERENT_UNIT_ENGINE_MAX
 };
@@ -70,6 +72,8 @@ public:
      */
     CoherentUnit(bitLenInt qBitCount);
 
+    CoherentUnit(bitLenInt qBitCount, std::shared_ptr<std::default_random_engine> rgp);
+
     /**
      * Initialize a coherent unit with qBitCount number of bits, all to |0>
      * state, with a specific phase
@@ -78,6 +82,8 @@ public:
      * phase usually makes sense only if they are initialized at the same time.
      */
     CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac);
+
+    CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
 
     /**
      * Initialize a coherent unit with qBitCount number of bits, to initState
@@ -107,7 +113,8 @@ public:
      * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
      * phase usually makes sense only if they are initialized at the same time.
      */
-    CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
+    CoherentUnit(
+        bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
 
     /**
      * Initialize a cloned register with same exact quantum state as pqs

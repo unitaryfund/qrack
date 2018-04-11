@@ -24,8 +24,9 @@ int main(int argc, char* argv[])
     Catch::Session session;
 
     bool disable_opencl = false;
-    bool disable_optimized = false;
     bool disable_software = false;
+    bool disable_opencl_optimized = false;
+    bool disable_software_optimized = false;
 
     using namespace Catch::clara;
 
@@ -35,7 +36,10 @@ int main(int argc, char* argv[])
      */
     auto cli = session.cli() | Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
         Opt(disable_software)["--disable-software"]("Disable the software implementation tests") |
-        Opt(disable_optimized)["--disable-optimized"]("Disable the optimized implementation tests");
+        Opt(disable_opencl_optimized)["--disable-opencl-optimized"](
+            "Disable the optimized OpenCL implementation tests") |
+        Opt(disable_software_optimized)["--disable-software-optimized"](
+            "Disable the optimized software implementation tests");
     ;
 
     session.cli(cli);
@@ -63,17 +67,23 @@ int main(int argc, char* argv[])
         num_failed = session.run();
     }
 
-    // if (num_failed == 0 && !disable_optimized) {
-    session.config().stream() << "Executing test suite using the Optimized Implementation" << std::endl;
-    testEngineType = COHERENT_UNIT_ENGINE_OPTIMIZED;
-    num_failed = session.run();
-    //}
+    if (num_failed == 0 && !disable_software_optimized) {
+        session.config().stream() << "Executing test suite using the Optimized Software Implementation" << std::endl;
+        testEngineType = COHERENT_UNIT_ENGINE_SOFTWARE_SEPARATED;
+        num_failed = session.run();
+    }
 
 #if ENABLE_OPENCL
     if (num_failed == 0 && !disable_opencl) {
         session.config().stream() << "Executing test suite using the OpenCL Implementation" << std::endl;
         testEngineType = COHERENT_UNIT_ENGINE_OPENCL;
         delete CreateCoherentUnit(testEngineType, 1, 0); /* Get the OpenCL banner out of the way. */
+        num_failed = session.run();
+    }
+
+    if (num_failed == 0 && !disable_opencl_optimized) {
+        session.config().stream() << "Executing test suite using the Optimized OpenCL Implementation" << std::endl;
+        testEngineType = COHERENT_UNIT_ENGINE_OPENCL_SEPARATED;
         num_failed = session.run();
     }
 #endif

@@ -12,7 +12,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "separatedunit.hpp"
+#include "qregister_factory.hpp"
 #include <iostream>
 
 #define bitLenInt uint8_t
@@ -21,10 +21,7 @@
 
 namespace Qrack {
 
-bool compare(QbListEntry i, QbListEntry j)
-{
-    return i.cu == j.cu ? i.start < j.start : i.cu < j.cu;
-}
+bool compare(QbListEntry i, QbListEntry j) { return i.cu == j.cu ? i.start < j.start : i.cu < j.cu; }
 
 void SeparatedUnit::CloneRawState(Complex16* output)
 {
@@ -43,18 +40,25 @@ void SeparatedUnit::SetQuantumState(Complex16* inputState)
         qubitInverseLookup[i] = i;
         coherentUnits.erase(coherentUnits.end() - i - 1);
     }
-    coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(qubitCount, 0, rand_generator_ptr)));
+    coherentUnits.push_back(
+        std::shared_ptr<CoherentUnit>(CreateCoherentUnit(cuEngine, qubitCount, 0, rand_generator_ptr)));
     coherentUnits[0]->SetQuantumState(inputState);
 }
 
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
 /// specific phase.
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, CoherentUnitEngine engine,
+    std::shared_ptr<std::default_random_engine> rgp)
 {
-    rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine[1]);
-    *rand_generator_ptr = std::default_random_engine();
-    randomSeed = std::time(0);
-    SetRandomSeed(randomSeed);
+    cuEngine = engine;
+    if (rgp == NULL) {
+        rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine[1]);
+        *rand_generator_ptr = std::default_random_engine();
+        randomSeed = std::time(0);
+        SetRandomSeed(randomSeed);
+    } else {
+        rand_generator_ptr = rgp;
+    }
     qubitCount = qBitCount;
     maxQPower = 1 << qubitCount;
 
@@ -74,32 +78,51 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16
         qubitLookup[i].cu = i;
         qubitLookup[i].qb = 0;
         qubitInverseLookup[i * qBitCount] = i;
-        coherentUnits.push_back(
-            std::shared_ptr<CoherentUnit>(new CoherentUnit(1, (setBit ? 1 : 0), phaseFac, rand_generator_ptr)));
+        coherentUnits.push_back(std::shared_ptr<CoherentUnit>(
+            CreateCoherentUnit(cuEngine, 1, (setBit ? 1 : 0), phaseFac, rand_generator_ptr)));
     }
 }
 
 /// Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
 /// specific phase.
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState)
-    : SeparatedUnit(qBitCount, initState, Complex16(-999.0, -999.0))
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, CoherentUnitEngine engine)
+    : SeparatedUnit(qBitCount, initState, Complex16(-999.0, -999.0), engine, NULL)
+{
+}
+
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, CoherentUnitEngine engine,
+    std::shared_ptr<std::default_random_engine> rgp)
+    : SeparatedUnit(qBitCount, initState, Complex16(-999.0, -999.0), engine, rgp)
 {
 }
 
 /// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount)
-    : SeparatedUnit(qBitCount, 0, Complex16(-999.0, -999.0))
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, CoherentUnitEngine engine)
+    : SeparatedUnit(qBitCount, 0, Complex16(-999.0, -999.0), engine, NULL)
+{
+}
+
+SeparatedUnit::SeparatedUnit(
+    bitLenInt qBitCount, CoherentUnitEngine engine, std::shared_ptr<std::default_random_engine> rgp)
+    : SeparatedUnit(qBitCount, 0, Complex16(-999.0, -999.0), engine, rgp)
 {
 }
 
 /// Initialize a coherent unit with qBitCount number of bits, all to |0> state, with a specific phase.
-SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac)
-    : SeparatedUnit(qBitCount, 0, phaseFac)
+SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac, CoherentUnitEngine engine)
+    : SeparatedUnit(qBitCount, 0, phaseFac, engine, NULL)
+{
+}
+
+SeparatedUnit::SeparatedUnit(
+    bitLenInt qBitCount, Complex16 phaseFac, CoherentUnitEngine engine, std::shared_ptr<std::default_random_engine> rgp)
+    : SeparatedUnit(qBitCount, 0, phaseFac, engine, rgp)
 {
 }
 
 SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs)
 {
+    cuEngine = pqs.cuEngine;
     rand_generator_ptr = pqs.rand_generator_ptr;
     randomSeed = std::time(0);
     SetRandomSeed(randomSeed);
@@ -114,9 +137,32 @@ SeparatedUnit::SeparatedUnit(const SeparatedUnit& pqs)
     qubitLookup = std::move(ql);
 
     for (bitLenInt i = 0; i < pqs.coherentUnits.size(); i++) {
-        coherentUnits.push_back(
-            std::shared_ptr<CoherentUnit>(new CoherentUnit(*(pqs.coherentUnits[pqs.coherentUnits.size() - i - 1]))));
+        coherentUnits.push_back(std::shared_ptr<CoherentUnit>(
+            CreateCoherentUnit(cuEngine, *(pqs.coherentUnits[pqs.coherentUnits.size() - i - 1]))));
     }
+}
+
+SeparatedUnit::SeparatedUnit(const CoherentUnit& pqs)
+{
+    // This will be superseded by the "shard" implementation.
+    /*
+    cuEngine = pqs.cuEngine;
+    rand_generator_ptr = pqs.rand_generator_ptr;
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
+    qubitCount = pqs.qubitCount;
+    maxQPower = 1 << qubitCount;
+
+    std::unique_ptr<QbLookup[]> ql(new QbLookup[qubitCount]);
+    std::copy(&(pqs.qubitLookup[0]), &(pqs.qubitLookup[0]) + qubitCount, &(ql[0]));
+    qubitLookup = std::move(ql);
+    std::unique_ptr<bitLenInt[]> qil(new bitLenInt[qubitCount * qubitCount]());
+    std::copy(&(pqs.qubitInverseLookup[0]), &(pqs.qubitInverseLookup[0]) + qubitCount, &(qil[0]));
+    qubitLookup = std::move(ql);
+
+    coherentUnits.push_back(
+        std::shared_ptr<CoherentUnit>(CreateCoherentUnit(cuEngine, pqs)));
+    */
 }
 
 void SeparatedUnit::Cohere(CoherentUnit& toCopy)
@@ -136,7 +182,7 @@ void SeparatedUnit::Cohere(CoherentUnit& toCopy)
         ql[qubitCount + i].qb = i;
         qubitInverseLookup[cuLen * qubitCount + i] = qubitCount + i;
     }
-    coherentUnits.push_back(std::shared_ptr<CoherentUnit>(new CoherentUnit(toCopy)));
+    coherentUnits.push_back(std::shared_ptr<CoherentUnit>(CreateCoherentUnit(cuEngine, toCopy)));
     qubitLookup = std::move(ql);
     qubitInverseLookup = std::move(qil);
 
@@ -223,7 +269,7 @@ bool SeparatedUnit::M(bitLenInt qubitIndex)
 
     bitLenInt qbCount = coherentUnits[qbl.cu]->GetQubitCount();
     if (qbCount > 1) {
-        std::shared_ptr<CoherentUnit> ncu(new CoherentUnit(1, 0, rand_generator_ptr));
+        std::shared_ptr<CoherentUnit> ncu(CreateCoherentUnit(cuEngine, 1, 0, rand_generator_ptr));
         coherentUnits[qbl.cu]->Decohere(qbl.qb, 1, *ncu);
         coherentUnits.push_back(ncu);
 
@@ -264,7 +310,7 @@ bitCapInt SeparatedUnit::MReg(bitLenInt start, bitLenInt length)
         qbl = qubitLookup[start + i];
         qbCount = coherentUnits[qbl.cu]->GetQubitCount();
         if (qbCount > 1) {
-            std::shared_ptr<CoherentUnit> ncu(new CoherentUnit(1, 0, rand_generator_ptr));
+            std::shared_ptr<CoherentUnit> ncu(CreateCoherentUnit(cuEngine, 1, 0, rand_generator_ptr));
             coherentUnits[qbl.cu]->Decohere(qbl.qb, 1, *ncu);
             coherentUnits.push_back(ncu);
 
@@ -1146,7 +1192,7 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
     }
 
     OptimizeParallelBitList(qbList);
-    std::vector<std::shared_ptr<CoherentUnit>> cuToCohere(qbList.size() - 1); 
+    std::vector<std::shared_ptr<CoherentUnit>> cuToCohere(qbList.size() - 1);
     for (i = 1; i < qbList.size(); i++) {
         cuToCohere[i - 1] = coherentUnits[qbList[i].cu];
     }
@@ -1164,7 +1210,7 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
 
     // Update coherentUnit list and inverse lookup at end
     cuLen = qbList.size() - 1;
-    std::vector<bitLenInt> cuToDelete(cuLen);    
+    std::vector<bitLenInt> cuToDelete(cuLen);
     for (i = 0; i < cuLen; i++) {
         cuToDelete[i] = qbList[i + 1].cu;
     }
@@ -1178,8 +1224,8 @@ void SeparatedUnit::EntangleBitList(std::vector<QbListEntry> qbList)
             }
         }
         for (j = cuRemoved; j < coherentUnits.size(); j++) {
-            std::copy(&(qubitInverseLookup[0]) + (j + 1) * qubitCount,
-                &(qubitInverseLookup[0]) + (j + 2) * qubitCount, &(qubitInverseLookup[0]) + j * qubitCount);
+            std::copy(&(qubitInverseLookup[0]) + (j + 1) * qubitCount, &(qubitInverseLookup[0]) + (j + 2) * qubitCount,
+                &(qubitInverseLookup[0]) + j * qubitCount);
         }
     }
 }

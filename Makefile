@@ -64,6 +64,9 @@ qregistercl.hpp: qregister.cl
 	${XXD} -i qregister.cl > qregistercl.hpp
 
 qregister_opencl.o: qregistercl.hpp oclengine.hpp
+qregister_factory.o : qregister.hpp par_for.hpp qregister_opencl.hpp qregister_factory.hpp
 tests.o : oclengine.hpp catch.hpp
 example.o : oclengine.hpp catch.hpp
+else
+qregister_factory.o : qregister.hpp par_for.hpp qregister_factory.hpp
 endif

@@ -29,13 +29,51 @@ CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount)
     InitOCL();
 }
 
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, Complex16 phaseFac)
+    : CoherentUnit(qBitCount, phaseFac)
+{
+    InitOCL();
+}
+
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, rgp)
+{
+    InitOCL();
+}
+
 CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState)
     : CoherentUnit(qBitCount, initState)
 {
     InitOCL();
 }
 
+CoherentUnitOCL::CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
+    : CoherentUnit(qBitCount, initState, phaseFac)
+{
+    InitOCL();
+}
+
+CoherentUnitOCL::CoherentUnitOCL(
+    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, initState, rgp)
+{
+    InitOCL();
+}
+
+CoherentUnitOCL::CoherentUnitOCL(
+    bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, initState, phaseFac, rgp)
+{
+    InitOCL();
+}
+
 CoherentUnitOCL::CoherentUnitOCL(const CoherentUnitOCL& pqs)
+    : CoherentUnit(pqs)
+{
+    InitOCL();
+}
+
+CoherentUnitOCL::CoherentUnitOCL(const CoherentUnit& pqs)
     : CoherentUnit(pqs)
 {
     InitOCL();
@@ -222,8 +260,7 @@ void CoherentUnitOCL::DECC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-    }
-    else {
+    } else {
         toSub++;
     }
     bitCapInt carryMask = 1 << carryIndex;

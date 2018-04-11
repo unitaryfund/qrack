@@ -109,8 +109,7 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-    }
-    else {
+    } else {
         toSub++;
     }
     bitCapInt carryMask = 1 << carryIndex;

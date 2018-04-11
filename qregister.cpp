@@ -145,6 +145,23 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 {
 }
 
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, 0, Complex16(-999.0, -999.0), rgp)
+{
+}
+
+/** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac)
+    : CoherentUnit(qBitCount, 0, phaseFac, NULL)
+{
+}
+
+/** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, 0, phaseFac, NULL)
+{
+}
+
 /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
@@ -250,7 +267,7 @@ void CoherentUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
     if (runningNorm != 1.0) {
         NormalizeState();
     }
-    
+
     for (i = 0; i < toCohereCount; i++) {
         if (toCopy[i]->runningNorm != 1.0) {
             toCopy[i]->NormalizeState();
@@ -1837,8 +1854,7 @@ void CoherentUnit::DECSC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-    }
-    else {
+    } else {
         toSub++;
     }
     bitCapInt overflowMask = 1 << overflowIndex;

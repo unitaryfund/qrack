@@ -34,17 +34,25 @@ class SeparatedUnit;
 class SeparatedUnit : public CoherentUnit {
 public:
     /** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
-    SeparatedUnit(bitLenInt qBitCount);
+    SeparatedUnit(bitLenInt qBitCount, CoherentUnitEngine engine);
+
+    SeparatedUnit(bitLenInt qBitCount, CoherentUnitEngine engine, std::shared_ptr<std::default_random_engine> rgp);
 
     /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state */
-    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState);
+    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, CoherentUnitEngine engine);
+
+    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, CoherentUnitEngine engine,
+        std::shared_ptr<std::default_random_engine> rgp);
 
     /** Initialize a coherent unit with qBitCount number of bits, all to |0> state, with a specific phase.
      *
      * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
      * phase usually makes sense only if they are initialized at the same time.
      */
-    SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac);
+    SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac, CoherentUnitEngine engine);
+
+    SeparatedUnit(bitLenInt qBitCount, Complex16 phaseFac, CoherentUnitEngine engine,
+        std::shared_ptr<std::default_random_engine> rgp);
 
     /** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
      * a specific phase.
@@ -52,7 +60,10 @@ public:
      * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
      * phase usually makes sense only if they are initialized at the same time.
      */
-    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac);
+    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, CoherentUnitEngine engine);
+
+    SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, CoherentUnitEngine engine,
+        std::shared_ptr<std::default_random_engine> rgp);
 
     /**
      * Initialize a cloned register with same exact quantum state as pqs
@@ -60,6 +71,8 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     SeparatedUnit(const SeparatedUnit& pqs);
+
+    SeparatedUnit(const CoherentUnit& pqs);
 
     void CloneRawState(Complex16* output);
 
@@ -77,7 +90,6 @@ public:
 
     void Dispose(bitLenInt start, bitLenInt length);
 
-
     double Prob(bitLenInt qubitIndex);
 
     double ProbAll(bitCapInt perm);
@@ -94,11 +106,9 @@ public:
 
     void SetPermutation(bitCapInt value);
 
-
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2, bitLenInt length);
-
 
     void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
@@ -116,7 +126,6 @@ public:
 
     void AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
-
     void H(bitLenInt qubitIndex);
 
     void X(bitLenInt qubitIndex);
@@ -125,14 +134,11 @@ public:
 
     void Z(bitLenInt qubitIndex);
 
-
     void X(bitLenInt start, bitLenInt length);
-
 
     void CY(bitLenInt control, bitLenInt target);
 
     void CZ(bitLenInt control, bitLenInt target);
-
 
     void RT(double radians, bitLenInt qubitIndex);
 
@@ -150,7 +156,6 @@ public:
 
     void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
 
-
     void CRT(double radians, bitLenInt control, bitLenInt target);
 
     void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
@@ -162,7 +167,6 @@ public:
     void CRZ(double radians, bitLenInt control, bitLenInt target);
 
     void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
-
 
     void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -196,7 +200,6 @@ public:
 
     void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-
     void QFT(bitLenInt start, bitLenInt length);
 
     void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
@@ -204,7 +207,6 @@ public:
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
     void PhaseFlip();
-
 
     unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
 
@@ -215,6 +217,7 @@ public:
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
+    CoherentUnitEngine cuEngine;
 
     std::unique_ptr<QbLookup[]> qubitLookup;
 
