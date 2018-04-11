@@ -54,6 +54,8 @@ target_link_libraries (unittest
         pthread
         )
 
+target_include_directories (unittest PUBLIC test)
+
 if (USE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=1)
 
@@ -85,10 +87,14 @@ if (USE_OPENCL)
     # Add the OpenCL objects to the library
     target_sources (qrack PRIVATE
         ${COMPILED_RESOURCES}
-        src/oclengine.cpp
+        src/common/oclengine.cpp
         src/qregister_opencl.cpp
         )
 
+    install (FILES
+        include/common/oclengine.hpp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
+        )
 else (USE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=0)
 endif (USE_OPENCL)
@@ -97,22 +103,28 @@ set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
 
+# Install common headers
+install (FILES
+    include/common/complex16simd.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
+    )
+
+# Install qrack library headers
 install (FILES 
     include/qregister.hpp
-    include/oclengine.hpp
     include/qregister_factory.hpp
     include/qregister_opencl.hpp
     include/separatedunit.hpp
-    include/common/complex16simd.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
+# Install the archive
 install (TARGETS qrack
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
+# Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
-
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 

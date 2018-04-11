@@ -9,4 +9,4 @@ Version: @PROJECT_VERSION@
 
 Requires:
 Libs: -L${libdir} -lqrack
-Cflags: -I${includedir}
+Cflags: -I${includedir}/qrack
