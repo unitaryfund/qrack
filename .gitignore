@@ -7,3 +7,9 @@ qregistercl.hpp
 example
 tags
 
+# cmake local build files
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+qrack.pc
