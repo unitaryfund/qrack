@@ -104,8 +104,7 @@ CoherentUnit::CoherentUnit(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
     if (rgp == NULL) {
-        rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine[1]);
-        *rand_generator_ptr = std::default_random_engine();
+        rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine());
         randomSeed = std::time(0);
         SetRandomSeed(randomSeed);
     } else {

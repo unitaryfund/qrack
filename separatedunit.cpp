@@ -52,8 +52,7 @@ SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16
 {
     cuEngine = engine;
     if (rgp == NULL) {
-        rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine[1]);
-        *rand_generator_ptr = std::default_random_engine();
+        rand_generator_ptr = std::shared_ptr<std::default_random_engine>(new std::default_random_engine());
         randomSeed = std::time(0);
         SetRandomSeed(randomSeed);
     } else {
