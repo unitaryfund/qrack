@@ -1,9 +1,8 @@
 # Qrack
 
-[![Quantum Rack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
+[![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
 
-This is a multithreaded framework for developing classically emulated virtual
-universal quantum processors.
+This is a multithreaded framework for developing classically emulated virtual universal quantum processors.
 
 The intent of "Qrack" is to provide a framework for developing pratical, computationally efficient, classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::CoherentUnit," assuming all the quantum memory in the QCPU is quantum mechanically "coherent" for quantum computation.
 
@@ -23,25 +22,26 @@ Qrack compiles like a library. To include in your project:
 ```
 
 2. On the command line, in the project directory
+
 ```
-make all
+$ mkdir _build && cd _build && cmake .. && make all install
 ```
 
 Instantiate a Qrack::CoherentUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) Coherent units can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence of separable subsystems between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
-## EXAMPLE.CPP
+## test/tests.cpp
 
-The included EXAMPLE.CPP is headed by a unit tests. Then, the following example is run:
+The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
 
-This is a simple example of quantum mechanics simulation in quantum computational logic. It is essentially a unidirectional binary quantum random walk algorithm, from a positive starting point, heading toward zero.
-
-We assume a fixed length time step. During each time step, we step through an equal superposition of either standing still or taking one fixed length step from our current position toward our fixed destination.
-
-This is equivalent to a physical body having a 50% chance of emitting a fixed unit of energy per a fixed unit of time, in a pure quantum state. Hence, it might be considered a simple quantum mechanics simulation.
+```
+    $ _build/unittest
+```
 
 ## Installing OpenCL on VMWare
+
+Most platforms offer a standardized way of installing OpenCL, however for VMWare it's a little more peculiar.
 
 1.  Download the [AMD APP SDK](https://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
 1.  Install it.
@@ -68,5 +68,3 @@ Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool chai
 Licensed under the GNU General Public License V3.
 
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
-
-
