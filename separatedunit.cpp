@@ -50,6 +50,7 @@ void SeparatedUnit::SetQuantumState(Complex16* inputState)
 SeparatedUnit::SeparatedUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, CoherentUnitEngine engine,
     std::shared_ptr<std::default_random_engine> rgp)
 {
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
     cuEngine = engine;
     if (rgp == NULL) {
         rand_generator_ptr = std::make_shared<std::default_random_engine>();

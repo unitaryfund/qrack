@@ -3,7 +3,7 @@ ENABLE_OPENCL ?= 1
 
 CPP      = g++
 XXD      = xxd
-OBJ      = complex16simd.o qregister.o par_for.o qregister_software.o qregister_factory.o separatedunit.o
+OBJ      = complex16simd.o qregister.o qregister_software.o qregister_factory.o separatedunit.o
 SRC      = $(wildcard *.cpp)
 HDRS     = $(wildcard *.hpp)
 FORMAT_SRC = ${SRC} qregister.cl
@@ -48,10 +48,10 @@ test: $(TEST_BIN)
 
 tests.o : tests.hpp catch.hpp
 test_main.o : tests.hpp catch.hpp
-qregister.o : qregister.hpp par_for.hpp
-qregister_opencl.o : qregister.hpp par_for.hpp
-qregister_software.o : qregister.hpp par_for.hpp
-separatedunit.o : qregister.hpp par_for.hpp separatedunit.hpp
+qregister.o : qregister.hpp
+qregister_opencl.o : qregister.hpp
+qregister_software.o : qregister.hpp
+separatedunit.o : qregister.hpp separatedunit.hpp
 
 $(TEST_BIN): $(TEST_OBJ) $(QRACK_LIB)
 	$(CPP) $(TEST_OBJ) $(QRACK_LIB) -o $(TEST_BIN) $(LDFLAGS) $(LIBS)
@@ -64,9 +64,9 @@ qregistercl.hpp: qregister.cl
 	${XXD} -i qregister.cl > qregistercl.hpp
 
 qregister_opencl.o: qregistercl.hpp oclengine.hpp
-qregister_factory.o : qregister.hpp par_for.hpp qregister_opencl.hpp qregister_factory.hpp
+qregister_factory.o : qregister.hpp qregister_opencl.hpp qregister_factory.hpp
 tests.o : oclengine.hpp catch.hpp
 example.o : oclengine.hpp catch.hpp
 else
-qregister_factory.o : qregister.hpp par_for.hpp qregister_factory.hpp
+qregister_factory.o : qregister.hpp qregister_factory.hpp
 endif
