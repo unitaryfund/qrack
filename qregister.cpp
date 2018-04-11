@@ -41,11 +41,13 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
-/**
- * The "Qrack::CoherentUnit" class represents one or more coherent quantum
- * processor registers, including primitive bit logic gates and (abstract)
- * opcodes-like methods.
- */
+/** Protected constructor for SeparatedUnit */
+CoherentUnit::CoherentUnit()
+    : rand_distribution(0.0, 1.0)
+{
+    // This method body left intentionally empty
+    randomSeed = std::time(0);
+}
 
 /**
  * Initialize a coherent unit with qBitCount number pf bits, to initState
@@ -75,15 +77,40 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  * impacts on subsequent operations accordingly.
  */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
+    : CoherentUnit(qBitCount, initState, Complex16(-999.0, -999.0), NULL)
+{
+}
+
+/** Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with a
+ * shared random number generator */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, initState, Complex16(-999.0, -999.0), rgp)
+{
+}
+
+/**
+ * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
+ * a shared random number generator, with a specific phase.
+ *
+ * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+ * phase usually makes sense only if they are initialized at the same time.
+ */
+CoherentUnit::CoherentUnit(
+    bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
     : rand_distribution(0.0, 1.0)
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    SetRandomSeed(std::time(0));
+    if (rgp == NULL) {
+        rand_generator_ptr = std::make_shared<std::default_random_engine>();
+        randomSeed = std::time(0);
+        SetRandomSeed(randomSeed);
+    } else {
+        rand_generator_ptr = rgp;
+    }
 
-    double angle = Rand() * 2.0 * M_PI;
     runningNorm = 1.0;
     qubitCount = qBitCount;
     maxQPower = 1 << qBitCount;
@@ -91,12 +118,46 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState)
     stateVec.reset();
     stateVec = std::move(sv);
     std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    stateVec[initState] = Complex16(cos(angle), sin(angle));
+    if (phaseFac == Complex16(-999.0, -999.0)) {
+        double angle = Rand() * 2.0 * M_PI;
+        stateVec[initState] = Complex16(cos(angle), sin(angle));
+    } else {
+        stateVec[initState] = phaseFac;
+    }
 }
 
-/// Initialize a coherent unit with qBitCount number of bits, all to |0> state.
+/**
+ * Initialize a coherent unit with qBitCount number of bits, to initState
+ * unsigned integer permutation state, with a specific phase.
+ *
+ * \warning Overall phase is generally arbitrary and unknowable. Setting two CoherentUnit instances to the same
+ * phase usually makes sense only if they are initialized at the same time.
+ */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac)
+    : CoherentUnit(qBitCount, initState, phaseFac, NULL)
+{
+}
+
+/** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
 CoherentUnit::CoherentUnit(bitLenInt qBitCount)
-    : CoherentUnit(qBitCount, 0)
+    : CoherentUnit(qBitCount, 0, Complex16(-999.0, -999.0), NULL)
+{
+}
+
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, 0, Complex16(-999.0, -999.0), rgp)
+{
+}
+
+/** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac)
+    : CoherentUnit(qBitCount, 0, phaseFac, NULL)
+{
+}
+
+/** Initialize a coherent unit with qBitCount number of bits, all to |0> state. */
+CoherentUnit::CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
+    : CoherentUnit(qBitCount, 0, phaseFac, NULL)
 {
 }
 
@@ -104,7 +165,9 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount)
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     : rand_distribution(0.0, 1.0)
 {
-    SetRandomSeed(std::time(0));
+    rand_generator_ptr = pqs.rand_generator_ptr;
+    randomSeed = std::time(0);
+    SetRandomSeed(randomSeed);
 
     runningNorm = pqs.runningNorm;
     qubitCount = pqs.qubitCount;
@@ -117,7 +180,11 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
 }
 
 /// Set the random seed (primarily used for testing)
-void CoherentUnit::SetRandomSeed(uint32_t seed) { rand_generator.seed(seed); }
+void CoherentUnit::SetRandomSeed(uint32_t seed)
+{
+    randomSeed = seed;
+    rand_generator_ptr->seed(seed);
+}
 
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 void CoherentUnit::CloneRawState(Complex16* output)
@@ -129,7 +196,7 @@ void CoherentUnit::CloneRawState(Complex16* output)
 }
 
 /// Generate a random double from 0 to 1
-double CoherentUnit::Rand() { return rand_distribution(rand_generator); }
+double CoherentUnit::Rand() { return rand_distribution(*rand_generator_ptr); }
 
 void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
@@ -138,14 +205,7 @@ void CoherentUnit::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 }
 
 /// Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
-void CoherentUnit::SetPermutation(bitCapInt perm)
-{
-    double angle = Rand() * 2.0 * M_PI;
-
-    runningNorm = 1.0;
-    std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
-    stateVec[perm] = Complex16(cos(angle), sin(angle));
-}
+void CoherentUnit::SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void CoherentUnit::SetQuantumState(Complex16* inputState)
@@ -173,13 +233,10 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy.qubitCount)) - 1) << qubitCount;
 
-    double angle = Rand() * 2.0 * M_PI;
-    Complex16 phaseFac(cos(angle), sin(angle));
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
-        nStateVec[lcv] =
-            phaseFac * sqrt(norm(stateVec[lcv & startMask]) * norm(toCopy.stateVec[(lcv & endMask) >> qubitCount]));
+        nStateVec[lcv] = stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
     });
 
     qubitCount = nQubitCount;
@@ -187,7 +244,54 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
 
     ResetStateVec(std::move(nStateVec));
     UpdateRunningNorm();
-    toCopy.UpdateRunningNorm();
+}
+
+/**
+ * Combine (copies) each CoherentUnit in the vector with this one, after the last bit
+ * index of this one. (If the programmer doesn't want to "cheat," it is left up
+ * to them to delete the old coherent unit that was added.
+ */
+void CoherentUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
+{
+    bitLenInt i;
+    bitLenInt toCohereCount = toCopy.size();
+
+    std::vector<bitLenInt> offset(toCohereCount);
+    std::vector<bitCapInt> mask(toCohereCount);
+
+    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt nQubitCount = qubitCount;
+    bitCapInt nMaxQPower;
+
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
+
+    for (i = 0; i < toCohereCount; i++) {
+        if (toCopy[i]->runningNorm != 1.0) {
+            toCopy[i]->NormalizeState();
+        }
+        mask[i] = ((1 << toCopy[i]->GetQubitCount()) - 1) << nQubitCount;
+        offset[i] = nQubitCount;
+        nQubitCount += toCopy[i]->GetQubitCount();
+    }
+
+    nMaxQPower = 1 << nQubitCount;
+
+    std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+        nStateVec[lcv] = stateVec[lcv & startMask];
+        for (bitLenInt j = 0; j < toCohereCount; j++) {
+            nStateVec[lcv] *= toCopy[j]->stateVec[(lcv & mask[j]) >> offset[j]];
+        }
+    });
+
+    qubitCount = nQubitCount;
+    maxQPower = nMaxQPower;
+
+    ResetStateVec(std::move(nStateVec));
+    UpdateRunningNorm();
 }
 
 /**
@@ -199,6 +303,10 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
  */
 void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& destination)
 {
+    if (length == 0) {
+        return;
+    }
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -212,12 +320,17 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
 
     std::unique_ptr<double[]> partStateProb(new double[partPower]());
     std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    double prob;
+    std::unique_ptr<double[]> partStateAngle(new double[partPower]());
+    std::unique_ptr<double[]> remainderStateAngle(new double[remainderPower]());
+    double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
+        angle = arg(stateVec[i]);
         partStateProb[(i & mask) >> start] += prob;
+        partStateAngle[(i & mask) >> start] = angle;
         remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
+        remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
     qubitCount = qubitCount - length;
@@ -226,18 +339,12 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
     std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
     ResetStateVec(std::move(sv));
 
-    double angle = Rand() * 2.0 * M_PI;
-    Complex16 phaseFac(cos(angle), sin(angle));
-
     for (i = 0; i < partPower; i++) {
-        destination.stateVec[i] = sqrt(partStateProb[i]) * phaseFac;
+        destination.stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
-    angle = Rand() * 2.0 * M_PI;
-    phaseFac = Complex16(cos(angle), sin(angle));
-
     for (i = 0; i < remainderPower; i++) {
-        stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
+        stateVec[i] = sqrt(remainderStateProb[i]) * Complex16(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
     }
 
     UpdateRunningNorm();
@@ -246,36 +353,39 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
 
 void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
 {
+    if (length == 0) {
+        return;
+    }
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
     bitCapInt partPower = 1 << length;
-    bitCapInt remainderPower = 1 << (qubitCount - length);
     bitCapInt mask = (partPower - 1) << start;
     bitCapInt startMask = (1 << start) - 1;
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    double prob;
+    std::unique_ptr<double[]> partStateProb(new double[maxQPower - partPower]());
+    std::unique_ptr<double[]> partStateAngle(new double[maxQPower - partPower]());
+    double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
-        remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
+        angle = arg(stateVec[i]);
+        partStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
+        partStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
 
-    std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
+    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]());
     ResetStateVec(std::move(sv));
 
-    double angle = Rand() * 2.0 * M_PI;
-    Complex16 phaseFac(cos(angle), sin(angle));
-
-    for (i = 0; i < remainderPower; i++) {
-        stateVec[i] = sqrt(remainderStateProb[i]) * phaseFac;
+    for (i = 0; i < maxQPower; i++) {
+        stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
     UpdateRunningNorm();
@@ -865,11 +975,16 @@ void CoherentUnit::CZ(bitLenInt control, bitLenInt target)
 // "start"
 void CoherentUnit::X(bitLenInt start, bitLenInt length)
 {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        X(start);
+        return;
+    }
+
     // As a fundamental gate, the register-wise X could proceed like so:
-    //
-    //     for (bitLenInt lcv = 0; lcv < length; lcv++) {
-    //         X(start + lcv);
-    //     }
+    // for (bitLenInt lcv = 0; lcv < length; lcv++) {
+    //    X(start + lcv);
+    //}
 
     // Basically ALL register-wise gates proceed by essentially the same
     // algorithm as this simple X gate.
@@ -930,6 +1045,12 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
 /// Bitwise swap
 void CoherentUnit::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        Swap(start1, start2);
+        return;
+    }
+
     int distance = start1 - start2;
     if (distance < 0) {
         distance *= -1;
@@ -1233,9 +1354,7 @@ void CoherentUnit::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
             SetReg(start, length, 0);
         } else {
             Swap(end - 1, end - 2);
-            Reverse(start, end);
-            Reverse(start, start + shift);
-            Reverse(start + shift, end);
+            ROL(shift, start, length);
             Swap(end - 1, end - 2);
             SetReg(start, shift, 0);
         }
@@ -1251,11 +1370,8 @@ void CoherentUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
             SetReg(start, length, 0);
         } else {
             Swap(end - 1, end - 2);
-            Reverse(start + shift, end);
-            Reverse(start, start + shift);
-            Reverse(start, end);
+            ROR(shift, start, length);
             Swap(end - 1, end - 2);
-
             SetReg(end - shift, shift, 0);
         }
     }
@@ -1737,6 +1853,7 @@ void CoherentUnit::DECSC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    } else {
         toSub++;
     }
     bitCapInt overflowMask = 1 << overflowIndex;
@@ -1758,9 +1875,9 @@ void CoherentUnit::DECSC(
         bitCapInt outInt = (inOutInt - toSub) + (lengthPower);
         bitCapInt outRes;
         if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes | (carryMask);
+            outRes = (outInt << (inOutStart)) | otherRes;
         } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes;
+            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | carryMask;
         }
         bool isOverflow = false;
         // First negative:
@@ -1941,17 +2058,6 @@ void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     });
 }
 
-/// For chips with a sign flag, flip the phase of states where the register is negative.
-void CoherentUnit::CPhaseFlip(bitLenInt toTest)
-{
-    bitCapInt testMask = 1 << toTest;
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
-        if ((lcv & testMask) == testMask)
-            stateVec[lcv] = -stateVec[lcv];
-    });
-}
-
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
 void CoherentUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
@@ -1973,18 +2079,38 @@ void CoherentUnit::PhaseFlip()
 /// Set register bits to given permutation
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
-    bool bitVal;
-    bitCapInt regVal = MReg(start, length);
-    for (bitLenInt i = 0; i < length; i++) {
-        bitVal = regVal & (1 << i);
-        if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
-            X(start + i);
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        SetBit(start, (value == 1));
+    } else if ((start == 0) && (length == qubitCount)) {
+        double angle = Rand() * 2.0 * M_PI;
+
+        runningNorm = 1.0;
+        std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+        stateVec[value] = Complex16(cos(angle), sin(angle));
+    } else {
+        bool bitVal;
+        bitCapInt regVal = MReg(start, length);
+        for (bitLenInt i = 0; i < length; i++) {
+            bitVal = regVal & (1 << i);
+            if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
+                X(start + i);
+        }
     }
 }
 
 /// Measure permutation state of a register
 bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
 {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        if (M(start)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
