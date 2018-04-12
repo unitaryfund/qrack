@@ -452,7 +452,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover_lookup")
         qftReg->SbcSuperposeReg8(8, 0, 16, toLoad);
         qftReg->X(16);
         qftReg->H(8, 8);
-        qftReg->ZeroPhaseFlip(0, 16);
+        qftReg->ZeroPhaseFlip(8, 8);
         qftReg->H(8, 8);
         qftReg->PhaseFlip();
         qftReg->AdcSuperposeReg8(8, 0, 16, toLoad);
