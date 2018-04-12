@@ -2,6 +2,6 @@ language:
   - c
 install:
   - sudo apt-get update
-  - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass
+  - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
 script:
-  - ENABLE_OPENCL=0 make
+  - cmake -DUSE_OPENCL=OFF .. && make -j 8 all
