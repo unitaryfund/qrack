@@ -420,6 +420,54 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover_lookup")
+{
+    int i;
+
+    // Grover's search to find a value in a lookup table.
+    // We search for 100. All values in lookup table are 1 except a single match.
+
+    const int TARGET_PROB = 100 + (230 << 8);
+
+    unsigned char toLoad[256];
+    for (i = 0; i < 256; i++) {
+        toLoad[i] = 1;
+    }
+    toLoad[230] = 100;
+
+    // Our input to the subroutine "oracle" is 8 bits.
+    qftReg->SetPermutation(0);
+    qftReg->H(8, 8);
+    qftReg->SuperposeReg8(8, 0, toLoad);
+
+    std::cout << "Iterations:" << std::endl;
+    // Twelve iterations maximizes the probablity for 256 searched elements.
+    for (i = 0; i < 12; i++) {
+        // Our "oracle" is true for an input of "100" and false for all other inputs.
+        qftReg->DEC(100, 0, 8);
+        qftReg->ZeroPhaseFlip(0, 8);
+        qftReg->INC(100, 0, 8);
+        // This ends the "oracle."
+        qftReg->X(16);
+        qftReg->SbcSuperposeReg8(8, 0, 16, toLoad);
+        qftReg->X(16);
+        qftReg->H(8, 8);
+        qftReg->ZeroPhaseFlip(8, 8);
+        qftReg->H(8, 8);
+        qftReg->PhaseFlip();
+        qftReg->AdcSuperposeReg8(8, 0, 16, toLoad);
+        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+    }
+
+    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    std::cout << "Full Result:    " << qftReg << std::endl;
+    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+
+    qftReg->MReg(0, 8);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));

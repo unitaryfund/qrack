@@ -241,7 +241,7 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
         // We shift the output integer back to correspondence with its
         // register bits, and entangle it with the input and carry, and
         // shunt the uninvoled "other" bits from input to output.
-        outputRes = outputInt << (outputStart);
+        outputRes = outputInt << outputStart;
 
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     });
@@ -338,7 +338,7 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
         // We shift the output integer back to correspondence with its
         // register bits, and entangle it with the input and carry, and
         // shunt the uninvoled "other" bits from input to output.
-        outputRes = outputInt << (outputMask);
+        outputRes = outputInt << outputStart;
 
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     });
