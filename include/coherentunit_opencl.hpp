@@ -29,19 +29,10 @@ namespace Qrack {
 
 class OCLEngine;
 
-class CoherentUnitOCL : public CoherentUnit {
+class CoherentUnitOCL : public CoherentUnitLocal {
 public:
-    CoherentUnitOCL(bitLenInt qBitCount);
-    CoherentUnitOCL(bitLenInt qBitCount, Complex16 phaseFac);
-    CoherentUnitOCL(bitLenInt qBitCount, std::shared_ptr<std::default_random_engine> rgp);
-    CoherentUnitOCL(bitLenInt qBitCount, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
-    CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState);
-    CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac);
-    CoherentUnitOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp);
-    CoherentUnitOCL(
-        bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
-    CoherentUnitOCL(const CoherentUnitOCL& pqs);
-    CoherentUnitOCL(const CoherentUnit& pqs);
+    /** Inherit the CoherentUnitLocal constructors. */
+    using CoherentUnitLocal::CoherentUnitLocal;
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -54,8 +45,6 @@ public:
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
-    CoherentUnitOCL();
-
     OCLEngine* clObj;
     cl::CommandQueue queue;
     cl::Buffer stateBuffer;
