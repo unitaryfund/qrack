@@ -387,6 +387,43 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
 {
     int i;
 
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
+
+    const int TARGET_PROB = 100;
+
+    // Our input to the subroutine "oracle" is 8 bits.
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+
+    std::cout << "Iterations:" << std::endl;
+    // Twelve iterations maximizes the probablity for 256 searched elements.
+    for (i = 0; i < 12; i++) {
+        // Our "oracle" is true for an input of "100" and false for all other inputs.
+        qftReg->DEC(100, 0, 8);
+        qftReg->ZeroPhaseFlip(0, 8);
+        qftReg->INC(100, 0, 8);
+        // This ends the "oracle."
+        qftReg->H(0, 8);
+        qftReg->ZeroPhaseFlip(0, 8);
+        qftReg->H(0, 8);
+        qftReg->PhaseFlip();
+        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+    }
+
+    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    std::cout << "Full Result:    " << qftReg << std::endl;
+    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+
+    qftReg->MReg(0, 8);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+}
+
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover_lookup")
+{
+    int i;
+
     // Grover's search to find a value in a lookup table.
     // We search for 100. All values in lookup table are 1 except a single match.
 
