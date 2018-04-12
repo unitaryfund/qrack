@@ -25,7 +25,7 @@
 #include <thread>
 #include <vector>
 
-#include "complex16simd.hpp"
+#include "common/complex16simd.hpp"
 
 #define Complex16 Complex16Simd
 #define bitLenInt uint8_t

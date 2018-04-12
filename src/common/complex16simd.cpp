@@ -11,7 +11,7 @@
 // for details.
 
 #define CMPLX_INC
-#include "complex16simd.hpp"
+#include "common/complex16simd.hpp"
 #include <math.h>
 
 namespace Qrack {
