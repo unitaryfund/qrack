@@ -56,6 +56,9 @@ target_link_libraries (unittest
 
 target_include_directories (unittest PUBLIC test)
 
+target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
+
 if (USE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=1)
 
