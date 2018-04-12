@@ -44,15 +44,24 @@ add_library (qrack STATIC
     src/common/complex16simd.cpp
     )
 
+# Declare the unittest executable
 add_executable (unittest
-        test/test_main.cpp
-        test/tests.cpp
-        )
+    test/test_main.cpp
+    test/tests.cpp
+    )
 
 target_link_libraries (unittest
-        qrack
-        pthread
-        )
+    qrack
+    pthread
+    )
+
+add_test (NAME qrack_tests
+    COMMAND unittest
+    )
+
+enable_testing()
+
+# Run the unittest executable on 'make test'
 
 target_include_directories (unittest PUBLIC test)
 
