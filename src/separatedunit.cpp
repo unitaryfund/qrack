@@ -1162,6 +1162,8 @@ void SeparatedUnit::OptimizeParallelBitList(std::vector<QbListEntry>& qbList)
         if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) == qbList[j + 1].start)) {
             qbList[j].length += qbList[j + 1].length;
             qbList.erase(qbList.begin() + j + 1);
+        } else if ((qbList[j].cu == qbList[j + 1].cu) && ((qbList[j].start + qbList[j].length) < qbList[j + 1].start)) {
+            qbList.erase(qbList.begin() + j + 1);
         } else {
             j++;
         }
