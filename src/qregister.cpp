@@ -801,14 +801,7 @@ void CoherentUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
         qPowers[1] = 1 << qubitIndex1;
         qPowers[2] = 1 << qubitIndex2;
         qPowers[0] = qPowers[1] + qPowers[2];
-        if (qubitIndex1 < qubitIndex2) {
-            qPowersSorted[0] = qPowers[1];
-            qPowersSorted[1] = qPowers[2];
-        } else {
-            qPowersSorted[0] = qPowers[2];
-            qPowersSorted[1] = qPowers[1];
-        }
-
+        std::sort(qPowersSorted, qPowersSorted + 2);
         Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
     }
 }
@@ -1414,19 +1407,26 @@ void CoherentUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     bitCapInt lengthPower = 1 << length;
     toAdd %= lengthPower;
     if ((length > 0) && (toAdd > 0)) {
-        bitCapInt i, j;
-        bitLenInt end = start + length;
-        bitCapInt startPower = 1 << start;
-        bitCapInt endPower = 1 << end;
-        bitCapInt iterPower = 1 << (qubitCount - end);
-        bitCapInt maxLCV = iterPower * endPower;
+        bitCapInt otherMask = (1 << qubitCount) - 1;
+        bitCapInt inOutMask = (lengthPower - 1) << start;
+        otherMask ^= inOutMask;
+        std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+        std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-        for (i = 0; i < startPower; i++) {
-            for (j = 0; j < maxLCV; j += endPower) {
-                rotate(&(stateVec[0]) + i + j, &(stateVec[0]) + ((lengthPower - toAdd) * startPower) + i + j,
-                    &(stateVec[0]) + endPower + i + j, startPower);
+        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+            bitCapInt otherRes = (lcv & otherMask);
+            bitCapInt inOutRes = (lcv & inOutMask);
+            bitCapInt inOutInt = inOutRes >> start;
+            bitCapInt outInt = inOutInt + toAdd;
+            bitCapInt outRes;
+            if (outInt < lengthPower) {
+                outRes = (outInt << start) | otherRes;
+            } else {
+                outRes = ((outInt - lengthPower) << start) | otherRes;
             }
-        }
+            nStateVec[outRes] = stateVec[lcv];
+        });
+        ResetStateVec(std::move(nStateVec));
     }
 }
 
@@ -1729,18 +1729,26 @@ void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
     bitCapInt lengthPower = 1 << length;
     toSub %= lengthPower;
     if ((length > 0) && (toSub > 0)) {
-        bitCapInt i, j;
-        bitLenInt end = start + length;
-        bitCapInt startPower = 1 << start;
-        bitCapInt endPower = 1 << end;
-        bitCapInt iterPower = 1 << (qubitCount - end);
-        bitCapInt maxLCV = iterPower * endPower;
-        for (i = 0; i < startPower; i++) {
-            for (j = 0; j < maxLCV; j += endPower) {
-                rotate(&(stateVec[0]) + i + j, &(stateVec[0]) + (toSub * startPower) + i + j,
-                    &(stateVec[0]) + endPower + i + j, startPower);
+        bitCapInt otherMask = (1 << qubitCount) - 1;
+        bitCapInt inOutMask = (lengthPower - 1) << start;
+        otherMask ^= inOutMask;
+        std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+        std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+
+        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+            bitCapInt otherRes = (lcv & otherMask);
+            bitCapInt inOutRes = (lcv & inOutMask);
+            bitCapInt inOutInt = inOutRes >> start;
+            bitCapInt outInt = inOutInt - toSub + lengthPower;
+            bitCapInt outRes;
+            if (outInt < lengthPower) {
+                outRes = (outInt << start) | otherRes;
+            } else {
+                outRes = ((outInt - lengthPower) << start) | otherRes;
             }
-        }
+            nStateVec[outRes] = stateVec[lcv];
+        });
+        ResetStateVec(std::move(nStateVec));
     }
 }
 
@@ -2192,13 +2200,7 @@ void CoherentUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const
     qPowers[1] = 1 << control;
     qPowers[2] = 1 << target;
     qPowers[0] = qPowers[1] + qPowers[2];
-    if (control < target) {
-        qPowersSorted[0] = qPowers[1];
-        qPowersSorted[1] = qPowers[2];
-    } else {
-        qPowersSorted[0] = qPowers[2];
-        qPowersSorted[1] = qPowers[1];
-    }
+    std::sort(qPowersSorted, qPowersSorted + 2);
     Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
 }
 
@@ -2209,13 +2211,7 @@ void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, c
     qPowers[1] = 1 << control;
     qPowers[2] = 1 << target;
     qPowers[0] = qPowers[1] + qPowers[2];
-    if (control < target) {
-        qPowersSorted[0] = qPowers[1];
-        qPowersSorted[1] = qPowers[2];
-    } else {
-        qPowersSorted[0] = qPowers[2];
-        qPowersSorted[1] = qPowers[1];
-    }
+    std::sort(qPowersSorted, qPowersSorted + 2);
     Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
 }
 
