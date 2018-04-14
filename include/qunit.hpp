@@ -1,11 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017. All rights reserved.
+// (C) Daniel Strano 2017, 2018. All rights reserved.
 //
-// This is a header-only, quick-and-dirty, multithreaded, universal quantum register
-// simulation, allowing (nonphysical) register cloning and direct measurement of
-// probability and phase, to leverage what advantages classical emulation of qubits
-// can have.
+// This is a multithreaded, universal quantum register simulation, allowing
+// (nonphysical) register cloning and direct measurement of probability and
+// phase, to leverage what advantages classical emulation of qubits can have.
 //
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -13,19 +12,16 @@
 
 #pragma once
 
-#include "common/localparallelfor.hpp"
+#include "qinterface.hpp"
+
+#include "common/parallel_for.hpp"
 
 namespace Qrack {
 
 /**
- * A CoherentUnit with all computational basis stored locally
- *
- * The full \f$ x_n \f$ set of computational basis eigenvalues are
- * stored locally to this object.  Derived implementations may
- * perform calculations using a variety of computational resources
- * available.
+ * General purpose QUnit implementation
  */
-class CoherentUnitLocal : public QRegister, public LocalParallelFor
+class QUnit : public QInterface, public ParallelFor
 {
 protected:
     uint32_t randomSeed;
@@ -38,111 +34,20 @@ protected:
     std::uniform_real_distribution<double> rand_distribution;
 
 public:
-
-    /**
-     * Initialize a coherent unit with qBitCount number of bits,
-     * all to |0> state.
-     */
-    CoherentUnitLocal(bitLenInt qBitCount);
-
-    CoherentUnitLocal(bitLenInt qBitCount, std::shared_ptr<std::default_random_engine> rgp);
-
-    /**
-     * Initialize a coherent unit with qBitCount number of bits,
-     * all to |0> state, with a specific phase
-     *
-     * \warning Overall phase is generally arbitrary and
-     * unknowable. Setting two CoherentUnitLocal instances to the
-     * same phase usually makes sense only if they are initialized
-     * at the same time.
-     */
-    CoherentUnitLocal(bitLenInt qBitCount, Complex16 phaseFac);
-
-    CoherentUnitLocal(bitLenInt qBitCount, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
-
-    /**
-     * Initialize a coherent unit with qBitCount number of bits, to
-     * initState unsigned integer permutation state.
-     */
-    CoherentUnitLocal(bitLenInt qBitCount, bitCapInt initState);
-
-    /**
-     * Initialize a coherent unit with qBitCount number of bits, to
-     * initState unsigned integer permutation state, with a
-     * specific phase.
-     *
-     * \warning Overall phase is generally arbitrary and
-     * unknowable. Setting two CoherentUnitLocal instances to the
-     * same phase usually makes sense only if they are initialized
-     * at the same time.
-     */
-    CoherentUnitLocal(bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac);
-
-    /**
-     * Initialize a coherent unit with qBitCount number of bits, to
-     * initState unsigned integer permutation state, with a shared
-     * random number generator.
-     */
-    CoherentUnitLocal(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp);
-
-    /**
-     * Initialize a coherent unit with qBitCount number of bits, to
-     * initState unsigned integer permutation state, with a shared
-     * random number generator, with a specific phase.
-     *
-     * \warning Overall phase is generally arbitrary and
-     * unknowable. Setting two CoherentUnitLocal instances to the
-     * same phase usually makes sense only if they are initialized
-     * at the same time.
-     */
-    CoherentUnitLocal(
+    QUnit(
         bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
 
-    /**
-     * Initialize a cloned register with same exact quantum state
-     * as pqs
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    CoherentUnitLocal(const CoherentUnitLocal& pqs);
-
-    /** Destructor of CoherentUnitLocal */
-    virtual ~CoherentUnitLocal() {}
-
-    /** Set the random seed. */
-    virtual void SetRandomSeed(uint32_t seed);
-
-    /**
-     * Output the exact quantum state of this register as a
-     * permutation basis array of complex numbers
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual void CloneRawState(Complex16* output);
-
-    /** Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int */
-    virtual void SetPermutation(bitCapInt perm);
-
-    /** Set an arbitrary pure quantum state */
     virtual void SetQuantumState(Complex16* inputState);
-
-    /** Implement a Cohere for a CoherentUnitLocal visitor. */
-    virtual void Cohere(CoherentUnitLocal& toCopy);
-    virtual void Cohere(QRegister& toCopy) override;
-    virtual void Cohere(QRegisterPtr toCopy) override;
-    virtual void Cohere(std::vector<QRegisterPtr> toCopy) override;
-
-
-    /** Implement a Decohere for a CoherentUnitLocal visitor. */
-    virtual void Decohere(bitLenInt start, bitLenInt length, CoherentUnitLocal& destination);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QRegisterPtr dest) override;
-
-    virtual void Dispose(bitLenInt start, bitLenInt length) override;
+    virtual void Cohere(QUnitPtr toCopy);
+    virtual void Cohere(std::vector<QUnitPtr> toCopy);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives
      *@{
      */
+
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
@@ -154,6 +59,7 @@ public:
     virtual void Z(bitLenInt qubitIndex);
     virtual void CY(bitLenInt control, bitLenInt target);
     virtual void CZ(bitLenInt control, bitLenInt target);
+
     /** @} */
 
     /**
@@ -171,6 +77,7 @@ public:
     virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
     virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
     /** @} */
 
     /**
@@ -181,6 +88,7 @@ public:
      *
      * @{
      */
+
     virtual void RT(double radians, bitLenInt qubitIndex);
     virtual void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
     virtual void RX(double radians, bitLenInt qubitIndex);
@@ -197,6 +105,7 @@ public:
     virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void CRT(double radians, bitLenInt control, bitLenInt target);
     virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
+
     /** @} */
 
     /**
@@ -207,6 +116,7 @@ public:
      *
      * @{
      */
+
     virtual void H(bitLenInt start, bitLenInt length);
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void Y(bitLenInt start, bitLenInt length);
@@ -236,6 +146,7 @@ public:
     virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
     virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
     virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
+
     /** @} */
 
     /**
@@ -243,6 +154,7 @@ public:
      *
      * @{
      */
+
     virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ASR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void LSL(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -265,6 +177,7 @@ public:
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
     /** @} */
 
     /**
@@ -272,23 +185,21 @@ public:
      *
      * @{
      */
+
     virtual void QFT(bitLenInt start, bitLenInt length);
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
-
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-    unsigned char MReg8(bitLenInt start);
-
     virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
     virtual unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
     virtual unsigned char SbcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
     /** @} */
 
     /**
@@ -296,11 +207,12 @@ public:
      *
      * @{
      */
+
     virtual double Prob(bitLenInt qubitIndex);
     virtual double ProbAll(bitCapInt fullRegister);
     virtual void ProbArray(double* probArray);
-
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
+
     /** @} */
 
 protected:
@@ -318,12 +230,4 @@ protected:
     virtual void Reverse(bitLenInt first, bitLenInt last);
     virtual void UpdateRunningNorm();
 };
-
-/* XXX Push the register-wide ops into QRegister. */
-/* XXX Pull software specific implementations into CULocalSoftware,
-       so that there are pure virtual's here for what OpenCL implements. */
-/* XXX Adjust CULocalOpenCL as well. */
-/* XXX Can more code be deleted that's common for gates, for example? What are
-       the real primitives here that are common across all implementations,
-       and can they be pulled all the way down to QRegister. */
 } // namespace Qrack

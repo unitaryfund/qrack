@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017. All rights reserved.
+// (C) Daniel Strano 2017, 2018. All rights reserved.
 //
 // This is a SIMD implementation of the double precision complex type.
 // The API is designed to (almost entirely) mirror that of the C++ standard library
@@ -16,7 +16,6 @@
 
 namespace Qrack {
 
-/// SIMD implementation of the double precision complex type
 /** SIMD implementation of the double precision complex type. */
 struct Complex16Simd {
     __m128d _val;

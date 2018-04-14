@@ -5,7 +5,7 @@ project (QRack VERSION 1.0 DESCRIPTION "High Performance Quantum Bit Simulation"
 include (GNUInstallDirs)
 
 set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD OpenCL SDK, if used")
-option (USE_OPENCL "Use OpenCL optimizations" ON)
+option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
 
 # Options used when building the project
 find_library (LIB_OPENCL OpenCL)
@@ -13,7 +13,7 @@ if (NOT LIB_OPENCL)
     # Attempt with AMD's OpenCL SDK
     find_library (LIB_OPENCL OpenCL PATHS ${OPENCL_AMDSDK}/lib/x86_64/)
     if (NOT LIB_OPENCL)
-        set (USE_OPENCL OFF)
+        set (ENABLE_OPENCL OFF)
     else ()
         # Found, set the required include path.
         set (OPENCL_INCLUDE_PATH ${OPENCL_AMDSDK}/include CACHE PATH "AMD OpenCL SDK Header include path")
@@ -25,9 +25,9 @@ if (NOT LIB_OPENCL)
     endif ()
 endif ()
 
-message ("OpenCL Support is: ${USE_OPENCL}")
+message ("OpenCL Support is: ${ENABLE_OPENCL}")
 
-if (USE_OPENCL)
+if (ENABLE_OPENCL)
     message ("    libOpenCL: ${LIB_OPENCL}")
     message ("    Includes:  ${OPENCL_INCLUDE_PATH}")
     message ("    Options:   ${OPENCL_COMPILATION_OPTIONS}")
@@ -68,7 +68,7 @@ target_include_directories (unittest PUBLIC test)
 target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
 
-if (USE_OPENCL)
+if (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=1)
 
     # Include the necessary options and libraries to link against
@@ -107,9 +107,9 @@ if (USE_OPENCL)
         include/common/oclengine.hpp
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
         )
-else (USE_OPENCL)
+else (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=0)
-endif (USE_OPENCL)
+endif (ENABLE_OPENCL)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}

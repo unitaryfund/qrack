@@ -5,7 +5,7 @@ inline double2 zmul(const double2 lhs, const double2 rhs)
     return (lhs * (double2)(rhs.y, -(rhs.y))) + (rhs.x * (double2)(lhs.y, lhs.x));
 }
 
-void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, constant ulong* ulongPtr)
+void kernel apply2x2(global double2* stateVec, constant ulong* ulongPtr, global double2* cmplxPtr)
 {
     ulong ID, Nthreads, lcv;
 

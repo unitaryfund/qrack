@@ -1,11 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017. All rights reserved.
+// (C) Daniel Strano 2017, 2018. All rights reserved.
 //
-// This is a header-only, quick-and-dirty, multithreaded, universal quantum register
-// simulation, allowing (nonphysical) register cloning and direct measurement of
-// probability and phase, to leverage what advantages classical emulation of qubits
-// can have.
+// This is a multithreaded, universal quantum register simulation, allowing
+// (nonphysical) register cloning and direct measurement of probability and
+// phase, to leverage what advantages classical emulation of qubits can have.
 //
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
