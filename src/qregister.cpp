@@ -799,7 +799,9 @@ void CoherentUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
         bitCapInt qPowers[3];
         bitCapInt qPowersSorted[2];
         qPowers[1] = 1 << qubitIndex1;
+        qPowersSorted[0] = qPowers[1];
         qPowers[2] = 1 << qubitIndex2;
+        qPowersSorted[1] = qPowers[2];
         qPowers[0] = qPowers[1] + qPowers[2];
         std::sort(qPowersSorted, qPowersSorted + 2);
         Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
@@ -2198,7 +2200,9 @@ void CoherentUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
     qPowers[1] = 1 << control;
+    qPowersSorted[0] = qPowers[1];
     qPowers[2] = 1 << target;
+    qPowersSorted[1] = qPowers[2];
     qPowers[0] = qPowers[1] + qPowers[2];
     std::sort(qPowersSorted, qPowersSorted + 2);
     Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
@@ -2209,7 +2213,9 @@ void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, c
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
     qPowers[1] = 1 << control;
+    qPowersSorted[0] = qPowers[1];
     qPowers[2] = 1 << target;
+    qPowersSorted[1] = qPowers[2];
     qPowers[0] = qPowers[1] + qPowers[2];
     std::sort(qPowersSorted, qPowersSorted + 2);
     Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
