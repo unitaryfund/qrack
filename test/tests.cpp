@@ -120,6 +120,18 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_mask")
     });
 }
 
+TEST_CASE_METHOD(CoherentUnitTestFixture, "test_entangle_bits")
+{
+    qftReg->SetPermutation(0x0a);
+    qftReg->INC(1, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x0b));
+    qftReg->INCC(1, 0, 7, 7);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x0c));
+    qftReg->Z(8);
+    qftReg->CPhaseFlipIfLess(1, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x0c));
+}
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
 {
     int j;
@@ -391,6 +403,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     // Our subroutine returns true only for an input of 100.
 
     const int TARGET_PROB = 100;
+
+    
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
