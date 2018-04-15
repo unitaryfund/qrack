@@ -15,7 +15,7 @@
 namespace Qrack {
 
 /// Set individual bit to pure |0> (false) or |1> (true) state
-void QUnit::SetBit(bitLenInt qubit1, bool value)
+void QEngineCPU::SetBit(bitLenInt qubit1, bool value)
 {
     if (value != M(qubit1)) {
         X(qubit1);
@@ -23,7 +23,7 @@ void QUnit::SetBit(bitLenInt qubit1, bool value)
 }
 
 /// Doubly-controlled not
-void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     // if ((control1 >= qubitCount) || (control2 >= qubitCount))
     //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
@@ -53,7 +53,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
-void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     // if ((control1 >= qubitCount) || (control2 >= qubitCount))
     //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
@@ -80,7 +80,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 }
 
 /// Controlled not
-void QUnit::CNOT(bitLenInt control, bitLenInt target)
+void QEngineCPU::CNOT(bitLenInt control, bitLenInt target)
 {
     // if ((control >= qubitCount) || (target >= qubitCount))
     //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
@@ -93,7 +93,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
-void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
+void QEngineCPU::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     // if ((control >= qubitCount) || (target >= qubitCount))
     //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
@@ -106,7 +106,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 }
 
 /// Hadamard gate
-void QUnit::H(bitLenInt qubit)
+void QEngineCPU::H(bitLenInt qubit)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
     // bits.");
@@ -116,7 +116,7 @@ void QUnit::H(bitLenInt qubit)
 }
 
 /// Swap values of two bits in register
-void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
+void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
     // if ((qubit1 >= qubitCount) || (qubit2 >= qubitCount))
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -142,7 +142,7 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 }
 
 /// NOT gate, which is also Pauli x matrix
-void QUnit::X(bitLenInt qubit)
+void QEngineCPU::X(bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -151,7 +151,7 @@ void QUnit::X(bitLenInt qubit)
 }
 
 /// Apply Pauli Y matrix to bit
-void QUnit::Y(bitLenInt qubit)
+void QEngineCPU::Y(bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -160,7 +160,7 @@ void QUnit::Y(bitLenInt qubit)
 }
 
 /// Apply Pauli Z matrix to bit
-void QUnit::Z(bitLenInt qubit)
+void QEngineCPU::Z(bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -169,7 +169,7 @@ void QUnit::Z(bitLenInt qubit)
 }
 
 /// Apply controlled Pauli Y matrix to bit
-void QUnit::CY(bitLenInt control, bitLenInt target)
+void QEngineCPU::CY(bitLenInt control, bitLenInt target)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total
     // bits.");
@@ -180,7 +180,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target)
 }
 
 /// Apply controlled Pauli Z matrix to bit
-void QUnit::CZ(bitLenInt control, bitLenInt target)
+void QEngineCPU::CZ(bitLenInt control, bitLenInt target)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total
     // bits.");
@@ -193,7 +193,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 // Single register instructions:
 
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
-void QUnit::H(bitLenInt start, bitLenInt length)
+void QEngineCPU::H(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         H(start + lcv);
@@ -201,7 +201,7 @@ void QUnit::H(bitLenInt start, bitLenInt length)
 }
 
 /// Apply Pauli Y matrix to each bit
-void QUnit::Y(bitLenInt start, bitLenInt length)
+void QEngineCPU::Y(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         Y(start + lcv);
@@ -209,7 +209,7 @@ void QUnit::Y(bitLenInt start, bitLenInt length)
 }
 
 /// Apply Pauli Z matrix to each bit
-void QUnit::Z(bitLenInt start, bitLenInt length)
+void QEngineCPU::Z(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         Z(start + lcv);
@@ -217,7 +217,7 @@ void QUnit::Z(bitLenInt start, bitLenInt length)
 }
 
 /// Apply controlled Pauli Y matrix to each bit
-void QUnit::CY(bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CY(bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CY(control + lcv, target + lcv);
@@ -225,15 +225,15 @@ void QUnit::CY(bitLenInt control, bitLenInt target, bitLenInt length)
 }
 
 /// Apply controlled Pauli Z matrix to each bit
-void QUnit::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CZ(control + lcv, target + lcv);
     }
 }
 
-/// Bit-parallel "CNOT" two bit ranges in QUnit, and store result in range starting at output
-void QUnit::CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length)
+/// Bit-parallel "CNOT" two bit ranges in QEngineCPU, and store result in range starting at output
+void QEngineCPU::CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length)
 {
     if (inputStart1 != inputStart2) {
         for (bitLenInt i = 0; i < length; i++) {

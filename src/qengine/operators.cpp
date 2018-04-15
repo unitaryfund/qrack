@@ -16,8 +16,8 @@ namespace Qrack {
 
 // Logic Gates:
 
-/// "AND" compare two bits in QUnit, and store result in outputBit
-void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+/// "AND" compare two bits in QEngineCPU, and store result in outputBit
+void QEngineCPU::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     /* Same bit, no action necessary. */
     if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
@@ -36,8 +36,8 @@ void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
     }
 }
 
-/// "AND" compare a qubit in QUnit with a classical bit, and store result in outputBit
-void QUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+/// "AND" compare a qubit in QEngineCPU with a classical bit, and store result in outputBit
+void QEngineCPU::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
     if (!inputClassicalBit) {
         SetBit(outputBit, false);
@@ -47,8 +47,8 @@ void QUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputB
     }
 }
 
-/// "OR" compare two bits in QUnit, and store result in outputBit
-void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+/// "OR" compare two bits in QEngineCPU, and store result in outputBit
+void QEngineCPU::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     /* Same bit, no action necessary. */
     if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
@@ -67,8 +67,8 @@ void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
     }
 }
 
-/// "OR" compare a qubit in QUnit with a classical bit, and store result in outputBit
-void QUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+/// "OR" compare a qubit in QEngineCPU with a classical bit, and store result in outputBit
+void QEngineCPU::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
     if (inputClassicalBit) {
         SetBit(outputBit, true);
@@ -78,8 +78,8 @@ void QUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBi
     }
 }
 
-/// "XOR" compare two bits in QUnit, and store result in outputBit
-void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+/// "XOR" compare two bits in QEngineCPU, and store result in outputBit
+void QEngineCPU::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
         SetBit(outputBit, false);
@@ -97,8 +97,8 @@ void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
     }
 }
 
-/// "XOR" compare a qubit in QUnit with a classical bit, and store result in outputBit
-void QUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+/// "XOR" compare a qubit in QEngineCPU with a classical bit, and store result in outputBit
+void QEngineCPU::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
     if (inputQBit != outputBit) {
         SetBit(outputBit, inputClassicalBit);
@@ -108,8 +108,8 @@ void QUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputB
     }
 }
 
-/// "AND" compare two bit ranges in QUnit, and store result in range starting at output
-void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
+/// "AND" compare two bit ranges in QEngineCPU, and store result in range starting at output
+void QEngineCPU::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
     if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
         for (bitLenInt i = 0; i < length; i++) {
@@ -118,9 +118,9 @@ void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputSt
     }
 }
 
-/// "AND" compare a bit range in QUnit with a classical unsigned integer, and store result in range starting at
+/// "AND" compare a bit range in QEngineCPU with a classical unsigned integer, and store result in range starting at
 /// output
-void QUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+void QEngineCPU::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
@@ -129,8 +129,8 @@ void QUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
     }
 }
 
-/// "OR" compare two bit ranges in QUnit, and store result in range starting at output
-void QUnit::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
+/// "OR" compare two bit ranges in QEngineCPU, and store result in range starting at output
+void QEngineCPU::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
     if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
         for (bitLenInt i = 0; i < length; i++) {
@@ -139,9 +139,9 @@ void QUnit::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputSta
     }
 }
 
-/// "OR" compare a bit range in QUnit with a classical unsigned integer, and store result in range starting at
+/// "OR" compare a bit range in QEngineCPU with a classical unsigned integer, and store result in range starting at
 /// output
-void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+void QEngineCPU::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
@@ -150,8 +150,8 @@ void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outp
     }
 }
 
-/// "XOR" compare two bit ranges in QUnit, and store result in range starting at output
-void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
+/// "XOR" compare two bit ranges in QEngineCPU, and store result in range starting at output
+void QEngineCPU::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
     if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
         for (bitLenInt i = 0; i < length; i++) {
@@ -160,9 +160,9 @@ void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputSt
     }
 }
 
-/// "XOR" compare a bit range in QUnit with a classical unsigned integer, and store result in range starting at
+/// "XOR" compare a bit range in QEngineCPU with a classical unsigned integer, and store result in range starting at
 /// output
-void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+void QEngineCPU::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
@@ -172,7 +172,7 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
 }
 
 /// Arithmetic shift left, with last 2 bits as sign and carry
-void QUnit::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineCPU::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
@@ -188,7 +188,7 @@ void QUnit::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Arithmetic shift right, with last 2 bits as sign and carry
-void QUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineCPU::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
@@ -204,7 +204,7 @@ void QUnit::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Logical shift left, filling the extra bits with |0>
-void QUnit::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineCPU::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
         if (shift >= length) {
@@ -217,7 +217,7 @@ void QUnit::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Logical shift right, filling the extra bits with |0>
-void QUnit::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineCPU::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
@@ -231,7 +231,7 @@ void QUnit::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
-void QUnit::QFT(bitLenInt start, bitLenInt length)
+void QEngineCPU::QFT(bitLenInt start, bitLenInt length)
 {
     if (length > 0) {
         bitLenInt end = start + length;
@@ -246,6 +246,6 @@ void QUnit::QFT(bitLenInt start, bitLenInt length)
 }
 
 /// Measure permutation state of an 8 bit register
-unsigned char QUnit::MReg8(bitLenInt start) { return MReg(start, 8); }
+unsigned char QEngineCPU::MReg8(bitLenInt start) { return MReg(start, 8); }
 
 } // namespace Qrack

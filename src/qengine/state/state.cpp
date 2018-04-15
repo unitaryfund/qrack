@@ -19,10 +19,10 @@ namespace Qrack {
  * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
  * a shared random number generator, with a specific phase.
  *
- * \warning Overall phase is generally arbitrary and unknowable. Setting two QUnitLocal instances to the same
+ * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
-QUnitLocal::QUnitLocal(
+QEngineCPU::QEngineCPU(
     bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
     : rand_distribution(0.0, 1.0)
     , numCores(std::thread::hardware_concurrency())
@@ -55,7 +55,7 @@ QUnitLocal::QUnitLocal(
 }
 
 /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
-QUnitLocal::QUnitLocal(const QUnitLocal& pqs)
+QEngineCPU::QEngineCPU(const QEngineCPU& pqs)
     : rand_distribution(0.0, 1.0)
     , numCores(std::thread::hardware_concurrency())
 {
@@ -74,7 +74,7 @@ QUnitLocal::QUnitLocal(const QUnitLocal& pqs)
 }
 
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
-void QUnitLocal::CloneRawState(Complex16* output)
+void QEngineCPU::CloneRawState(Complex16* output)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -83,19 +83,19 @@ void QUnitLocal::CloneRawState(Complex16* output)
 }
 
 /// Generate a random double from 0 to 1
-double QUnitLocal::Rand() { return rand_distribution(*rand_generator_ptr); }
+double QEngineCPU::Rand() { return rand_distribution(*rand_generator_ptr); }
 
-void QUnitLocal::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
+void QEngineCPU::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
     stateVec.reset();
     stateVec = std::move(nStateVec);
 }
 
 /// Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
-void QUnitLocal::SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
+void QEngineCPU::SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QUnitLocal::SetQuantumState(Complex16* inputState)
+void QEngineCPU::SetQuantumState(Complex16* inputState)
 {
     std::copy(&(inputState[0]), &(inputState[0]) + maxQPower, &(stateVec[0]));
 }
@@ -105,7 +105,7 @@ void QUnitLocal::SetQuantumState(Complex16* inputState)
  *
  * A fundamental operation used by almost all gates.
  */
-void QUnitLocal::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
 {
     Complex16 nrm = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
@@ -130,11 +130,11 @@ void QUnitLocal::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         runningNorm = 1.0;
     }
 }/**
- * Combine (a copy of) another QUnitLocal with this one, after the last bit
+ * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
  */
-void QUnitLocal::Cohere(QUnitLocal& toCopy)
+void QEngineCPU::Cohere(QEngineCPU& toCopy)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -163,11 +163,11 @@ void QUnitLocal::Cohere(QUnitLocal& toCopy)
 }
 
 /**
- * Combine (copies) each QUnitLocal in the vector with this one, after the last bit
+ * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
  */
-void QUnitLocal::Cohere(std::vector<std::shared_ptr<QUnitLocal>> toCopy)
+void QEngineCPU::Cohere(std::vector<std::shared_ptr<QEngineCPU>> toCopy)
 {
     bitLenInt i;
     bitLenInt toCohereCount = toCopy.size();
@@ -213,11 +213,11 @@ void QUnitLocal::Cohere(std::vector<std::shared_ptr<QUnitLocal>> toCopy)
 /**
  * Minimally decohere a set of contigious bits from the full coherent unit. The
  * length of this coherent unit is reduced by the length of bits decohered, and
- * the bits removed are output in the destination QUnitLocal pointer. The
+ * the bits removed are output in the destination QEngineCPU pointer. The
  * destination object must be initialized to the correct number of bits, in 0
  * permutation state.
  */
-void QUnitLocal::Decohere(bitLenInt start, bitLenInt length, QUnitLocal& destination)
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPU& destination)
 {
     if (length == 0) {
         return;
@@ -267,7 +267,7 @@ void QUnitLocal::Decohere(bitLenInt start, bitLenInt length, QUnitLocal& destina
     destination.UpdateRunningNorm();
 }
 
-void QUnitLocal::Dispose(bitLenInt start, bitLenInt length)
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 {
     if (length == 0) {
         return;
@@ -308,7 +308,7 @@ void QUnitLocal::Dispose(bitLenInt start, bitLenInt length)
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-double QUnitLocal::Prob(bitLenInt qubit)
+double QEngineCPU::Prob(bitLenInt qubit)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -328,7 +328,7 @@ double QUnitLocal::Prob(bitLenInt qubit)
 }
 
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-double QUnitLocal::ProbAll(bitCapInt fullRegister)
+double QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -338,7 +338,7 @@ double QUnitLocal::ProbAll(bitCapInt fullRegister)
 }
 
 /// PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
-void QUnitLocal::ProbArray(double* probArray)
+void QEngineCPU::ProbArray(double* probArray)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -350,7 +350,7 @@ void QUnitLocal::ProbArray(double* probArray)
     }
 }
 
-void QUnitLocal::NormalizeState()
+void QEngineCPU::NormalizeState()
 {
     par_for(0, maxQPower, [&](const bitCapInt lcv) {
         stateVec[lcv] /= runningNorm;
@@ -361,6 +361,6 @@ void QUnitLocal::NormalizeState()
     runningNorm = 1.0;
 }
 
-void QUnitLocal::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, &(stateVec[0])); }
+void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, &(stateVec[0])); }
 
 } // namespace Qrack

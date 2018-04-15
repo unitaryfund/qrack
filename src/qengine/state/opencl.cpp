@@ -18,7 +18,7 @@ namespace Qrack {
 #define BCI_ARG_LEN 10
 #define CMPLX_NORM_LEN 5
 
-void QUnitOCL::InitOCL()
+void QEngineOCL::InitOCL()
 {
     clObj = OCLEngine::Instance();
 
@@ -37,7 +37,7 @@ void QUnitOCL::InitOCL()
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
-void QUnitOCL::ReInitOCL()
+void QEngineOCL::ReInitOCL()
 {
     clObj = OCLEngine::Instance();
 
@@ -51,14 +51,14 @@ void QUnitOCL::ReInitOCL()
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
-void QUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
+void QEngineOCL::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
     CoherentUnit::ResetStateVec(std::move(nStateVec));
     ReInitOCL();
 }
 
-void QUnitOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, size_t nVecLen = 0, unsigned char* values = NULL)
+void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, size_t nVecLen = 0, unsigned char* values = NULL)
 {
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0,
@@ -90,7 +90,7 @@ void QUnitOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN],
     }
 }
 
-void QUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
+void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
 {
     Complex16 cmplx[CMPLX_NORM_LEN];
@@ -112,7 +112,7 @@ void QUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* m
     }
 }
 
-void QUnitOCL::ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineOCL::ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
@@ -123,19 +123,19 @@ void QUnitOCL::ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt
 }
 
 /// "Circular shift left" - shift bits left, and carry last bits.
-void QUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     ROx(clObj->GetROLPtr(), shift, start, length);
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     ROx(clObj->GetRORPtr(), shift, start, length);
 }
 
 /// Add or Subtract integer (without sign, with carry)
-void QUnitOCL::INTC(cl::Kernel* call,
+void QEngineOCL::INTC(cl::Kernel* call,
     bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
@@ -156,21 +156,21 @@ void QUnitOCL::INTC(cl::Kernel* call,
 }
 
 /** Increment integer (without sign, with carry) */
-void QUnitOCL::INCC(
+void QEngineOCL::INCC(
     bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     INTC(clObj->GetINCCPtr(), toAdd, start, length, carryIndex);
 }
 
 /** Subtract integer (without sign, with carry) */
-void QUnitOCL::DECC(
+void QEngineOCL::DECC(
     bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     INTC(clObj->GetDECCPtr(), toAdd, start, length, carryIndex);
 }
 
 /** Set 8 bit register bits based on read from classical memory */
-unsigned char QUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
+unsigned char QEngineOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
     SetReg(outputStart, 8, 0);
     bitCapInt inputMask = 0xff << inputStart;
@@ -193,7 +193,7 @@ unsigned char QUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStar
 }
 
 /** Add or Subtract based on an indexed load from classical memory */
-unsigned char QUnitOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
+unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     // The carry has to first to be measured for its input value.
@@ -234,14 +234,14 @@ unsigned char QUnitOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
 }
 
 /** Add based on an indexed load from classical memory */
-unsigned char QUnitOCL::AdcSuperposeReg8(
+unsigned char QEngineOCL::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     OpSuperposeReg8(clObj->GetADC8Ptr(), 0, inputStart, outputStart, carryIndex, values);
 }
 
 /** Subtract based on an indexed load from classical memory */
-unsigned char QUnitOCL::SbcSuperposeReg8(
+unsigned char QEngineOCL::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     OpSuperposeReg8(clObj->GetSBC8Ptr(), 1, inputStart, outputStart, carryIndex, values);

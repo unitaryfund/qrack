@@ -16,7 +16,7 @@
 namespace Qrack {
 
 /// Measurement gate
-bool QUnitLocal::M(bitLenInt qubit)
+bool QEngineCPU::M(bitLenInt qubit)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -72,7 +72,7 @@ bool QUnitLocal::M(bitLenInt qubit)
 
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
-void QUnitLocal::X(bitLenInt start, bitLenInt length)
+void QEngineCPU::X(bitLenInt start, bitLenInt length)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
@@ -142,7 +142,7 @@ void QUnitLocal::X(bitLenInt start, bitLenInt length)
 }
 
 /// Bitwise swap
-void QUnitLocal::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
+void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
@@ -177,8 +177,8 @@ void QUnitLocal::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
     }
 }
 
-/// Phase flip always - equivalent to Z X Z X on any bit in the QUnitLocal
-void QUnitLocal::PhaseFlip()
+/// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
+void QEngineCPU::PhaseFlip()
 {
     par_for(0, maxQPower, [&](const bitCapInt lcv) { stateVec[lcv] = -stateVec[lcv]; });
 }

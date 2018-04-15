@@ -16,7 +16,7 @@
 namespace Qrack {
 
 /// "Circular shift left" - shift bits left, and carry last bits.
-void QUnitLocal::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     bitCapInt regMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
@@ -41,7 +41,7 @@ void QUnitLocal::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QUnitLocal::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     bitCapInt regMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
@@ -67,7 +67,7 @@ void QUnitLocal::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Add integer (without sign, with carry)
-void QUnitLocal::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+void QEngineCPU::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -101,7 +101,7 @@ void QUnitLocal::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenI
 }
 
 /// Subtract integer (without sign, with carry)
-void QUnitLocal::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -136,7 +136,7 @@ void QUnitLocal::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenI
 }
 
 /// Add integer (without sign)
-void QUnitLocal::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QEngineCPU::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     toAdd %= lengthPower;
@@ -158,7 +158,7 @@ void QUnitLocal::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 }
 
 /// Add BCD integer (without sign)
-void QUnitLocal::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
@@ -209,7 +209,7 @@ void QUnitLocal::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 }
 
 /// Add BCD integer (without sign, with carry)
-void QUnitLocal::INCBCDC(
+void QEngineCPU::INCBCDC(
     bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
@@ -289,7 +289,7 @@ void QUnitLocal::INCBCDC(
  * to an unsigned format, with the sign bit assumed to be set at the
  * appropriate position before the cast.
  */
-void QUnitLocal::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
@@ -340,7 +340,7 @@ void QUnitLocal::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
  * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
  * position before the cast.
  */
-void QUnitLocal::INCSC(
+void QEngineCPU::INCSC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
@@ -399,7 +399,7 @@ void QUnitLocal::INCSC(
  * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
  * cast.
  */
-void QUnitLocal::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QEngineCPU::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -451,7 +451,7 @@ void QUnitLocal::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, 
 }
 
 /// Subtract integer (without sign)
-void QUnitLocal::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+void QEngineCPU::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     toSub %= lengthPower;
@@ -472,7 +472,7 @@ void QUnitLocal::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 }
 
 /// Subtract BCD integer (without sign)
-void QUnitLocal::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
@@ -527,7 +527,7 @@ void QUnitLocal::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
  * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
  */
-void QUnitLocal::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
@@ -578,7 +578,7 @@ void QUnitLocal::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
  * Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
  * appropriate position before the cast.
  */
-void QUnitLocal::DECSC(
+void QEngineCPU::DECSC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
@@ -638,7 +638,7 @@ void QUnitLocal::DECSC(
  * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
  * cast.
  */
-void QUnitLocal::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -691,7 +691,7 @@ void QUnitLocal::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, 
 }
 
 /// Subtract BCD integer (without sign, with carry)
-void QUnitLocal::DECBCDC(
+void QEngineCPU::DECBCDC(
     bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
@@ -764,7 +764,7 @@ void QUnitLocal::DECBCDC(
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
-void QUnitLocal::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
@@ -775,7 +775,7 @@ void QUnitLocal::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
-void QUnitLocal::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     bitCapInt regMask = ((1 << length) - 1) << start;
     bitCapInt flagMask = 1 << flagIndex;
@@ -787,7 +787,7 @@ void QUnitLocal::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 }
 
 /// Set register bits to given permutation
-void QUnitLocal::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+void QEngineCPU::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
@@ -810,7 +810,7 @@ void QUnitLocal::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 }
 
 /// Measure permutation state of a register
-bitCapInt QUnitLocal::MReg(bitLenInt start, bitLenInt length)
+bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
@@ -882,7 +882,7 @@ bitCapInt QUnitLocal::MReg(bitLenInt start, bitLenInt length)
 }
 
 /// Set 8 bit register bits based on read from classical memory
-unsigned char QUnitLocal::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
+unsigned char QEngineCPU::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
     bitCapInt i, outputInt;
     SetReg(outputStart, 8, 0);
@@ -916,7 +916,7 @@ unsigned char QUnitLocal::SuperposeReg8(bitLenInt inputStart, bitLenInt outputSt
 }
 
 /// Add based on an indexed load from classical memory
-unsigned char QUnitLocal::AdcSuperposeReg8(
+unsigned char QEngineCPU::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
 
@@ -1009,7 +1009,7 @@ unsigned char QUnitLocal::AdcSuperposeReg8(
 }
 
 /// Subtract based on an indexed load from classical memory
-unsigned char QUnitLocal::SbcSuperposeReg8(
+unsigned char QEngineCPU::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     // This a quantum/classical interface method, similar to SuperposeReg8.

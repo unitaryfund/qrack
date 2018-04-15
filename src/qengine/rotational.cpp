@@ -15,7 +15,7 @@
 namespace Qrack {
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
-void QUnit::RT(double radians, bitLenInt qubit)
+void QEngineCPU::RT(double radians, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total // bits.");
@@ -32,7 +32,7 @@ void QUnit::RT(double radians, bitLenInt qubit)
  * NOTE THAT * DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO.
  */
-void QUnit::RTDyad(int numerator, int denominator, bitLenInt qubit)
+void QEngineCPU::RTDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -40,7 +40,7 @@ void QUnit::RTDyad(int numerator, int denominator, bitLenInt qubit)
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
-void QUnit::RX(double radians, bitLenInt qubit)
+void QEngineCPU::RX(double radians, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     // throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -58,7 +58,7 @@ void QUnit::RX(double radians, bitLenInt qubit)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO.
  */
-void QUnit::RXDyad(int numerator, int denominator, bitLenInt qubit)
+void QEngineCPU::RXDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -66,7 +66,7 @@ void QUnit::RXDyad(int numerator, int denominator, bitLenInt qubit)
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
-void QUnit::RY(double radians, bitLenInt qubit)
+void QEngineCPU::RY(double radians, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -84,7 +84,7 @@ void QUnit::RY(double radians, bitLenInt qubit)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO.
  */
-void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
+void QEngineCPU::RYDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -92,7 +92,7 @@ void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
-void QUnit::RZ(double radians, bitLenInt qubit)
+void QEngineCPU::RZ(double radians, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -109,7 +109,7 @@ void QUnit::RZ(double radians, bitLenInt qubit)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS AND LACKS DIVISION BY A FACTOR OF TWO.
  */
-void QUnit::RZDyad(int numerator, int denominator, bitLenInt qubit)
+void QEngineCPU::RZDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -117,7 +117,7 @@ void QUnit::RZDyad(int numerator, int denominator, bitLenInt qubit)
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
-void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRT(double radians, bitLenInt control, bitLenInt target)
 {
     // if ((control >= qubitCount) || (target >= qubitCount))
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -132,7 +132,7 @@ void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
-void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
     // if (control >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -144,7 +144,7 @@ void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
-void QUnit::CRX(double radians, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target)
 {
     // if (control >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -164,7 +164,7 @@ void QUnit::CRX(double radians, bitLenInt control, bitLenInt target)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS.
  */
-void QUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
     // if (control >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -174,7 +174,7 @@ void QUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 }
 
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
-void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRY(double radians, bitLenInt control, bitLenInt target)
 {
     // if (control >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -194,7 +194,7 @@ void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS.
  */
-void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRYDyad control bit cannot also be target.");
@@ -202,7 +202,7 @@ void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 }
 
 /// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
-void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRZ control bit cannot also be target.");
@@ -220,7 +220,7 @@ void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION
  * OPERATORS.
  */
-void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QEngineCPU::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRZDyad control bit cannot also be target.");
@@ -230,7 +230,7 @@ void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 // Single register instructions:
 
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-void QUnit::RT(double radians, bitLenInt start, bitLenInt length)
+void QEngineCPU::RT(double radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RT(radians, start + lcv);
@@ -243,7 +243,7 @@ void QUnit::RT(double radians, bitLenInt start, bitLenInt length)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
  * TWO.
  */
-void QUnit::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+void QEngineCPU::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RTDyad(numerator, denominator, start + lcv);
@@ -251,7 +251,7 @@ void QUnit::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt le
 }
 
 /// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
-void QUnit::RX(double radians, bitLenInt start, bitLenInt length)
+void QEngineCPU::RX(double radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RX(radians, start + lcv);
@@ -265,7 +265,7 @@ void QUnit::RX(double radians, bitLenInt start, bitLenInt length)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR
  * OF TWO.
  */
-void QUnit::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+void QEngineCPU::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RXDyad(numerator, denominator, start + lcv);
@@ -273,7 +273,7 @@ void QUnit::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt le
 }
 
 /// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
-void QUnit::RY(double radians, bitLenInt start, bitLenInt length)
+void QEngineCPU::RY(double radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RY(radians, start + lcv);
@@ -287,7 +287,7 @@ void QUnit::RY(double radians, bitLenInt start, bitLenInt length)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR
  * OF TWO.
  */
-void QUnit::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+void QEngineCPU::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RYDyad(numerator, denominator, start + lcv);
@@ -295,7 +295,7 @@ void QUnit::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt le
 }
 
 /// z axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli z axis
-void QUnit::RZ(double radians, bitLenInt start, bitLenInt length)
+void QEngineCPU::RZ(double radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RZ(radians, start + lcv);
@@ -309,7 +309,7 @@ void QUnit::RZ(double radians, bitLenInt start, bitLenInt length)
  * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR
  * OF TWO.
  */
-void QUnit::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+void QEngineCPU::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RZDyad(numerator, denominator, start + lcv);
@@ -317,7 +317,7 @@ void QUnit::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt le
 }
 
 /// Controlled "phase shift gate"
-void QUnit::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRT(radians, control + lcv, target + lcv);
@@ -325,7 +325,7 @@ void QUnit::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt l
 }
 
 /// Controlled dyadic fraction "phase shift gate"
-void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRTDyad(numerator, denominator, control + lcv, target + lcv);
@@ -333,7 +333,7 @@ void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 }
 
 /// Controlled x axis rotation
-void QUnit::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRX(radians, control + lcv, target + lcv);
@@ -342,7 +342,7 @@ void QUnit::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt l
 
 /// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
 /// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
-void QUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRXDyad(numerator, denominator, control + lcv, target + lcv);
@@ -350,7 +350,7 @@ void QUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 }
 
 /// Controlled y axis rotation
-void QUnit::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRY(radians, control + lcv, target + lcv);
@@ -359,7 +359,7 @@ void QUnit::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt l
 
 /// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
 /// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRYDyad(numerator, denominator, control + lcv, target + lcv);
@@ -367,7 +367,7 @@ void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 }
 
 /// Controlled z axis rotation
-void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRZ(radians, control + lcv, target + lcv);
@@ -376,7 +376,7 @@ void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt l
 
 /// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
 /// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
-void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+void QEngineCPU::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         CRZDyad(numerator, denominator, control + lcv, target + lcv);

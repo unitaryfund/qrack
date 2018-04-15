@@ -30,19 +30,19 @@ typedef std::shared_ptr<QInterface> QInterfacePtr;
 /**
  * Enumerated list of supported engines.
  *
- * Use QINTERFACE_ENGINE_OPTIMAL for the best supported engine.
+ * Use QENGINE_OPTIMAL for the best supported engine.
  */
 enum QInterfaceEngine {
-    QINTERFACE_ENGINE_SOFTWARE = 0,
-    QINTERFACE_ENGINE_OPENCL,
+    QENGINE_CPU = 0,
+    QENGINE_OPENCL,
 
 #if ENABLE_OPENCL
-    QINTERFACE_ENGINE_OPTIMAL = QINTERFACE_ENGINE_OPENCL,
+    QENGINE_OPTIMAL = QENGINE_OPENCL,
 #else
-    QINTERFACE_ENGINE_OPTIMAL = QINTERFACE_ENGINE_SOFTWARE,
+    QENGINE_OPTIMAL = QENGINE_CPU,
 #endif
 
-    QINTERFACE_ENGINE_MAX
+    QENGINE_MAX
 };
 
 /** Factory method to create specific engine implementations. */

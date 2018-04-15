@@ -37,11 +37,17 @@ include_directories ("include" "include/common")
 
 # Declare the library
 add_library (qrack STATIC
-    src/qregister.cpp
-    src/qregister_factory.cpp
-    src/qregister_software.cpp
-    src/separatedunit.cpp
     src/common/complex16simd.cpp
+    src/common/parallel_for.cpp
+    src/qengine/qengine.cpp
+    src/qengine/operators.cpp
+    src/qengine/gates.cpp
+    src/qengine/rotational.cpp
+    src/qengine/state/state.cpp
+    src/qengine/state/operators.cpp
+    src/qengine/state/gates.cpp
+    src/qengine/factory.cpp
+    src/qunit.cpp
     )
 
 # Declare the unittest executable
@@ -78,7 +84,7 @@ if (ENABLE_OPENCL)
 
     # Build the OpenCL command files
     find_program (XXD_BIN xxd)
-    file (GLOB_RECURSE COMPILED_RESOURCES "src/*.cl")
+    file (GLOB_RECURSE COMPILED_RESOURCES "src/qengine/state/*.cl")
     foreach (INPUT_FILE ${COMPILED_RESOURCES})
         get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
         get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
@@ -100,13 +106,9 @@ if (ENABLE_OPENCL)
     target_sources (qrack PRIVATE
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
-        src/qregister_opencl.cpp
+        src/qengine/state/opencl.cpp
         )
 
-    install (FILES
-        include/common/oclengine.hpp
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
-        )
 else (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=0)
 endif (ENABLE_OPENCL)
@@ -118,15 +120,19 @@ set_target_properties (qrack PROPERTIES
 # Install common headers
 install (FILES
     include/common/complex16simd.hpp
+    include/common/oclengine.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
 # Install qrack library headers
 install (FILES 
-    include/qregister.hpp
-    include/qregister_factory.hpp
-    include/qregister_opencl.hpp
-    include/separatedunit.hpp
+    include/qengine_cpu.hpp
+    include/qunit.hpp
+    include/common/oclengine.hpp
+    include/common/complex16simd.hpp
+    include/common/parallel_for.hpp
+    include/qengine_opencl.hpp
+    include/qinterface.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

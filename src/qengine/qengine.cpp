@@ -15,7 +15,7 @@
 namespace Qrack {
 
 /// Swap values of two bits in register
-void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
+void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
     // if ((qubit1 >= qubitCount) || (qubit2 >= qubitCount))
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
@@ -40,14 +40,14 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     }
 }
 
-void QUnit::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
+void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, true, doCalcNorm);
 }
 
-void QUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
@@ -64,7 +64,7 @@ void QUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Comple
     Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
 }
 
-void QUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
@@ -81,7 +81,7 @@ void QUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Co
     Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
 }
 
-void QUnit::Reverse(bitLenInt first, bitLenInt last)
+void QEngineCPU::Reverse(bitLenInt first, bitLenInt last)
 {
     while ((first < last) && (first < (last - 1))) {
         last--;

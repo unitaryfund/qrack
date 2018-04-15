@@ -14,33 +14,28 @@
 
 #include "qinterface.hpp"
 
-#include "common/parallel_for.hpp"
-
 namespace Qrack {
 
-/**
- * General purpose QUnit implementation
- */
-class QUnit : public QInterface, public ParallelFor
+/** Associates a QInterface object with a set of bits. */
+struct QRegShard {
+    QInterfacePtr unit;
+    bitLenInt mapped;
+};
+
+class QUnit : public QInterface
 {
 protected:
-    uint32_t randomSeed;
-    double runningNorm;
-    bitLenInt qubitCount;
-    bitCapInt maxQPower;
-    std::unique_ptr<Complex16[]> stateVec;
-
-    std::shared_ptr<std::default_random_engine> rand_generator_ptr;
-    std::uniform_real_distribution<double> rand_distribution;
+    QInterfaceEngine engine;
+    std::vector<QRegShard> shards;
+    std::default_random_engine rand_generator_ptr;
 
 public:
-    QUnit(
-        bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
+    QUnit(QInterfaceEngine engine, bitLenInt qBitCount);
 
     virtual void SetQuantumState(Complex16* inputState);
-    virtual void Cohere(QUnitPtr toCopy);
-    virtual void Cohere(std::vector<QUnitPtr> toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    virtual void Cohere(QInterfacePtr toCopy);
+    virtual void Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /**
@@ -52,11 +47,11 @@ public:
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
-    virtual void H(bitLenInt qubitIndex);
-    virtual bool M(bitLenInt qubitIndex);
-    virtual void X(bitLenInt qubitIndex);
-    virtual void Y(bitLenInt qubitIndex);
-    virtual void Z(bitLenInt qubitIndex);
+    virtual void H(bitLenInt qubit);
+    virtual bool M(bitLenInt qubit);
+    virtual void X(bitLenInt qubit);
+    virtual void Y(bitLenInt qubit);
+    virtual void Z(bitLenInt qubit);
     virtual void CY(bitLenInt control, bitLenInt target);
     virtual void CZ(bitLenInt control, bitLenInt target);
 
@@ -89,18 +84,18 @@ public:
      * @{
      */
 
-    virtual void RT(double radians, bitLenInt qubitIndex);
-    virtual void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
-    virtual void RX(double radians, bitLenInt qubitIndex);
-    virtual void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RT(double radians, bitLenInt qubit);
+    virtual void RTDyad(int numerator, int denominator, bitLenInt qubit);
+    virtual void RX(double radians, bitLenInt qubit);
+    virtual void RXDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void CRX(double radians, bitLenInt control, bitLenInt target);
     virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
-    virtual void RY(double radians, bitLenInt qubitIndex);
-    virtual void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RY(double radians, bitLenInt qubit);
+    virtual void RYDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void CRY(double radians, bitLenInt control, bitLenInt target);
     virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
-    virtual void RZ(double radians, bitLenInt qubitIndex);
-    virtual void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
+    virtual void RZ(double radians, bitLenInt qubit);
+    virtual void RZDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void CRZ(double radians, bitLenInt control, bitLenInt target);
     virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void CRT(double radians, bitLenInt control, bitLenInt target);
@@ -164,16 +159,14 @@ public:
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-    virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-    virtual void DECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -193,11 +186,9 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
-    virtual unsigned char AdcSuperposeReg8(
-        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-    virtual unsigned char SbcSuperposeReg8(
-        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual unsigned char AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual unsigned char SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** @} */
@@ -208,26 +199,20 @@ public:
      * @{
      */
 
-    virtual double Prob(bitLenInt qubitIndex);
+    virtual double Prob(bitLenInt qubit);
     virtual double ProbAll(bitCapInt fullRegister);
     virtual void ProbArray(double* probArray);
-    virtual void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual void SetBit(bitLenInt qubit1, bool value);
 
     /** @} */
 
 protected:
-    /** Generate a random double from 0 to 1 */
-    double Rand();
+    void Decompose(bitLenInt qubit);
 
-    virtual void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
-    virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    virtual void Carry(bitLenInt integerStart, bitLenInt integerLength, bitLenInt carryBit);
-    virtual void NormalizeState();
-    virtual void Reverse(bitLenInt first, bitLenInt last);
-    virtual void UpdateRunningNorm();
+    typedef void (CohesiveUnit::*TwoBitCall(bitLenInt, bitLenInt);
+    typedef void (CohesiveUnit::*ThreeBitCall(bitLenInt, bitLenInt, bitLenInt);
+    void EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn);
+    void EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn);
 };
+
 } // namespace Qrack

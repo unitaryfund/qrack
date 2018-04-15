@@ -28,8 +28,8 @@ namespace Qrack {
 
 class OCLEngine;
 
-/** OpenCL enhanced QUnit implementation. */
-class QUnitOCL : public QUnit
+/** OpenCL enhanced QEngineCPU implementation. */
+class QEngineOCL : public QEngineCPU
 {
 protected:
     OCLEngine* clObj;
@@ -43,9 +43,9 @@ protected:
 
 public:
 
-    QUnitOCL(
+    QEngineOCL(
         bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
-        : QUnit(qBitCount, initState, phaseFac, rgp)
+        : QEngineCPU(qBitCount, initState, phaseFac, rgp)
     {
         InitOCL();
     }

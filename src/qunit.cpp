@@ -15,7 +15,7 @@
 
 namespace Qrack {
 
-QRegister::QRegister(CoherentUnitEngine eng, bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, uint32_t rand_seed) : engine(eng)
+QUnit::QUnit(CoherentUnitEngine eng, bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, uint32_t rand_seed) : engine(eng)
 {
     rand_generator = std::default_random_engine();
     rand_generator->seed(rand_seed);
@@ -32,9 +32,9 @@ QRegister::QRegister(CoherentUnitEngine eng, bitLenInt qBitCount, bitCapInt init
     }
 }
 
-void QRegister::Decompose(bitLenInt qubit)
+void QUnit::Decompose(bitLenInt qubit)
 {
-    std::shared_ptr<QUnit> unit = shards[qubit].unit;
+    std::shared_ptr<QInterface> unit = shards[qubit].unit;
     for (auto shard : shards) {
         if (shard.unit == unit) {
             shard.unit = CreateCoherentUnit(engine, 1, 0, phaseFac, rand_generator);
@@ -45,10 +45,10 @@ void QRegister::Decompose(bitLenInt qubit)
 }
 
 /* XXX Convert this to a variadic template argument function call. */
-void QRegister::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn)
+void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn)
 {
-    std::shared_ptr<QUnit> unit1 = shards[bit1].unit;
-    std::shared_ptr<QUnit> unit2 = shards[bit2].unit;
+    std::shared_ptr<QInterface> unit1 = shards[bit1].unit;
+    std::shared_ptr<QInterface> unit2 = shards[bit2].unit;
 
     if (unit1 != unit2) {
         // Not already cohered; create a new unit and merge.
@@ -66,11 +66,11 @@ void QRegister::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn)
     (unit->*fn)(shards[bit1].mapped, shards[bit2].mapped);
 }
 
-void QRegister::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn)
+void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn)
 {
-    std::shared_ptr<QUnit> unit1 = shards[bit1].unit;
-    std::shared_ptr<QUnit> unit2 = shards[bit2].unit;
-    std::shared_ptr<QUnit> unit3 = shards[bit3].unit;
+    std::shared_ptr<QInterface> unit1 = shards[bit1].unit;
+    std::shared_ptr<QInterface> unit2 = shards[bit2].unit;
+    std::shared_ptr<QInterface> unit3 = shards[bit3].unit;
 
     if (unit1 != unit2 || unit2 != unit3) {
         // Not already cohered; create a new unit and merge.
@@ -92,13 +92,13 @@ void QRegister::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, 
     (unit->*fn)(shards[bit1].mapped, shards[bit2].mapped, shards[bit3].mapped);
 }
 
-double QRegister::Prob(bitLenInt qubit)
+double QUnit::Prob(bitLenInt qubit)
 {
     QuantumBitShard &shard = shards[qubit];
     return (shard.unit->Prob)(shard.mapped);
 }
 
-double QRegister::ProbAll(bitCapInt perm)
+double QUnit::ProbAll(bitCapInt perm)
 {
     double result = 1.0;
 
@@ -114,7 +114,7 @@ double QRegister::ProbAll(bitCapInt perm)
     return result;
 }
 
-void QRegister::ProbArray(double* probArray)
+void QUnit::ProbArray(double* probArray)
 {
     for (int bit = 0; bit < shards.length(); bit++) {
         probArray[bit] = Prob(bit);
@@ -122,7 +122,7 @@ void QRegister::ProbArray(double* probArray)
 }
 
 /// Measure a bit
-bool QRegister::M(bitLenInt qubit)
+bool QUnit::M(bitLenInt qubit)
 {
     QuantumBitShard &shard = shards[qubit];
     bool result = shard.unit->M(shard.mapped);
@@ -137,7 +137,7 @@ bool QRegister::M(bitLenInt qubit)
 }
 
 /// Measure permutation state of a register
-bitCapInt QRegister::MReg(bitLenInt start, bitLenInt length)
+bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 {
     bitLenInt end = start + length;
     bitCapInt result = 0;
@@ -149,7 +149,7 @@ bitCapInt QRegister::MReg(bitLenInt start, bitLenInt length)
     return result;
 }
 
-void QRegister::SetBit(bitLenInt qubit, bool value)
+void QUnit::SetBit(bitLenInt qubit, bool value)
 {
     QuantumBitShard &shard = shards[qubit];
     shard.unit->SetBit(shard.mapped, value);
@@ -157,7 +157,7 @@ void QRegister::SetBit(bitLenInt qubit, bool value)
 }
 
 /// Set register bits to given permutation
-void QRegister::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     for (bitLenInt bit = start; bit < length; bit++) {
         QuantumBitShard &shard = shards[bit];
@@ -166,7 +166,7 @@ void QRegister::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     }
 }
 
-void QRegister::Swap(bitLenInt qubit1, bitLenInt qubit2)
+void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
     QuantumBitShard &shard1 = shards[qubit1];
     QuantumBitShard &shard2 = shards[qubit2];
@@ -178,190 +178,190 @@ void QRegister::Swap(bitLenInt qubit1, bitLenInt qubit2)
     shard1.mapped = shard2.mapped;
     shard2.mapped = tmp.mapped;
 
-    // Swap the QUnit object.
+    // Swap the QInterface object.
     tmp.unit = shard1.unit;
     shard1.unit = shard2.unit;
     shard2.unit = tmp.unit;
 }
 
-void QRegister::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
     for (bitLenInt i = 0; i < length; i++) {
         Swap(qubit1 + i, qubit2 + i);
     }
 }
 
-void QRegister::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QUnit::AND);
+    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::AND);
 }
 
-void QRegister::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QUnit::OR);
+    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::OR);
 }
 
-void QRegister::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QUnit::XOR);
+    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::XOR);
 }
 
-void QRegister::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+void QUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, [&](QUnit *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall(inputBit1, inputBit2, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
             unit->CLAND(b1, inputClassicalBit, b2);
         });
 }
 
-void QRegister::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+void QUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, [&](QUnit *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall(inputBit1, inputBit2, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
             unit->CLOR(b1, inputClassicalBit, b2);
         });
 }
 
-void QRegister::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+void QUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, [&](QUnit *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall(inputBit1, inputBit2, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
             unit->CLXOR(b1, inputClassicalBit, b2);
         });
 }
 
-void QRegister::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QUnit::CCNOT);
+    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::CCNOT);
 }
 
-void QRegister::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QUnit::AntiCCNOT);
+    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::AntiCCNOT);
 }
 
-void QRegister::H(bitLenInt qubit)
+void QUnit::H(bitLenInt qubit)
 {
     shards[qubit]->unit->H(shards[qubit].mapped);
 }
 
-void QRegister::X(bitLenInt qubit)
+void QUnit::X(bitLenInt qubit)
 {
     shards[qubit]->unit->X(shards[qubit].mapped);
 }
 
-void QRegister::Y(bitLenInt qubit)
+void QUnit::Y(bitLenInt qubit)
 {
     shards[qubit]->unit->Y(shards[qubit].mapped);
 }
 
-void QRegister::Z(bitLenInt qubit)
+void QUnit::Z(bitLenInt qubit)
 {
     shards[qubit]->unit->Z(shards[qubit].mapped);
 }
 
-void QRegister::X(bitLenInt start, bitLenInt length)
+void QUnit::X(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt i = 0; i < length; i++) {
         X(start + i);
     }
 }
 
-void QRegister::CY(bitLenInt control, bitLenInt target)
+void QUnit::CY(bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, &QUnit::CY);
+    EntangleAndCall(control, target, &QInterface::CY);
 }
 
-void QRegister::CZ(bitLenInt control, bitLenInt target)
+void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, &QUnit::CZ);
+    EntangleAndCall(control, target, &QInterface::CZ);
 }
 
-void QRegister::RT(double radians, bitLenInt qubit)
+void QUnit::RT(double radians, bitLenInt qubit)
 {
-    EntangleAndCall(qubit, [&](QUnit *unit, bitLenInt q) {
+    EntangleAndCall(qubit, [&](QInterface *unit, bitLenInt q) {
             unit->RT(radians, q);
         });
 }
 
-void QRegister::RTDyad(int numerator, int denominator, bitLenInt qubit)
+void QUnit::RTDyad(int numerator, int denominator, bitLenInt qubit)
 {
     shards[qubit]->unit->RTDyad(numerator, denominator, shards[qubit].mapped);
 }
 
-void QRegister::RX(double radians, bitLenInt qubit)
+void QUnit::RX(double radians, bitLenInt qubit)
 {
     shards[qubit]->unit->RX(radians, shards[qubit].mapped);
 }
 
-void QRegister::RXDyad(int numerator, int denominator, bitLenInt qubit)
+void QUnit::RXDyad(int numerator, int denominator, bitLenInt qubit)
 {
     shards[qubit]->unit->RXDyad(numerator, denominator, shards[qubit].mapped);
 }
 
-void QRegister::RY(double radians, bitLenInt qubit)
+void QUnit::RY(double radians, bitLenInt qubit)
 {
     shards[qubit]->unit->RY(radians, shards[qubit].mapped);
 }
 
-void QRegister::RYDyad(int numerator, int denominator, bitLenInt qubit)
+void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
 {
     shards[qubit]->unit->RYDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 // XXX XXX XXX Didn't make any further changes below here...
 
-void QRegister::RZ(double radians, bitLenInt qubit)
+void QUnit::RZ(double radians, bitLenInt qubit)
 {
     shards[qubit]->RZ(radians, qubitLookup[qubit].qb);
 }
 
-void QRegister::RZDyad(int numerator, int denominator, bitLenInt qubit)
+void QUnit::RZDyad(int numerator, int denominator, bitLenInt qubit)
 {
     shards[qubit]->RZDyad(numerator, denominator, qubitLookup[qubit].qb);
 }
 
-void QRegister::CRT(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QUnit *unit, bitLenInt c, bitLenInt t) {
+    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
             unit->CRT(radians, c, t);
         });
 }
 
-void QRegister::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QUnit *unit, bitLenInt c, bitLenInt t) {
+    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
             unit->CRTDyad(numerator, denominator, c, t);
         });
 }
 
-void QRegister::CRY(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QUnit *unit, bitLenInt c, bitLenInt t) {
+    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
             unit->CRY(radians, c, t);
         });
 }
 
-void QRegister::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QUnit *unit, bitLenInt c, bitLenInt t) {
+    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
             unit->CRYDyad(numerator, denominator, c, t);
         });
 }
 
-void QRegister::CRZ(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QUnit *unit, bitLenInt c, bitLenInt t) {
+    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
             unit->CRZ(radians, c, t);
         });
 }
 
-void QRegister::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
+void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QUnit *unit, bitLenInt c, bitLenInt t) {
+    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
             unit->CRZDyad(numerator, denominator, c, t);
         });
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QRegister::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
@@ -376,7 +376,7 @@ void QRegister::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QRegister::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
@@ -390,118 +390,118 @@ void QRegister::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 }
 
-void QRegister::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+void QUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::INCSC(
+void QUnit::INCSC(
     bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QUnit::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QUnit::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+void QUnit::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DECSC(
+void QUnit::DECSC(
     bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QUnit::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::DECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::DECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::QFT(bitLenInt start, bitLenInt length)
+void QUnit::QFT(bitLenInt start, bitLenInt length)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::PhaseFlip()
+void QUnit::PhaseFlip()
 {
     for (shard : shards) {
         shard.unit->PhaseFlip();
     }
 }
 
-unsigned char QRegister::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
+unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-unsigned char QRegister::AdcSuperposeReg8(
+unsigned char QUnit::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-unsigned char QRegister::SbcSuperposeReg8(
+unsigned char QUnit::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     /* XXX TODO Map arbitrary list. */
 }
 
-void QRegister::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList)
+void QUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList)
 {
     /* XXX TODO Map arbitrary list. */
 }

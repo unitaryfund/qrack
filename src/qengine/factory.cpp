@@ -23,11 +23,11 @@ template <typename... Ts>
 QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args)
 {
     switch (engine) {
-    case QUNIT_ENGINE_SOFTWARE:
-        return std::make_shared<QUnit>(args...);
+    case QENGINE_CPU:
+        return std::make_shared<QEngineCPU>(args...);
 #if ENABLE_OPENCL
-    case QUNIT_ENGINE_OPENCL:
-        return std::make_shared<QUnitOCL>(args...);
+    case QENGINE_OPENCL:
+        return std::make_shared<QEngineOCL>(args...);
 #endif
     default:
         return NULL;
