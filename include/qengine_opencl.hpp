@@ -12,8 +12,6 @@
 
 #pragma once
 
-namespace Qrack {
-
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
 #endif
@@ -24,7 +22,9 @@ namespace Qrack {
 #include <CL/cl.hpp>
 #endif
 
-#include "qunit.hpp"
+#include "qengine_cpu.hpp"
+
+namespace Qrack {
 
 class OCLEngine;
 
@@ -44,8 +44,8 @@ protected:
 public:
 
     QEngineOCL(
-        bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
-        : QEngineCPU(qBitCount, initState, phaseFac, rgp)
+        bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+        : QEngineCPU(qBitCount, initState, rgp)
     {
         InitOCL();
     }
@@ -62,6 +62,8 @@ public:
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 
 protected:
+    static const int BCI_ARG_LEN = 10;
+
     void InitOCL();
     void ReInitOCL();
     void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
@@ -73,5 +75,8 @@ protected:
     /* A couple utility functions used by the operations above. */
     void ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length);
     void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
-}
+
+    unsigned char OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn, bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
 };
+
+}

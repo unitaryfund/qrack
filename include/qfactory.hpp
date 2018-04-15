@@ -10,15 +10,17 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qinterface.hpp"
-#include "qunit.hpp"
+#pragma once
+
+#include "qengine_cpu.hpp"
 
 #if ENABLE_OPENCL
-#include "qunit_opencl.hpp"
+#include "qengine_opencl.hpp"
 #endif
 
 namespace Qrack {
 
+/** Factory method to create specific engine implementations. */
 template <typename... Ts>
 QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args)
 {
@@ -34,4 +36,4 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args)
     }
 }
 
-} // namespace Qrack
+}

@@ -76,6 +76,7 @@ Complex16Simd Complex16Simd::operator/(const double rhs) const { return _mm_div_
 Complex16Simd Complex16Simd::operator/=(const double rhs)
 {
     _val = _mm_div_pd(_val, _mm_set1_pd(rhs));
+    return Complex16Simd(_val);
 }
 Complex16Simd Complex16Simd::operator-() const { return -1.0 * _val; }
 Complex16Simd Complex16Simd::operator*=(const double& other)

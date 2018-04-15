@@ -10,9 +10,27 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qunit.hpp"
+#include "qengine_cpu.hpp"
 
 namespace Qrack {
+
+template <class BidirectionalIterator>
+void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride)
+{
+    while ((first < last) && (first < (last - stride))) {
+        last -= stride;
+        std::iter_swap(first, last);
+        first += stride;
+    }
+}
+
+template <class BidirectionalIterator>
+void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride)
+{
+    reverse(first, middle, stride);
+    reverse(middle, last, stride);
+    reverse(first, last, stride);
+}
 
 /// Swap values of two bits in register
 void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)

@@ -12,12 +12,14 @@
 
 #pragma once
 
+#include <random>
+
 #include "qinterface.hpp"
 
 namespace Qrack {
 
 /** Associates a QInterface object with a set of bits. */
-struct QRegShard {
+struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
 };
@@ -26,13 +28,15 @@ class QUnit : public QInterface
 {
 protected:
     QInterfaceEngine engine;
-    std::vector<QRegShard> shards;
-    std::default_random_engine rand_generator_ptr;
+    std::vector<QEngineShard> shards;
+
+    std::shared_ptr<std::default_random_engine> rand_generator;
 
 public:
-    QUnit(QInterfaceEngine engine, bitLenInt qBitCount);
+    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, uint32_t rand_seed = 0);
 
     virtual void SetQuantumState(Complex16* inputState);
+    virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     virtual void Cohere(QInterfacePtr toCopy);
     virtual void Cohere(std::vector<QInterfacePtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
@@ -209,8 +213,8 @@ public:
 protected:
     void Decompose(bitLenInt qubit);
 
-    typedef void (CohesiveUnit::*TwoBitCall(bitLenInt, bitLenInt);
-    typedef void (CohesiveUnit::*ThreeBitCall(bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QInterface::*TwoBitCall)(bitLenInt, bitLenInt);
+    typedef void (QInterface::*ThreeBitCall)(bitLenInt, bitLenInt, bitLenInt);
     void EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn);
     void EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn);
 };

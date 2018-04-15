@@ -12,8 +12,12 @@
 
 #pragma once
 
+#include <functional>
+
 /* Needed for bitCapInt typedefs. */
 #include "qinterface.hpp"
+
+namespace Qrack {
 
 class ParallelFor 
 {
@@ -21,8 +25,8 @@ private:
     int32_t numCores;
 
 public:
-    LocalParallelFor() : numCores(1) { }
-    virtual ~LocalParallelFor() { }
+    ParallelFor() : numCores(1) { }
+    virtual ~ParallelFor() { }
 
     void SetConcurrencyLevel(int32_t num) { numCores = num; }
     int32_t GetConcurrencyLevel() { return numCores; }
@@ -61,3 +65,5 @@ public:
     /** Calculate the normal for the array. */
     double par_norm(const bitCapInt maxQPower, const Complex16* stateArray);
 };
+
+}

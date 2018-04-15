@@ -13,6 +13,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
@@ -36,6 +37,7 @@ enum QInterfaceEngine {
     QENGINE_CPU = 0,
     QENGINE_OPENCL,
 
+    QENGINE_FIRST = QENGINE_CPU,
 #if ENABLE_OPENCL
     QENGINE_OPTIMAL = QENGINE_OPENCL,
 #else
@@ -44,10 +46,6 @@ enum QInterfaceEngine {
 
     QENGINE_MAX
 };
-
-/** Factory method to create specific engine implementations. */
-template <typename... Ts>
-QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args);
 
 /**
  * A "Qrack::QInterface" is an abstract interface exposing qubit permutation
@@ -64,7 +62,7 @@ public:
     QInterface(bitLenInt n) : qubitCount(n) { }
 
     /** Destructor of QInterface */
-    virtual ~QInterface() {} = 0;
+    virtual ~QInterface() {};
 
     /** Get the count of bits in this register */
     int GetQubitCount() { return qubitCount; }
@@ -74,6 +72,9 @@ public:
 
     /** Set an arbitrary pure quantum state */
     virtual void SetQuantumState(Complex16* inputState) = 0;
+
+    /** Set to a specific permutation */
+    virtual void SetPermutation(bitCapInt perm) = 0;
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -797,7 +798,7 @@ public:
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length) = 0;
 
     /** Measure permutation state of an 8 bit register */
-    unsigned char MReg8(bitLenInt start) = 0;
+    virtual unsigned char MReg8(bitLenInt start) = 0;
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from

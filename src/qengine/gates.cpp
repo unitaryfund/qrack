@@ -10,7 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qregister.hpp"
+#include <algorithm>
+
+#include "qengine_cpu.hpp"
 
 namespace Qrack {
 
@@ -113,32 +115,6 @@ void QEngineCPU::H(bitLenInt qubit)
     const Complex16 had[4] = { Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
         Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0) };
     ApplySingleBit(qubit, had, true);
-}
-
-/// Swap values of two bits in register
-void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    // if ((qubit1 >= qubitCount) || (qubit2 >= qubitCount))
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    if (qubit1 != qubit2) {
-        const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0),
-            Complex16(0.0, 0.0) };
-
-        bitCapInt qPowers[3];
-        bitCapInt qPowersSorted[2];
-        qPowers[1] = 1 << qubit1;
-        qPowers[2] = 1 << qubit2;
-        qPowers[0] = qPowers[1] + qPowers[2];
-        if (qubit1 < qubit2) {
-            qPowersSorted[0] = qPowers[1];
-            qPowersSorted[1] = qPowers[2];
-        } else {
-            qPowersSorted[0] = qPowers[2];
-            qPowersSorted[1] = qPowers[1];
-        }
-
-        Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
-    }
 }
 
 /// NOT gate, which is also Pauli x matrix

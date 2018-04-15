@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "oclengine.hpp"
+#include "qenginecl.hpp"
 
 namespace Qrack {
 
@@ -66,7 +67,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
 
-    sources.push_back({ (const char*)qregister_cl, (long unsigned int)qregister_cl_len });
+    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
     program = cl::Program(context, sources);
     if (program.build({ default_device }) != CL_SUCCESS) {

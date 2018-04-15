@@ -10,8 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qunit.hpp"
-#include "qunitlocal.hpp"
+#include "qengine_cpu.hpp"
 
 namespace Qrack {
 
@@ -181,4 +180,6 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 void QEngineCPU::PhaseFlip()
 {
     par_for(0, maxQPower, [&](const bitCapInt lcv) { stateVec[lcv] = -stateVec[lcv]; });
+}
+
 }

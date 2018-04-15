@@ -10,12 +10,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qunit_opencl.hpp"
+#include "qengine_opencl.hpp"
 #include "oclengine.hpp"
 
 namespace Qrack {
 
-#define BCI_ARG_LEN 10
 #define CMPLX_NORM_LEN 5
 
 void QEngineOCL::InitOCL()
@@ -54,13 +53,13 @@ void QEngineOCL::ReInitOCL()
 void QEngineOCL::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
     queue.enqueueUnmapMemObject(stateBuffer, &(stateVec[0]));
-    CoherentUnit::ResetStateVec(std::move(nStateVec));
+    QEngineCPU::ResetStateVec(std::move(nStateVec));
     ReInitOCL();
 }
 
-void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, size_t nVecLen = 0, unsigned char* values = NULL)
+void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec, size_t nVecLen, unsigned char* values)
 {
-    queue.enqueueUnmapMemObject(stateBuffer, stateVec);
+    queue.enqueueUnmapMemObject(stateBuffer, stateVec.get());
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0,
             sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     size_t cmplxSz = nVecLen > 0 ? nVecLen : maxQPower;
@@ -85,8 +84,8 @@ void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * cmplxSz);
 
     if (!nVec) {
-        ResetStateVec(std::move(nStateVec));
-        free(nStateVec);
+        std::unique_ptr<Complex16[]> sv(nStateVec);
+        ResetStateVec(std::move(sv));
     }
 }
 
@@ -103,7 +102,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         bciArgs[4 + i] = qPowersSorted[i];
     }
 
-    DispatchCall(clObj->getApply2x2Ptr(), bitCapInt, cmplx, CMPLX_NORM_LEN);
+    DispatchCall(clObj->GetApply2x2Ptr(), bciArgs, cmplx, CMPLX_NORM_LEN);
 
     if (doCalcNorm) {
         UpdateRunningNorm();
@@ -136,7 +135,7 @@ void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 
 /// Add or Subtract integer (without sign, with carry)
 void QEngineOCL::INTC(cl::Kernel* call,
-    bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+    bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -157,16 +156,16 @@ void QEngineOCL::INTC(cl::Kernel* call,
 
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INCC(
-    bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+    bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
     INTC(clObj->GetINCCPtr(), toAdd, start, length, carryIndex);
 }
 
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DECC(
-    bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+    bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    INTC(clObj->GetDECCPtr(), toAdd, start, length, carryIndex);
+    INTC(clObj->GetDECCPtr(), toSub, start, length, carryIndex);
 }
 
 /** Set 8 bit register bits based on read from classical memory */
@@ -237,14 +236,14 @@ unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
 unsigned char QEngineOCL::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
-    OpSuperposeReg8(clObj->GetADC8Ptr(), 0, inputStart, outputStart, carryIndex, values);
+    return OpSuperposeReg8(clObj->GetADC8Ptr(), 0, inputStart, outputStart, carryIndex, values);
 }
 
 /** Subtract based on an indexed load from classical memory */
 unsigned char QEngineOCL::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
-    OpSuperposeReg8(clObj->GetSBC8Ptr(), 1, inputStart, outputStart, carryIndex, values);
+    return OpSuperposeReg8(clObj->GetSBC8Ptr(), 1, inputStart, outputStart, carryIndex, values);
 }
 
 } // namespace Qrack

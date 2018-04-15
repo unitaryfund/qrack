@@ -10,8 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qunit.hpp"
-#include "qunitlocal.hpp"
+#include <thread>
+
+#include "qengine_cpu.hpp"
 
 namespace Qrack {
 
@@ -23,20 +24,21 @@ namespace Qrack {
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(
-    bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
-    : rand_distribution(0.0, 1.0)
-    , numCores(std::thread::hardware_concurrency())
+    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, Complex16 phaseFac)
+    : QInterface(qBitCount),
+      rand_distribution(0.0, 1.0)
 {
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
     if (rgp == NULL) {
-        rand_generator_ptr = std::make_shared<std::default_random_engine>();
+        rand_generator = std::make_shared<std::default_random_engine>();
         randomSeed = std::time(0);
         SetRandomSeed(randomSeed);
     } else {
-        rand_generator_ptr = rgp;
+        rand_generator = rgp;
     }
 
     runningNorm = 1.0;
@@ -54,45 +56,11 @@ QEngineCPU::QEngineCPU(
     }
 }
 
-/// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
-QEngineCPU::QEngineCPU(const QEngineCPU& pqs)
-    : rand_distribution(0.0, 1.0)
-    , numCores(std::thread::hardware_concurrency())
-{
-    rand_generator_ptr = pqs.rand_generator_ptr;
-    randomSeed = std::time(0);
-    SetRandomSeed(randomSeed);
-
-    runningNorm = pqs.runningNorm;
-    qubitCount = pqs.qubitCount;
-    maxQPower = pqs.maxQPower;
-
-    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
-    stateVec.reset();
-    stateVec = std::move(sv);
-    SetQuantumState(&pqs.stateVec[0]);
-}
-
-/// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
-void QEngineCPU::CloneRawState(Complex16* output)
-{
-    if (runningNorm != 1.0) {
-        NormalizeState();
-    }
-    std::copy(&(stateVec[0]), &(stateVec[0]) + maxQPower, &(output[0]));
-}
-
-/// Generate a random double from 0 to 1
-double QEngineCPU::Rand() { return rand_distribution(*rand_generator_ptr); }
-
 void QEngineCPU::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 {
     stateVec.reset();
     stateVec = std::move(nStateVec);
 }
-
-/// Set |0>/|1> bit basis pure quantum permutation state, as an unsigned int
-void QEngineCPU::SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(Complex16* inputState)
@@ -134,25 +102,25 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
  */
-void QEngineCPU::Cohere(QEngineCPU& toCopy)
+void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
-    if (toCopy.runningNorm != 1.0) {
-        toCopy.NormalizeState();
+    if (toCopy->runningNorm != 1.0) {
+        toCopy->NormalizeState();
     }
 
-    bitCapInt nQubitCount = qubitCount + toCopy.qubitCount;
+    bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
     bitCapInt nMaxQPower = 1 << nQubitCount;
     bitCapInt startMask = (1 << qubitCount) - 1;
-    bitCapInt endMask = ((1 << (toCopy.qubitCount)) - 1) << qubitCount;
+    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
 
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
-        nStateVec[lcv] = stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
+        nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
     });
 
     qubitCount = nQubitCount;
@@ -167,7 +135,7 @@ void QEngineCPU::Cohere(QEngineCPU& toCopy)
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
  */
-void QEngineCPU::Cohere(std::vector<std::shared_ptr<QEngineCPU>> toCopy)
+void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 {
     bitLenInt i;
     bitLenInt toCohereCount = toCopy.size();
@@ -217,7 +185,7 @@ void QEngineCPU::Cohere(std::vector<std::shared_ptr<QEngineCPU>> toCopy)
  * destination object must be initialized to the correct number of bits, in 0
  * permutation state.
  */
-void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPU& destination)
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
     if (length == 0) {
         return;
@@ -256,7 +224,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPU& destina
     ResetStateVec(std::move(sv));
 
     for (i = 0; i < partPower; i++) {
-        destination.stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
+        destination->stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
     for (i = 0; i < remainderPower; i++) {
@@ -264,7 +232,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPU& destina
     }
 
     UpdateRunningNorm();
-    destination.UpdateRunningNorm();
+    destination->UpdateRunningNorm();
 }
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)

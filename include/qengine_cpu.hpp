@@ -12,11 +12,21 @@
 
 #pragma once
 
+#include <random>
+
 #include "qinterface.hpp"
 
 #include "common/parallel_for.hpp"
 
 namespace Qrack {
+
+class QEngineCPU;
+typedef std::shared_ptr<QEngineCPU> QEngineCPUPtr;
+
+template <class BidirectionalIterator>
+void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride);
+template <class BidirectionalIterator>
+void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
 
 /**
  * General purpose QEngineCPU implementation
@@ -30,14 +40,21 @@ protected:
     bitCapInt maxQPower;
     std::unique_ptr<Complex16[]> stateVec;
 
-    std::shared_ptr<std::default_random_engine> rand_generator_ptr;
+    std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
 public:
     QEngineCPU(
-        bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp);
+        bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, Complex16 phaseFac = Complex16(-999.0, -999.0));
+    ~QEngineCPU() {}
 
     virtual void SetQuantumState(Complex16* inputState);
+    virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
+    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
+    virtual void Cohere(QInterfacePtr toCopy);
+    virtual void Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+
     virtual void Cohere(QEngineCPUPtr toCopy);
     virtual void Cohere(std::vector<QEngineCPUPtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
@@ -192,6 +209,7 @@ public:
     virtual void PhaseFlip();
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual unsigned char MReg8(bitLenInt start);
     virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values);
     virtual unsigned char AdcSuperposeReg8(
         bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
@@ -217,7 +235,7 @@ public:
 
 protected:
     /** Generate a random double from 0 to 1 */
-    double Rand();
+    double Rand() { return rand_distribution(*rand_generator); }
 
     virtual void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,

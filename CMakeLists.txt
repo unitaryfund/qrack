@@ -46,8 +46,7 @@ add_library (qrack STATIC
     src/qengine/state/state.cpp
     src/qengine/state/operators.cpp
     src/qengine/state/gates.cpp
-    src/qengine/factory.cpp
-    src/qunit.cpp
+    # src/qunit.cpp
     )
 
 # Declare the unittest executable

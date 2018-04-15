@@ -10,7 +10,13 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
+#include <atomic>
+#include <future>
+#include <math.h>
+
 #include "common/parallel_for.hpp"
+
+namespace Qrack {
 
 /*
  * Iterate through the permutations a maximum of end-begin times, allowing the
@@ -69,10 +75,6 @@ void ParallelFor::par_for_skip(
 void ParallelFor::par_for_mask(
     const bitCapInt begin, const bitCapInt end, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn)
 {
-    if (maskLen > qubitCount) {
-        throw std::invalid_argument("Too many masks");
-    }
-
     for (int i = 1; i < maskLen; i++) {
         if (maskArray[i] < maskArray[i - 1]) {
             throw std::invalid_argument("Masks must be ordered by size");
@@ -141,3 +143,4 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const Complex16* stateAr
     return sqrt(nrmSqr);
 }
 
+}

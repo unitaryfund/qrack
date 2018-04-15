@@ -10,24 +10,26 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "separatedunit.hpp"
-#include <iostream>
+#include <ctime>
+
+#include "qunit.hpp"
 
 namespace Qrack {
 
-QUnit::QUnit(CoherentUnitEngine eng, bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, uint32_t rand_seed) : engine(eng)
+QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, uint32_t rand_seed) : QInterface(qBitCount), engine(eng)
 {
-    rand_generator = std::default_random_engine();
-    rand_generator->seed(rand_seed);
-    shards.resize(qBitCount);
-
-    if (phaseFac == Complex16(-999.0, -999.0)) {
-        double angle = Rand() * 2.0 * M_PI;
-        phaseFac = Complex16(cos(angle), sin(angle));
+    if (rand_seed == 0) {
+        rand_seed = std::time(0);
     }
 
+    /* Used to control the random seed for all allocated interfaces. */
+    rand_generator = std::make_shared<std::default_random_engine>();
+    rand_generator->seed(rand_seed);
+
+    shards.resize(qBitCount);
+
     for (auto shard : shards) {
-        shard.unit = CreateCoherentUnit(engine, 1, 0, phaseFac, rand_generator);
+        shard.unit = CreateQuantumInterface(engine, 1, 0, rand_generator);
         shard.mapped = 0;
     }
 }
@@ -37,8 +39,8 @@ void QUnit::Decompose(bitLenInt qubit)
     std::shared_ptr<QInterface> unit = shards[qubit].unit;
     for (auto shard : shards) {
         if (shard.unit == unit) {
-            shard.unit = CreateCoherentUnit(engine, 1, 0, phaseFac, rand_generator);
-            shard.unit->SetBit(0, unit->M(shard.mapped)); // Probably wrong, but YWKIM
+            shard.unit = CreateQuantumInterface(engine, 1, 0, rand_generator);
+            shard.unit->SetBit(0, unit->M(shard.mapped));
             shard.mapped = 0;
         }
     }
@@ -63,7 +65,7 @@ void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn)
         }
     }
 
-    (unit->*fn)(shards[bit1].mapped, shards[bit2].mapped);
+    ((*unit1).*fn)(shards[bit1].mapped, shards[bit2].mapped);
 }
 
 void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn)
@@ -86,24 +88,24 @@ void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, Thre
             if (shard.unit == unit3) {
                 shard.unit = unit1;
                 shard.mapped = shard.mapped + unit1->GetQubitCount() + unit2->GetQubitCount();
-        }
+			}
+		}
     }
 
-    (unit->*fn)(shards[bit1].mapped, shards[bit2].mapped, shards[bit3].mapped);
+    ((*unit1).*fn)(shards[bit1].mapped, shards[bit2].mapped, shards[bit3].mapped);
 }
 
 double QUnit::Prob(bitLenInt qubit)
 {
-    QuantumBitShard &shard = shards[qubit];
+    QEngineShard &shard = shards[qubit];
     return (shard.unit->Prob)(shard.mapped);
 }
 
 double QUnit::ProbAll(bitCapInt perm)
 {
     double result = 1.0;
-
     for (auto shard : shards) {
-        p = 0;
+        // int p = 0;
         //for (auto bit : shards[i].bits) {
         //    p |= perm & (1 << bit) ? (1 << shards[i].bits[bit]) : 0;
         //}
@@ -116,7 +118,7 @@ double QUnit::ProbAll(bitCapInt perm)
 
 void QUnit::ProbArray(double* probArray)
 {
-    for (int bit = 0; bit < shards.length(); bit++) {
+    for (size_t bit = 0; bit < shards.size(); bit++) {
         probArray[bit] = Prob(bit);
     }
 }
@@ -124,14 +126,13 @@ void QUnit::ProbArray(double* probArray)
 /// Measure a bit
 bool QUnit::M(bitLenInt qubit)
 {
-    QuantumBitShard &shard = shards[qubit];
-    bool result = shard.unit->M(shard.mapped);
+    bool result = shards[qubit].unit->M(shards[qubit].mapped);
 
     /*
      * Decomposes all of the bits in the shard, performing M() on each one and
      * setting each new CU to the appropriate value.
      */
-    Decompose(shard);
+    Decompose(qubit);
 
     return result;
 }
@@ -151,27 +152,25 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 
 void QUnit::SetBit(bitLenInt qubit, bool value)
 {
-    QuantumBitShard &shard = shards[qubit];
-    shard.unit->SetBit(shard.mapped, value);
-    Decompose(shard);
+    shards[qubit].unit->SetBit(shards[qubit].mapped, value);
+    Decompose(qubit);
 }
 
 /// Set register bits to given permutation
 void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     for (bitLenInt bit = start; bit < length; bit++) {
-        QuantumBitShard &shard = shards[bit];
-        shard.unit->SetBit(shard.mapped, value & (1 << bit));
-        Decompose(shard);
+        shards[bit].unit->SetBit(shards[bit].mapped, value & (1 << bit));
+        Decompose(bit);
     }
 }
 
 void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    QuantumBitShard &shard1 = shards[qubit1];
-    QuantumBitShard &shard2 = shards[qubit2];
+    QEngineShard &shard1 = shards[qubit1];
+    QEngineShard &shard2 = shards[qubit2];
 
-    QuantumBitShard tmp;
+    QEngineShard tmp;
 
     // Swap the bit mapping.
     tmp.mapped = shard1.mapped;
@@ -206,23 +205,23 @@ void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
     EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::XOR);
 }
 
-void QUnit::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall(inputBit, outputBit, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
             unit->CLAND(b1, inputClassicalBit, b2);
         });
 }
 
-void QUnit::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall(inputBit, outputBit, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
             unit->CLOR(b1, inputClassicalBit, b2);
         });
 }
 
-void QUnit::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputQBit)
+void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall(inputBit, outputBit, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
             unit->CLXOR(b1, inputClassicalBit, b2);
         });
 }
@@ -305,8 +304,6 @@ void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
 {
     shards[qubit]->unit->RYDyad(numerator, denominator, shards[qubit].mapped);
 }
-
-// XXX XXX XXX Didn't make any further changes below here...
 
 void QUnit::RZ(double radians, bitLenInt qubit)
 {
