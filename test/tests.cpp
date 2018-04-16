@@ -171,10 +171,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
         testPage[j] = j;
     }
 
-    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    std::cout << "Full Result:    " << qftReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
-
     qftReg->SuperposeReg8(8, 0, testPage);
 
     for (j = 0; j < 256; j++) {
@@ -262,6 +258,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
         qftReg->DECC(1, 0, 8, 8);
+
         if (i < 6) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {

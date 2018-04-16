@@ -5,14 +5,15 @@ inline double2 zmul(const double2 lhs, const double2 rhs)
     return (lhs * (double2)(rhs.y, -(rhs.y))) + (rhs.x * (double2)(lhs.y, lhs.x));
 }
 
-void kernel apply2x2(global double2* stateVec, constant ulong* ulongPtr, global double2* mtrx)
+void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, constant ulong* ulongPtr)
 {
     ulong ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
+    constant double2* mtrx = cmplxPtr;
 
-    double2 nrm = mtrx[4];
+    double2 nrm = cmplxPtr[4];
     ulong bitCount = ulongPtr[0];
     ulong maxI = ulongPtr[1];
     ulong offset1 = ulongPtr[2];

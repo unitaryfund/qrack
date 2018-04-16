@@ -106,9 +106,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.finish();
 
     cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
-    queue.finish();
     apply2x2.setArg(0, stateBuffer);
     apply2x2.setArg(1, cmplxBuffer);
     apply2x2.setArg(2, ulongBuffer);
@@ -149,20 +149,14 @@ void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 
 /// Add or Subtract integer (without sign, with carry)
 void QEngineOCL::INTC(cl::Kernel* call,
-    bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+    bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~(regMask | carryMask));
 
-    bitCapInt bciArgs[10] = { maxQPower >> 1, regMask, otherMask, lengthPower, carryMask, start, toAdd, 0, 0,
+    bitCapInt bciArgs[10] = { maxQPower >> 1, regMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0,
         0 };
 
     DispatchCall(call, bciArgs);
@@ -172,6 +166,12 @@ void QEngineOCL::INTC(cl::Kernel* call,
 void QEngineOCL::INCC(
     bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
     INTC(clObj->GetINCCPtr(), toAdd, start, length, carryIndex);
 }
 
@@ -179,6 +179,13 @@ void QEngineOCL::INCC(
 void QEngineOCL::DECC(
     bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
     INTC(clObj->GetDECCPtr(), toSub, start, length, carryIndex);
 }
 
