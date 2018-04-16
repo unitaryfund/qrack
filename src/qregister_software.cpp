@@ -394,40 +394,25 @@ void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex1
     const bitCapInt* qPowersSorted, const bool doCalcNorm)
 {
     Complex16 nrm = Complex16((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
+    par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
+        Complex16 qubit[2];
+
+        qubit[0] = stateVec[lcv + offset1];
+        qubit[1] = stateVec[lcv + offset2];
+
+        Complex16 Y0 = qubit[0];
+        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+        stateVec[lcv + offset1] = qubit[0];
+        stateVec[lcv + offset2] = qubit[1];
+    });
+
     if (doCalcNorm) {
-        runningNorm = 0.0;
-
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
-            Complex16 qubit[2];
-
-            qubit[0] = stateVec[lcv + offset1];
-            qubit[1] = stateVec[lcv + offset2];
-
-            Complex16 Y0 = qubit[0];
-            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
-            runningNorm += norm(qubit[0]) + norm(qubit[1]);
-
-            stateVec[lcv + offset1] = qubit[0];
-            stateVec[lcv + offset2] = qubit[1];
-        });
+        UpdateRunningNorm();
     }
     else {
         runningNorm = 1.0;
-
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
-            Complex16 qubit[2];
-
-            qubit[0] = stateVec[lcv + offset1];
-            qubit[1] = stateVec[lcv + offset2];
-
-            Complex16 Y0 = qubit[0];
-            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
-
-            stateVec[lcv + offset1] = qubit[0];
-            stateVec[lcv + offset2] = qubit[1];
-        });
     }
 }
 } // namespace Qrack

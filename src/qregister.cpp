@@ -2074,15 +2074,17 @@ void CoherentUnit::DECSC(
  */
 void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
-    //Does not necessarily commute with single bit queues
-    FlushQueue(inOutStart, length);
-    FlushQueue(carryIndex);
-
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
         toSub++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
+
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt otherMask = (1 << qubitCount) - 1;
@@ -2132,15 +2134,16 @@ void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length
 void CoherentUnit::DECBCDC(
     bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
-    //Does not necessarily commute with single bit queues
-    FlushQueue(inOutStart, length); 
-    FlushQueue(carryIndex);
-
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
         toSub++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length); 
+
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
@@ -2261,7 +2264,7 @@ void CoherentUnit::PhaseFlip()
 /// Set register bits to given permutation
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
-    ResetQueue(start, length);
+    FlushQueue(start, length);
 
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {

@@ -8,7 +8,7 @@
 #include "tests.hpp"
 
 using namespace Qrack;
-/*
+
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for")
 {
     int NUM_ENTRIES = 2000;
@@ -509,8 +509,8 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
 }
-*/
 
+/*
 TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
 {
     const int planckTimes = 33000;
@@ -638,3 +638,4 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_random_walk")
 
     //("Hello, Universe!")
 }
+*/
