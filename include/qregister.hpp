@@ -1006,6 +1006,7 @@ protected:
     /// Constructor for SeparatedUnit
     CoherentUnit();
 
+    const bitCapInt ParStride = 8;
     uint32_t randomSeed;
     double runningNorm;
     bitLenInt qubitCount;

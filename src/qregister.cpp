@@ -2499,22 +2499,42 @@ void CoherentUnit::par_for_inc(const bitCapInt begin, const bitCapInt end, Incre
     idx = begin;
 
     std::vector<std::future<void>> futures(numCores);
+    bitCapInt pStride = ParStride;
 
-    for (int cpu = 0; cpu < numCores; cpu++) {
-        futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn]() {
-            for (bitCapInt i = idx++; i < end; i = idx++) {
-                i = inc(i, cpu);
-                /* Easiest to clamp on end. */
-                if (i >= end) {
-                    break;
-                }
-                fn(i, cpu);
+    if ((int)(maxQPower / ParStride) < numCores) {
+        bitCapInt j;
+        for (bitCapInt i = 0; i < end; i++) {
+            j = inc(i, 0);
+            if (j >= end) {
+                break;
             }
-        });
+            fn(j, 0);
+        }
     }
+    else {
+        for (int cpu = 0; cpu < numCores; cpu++) {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn, pStride]() {
+                bitCapInt j, k;
+                bitCapInt strideEnd = end / pStride;
+                for (bitCapInt i = idx++; i < strideEnd; i = idx++) {
+                    for (j = 0; j < pStride; j++) {
+                        k = inc(i * pStride + j, cpu);
+                        /* Easiest to clamp on end. */
+                        if (k >= end) {
+                            break;
+                        }
+                        fn(k, cpu);
+                    }
+                    if (k >= end) {
+                        break;
+                    }
+                }
+            });
+        }
 
-    for (int cpu = 0; cpu < numCores; cpu++) {
-        futures[cpu].get();
+        for (int cpu = 0; cpu < numCores; cpu++) {
+            futures[cpu].get();
+        }
     }
 }
 
@@ -2582,40 +2602,46 @@ double CoherentUnit::par_norm(const bitCapInt maxQPower, const Complex16* stateA
     // std::partial_sort_copy(sAD, sAD + (maxQPower * 2), sSAD, sSAD + (maxQPower * 2));
     // Complex16* sorted = reinterpret_cast<Complex16*>(sSAD);
 
-    std::atomic<bitCapInt> idx;
-    idx = 0;
-    double* nrmPart = new double[numCores];
-    std::vector<std::future<void>> futures(numCores);
-    for (int cpu = 0; cpu != numCores; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
-            double sqrNorm = 0.0;
-            // double smallSqrNorm = 0.0;
-            bitCapInt i;
-            for (;;) {
-                i = idx++;
-                // if (i >= maxQPower) {
-                //	sqrNorm += smallSqrNorm;
-                //	break;
-                //}
-                // smallSqrNorm += norm(sorted[i]);
-                // if (smallSqrNorm > sqrNorm) {
-                //	sqrNorm += smallSqrNorm;
-                //	smallSqrNorm = 0;
-                //}
-                if (i >= maxQPower)
-                    break;
-                sqrNorm += norm(stateArray[i]);
-            }
-            nrmPart[cpu] = sqrNorm;
-        });
-    }
-
+    
     double nrmSqr = 0;
-    for (int cpu = 0; cpu != numCores; ++cpu) {
-        futures[cpu].get();
-        nrmSqr += nrmPart[cpu];
+    if ((int)(maxQPower / ParStride) < numCores) {
+        for (bitCapInt i = 0; i < maxQPower; i++) {
+            nrmSqr += norm(stateArray[i]);
+        }
     }
-    delete[] nrmPart;
+    else {
+        std::atomic<bitCapInt> idx;
+        idx = 0;
+        double* nrmPart = new double[numCores];
+        std::vector<std::future<void>> futures(numCores);
+        bitCapInt pStride = ParStride;
+        for (int cpu = 0; cpu != numCores; ++cpu) {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart, pStride]() {
+                double sqrNorm = 0.0;
+                // double smallSqrNorm = 0.0;
+                bitCapInt i, j , k;
+                for (;;) {
+                    i = idx++;
+                    for (j = 0; j < pStride; j++) {
+                        k = i * pStride + j;
+                        if (k >= maxQPower)
+                            break;
+                        sqrNorm += norm(stateArray[k]);
+                    }
+                    if (k >= maxQPower)
+                        break;
+                }
+                nrmPart[cpu] = sqrNorm;
+            });
+        }
+
+        for (int cpu = 0; cpu != numCores; ++cpu) {
+            futures[cpu].get();
+            nrmSqr += nrmPart[cpu];
+        }
+        delete[] nrmPart;
+    }
+    
     return sqrt(nrmSqr);
 }
 
