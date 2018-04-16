@@ -123,13 +123,13 @@ void CoherentUnitOCL::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
 }
 
 void CoherentUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     Complex16 cmplx[5];
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
-    cmplx[4] = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
+    cmplx[4] = Complex16((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
     bitCapInt ulong[10] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         ulong[4 + i] = qPowersSorted[i];
@@ -159,6 +159,9 @@ void CoherentUnitOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Compl
 /// "Circular shift left" - shift bits left, and carry last bits.
 void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
@@ -187,6 +190,9 @@ void CoherentUnitOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// "Circular shift right" - shift bits right, and carry first bits.
 void CoherentUnitOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
@@ -220,8 +226,13 @@ void CoherentUnitOCL::INCC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
         toAdd++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
@@ -258,9 +269,14 @@ void CoherentUnitOCL::DECC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
     } else {
         toSub++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
@@ -293,6 +309,9 @@ void CoherentUnitOCL::DECC(
 /// Set 8 bit register bits based on read from classical memory
 unsigned char CoherentUnitOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inputStart, 8);
+
     SetReg(outputStart, 8, 0);
     bitCapInt inputMask = 0xff << inputStart;
     bitCapInt outputMask = 0xff << outputStart;
@@ -341,7 +360,12 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
         // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
         carryIn = 1;
         X(carryIndex);
+        FlushQueue(carryIndex);
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(outputStart, 8);
+    FlushQueue(inputStart, 8);
 
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;
@@ -391,13 +415,19 @@ unsigned char CoherentUnitOCL::AdcSuperposeReg8(
 unsigned char CoherentUnitOCL::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
+
     // The carry has to first to be measured for its input value.
     bitCapInt carryIn = 1;
     if (M(carryIndex)) {
         // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
         carryIn = 0;
         X(carryIndex);
+        FlushQueue(carryIndex);
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(outputStart, 8);
+    FlushQueue(inputStart, 8);
 
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;

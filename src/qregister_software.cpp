@@ -20,6 +20,9 @@ namespace Qrack {
 /// "Circular shift left" - shift bits left, and carry last bits.
 void CoherentUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+
     bitCapInt regMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
@@ -45,6 +48,9 @@ void CoherentUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// "Circular shift right" - shift bits right, and carry first bits.
 void CoherentUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+
     bitCapInt regMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
@@ -74,8 +80,13 @@ void CoherentUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLe
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
         toAdd++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
@@ -108,9 +119,14 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
     } else {
         toSub++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
@@ -140,6 +156,9 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
 /// Set 8 bit register bits based on read from classical memory
 unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inputStart, 8);
+
     bitCapInt i, outputInt;
     SetReg(outputStart, 8, 0);
 
@@ -175,7 +194,6 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
 unsigned char CoherentUnit::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
-
     // This a quantum/classical interface method, similar to SuperposeReg8.
     // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
     // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
@@ -191,7 +209,12 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
         // If the carry is set, we carry 1 in. We always initially clear the carry after testing for carry in.
         carryIn = 1;
         X(carryIndex);
+        FlushQueue(carryIndex);
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(outputStart, 8);
+    FlushQueue(inputStart, 8);
 
     // We calloc a new stateVector for output.
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -284,7 +307,12 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
         // If the carry is set, we borrow 1 going in. We always initially clear the carry after testing for borrow in.
         carryIn = 0;
         X(carryIndex);
+        FlushQueue(carryIndex);
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(outputStart, 8);
+    FlushQueue(inputStart, 8);
 
     // We calloc a new stateVector for output.
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
@@ -363,28 +391,43 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
 
 // Private CoherentUnit methods
 void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, const bool doCalcNorm)
 {
-    Complex16 nrm = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
-
-    par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
-        Complex16 qubit[2];
-
-        qubit[0] = stateVec[lcv + offset1];
-        qubit[1] = stateVec[lcv + offset2];
-
-        Complex16 Y0 = qubit[0];
-        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
-
-        stateVec[lcv + offset1] = qubit[0];
-        stateVec[lcv + offset2] = qubit[1];
-    });
-
+    Complex16 nrm = Complex16((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
     if (doCalcNorm) {
-        UpdateRunningNorm();
-    } else {
+        runningNorm = 0.0;
+
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
+            Complex16 qubit[2];
+
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            runningNorm += norm(qubit[0]) + norm(qubit[1]);
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+    }
+    else {
         runningNorm = 1.0;
+
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
+            Complex16 qubit[2];
+
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
     }
 }
 } // namespace Qrack

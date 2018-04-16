@@ -1011,20 +1011,28 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
     std::unique_ptr<Complex16[]> stateVec;
+    std::vector<std::unique_ptr<Complex16[]>> gateQueue;
+    std::vector<bool> isQueued;
 
     std::shared_ptr<std::default_random_engine> rand_generator_ptr;
     std::uniform_real_distribution<double> rand_distribution;
 
     virtual void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
+        const bitCapInt* qPowersSorted, bool doCalcNorm);
     void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
-    void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
+    void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx);
+    void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx);
     void Carry(bitLenInt integerStart, bitLenInt integerLength, bitLenInt carryBit);
     void NormalizeState();
     void Reverse(bitLenInt first, bitLenInt last);
     void UpdateRunningNorm();
+    void Mul2x2(const Complex16* leftIn, Complex16* rightOut);
+    void FlushQueue(bitLenInt index);
+    void FlushQueue(bitLenInt start, bitLenInt length);
+    void ResetQueue(bitLenInt index);
+    void ResetQueue(bitLenInt start, bitLenInt length);
+    bool CheckQueued(bitLenInt start, bitLenInt length);
 
 public:
     /*

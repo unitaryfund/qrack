@@ -99,7 +99,9 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, bitCapInt initState, std::shared
  */
 CoherentUnit::CoherentUnit(
     bitLenInt qBitCount, bitCapInt initState, Complex16 phaseFac, std::shared_ptr<std::default_random_engine> rgp)
-    : rand_distribution(0.0, 1.0)
+    : gateQueue(qBitCount)
+    , isQueued(qBitCount)
+    , rand_distribution(0.0, 1.0)
     , numCores(std::thread::hardware_concurrency())
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -126,6 +128,15 @@ CoherentUnit::CoherentUnit(
         stateVec[initState] = Complex16(cos(angle), sin(angle));
     } else {
         stateVec[initState] = phaseFac;
+    }
+
+    for (bitLenInt i = 0; i < qBitCount; i++) {
+        isQueued[i] = false;
+        gateQueue[i] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
+        gateQueue[i][0] = Complex16(1.0, 0.0);
+        gateQueue[i][1] = Complex16(0.0, 0.0);
+        gateQueue[i][2] = Complex16(0.0, 0.0);
+        gateQueue[i][3] = Complex16(1.0, 0.0);
     }
 }
 
@@ -166,7 +177,9 @@ CoherentUnit::CoherentUnit(bitLenInt qBitCount, Complex16 phaseFac, std::shared_
 
 /// PSEUDO-QUANTUM Initialize a cloned register with same exact quantum state as pqs
 CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
-    : rand_distribution(0.0, 1.0)
+    : gateQueue(pqs.qubitCount)
+    , isQueued(pqs.qubitCount)
+    , rand_distribution(0.0, 1.0)
     , numCores(std::thread::hardware_concurrency())
 {
     rand_generator_ptr = pqs.rand_generator_ptr;
@@ -176,6 +189,12 @@ CoherentUnit::CoherentUnit(const CoherentUnit& pqs)
     runningNorm = pqs.runningNorm;
     qubitCount = pqs.qubitCount;
     maxQPower = pqs.maxQPower;
+
+    std::copy((pqs.isQueued).begin(), (pqs.isQueued).begin() + pqs.qubitCount, isQueued.begin());
+    for (bitLenInt i = 0; i < pqs.qubitCount; i++) {
+        gateQueue[i] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
+        std::copy(&(pqs.gateQueue[i][0]), &(pqs.gateQueue[i][0]) + 4, &(gateQueue[i][0]));
+    }
 
     std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
     stateVec.reset();
@@ -193,6 +212,7 @@ void CoherentUnit::SetRandomSeed(uint32_t seed)
 /// PSEUDO-QUANTUM Output the exact quantum state of this register as a permutation basis array of complex numbers
 void CoherentUnit::CloneRawState(Complex16* output)
 {
+    FlushQueue(0, qubitCount);
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -214,6 +234,7 @@ void CoherentUnit::SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm);
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void CoherentUnit::SetQuantumState(Complex16* inputState)
 {
+    ResetQueue(0, qubitCount);
     std::copy(&(inputState[0]), &(inputState[0]) + maxQPower, &(stateVec[0]));
 }
 
@@ -232,10 +253,25 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
         toCopy.NormalizeState();
     }
 
+    bitLenInt i;
     bitCapInt nQubitCount = qubitCount + toCopy.qubitCount;
     bitCapInt nMaxQPower = 1 << nQubitCount;
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy.qubitCount)) - 1) << qubitCount;
+
+    std::vector<std::unique_ptr<Complex16[]>> nGateQueue(nQubitCount);
+    std::vector<bool> nIsQueued(nQubitCount);
+    std::copy(isQueued.begin(), isQueued.begin() + qubitCount, nIsQueued.begin());
+    for (i = 0; i < qubitCount; i++) {
+        nGateQueue[i] = std::move(gateQueue[i]);
+    }
+    for (i = 0; i < toCopy.qubitCount; i++) {
+        nIsQueued[i + qubitCount] = toCopy.isQueued[i];
+        nGateQueue[i + qubitCount] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
+        std::copy(&(toCopy.gateQueue[i][0]), &(toCopy.gateQueue[i][0]) + 4, &(nGateQueue[i + qubitCount][0]));
+    }
+    gateQueue = std::move(nGateQueue);
+    isQueued = nIsQueued;
 
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
@@ -257,7 +293,7 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
  */
 void CoherentUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
 {
-    bitLenInt i;
+    bitLenInt i, j, k;
     bitLenInt toCohereCount = toCopy.size();
 
     std::vector<bitLenInt> offset(toCohereCount);
@@ -279,6 +315,24 @@ void CoherentUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
         offset[i] = nQubitCount;
         nQubitCount += toCopy[i]->GetQubitCount();
     }
+
+    std::vector<std::unique_ptr<Complex16[]>> nGateQueue(nQubitCount);
+    std::vector<bool> nIsQueued(nQubitCount);
+    std::copy(isQueued.begin(), isQueued.begin() + qubitCount, nIsQueued.begin());
+    for (i = 0; i < qubitCount; i++) {
+        nGateQueue[i] = std::move(gateQueue[i]);
+    }
+    k = 0;
+    for (i = 0; i < toCohereCount; i++) {
+        for (j = 0; j < toCopy[i]->GetQubitCount(); j++) {
+            nIsQueued[k + qubitCount] = toCopy[i]->isQueued[i];
+            nGateQueue[k + qubitCount] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
+            std::copy(&(toCopy[i]->gateQueue[j][0]), &(toCopy[i]->gateQueue[j][0]) + 4, &(nGateQueue[k + qubitCount][0]));
+            k++;
+        }
+    }
+    gateQueue = std::move(nGateQueue);
+    isQueued = nIsQueued;
 
     nMaxQPower = 1 << nQubitCount;
 
@@ -310,6 +364,10 @@ void CoherentUnit::Decohere(bitLenInt start, bitLenInt length, CoherentUnit& des
     if (length == 0) {
         return;
     }
+
+    FlushQueue(start, length);
+    gateQueue.erase(gateQueue.begin() + start, gateQueue.begin() + start + length);
+    isQueued.erase(isQueued.begin() + start, isQueued.begin() + start + length);
 
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -360,6 +418,9 @@ void CoherentUnit::Dispose(bitLenInt start, bitLenInt length)
     if (length == 0) {
         return;
     }
+
+    gateQueue.erase(gateQueue.begin() + start, gateQueue.begin() + start + length);
+    isQueued.erase(isQueued.begin() + start, isQueued.begin() + start + length);
 
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -514,7 +575,7 @@ void CoherentUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt targe
     qPowersSorted[2] = qPowers[3];
     qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false, false);
+    Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
@@ -541,7 +602,7 @@ void CoherentUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt t
     qPowersSorted[2] = qPowers[3];
     qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(0, qPowers[3], pauliX, 3, qPowersSorted, false, false);
+    Apply2x2(0, qPowers[3], pauliX, 3, qPowersSorted, false);
 }
 
 /// Controlled not
@@ -554,7 +615,7 @@ void CoherentUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliX, false);
+    ApplyControlled2x2(control, target, pauliX);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
@@ -567,7 +628,7 @@ void CoherentUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     }
 
     const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyAntiControlled2x2(control, target, pauliX, false);
+    ApplyAntiControlled2x2(control, target, pauliX);
 }
 
 /// Hadamard gate
@@ -583,6 +644,8 @@ void CoherentUnit::H(bitLenInt qubitIndex)
 /// Measurement gate
 bool CoherentUnit::M(bitLenInt qubitIndex)
 {
+    FlushQueue(qubitIndex);
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -637,6 +700,8 @@ bool CoherentUnit::M(bitLenInt qubitIndex)
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 double CoherentUnit::Prob(bitLenInt qubitIndex)
 {
+    FlushQueue(qubitIndex);
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -657,6 +722,8 @@ double CoherentUnit::Prob(bitLenInt qubitIndex)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 double CoherentUnit::ProbAll(bitCapInt fullRegister)
 {
+    FlushQueue(0, qubitCount);
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -667,6 +734,8 @@ double CoherentUnit::ProbAll(bitCapInt fullRegister)
 /// PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
 void CoherentUnit::ProbArray(double* probArray)
 {
+    FlushQueue(0, qubitCount);
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -793,6 +862,10 @@ void CoherentUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     // if ((qubitIndex1 >= qubitCount) || (qubitIndex2 >= qubitCount))
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (qubitIndex1 != qubitIndex2) {
+        // Does not necessarily commute with single bit gates;
+        FlushQueue(qubitIndex1);
+        FlushQueue(qubitIndex2);
+
         const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0),
             Complex16(0.0, 0.0) };
 
@@ -804,7 +877,7 @@ void CoherentUnit::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
         qPowersSorted[1] = qPowers[2];
         qPowers[0] = qPowers[1] + qPowers[2];
         std::sort(qPowersSorted, qPowersSorted + 2);
-        Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
+        Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false);
     }
 }
 
@@ -847,7 +920,7 @@ void CoherentUnit::CRT(double radians, bitLenInt control, bitLenInt target)
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     const Complex16 mtrx[4] = { Complex16(1.0, 0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(cosine, sine) };
-    ApplyControlled2x2(control, target, mtrx, true);
+    ApplyControlled2x2(control, target, mtrx);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
@@ -873,7 +946,7 @@ void CoherentUnit::CRX(double radians, bitLenInt control, bitLenInt target)
     double sine = sin(radians / 2.0);
     Complex16 pauliRX[4] = { Complex16(cosine, 0.0), Complex16(0.0, -sine), Complex16(0.0, -sine),
         Complex16(cosine, 0.0) };
-    ApplyControlled2x2(control, target, pauliRX, true);
+    ApplyControlled2x2(control, target, pauliRX);
 }
 
 /**
@@ -903,7 +976,7 @@ void CoherentUnit::CRY(double radians, bitLenInt control, bitLenInt target)
     double sine = sin(radians / 2.0);
     Complex16 pauliRY[4] = { Complex16(cosine, 0.0), Complex16(-sine, 0.0), Complex16(sine, 0.0),
         Complex16(cosine, 0.0) };
-    ApplyControlled2x2(control, target, pauliRY, true);
+    ApplyControlled2x2(control, target, pauliRY);
 }
 
 /**
@@ -929,7 +1002,7 @@ void CoherentUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
     double sine = sin(radians / 2.0);
     const Complex16 pauliRZ[4] = { Complex16(cosine, -sine), Complex16(0.0, 0.0), Complex16(0.0, 0.0),
         Complex16(cosine, sine) };
-    ApplyControlled2x2(control, target, pauliRZ, true);
+    ApplyControlled2x2(control, target, pauliRZ);
 }
 
 /**
@@ -954,7 +1027,7 @@ void CoherentUnit::CY(bitLenInt control, bitLenInt target)
     if (control == target)
         throw std::invalid_argument("CY control bit cannot also be target.");
     const Complex16 pauliY[4] = { Complex16(0.0, 0.0), Complex16(0.0, -1.0), Complex16(0.0, 1.0), Complex16(0.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliY, false);
+    ApplyControlled2x2(control, target, pauliY);
 }
 
 /// Apply controlled Pauli Z matrix to bit
@@ -965,7 +1038,7 @@ void CoherentUnit::CZ(bitLenInt control, bitLenInt target)
     if (control == target)
         throw std::invalid_argument("CZ control bit cannot also be target.");
     const Complex16 pauliZ[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(-1.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliZ, false);
+    ApplyControlled2x2(control, target, pauliZ);
 }
 
 // Single register instructions:
@@ -979,6 +1052,16 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
         X(start);
         return;
     }
+
+    // If we have depth optimizations queued, keep pushing on that queue.
+    if (CheckQueued(start, length)) {
+        for (bitLenInt i = 0; i < length; i++) {
+            X(start + i);
+        }
+        return;
+    }
+
+    // Otherwise, use an optimized register-wise gate.
 
     // As a fundamental gate, the register-wise X could proceed like so:
     // for (bitLenInt lcv = 0; lcv < length; lcv++) {
@@ -1041,6 +1124,45 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
     ResetStateVec(std::move(nStateVec));
 }
 
+/// Apply Pauli Y matrix to each bit
+void CoherentUnit::Y(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        Y(start + lcv);
+    }
+}
+
+/// Apply Pauli Z matrix to each bit
+void CoherentUnit::Z(bitLenInt start, bitLenInt length)
+{
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        Z(start);
+        return;
+    }
+
+    if (CheckQueued(start, length)) {
+        for (bitLenInt i = 0; i < length; i++) {
+            Z(start + i);
+        }
+    } else {
+        bitCapInt inOutMask = ((1 << length) - 1) << start;
+        bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
+        std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt inOutRes = lcv & inOutMask;
+            bitCapInt inOutInt = inOutRes >> start;
+            bitLenInt bitCount;
+            for (bitCount = 0; inOutInt; bitCount++) {
+                inOutInt &= inOutInt - 1;  
+            }
+            nStateVec[inOutRes | otherRes] = (bitCount & 1) ? -stateVec[lcv] : stateVec[lcv];
+        });
+        ResetStateVec(std::move(nStateVec));
+    }
+}
+
 /// Bitwise swap
 void CoherentUnit::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
@@ -1049,6 +1171,10 @@ void CoherentUnit::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         Swap(start1, start2);
         return;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start1, length);
+    FlushQueue(start2, length);
 
     int distance = start1 - start2;
     if (distance < 0) {
@@ -1169,22 +1295,6 @@ void CoherentUnit::RZDyad(int numerator, int denominator, bitLenInt start, bitLe
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         RZDyad(numerator, denominator, start + lcv);
-    }
-}
-
-/// Apply Pauli Y matrix to each bit
-void CoherentUnit::Y(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        Y(start + lcv);
-    }
-}
-
-/// Apply Pauli Z matrix to each bit
-void CoherentUnit::Z(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        Z(start + lcv);
     }
 }
 
@@ -1406,6 +1516,9 @@ void CoherentUnit::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Add integer (without sign)
 void CoherentUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+
     bitCapInt lengthPower = 1 << length;
     toAdd %= lengthPower;
     if ((length > 0) && (toAdd > 0)) {
@@ -1435,6 +1548,9 @@ void CoherentUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 /// Add BCD integer (without sign)
 void CoherentUnit::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
@@ -1487,6 +1603,10 @@ void CoherentUnit::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
 void CoherentUnit::INCBCDC(
     bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+    FlushQueue(carryIndex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1566,6 +1686,10 @@ void CoherentUnit::INCBCDC(
  */
 void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+    FlushQueue(overflowIndex);
+
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt otherMask = (1 << qubitCount) - 1;
@@ -1621,8 +1745,13 @@ void CoherentUnit::INCSC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
         toAdd++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
@@ -1676,6 +1805,10 @@ void CoherentUnit::INCSC(
  */
 void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+    FlushQueue(carryIndex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1731,6 +1864,9 @@ void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
     bitCapInt lengthPower = 1 << length;
     toSub %= lengthPower;
     if ((length > 0) && (toSub > 0)) {
+        //Does not necessarily commute with single bit queues
+        FlushQueue(start, length);
+
         bitCapInt otherMask = (1 << qubitCount) - 1;
         bitCapInt inOutMask = (lengthPower - 1) << start;
         otherMask ^= inOutMask;
@@ -1761,6 +1897,10 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
     otherMask ^= inOutMask;
@@ -1812,6 +1952,10 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
  */
 void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+    FlushQueue(overflowIndex);
+
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt otherMask = (1 << qubitCount) - 1;
@@ -1867,9 +2011,14 @@ void CoherentUnit::DECSC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+        FlushQueue(carryIndex);
     } else {
         toSub++;
     }
+
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
     bitCapInt carryMask = 1 << carryIndex;
@@ -1923,6 +2072,10 @@ void CoherentUnit::DECSC(
  */
 void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length);
+    FlushQueue(carryIndex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1977,6 +2130,10 @@ void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length
 void CoherentUnit::DECBCDC(
     bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(inOutStart, length); 
+    FlushQueue(carryIndex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -2049,6 +2206,7 @@ void CoherentUnit::DECBCDC(
 /// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
 void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
 {
+    //Uses single bit gates
     if (length > 0) {
         bitLenInt end = start + length;
         bitLenInt i, j;
@@ -2064,6 +2222,9 @@ void CoherentUnit::QFT(bitLenInt start, bitLenInt length)
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     par_for(0, maxQPower, [&](const bitCapInt lcv) {
@@ -2075,6 +2236,10 @@ void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
 void CoherentUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    //Does not necessarily commute with single bit queues
+    FlushQueue(start, length);
+    FlushQueue(flagIndex);
+
     bitCapInt regMask = ((1 << length) - 1) << start;
     bitCapInt flagMask = 1 << flagIndex;
 
@@ -2087,12 +2252,15 @@ void CoherentUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitL
 /// Phase flip always - equivalent to Z X Z X on any bit in the CoherentUnit
 void CoherentUnit::PhaseFlip()
 {
+    //Commutes with single bit queues
     par_for(0, maxQPower, [&](const bitCapInt lcv) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
 /// Set register bits to given permutation
 void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
+    ResetQueue(start, length);
+
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
         SetBit(start, (value == 1));
@@ -2105,7 +2273,7 @@ void CoherentUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     } else {
         bool bitVal;
         bitCapInt regVal = MReg(start, length);
-        for (bitLenInt i = 0; i < length; i++) {
+        for (bitCapInt i = 0; i < length; i++) {
             bitVal = regVal & (1 << i);
             if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
                 X(start + i);
@@ -2124,6 +2292,8 @@ bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
             return 0;
         }
     }
+
+    FlushQueue(start, length);
 
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -2190,13 +2360,22 @@ unsigned char CoherentUnit::MReg8(bitLenInt start) { return MReg(start, 8); }
 
 void CoherentUnit::ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm)
 {
-    bitCapInt qPowers[1];
-    qPowers[0] = 1 << qubitIndex;
-    Apply2x2(0, qPowers[0], mtrx, 1, qPowers, true, doCalcNorm);
+    if (qubitCount <= 2) {
+        bitCapInt qPowers[1];
+        qPowers[0] = 1 << qubitIndex;
+        Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
+    }
+    else {
+        isQueued[qubitIndex] = true;
+        Mul2x2(mtrx, &(gateQueue[qubitIndex][0]));
+    }
 }
 
-void CoherentUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void CoherentUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx)
 {
+    FlushQueue(control);
+    FlushQueue(target);
+
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
     qPowers[1] = 1 << control;
@@ -2205,11 +2384,14 @@ void CoherentUnit::ApplyControlled2x2(bitLenInt control, bitLenInt target, const
     qPowersSorted[1] = qPowers[2];
     qPowers[0] = qPowers[1] + qPowers[2];
     std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
+    Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false);
 }
 
-void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx)
 {
+    FlushQueue(control);
+    FlushQueue(target);
+
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
     qPowers[1] = 1 << control;
@@ -2218,7 +2400,7 @@ void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, c
     qPowersSorted[1] = qPowers[2];
     qPowers[0] = qPowers[1] + qPowers[2];
     std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
+    Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false);
 }
 
 void CoherentUnit::NormalizeState()
@@ -2242,6 +2424,59 @@ void CoherentUnit::Reverse(bitLenInt first, bitLenInt last)
 }
 
 void CoherentUnit::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, &(stateVec[0])); }
+
+void CoherentUnit::Mul2x2(const Complex16* leftIn, Complex16* rightOut) {
+    Complex16 rightDupe[4];
+    std::copy(rightOut, rightOut + 4, rightDupe);
+    rightOut[0] = leftIn[0] * rightDupe[0] + leftIn[1] * rightDupe[2];
+    rightOut[1] = leftIn[0] * rightDupe[1] + leftIn[1] * rightDupe[3];
+    rightOut[2] = leftIn[2] * rightDupe[0] + leftIn[3] * rightDupe[2];
+    rightOut[3] = leftIn[2] * rightDupe[1] + leftIn[3] * rightDupe[3];
+}
+
+void CoherentUnit::FlushQueue(bitLenInt index) {
+    if (isQueued[index]) {
+        isQueued[index] = false;
+        bitCapInt qPowers[1];
+        qPowers[0] = 1 << index;
+        Apply2x2(0, qPowers[0], &(gateQueue[index][0]), 1, qPowers, true);
+        gateQueue[index][0] = Complex16(1.0, 0.0);
+        gateQueue[index][1] = Complex16(0.0, 0.0);
+        gateQueue[index][2] = Complex16(0.0, 0.0);
+        gateQueue[index][3] = Complex16(1.0, 0.0);
+    }
+}
+
+void CoherentUnit::FlushQueue(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        FlushQueue(start + i);
+    }
+}
+
+void CoherentUnit::ResetQueue(bitLenInt index) {
+    if (isQueued[index]) {
+        isQueued[index] = false;
+        gateQueue[index][0] = Complex16(1.0, 0.0);
+        gateQueue[index][1] = Complex16(0.0, 0.0);
+        gateQueue[index][2] = Complex16(0.0, 0.0);
+        gateQueue[index][3] = Complex16(1.0, 0.0);
+    }
+}
+
+void CoherentUnit::ResetQueue(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        ResetQueue(start + i);
+    }
+}
+
+bool CoherentUnit::CheckQueued(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        if (isQueued[start + i]) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /*
  * Iterate through the permutations a maximum of end-begin times, allowing the
