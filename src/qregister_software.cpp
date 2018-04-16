@@ -34,7 +34,7 @@ void CoherentUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt regRes = (lcv & (regMask));
         bitCapInt regInt = regRes >> (start);
@@ -63,7 +63,7 @@ void CoherentUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt regRes = (lcv & (regMask));
         bitCapInt regInt = regRes >> (start);
@@ -97,7 +97,7 @@ void CoherentUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLe
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -137,7 +137,7 @@ void CoherentUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLe
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -169,7 +169,7 @@ unsigned char CoherentUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt output
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, skipPower, 8, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, skipPower, 8, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt inputRes = lcv & (inputMask);
         bitCapInt inputInt = inputRes >> (inputStart);
         bitCapInt outputInt = values[inputInt];
@@ -232,7 +232,7 @@ unsigned char CoherentUnit::AdcSuperposeReg8(
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
 
-    par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv, const int cpu) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -329,7 +329,7 @@ unsigned char CoherentUnit::SbcSuperposeReg8(
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
 
-    par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv, const int cpu) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -394,25 +394,51 @@ void CoherentUnit::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex1
     const bitCapInt* qPowersSorted, const bool doCalcNorm)
 {
     Complex16 nrm = Complex16((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
-    par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
-        Complex16 qubit[2];
 
-        qubit[0] = stateVec[lcv + offset1];
-        qubit[1] = stateVec[lcv + offset2];
+    if (doCalcNorm && (bitCount == 1)) {
+        double* rngNrm = new double[numCores]; 
+        std::fill(rngNrm, rngNrm + numCores, 0.0);
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            Complex16 qubit[2];
 
-        Complex16 Y0 = qubit[0];
-        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
 
-        stateVec[lcv + offset1] = qubit[0];
-        stateVec[lcv + offset2] = qubit[1];
-    });
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
-    if (doCalcNorm) {
-        UpdateRunningNorm();
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        runningNorm = 0.0;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
+        runningNorm = sqrt(runningNorm);
     }
     else {
-        runningNorm = 1.0;
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            Complex16 qubit[2];
+
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        if (doCalcNorm) {
+            UpdateRunningNorm();
+        }
+        else {
+            runningNorm = 1.0;
+        }
     }
 }
 } // namespace Qrack

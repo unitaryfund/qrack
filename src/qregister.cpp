@@ -277,7 +277,7 @@ void CoherentUnit::Cohere(CoherentUnit& toCopy)
 
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy.stateVec[(lcv & endMask) >> qubitCount];
     });
 
@@ -340,7 +340,7 @@ void CoherentUnit::Cohere(std::vector<std::shared_ptr<CoherentUnit>> toCopy)
 
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask];
         for (bitLenInt j = 0; j < toCohereCount; j++) {
             nStateVec[lcv] *= toCopy[j]->stateVec[(lcv & mask[j]) >> offset[j]];
@@ -671,7 +671,7 @@ bool CoherentUnit::M(bitLenInt qubitIndex)
 
         nrm = Complex16(cosine, sine) / nrmlzr;
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
                 stateVec[lcv] = Complex16(0.0, 0.0);
             } else {
@@ -685,7 +685,7 @@ bool CoherentUnit::M(bitLenInt qubitIndex)
 
         nrm = Complex16(cosine, sine) / nrmlzr;
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
                 stateVec[lcv] = nrm * stateVec[lcv];
             } else {
@@ -1089,7 +1089,7 @@ void CoherentUnit::X(bitLenInt start, bitLenInt length)
     // the parallel for loop. Some skip certain permutations in order to
     // optimize. Some take a new permutation state vector for output, and some
     // just transform the permutation state vector in place.
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         // Set nStateVec, indexed by the loop control variable (lcv) with
         // the X'ed bits inverted, with the value of stateVec indexed by
         // lcv.
@@ -1151,7 +1151,7 @@ void CoherentUnit::Z(bitLenInt start, bitLenInt length)
         bitCapInt inOutMask = ((1 << length) - 1) << start;
         bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
         std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt inOutRes = lcv & inOutMask;
             bitCapInt inOutInt = inOutRes >> start;
@@ -1194,7 +1194,7 @@ void CoherentUnit::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         otherMask ^= reg1Mask | reg2Mask;
         std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = (lcv & otherMask);
             bitCapInt reg1Res = ((lcv & reg1Mask) >> (start1)) << (start2);
             bitCapInt reg2Res = ((lcv & reg2Mask) >> (start2)) << (start1);
@@ -1530,7 +1530,7 @@ void CoherentUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
         std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = (lcv & otherMask);
             bitCapInt inOutRes = (lcv & inOutMask);
             bitCapInt inOutInt = inOutRes >> start;
@@ -1563,7 +1563,7 @@ void CoherentUnit::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt partToAdd = toAdd;
         bitCapInt inOutRes = (lcv & (inOutMask));
@@ -1627,7 +1627,7 @@ void CoherentUnit::INCBCDC(
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt partToAdd = toAdd;
         bitCapInt inOutRes = (lcv & (inOutMask));
@@ -1701,7 +1701,7 @@ void CoherentUnit::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length,
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -1765,7 +1765,7 @@ void CoherentUnit::INCSC(
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -1826,7 +1826,7 @@ void CoherentUnit::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -1875,7 +1875,7 @@ void CoherentUnit::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
         std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
         std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = (lcv & otherMask);
             bitCapInt inOutRes = (lcv & inOutMask);
             bitCapInt inOutInt = inOutRes >> start;
@@ -1909,7 +1909,7 @@ void CoherentUnit::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt lengt
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt partToSub = toAdd;
         bitCapInt inOutRes = (lcv & (inOutMask));
@@ -1967,7 +1967,7 @@ void CoherentUnit::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length,
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -2032,7 +2032,7 @@ void CoherentUnit::DECSC(
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -2096,7 +2096,7 @@ void CoherentUnit::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
@@ -2156,7 +2156,7 @@ void CoherentUnit::DECBCDC(
     std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
     std::fill(&(nStateVec[0]), &(nStateVec[0]) + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv) {
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt partToSub = toSub;
         bitCapInt inOutRes = (lcv & (inOutMask));
@@ -2232,7 +2232,7 @@ void CoherentUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if ((lcv & (~(regMask))) == lcv)
             stateVec[lcv] = -stateVec[lcv];
     });
@@ -2248,7 +2248,7 @@ void CoherentUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitL
     bitCapInt regMask = ((1 << length) - 1) << start;
     bitCapInt flagMask = 1 << flagIndex;
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if ((((lcv & regMask) >> (start)) < greaterPerm) & ((lcv & flagMask) == flagMask))
             stateVec[lcv] = -stateVec[lcv];
     });
@@ -2258,7 +2258,7 @@ void CoherentUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitL
 void CoherentUnit::PhaseFlip()
 {
     //Commutes with single bit queues
-    par_for(0, maxQPower, [&](const bitCapInt lcv) { stateVec[lcv] = -stateVec[lcv]; });
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
 /// Set register bits to given permutation
@@ -2347,7 +2347,7 @@ bitCapInt CoherentUnit::MReg(bitLenInt start, bitLenInt length)
     bitCapInt resultPtr = result << start;
     Complex16 nrm = Complex16(cosine, sine) / nrmlzr;
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if ((lcv & resultPtr) == resultPtr) {
             stateVec[lcv] = nrm * stateVec[lcv];
         } else {
@@ -2410,7 +2410,7 @@ void CoherentUnit::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, c
 
 void CoherentUnit::NormalizeState()
 {
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
         if (norm(stateVec[lcv]) < 1e-15) {
             stateVec[lcv] = Complex16(0.0, 0.0);
@@ -2501,14 +2501,14 @@ void CoherentUnit::par_for_inc(const bitCapInt begin, const bitCapInt end, Incre
     std::vector<std::future<void>> futures(numCores);
 
     for (int cpu = 0; cpu < numCores; cpu++) {
-        futures[cpu] = std::async(std::launch::async, [&]() {
+        futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn]() {
             for (bitCapInt i = idx++; i < end; i = idx++) {
-                i = inc(i);
+                i = inc(i, cpu);
                 /* Easiest to clamp on end. */
                 if (i >= end) {
                     break;
                 }
-                fn(i);
+                fn(i, cpu);
             }
         });
     }
@@ -2520,7 +2520,7 @@ void CoherentUnit::par_for_inc(const bitCapInt begin, const bitCapInt end, Incre
 
 void CoherentUnit::par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn)
 {
-    par_for_inc(begin, end, [](const bitCapInt i) { return i; }, fn);
+    par_for_inc(begin, end, [](const bitCapInt i, int cpu) { return i; }, fn);
 }
 
 void CoherentUnit::par_for_skip(
@@ -2538,7 +2538,7 @@ void CoherentUnit::par_for_skip(
     bitCapInt highMask = (~(lowMask + skipMask)) << (maskWidth - 1);
 
     IncrementFunc incFn = [lowMask, highMask, maskWidth](
-                              bitCapInt i) { return ((i << maskWidth) & highMask) | (i & lowMask); };
+                              bitCapInt i, int cpu) { return ((i << maskWidth) & highMask) | (i & lowMask); };
 
     par_for_inc(begin, end, incFn, fn);
 }
@@ -2564,7 +2564,7 @@ void CoherentUnit::par_for_mask(
         masks[i][1] = (~(masks[i][0] + maskArray[i])); // high mask
     }
 
-    IncrementFunc incFn = [&masks, maskLen](bitCapInt i) {
+    IncrementFunc incFn = [&masks, maskLen](bitCapInt i, int cpu) {
         /* Push i apart, one mask at a time. */
         for (int m = 0; m < maskLen; m++) {
             i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
@@ -2615,6 +2615,7 @@ double CoherentUnit::par_norm(const bitCapInt maxQPower, const Complex16* stateA
         futures[cpu].get();
         nrmSqr += nrmPart[cpu];
     }
+    delete[] nrmPart;
     return sqrt(nrmSqr);
 }
 

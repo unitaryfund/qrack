@@ -21,7 +21,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for")
         hit[i].store(false);
     }
 
-    qftReg->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv) {
+    qftReg->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -51,7 +51,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip")
         hit[i].store(false);
     }
 
-    qftReg->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv) {
+    qftReg->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -79,7 +79,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip_wide")
         hit[i].store(false);
     }
 
-    qftReg->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv) {
+    qftReg->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv, const int cpu) {
         REQUIRE(lcv < NUM_ENTRIES);
         bool old = true;
         old = hit[lcv].exchange(old);
@@ -109,7 +109,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_mask")
 
     qftReg->SetConcurrencyLevel(1);
 
-    qftReg->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv) {
+    qftReg->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
