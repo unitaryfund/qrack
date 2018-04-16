@@ -127,7 +127,7 @@ public:
     /**
      * \defgroup RegGates Register-spanning gates
      *
-     * Convienence and optimized functions implementing gates are applied from
+     * Convenience and optimized functions implementing gates are applied from
      * the bit 'start' for 'length' bits for the register.
      *
      * @{
