@@ -32,6 +32,8 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
+template void rotate<Complex16 *>(Complex16 *first, Complex16 *middle, Complex16 *last, bitCapInt stride);
+
 /// Swap values of two bits in register
 void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {

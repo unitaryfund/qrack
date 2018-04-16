@@ -110,7 +110,7 @@ public:
      * exposing a quantum mechanically consistent API or instruction set.
      */
     virtual void Cohere(QInterfacePtr toCopy) = 0;
-    virtual void Cohere(std::vector<QInterfacePtr> toCopy) = 0;
+    // virtual void Cohere(std::vector<QInterfacePtr> toCopy) = 0;
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,

@@ -13,6 +13,7 @@
 #pragma once
 
 #include <random>
+#include <memory>
 
 #include "qinterface.hpp"
 
@@ -51,12 +52,10 @@ public:
     virtual void SetQuantumState(Complex16* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
-    virtual void Cohere(QInterfacePtr toCopy);
-    virtual void Cohere(std::vector<QInterfacePtr> toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Cohere(QInterfacePtr toCopy) { Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest)); }
 
     virtual void Cohere(QEngineCPUPtr toCopy);
-    virtual void Cohere(std::vector<QEngineCPUPtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -243,7 +242,6 @@ protected:
     virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    virtual void Carry(bitLenInt integerStart, bitLenInt integerLength, bitLenInt carryBit);
     virtual void NormalizeState();
     virtual void Reverse(bitLenInt first, bitLenInt last);
     virtual void UpdateRunningNorm();

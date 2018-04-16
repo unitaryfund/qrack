@@ -130,6 +130,7 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     UpdateRunningNorm();
 }
 
+#if 0
 /**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
@@ -177,6 +178,7 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
     ResetStateVec(std::move(nStateVec));
     UpdateRunningNorm();
 }
+#endif
 
 /**
  * Minimally decohere a set of contigious bits from the full coherent unit. The
