@@ -43,6 +43,8 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
+const Complex16 CMPLX_I_2X2[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(1.0, 0.0) };
+
 /** Protected constructor for SeparatedUnit */
 CoherentUnit::CoherentUnit()
     : rand_distribution(0.0, 1.0)
@@ -2428,10 +2430,22 @@ void CoherentUnit::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, &(sta
 void CoherentUnit::Mul2x2(const Complex16* leftIn, Complex16* rightOut) {
     Complex16 rightDupe[4];
     std::copy(rightOut, rightOut + 4, rightDupe);
-    rightOut[0] = leftIn[0] * rightDupe[0] + leftIn[1] * rightDupe[2];
-    rightOut[1] = leftIn[0] * rightDupe[1] + leftIn[1] * rightDupe[3];
-    rightOut[2] = leftIn[2] * rightDupe[0] + leftIn[3] * rightDupe[2];
-    rightOut[3] = leftIn[2] * rightDupe[1] + leftIn[3] * rightDupe[3];
+    std::vector<std::future<void>> futures(4);
+    futures[0] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[0] = leftIn[0] * rightDupe[0] + leftIn[1] * rightDupe[2];
+    });
+    futures[1] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[1] = leftIn[0] * rightDupe[1] + leftIn[1] * rightDupe[3];
+    });
+    futures[2] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[2] = leftIn[2] * rightDupe[0] + leftIn[3] * rightDupe[2];
+    });
+    futures[3] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[3] = leftIn[2] * rightDupe[1] + leftIn[3] * rightDupe[3];
+    });
+    for (int i = 0; i < 4; i++) {
+        futures[i].get();
+    }
 }
 
 void CoherentUnit::FlushQueue(bitLenInt index) {
@@ -2440,10 +2454,7 @@ void CoherentUnit::FlushQueue(bitLenInt index) {
         bitCapInt qPowers[1];
         qPowers[0] = 1 << index;
         Apply2x2(0, qPowers[0], &(gateQueue[index][0]), 1, qPowers, true);
-        gateQueue[index][0] = Complex16(1.0, 0.0);
-        gateQueue[index][1] = Complex16(0.0, 0.0);
-        gateQueue[index][2] = Complex16(0.0, 0.0);
-        gateQueue[index][3] = Complex16(1.0, 0.0);
+        std::copy(CMPLX_I_2X2, CMPLX_I_2X2 + 4, &(gateQueue[index][0]));
     }
 }
 
@@ -2456,10 +2467,7 @@ void CoherentUnit::FlushQueue(bitLenInt start, bitLenInt length) {
 void CoherentUnit::ResetQueue(bitLenInt index) {
     if (isQueued[index]) {
         isQueued[index] = false;
-        gateQueue[index][0] = Complex16(1.0, 0.0);
-        gateQueue[index][1] = Complex16(0.0, 0.0);
-        gateQueue[index][2] = Complex16(0.0, 0.0);
-        gateQueue[index][3] = Complex16(1.0, 0.0);
+        std::copy(CMPLX_I_2X2, CMPLX_I_2X2 + 4, &(gateQueue[index][0]));
     }
 }
 
