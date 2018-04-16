@@ -66,9 +66,9 @@ protected:
 
     void InitOCL();
     void ReInitOCL();
-    void ResetStateVec(std::unique_ptr<Complex16[]> nStateVec);
+    void ResetStateVec(Complex16 *nStateVec);
 
-    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, size_t nVecLen = 0, unsigned char* values = NULL);
+    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, unsigned char* values = NULL);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
 

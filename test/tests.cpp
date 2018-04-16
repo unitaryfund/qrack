@@ -170,6 +170,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
+
+    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    std::cout << "Full Result:    " << qftReg << std::endl;
+    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+
     qftReg->SuperposeReg8(8, 0, testPage);
 
     for (j = 0; j < 256; j++) {

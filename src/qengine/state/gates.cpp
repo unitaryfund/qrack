@@ -97,7 +97,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     // Sometimes we transform the state in place. Alternatively, we often
     // allocate a new permutation state vector to transfer old probabilities
     // and phases into.
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+    Complex16 *nStateVec = new Complex16[maxQPower];
 
     // This function call is a parallel "for" loop. We have several variants of
     // the parallel for loop. Some skip certain permutations in order to
@@ -137,7 +137,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     });
     // We replace our old permutation state vector with the new one we just
     // filled, at the end.
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise swap
@@ -163,7 +163,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         bitCapInt reg2Mask = ((1 << length) - 1) << start2;
         bitCapInt otherMask = maxQPower - 1;
         otherMask ^= reg1Mask | reg2Mask;
-        std::unique_ptr<Complex16[]> nStateVec(new Complex16[maxQPower]);
+        Complex16 *nStateVec = new Complex16[maxQPower];
 
         par_for(0, maxQPower, [&](const bitCapInt lcv) {
             bitCapInt otherRes = (lcv & otherMask);
@@ -172,7 +172,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
             nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
         });
         // We replace our old permutation state vector with the new one we just filled, at the end.
-        ResetStateVec(std::move(nStateVec));
+        ResetStateVec(nStateVec);
     }
 }
 

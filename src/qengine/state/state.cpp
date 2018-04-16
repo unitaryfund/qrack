@@ -26,6 +26,7 @@ namespace Qrack {
 QEngineCPU::QEngineCPU(
     bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, Complex16 phaseFac)
     : QInterface(qBitCount),
+      stateVec(NULL),
       rand_distribution(0.0, 1.0)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -44,10 +45,8 @@ QEngineCPU::QEngineCPU(
     runningNorm = 1.0;
     qubitCount = qBitCount;
     maxQPower = 1 << qBitCount;
-    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]);
-    stateVec.reset();
-    stateVec = std::move(sv);
-    std::fill(&(stateVec[0]), &(stateVec[0]) + maxQPower, Complex16(0.0, 0.0));
+    stateVec = new Complex16[maxQPower];
+    std::fill(stateVec, stateVec + maxQPower, Complex16(0.0, 0.0));
     if (phaseFac == Complex16(-999.0, -999.0)) {
         double angle = Rand() * 2.0 * M_PI;
         stateVec[initState] = Complex16(cos(angle), sin(angle));
@@ -56,16 +55,16 @@ QEngineCPU::QEngineCPU(
     }
 }
 
-void QEngineCPU::ResetStateVec(std::unique_ptr<Complex16[]> nStateVec)
+void QEngineCPU::ResetStateVec(Complex16 *nStateVec)
 {
-    stateVec.reset();
-    stateVec = std::move(nStateVec);
+    delete []stateVec;
+    stateVec = nStateVec;
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(Complex16* inputState)
 {
-    std::copy(&(inputState[0]), &(inputState[0]) + maxQPower, &(stateVec[0]));
+    std::copy(inputState, inputState + maxQPower, stateVec);
 }
 
 /**
@@ -117,7 +116,7 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
 
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
+    Complex16 *nStateVec = new Complex16[nMaxQPower];
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
@@ -126,7 +125,7 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     qubitCount = nQubitCount;
     maxQPower = nMaxQPower;
 
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
     UpdateRunningNorm();
 }
 
@@ -163,7 +162,7 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 
     nMaxQPower = 1 << nQubitCount;
 
-    std::unique_ptr<Complex16[]> nStateVec(new Complex16[nMaxQPower]);
+    Complex16 *nStateVec = new Complex16[nMaxQPower];
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
         nStateVec[lcv] = stateVec[lcv & startMask];
@@ -175,7 +174,7 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
     qubitCount = nQubitCount;
     maxQPower = nMaxQPower;
 
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
     UpdateRunningNorm();
 }
 #endif
@@ -222,8 +221,8 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
 
-    std::unique_ptr<Complex16[]> sv(new Complex16[remainderPower]());
-    ResetStateVec(std::move(sv));
+    Complex16 *sv = new Complex16[remainderPower];
+    ResetStateVec(sv);
 
     for (i = 0; i < partPower; i++) {
         destination->stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
@@ -267,8 +266,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     qubitCount = qubitCount - length;
     maxQPower = 1 << qubitCount;
 
-    std::unique_ptr<Complex16[]> sv(new Complex16[maxQPower]());
-    ResetStateVec(std::move(sv));
+    Complex16 *sv = new Complex16[maxQPower];
+    ResetStateVec(sv);
 
     for (i = 0; i < maxQPower; i++) {
         stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
@@ -331,6 +330,6 @@ void QEngineCPU::NormalizeState()
     runningNorm = 1.0;
 }
 
-void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, &(stateVec[0])); }
+void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
 
 } // namespace Qrack
