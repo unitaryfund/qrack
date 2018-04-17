@@ -1,16 +1,32 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano 2017, 2018. All rights reserved.
+//
+// This is a multithreaded, universal quantum register simulation, allowing
+// (nonphysical) register cloning and direct measurement of probability and
+// phase, to leverage what advantages classical emulation of qubits can have.
+//
+// Licensed under the GNU General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// for details.
+
+#include <atomic>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "catch.hpp"
-#include "qregister.hpp"
+#include "qinterface.hpp"
+#include "qengine_cpu.hpp"
 
 #include "tests.hpp"
 
 using namespace Qrack;
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for")
+TEST_CASE("test_par_for")
 {
+    QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
+
     int NUM_ENTRIES = 2000;
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -21,7 +37,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for")
         hit[i].store(false);
     }
 
-    qftReg->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv) {
+    qengine->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -35,8 +51,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for")
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip")
+TEST_CASE("test_par_for_skip")
 {
+    QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
+
     int NUM_ENTRIES = 2000;
     int NUM_CALLS = 1000;
 
@@ -51,7 +69,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip")
         hit[i].store(false);
     }
 
-    qftReg->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv) {
+    qengine->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -63,8 +81,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip")
     REQUIRE(calls.load() == NUM_CALLS);
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip_wide")
+TEST_CASE("test_par_for_skip_wide")
 {
+    QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
+
     int NUM_ENTRIES = 2000;
     int NUM_CALLS = 1000;
 
@@ -79,7 +99,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip_wide")
         hit[i].store(false);
     }
 
-    qftReg->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv) {
+    qengine->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv) {
         REQUIRE(lcv < NUM_ENTRIES);
         bool old = true;
         old = hit[lcv].exchange(old);
@@ -90,8 +110,10 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_skip_wide")
     });
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_mask")
+TEST_CASE("test_par_for_mask")
 {
+    QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
+
     int NUM_ENTRIES = 2000;
     int NUM_CALLS = 512; // 2048 >> 2, masked off so all bits are set.
 
@@ -107,9 +129,9 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_mask")
         hit[i].store(false);
     }
 
-    qftReg->SetConcurrencyLevel(1);
+    qengine->SetConcurrencyLevel(1);
 
-    qftReg->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv) {
+    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -120,7 +142,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_par_for_mask")
     });
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
     int j;
 
@@ -136,7 +158,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
 {
     int j;
 
@@ -148,6 +170,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
+
     qftReg->SuperposeReg8(8, 0, testPage);
 
     for (j = 0; j < 256; j++) {
@@ -158,7 +181,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_adc_superposition_reg")
     REQUIRE(expectation == 0xff);
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
 {
     int j;
 
@@ -177,13 +200,13 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_sbc_superposition_reg")
     REQUIRE(expectation == 0x00);
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_m")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
 {
     qftReg->SetReg(0, 8, 0x2b);
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;
 
@@ -191,14 +214,14 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_inc")
     for (i = 0; i < 8; i++) {
         qftReg->INC(1, 0, 8);
         if (i < 5) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 8, 251 + i));
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 8, i - 5));
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
         }
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_dec")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
     int i;
     int start = 0x08;
@@ -207,11 +230,11 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_dec")
     for (i = 0; i < 8; i++) {
         qftReg->DEC(9, 0, 8);
         start -= 9;
-        REQUIRE_THAT(*qftReg, HasProbability(0, 19, 0xff - i * 9));
+        REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 {
     int i;
 
@@ -219,33 +242,34 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incc")
     for (i = 0; i < 10; i++) {
         qftReg->INCC(1, 0, 8, 8);
         if (i < 7) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 249 + i));
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 249 + i));
         } else if (i == 7) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0x100));
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
         } else {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 2 + i - 8));
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 2 + i - 8));
         }
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 {
     int i;
 
     qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
         qftReg->DECC(1, 0, 8, 8);
+
         if (i < 6) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 5 - i + 256));
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 0xff));
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0xff));
         } else {
-            REQUIRE_THAT(*qftReg, HasProbability(0, 9, 253 - i + 7 + 256));
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 253 - i + 7 + 256));
         }
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 {
     int i;
 
@@ -256,21 +280,21 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_incsc")
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_not")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_not")
 {
     qftReg->SetPermutation(0x1f);
     qftReg->X(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_swap")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
 {
     qftReg->SetPermutation(0xb2);
     qftReg->Swap(0, 4, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_rol")
 {
     qftReg->SetPermutation(6);
     REQUIRE_THAT(qftReg, HasProbability(6));
@@ -278,7 +302,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_rol")
     REQUIRE_THAT(qftReg, HasProbability(6 << 1));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ror")
 {
     qftReg->SetPermutation(160);
     REQUIRE_THAT(qftReg, HasProbability(160));
@@ -286,7 +310,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_ror")
     REQUIRE_THAT(qftReg, HasProbability(160 >> 1));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_and")
 {
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
@@ -297,7 +321,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_and")
     REQUIRE_THAT(qftReg, HasProbability(0x23e));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_or")
 {
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
@@ -308,7 +332,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_or")
     REQUIRE_THAT(qftReg, HasProbability(0xf3e));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_xor")
 {
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
@@ -319,7 +343,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_xor")
     REQUIRE_THAT(qftReg, HasProbability(0xd3e));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
     double qftProbs[20];
     qftReg->SetPermutation(85);
@@ -347,43 +371,43 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_qft_h")
     }
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_decohere")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
     int j;
 
-    Qrack::CoherentUnit qftReg2(4, 0);
+    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decohere(0, 4, qftReg2);
 
-    REQUIRE_THAT(*qftReg, HasProbability(0, 4, 0x2));
+    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_dispose")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
 {
     int j;
 
     qftReg->SetPermutation(0x2b);
     qftReg->Dispose(0, 4);
 
-    REQUIRE_THAT(*qftReg, HasProbability(0, 4, 0x2));
+    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_cohere")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
 {
     int j;
 
     qftReg->Dispose(0, qftReg->GetQubitCount() - 4);
     qftReg->SetPermutation(0x0b);
-    Qrack::CoherentUnit qftReg2(4, 0x02);
+    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0x02);
 
     qftReg->Cohere(qftReg2);
 
-    REQUIRE_THAT(*qftReg, HasProbability(0, 8, 0x2b));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 {
     int i;
 
@@ -420,7 +444,7 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover_lookup")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 {
     int i;
 
@@ -468,14 +492,14 @@ TEST_CASE_METHOD(CoherentUnitTestFixture, "test_grover_lookup")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_set_reg")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
     qftReg->SetReg(0, 8, 10);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 10));
 }
 
-TEST_CASE_METHOD(CoherentUnitTestFixture, "test_basis_change")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 {
     int i;
     unsigned char toSearch[256];

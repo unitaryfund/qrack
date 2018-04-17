@@ -1,13 +1,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017. All rights reserved.
+// (C) Daniel Strano 2017, 2018. All rights reserved.
 //
 // This is a SIMD implementation of the double precision complex type.
 // The API is designed to (almost entirely) mirror that of the C++ standard library
 // double precision complex type.
 //
-// Licensed under the GNU Lesser General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
+// Licensed under the GNU General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
 #define CMPLX_INC
@@ -16,10 +16,8 @@
 
 namespace Qrack {
 
-/// SIMD implementation of the double precision complex type
 /** SIMD implementation of the double precision complex type. */
 
-// Public method definitions:
 Complex16Simd::Complex16Simd() {}
 Complex16Simd::Complex16Simd(__m128d v) { _val = v; }
 Complex16Simd::Complex16Simd(double real, double imag) { _val = _mm_set_pd(imag, real); }

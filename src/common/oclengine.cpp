@@ -1,11 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017. All rights reserved.
+// (C) Daniel Strano 2017, 2018. All rights reserved.
 //
-// This is a header-only, quick-and-dirty, multithreaded, universal quantum register
-// simulation, allowing (nonphysical) register cloning and direct measurement of
-// probability and phase, to leverage what advantages classical emulation of qubits
-// can have.
+// This is a multithreaded, universal quantum register simulation, allowing
+// (nonphysical) register cloning and direct measurement of probability and
+// phase, to leverage what advantages classical emulation of qubits can have.
 //
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -14,8 +13,7 @@
 #include <iostream>
 
 #include "oclengine.hpp"
-
-#include "qregistercl.hpp"
+#include "qenginecl.hpp"
 
 namespace Qrack {
 
@@ -69,7 +67,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
 
-    sources.push_back({ (const char*)qregister_cl, (long unsigned int)qregister_cl_len });
+    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
     program = cl::Program(context, sources);
     if (program.build({ default_device }) != CL_SUCCESS) {
