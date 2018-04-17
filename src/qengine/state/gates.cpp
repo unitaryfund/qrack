@@ -40,7 +40,7 @@ bool QEngineCPU::M(bitLenInt qubit)
 
         nrm = Complex16(cosine, sine) / nrmlzr;
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
                 stateVec[lcv] = Complex16(0.0, 0.0);
             } else {
@@ -54,7 +54,7 @@ bool QEngineCPU::M(bitLenInt qubit)
 
         nrm = Complex16(cosine, sine) / nrmlzr;
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
                 stateVec[lcv] = nrm * stateVec[lcv];
             } else {
@@ -103,7 +103,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     // the parallel for loop. Some skip certain permutations in order to
     // optimize. Some take a new permutation state vector for output, and some
     // just transform the permutation state vector in place.
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         // Set nStateVec, indexed by the loop control variable (lcv) with
         // the X'ed bits inverted, with the value of stateVec indexed by
         // lcv.
@@ -165,7 +165,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         otherMask ^= reg1Mask | reg2Mask;
         Complex16 *nStateVec = new Complex16[maxQPower];
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = (lcv & otherMask);
             bitCapInt reg1Res = ((lcv & reg1Mask) >> (start1)) << (start2);
             bitCapInt reg2Res = ((lcv & reg2Mask) >> (start2)) << (start1);
@@ -179,7 +179,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
 void QEngineCPU::PhaseFlip()
 {
-    par_for(0, maxQPower, [&](const bitCapInt lcv) { stateVec[lcv] = -stateVec[lcv]; });
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
 }

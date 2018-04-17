@@ -73,28 +73,55 @@ void QEngineCPU::SetQuantumState(Complex16* inputState)
  * A fundamental operation used by almost all gates.
  */
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    Complex16 nrm = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
+    Complex16 nrm = Complex16((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
+    int numCores = GetConcurrencyLevel();
 
-    par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
-        Complex16 qubit[2];
+    if (doCalcNorm && (bitCount == 1)) {
+        double* rngNrm = new double[numCores]; 
+        std::fill(rngNrm, rngNrm + numCores, 0.0);
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            Complex16 qubit[2];
 
-        qubit[0] = stateVec[lcv + offset1];
-        qubit[1] = stateVec[lcv + offset2];
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
 
-        Complex16 Y0 = qubit[0];
-        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
-        stateVec[lcv + offset1] = qubit[0];
-        stateVec[lcv + offset2] = qubit[1];
-    });
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        runningNorm = 0.0;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
+        runningNorm = sqrt(runningNorm);
+    }
+    else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            Complex16 qubit[2];
 
-    if (doCalcNorm) {
-        UpdateRunningNorm();
-    } else {
-        runningNorm = 1.0;
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        if (doCalcNorm) {
+            UpdateRunningNorm();
+        }
+        else {
+            runningNorm = 1.0;
+        }
     }
 }/**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
@@ -118,7 +145,7 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
     Complex16 *nStateVec = new Complex16[nMaxQPower];
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
     });
 
@@ -321,7 +348,7 @@ void QEngineCPU::ProbArray(double* probArray)
 
 void QEngineCPU::NormalizeState()
 {
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
         if (norm(stateVec[lcv]) < 1e-15) {
             stateVec[lcv] = Complex16(0.0, 0.0);

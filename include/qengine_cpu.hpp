@@ -238,7 +238,7 @@ protected:
 
     virtual void ResetStateVec(Complex16 *nStateVec);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
+        const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
