@@ -60,6 +60,15 @@ void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
     }
 }
 
+void QEngineCPU::Reverse(bitLenInt first, bitLenInt last)
+{
+    while ((first < last) && (first < (last - 1))) {
+        last--;
+        Swap(first, last);
+        first++;
+    }
+}
+
 void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[1];
@@ -99,15 +108,6 @@ void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, con
         qPowersSorted[1] = qPowers[1];
     }
     Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
-}
-
-void QEngineCPU::Reverse(bitLenInt first, bitLenInt last)
-{
-    while ((first < last) && (first < (last - 1))) {
-        last--;
-        Swap(first, last);
-        first++;
-    }
 }
 
 } // namespace Qrack

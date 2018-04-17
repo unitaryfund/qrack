@@ -101,8 +101,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
  */
-void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
+bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 {
+    bitLenInt result = qubitCount;
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -127,57 +129,26 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
     ResetStateVec(nStateVec);
     UpdateRunningNorm();
+
+    return result;
 }
 
-#if 0
 /**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
+ *
+ * Returns a mapping of the index into the new QEngine that each old one was mapped to.
  */
-void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
+std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr> toCopy)
 {
-    bitLenInt i;
-    bitLenInt toCohereCount = toCopy.size();
-
-    std::vector<bitLenInt> offset(toCohereCount);
-    std::vector<bitCapInt> mask(toCohereCount);
-
-    bitCapInt startMask = (1 << qubitCount) - 1;
-    bitCapInt nQubitCount = qubitCount;
-    bitCapInt nMaxQPower;
-
-    if (runningNorm != 1.0) {
-        NormalizeState();
+    std::map<QInterfacePtr, bitLenInt> ret;
+    for (auto engine : toCopy) {
+        ret[engine] = Cohere(std::dynamic_pointer_cast<QEngineCPU>(engine));
     }
 
-    for (i = 0; i < toCohereCount; i++) {
-        if (toCopy[i]->runningNorm != 1.0) {
-            toCopy[i]->NormalizeState();
-        }
-        mask[i] = ((1 << toCopy[i]->GetQubitCount()) - 1) << nQubitCount;
-        offset[i] = nQubitCount;
-        nQubitCount += toCopy[i]->GetQubitCount();
-    }
-
-    nMaxQPower = 1 << nQubitCount;
-
-    Complex16 *nStateVec = new Complex16[nMaxQPower];
-
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
-        nStateVec[lcv] = stateVec[lcv & startMask];
-        for (bitLenInt j = 0; j < toCohereCount; j++) {
-            nStateVec[lcv] *= toCopy[j]->stateVec[(lcv & mask[j]) >> offset[j]];
-        }
-    });
-
-    qubitCount = nQubitCount;
-    maxQPower = nMaxQPower;
-
-    ResetStateVec(nStateVec);
-    UpdateRunningNorm();
+    return ret;
 }
-#endif
 
 /**
  * Minimally decohere a set of contigious bits from the full coherent unit. The

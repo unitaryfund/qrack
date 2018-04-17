@@ -37,8 +37,8 @@ public:
 
     virtual void SetQuantumState(Complex16* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
-    virtual void Cohere(QInterfacePtr toCopy);
-    virtual void Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy);
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -213,10 +213,14 @@ public:
 protected:
     void Decompose(bitLenInt qubit);
 
-    typedef void (QInterface::*TwoBitCall)(bitLenInt, bitLenInt);
-    typedef void (QInterface::*ThreeBitCall)(bitLenInt, bitLenInt, bitLenInt);
-    void EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn);
-    void EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn);
+    QInterfacePtr Entangle(std::initializer_list<bitLenInt *> bits);
+    QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
+    template <class It> QInterfacePtr EntangleIterator(It first, It last);
+
+    template <typename F, typename ... B>
+    void EntangleAndCallMember(F fn, B ... bits);
+    template <typename F, typename ... B>
+    void EntangleAndCall(F fn, B ... bits);
 };
 
 } // namespace Qrack

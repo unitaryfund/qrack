@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
@@ -108,9 +109,12 @@ public:
      * is not semantically enforced in Qrack, because optimization of an
      * emulator might be acheived by "cloning" "under-the-hood" while only
      * exposing a quantum mechanically consistent API or instruction set.
+     *
+     * Returns the quantum bit offset that the QInterface was appended at, such
+     * that bit 5 in toCopy is equal to offset+5 in this object.
      */
-    virtual void Cohere(QInterfacePtr toCopy) = 0;
-    // virtual void Cohere(std::vector<QInterfacePtr> toCopy) = 0;
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) = 0;
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy) = 0;
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,
@@ -918,6 +922,9 @@ public:
 
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length) = 0;
+
+    /** Reverse all of the bits in a sequence. */
+    virtual void Reverse(bitLenInt first, bitLenInt last) = 0;
 
     /** @} */
 

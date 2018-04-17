@@ -52,10 +52,13 @@ public:
     virtual void SetQuantumState(Complex16* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
-    virtual void Cohere(QInterfacePtr toCopy) { Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
+
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
+    std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest)); }
 
-    virtual void Cohere(QEngineCPUPtr toCopy);
+    virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 

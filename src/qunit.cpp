@@ -11,8 +11,11 @@
 // for details.
 
 #include <ctime>
+#include <map>
+#include <initializer_list>
 
 #include "qunit.hpp"
+#include "qfactory.hpp"
 
 namespace Qrack {
 
@@ -46,53 +49,76 @@ void QUnit::Decompose(bitLenInt qubit)
     }
 }
 
-/* XXX Convert this to a variadic template argument function call. */
-void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, TwoBitCall fn)
+QInterfacePtr QUnit::Entangle(std::initializer_list<bitLenInt *> bits)
 {
-    std::shared_ptr<QInterface> unit1 = shards[bit1].unit;
-    std::shared_ptr<QInterface> unit2 = shards[bit2].unit;
+    return EntangleIterator(bits.begin(), bits.end());
+}
 
-    if (unit1 != unit2) {
-        // Not already cohered; create a new unit and merge.
-        unit1->Cohere(unit2);
+template <class It>
+QInterfacePtr QUnit::EntangleIterator(It first, It last)
+{
+    std::vector<QInterfacePtr> units;
 
-        // Adjust all of the shards that referenced either of the old units.
-        for (auto shard : shards) {
-            if (shard.unit == unit2) {
-                shard.unit = unit1;
-                shard.mapped = shard.mapped + unit1->GetQubitCount();
-            }
+    QInterfacePtr unit1 = shards[**first].unit;
+    std::map<QInterfacePtr, bool> found;
+
+    found[unit1] = true;
+
+    /* Walk through all of the supplied bits and create a unique list to cohere. */
+    for (auto bit = first; bit != last; ++bit) {
+        if (found.find(shards[**bit].unit) == found.end()) {
+            units.push_back(shards[**bit].unit);
         }
     }
 
-    ((*unit1).*fn)(shards[bit1].mapped, shards[bit2].mapped);
-}
+    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
+    auto offsets = unit1->Cohere(units);
 
-void QUnit::EntangleAndCall(bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, ThreeBitCall fn)
-{
-    std::shared_ptr<QInterface> unit1 = shards[bit1].unit;
-    std::shared_ptr<QInterface> unit2 = shards[bit2].unit;
-    std::shared_ptr<QInterface> unit3 = shards[bit3].unit;
-
-    if (unit1 != unit2 || unit2 != unit3) {
-        // Not already cohered; create a new unit and merge.
-        unit1->Cohere(unit2);
-        unit1->Cohere(unit3);
-
-        // Adjust all of the shards that referenced either of the old units.
-        for (auto shard : shards) {
-            if (shard.unit == unit2) {
-                shard.unit = unit1;
-                shard.mapped = shard.mapped + unit1->GetQubitCount();
-            }
-            if (shard.unit == unit3) {
-                shard.unit = unit1;
-                shard.mapped = shard.mapped + unit1->GetQubitCount() + unit2->GetQubitCount();
-			}
-		}
+    /* Since each unit will be collapsed in-order, one set of bits at a time. */
+    for (auto shard : shards) {
+        auto search = offsets.find(shard.unit);
+        if (search != offsets.end()) {
+            shard.mapped += search->second;
+            shard.unit = unit1;
+        }
     }
 
-    ((*unit1).*fn)(shards[bit1].mapped, shards[bit2].mapped, shards[bit3].mapped);
+    /* Change the source parameters to the correct newly mapped bit indexes. */
+    for (auto bit = first; bit != last; ++bit) {
+        **bit = shards[**bit].mapped;
+    }
+
+    return unit1;
+}
+
+QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
+{
+    std::vector<bitLenInt> bits(length);
+    std::vector<bitLenInt *> ebits(length);
+    for (auto i = 0; i < length; i++) {
+        bits[i] = i + start;
+        ebits[i] = &bits[i];
+    }
+
+    return EntangleIterator(ebits.begin(), ebits.end());
+}
+
+/*
+ * Accept a variable number of bits, entangle them all into a single QInterface
+ * object, and then call the supplied function on that object.
+ */
+template <typename F, typename ... B>
+void QUnit::EntangleAndCallMember(F fn, B ... bits)
+{
+    auto qbits = Entangle({&bits...});
+    ((*qbits).*fn)(bits...);
+}
+
+template <typename F, typename ... B>
+void QUnit::EntangleAndCall(F fn, B ... bits)
+{
+    auto qbits = Entangle({&bits...});
+    fn(qbits, bits...);
 }
 
 double QUnit::Prob(bitLenInt qubit)
@@ -190,70 +216,73 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
     }
 }
 
+#define PTR3(X) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt)) &QInterface::X
+#define PTR2(X) (void (QInterface::*)(bitLenInt, bitLenInt)) &QInterface::X
+
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::AND);
+    EntangleAndCallMember(PTR3(AND), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::OR);
+    EntangleAndCallMember(PTR3(OR), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::XOR);
+    EntangleAndCallMember(PTR3(XOR), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit, outputBit, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CLAND(b1, inputClassicalBit, b2);
-        });
+        }, inputBit, outputBit);
 }
 
 void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit, outputBit, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CLOR(b1, inputClassicalBit, b2);
-        });
+        }, inputBit, outputBit);
 }
 
 void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit, outputBit, [&](QInterface *unit, bitLenInt b1, bitLenInt b2) {
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CLXOR(b1, inputClassicalBit, b2);
-        });
+        }, inputBit, outputBit);
 }
 
 void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::CCNOT);
+    EntangleAndCallMember(PTR3(CCNOT), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    EntangleAndCall(inputBit1, inputBit2, outputBit, &QInterface::AntiCCNOT);
+    EntangleAndCallMember(PTR3(AntiCCNOT), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::H(bitLenInt qubit)
 {
-    shards[qubit]->unit->H(shards[qubit].mapped);
+    shards[qubit].unit->H(shards[qubit].mapped);
 }
 
 void QUnit::X(bitLenInt qubit)
 {
-    shards[qubit]->unit->X(shards[qubit].mapped);
+    shards[qubit].unit->X(shards[qubit].mapped);
 }
 
 void QUnit::Y(bitLenInt qubit)
 {
-    shards[qubit]->unit->Y(shards[qubit].mapped);
+    shards[qubit].unit->Y(shards[qubit].mapped);
 }
 
 void QUnit::Z(bitLenInt qubit)
 {
-    shards[qubit]->unit->Z(shards[qubit].mapped);
+    shards[qubit].unit->Z(shards[qubit].mapped);
 }
 
 void QUnit::X(bitLenInt start, bitLenInt length)
@@ -265,101 +294,102 @@ void QUnit::X(bitLenInt start, bitLenInt length)
 
 void QUnit::CY(bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, &QInterface::CY);
+    EntangleAndCallMember(PTR2(CY), control, target);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, &QInterface::CZ);
+    EntangleAndCallMember(PTR2(CZ), control, target);
 }
 
 void QUnit::RT(double radians, bitLenInt qubit)
 {
-    EntangleAndCall(qubit, [&](QInterface *unit, bitLenInt q) {
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt q) {
             unit->RT(radians, q);
-        });
+        }, qubit);
 }
 
 void QUnit::RTDyad(int numerator, int denominator, bitLenInt qubit)
 {
-    shards[qubit]->unit->RTDyad(numerator, denominator, shards[qubit].mapped);
+    shards[qubit].unit->RTDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::RX(double radians, bitLenInt qubit)
 {
-    shards[qubit]->unit->RX(radians, shards[qubit].mapped);
+    shards[qubit].unit->RX(radians, shards[qubit].mapped);
 }
 
 void QUnit::RXDyad(int numerator, int denominator, bitLenInt qubit)
 {
-    shards[qubit]->unit->RXDyad(numerator, denominator, shards[qubit].mapped);
+    shards[qubit].unit->RXDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::RY(double radians, bitLenInt qubit)
 {
-    shards[qubit]->unit->RY(radians, shards[qubit].mapped);
+    shards[qubit].unit->RY(radians, shards[qubit].mapped);
 }
 
 void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
 {
-    shards[qubit]->unit->RYDyad(numerator, denominator, shards[qubit].mapped);
+    shards[qubit].unit->RYDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::RZ(double radians, bitLenInt qubit)
 {
-    shards[qubit]->RZ(radians, qubitLookup[qubit].qb);
+    shards[qubit].unit->RZ(radians, shards[qubit].mapped);
 }
 
 void QUnit::RZDyad(int numerator, int denominator, bitLenInt qubit)
 {
-    shards[qubit]->RZDyad(numerator, denominator, qubitLookup[qubit].qb);
+    shards[qubit].unit->RZDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
-            unit->CRT(radians, c, t);
-        });
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CRT(radians, b1, b2);
+        }, control, target);
 }
 
 void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
-            unit->CRTDyad(numerator, denominator, c, t);
-        });
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CRTDyad(numerator, denominator, b1, b2);
+        }, control, target);
 }
 
 void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
-            unit->CRY(radians, c, t);
-        });
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CRY(radians, b1, b2);
+        }, control, target);
 }
 
 void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
-            unit->CRYDyad(numerator, denominator, c, t);
-        });
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CRYDyad(numerator, denominator, b1, b2);
+        }, control, target);
 }
 
 void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
-            unit->CRZ(radians, c, t);
-        });
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CRZ(radians, b1, b2);
+        }, control, target);
 }
 
 void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(control, target, [&](QInterface *unit, bitLenInt c, bitLenInt t) {
-            unit->CRZDyad(numerator, denominator, c, t);
-        });
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CRZDyad(numerator, denominator, b1, b2);
+        }, control, target);
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
 void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    /* SetReg and Reverse both do mapping under the hood. */
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
         if (shift >= length) {
@@ -389,47 +419,57 @@ void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 
 void QUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
+    EntangleRange(start, length);
+
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::INCSC(
     bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
 void QUnit::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    EntangleRange(start, length);
     /* XXX TODO Map arbitrary list. */
 }
 
@@ -476,7 +516,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip()
 {
-    for (shard : shards) {
+    for (auto shard : shards) {
         shard.unit->PhaseFlip();
     }
 }
@@ -484,23 +524,21 @@ void QUnit::PhaseFlip()
 unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
     /* XXX TODO Map arbitrary list. */
+    return 0;
 }
 
 unsigned char QUnit::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     /* XXX TODO Map arbitrary list. */
+    return 0;
 }
 
 unsigned char QUnit::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     /* XXX TODO Map arbitrary list. */
-}
-
-void QUnit::GetOrderedBitList(bitLenInt start, bitLenInt length, std::vector<QbListEntry>& qbList)
-{
-    /* XXX TODO Map arbitrary list. */
+    return 0;
 }
 
 } // namespace Qrack
