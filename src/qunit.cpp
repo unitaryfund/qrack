@@ -220,8 +220,9 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
     }
 }
 
-#define PTR3(X) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt)) &QInterface::X
-#define PTR2(X) (void (QInterface::*)(bitLenInt, bitLenInt)) &QInterface::X
+/* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
+#define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt)) &QInterface::OP
+#define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt)) &QInterface::OP
 
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
@@ -421,101 +422,143 @@ void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 }
 
-void QUnit::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-
-    /* XXX TODO Map arbitrary list. */
+    OrderContiguous(start, length);
+    shards[start].unit->INC(toMod, shards[start].mapped, length);
 }
 
-void QUnit::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    /*
+     * FUTURE: If start[length] and carry are already in the same QE, then it
+     * doesn't make sense to Decompose and re-entangle them.
+     */
+    M(flagIndex);
+
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+
+    /* Make sure the flag bit is entangled in the same QU. */
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            ((*unit).*fn)(toMod, b1, length, b2);
+        }, start, flagIndex);
+}
+
+void QUnit::INCxx(INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
+{
+    /*
+     * FUTURE: If start[length] and carry are already in the same QE, then it
+     * doesn't make sense to Decompose and re-entangle them.
+     */
+    M(flag1Index);
+    M(flag2Index);
+
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+
+    /* Make sure the flag bit is entangled in the same QU. */
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) {
+            ((*unit).*fn)(toMod, b1, length, b2, b3);
+        }, start, flag1Index, flag2Index);
+}
+
+void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    INCx(&QInterface::INCC, toMod, start, length, carryIndex);
+}
+
+void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+}
+
+void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
+}
+
+void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    INCx(&QInterface::INCSC, toMod, start, length, carryIndex);
+}
+
+void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
+    OrderContiguous(start, length);
+    shards[start].unit->INCBCD(toMod, shards[start].mapped, length);
 }
 
-void QUnit::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
+}
+
+void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
+    OrderContiguous(start, length);
+    shards[start].unit->DEC(toMod, shards[start].mapped, length);
 }
 
-void QUnit::INCSC(
-    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
+    INCx(&QInterface::DECC, toMod, start, length, carryIndex);
 }
 
-void QUnit::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
-}
-
-void QUnit::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-{
-    EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
-}
-
-void QUnit::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
-}
-
-void QUnit::DEC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-{
-    EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
-}
-
-void QUnit::DECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    EntangleRange(start, length);
-    /* XXX TODO Map arbitrary list. */
-}
-
-void QUnit::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-{
-    /* XXX TODO Map arbitrary list. */
+    INCx(&QInterface::DECS, toMod, start, length, overflowIndex);
 }
 
 void QUnit::DECSC(
-    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    /* XXX TODO Map arbitrary list. */
+    INCxx(&QInterface::DECSC, toMod, start, length, overflowIndex, carryIndex);
 }
 
-void QUnit::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    /* XXX TODO Map arbitrary list. */
+    INCx(&QInterface::DECSC, toMod, start, length, carryIndex);
 }
 
-void QUnit::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
-    /* XXX TODO Map arbitrary list. */
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->DECBCD(toMod, shards[start].mapped, length);
 }
 
-void QUnit::DECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    /* XXX TODO Map arbitrary list. */
+    INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
 }
 
 void QUnit::QFT(bitLenInt start, bitLenInt length)
 {
-    /* XXX TODO Map arbitrary list. */
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->QFT(shards[start].mapped, length);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    /* XXX TODO Map arbitrary list. */
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    /* XXX TODO Map arbitrary list. */
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+
+    /* Make sure the flag bit is entangled in the same QU. */
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+            unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2);
+        }, start, flagIndex);
 }
 
 void QUnit::PhaseFlip()
@@ -527,22 +570,44 @@ void QUnit::PhaseFlip()
 
 unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
-    /* XXX TODO Map arbitrary list. */
-    return 0;
+    const bitLenInt length = 8;
+    EntangleRange(inputStart, length, outputStart, length);
+    OrderContiguous(inputStart, length);
+    OrderContiguous(outputStart, length);
+
+    return shards[inputStart].unit->SuperposeReg8(shards[inputStart].mapped, shards[outputStart].mapped, values);
 }
 
 unsigned char QUnit::AdcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
-    /* XXX TODO Map arbitrary list. */
-    return 0;
+    const bitLenInt length = 8;
+    EntangleRange(inputStart, length, outputStart, length);
+    OrderContiguous(inputStart, length);
+    OrderContiguous(outputStart, length);
+    unsigned char result = 0;
+
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) {
+            result = unit->AdcSuperposeReg8(b1, b2, b3, values);
+        }, inputStart, outputStart, carryIndex);
+
+    return result;
 }
 
 unsigned char QUnit::SbcSuperposeReg8(
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
-    /* XXX TODO Map arbitrary list. */
-    return 0;
+    const bitLenInt length = 8;
+    EntangleRange(inputStart, length, outputStart, length);
+    OrderContiguous(inputStart, length);
+    OrderContiguous(outputStart, length);
+    unsigned char result = 0;
+
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) {
+            result = unit->SbcSuperposeReg8(b1, b2, b3, values);
+        }, inputStart, outputStart, carryIndex);
+
+    return result;
 }
 
 } // namespace Qrack

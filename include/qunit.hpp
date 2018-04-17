@@ -160,6 +160,7 @@ public:
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
@@ -211,16 +212,25 @@ public:
     /** @} */
 
 protected:
+    typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
+    void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    void INCxx(INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
+
     void Decompose(bitLenInt qubit);
 
     QInterfacePtr Entangle(std::initializer_list<bitLenInt *> bits);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
+    QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
+
     template <class It> QInterfacePtr EntangleIterator(It first, It last);
 
     template <typename F, typename ... B>
     void EntangleAndCallMember(F fn, B ... bits);
     template <typename F, typename ... B>
     void EntangleAndCall(F fn, B ... bits);
+
+    void OrderContiguous(bitLenInt start, bitLenInt length);
 };
 
 } // namespace Qrack
