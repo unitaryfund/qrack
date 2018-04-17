@@ -130,13 +130,17 @@ double QUnit::Prob(bitLenInt qubit)
 double QUnit::ProbAll(bitCapInt perm)
 {
     double result = 1.0;
-    for (auto shard : shards) {
-        // int p = 0;
-        //for (auto bit : shards[i].bits) {
-        //    p |= perm & (1 << bit) ? (1 << shards[i].bits[bit]) : 0;
-        //}
-        // XXX: Reconstruct the perm for this particular CU's mapping.
-        // result *= Call<&CoherentUnit::ProbAll>(p) << i;
+
+    std::map<QInterfacePtr, bitCapInt> perms;
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (perm & (1 << i)) {
+            perms[shards[i].unit] |= 1 << shards[i].mapped;
+        }
+    }
+
+    for (auto qi : perms) {
+        result *= qi.first->ProbAll(qi.second);
     }
 
     return result;
