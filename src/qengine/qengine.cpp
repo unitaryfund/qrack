@@ -37,8 +37,10 @@ template void rotate<Complex16 *>(Complex16 *first, Complex16 *middle, Complex16
 /// Swap values of two bits in register
 void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    // if ((qubit1 >= qubitCount) || (qubit2 >= qubitCount))
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    // Does not necessarily commute with single bit gates
+    FlushQueue(qubit1);
+    FlushQueue(qubit2);
+
     if (qubit1 != qubit2) {
         const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0),
             Complex16(0.0, 0.0) };
@@ -62,13 +64,23 @@ void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
 {
-    bitCapInt qPowers[1];
-    qPowers[0] = 1 << qubit;
-    Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
+    if (qubitCount <= 2) {
+        bitCapInt qPowers[1];
+        qPowers[0] = 1 << qubit;
+        Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
+    }
+    else {
+        isQueued[qubit] = true;
+        Mul2x2(mtrx, &(gateQueue[qubit][0]));
+    }
 }
 
 void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control);
+    FlushQueue(target);
+
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
     qPowers[1] = 1 << control;
@@ -86,6 +98,10 @@ void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const C
 
 void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control);
+    FlushQueue(target);
+
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[2];
     qPowers[1] = 1 << control;
@@ -108,6 +124,66 @@ void QEngineCPU::Reverse(bitLenInt first, bitLenInt last)
         Swap(first, last);
         first++;
     }
+}
+
+void QEngineCPU::Mul2x2(const Complex16* leftIn, Complex16* rightOut) {
+    Complex16 rightDupe[4];
+    std::copy(rightOut, rightOut + 4, rightDupe);
+    std::vector<std::future<void>> futures(4);
+    futures[0] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[0] = leftIn[0] * rightDupe[0] + leftIn[1] * rightDupe[2];
+    });
+    futures[1] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[1] = leftIn[0] * rightDupe[1] + leftIn[1] * rightDupe[3];
+    });
+    futures[2] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[2] = leftIn[2] * rightDupe[0] + leftIn[3] * rightDupe[2];
+    });
+    futures[3] = std::async(std::launch::async, [rightOut, leftIn, rightDupe]() {
+        rightOut[3] = leftIn[2] * rightDupe[1] + leftIn[3] * rightDupe[3];
+    });
+    for (int i = 0; i < 4; i++) {
+        futures[i].get();
+    }
+}
+
+const Complex16 CMPLX_I_2X2[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(1.0, 0.0) };
+void QEngineCPU::FlushQueue(bitLenInt index) {
+    if (isQueued[index]) {
+        isQueued[index] = false;
+        bitCapInt qPowers[1];
+        qPowers[0] = 1 << index;
+        Apply2x2(0, qPowers[0], &(gateQueue[index][0]), 1, qPowers, true);
+        std::copy(CMPLX_I_2X2, CMPLX_I_2X2 + 4, &(gateQueue[index][0]));
+    }
+}
+
+void QEngineCPU::FlushQueue(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        FlushQueue(start + i);
+    }
+}
+
+void QEngineCPU::ResetQueue(bitLenInt index) {
+    if (isQueued[index]) {
+        isQueued[index] = false;
+        std::copy(CMPLX_I_2X2, CMPLX_I_2X2 + 4, &(gateQueue[index][0]));
+    }
+}
+
+void QEngineCPU::ResetQueue(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        ResetQueue(start + i);
+    }
+}
+
+bool QEngineCPU::CheckQueued(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        if (isQueued[start + i]) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace Qrack

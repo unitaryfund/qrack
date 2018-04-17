@@ -37,6 +37,12 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         throw std::invalid_argument("CCNOT control bits cannot also be target.");
     }
 
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control1);
+    FlushQueue(control2);
+    FlushQueue(target);
+
+
     const Complex16 pauliX[4] = {
             Complex16(0.0, 0.0), Complex16(1.0, 0.0),
             Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
@@ -66,6 +72,11 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
         throw std::invalid_argument("CCNOT control bits cannot also be target.");
     }
 
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control1);
+    FlushQueue(control2);
+    FlushQueue(target);
+
     const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
 
     bitCapInt qPowers[4];
@@ -90,6 +101,11 @@ void QEngineCPU::CNOT(bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CNOT control bit cannot also be target.");
     }
 
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control);
+    FlushQueue(target);
+
+
     const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
     ApplyControlled2x2(control, target, pauliX, false);
 }
@@ -102,6 +118,10 @@ void QEngineCPU::AntiCNOT(bitLenInt control, bitLenInt target)
     if (control == target) {
         throw std::invalid_argument("CNOT control bit cannot also be target.");
     }
+
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control);
+    FlushQueue(target);
 
     const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
     ApplyAntiControlled2x2(control, target, pauliX, false);
@@ -151,6 +171,11 @@ void QEngineCPU::CY(bitLenInt control, bitLenInt target)
     // bits.");
     if (control == target)
         throw std::invalid_argument("CY control bit cannot also be target.");
+
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control);
+    FlushQueue(target);
+
     const Complex16 pauliY[4] = { Complex16(0.0, 0.0), Complex16(0.0, -1.0), Complex16(0.0, 1.0), Complex16(0.0, 0.0) };
     ApplyControlled2x2(control, target, pauliY, false);
 }
@@ -162,6 +187,11 @@ void QEngineCPU::CZ(bitLenInt control, bitLenInt target)
     // bits.");
     if (control == target)
         throw std::invalid_argument("CZ control bit cannot also be target.");
+
+    // Does not necessarily commute with single bit gates
+    FlushQueue(control);
+    FlushQueue(target);
+
     const Complex16 pauliZ[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(-1.0, 0.0) };
     ApplyControlled2x2(control, target, pauliZ, false);
 }
@@ -181,14 +211,6 @@ void QEngineCPU::Y(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt lcv = 0; lcv < length; lcv++) {
         Y(start + lcv);
-    }
-}
-
-/// Apply Pauli Z matrix to each bit
-void QEngineCPU::Z(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        Z(start + lcv);
     }
 }
 

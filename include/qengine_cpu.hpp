@@ -14,6 +14,7 @@
 
 #include <random>
 #include <memory>
+#include <future>
 
 #include "qinterface.hpp"
 
@@ -40,6 +41,8 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
     Complex16 *stateVec;
+    std::vector<std::unique_ptr<Complex16[]>> gateQueue;
+    std::vector<bool> isQueued;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
@@ -245,5 +248,11 @@ protected:
     virtual void NormalizeState();
     virtual void Reverse(bitLenInt first, bitLenInt last);
     virtual void UpdateRunningNorm();
+    virtual void Mul2x2(const Complex16* leftIn, Complex16* rightOut);
+    virtual void FlushQueue(bitLenInt index);
+    virtual void FlushQueue(bitLenInt start, bitLenInt length);
+    virtual void ResetQueue(bitLenInt index);
+    virtual void ResetQueue(bitLenInt start, bitLenInt length);
+    virtual bool CheckQueued(bitLenInt start, bitLenInt length);
 };
 } // namespace Qrack

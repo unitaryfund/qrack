@@ -17,20 +17,19 @@ namespace Qrack {
 /// Measurement gate
 bool QEngineCPU::M(bitLenInt qubit)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(qubit);
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
     bool result;
-    double prob = Rand();
-    double angle = Rand() * 2.0 * M_PI;
-    double cosine = cos(angle);
-    double sine = sin(angle);
     Complex16 nrm;
 
     bitCapInt qPowers = 1 << qubit;
     double oneChance = Prob(qubit);
-
+    double prob = Rand();
     result = (prob < oneChance) && oneChance > 0.0;
     double nrmlzr = 1.0;
     if (result) {
@@ -38,7 +37,7 @@ bool QEngineCPU::M(bitLenInt qubit)
             nrmlzr = oneChance;
         }
 
-        nrm = Complex16(cosine, sine) / nrmlzr;
+        nrm = Complex16(1.0 / nrmlzr, 0.0);
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
@@ -52,7 +51,7 @@ bool QEngineCPU::M(bitLenInt qubit)
             nrmlzr = sqrt(1.0 - oneChance);
         }
 
-        nrm = Complex16(cosine, sine) / nrmlzr;
+        nrm = Complex16(1.0 / nrmlzr, 0.0);
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
@@ -79,6 +78,16 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
         return;
     }
 
+    // If we have depth optimizations queued, keep pushing on that queue.
+    if (CheckQueued(start, length)) {
+        for (bitLenInt i = 0; i < length; i++) {
+            X(start + i);
+        }
+        return;
+    }
+
+    // Otherwise, use an optimized register-wise gate.
+
     // As a fundamental gate, the register-wise X could proceed like so:
     // for (bitLenInt lcv = 0; lcv < length; lcv++) {
     //    X(start + lcv);
@@ -97,7 +106,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     // Sometimes we transform the state in place. Alternatively, we often
     // allocate a new permutation state vector to transfer old probabilities
     // and phases into.
-    Complex16 *nStateVec = new Complex16[maxQPower];
+    Complex16* nStateVec = new Complex16[maxQPower];
 
     // This function call is a parallel "for" loop. We have several variants of
     // the parallel for loop. Some skip certain permutations in order to
@@ -137,7 +146,38 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     });
     // We replace our old permutation state vector with the new one we just
     // filled, at the end.
-    ResetStateVec(nStateVec);
+    ResetStateVec(std::move(nStateVec));
+}
+
+/// Apply Pauli Z matrix to each bit
+void QEngineCPU::Z(bitLenInt start, bitLenInt length)
+{
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        Z(start);
+        return;
+    }
+
+    if (CheckQueued(start, length)) {
+        for (bitLenInt i = 0; i < length; i++) {
+            Z(start + i);
+        }
+    } else {
+        bitCapInt inOutMask = ((1 << length) - 1) << start;
+        bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
+        Complex16* nStateVec = new Complex16[maxQPower];
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt inOutRes = lcv & inOutMask;
+            bitCapInt inOutInt = inOutRes >> start;
+            bitLenInt bitCount;
+            for (bitCount = 0; inOutInt; bitCount++) {
+                inOutInt &= inOutInt - 1;  
+            }
+            nStateVec[inOutRes | otherRes] = (bitCount & 1) ? -stateVec[lcv] : stateVec[lcv];
+        });
+        ResetStateVec(std::move(nStateVec));
+    }
 }
 
 /// Bitwise swap
@@ -148,6 +188,10 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         Swap(start1, start2);
         return;
     }
+
+    // Does not necessarily commute with single bit queues
+    FlushQueue(start1, length);
+    FlushQueue(start2, length);
 
     int distance = start1 - start2;
     if (distance < 0) {
@@ -179,6 +223,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
 void QEngineCPU::PhaseFlip()
 {
+    // Commutes with single bit gates
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 

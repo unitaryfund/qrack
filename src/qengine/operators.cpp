@@ -24,6 +24,11 @@ void QEngineCPU::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
         return;
     }
 
+    // Does not necessarily commute with single bit gates
+    FlushQueue(inputBit1);
+    FlushQueue(inputBit2);
+    FlushQueue(outputBit);
+
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
         SetBit(outputBit, false);
         if (inputBit1 == inputBit2) {
@@ -39,6 +44,10 @@ void QEngineCPU::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
 /// "AND" compare a qubit in QEngineCPU with a classical bit, and store result in outputBit
 void QEngineCPU::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(inputQBit);
+    FlushQueue(outputBit);
+
     if (!inputClassicalBit) {
         SetBit(outputBit, false);
     } else if (inputQBit != outputBit) {
@@ -55,6 +64,11 @@ void QEngineCPU::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBi
         return;
     }
 
+    // Does not necessarily commute with single bit gates
+    FlushQueue(inputBit1);
+    FlushQueue(inputBit2);
+    FlushQueue(outputBit);
+
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
         SetBit(outputBit, true);
         if (inputBit1 == inputBit2) {
@@ -70,6 +84,10 @@ void QEngineCPU::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBi
 /// "OR" compare a qubit in QEngineCPU with a classical bit, and store result in outputBit
 void QEngineCPU::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(inputQBit);
+    FlushQueue(outputBit);
+
     if (inputClassicalBit) {
         SetBit(outputBit, true);
     } else if (inputQBit != outputBit) {
@@ -81,6 +99,11 @@ void QEngineCPU::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt out
 /// "XOR" compare two bits in QEngineCPU, and store result in outputBit
 void QEngineCPU::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(inputBit1);
+    FlushQueue(inputBit2);
+    FlushQueue(outputBit);
+
     if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
         SetBit(outputBit, false);
         return;
@@ -100,6 +123,10 @@ void QEngineCPU::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
 /// "XOR" compare a qubit in QEngineCPU with a classical bit, and store result in outputBit
 void QEngineCPU::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
+    // Does not necessarily commute with single bit gates
+    FlushQueue(inputQBit);
+    FlushQueue(outputBit);
+
     if (inputQBit != outputBit) {
         SetBit(outputBit, inputClassicalBit);
         CNOT(inputQBit, outputBit);
