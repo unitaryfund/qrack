@@ -146,7 +146,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     });
     // We replace our old permutation state vector with the new one we just
     // filled, at the end.
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Apply Pauli Z matrix to each bit
@@ -176,7 +176,7 @@ void QEngineCPU::Z(bitLenInt start, bitLenInt length)
             }
             nStateVec[inOutRes | otherRes] = (bitCount & 1) ? -stateVec[lcv] : stateVec[lcv];
         });
-        ResetStateVec(std::move(nStateVec));
+        ResetStateVec(nStateVec);
     }
 }
 

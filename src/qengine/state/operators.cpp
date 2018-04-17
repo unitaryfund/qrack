@@ -103,7 +103,7 @@ void QEngineCPU::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenI
         }
         nStateVec[outRes] = stateVec[lcv];
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Subtract integer (without sign, with carry)
@@ -141,7 +141,7 @@ void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenI
         }
         nStateVec[outRes] = stateVec[lcv];
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Add integer (without sign)
@@ -171,7 +171,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
             }
             nStateVec[outRes] = stateVec[lcv];
         });
-        ResetStateVec(std::move(nStateVec));
+        ResetStateVec(nStateVec);
     }
 }
 
@@ -226,7 +226,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         }
         delete[] nibbles;
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Add BCD integer (without sign, with carry)
@@ -305,7 +305,7 @@ void QEngineCPU::INCBCDC(
         }
         delete[] nibbles;
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /**
@@ -360,7 +360,7 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
             nStateVec[outRes] = stateVec[lcv];
         }
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /**
@@ -424,7 +424,7 @@ void QEngineCPU::INCSC(
             nStateVec[outRes] = stateVec[lcv];
         }
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /**
@@ -484,7 +484,7 @@ void QEngineCPU::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, 
             nStateVec[outRes] = stateVec[lcv];
         }
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Subtract integer (without sign)
@@ -514,7 +514,7 @@ void QEngineCPU::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
             }
             nStateVec[outRes] = stateVec[lcv];
         });
-        ResetStateVec(std::move(nStateVec));
+        ResetStateVec(nStateVec);
     }
 }
 
@@ -569,7 +569,7 @@ void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         }
         delete[] nibbles;
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /**
@@ -622,7 +622,7 @@ void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
             nStateVec[outRes] = stateVec[lcv];
         }
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /**
@@ -687,7 +687,7 @@ void QEngineCPU::DECSC(
             nStateVec[outRes] = stateVec[lcv];
         }
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /**
@@ -749,7 +749,7 @@ void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, 
             nStateVec[outRes] = stateVec[lcv];
         }
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// Subtract BCD integer (without sign, with carry)
@@ -826,7 +826,7 @@ void QEngineCPU::DECBCDC(
         }
         delete[] nibbles;
     });
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
@@ -987,7 +987,7 @@ unsigned char QEngineCPU::SuperposeReg8(bitLenInt inputStart, bitLenInt outputSt
         average += prob * outputInt;
     }
 
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 
     return (unsigned char)(average + 0.5);
 }
@@ -1083,7 +1083,7 @@ unsigned char QEngineCPU::AdcSuperposeReg8(
 
     // Finally, we dealloc the old state vector and replace it with the one we
     // just calculated.
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 
     // Return the expectation value.
     return (unsigned char)(average + 0.5);
@@ -1184,7 +1184,7 @@ unsigned char QEngineCPU::SbcSuperposeReg8(
 
     // Finally, we dealloc the old state vector and replace it with the one we
     // just calculated.
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 
     // Return the expectation value.
     return (unsigned char)(average + 0.5);
