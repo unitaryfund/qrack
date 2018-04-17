@@ -64,7 +64,7 @@ void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
 {
-    if (qubitCount <= 2) {
+    if (qubitCount <= 3) {
         bitCapInt qPowers[1];
         qPowers[0] = 1 << qubit;
         Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
