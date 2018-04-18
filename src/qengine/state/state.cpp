@@ -153,7 +153,7 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
     std::vector<Complex16*> nGateQueue(nQubitCount);
     std::vector<bool> nIsQueued(nQubitCount);
-    std::copy(isQueued.begin(), isQueued.begin() + qubitCount, nIsQueued.begin());
+    std::copy(isQueued.begin(), isQueued.end(), nIsQueued.begin());
     std::copy(gateQueue.begin(), gateQueue.end(), nGateQueue.begin());
     for (i = 0; i < toCopy->qubitCount; i++) {
         nIsQueued[i + qubitCount] = toCopy->isQueued[i];
@@ -176,7 +176,6 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     UpdateRunningNorm();
 }
 
-#if 0
 /**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
@@ -190,7 +189,7 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
     std::vector<bitLenInt> offset(toCohereCount);
     std::vector<bitCapInt> mask(toCohereCount);
 
-    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt startMask = maxQPower - 1;
     bitCapInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
@@ -209,7 +208,7 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 
     std::vector<Complex16*> nGateQueue(nQubitCount);
     std::vector<bool> nIsQueued(nQubitCount);
-    std::copy(isQueued.begin(), isQueued.begin() + qubitCount, nIsQueued.begin());
+    std::copy(isQueued.begin(), isQueued.end(), nIsQueued.begin());
     std::copy(gateQueue.begin(), gateQueue.end(), nGateQueue.begin());
     k = 0;
     for (i = 0; i < toCohereCount; i++) {
@@ -227,7 +226,7 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 
     Complex16 *nStateVec = new Complex16[nMaxQPower];
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask];
         for (bitLenInt j = 0; j < toCohereCount; j++) {
             nStateVec[lcv] *= toCopy[j]->stateVec[(lcv & mask[j]) >> offset[j]];
@@ -240,7 +239,6 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
     ResetStateVec(nStateVec);
     UpdateRunningNorm();
 }
-#endif
 
 /**
  * Minimally decohere a set of contigious bits from the full coherent unit. The

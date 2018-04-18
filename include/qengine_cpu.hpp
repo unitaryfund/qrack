@@ -59,6 +59,7 @@ public:
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest)); }
 
     virtual void Cohere(QEngineCPUPtr toCopy);
+    virtual void Cohere(std::vector<QEngineCPUPtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
