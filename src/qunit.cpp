@@ -19,35 +19,17 @@
 
 namespace Qrack {
 
-QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp) : QInterface(qBitCount), engine(eng)
+QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+    : QInterface(qBitCount), engine(eng)
 {
 
-    if (rgp == NULL) {
+    if (rgp == nullptr) {
         /* Used to control the random seed for all allocated interfaces. */
         rand_generator = std::make_shared<std::default_random_engine>();
         rand_generator->seed(std::time(0));
-    }
-    else {
+    } else {
         rand_generator = rgp;
     }
-
-    shards.resize(qBitCount);
-
-    for (auto shard : shards) {
-        shard.unit = CreateQuantumInterface(engine, 1, 0, rand_generator);
-        shard.mapped = 0;
-    }
-}
-
-QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, uint32_t rand_seed) : QInterface(qBitCount), engine(eng)
-{
-    if (rand_seed == 0) {
-        rand_seed = std::time(0);
-    }
-
-    /* Used to control the random seed for all allocated interfaces. */
-    rand_generator = std::make_shared<std::default_random_engine>();
-    rand_generator->seed(rand_seed);
 
     shards.resize(qBitCount);
 
