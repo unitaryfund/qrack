@@ -28,7 +28,8 @@ using namespace Qrack;
  * Default engine type to run the tests with. Global because catch doesn't
  * support parameterization.
  */
-enum QInterfaceEngine testEngineType = QENGINE_FIRST;
+enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
+enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 
 int main(int argc, char* argv[])
 {
@@ -36,6 +37,7 @@ int main(int argc, char* argv[])
 
     bool disable_opencl = false;
     bool disable_cpu = false;
+    bool disable_qunit = false;
 
     using namespace Catch::clara;
 
@@ -45,6 +47,7 @@ int main(int argc, char* argv[])
      */
     auto cli = session.cli() |
             Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
+            Opt(disable_qunit)["--disable-qunit"]("Disable QUnit implementation tests") |
             Opt(disable_cpu)["--disable-cpu"]("Disable the CPU-based implementation tests");
 
     session.cli(cli);
@@ -75,11 +78,31 @@ int main(int argc, char* argv[])
 #if ENABLE_OPENCL
     if (num_failed == 0 && !disable_opencl) {
         session.config().stream() << "Executing test suite using the OpenCL Implementation" << std::endl;
-        testEngineType = QENGINE_OPENCL;
-        CreateQuantumInterface(testEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+        testEngineType = QINTERFACE_OPENCL;
+        testSubEngineType = QINTERFACE_OPENCL;
+        CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
         num_failed = session.run();
     }
 #endif
+
+    if (num_failed == 0 && !disable_qunit) {
+        session.config().stream() << "Executing test suite using the QUnit Implementation" << std::endl;
+        testEngineType = QINTERFACE_QUNIT;
+        if (!disable_cpu) {
+            session.config().stream() << "Executing QUnit test suite using the CPU Implementation" << std::endl;
+            testSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && !disable_opencl) {
+            session.config().stream() << "Executing QUnit test suite using the OpenCL Implementation" << std::endl;
+            testSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+
+        num_failed = session.run();
+    }
 
     return num_failed;
 }
@@ -96,5 +119,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
 
-    qftReg = CreateQuantumInterface(testEngineType, 20, 0, rng);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 20, 0, rng);
 }

@@ -18,19 +18,23 @@
 #include "qengine_opencl.hpp"
 #endif
 
+#include "qunit.hpp"
+
 namespace Qrack {
 
 /** Factory method to create specific engine implementations. */
 template <typename... Ts>
-QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args)
+QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts ... args)
 {
     switch (engine) {
-    case QENGINE_CPU:
+    case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
 #if ENABLE_OPENCL
-    case QENGINE_OPENCL:
+    case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
 #endif
+    case QINTERFACE_QUNIT:
+        return std::make_shared<QUnit>(subengine, args...);
     default:
         return NULL;
     }

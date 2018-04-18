@@ -32,20 +32,21 @@ typedef std::shared_ptr<QInterface> QInterfacePtr;
 /**
  * Enumerated list of supported engines.
  *
- * Use QENGINE_OPTIMAL for the best supported engine.
+ * Use QINTERFACE_OPTIMAL for the best supported engine.
  */
 enum QInterfaceEngine {
-    QENGINE_CPU = 0,
-    QENGINE_OPENCL,
+    QINTERFACE_CPU = 0,
+    QINTERFACE_OPENCL,
+    QINTERFACE_QUNIT,
 
-    QENGINE_FIRST = QENGINE_CPU,
+    QINTERFACE_FIRST = QINTERFACE_CPU,
 #if ENABLE_OPENCL
-    QENGINE_OPTIMAL = QENGINE_OPENCL,
+    QINTERFACE_OPTIMAL = QINTERFACE_OPENCL,
 #else
-    QENGINE_OPTIMAL = QENGINE_CPU,
+    QINTERFACE_OPTIMAL = QINTERFACE_CPU,
 #endif
 
-    QENGINE_MAX
+    QINTERFACE_MAX
 };
 
 /**
@@ -801,9 +802,6 @@ public:
     /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length) = 0;
 
-    /** Measure permutation state of an 8 bit register */
-    virtual unsigned char MReg8(bitLenInt start) = 0;
-
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from
      * classical memory
@@ -924,7 +922,15 @@ public:
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length) = 0;
 
     /** Reverse all of the bits in a sequence. */
-    virtual void Reverse(bitLenInt first, bitLenInt last) = 0;
+    virtual void Reverse(bitLenInt first, bitLenInt last)
+    {
+        while ((first < last) && (first < (last - 1))) {
+            last--;
+            Swap(first, last);
+            first++;
+        }
+    }
+
 
     /** @} */
 
