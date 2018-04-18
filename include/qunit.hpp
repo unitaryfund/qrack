@@ -34,6 +34,7 @@ protected:
 
 public:
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, uint32_t rand_seed = 0);
+    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp);
 
     virtual void SetQuantumState(Complex16* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
@@ -104,47 +105,6 @@ public:
     virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void CRT(double radians, bitLenInt control, bitLenInt target);
     virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
-
-    /** @} */
-
-    /**
-     * \defgroup RegGates Register-spanning gates
-     *
-     * Convienence and optimized functions implementing gates are applied from
-     * the bit 'start' for 'length' bits for the register.
-     *
-     * @{
-     */
-
-    virtual void H(bitLenInt start, bitLenInt length);
-    virtual void X(bitLenInt start, bitLenInt length);
-    virtual void Y(bitLenInt start, bitLenInt length);
-    virtual void Z(bitLenInt start, bitLenInt length);
-    virtual void CNOT(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
-    virtual void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
-    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
-    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
-    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void RT(double radians, bitLenInt start, bitLenInt length);
-    virtual void RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-    virtual void RX(double radians, bitLenInt start, bitLenInt length);
-    virtual void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-    virtual void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void RY(double radians, bitLenInt start, bitLenInt length);
-    virtual void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-    virtual void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void RZ(double radians, bitLenInt start, bitLenInt length);
-    virtual void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
-    virtual void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
-    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
 
