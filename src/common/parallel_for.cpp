@@ -28,21 +28,27 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
 {
     std::atomic<bitCapInt> idx;
     idx = begin;
-
-    std::vector<std::future<void>> futures(numCores);
     bitCapInt pStride = ParStride;
 
     if ((int)((end - begin) / ParStride) < numCores) {
+        std::vector<std::future<void>> futures(end - begin);
         bitCapInt j;
-        for (bitCapInt i = 0; i < end; i++) {
-            j = inc(i, 0);
+        for (int cpu = begin; cpu < (int)end; cpu++) {
+            j = inc(cpu, 0);
             if (j >= end) {
                 break;
             }
-            fn(j, 0);
+            futures[cpu] = std::async(std::launch::async, [j, cpu, fn]() {
+                fn(j, cpu);
+            });
+        }
+
+        for (int cpu = 0; cpu < (int)(end - begin); cpu++) {
+            futures[cpu].get();
         }
     }
     else {
+        std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn, pStride]() {
                 bitCapInt j, k;

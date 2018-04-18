@@ -58,11 +58,7 @@ QEngineCPU::QEngineCPU(
 
     for (bitLenInt i = 0; i < qBitCount; i++) {
         isQueued[i] = false;
-        gateQueue[i] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
-        gateQueue[i][0] = Complex16(1.0, 0.0);
-        gateQueue[i][1] = Complex16(0.0, 0.0);
-        gateQueue[i][2] = Complex16(0.0, 0.0);
-        gateQueue[i][3] = Complex16(1.0, 0.0);
+        gateQueue[i] = new Complex16[4];
     }
 }
 
@@ -155,18 +151,16 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
 
-    std::vector<std::unique_ptr<Complex16[]>> nGateQueue(nQubitCount);
+    std::vector<Complex16*> nGateQueue(nQubitCount);
     std::vector<bool> nIsQueued(nQubitCount);
     std::copy(isQueued.begin(), isQueued.begin() + qubitCount, nIsQueued.begin());
-    for (i = 0; i < qubitCount; i++) {
-        nGateQueue[i] = std::move(gateQueue[i]);
-    }
+    std::copy(gateQueue.begin(), gateQueue.end(), nGateQueue.begin());
     for (i = 0; i < toCopy->qubitCount; i++) {
         nIsQueued[i + qubitCount] = toCopy->isQueued[i];
-        nGateQueue[i + qubitCount] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
-        std::copy(&(toCopy->gateQueue[i][0]), &(toCopy->gateQueue[i][0]) + 4, &(nGateQueue[i + qubitCount][0]));
+        nGateQueue[i + qubitCount] = new Complex16[4];
+        std::copy(toCopy->gateQueue[i], toCopy->gateQueue[i] + 4, nGateQueue[i + qubitCount]);
     }
-    gateQueue = std::move(nGateQueue);
+    gateQueue = nGateQueue;
     isQueued = nIsQueued;
 
     Complex16 *nStateVec = new Complex16[nMaxQPower];
@@ -213,22 +207,20 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
         nQubitCount += toCopy[i]->GetQubitCount();
     }
 
-    std::vector<std::unique_ptr<Complex16[]>> nGateQueue(nQubitCount);
+    std::vector<Complex16*> nGateQueue(nQubitCount);
     std::vector<bool> nIsQueued(nQubitCount);
     std::copy(isQueued.begin(), isQueued.begin() + qubitCount, nIsQueued.begin());
-    for (i = 0; i < qubitCount; i++) {
-        nGateQueue[i] = std::move(gateQueue[i]);
-    }
+    std::copy(gateQueue.begin(), gateQueue.end(), nGateQueue.begin());
     k = 0;
     for (i = 0; i < toCohereCount; i++) {
         for (j = 0; j < toCopy[i]->GetQubitCount(); j++) {
             nIsQueued[k + qubitCount] = toCopy[i]->isQueued[i];
-            nGateQueue[k + qubitCount] = std::move(std::unique_ptr<Complex16[]>(new Complex16[4]));
-            std::copy(&(toCopy[i]->gateQueue[j][0]), &(toCopy[i]->gateQueue[j][0]) + 4, &(nGateQueue[k + qubitCount][0]));
+            nGateQueue[k + qubitCount] = new Complex16[4];
+            std::copy(toCopy[i]->gateQueue[j], toCopy[i]->gateQueue[j] + 4, nGateQueue[k + qubitCount]);
             k++;
         }
     }
-    gateQueue = std::move(nGateQueue);
+    gateQueue = nGateQueue;
     isQueued = nIsQueued;
 
     nMaxQPower = 1 << nQubitCount;
@@ -264,6 +256,11 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     }
 
     FlushQueue(start, length);
+
+    bitCapInt i;
+    for (i = 0; i < length; i++){
+        delete[] gateQueue[i + start];
+    }
     gateQueue.erase(gateQueue.begin() + start, gateQueue.begin() + start + length);
     isQueued.erase(isQueued.begin() + start, isQueued.begin() + start + length);
 
@@ -276,7 +273,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     bitCapInt mask = (partPower - 1) << start;
     bitCapInt startMask = (1 << start) - 1;
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
-    bitCapInt i;
+    
 
     std::unique_ptr<double[]> partStateProb(new double[partPower]());
     std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
@@ -317,6 +314,10 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
+    bitCapInt i;
+    for (i = 0; i < length; i++){
+        delete[] gateQueue[i + start];
+    }
     gateQueue.erase(gateQueue.begin() + start, gateQueue.begin() + start + length);
     isQueued.erase(isQueued.begin() + start, isQueued.begin() + start + length);
 
@@ -328,7 +329,6 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     bitCapInt mask = (partPower - 1) << start;
     bitCapInt startMask = (1 << start) - 1;
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
-    bitCapInt i;
 
     std::unique_ptr<double[]> partStateProb(new double[maxQPower - partPower]());
     std::unique_ptr<double[]> partStateAngle(new double[maxQPower - partPower]());

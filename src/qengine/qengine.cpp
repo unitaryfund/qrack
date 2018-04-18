@@ -69,9 +69,12 @@ void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doC
         qPowers[0] = 1 << qubit;
         Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
     }
+    else if (isQueued[qubit]) {
+        Mul2x2(mtrx, &(gateQueue[qubit][0]));
+    }
     else {
         isQueued[qubit] = true;
-        Mul2x2(mtrx, &(gateQueue[qubit][0]));
+        std::copy(mtrx, mtrx + 4, &(gateQueue[qubit][0]));
     }
 }
 
@@ -147,33 +150,18 @@ void QEngineCPU::Mul2x2(const Complex16* leftIn, Complex16* rightOut) {
     }
 }
 
-const Complex16 CMPLX_I_2X2[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(1.0, 0.0) };
 void QEngineCPU::FlushQueue(bitLenInt index) {
     if (isQueued[index]) {
         isQueued[index] = false;
         bitCapInt qPowers[1];
         qPowers[0] = 1 << index;
         Apply2x2(0, qPowers[0], &(gateQueue[index][0]), 1, qPowers, true);
-        std::copy(CMPLX_I_2X2, CMPLX_I_2X2 + 4, &(gateQueue[index][0]));
     }
 }
 
 void QEngineCPU::FlushQueue(bitLenInt start, bitLenInt length) {
     for (bitLenInt i = 0; i < length; i++) {
         FlushQueue(start + i);
-    }
-}
-
-void QEngineCPU::ResetQueue(bitLenInt index) {
-    if (isQueued[index]) {
-        isQueued[index] = false;
-        std::copy(CMPLX_I_2X2, CMPLX_I_2X2 + 4, &(gateQueue[index][0]));
-    }
-}
-
-void QEngineCPU::ResetQueue(bitLenInt start, bitLenInt length) {
-    for (bitLenInt i = 0; i < length; i++) {
-        ResetQueue(start + i);
     }
 }
 
