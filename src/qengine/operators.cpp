@@ -245,7 +245,4 @@ void QEngineCPU::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
-/// Measure permutation state of an 8 bit register
-unsigned char QEngineCPU::MReg8(bitLenInt start) { return MReg(start, 8); }
-
 } // namespace Qrack

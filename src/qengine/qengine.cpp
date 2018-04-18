@@ -60,15 +60,6 @@ void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
     }
 }
 
-void QEngineCPU::Reverse(bitLenInt first, bitLenInt last)
-{
-    while ((first < last) && (first < (last - 1))) {
-        last--;
-        Swap(first, last);
-        first++;
-    }
-}
-
 void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[1];
