@@ -404,6 +404,20 @@ void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt
         }, control, target);
 }
 
+void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->ROL(shift, shards[start].mapped, length);
+}
+
+void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->ROR(shift, shards[start].mapped, length);
+}
+
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);

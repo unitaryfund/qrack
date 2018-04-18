@@ -289,4 +289,158 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
+///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
+void QInterface::RT(double radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RT(radians, start + lcv);
+    }
+}
+
+/**
+ * Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RTDyad(numerator, denominator, start + lcv);
+    }
+}
+
+/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
+void QInterface::RX(double radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RX(radians, start + lcv);
+    }
+}
+
+/**
+ * Dyadic fraction x axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli x
+ * axis.
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR
+ * OF TWO.
+ */
+void QInterface::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RXDyad(numerator, denominator, start + lcv);
+    }
+}
+
+/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
+void QInterface::RY(double radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RY(radians, start + lcv);
+    }
+}
+
+/**
+ * Dyadic fraction y axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y
+ * axis.
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR
+ * OF TWO.
+ */
+void QInterface::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RYDyad(numerator, denominator, start + lcv);
+    }
+}
+
+/// z axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli z axis
+void QInterface::RZ(double radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RZ(radians, start + lcv);
+    }
+}
+
+/**
+ * Dyadic fraction z axis rotation gate - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around Pauli y
+ * axis.
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR
+ * OF TWO.
+ */
+void QInterface::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        RZDyad(numerator, denominator, start + lcv);
+    }
+}
+
+/// Controlled "phase shift gate"
+void QInterface::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRT(radians, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled dyadic fraction "phase shift gate"
+void QInterface::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRTDyad(numerator, denominator, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled x axis rotation
+void QInterface::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRX(radians, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+void QInterface::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRXDyad(numerator, denominator, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled y axis rotation
+void QInterface::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRY(radians, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+void QInterface::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRYDyad(numerator, denominator, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled z axis rotation
+void QInterface::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRZ(radians, control + lcv, target + lcv);
+    }
+}
+
+/// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt lcv = 0; lcv < length; lcv++) {
+        CRZDyad(numerator, denominator, control + lcv, target + lcv);
+    }
+}
+
 } // namespace Qrack
