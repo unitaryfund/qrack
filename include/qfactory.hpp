@@ -24,7 +24,7 @@ namespace Qrack {
 
 /** Factory method to create specific engine implementations. */
 template <typename... Ts>
-QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args)
+QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts ... args)
 {
     switch (engine) {
     case QINTERFACE_CPU:
@@ -34,7 +34,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, Ts ... args)
         return std::make_shared<QEngineOCL>(args...);
 #endif
     case QINTERFACE_QUNIT:
-        return std::make_shared<QUnit>(QINTERFACE_OPTIMAL, args...);
+        return std::make_shared<QUnit>(subengine, args...);
     default:
         return NULL;
     }
