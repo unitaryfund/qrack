@@ -503,7 +503,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 {
     int i;
     unsigned char toSearch[256];
-    unsigned char output[256];
 
     // Create the lookup table
     for (i = 0; i < 256; i++) {

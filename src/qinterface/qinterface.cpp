@@ -18,8 +18,8 @@ namespace Qrack {
 // "start"
 void QInterface::X(bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        X(start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        X(start + bit);
     }
 }
 
@@ -36,40 +36,40 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 void QInterface::H(bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        H(start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        H(start + bit);
     }
 }
 
 /// Apply Pauli Y matrix to each bit
 void QInterface::Y(bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        Y(start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        Y(start + bit);
     }
 }
 
 /// Apply Pauli Z matrix to each bit
 void QInterface::Z(bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        Z(start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        Z(start + bit);
     }
 }
 
 /// Apply controlled Pauli Y matrix to each bit
 void QInterface::CY(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CY(control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CY(control + bit, target + bit);
     }
 }
 
 /// Apply controlled Pauli Z matrix to each bit
 void QInterface::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CZ(control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CZ(control + bit, target + bit);
     }
 }
 
@@ -224,8 +224,8 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
 void QInterface::RT(double radians, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RT(radians, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RT(radians, start + bit);
     }
 }
 
@@ -237,16 +237,16 @@ void QInterface::RT(double radians, bitLenInt start, bitLenInt length)
  */
 void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RTDyad(numerator, denominator, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RTDyad(numerator, denominator, start + bit);
     }
 }
 
 /// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
 void QInterface::RX(double radians, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RX(radians, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RX(radians, start + bit);
     }
 }
 
@@ -259,16 +259,16 @@ void QInterface::RX(double radians, bitLenInt start, bitLenInt length)
  */
 void QInterface::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RXDyad(numerator, denominator, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RXDyad(numerator, denominator, start + bit);
     }
 }
 
 /// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
 void QInterface::RY(double radians, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RY(radians, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RY(radians, start + bit);
     }
 }
 
@@ -281,16 +281,16 @@ void QInterface::RY(double radians, bitLenInt start, bitLenInt length)
  */
 void QInterface::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RYDyad(numerator, denominator, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RYDyad(numerator, denominator, start + bit);
     }
 }
 
 /// z axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli z axis
 void QInterface::RZ(double radians, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RZ(radians, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RZ(radians, start + bit);
     }
 }
 
@@ -303,32 +303,32 @@ void QInterface::RZ(double radians, bitLenInt start, bitLenInt length)
  */
 void QInterface::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        RZDyad(numerator, denominator, start + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        RZDyad(numerator, denominator, start + bit);
     }
 }
 
 /// Controlled "phase shift gate"
 void QInterface::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRT(radians, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRT(radians, control + bit, target + bit);
     }
 }
 
 /// Controlled dyadic fraction "phase shift gate"
 void QInterface::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRTDyad(numerator, denominator, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRTDyad(numerator, denominator, control + bit, target + bit);
     }
 }
 
 /// Controlled x axis rotation
 void QInterface::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRX(radians, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRX(radians, control + bit, target + bit);
     }
 }
 
@@ -336,16 +336,16 @@ void QInterface::CRX(double radians, bitLenInt control, bitLenInt target, bitLen
 /// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
 void QInterface::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRXDyad(numerator, denominator, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRXDyad(numerator, denominator, control + bit, target + bit);
     }
 }
 
 /// Controlled y axis rotation
 void QInterface::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRY(radians, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRY(radians, control + bit, target + bit);
     }
 }
 
@@ -353,16 +353,16 @@ void QInterface::CRY(double radians, bitLenInt control, bitLenInt target, bitLen
 /// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 void QInterface::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRYDyad(numerator, denominator, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRYDyad(numerator, denominator, control + bit, target + bit);
     }
 }
 
 /// Controlled z axis rotation
 void QInterface::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRZ(radians, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRZ(radians, control + bit, target + bit);
     }
 }
 
@@ -370,8 +370,8 @@ void QInterface::CRZ(double radians, bitLenInt control, bitLenInt target, bitLen
 /// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
 void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt lcv = 0; lcv < length; lcv++) {
-        CRZDyad(numerator, denominator, control + lcv, target + lcv);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CRZDyad(numerator, denominator, control + bit, target + bit);
     }
 }
 

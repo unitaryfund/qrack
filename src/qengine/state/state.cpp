@@ -43,8 +43,7 @@ QEngineCPU::QEngineCPU(
     }
 
     runningNorm = 1.0;
-    qubitCount = qBitCount;
-    maxQPower = 1 << qBitCount;
+    SetQubitCount(qBitCount);
     stateVec = new Complex16[maxQPower];
     std::fill(stateVec, stateVec + maxQPower, Complex16(0.0, 0.0));
     if (phaseFac == Complex16(-999.0, -999.0)) {
@@ -124,8 +123,7 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
     });
 
-    qubitCount = nQubitCount;
-    maxQPower = nMaxQPower;
+    SetQubitCount(nQubitCount);
 
     ResetStateVec(nStateVec);
     UpdateRunningNorm();
@@ -143,7 +141,7 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
-    for (auto engine : toCopy) {
+    for (auto &&engine : toCopy) {
         ret[engine] = Cohere(std::dynamic_pointer_cast<QEngineCPU>(engine));
     }
 
@@ -189,8 +187,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
-    qubitCount = qubitCount - length;
-    maxQPower = 1 << qubitCount;
+    SetQubitCount(qubitCount - length);
 
     Complex16 *sv = new Complex16[remainderPower];
     ResetStateVec(sv);
@@ -234,8 +231,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         partStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
-    qubitCount = qubitCount - length;
-    maxQPower = 1 << qubitCount;
+    SetQubitCount(qubitCount - length);
 
     Complex16 *sv = new Complex16[maxQPower];
     ResetStateVec(sv);

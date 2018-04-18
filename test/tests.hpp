@@ -32,7 +32,6 @@ inline std::ostream& operator<<(std::ostream& os, Qrack::QInterfacePtr qftReg)
         os.unsetf(std::ios_base::showpoint);
         return outputPerBitProbs(os, qftReg);
     }
-    // Super expensive and slow.
     if (os.flags() & std::ios_base::showbase) {
         os.unsetf(std::ios_base::showbase);
         return outputIndependentBits(os, qftReg);

@@ -113,10 +113,6 @@ public:
      * @{
      */
 
-    virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ASR(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void LSL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -143,7 +139,6 @@ public:
      * @{
      */
 
-    virtual void QFT(bitLenInt start, bitLenInt length);
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
@@ -189,7 +184,20 @@ protected:
     template <typename F, typename ... B>
     void EntangleAndCall(F fn, B ... bits);
 
-    void OrderContiguous(bitLenInt start, bitLenInt length);
+    void OrderContiguous(QInterfacePtr unit);
+
+    struct QSortEntry
+    {
+        bitLenInt bit;
+        bitLenInt mapped;
+        bool operator<(const QSortEntry &rhs) {
+            return mapped < rhs.mapped;
+        }
+        bool operator>(const QSortEntry &rhs) {
+            return mapped > rhs.mapped;
+        }
+    };
+    void SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenInt low, bitLenInt high);
 };
 
 } // namespace Qrack
