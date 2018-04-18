@@ -526,19 +526,19 @@ public:
      */
 
     /** Bitwise Hadamard */
-    virtual void H(bitLenInt start, bitLenInt length) = 0;
+    virtual void H(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli X (or logical "NOT") operator */
-    virtual void X(bitLenInt start, bitLenInt length) = 0;
+    virtual void X(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Y operator */
-    virtual void Y(bitLenInt start, bitLenInt length) = 0;
+    virtual void Y(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Z operator */
-    virtual void Z(bitLenInt start, bitLenInt length) = 0;
+    virtual void Z(bitLenInt start, bitLenInt length);
 
     /** Bitwise controlled-not */
-    virtual void CNOT(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length) = 0;
+    virtual void CNOT(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
 
     /**
      * Bitwise "AND"
@@ -546,7 +546,7 @@ public:
      * "AND" registers at "inputStart1" and "inputStart2," of "length" bits,
      * placing the result in "outputStart".
      */
-    virtual void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) = 0;
+    virtual void AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /**
      * Classical bitwise "AND"
@@ -554,26 +554,26 @@ public:
      * "AND" registers at "inputStart1" and the classic bits of "classicalInput," of "length" bits,
      * placing the result in "outputStart".
      */
-    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length) = 0;
+    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "OR" */
-    virtual void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) = 0;
+    virtual void OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "OR" */
-    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length) = 0;
+    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** Bitwise "XOR" */
-    virtual void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length) = 0;
+    virtual void XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
 
     /** Classical bitwise "XOR" */
-    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length) = 0;
+    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /**
      * Bitwise phase shift gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    virtual void RT(double radians, bitLenInt start, bitLenInt length) = 0;
+    virtual void RT(double radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction phase shift gate
@@ -581,28 +581,28 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around |1>
      * state.
      */
-    virtual void RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) = 0;
+    virtual void RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise X axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(double radians, bitLenInt start, bitLenInt length) = 0;
+    virtual void RX(double radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction X axis rotation gate
      *
      * Rotates \f$ e^{i*{\pi * numerator} / denominator} \f$ on Pauli x axis.
      */
-    virtual void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) = 0;
+    virtual void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled X axis rotation gate
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    virtual void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction X axis rotation gate
@@ -610,14 +610,14 @@ public:
      * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
      * denominator} \f$ around Pauli x axis.
      */
-    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise Y axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(double radians, bitLenInt start, bitLenInt length) = 0;
+    virtual void RY(double radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction Y axis rotation gate
@@ -625,7 +625,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Y
      * axis.
      */
-    virtual void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) = 0;
+    virtual void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled Y axis rotation gate
@@ -633,7 +633,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    virtual void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction y axis rotation gate
@@ -641,14 +641,14 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
      * denominator} \f$ around Pauli Y axis.
      */
-    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise Z axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(double radians, bitLenInt start, bitLenInt length) = 0;
+    virtual void RZ(double radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction Z axis rotation gate
@@ -656,7 +656,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Z
      * axis.
      */
-    virtual void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length) = 0;
+    virtual void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled Z axis rotation gate
@@ -664,7 +664,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    virtual void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction Z axis rotation gate
@@ -672,7 +672,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
      * denominator} \f$ around Pauli Z axis.
      */
-    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled "phase shift gate"
@@ -680,7 +680,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
      * \f$ around |1> state.
      */
-    virtual void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction "phase shift gate"
@@ -688,7 +688,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
      * numerator} / denominator} \f$ around |1> state.
      */
-    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled Y gate
@@ -696,7 +696,7 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
      * to "target."
      */
-    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled Z gate
@@ -704,7 +704,7 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
      * to "target."
      */
-    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length) = 0;
+    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
 
@@ -715,16 +715,16 @@ public:
      */
 
     /** Arithmetic shift left, with last 2 bits as sign and carry */
-    virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Arithmetic shift right, with last 2 bits as sign and carry */
-    virtual void ASR(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void ASR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Logical shift left, filling the extra bits with |0> */
-    virtual void LSL(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void LSL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Logical shift right, filling the extra bits with |0> */
-    virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Circular shift left - shift bits left, and carry last bits. */
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
@@ -785,7 +785,7 @@ public:
      */
 
     /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register. */
-    virtual void QFT(bitLenInt start, bitLenInt length) = 0;
+    virtual void QFT(bitLenInt start, bitLenInt length);
 
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length) = 0;
@@ -970,7 +970,7 @@ public:
      * The state ends up entirely in the "value" state, with a random phase
      * factor.
      */
-    virtual void SetBit(bitLenInt qubitIndex1, bool value) = 0;
+    virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /** @} */
 };

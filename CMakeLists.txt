@@ -39,6 +39,7 @@ include_directories ("include" "include/common")
 add_library (qrack STATIC
     src/common/complex16simd.cpp
     src/common/parallel_for.cpp
+    src/qinterface/qinterface.cpp
     src/qengine/qengine.cpp
     src/qengine/operators.cpp
     src/qengine/gates.cpp

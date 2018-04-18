@@ -19,15 +19,17 @@
 
 namespace Qrack {
 
-QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, uint32_t rand_seed) : QInterface(qBitCount), engine(eng)
+QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+    : QInterface(qBitCount), engine(eng)
 {
-    if (rand_seed == 0) {
-        rand_seed = std::time(0);
-    }
 
-    /* Used to control the random seed for all allocated interfaces. */
-    rand_generator = std::make_shared<std::default_random_engine>();
-    rand_generator->seed(rand_seed);
+    if (rgp == nullptr) {
+        /* Used to control the random seed for all allocated interfaces. */
+        rand_generator = std::make_shared<std::default_random_engine>();
+        rand_generator->seed(std::time(0));
+    } else {
+        rand_generator = rgp;
+    }
 
     shards.resize(qBitCount);
 
@@ -290,13 +292,6 @@ void QUnit::Z(bitLenInt qubit)
     shards[qubit].unit->Z(shards[qubit].mapped);
 }
 
-void QUnit::X(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt i = 0; i < length; i++) {
-        X(start + i);
-    }
-}
-
 void QUnit::CY(bitLenInt control, bitLenInt target)
 {
     EntangleAndCallMember(PTR2(CY), control, target);
@@ -391,35 +386,18 @@ void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt
         }, control, target);
 }
 
-/// "Circular shift right" - shift bits right, and carry first bits.
 void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    /* SetReg and Reverse both do mapping under the hood. */
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Reverse(start, end);
-            Reverse(start, start + shift);
-            Reverse(start + shift, end);
-        }
-    }
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->ROL(shift, shards[start].mapped, length);
 }
 
-/// "Circular shift right" - shift bits right, and carry first bits.
 void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Reverse(start + shift, end);
-            Reverse(start, start + shift);
-            Reverse(start, end);
-        }
-    }
+    EntangleRange(start, length);
+    OrderContiguous(start, length);
+    shards[start].unit->ROR(shift, shards[start].mapped, length);
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
@@ -534,13 +512,6 @@ void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
-}
-
-void QUnit::QFT(bitLenInt start, bitLenInt length)
-{
-    EntangleRange(start, length);
-    OrderContiguous(start, length);
-    shards[start].unit->QFT(shards[start].mapped, length);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
