@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
         session.config().stream() << "Executing test suite using the OpenCL Implementation" << std::endl;
         testEngineType = QINTERFACE_OPENCL;
         testSubEngineType = QINTERFACE_OPENCL;
-        CreateQuantumInterface(testEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+        CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
         num_failed = session.run();
     }
 #endif
