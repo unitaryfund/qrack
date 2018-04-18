@@ -33,8 +33,7 @@ protected:
     std::shared_ptr<std::default_random_engine> rand_generator;
 
 public:
-    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, uint32_t rand_seed = 0);
-    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp);
+    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
     virtual void SetQuantumState(Complex16* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
