@@ -59,9 +59,19 @@ enum QInterfaceEngine {
 class QInterface {
 protected:
     bitLenInt qubitCount;
+    bitCapInt maxQPower;
+
+    void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = 1 << qubitCount;
+    }
 
 public:
-    QInterface(bitLenInt n) : qubitCount(n) { }
+    QInterface(bitLenInt n)
+    {
+        SetQubitCount(n);
+    }
 
     /** Destructor of QInterface */
     virtual ~QInterface() {};
@@ -70,7 +80,7 @@ public:
     int GetQubitCount() { return qubitCount; }
 
     /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
-    int GetMaxQPower() { return 1 << qubitCount; }
+    int GetMaxQPower() { return maxQPower; }
 
     /** Set an arbitrary pure quantum state */
     virtual void SetQuantumState(Complex16* inputState) = 0;
@@ -711,6 +721,9 @@ public:
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
+     * \todo Many of these have performance that can be improved in QUnit via
+     *       implementations with more intelligently chosen Cohere/Decompose
+     *       patterns.
      * @{
      */
 
