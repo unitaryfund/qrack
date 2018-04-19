@@ -77,6 +77,7 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     }
 
     qubitCount = qubitCount + toCopy->GetQubitCount();
+    maxQPower = 1 << qubitCount;
 
     return ret;
 }
@@ -131,6 +132,9 @@ void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
             }
         }
     }
+
+    qubitCount = qubitCount - length;
+    maxQPower = 1 << qubitCount;
 }
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length)
@@ -165,6 +169,9 @@ void QUnit::Dispose(bitLenInt start, bitLenInt length)
             }
         }
     }
+
+    qubitCount = qubitCount - length;
+    maxQPower = 1 << qubitCount;
 }
 
 void QUnit::Decompose(bitLenInt qubit)
