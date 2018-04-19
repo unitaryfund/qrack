@@ -17,6 +17,10 @@ namespace Qrack {
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    if (shift == 0 || length == 0) {
+        return;
+    }
+
     bitCapInt regMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;
@@ -42,6 +46,10 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// "Circular shift right" - shift bits right, and carry first bits.
 void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    if (shift == 0 || length == 0) {
+        return;
+    }
+
     bitCapInt regMask = 0;
     bitCapInt otherMask = (1 << qubitCount) - 1;
     bitCapInt lengthPower = 1 << length;

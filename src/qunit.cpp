@@ -219,7 +219,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
-{ 
+{
     std::vector<bitLenInt> bits(length1 + length2);
     std::vector<bitLenInt *> ebits(length1 + length2);
     for (auto i = 0; i < length1; i++) {
@@ -296,6 +296,14 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenIn
     }
     if (i < high) {
         SortUnit(unit, bits, i, high);
+    }
+}
+
+void QUnit::DumpShards()
+{
+    int i = 0;
+    for (auto shard : shards) {
+        printf("%2d.\t%p[%d]\n", i++, shard.unit.get(), shard.mapped);
     }
 }
 
@@ -631,9 +639,10 @@ void QUnit::INCxx(INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length
      * doesn't make sense to Decompose and re-entangle them.
      */
 
-    // Overflow flag should not be measured:
-    // M(flag1Index);
-
+    /*
+     * Overflow flag should not be measured, however the carry flag still needs
+     * to be measured.
+     */
     M(flag2Index);
 
     EntangleRange(start, length);
@@ -747,10 +756,14 @@ unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, 
     const bitLenInt length = 8;
 
     // TODO: This logic is overridden to demonstrate correct output from the lookup table search unit test. //
-    EntangleRange(outputStart, 2 * length);
+    printf("Entangling %d->%d, %d->%d\n", inputStart, inputStart + length, outputStart, outputStart + length);
+    EntangleRange(inputStart, length, outputStart, length);
+    //EntangleRange(outputStart, 2 * length);
+    OrderContiguous(shards[inputStart].unit);
+    DumpShards();
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    OrderContiguous(shards[inputStart].unit);
 
     return shards[inputStart].unit->SuperposeReg8(shards[inputStart].mapped, shards[outputStart].mapped, values);
 }

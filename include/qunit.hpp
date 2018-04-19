@@ -14,7 +14,10 @@
 
 #include <random>
 
+class QInterfaceTestFixture;
+
 #include "qinterface.hpp"
+
 
 namespace Qrack {
 
@@ -23,6 +26,9 @@ struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
 };
+
+class QUnit;
+typedef std::shared_ptr<QUnit> QUnitPtr;
 
 class QUnit : public QInterface
 {
@@ -173,6 +179,7 @@ public:
     /** @} */
 
 protected:
+public:     /* XXX XXX */
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
     void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
@@ -207,6 +214,10 @@ protected:
         }
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenInt low, bitLenInt high);
+
+    /* Debugging and diagnostic routines. */
+    friend class QInterfaceTestFixture; /* XXX XXX */
+    void DumpShards();
 };
 
 } // namespace Qrack
