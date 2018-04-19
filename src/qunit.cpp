@@ -202,15 +202,12 @@ QInterfacePtr QUnit::EntangleIterator(It first, It last)
 
     bool areAllSameUnit = true;
 
-    found[unit1] = true;
-
     /* Walk through all of the supplied bits and create a unique list to cohere. */
     for (auto bit = first + 1; bit != last; ++bit) {
         if (shards[**bit].unit != unit1) {
             areAllSameUnit = false;
             if (found.find(shards[**bit].unit) == found.end()) {
                 units.push_back(shards[**bit].unit);
-                areAllSameUnit = false;
             }
         }
     }
@@ -779,7 +776,7 @@ unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, 
     const bitLenInt length = 8;
 
     // TODO: This logic is overridden to demonstrate correct output from the lookup table search unit test. //
-    EntangleRange(inputStart, 2 * length);
+    EntangleRange(outputStart, 2 * length);
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     OrderContiguous(shards[inputStart].unit);
