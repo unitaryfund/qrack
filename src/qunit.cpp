@@ -38,6 +38,18 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std
     }
 }
 
+Complex16* QUnit::GetState() {
+    EntangleRange(0, qubitCount);
+    OrderContiguous(shards[0].unit);
+    return shards[0].unit->GetState();
+}
+
+void QUnit::CopyState(QInterfacePtr orig) {
+    EntangleRange(0, qubitCount);
+    OrderContiguous(shards[0].unit);
+    return shards[0].unit->CopyState(orig);
+}
+
 void QUnit::SetQuantumState(Complex16* inputState)
 {
     auto unit = CreateQuantumInterface(engine, engine, qubitCount, 0, rand_generator);
@@ -59,6 +71,7 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
 
     shards.resize(qubitCount + toCopy->GetQubitCount());
     for (bitLenInt i = 0; i < toCopy->GetQubitCount(); i++) {
+        // TODO: shards[i + qubitCount].unit = CreateQuantumInterface(engine, engine, toCopy);
         shards[i + qubitCount].unit = toCopy;
         shards[i + qubitCount].mapped = i;
     }
@@ -85,23 +98,72 @@ std::map<QInterfacePtr, bitLenInt> QUnit::Cohere(std::vector<QInterfacePtr> toCo
  */
 void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
-    EntangleRange(start, length);
-    QInterfacePtr unit = shards[start].unit;
+    /* TODO: This method should compose the bits for the destination without cohering the length first */
 
-    for (auto &&shard : shards) {
-        if (shard.unit == unit) {
-            shard.unit = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
-            shard.mapped = 0;
+    EntangleRange(start, length);
+    OrderContiguous(shards[start].unit);
+    QInterfacePtr unit = shards[start].unit;
+    bitLenInt mapped = shards[start].mapped;
+    bitLenInt i = 0;
+    if (unit->GetQubitCount() > length) {
+        unit->Decohere(mapped, length, dest);
+        while (i < shards.size()) {
+            if (shards[i].unit == unit && shards[i].mapped >= (mapped + length)) {
+                shards[i].mapped -= length;
+                i++;
+            }
+            else if (shards[i].unit == unit && shards[i].mapped >= mapped) {
+                shards.erase(shards.begin() + i);
+            }
+            else {
+                i++;
+            }
         }
     }
-
-    dest->Cohere(unit);
+    else {
+        dest->CopyState(unit);
+        while (i < shards.size()) {
+            if (shards[i].unit == unit) {
+                shards.erase(shards.begin() + i);
+            }
+            else {
+                i++;
+            }
+        }
+    }
 }
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        Decompose(start + i);
+    EntangleRange(start, length);
+    OrderContiguous(shards[start].unit);
+    QInterfacePtr unit = shards[start].unit;
+    bitLenInt mapped = shards[start].mapped;
+    bitLenInt i = 0;
+    if (unit->GetQubitCount() > length) {
+        unit->Dispose(shards[start].mapped, length);
+        while (i < shards.size()) {
+            if (shards[i].unit == unit && shards[i].mapped >= (mapped + length)) {
+                shards[i].mapped -= length;
+                i++;
+            }
+            else if (shards[i].unit == unit && shards[i].mapped >= mapped) {
+                shards.erase(shards.begin() + i);
+            }
+            else {
+                i++;
+            }
+        }
+    }
+    else {
+        while (i < shards.size()) {
+            if (shards[i].unit == unit) {
+                shards.erase(shards.begin() + i);
+            }
+            else {
+                i++;
+            }
+        }
     }
 }
 

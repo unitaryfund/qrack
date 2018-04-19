@@ -954,6 +954,20 @@ public:
      */
 
     /**
+     * Get pointer to raw state vector
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual Complex16* GetState() = 0;
+
+    /**
+     * Direct copy of raw state vector to produce a clone
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void CopyState(QInterfacePtr orig) = 0;
+
+    /**
      * Direct measure of bit probability to be in |1> state
      *
      * \warning PSEUDO-QUANTUM

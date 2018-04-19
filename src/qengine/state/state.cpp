@@ -54,6 +54,14 @@ QEngineCPU::QEngineCPU(
     }
 }
 
+Complex16* QEngineCPU::GetState() {
+    return stateVec;
+}
+
+void QEngineCPU::CopyState(QInterfacePtr orig) {
+    std::copy(orig->GetState(), orig->GetState() + (1 << (orig->GetQubitCount())), stateVec);
+}
+
 void QEngineCPU::ResetStateVec(Complex16 *nStateVec)
 {
     delete []stateVec;

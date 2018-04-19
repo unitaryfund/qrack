@@ -158,6 +158,8 @@ public:
      * @{
      */
 
+    virtual Complex16* GetState();
+    virtual void CopyState(QInterfacePtr orig);
     virtual double Prob(bitLenInt qubit);
     virtual double ProbAll(bitCapInt fullRegister);
     virtual void ProbArray(double* probArray);
