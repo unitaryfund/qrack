@@ -140,7 +140,7 @@ TEST_CASE("test_par_for_mask")
         calls++;
     });
 }
-
+/*
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
     int j;
@@ -198,7 +198,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 << 16));
     REQUIRE(expectation == 0x00);
 }
-
+*/
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
 {
     qftReg->SetReg(0, 8, 0x2b);
