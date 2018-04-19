@@ -517,3 +517,28 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
+{
+    /* Entangle in increasingly larger units. */
+    for (int i = 0; i < (qftReg->GetQubitCount() - 1); i += 2) {
+        qftReg->CNOT(i, i + 1);
+    }
+
+    for (int i = qftReg->GetQubitCount() - 2; i > 0; i -= 2) {
+        qftReg->CNOT(i - 1, i);
+    }
+
+    for (int i = 1; i < qftReg->GetQubitCount(); i += 2) {
+        qftReg->X(i);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xAAAAA));
+    for (int i = 1; i < qftReg->GetQubitCount(); i += 2) {
+        qftReg->X(i);
+    }
+    for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
+        qftReg->X(i);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
+}
+

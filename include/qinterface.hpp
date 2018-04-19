@@ -61,7 +61,7 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
 
-    void SetQubitCount(bitLenInt qb)
+    virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
         maxQPower = 1 << qubitCount;
@@ -952,13 +952,6 @@ public:
      *
      * @{
      */
-
-    /**
-     * Get pointer to raw state vector
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual Complex16* GetState() = 0;
 
     /**
      * Direct copy of raw state vector to produce a clone

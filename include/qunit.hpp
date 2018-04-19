@@ -32,6 +32,12 @@ protected:
 
     std::shared_ptr<std::default_random_engine> rand_generator;
 
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        shards.resize(qb);
+        QInterface::SetQubitCount(qb);
+    }
+
 public:
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
@@ -158,7 +164,6 @@ public:
      * @{
      */
 
-    virtual Complex16* GetState();
     virtual void CopyState(QInterfacePtr orig);
     virtual double Prob(bitLenInt qubit);
     virtual double ProbAll(bitCapInt fullRegister);
@@ -187,6 +192,8 @@ protected:
     void EntangleAndCall(F fn, B ... bits);
 
     void OrderContiguous(QInterfacePtr unit);
+
+    void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     struct QSortEntry
     {

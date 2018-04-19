@@ -45,7 +45,7 @@ protected:
 public:
     QEngineCPU(
         bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, Complex16 phaseFac = Complex16(-999.0, -999.0));
-    ~QEngineCPU() {}
+    ~QEngineCPU() { delete []stateVec; }
 
     virtual void SetQuantumState(Complex16* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }

@@ -140,6 +140,8 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const Complex16* stateAr
         futures[cpu].get();
         nrmSqr += nrmPart[cpu];
     }
+
+    delete []nrmPart;
     return sqrt(nrmSqr);
 }
 

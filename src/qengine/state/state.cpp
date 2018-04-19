@@ -54,12 +54,19 @@ QEngineCPU::QEngineCPU(
     }
 }
 
-Complex16* QEngineCPU::GetState() {
+Complex16* QEngineCPU::GetState()
+{
     return stateVec;
 }
 
-void QEngineCPU::CopyState(QInterfacePtr orig) {
-    std::copy(orig->GetState(), orig->GetState() + (1 << (orig->GetQubitCount())), stateVec);
+void QEngineCPU::CopyState(QInterfacePtr orig)
+{
+    /* Set the size and reset the stateVec to the correct size. */
+    SetQubitCount(orig->GetQubitCount());
+    ResetStateVec(new Complex16[maxQPower]);
+
+    QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
+    std::copy(src->GetState(), src->GetState() + (1 << (src->GetQubitCount())), stateVec);
 }
 
 void QEngineCPU::ResetStateVec(Complex16 *nStateVec)
@@ -228,8 +235,18 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> partStateProb(new double[maxQPower - partPower]());
-    std::unique_ptr<double[]> partStateAngle(new double[maxQPower - partPower]());
+    /* Disposing of the entire object. */
+    if (maxQPower - partPower == 0) {
+        SetQubitCount(1);       // Leave as a single bit for safety.
+        Complex16 *sv = new Complex16[maxQPower];
+        ResetStateVec(sv);
+
+        return;
+    }
+
+
+    double *partStateProb = new double[maxQPower - partPower];
+    double *partStateAngle = new double[maxQPower - partPower];
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
@@ -249,6 +266,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     }
 
     UpdateRunningNorm();
+    delete []partStateProb;
+    delete []partStateAngle;
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
