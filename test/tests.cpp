@@ -527,17 +527,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
     for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
     }
-    printf("X\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
     for (int i = 0; i < (qftReg->GetQubitCount() - 1); i += 2) {
         qftReg->CNOT(i, i + 1);
     }
-    printf("CNOT 1\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xfffff));
     for (int i = qftReg->GetQubitCount() - 2; i > 0; i -= 2) {
         qftReg->CNOT(i - 1, i);
     }
-    printf("CNOT 2\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xAAAAB));
 
     for (int i = 1; i < qftReg->GetQubitCount(); i += 2) {
@@ -554,7 +551,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_2")
     for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
     }
-    printf("X\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
 
     /* Tweak a handful of bits throughtout the object. */
@@ -565,11 +561,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_2")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
     unit->EntangleRange(8, 8, 0, 8);
-    printf("ENT\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
 
     unit->ROL(0, 0, 1); /* Use ROL to force an OrderContiguous */
-    printf("ROL\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
 }
 
