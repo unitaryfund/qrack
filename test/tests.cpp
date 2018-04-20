@@ -572,3 +572,33 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_2")
     printf("ROL\n"); unit->DumpShards();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_3")
+{
+    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
+    if (!unit) { return; }
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0));
+    for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
+        qftReg->X(i);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
+
+    /* Tweak a handful of bits throughtout the object. */
+    qftReg->X(0);
+    qftReg->X(5);
+    qftReg->X(10);
+    qftReg->X(15);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
+
+    /* Test the entanglement with different patterns. */
+    unit->EntangleRange(0, 3);
+    qftReg->CNOT(0, 8);
+    unit->EntangleRange(5, 4);
+    unit->EntangleRange(0, 10);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
+
+    unit->ROL(0, 0, 1); /* Use ROL to force an OrderContiguous */
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
+}

@@ -175,6 +175,7 @@ QInterfacePtr QUnit::EntangleIterator(It first, It last)
     /* Walk through all of the supplied bits and create a unique list to cohere. */
     for (auto bit = first + 1; bit != last; ++bit) {
         if (found.find(shards[**bit].unit) == found.end()) {
+            found[shards[**bit].unit] = true;
             units.push_back(shards[**bit].unit);
         }
     }
@@ -286,7 +287,7 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenIn
         if (i <= j) {
             unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
             std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped);     /* Change the global mapping. */
-            std::swap(bits[i], bits[j]);                /* Change the contents of the sorting array. */
+            std::swap(bits[i].mapped, bits[j].mapped);                /* Change the contents of the sorting array. */
             i++;
             j--;
         }
@@ -756,7 +757,6 @@ unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, 
     const bitLenInt length = 8;
 
     // TODO: This logic is overridden to demonstrate correct output from the lookup table search unit test. //
-    printf("Entangling %d->%d, %d->%d\n", inputStart, inputStart + length, outputStart, outputStart + length);
     EntangleRange(inputStart, length, outputStart, length);
     //EntangleRange(outputStart, 2 * length);
     OrderContiguous(shards[inputStart].unit);
