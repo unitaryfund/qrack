@@ -760,7 +760,6 @@ unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, 
     EntangleRange(inputStart, length, outputStart, length);
     //EntangleRange(outputStart, 2 * length);
     OrderContiguous(shards[inputStart].unit);
-    DumpShards();
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
 

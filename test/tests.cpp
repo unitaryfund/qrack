@@ -351,25 +351,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
     int i, j;
 
-    std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
-              << std::endl;
+    // std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
+    //           << std::endl;
 
     for (i = 0; i < 8; i += 2) {
         qftReg->H(i);
     }
 
-    std::cout << "Initial:" << std::endl;
-    for (i = 0; i < 8; i++) {
-        std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
-    }
+    // std::cout << "Initial:" << std::endl;
+    // for (i = 0; i < 8; i++) {
+    //     std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
+    // }
 
     qftReg->QFT(0, 8);
 
-    std::cout << "Final:" << std::endl;
-    for (i = 0; i < 8; i++) {
-        qftProbs[i] = qftReg->Prob(i);
-        std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
-    }
+    // std::cout << "Final:" << std::endl;
+    // for (i = 0; i < 8; i++) {
+    //     qftProbs[i] = qftReg->Prob(i);
+    //     std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
+    // }
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
@@ -421,7 +421,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
 
-    std::cout << "Iterations:" << std::endl;
+    // std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
@@ -433,12 +433,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
         qftReg->ZeroPhaseFlip(0, 8);
         qftReg->H(0, 8);
         qftReg->PhaseFlip();
-        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
     }
 
-    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    std::cout << "Full Result:    " << qftReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+    // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    // std::cout << "Full Result:    " << qftReg << std::endl;
+    // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
     qftReg->MReg(0, 8);
 
@@ -465,7 +465,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     qftReg->H(8, 8);
     qftReg->SuperposeReg8(8, 0, toLoad);
 
-    std::cout << "Iterations:" << std::endl;
+    // std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
@@ -481,12 +481,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
         qftReg->H(8, 8);
         qftReg->PhaseFlip();
         qftReg->AdcSuperposeReg8(8, 0, 16, toLoad);
-        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
     }
 
-    std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    std::cout << "Full Result:    " << qftReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+    // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+    // std::cout << "Full Result:    " << qftReg << std::endl;
+    // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
     qftReg->MReg(0, 8);
 
