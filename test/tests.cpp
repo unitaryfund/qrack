@@ -596,3 +596,323 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_3")
     unit->ROL(0, 0, 1); /* Use ROL to force an OrderContiguous */
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change_2")
+{
+    unsigned char toSearch[256];
+
+    // Create the lookup table
+    for (int i = 0; i < 256; i++) {
+        toSearch[i] = 100;
+    }
+
+    // Divide qftReg into two registers of 8 bits each
+
+    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
+    qftReg->SetPermutation(0);
+    qftReg->H(8, 8);
+    //unit->DumpShards();
+    unit->EntangleRange(0, 8); //8, 8, 0, 8);
+    unit->EntangleRange(8, 8);
+    unit->EntangleRange(0, 16); // 8, 8, 0, 8);
+    unit->ROL(0, 0, 1);
+    Qrack::QEngineCPUPtr cpu = std::dynamic_pointer_cast<Qrack::QEngineCPU>(unit->GetUnit(0));
+    for (int i = 0; i < cpu->GetMaxQPower(); i++) {
+        double a = cpu->GetState()[i]._val[0];
+        double b = cpu->GetState()[i]._val[1];
+        printf("\t%d. %F.%F\n", i,  a + 10, b + 10);
+    }
+    //unit->DumpShards();
+    //unit->ROL(0, 0, 1);
+
+    //QInterfacePtr p = unit->GetUnit(0);
+    //std::cout << "Ind Result:     " << std::showbase << p << std::endl;
+    //std::cout << "Full Result:    " << p << std::endl;
+    //std::cout << "Per Bit Result: " << std::showpoint << p << std::endl;
+    qftReg->SuperposeReg8(8, 0, toSearch);
+    qftReg->H(8, 8);
+
+    // unit->DumpShards();
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change_3")
+{
+    unsigned char toSearch[256];
+
+    // Create the lookup table
+    for (int i = 0; i < 256; i++) {
+        toSearch[i] = 100;
+    }
+
+    // Divide qftReg into two registers of 8 bits each
+
+    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+    qftReg->SuperposeReg8(8, 0, toSearch);
+    qftReg->H(8, 8);
+
+    // unit->DumpShards();
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
+}
+
+void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
+{
+    /* Validate that 'a' and 'b' are the same. */
+    REQUIRE(b->GetQubitCount() == a->GetQubitCount());
+    REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
+    REQUIRE(b->runningNorm == a->runningNorm);
+    //for (int i = 0; i < a->GetMaxQPower(); i++) {
+    //    REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
+    //    REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
+    //}
+    for (int i = 0; i < a->GetQubitCount(); i++) {
+        REQUIRE(a->Prob(i) == b->Prob(i));
+    }
+}
+
+TEST_CASE("test_coherence_swap")
+{
+    /* Set up four engines, identical. */
+    std::shared_ptr<std::default_random_engine> rng_a = std::make_shared<std::default_random_engine>();
+    std::shared_ptr<std::default_random_engine> rng_b = std::make_shared<std::default_random_engine>();
+    std::shared_ptr<std::default_random_engine> rng_c = std::make_shared<std::default_random_engine>();
+    rng_a->seed(10);
+    rng_b->seed(10);
+    rng_c->seed(10);
+
+    /* 'a' is the guide.  'b' gets a reversed Cohere, and 'c' gets a normal Cohere for cross-check. */
+    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng_a);
+    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng_a);
+    QEngineCPUPtr b_1 = std::make_shared<QEngineCPU>(8, 0, rng_b);
+    QEngineCPUPtr b_2 = std::make_shared<QEngineCPU>(8, 0, rng_b);
+    QEngineCPUPtr c_1 = std::make_shared<QEngineCPU>(8, 0, rng_c);
+    QEngineCPUPtr c_2 = std::make_shared<QEngineCPU>(8, 0, rng_c);
+
+    /* Copy the state from 'a' to 'b' and 'c' */
+    b_1->SetQuantumState(a_1->GetState());
+    b_2->SetQuantumState(a_2->GetState());
+    c_1->SetQuantumState(a_1->GetState());
+    c_2->SetQuantumState(a_2->GetState());
+
+    b_1->runningNorm = a_1->runningNorm;
+    b_2->runningNorm = a_2->runningNorm;
+    c_1->runningNorm = a_1->runningNorm;
+    c_2->runningNorm = a_2->runningNorm;
+
+    validate_equal(a_1, b_1);
+    validate_equal(a_2, b_2);
+    validate_equal(a_1, c_1);
+    validate_equal(a_2, c_2);
+
+    /* Perform the same operation on 'a', 'b', and 'c'. */
+    a_2->H(0, 8);
+    b_2->H(0, 8);
+    c_2->H(0, 8);
+
+    validate_equal(a_2, b_2);
+    validate_equal(a_2, c_2);
+
+    a_1->Cohere(a_2);       // Cohere [ reg_1, reg_2 ]
+    b_2->Cohere(b_1);       // Cohere [ reg_2, reg_1 ] - backwards
+    c_1->Cohere(c_2);       // Cohere [ reg_1, reg_2 ]
+
+    QEngineCPUPtr a = a_1;
+    QEngineCPUPtr b = b_2;
+    QEngineCPUPtr c = c_1;
+
+    REQUIRE(a->GetQubitCount() == 16);
+    REQUIRE(b->GetQubitCount() == 16);
+    REQUIRE(c->GetQubitCount() == 16);
+
+    /* Validate 'a' == 'c'. */
+    validate_equal(a, c);
+
+    /* 'b' is backwards, swap the first 8 bits with the second 8 bits. */
+    for (int i = 0; i < 8; i++) {
+        b->Swap(i, i + 8);
+    }
+
+    /* Validate that 'a' and 'b' are the same. */
+    validate_equal(a, b);
+}
+
+void log(QEngineCPUPtr p)
+{
+    std::cout << std::endl << std::showpoint << (QInterfacePtr)p << std::endl;
+}
+
+TEST_CASE("test_basis_change_4")
+{
+    std::shared_ptr<std::default_random_engine> rng =
+        std::make_shared<std::default_random_engine>(); rng->seed(10);
+
+    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng);
+    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng);
+
+    unsigned char toSearch[256];
+
+    // Create the lookup table
+    for (int i = 0; i < 256; i++) {
+        toSearch[i] = 100;
+    }
+
+    a_2->H(0, 8);
+    a_1->Cohere(a_2);
+
+
+
+
+    log(a_1);
+    /*
+	 15]: 0.5
+	 14]: 0.5
+	 13]: 0.5
+	 12]: 0.5
+	 11]: 0.5
+	 10]: 0.5
+	  9]: 0.5
+	  8]: 0.5
+	  7]: 0
+	  6]: 0
+	  5]: 0
+	  4]: 0
+	  3]: 0
+	  2]: 0
+	  1]: 0
+	  0]: 0
+     */
+
+    a_1->SuperposeReg8(8, 0, toSearch);
+    log(a_1);
+    /*
+	 15]: 0.5
+	 14]: 0.5
+	 13]: 0.5
+	 12]: 0.5
+	 11]: 0.5
+	 10]: 0.5
+	  9]: 0.5
+	  8]: 0.5
+	  7]: 0
+	  6]: 1
+	  5]: 1
+	  4]: 0
+	  3]: 0
+	  2]: 1
+	  1]: 0
+	  0]: 0
+     */
+
+    a_1->H(8, 8);
+    log(a_1);
+    /*
+	 15]: 0
+	 14]: 0
+	 13]: 0
+	 12]: 0
+	 11]: 0
+	 10]: 0
+	  9]: 0
+	  8]: 0
+	  7]: 0
+	  6]: 1
+	  5]: 1
+	  4]: 0
+	  3]: 0
+	  2]: 1
+	  1]: 0
+	  0]: 0
+      */
+
+    REQUIRE_THAT(a_1, HasProbability(0, 16, 100));
+}
+
+TEST_CASE("test_basis_change_5")
+{
+    std::shared_ptr<std::default_random_engine> rng =
+        std::make_shared<std::default_random_engine>(); rng->seed(10);
+
+    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng);
+    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng);
+
+    unsigned char toSearch[256];
+
+    // Create the lookup table
+    for (int i = 0; i < 256; i++) {
+        toSearch[i] = 100;
+    }
+
+    a_2->H(0, 8);
+    a_2->Cohere(a_1);
+    for (int i = 0; i < 8; i++) {
+        a_2->Swap(i, i + 8);
+    }
+
+    log(a_2);
+    /*
+	 15]: 0.5
+	 14]: 0.5
+	 13]: 0.5
+	 12]: 0.5
+	 11]: 0.5
+	 10]: 0.5
+	  9]: 0.5
+	  8]: 0.5
+	  7]: 0
+	  6]: 0
+	  5]: 0
+	  4]: 0
+	  3]: 0
+	  2]: 0
+	  1]: 0
+	  0]: 0
+     */
+
+    a_2->SuperposeReg8(8, 0, toSearch);
+    log(a_2);
+    /*
+	 15]: 0.5
+	 14]: 0.5
+	 13]: 0.5
+	 12]: 0.5
+	 11]: 0.5
+	 10]: 0.5
+	  9]: 0.5
+	  8]: 0.5
+	  7]: 0
+	  6]: 1
+	  5]: 1
+	  4]: 0
+	  3]: 0
+	  2]: 1
+	  1]: 0
+	  0]: 0
+     */
+
+    a_2->H(8, 8);
+    log(a_2);
+    /*
+	 15]: 1
+	 14]: 1
+	 13]: 1
+	 12]: 1
+	 11]: 1
+	 10]: 1
+	  9]: 1
+	  8]: 1
+	  7]: 0
+	  6]: 1
+	  5]: 1
+	  4]: 0
+	  3]: 0
+	  2]: 1
+	  1]: 0
+	  0]: 0
+     */
+
+    REQUIRE_THAT((QInterfacePtr)a_2, HasProbability(0, 16, 100));
+}

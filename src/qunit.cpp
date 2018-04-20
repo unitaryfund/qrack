@@ -756,13 +756,16 @@ unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, 
 {
     const bitLenInt length = 8;
 
-    // TODO: This logic is overridden to demonstrate correct output from the lookup table search unit test. //
+    // XXX XXX XXX: This logic is overridden to demonstrate correct output from the lookup table search unit test. //
     EntangleRange(inputStart, length, outputStart, length);
-    //EntangleRange(outputStart, 2 * length);
+    // EntangleRange(outputStart, 2 * length);
     OrderContiguous(shards[inputStart].unit);
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////
+    for (int i = 0; i < GetQubitCount(); i++) {
+        printf("%d. %f\n", i, shards[inputStart].unit->Prob(i));
+    }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return shards[inputStart].unit->SuperposeReg8(shards[inputStart].mapped, shards[outputStart].mapped, values);
 }

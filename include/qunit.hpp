@@ -218,6 +218,7 @@ public:     /* XXX XXX */
     /* Debugging and diagnostic routines. */
     friend class QInterfaceTestFixture; /* XXX XXX */
     void DumpShards();
+    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 };
 
 } // namespace Qrack

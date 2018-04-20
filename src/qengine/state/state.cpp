@@ -156,9 +156,50 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
-    for (auto &&engine : toCopy) {
-        ret[engine] = Cohere(std::dynamic_pointer_cast<QEngineCPU>(engine));
+
+    bitLenInt i;
+    bitLenInt toCohereCount = toCopy.size();
+
+    std::vector<bitLenInt> offset(toCohereCount);
+    std::vector<bitCapInt> mask(toCohereCount);
+
+    bitCapInt startMask = maxQPower - 1;
+    bitCapInt nQubitCount = qubitCount;
+    bitCapInt nMaxQPower;
+
+    if (runningNorm != 1.0) {
+        NormalizeState();
     }
+
+    for (i = 0; i < toCohereCount; i++) {
+        QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
+        if (src->runningNorm != 1.0) {
+            src->NormalizeState();
+        }
+        mask[i] = ((1 << src->GetQubitCount()) - 1) << nQubitCount;
+        offset[i] = nQubitCount;
+        ret[toCopy[i]] = nQubitCount;
+        nQubitCount += src->GetQubitCount();
+    }
+
+    nMaxQPower = 1 << nQubitCount;
+
+    Complex16 *nStateVec = new Complex16[nMaxQPower];
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+        QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
+
+        nStateVec[lcv] = stateVec[lcv & startMask];
+        for (bitLenInt j = 0; j < toCohereCount; j++) {
+            nStateVec[lcv] *= src->stateVec[(lcv & mask[j]) >> offset[j]];
+        }
+    });
+
+    qubitCount = nQubitCount;
+    maxQPower = nMaxQPower;
+
+    ResetStateVec(nStateVec);
+    UpdateRunningNorm();
 
     return ret;
 }

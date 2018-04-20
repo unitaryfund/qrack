@@ -34,7 +34,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  */
 class QEngineCPU : public QInterface, public ParallelFor
 {
-protected:
+public: /* XXX XXX */
     uint32_t randomSeed;
     double runningNorm;
     Complex16 *stateVec;
@@ -134,6 +134,7 @@ public:
      * @{
      */
 
+    using QInterface::H;
     virtual void X(bitLenInt start, bitLenInt length);
 
     /** @} */
