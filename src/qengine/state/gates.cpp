@@ -25,11 +25,15 @@ bool QEngineCPU::M(bitLenInt qubit)
     }
 
     bool result;
+    double prob = Rand();
+    double angle = Rand() * 2.0 * M_PI;
+    double cosine = cos(angle);
+    double sine = sin(angle);
     Complex16 nrm;
 
     bitCapInt qPowers = 1 << qubit;
     double oneChance = Prob(qubit);
-    double prob = Rand();
+
     result = (prob < oneChance) && oneChance > 0.0;
     double nrmlzr = 1.0;
     if (result) {
@@ -37,7 +41,7 @@ bool QEngineCPU::M(bitLenInt qubit)
             nrmlzr = oneChance;
         }
 
-        nrm = Complex16(1.0 / nrmlzr, 0.0);
+        nrm = Complex16(cosine, sine) / nrmlzr;
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
@@ -51,7 +55,7 @@ bool QEngineCPU::M(bitLenInt qubit)
             nrmlzr = sqrt(1.0 - oneChance);
         }
 
-        nrm = Complex16(1.0 / nrmlzr, 0.0);
+        nrm = Complex16(cosine, sine) / nrmlzr;
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
