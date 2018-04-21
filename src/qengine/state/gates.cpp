@@ -152,7 +152,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
     if (distance < length) {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            Swap(start1 + i, start2 + i, 1);
+            Swap(start1 + i, start2 + i);
         }
     } else {
         bitCapInt reg1Mask = ((1 << length) - 1) << start1;

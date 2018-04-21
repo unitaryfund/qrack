@@ -939,7 +939,7 @@ public:
     {
         while ((first < last) && (first < (last - 1))) {
             last--;
-            Swap(first, last, 1);   /* TODO: Return to single-bit variant. */
+            Swap(first, last);
             first++;
         }
     }
