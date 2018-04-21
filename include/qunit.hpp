@@ -179,7 +179,6 @@ public:
     /** @} */
 
 protected:
-public:     /* XXX XXX */
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
     void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
@@ -216,7 +215,6 @@ public:     /* XXX XXX */
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenInt low, bitLenInt high);
 
     /* Debugging and diagnostic routines. */
-    friend class QInterfaceTestFixture; /* XXX XXX */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 };

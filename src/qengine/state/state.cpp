@@ -97,9 +97,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         qubit[0] = stateVec[lcv + offset1];
         qubit[1] = stateVec[lcv + offset2];
 
-        Complex16 Y0 = qubit[0];
-        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+        qubit[0] = nrm * ((mtrx[0] * qubit[0]) + (mtrx[1] * qubit[1]));
+        qubit[1] = nrm * ((mtrx[2] * qubit[0]) + (mtrx[3] * qubit[1]));
 
         stateVec[lcv + offset1] = qubit[0];
         stateVec[lcv + offset2] = qubit[1];
@@ -187,10 +186,10 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
     Complex16 *nStateVec = new Complex16[nMaxQPower];
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
-        QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
-
         nStateVec[lcv] = stateVec[lcv & startMask];
+
         for (bitLenInt j = 0; j < toCohereCount; j++) {
+            QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[j]);
             nStateVec[lcv] *= src->stateVec[(lcv & mask[j]) >> offset[j]];
         }
     });

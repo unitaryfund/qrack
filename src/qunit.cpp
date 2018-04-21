@@ -285,7 +285,8 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenIn
             j--;
         }
         if (i <= j) {
-            unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
+            /* Note: Using the length variant to avoid a likely-temporary bug in the single-bit variant. */
+            unit->Swap(bits[i].mapped, bits[j].mapped, 1); /* Change the location in the QE itself. */
             std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped);     /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped);                /* Change the contents of the sorting array. */
             i++;
@@ -756,16 +757,8 @@ unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, 
 {
     const bitLenInt length = 8;
 
-    // XXX XXX XXX: This logic is overridden to demonstrate correct output from the lookup table search unit test. //
     EntangleRange(inputStart, length, outputStart, length);
-    // EntangleRange(outputStart, 2 * length);
     OrderContiguous(shards[inputStart].unit);
-
-    for (int i = 0; i < GetQubitCount(); i++) {
-        printf("%d. %f\n", i, shards[inputStart].unit->Prob(i));
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return shards[inputStart].unit->SuperposeReg8(shards[inputStart].mapped, shards[outputStart].mapped, values);
 }

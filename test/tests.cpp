@@ -24,6 +24,46 @@
 
 using namespace Qrack;
 
+void print_bin(int bits, int d);
+void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
+void log(QInterfacePtr p);
+
+void print_bin(int bits, int d)
+{
+    int mask = 1 << bits;
+    while (mask != 0) {
+        printf("%d", !!(d & mask));
+        mask >>= 1;
+    }
+}
+
+void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
+{
+    /* Validate that 'a' and 'b' are the same. */
+    REQUIRE(b->GetQubitCount() == a->GetQubitCount());
+    REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
+    REQUIRE(b->runningNorm == a->runningNorm);
+    for (int i = 0; i < a->GetMaxQPower(); i++) {
+        // if (a->GetState()[i]._val[0] != b->GetState()[i]._val[0] ||
+        //         a->GetState()[i]._val[1] != b->GetState()[i]._val[1]) {
+        //     print_bin(16, i); printf(". %f/%f != %f/%f\n", a->GetState()[i]._val[0], a->GetState()[i]._val[1],
+        //         b->GetState()[i]._val[0], b->GetState()[i]._val[1]);
+        // }
+
+        REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
+        REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
+    }
+
+    for (int i = 0; i < a->GetQubitCount(); i++) {
+        REQUIRE(a->Prob(i) == b->Prob(i));
+    }
+}
+
+void log(QInterfacePtr p)
+{
+    std::cout << std::endl << std::showpoint << p << std::endl;
+}
+
 TEST_CASE("test_par_for")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
@@ -203,6 +243,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
 */
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
 {
+    REQUIRE(qftReg->MReg(0, 8) == 0);
     qftReg->SetReg(0, 8, 0x2b);
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
@@ -511,7 +552,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
     }
 
     // Divide qftReg into two registers of 8 bits each
-
     qftReg->SetPermutation(0);
     qftReg->H(8, 8);
     qftReg->SuperposeReg8(8, 0, toSearch);
@@ -522,7 +562,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
 {
-    QUnitPtr unit = std::dynamic_pointer_cast<QUnit>(qftReg);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0));
     for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
@@ -541,137 +580,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
         qftReg->X(i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_2")
-{
-    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0));
-    for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
-        qftReg->X(i);
-    }
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
-
-    /* Tweak a handful of bits throughtout the object. */
-    qftReg->X(0);
-    qftReg->X(5);
-    qftReg->X(10);
-    qftReg->X(15);
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
-    unit->EntangleRange(8, 8, 0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
-
-    unit->ROL(0, 0, 1); /* Use ROL to force an OrderContiguous */
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement_3")
-{
-    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
-    if (!unit) { return; }
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0));
-    for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
-        qftReg->X(i);
-    }
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
-
-    /* Tweak a handful of bits throughtout the object. */
-    qftReg->X(0);
-    qftReg->X(5);
-    qftReg->X(10);
-    qftReg->X(15);
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
-
-    /* Test the entanglement with different patterns. */
-    unit->EntangleRange(0, 3);
-    qftReg->CNOT(0, 8);
-    unit->EntangleRange(5, 4);
-    unit->EntangleRange(0, 10);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
-
-    unit->ROL(0, 0, 1); /* Use ROL to force an OrderContiguous */
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x5D174));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change_2")
-{
-    unsigned char toSearch[256];
-
-    // Create the lookup table
-    for (int i = 0; i < 256; i++) {
-        toSearch[i] = 100;
-    }
-
-    // Divide qftReg into two registers of 8 bits each
-
-    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
-    qftReg->SetPermutation(0);
-    qftReg->H(8, 8);
-    //unit->DumpShards();
-    unit->EntangleRange(0, 8); //8, 8, 0, 8);
-    unit->EntangleRange(8, 8);
-    unit->EntangleRange(0, 16); // 8, 8, 0, 8);
-    unit->ROL(0, 0, 1);
-    Qrack::QEngineCPUPtr cpu = std::dynamic_pointer_cast<Qrack::QEngineCPU>(unit->GetUnit(0));
-    for (int i = 0; i < cpu->GetMaxQPower(); i++) {
-        double a = cpu->GetState()[i]._val[0];
-        double b = cpu->GetState()[i]._val[1];
-        printf("\t%d. %F.%F\n", i,  a + 10, b + 10);
-    }
-    //unit->DumpShards();
-    //unit->ROL(0, 0, 1);
-
-    //QInterfacePtr p = unit->GetUnit(0);
-    //std::cout << "Ind Result:     " << std::showbase << p << std::endl;
-    //std::cout << "Full Result:    " << p << std::endl;
-    //std::cout << "Per Bit Result: " << std::showpoint << p << std::endl;
-    qftReg->SuperposeReg8(8, 0, toSearch);
-    qftReg->H(8, 8);
-
-    // unit->DumpShards();
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change_3")
-{
-    unsigned char toSearch[256];
-
-    // Create the lookup table
-    for (int i = 0; i < 256; i++) {
-        toSearch[i] = 100;
-    }
-
-    // Divide qftReg into two registers of 8 bits each
-
-    Qrack::QUnitPtr unit = std::dynamic_pointer_cast<Qrack::QUnit>(qftReg);
-    qftReg->SetPermutation(0);
-    qftReg->H(0, 8);
-    qftReg->SuperposeReg8(8, 0, toSearch);
-    qftReg->H(8, 8);
-
-    // unit->DumpShards();
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
-}
-
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
-{
-    /* Validate that 'a' and 'b' are the same. */
-    REQUIRE(b->GetQubitCount() == a->GetQubitCount());
-    REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
-    REQUIRE(b->runningNorm == a->runningNorm);
-    //for (int i = 0; i < a->GetMaxQPower(); i++) {
-    //    REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
-    //    REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
-    //}
-    for (int i = 0; i < a->GetQubitCount(); i++) {
-        REQUIRE(a->Prob(i) == b->Prob(i));
-    }
 }
 
 TEST_CASE("test_coherence_swap")
@@ -732,187 +640,44 @@ TEST_CASE("test_coherence_swap")
     validate_equal(a, c);
 
     /* 'b' is backwards, swap the first 8 bits with the second 8 bits. */
-    for (int i = 0; i < 8; i++) {
-        b->Swap(i, i + 8);
-    }
+    b->Swap(0, 8, 8);
 
     /* Validate that 'a' and 'b' are the same. */
     validate_equal(a, b);
 }
 
-void log(QEngineCPUPtr p)
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
 {
-    std::cout << std::endl << std::showpoint << (QInterfacePtr)p << std::endl;
+    qftReg->H(0);
+
+    REQUIRE(qftReg->Prob(0) == 0.5);
+    REQUIRE(qftReg->Prob(1) == 0);
+
+	qftReg->Swap(0, 1);
+
+    REQUIRE(qftReg->Prob(0) == 0);
+    REQUIRE(qftReg->Prob(1) == 0.5);
+
+    qftReg->H(1);
+
+    REQUIRE(qftReg->Prob(0) == 0);
+    REQUIRE(qftReg->Prob(1) == 0);
 }
 
-TEST_CASE("test_basis_change_4")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
 {
-    std::shared_ptr<std::default_random_engine> rng =
-        std::make_shared<std::default_random_engine>(); rng->seed(10);
+    qftReg->H(0);
 
-    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng);
-    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng);
+    REQUIRE(qftReg->Prob(0) == 0.5);
+    REQUIRE(qftReg->Prob(1) == 0);
 
-    unsigned char toSearch[256];
+	qftReg->Swap(0, 1, 1);
 
-    // Create the lookup table
-    for (int i = 0; i < 256; i++) {
-        toSearch[i] = 100;
-    }
+    REQUIRE(qftReg->Prob(0) == 0);
+    REQUIRE(qftReg->Prob(1) == 0.5);
 
-    a_2->H(0, 8);
-    a_1->Cohere(a_2);
+    qftReg->H(1);
 
-
-
-
-    log(a_1);
-    /*
-	 15]: 0.5
-	 14]: 0.5
-	 13]: 0.5
-	 12]: 0.5
-	 11]: 0.5
-	 10]: 0.5
-	  9]: 0.5
-	  8]: 0.5
-	  7]: 0
-	  6]: 0
-	  5]: 0
-	  4]: 0
-	  3]: 0
-	  2]: 0
-	  1]: 0
-	  0]: 0
-     */
-
-    a_1->SuperposeReg8(8, 0, toSearch);
-    log(a_1);
-    /*
-	 15]: 0.5
-	 14]: 0.5
-	 13]: 0.5
-	 12]: 0.5
-	 11]: 0.5
-	 10]: 0.5
-	  9]: 0.5
-	  8]: 0.5
-	  7]: 0
-	  6]: 1
-	  5]: 1
-	  4]: 0
-	  3]: 0
-	  2]: 1
-	  1]: 0
-	  0]: 0
-     */
-
-    a_1->H(8, 8);
-    log(a_1);
-    /*
-	 15]: 0
-	 14]: 0
-	 13]: 0
-	 12]: 0
-	 11]: 0
-	 10]: 0
-	  9]: 0
-	  8]: 0
-	  7]: 0
-	  6]: 1
-	  5]: 1
-	  4]: 0
-	  3]: 0
-	  2]: 1
-	  1]: 0
-	  0]: 0
-      */
-
-    REQUIRE_THAT(a_1, HasProbability(0, 16, 100));
-}
-
-TEST_CASE("test_basis_change_5")
-{
-    std::shared_ptr<std::default_random_engine> rng =
-        std::make_shared<std::default_random_engine>(); rng->seed(10);
-
-    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng);
-    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng);
-
-    unsigned char toSearch[256];
-
-    // Create the lookup table
-    for (int i = 0; i < 256; i++) {
-        toSearch[i] = 100;
-    }
-
-    a_2->H(0, 8);
-    a_2->Cohere(a_1);
-    for (int i = 0; i < 8; i++) {
-        a_2->Swap(i, i + 8);
-    }
-
-    log(a_2);
-    /*
-	 15]: 0.5
-	 14]: 0.5
-	 13]: 0.5
-	 12]: 0.5
-	 11]: 0.5
-	 10]: 0.5
-	  9]: 0.5
-	  8]: 0.5
-	  7]: 0
-	  6]: 0
-	  5]: 0
-	  4]: 0
-	  3]: 0
-	  2]: 0
-	  1]: 0
-	  0]: 0
-     */
-
-    a_2->SuperposeReg8(8, 0, toSearch);
-    log(a_2);
-    /*
-	 15]: 0.5
-	 14]: 0.5
-	 13]: 0.5
-	 12]: 0.5
-	 11]: 0.5
-	 10]: 0.5
-	  9]: 0.5
-	  8]: 0.5
-	  7]: 0
-	  6]: 1
-	  5]: 1
-	  4]: 0
-	  3]: 0
-	  2]: 1
-	  1]: 0
-	  0]: 0
-     */
-
-    a_2->H(8, 8);
-    log(a_2);
-    /*
-	 15]: 1
-	 14]: 1
-	 13]: 1
-	 12]: 1
-	 11]: 1
-	 10]: 1
-	  9]: 1
-	  8]: 1
-	  7]: 0
-	  6]: 1
-	  5]: 1
-	  4]: 0
-	  3]: 0
-	  2]: 1
-	  1]: 0
-	  0]: 0
-     */
-
-    REQUIRE_THAT((QInterfacePtr)a_2, HasProbability(0, 16, 100));
+    REQUIRE(qftReg->Prob(0) == 0);
+    REQUIRE(qftReg->Prob(1) == 0);
 }
