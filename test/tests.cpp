@@ -42,7 +42,6 @@ void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
     /* Validate that 'a' and 'b' are the same. */
     REQUIRE(b->GetQubitCount() == a->GetQubitCount());
     REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
-    REQUIRE(b->runningNorm == a->runningNorm);
     for (int i = 0; i < a->GetMaxQPower(); i++) {
         // if (a->GetState()[i]._val[0] != b->GetState()[i]._val[0] ||
         //         a->GetState()[i]._val[1] != b->GetState()[i]._val[1]) {
@@ -605,11 +604,6 @@ TEST_CASE("test_coherence_swap")
     b_2->SetQuantumState(a_2->GetState());
     c_1->SetQuantumState(a_1->GetState());
     c_2->SetQuantumState(a_2->GetState());
-
-    b_1->runningNorm = a_1->runningNorm;
-    b_2->runningNorm = a_2->runningNorm;
-    c_1->runningNorm = a_1->runningNorm;
-    c_2->runningNorm = a_2->runningNorm;
 
     validate_equal(a_1, b_1);
     validate_equal(a_2, b_2);

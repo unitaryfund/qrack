@@ -756,7 +756,6 @@ void QUnit::PhaseFlip()
 unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
     const bitLenInt length = 8;
-
     EntangleRange(inputStart, length, outputStart, length);
     OrderContiguous(shards[inputStart].unit);
 

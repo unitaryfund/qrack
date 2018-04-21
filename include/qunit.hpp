@@ -14,10 +14,7 @@
 
 #include <random>
 
-class QInterfaceTestFixture;
-
 #include "qinterface.hpp"
-
 
 namespace Qrack {
 
