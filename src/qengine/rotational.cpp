@@ -125,10 +125,6 @@ void QEngineCPU::CRT(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("control bit cannot also be target.");
     }
 
-    // Does not necessarily commute with single bit gates
-    FlushQueue(control);
-    FlushQueue(target);
-
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     const Complex16 mtrx[4] = { Complex16(1.0, 0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(cosine, sine) };
@@ -154,10 +150,6 @@ void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (control == target)
         throw std::invalid_argument("CRX control bit cannot also be target.");
-
-    // Does not necessarily commute with single bit gates
-    FlushQueue(control);
-    FlushQueue(target);
 
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
@@ -190,10 +182,6 @@ void QEngineCPU::CRY(double radians, bitLenInt control, bitLenInt target)
     if (control == target)
         throw std::invalid_argument("CRY control bit cannot also be target.");
 
-    // Does not necessarily commute with single bit gates
-    FlushQueue(control);
-    FlushQueue(target);
-
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     Complex16 pauliRY[4] = { Complex16(cosine, 0.0), Complex16(-sine, 0.0), Complex16(sine, 0.0),
@@ -220,10 +208,6 @@ void QEngineCPU::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRZ control bit cannot also be target.");
-
-    // Does not necessarily commute with single bit gates
-    FlushQueue(control);
-    FlushQueue(target);
 
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);

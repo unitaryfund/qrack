@@ -17,9 +17,6 @@ namespace Qrack {
 /// Measurement gate
 bool QEngineCPU::M(bitLenInt qubit)
 {
-    // Does not necessarily commute with single bit gates
-    FlushQueue(qubit);
-
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -79,14 +76,6 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
         X(start);
-        return;
-    }
-
-    // If we have depth optimizations queued, keep pushing on that queue.
-    if (CheckQueued(start, length)) {
-        for (bitLenInt i = 0; i < length; i++) {
-            X(start + i);
-        }
         return;
     }
 
@@ -162,26 +151,20 @@ void QEngineCPU::Z(bitLenInt start, bitLenInt length)
         return;
     }
 
-    if (CheckQueued(start, length)) {
-        for (bitLenInt i = 0; i < length; i++) {
-            Z(start + i);
+    bitCapInt inOutMask = ((1 << length) - 1) << start;
+    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
+    Complex16* nStateVec = new Complex16[maxQPower];
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> start;
+        bitLenInt bitCount;
+        for (bitCount = 0; inOutInt; bitCount++) {
+            inOutInt &= inOutInt - 1;  
         }
-    } else {
-        bitCapInt inOutMask = ((1 << length) - 1) << start;
-        bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
-        Complex16* nStateVec = new Complex16[maxQPower];
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            bitCapInt otherRes = lcv & otherMask;
-            bitCapInt inOutRes = lcv & inOutMask;
-            bitCapInt inOutInt = inOutRes >> start;
-            bitLenInt bitCount;
-            for (bitCount = 0; inOutInt; bitCount++) {
-                inOutInt &= inOutInt - 1;  
-            }
-            nStateVec[inOutRes | otherRes] = (bitCount & 1) ? -stateVec[lcv] : stateVec[lcv];
-        });
-        ResetStateVec(nStateVec);
-    }
+        nStateVec[inOutRes | otherRes] = (bitCount & 1) ? -stateVec[lcv] : stateVec[lcv];
+    });
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise swap
@@ -192,10 +175,6 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         Swap(start1, start2);
         return;
     }
-
-    // Does not necessarily commute with single bit queues
-    FlushQueue(start1, length);
-    FlushQueue(start2, length);
 
     int distance = start1 - start2;
     if (distance < 0) {

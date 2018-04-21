@@ -127,9 +127,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
 
 void QEngineOCL::ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    // Does not necessarily commute with single bit gates
-    FlushQueue(start, length);
-
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
@@ -154,10 +151,6 @@ void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 void QEngineOCL::INTC(cl::Kernel* call,
     bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    // Does not necessarily commute with single bit gates
-    FlushQueue(start, length);
-    FlushQueue(carryIndex);
-
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
@@ -176,11 +169,8 @@ void QEngineOCL::INCC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-        FlushQueue(carryIndex);
         toAdd++;
     }
-
-    FlushQueue(start, length);
 
     INTC(clObj->GetINCCPtr(), toAdd, start, length, carryIndex);
 }
@@ -192,12 +182,9 @@ void QEngineOCL::DECC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-        FlushQueue(carryIndex);
     } else {
         toSub++;
     }
-
-    FlushQueue(start, length);
 
     INTC(clObj->GetDECCPtr(), toSub, start, length, carryIndex);
 }
@@ -205,7 +192,6 @@ void QEngineOCL::DECC(
 /** Set 8 bit register bits based on read from classical memory */
 unsigned char QEngineOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
 {
-    FlushQueue(inputStart, 8);
     SetReg(outputStart, 8, 0);
 
     bitCapInt inputMask = 0xff << inputStart;
@@ -239,11 +225,7 @@ unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
          */
         carryIn = !carryIn;
         X(carryIndex);
-        FlushQueue(carryIndex);
     }
-
-    FlushQueue(inputStart, 8);
-    FlushQueue(outputStart, 8);
 
     bitCapInt lengthPower = 1 << 8;
     bitCapInt carryMask = 1 << carryIndex;

@@ -27,8 +27,6 @@ QEngineCPU::QEngineCPU(
     bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, Complex16 phaseFac)
     : QInterface(qBitCount),
       stateVec(NULL),
-      gateQueue(qBitCount),
-      isQueued(qBitCount),
       rand_distribution(0.0, 1.0)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -54,11 +52,6 @@ QEngineCPU::QEngineCPU(
         stateVec[initState] = Complex16(cos(angle), sin(angle));
     } else {
         stateVec[initState] = phaseFac;
-    }
-
-    for (bitLenInt i = 0; i < qBitCount; i++) {
-        isQueued[i] = false;
-        gateQueue[i] = new Complex16[4];
     }
 }
 
@@ -145,23 +138,10 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
         toCopy->NormalizeState();
     }
 
-    bitCapInt i;
     bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
     bitCapInt nMaxQPower = 1 << nQubitCount;
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
-
-    std::vector<Complex16*> nGateQueue(nQubitCount);
-    std::vector<bool> nIsQueued(nQubitCount);
-    std::copy(isQueued.begin(), isQueued.end(), nIsQueued.begin());
-    std::copy(gateQueue.begin(), gateQueue.end(), nGateQueue.begin());
-    for (i = 0; i < toCopy->qubitCount; i++) {
-        nIsQueued[i + qubitCount] = toCopy->isQueued[i];
-        nGateQueue[i + qubitCount] = new Complex16[4];
-        std::copy(toCopy->gateQueue[i], toCopy->gateQueue[i] + 4, nGateQueue[i + qubitCount]);
-    }
-    gateQueue = nGateQueue;
-    isQueued = nIsQueued;
 
     Complex16 *nStateVec = new Complex16[nMaxQPower];
 
@@ -183,7 +163,7 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
  */
 void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 {
-    bitLenInt i, j, k;
+    bitLenInt i;
     bitLenInt toCohereCount = toCopy.size();
 
     std::vector<bitLenInt> offset(toCohereCount);
@@ -205,22 +185,6 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
         offset[i] = nQubitCount;
         nQubitCount += toCopy[i]->GetQubitCount();
     }
-
-    std::vector<Complex16*> nGateQueue(nQubitCount);
-    std::vector<bool> nIsQueued(nQubitCount);
-    std::copy(isQueued.begin(), isQueued.end(), nIsQueued.begin());
-    std::copy(gateQueue.begin(), gateQueue.end(), nGateQueue.begin());
-    k = 0;
-    for (i = 0; i < toCohereCount; i++) {
-        for (j = 0; j < toCopy[i]->GetQubitCount(); j++) {
-            nIsQueued[k + qubitCount] = toCopy[i]->isQueued[i];
-            nGateQueue[k + qubitCount] = new Complex16[4];
-            std::copy(toCopy[i]->gateQueue[j], toCopy[i]->gateQueue[j] + 4, nGateQueue[k + qubitCount]);
-            k++;
-        }
-    }
-    gateQueue = nGateQueue;
-    isQueued = nIsQueued;
 
     nMaxQPower = 1 << nQubitCount;
 
@@ -253,19 +217,11 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         return;
     }
 
-    FlushQueue(start, length);
-
-    bitCapInt i;
-    for (i = 0; i < length; i++){
-        delete[] gateQueue[i + start];
-    }
-    gateQueue.erase(gateQueue.begin() + start, gateQueue.begin() + start + length);
-    isQueued.erase(isQueued.begin() + start, isQueued.begin() + start + length);
-
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
+    bitCapInt i;
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
     bitCapInt mask = (partPower - 1) << start;
@@ -312,17 +268,11 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
-    bitCapInt i;
-    for (i = 0; i < length; i++){
-        delete[] gateQueue[i + start];
-    }
-    gateQueue.erase(gateQueue.begin() + start, gateQueue.begin() + start + length);
-    isQueued.erase(isQueued.begin() + start, isQueued.begin() + start + length);
-
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
+    bitCapInt i;
     bitCapInt partPower = 1 << length;
     bitCapInt mask = (partPower - 1) << start;
     bitCapInt startMask = (1 << start) - 1;
@@ -355,8 +305,6 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 double QEngineCPU::Prob(bitLenInt qubit)
 {
-    FlushQueue(qubit);
-
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -377,8 +325,6 @@ double QEngineCPU::Prob(bitLenInt qubit)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 double QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
-    FlushQueue(0, qubitCount);
-
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -389,8 +335,6 @@ double QEngineCPU::ProbAll(bitCapInt fullRegister)
 /// PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
 void QEngineCPU::ProbArray(double* probArray)
 {
-    FlushQueue(0, qubitCount);
-
     if (runningNorm != 1.0) {
         NormalizeState();
     }
