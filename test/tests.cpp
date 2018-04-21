@@ -24,6 +24,14 @@
 
 using namespace Qrack;
 
+#define EPSILON 0.001
+#define REQUIRE_FLOAT(A, B) do {                                            \
+        double __tmp_a = A;                                                 \
+        double __tmp_b = B;                                                 \
+        REQUIRE(__tmp_a < (__tmp_b + EPSILON));                             \
+        REQUIRE(__tmp_b > (__tmp_b - EPSILON));                             \
+    } while (0);
+
 void print_bin(int bits, int d);
 void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
 void log(QInterfacePtr p);
@@ -42,6 +50,13 @@ void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
     /* Validate that 'a' and 'b' are the same. */
     REQUIRE(b->GetQubitCount() == a->GetQubitCount());
     REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
+
+    /* Test probabilities */
+    for (int i = 0; i < a->GetQubitCount(); i++) {
+        REQUIRE(a->Prob(i) == b->Prob(i));
+    }
+
+    /* Test the raw state vector, only valid under narrow conditions. */
     for (int i = 0; i < a->GetMaxQPower(); i++) {
         // if (a->GetState()[i]._val[0] != b->GetState()[i]._val[0] ||
         //         a->GetState()[i]._val[1] != b->GetState()[i]._val[1]) {
@@ -53,9 +68,6 @@ void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
         REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
     }
 
-    for (int i = 0; i < a->GetQubitCount(); i++) {
-        REQUIRE(a->Prob(i) == b->Prob(i));
-    }
 }
 
 void log(QInterfacePtr p)
@@ -63,7 +75,7 @@ void log(QInterfacePtr p)
     std::cout << std::endl << std::showpoint << p << std::endl;
 }
 
-TEST_CASE("test_par_for")
+TEST_CASE("test_qengine_cpu_par_for")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
@@ -91,7 +103,7 @@ TEST_CASE("test_par_for")
     }
 }
 
-TEST_CASE("test_par_for_skip")
+TEST_CASE("test_qengine_cpu_par_for_skip")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
@@ -121,7 +133,7 @@ TEST_CASE("test_par_for_skip")
     REQUIRE(calls.load() == NUM_CALLS);
 }
 
-TEST_CASE("test_par_for_skip_wide")
+TEST_CASE("test_qengine_cpu_par_for_skip_wide")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
@@ -150,7 +162,7 @@ TEST_CASE("test_par_for_skip_wide")
     });
 }
 
-TEST_CASE("test_par_for_mask")
+TEST_CASE("test_qengine_cpu_par_for_mask")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
@@ -581,7 +593,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));
 }
 
-TEST_CASE("test_coherence_swap")
+TEST_CASE("test_qengine_cpu_coherence_swap")
 {
     /* Set up four engines, identical. */
     std::shared_ptr<std::default_random_engine> rng_a = std::make_shared<std::default_random_engine>();
@@ -644,34 +656,34 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
 {
     qftReg->H(0);
 
-    REQUIRE(qftReg->Prob(0) == 0.5);
-    REQUIRE(qftReg->Prob(1) == 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
 	qftReg->Swap(0, 1);
 
-    REQUIRE(qftReg->Prob(0) == 0);
-    REQUIRE(qftReg->Prob(1) == 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
 
     qftReg->H(1);
 
-    REQUIRE(qftReg->Prob(0) == 0);
-    REQUIRE(qftReg->Prob(1) == 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
 {
     qftReg->H(0);
 
-    REQUIRE(qftReg->Prob(0) == 0.5);
-    REQUIRE(qftReg->Prob(1) == 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
 	qftReg->Swap(0, 1, 1);
 
-    REQUIRE(qftReg->Prob(0) == 0);
-    REQUIRE(qftReg->Prob(1) == 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
 
     qftReg->H(1);
 
-    REQUIRE(qftReg->Prob(0) == 0);
-    REQUIRE(qftReg->Prob(1) == 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
