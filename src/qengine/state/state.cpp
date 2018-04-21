@@ -243,9 +243,14 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
-    SetQubitCount(qubitCount - length);
-
-    Complex16 *sv = new Complex16[remainderPower];
+    Complex16 *sv;
+    if (maxQPower - partPower == 0) {
+        SetQubitCount(1);
+        sv = new Complex16[maxQPower];
+    } else {
+        SetQubitCount(qubitCount - length);
+        sv = new Complex16[remainderPower];
+    }
     ResetStateVec(sv);
 
     for (i = 0; i < partPower; i++) {
@@ -286,8 +291,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     }
 
 
-    double *partStateProb = new double[maxQPower - partPower];
-    double *partStateAngle = new double[maxQPower - partPower];
+    double *partStateProb = new double[1<<(qubitCount - length)];
+    double *partStateAngle = new double[1<<(qubitCount - length)];
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
