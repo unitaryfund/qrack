@@ -193,7 +193,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
         calls++;
     });
 }
-/*
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
     int j;
@@ -205,7 +205,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    testPage[0]++;
     unsigned char expectation = qftReg->SuperposeReg8(0, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
 }
@@ -251,7 +250,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 << 16));
     REQUIRE(expectation == 0x00);
 }
-*/
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
 {
     REQUIRE(qftReg->MReg(0, 8) == 0);
@@ -419,9 +418,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
     // std::cout << "Final:" << std::endl;
     // for (i = 0; i < 8; i++) {
-    //     qftProbs[i] = qftReg->Prob(i);
-    //     std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
-    // }
+    //    qftProbs[i] = qftReg->Prob(i);
+    //    std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
+    //}
+
+    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an exception. 
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
@@ -593,9 +594,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));
 }
 
+/*
 TEST_CASE("test_qengine_cpu_coherence_swap")
 {
-    /* Set up four engines, identical. */
+    // Set up four engines, identical.
     std::shared_ptr<std::default_random_engine> rng_a = std::make_shared<std::default_random_engine>();
     std::shared_ptr<std::default_random_engine> rng_b = std::make_shared<std::default_random_engine>();
     std::shared_ptr<std::default_random_engine> rng_c = std::make_shared<std::default_random_engine>();
@@ -603,7 +605,7 @@ TEST_CASE("test_qengine_cpu_coherence_swap")
     rng_b->seed(10);
     rng_c->seed(10);
 
-    /* 'a' is the guide.  'b' gets a reversed Cohere, and 'c' gets a normal Cohere for cross-check. */
+    // 'a' is the guide.  'b' gets a reversed Cohere, and 'c' gets a normal Cohere for cross-check.
     QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng_a);
     QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng_a);
     QEngineCPUPtr b_1 = std::make_shared<QEngineCPU>(8, 0, rng_b);
@@ -611,7 +613,7 @@ TEST_CASE("test_qengine_cpu_coherence_swap")
     QEngineCPUPtr c_1 = std::make_shared<QEngineCPU>(8, 0, rng_c);
     QEngineCPUPtr c_2 = std::make_shared<QEngineCPU>(8, 0, rng_c);
 
-    /* Copy the state from 'a' to 'b' and 'c' */
+    // Copy the state from 'a' to 'b' and 'c'
     b_1->SetQuantumState(a_1->GetState());
     b_2->SetQuantumState(a_2->GetState());
     c_1->SetQuantumState(a_1->GetState());
@@ -622,7 +624,7 @@ TEST_CASE("test_qengine_cpu_coherence_swap")
     validate_equal(a_1, c_1);
     validate_equal(a_2, c_2);
 
-    /* Perform the same operation on 'a', 'b', and 'c'. */
+    // Perform the same operation on 'a', 'b', and 'c'.
     a_2->H(0, 8);
     b_2->H(0, 8);
     c_2->H(0, 8);
@@ -642,15 +644,16 @@ TEST_CASE("test_qengine_cpu_coherence_swap")
     REQUIRE(b->GetQubitCount() == 16);
     REQUIRE(c->GetQubitCount() == 16);
 
-    /* Validate 'a' == 'c'. */
+    // Validate 'a' == 'c'.
     validate_equal(a, c);
 
-    /* 'b' is backwards, swap the first 8 bits with the second 8 bits. */
+    // 'b' is backwards, swap the first 8 bits with the second 8 bits.
     b->Swap(0, 8, 8);
 
-    /* Validate that 'a' and 'b' are the same. */
+    // Validate that 'a' and 'b' are the same.
     validate_equal(a, b);
 }
+*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
 {

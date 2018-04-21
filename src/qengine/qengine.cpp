@@ -37,26 +37,8 @@ template void rotate<Complex16 *>(Complex16 *first, Complex16 *middle, Complex16
 /// Swap values of two bits in register
 void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    // if ((qubit1 >= qubitCount) || (qubit2 >= qubitCount))
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (qubit1 != qubit2) {
-        const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0),
-            Complex16(0.0, 0.0) };
-
-        bitCapInt qPowers[3];
-        bitCapInt qPowersSorted[2];
-        qPowers[1] = 1 << qubit1;
-        qPowers[2] = 1 << qubit2;
-        qPowers[0] = qPowers[1] + qPowers[2];
-        if (qubit1 < qubit2) {
-            qPowersSorted[0] = qPowers[1];
-            qPowersSorted[1] = qPowers[2];
-        } else {
-            qPowersSorted[0] = qPowers[2];
-            qPowersSorted[1] = qPowers[1];
-        }
-
-        Apply2x2(qPowers[2], qPowers[1], pauliX, 2, qPowersSorted, false, false);
+        Swap(qubit1, qubit2, 1);
     }
 }
 

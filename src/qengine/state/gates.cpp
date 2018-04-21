@@ -142,20 +142,17 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
 /// Bitwise swap
 void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
-    // First, single bit operations are better optimized for this special case:
-    if (length == 1) {
-        Swap(start1, start2);
+    int distance = start1 - start2;
+    if (distance == 0) {
         return;
     }
-
-    int distance = start1 - start2;
-    if (distance < 0) {
+    else if (distance < 0) {
         distance *= -1;
     }
     if (distance < length) {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            Swap(start1 + i, start2 + i);
+            Swap(start1 + i, start2 + i, 1);
         }
     } else {
         bitCapInt reg1Mask = ((1 << length) - 1) << start1;
