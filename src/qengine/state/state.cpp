@@ -43,8 +43,7 @@ QEngineCPU::QEngineCPU(
     }
 
     runningNorm = 1.0;
-    qubitCount = qBitCount;
-    maxQPower = 1 << qBitCount;
+    SetQubitCount(qBitCount);
     stateVec = new Complex16[maxQPower];
     std::fill(stateVec, stateVec + maxQPower, Complex16(0.0, 0.0));
     if (phaseFac == Complex16(-999.0, -999.0)) {
@@ -53,6 +52,21 @@ QEngineCPU::QEngineCPU(
     } else {
         stateVec[initState] = phaseFac;
     }
+}
+
+Complex16* QEngineCPU::GetState()
+{
+    return stateVec;
+}
+
+void QEngineCPU::CopyState(QInterfacePtr orig)
+{
+    /* Set the size and reset the stateVec to the correct size. */
+    SetQubitCount(orig->GetQubitCount());
+    ResetStateVec(new Complex16[maxQPower]);
+
+    QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
+    std::copy(src->GetState(), src->GetState() + (1 << (src->GetQubitCount())), stateVec);
 }
 
 void QEngineCPU::ResetStateVec(Complex16 *nStateVec)
@@ -83,7 +97,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         qubit[0] = stateVec[lcv + offset1];
         qubit[1] = stateVec[lcv + offset2];
 
-        Complex16 Y0 = qubit[0];
+        Complex16 Y0 = qubit[0];            // Save from being overwritten.
         qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
         qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
 
@@ -101,8 +115,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
  */
-void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
+bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 {
+    bitLenInt result = qubitCount;
+
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -122,28 +138,32 @@ void QEngineCPU::Cohere(QEngineCPUPtr toCopy)
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
     });
 
-    qubitCount = nQubitCount;
-    maxQPower = nMaxQPower;
+    SetQubitCount(nQubitCount);
 
     ResetStateVec(nStateVec);
     UpdateRunningNorm();
+
+    return result;
 }
 
-#if 0
 /**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
+ *
+ * Returns a mapping of the index into the new QEngine that each old one was mapped to.
  */
-void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
+std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr> toCopy)
 {
+    std::map<QInterfacePtr, bitLenInt> ret;
+
     bitLenInt i;
     bitLenInt toCohereCount = toCopy.size();
 
     std::vector<bitLenInt> offset(toCohereCount);
     std::vector<bitCapInt> mask(toCohereCount);
 
-    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt startMask = maxQPower - 1;
     bitCapInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
@@ -152,12 +172,14 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
     }
 
     for (i = 0; i < toCohereCount; i++) {
-        if (toCopy[i]->runningNorm != 1.0) {
-            toCopy[i]->NormalizeState();
+        QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
+        if (src->runningNorm != 1.0) {
+            src->NormalizeState();
         }
-        mask[i] = ((1 << toCopy[i]->GetQubitCount()) - 1) << nQubitCount;
+        mask[i] = ((1 << src->GetQubitCount()) - 1) << nQubitCount;
         offset[i] = nQubitCount;
-        nQubitCount += toCopy[i]->GetQubitCount();
+        ret[toCopy[i]] = nQubitCount;
+        nQubitCount += src->GetQubitCount();
     }
 
     nMaxQPower = 1 << nQubitCount;
@@ -166,8 +188,10 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
         nStateVec[lcv] = stateVec[lcv & startMask];
+
         for (bitLenInt j = 0; j < toCohereCount; j++) {
-            nStateVec[lcv] *= toCopy[j]->stateVec[(lcv & mask[j]) >> offset[j]];
+            QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[j]);
+            nStateVec[lcv] *= src->stateVec[(lcv & mask[j]) >> offset[j]];
         }
     });
 
@@ -176,8 +200,9 @@ void QEngineCPU::Cohere(std::vector<QEngineCPUPtr> toCopy)
 
     ResetStateVec(nStateVec);
     UpdateRunningNorm();
+
+    return ret;
 }
-#endif
 
 /**
  * Minimally decohere a set of contigious bits from the full coherent unit. The
@@ -218,8 +243,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
-    qubitCount = qubitCount - length;
-    maxQPower = 1 << qubitCount;
+    SetQubitCount(qubitCount - length);
 
     Complex16 *sv = new Complex16[remainderPower];
     ResetStateVec(sv);
@@ -252,8 +276,18 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> partStateProb(new double[maxQPower - partPower]());
-    std::unique_ptr<double[]> partStateAngle(new double[maxQPower - partPower]());
+    /* Disposing of the entire object. */
+    if (maxQPower - partPower == 0) {
+        SetQubitCount(1);       // Leave as a single bit for safety.
+        Complex16 *sv = new Complex16[maxQPower];
+        ResetStateVec(sv);
+
+        return;
+    }
+
+
+    double *partStateProb = new double[maxQPower - partPower];
+    double *partStateAngle = new double[maxQPower - partPower];
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
@@ -263,8 +297,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         partStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
-    qubitCount = qubitCount - length;
-    maxQPower = 1 << qubitCount;
+    SetQubitCount(qubitCount - length);
 
     Complex16 *sv = new Complex16[maxQPower];
     ResetStateVec(sv);
@@ -274,6 +307,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     }
 
     UpdateRunningNorm();
+    delete []partStateProb;
+    delete []partStateAngle;
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state

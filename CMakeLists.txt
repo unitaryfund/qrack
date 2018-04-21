@@ -39,6 +39,7 @@ include_directories ("include" "include/common")
 add_library (qrack STATIC
     src/common/complex16simd.cpp
     src/common/parallel_for.cpp
+    src/qinterface/qinterface.cpp
     src/qengine/qengine.cpp
     src/qengine/operators.cpp
     src/qengine/gates.cpp
@@ -46,7 +47,7 @@ add_library (qrack STATIC
     src/qengine/state/state.cpp
     src/qengine/state/operators.cpp
     src/qengine/state/gates.cpp
-    # src/qunit.cpp
+    src/qunit.cpp
     )
 
 # Declare the unittest executable
