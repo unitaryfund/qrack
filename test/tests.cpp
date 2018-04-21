@@ -89,7 +89,7 @@ TEST_CASE("test_qengine_cpu_par_for")
         hit[i].store(false);
     }
 
-    qengine->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv) {
+    qengine->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -121,7 +121,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip")
         hit[i].store(false);
     }
 
-    qengine->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv) {
+    qengine->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -151,7 +151,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
         hit[i].store(false);
     }
 
-    qengine->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv) {
+    qengine->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv, const int cpu) {
         REQUIRE(lcv < NUM_ENTRIES);
         bool old = true;
         old = hit[lcv].exchange(old);
@@ -183,7 +183,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
     qengine->SetConcurrencyLevel(1);
 
-    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv) {
+    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);

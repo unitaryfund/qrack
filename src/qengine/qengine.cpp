@@ -46,7 +46,7 @@ void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doC
 {
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
-    Apply2x2(0, qPowers[0], mtrx, 1, qPowers, true, doCalcNorm);
+    Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
 }
 
 void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
@@ -63,7 +63,7 @@ void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const C
         qPowersSorted[0] = qPowers[2];
         qPowersSorted[1] = qPowers[1];
     }
-    Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, false, doCalcNorm);
+    Apply2x2(qPowers[0], qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
 void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
@@ -80,7 +80,7 @@ void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, con
         qPowersSorted[0] = qPowers[2];
         qPowersSorted[1] = qPowers[1];
     }
-    Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, false, doCalcNorm);
+    Apply2x2(0, qPowers[2], mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
 } // namespace Qrack

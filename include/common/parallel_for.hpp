@@ -35,8 +35,8 @@ public:
      */
 
     /** Called once per value between begin and end. */
-    typedef std::function<void(const bitCapInt)> ParallelFunc;
-    typedef std::function<bitCapInt(const bitCapInt)> IncrementFunc;
+    typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
+    typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
 
     /**
      * Iterate through the permutations a maximum of end-begin times, allowing

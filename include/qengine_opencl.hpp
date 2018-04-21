@@ -70,7 +70,7 @@ protected:
 
     void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, unsigned char* values = NULL);
 
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm);
 
     /* A couple utility functions used by the operations above. */
     void ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length);
