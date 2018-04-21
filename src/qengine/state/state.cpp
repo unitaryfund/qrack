@@ -97,8 +97,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         qubit[0] = stateVec[lcv + offset1];
         qubit[1] = stateVec[lcv + offset2];
 
-        qubit[0] = nrm * ((mtrx[0] * qubit[0]) + (mtrx[1] * qubit[1]));
-        qubit[1] = nrm * ((mtrx[2] * qubit[0]) + (mtrx[3] * qubit[1]));
+        Complex16 Y0 = qubit[0];            // Save from being overwritten.
+        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
 
         stateVec[lcv + offset1] = qubit[0];
         stateVec[lcv + offset2] = qubit[1];

@@ -856,6 +856,12 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
     lowerProb = 0.0;
     largestProb = 0.0;
     result = lengthPower - 1;
+
+    /*
+     * The value of 'lcv' should not exceed lengthPower unless the stateVec is
+     * in an bug-induced topology - some value in stateVec must always be a
+     * vector.
+     */
     while ((!foundPerm) && (lcv < maxQPower)) {
         if ((probArray[lcv] + lowerProb) > prob) {
             foundPerm = true;
