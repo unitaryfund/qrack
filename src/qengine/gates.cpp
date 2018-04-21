@@ -51,7 +51,7 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     qPowersSorted[2] = qPowers[3];
     qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false, false);
+    Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
@@ -78,7 +78,7 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
     qPowersSorted[2] = qPowers[3];
     qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(0, qPowers[3], pauliX, 3, qPowersSorted, false, false);
+    Apply2x2(0, qPowers[3], pauliX, 3, qPowersSorted, false);
 }
 
 /// Controlled not
