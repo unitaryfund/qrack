@@ -14,6 +14,7 @@
 
 #include <random>
 #include <memory>
+#include <future>
 
 #include "qinterface.hpp"
 
@@ -40,6 +41,8 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
     Complex16 *stateVec;
+    std::vector<Complex16*> gateQueue;
+    std::vector<bool> isQueued;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
@@ -56,6 +59,7 @@ public:
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest)); }
 
     virtual void Cohere(QEngineCPUPtr toCopy);
+    virtual void Cohere(std::vector<QEngineCPUPtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -238,12 +242,16 @@ protected:
 
     virtual void ResetStateVec(Complex16 *nStateVec);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm);
+        const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void NormalizeState();
     virtual void Reverse(bitLenInt first, bitLenInt last);
     virtual void UpdateRunningNorm();
+    virtual void Mul2x2(const Complex16* leftIn, Complex16* rightOut);
+    virtual void FlushQueue(bitLenInt index);
+    virtual void FlushQueue(bitLenInt start, bitLenInt length);
+    virtual bool CheckQueued(bitLenInt start, bitLenInt length);
 };
 } // namespace Qrack
