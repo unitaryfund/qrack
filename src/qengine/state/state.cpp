@@ -256,10 +256,10 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> partStateProb(new double[partPower]());
-    std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    std::unique_ptr<double[]> partStateAngle(new double[partPower]());
-    std::unique_ptr<double[]> remainderStateAngle(new double[remainderPower]());
+    double* partStateProb = new double[partPower]();
+    double* remainderStateProb = new double[remainderPower]();
+    double* partStateAngle = new double[partPower];
+    double* remainderStateAngle = new double[remainderPower];
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
@@ -272,22 +272,27 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     }
 
     Complex16 *sv;
-    if (maxQPower - partPower == 0) {
+    if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
-        sv = new Complex16[maxQPower];
     } else {
         SetQubitCount(qubitCount - length);
-        sv = new Complex16[remainderPower];
     }
+    sv = new Complex16[maxQPower];
     ResetStateVec(sv);
 
     for (i = 0; i < partPower; i++) {
         destination->stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
+    delete []partStateProb;
+    delete []partStateAngle;
+
     for (i = 0; i < remainderPower; i++) {
         stateVec[i] = sqrt(remainderStateProb[i]) * Complex16(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
     }
+
+    delete []remainderStateProb;
+    delete []remainderStateAngle;
 
     UpdateRunningNorm();
     destination->UpdateRunningNorm();
@@ -310,7 +315,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     bitCapInt i;
 
     /* Disposing of the entire object. */
-    if (maxQPower - partPower == 0) {
+    if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);       // Leave as a single bit for safety.
         Complex16 *sv = new Complex16[maxQPower];
         ResetStateVec(sv);
@@ -319,7 +324,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     }
 
 
-    double *partStateProb = new double[1<<(qubitCount - length)];
+    double *partStateProb = new double[1<<(qubitCount - length)]();
     double *partStateAngle = new double[1<<(qubitCount - length)];
     double prob, angle;
 
@@ -339,9 +344,10 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
-    UpdateRunningNorm();
     delete []partStateProb;
     delete []partStateAngle;
+
+    UpdateRunningNorm();
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
