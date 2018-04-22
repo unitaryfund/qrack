@@ -139,6 +139,86 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     ResetStateVec(nStateVec);
 }
 
+/// Bitwise CNOT
+void QEngineCPU::CNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = ((reg1Res >> start1) ^ ((lcv & reg2Mask) >> start2)) << start2;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise "Anti-"CNOT - NOT operation if control is 0
+void QEngineCPU::AntiCNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = ((((~reg1Res) & reg1Mask) >> start1) ^ ((lcv & reg2Mask) >> start2)) << start2;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise CCNOT
+void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << control1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << control2;
+    bitCapInt reg3Mask = ((1 << length) - 1) << target;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask | reg3Mask;
+    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = lcv & reg2Mask;
+        bitCapInt reg3Res = (((reg1Res >> control1) & (reg2Res >> control2)) ^ ((lcv & reg3Mask) >> target)) << target;
+        nStateVec[reg1Res | reg2Res | reg3Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise "Anti-"CCNOT - NOT operation if both control bits are 0
+void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << control1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << control2;
+    bitCapInt reg3Mask = ((1 << length) - 1) << target;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask | reg3Mask;
+    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = lcv & reg2Mask;
+        bitCapInt reg3Res = (((((~reg1Res) & reg1Mask) >> control1) & (((~reg2Res) & reg2Mask) >> control2)) ^ ((lcv & reg3Mask) >> target)) << target;
+        nStateVec[reg1Res | reg2Res | reg3Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
 /// Bitwise swap
 void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {

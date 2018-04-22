@@ -258,6 +258,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
+{
+    qftReg->SetPermutation(0x55F0);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
+    qftReg->CNOT(8, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x55A5));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
+{
+    qftReg->SetPermutation(0x55F0);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
+    qftReg->AntiCNOT(8, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x555A));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
+{
+    qftReg->SetPermutation(0xCAC);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
+    qftReg->CCNOT(8, 4, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCA4));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
+{
+    qftReg->SetPermutation(0xCAC);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
+    qftReg->AntiCCNOT(8, 4, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAD));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;

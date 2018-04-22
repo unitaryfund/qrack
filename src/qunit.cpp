@@ -467,7 +467,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    EntangleAndCallMember(PTR2(CNOT), control, target);
+    EntangleAndCallMember(PTR2(AntiCNOT), control, target);
 }
 
 void QUnit::H(bitLenInt qubit)
