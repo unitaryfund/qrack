@@ -370,7 +370,7 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 
     for (bitLenInt bit = 0; bit < length; bit++) {
         if (M(bit + start)) {
-            result |= 1 << (bit + start);
+            result |= 1 << bit;
         }
     }
 
