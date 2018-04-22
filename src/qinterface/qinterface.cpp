@@ -14,6 +14,35 @@
 
 namespace Qrack {
 
+// Bit-wise apply "anti-"controlled-not to three registers
+void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        AntiCCNOT(control1 + bit, control2 + bit, target + bit);
+    }
+}
+
+void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CCNOT(control1 + bit, control2 + bit, target + bit);
+    }
+}
+
+void QInterface::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        AntiCNOT(control + bit, target + bit);
+    }
+}
+
+void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CNOT(control + bit, target + bit);
+    }
+}
+
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QInterface::X(bitLenInt start, bitLenInt length)
@@ -70,16 +99,6 @@ void QInterface::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CZ(control + bit, target + bit);
-    }
-}
-
-/// Bit-parallel "CNOT" two bit ranges in QInterface, and store result in range starting at output
-void QInterface::CNOT(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt length)
-{
-    if (inputStart1 != inputStart2) {
-        for (bitLenInt i = 0; i < length; i++) {
-            CNOT(inputStart1 + i, inputStart2 + i);
-        }
     }
 }
 

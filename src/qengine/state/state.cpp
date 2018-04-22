@@ -87,30 +87,59 @@ void QEngineCPU::SetQuantumState(Complex16* inputState)
  * A fundamental operation used by almost all gates.
  */
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doApplyNorm, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    Complex16 nrm = Complex16(doApplyNorm ? (1.0 / runningNorm) : 1.0, 0.0);
+    Complex16 nrm = Complex16((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
+    int numCores = GetConcurrencyLevel();
 
-    par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv) {
-        Complex16 qubit[2];
+    if (doCalcNorm && (bitCount == 1)) {
+        double* rngNrm = new double[numCores]; 
+        std::fill(rngNrm, rngNrm + numCores, 0.0);
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            Complex16 qubit[2];
 
-        qubit[0] = stateVec[lcv + offset1];
-        qubit[1] = stateVec[lcv + offset2];
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
 
-        Complex16 Y0 = qubit[0];            // Save from being overwritten.
-        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
-        stateVec[lcv + offset1] = qubit[0];
-        stateVec[lcv + offset2] = qubit[1];
-    });
-
-    if (doCalcNorm) {
-        UpdateRunningNorm();
-    } else {
-        runningNorm = 1.0;
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        runningNorm = 0.0;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
+        runningNorm = sqrt(runningNorm);
     }
-}/**
+    else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            Complex16 qubit[2];
+
+            qubit[0] = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            Complex16 Y0 = qubit[0];
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        if (doCalcNorm) {
+            UpdateRunningNorm();
+        }
+        else {
+            runningNorm = 1.0;
+        }
+    }
+}
+
+/**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
@@ -134,7 +163,7 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
     Complex16 *nStateVec = new Complex16[nMaxQPower];
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
     });
 
@@ -186,7 +215,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
 
     Complex16 *nStateVec = new Complex16[nMaxQPower];
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv) {
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask];
 
         for (bitLenInt j = 0; j < toCohereCount; j++) {
@@ -228,10 +257,10 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    std::unique_ptr<double[]> partStateProb(new double[partPower]());
-    std::unique_ptr<double[]> remainderStateProb(new double[remainderPower]());
-    std::unique_ptr<double[]> partStateAngle(new double[partPower]());
-    std::unique_ptr<double[]> remainderStateAngle(new double[remainderPower]());
+    double* partStateProb = new double[partPower]();
+    double* remainderStateProb = new double[remainderPower]();
+    double* partStateAngle = new double[partPower];
+    double* remainderStateAngle = new double[remainderPower];
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
@@ -244,22 +273,27 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     }
 
     Complex16 *sv;
-    if (maxQPower - partPower == 0) {
+    if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
-        sv = new Complex16[maxQPower];
     } else {
         SetQubitCount(qubitCount - length);
-        sv = new Complex16[remainderPower];
     }
+    sv = new Complex16[maxQPower];
     ResetStateVec(sv);
 
     for (i = 0; i < partPower; i++) {
         destination->stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
+    delete []partStateProb;
+    delete []partStateAngle;
+
     for (i = 0; i < remainderPower; i++) {
         stateVec[i] = sqrt(remainderStateProb[i]) * Complex16(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
     }
+
+    delete []remainderStateProb;
+    delete []remainderStateAngle;
 
     UpdateRunningNorm();
     destination->UpdateRunningNorm();
@@ -282,7 +316,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     bitCapInt i;
 
     /* Disposing of the entire object. */
-    if (maxQPower - partPower == 0) {
+    if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);       // Leave as a single bit for safety.
         Complex16 *sv = new Complex16[maxQPower];
         ResetStateVec(sv);
@@ -291,7 +325,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     }
 
 
-    double *partStateProb = new double[1<<(qubitCount - length)];
+    double *partStateProb = new double[1<<(qubitCount - length)]();
     double *partStateAngle = new double[1<<(qubitCount - length)];
     double prob, angle;
 
@@ -311,9 +345,10 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
-    UpdateRunningNorm();
     delete []partStateProb;
     delete []partStateAngle;
+
+    UpdateRunningNorm();
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
@@ -361,7 +396,7 @@ void QEngineCPU::ProbArray(double* probArray)
 
 void QEngineCPU::NormalizeState()
 {
-    par_for(0, maxQPower, [&](const bitCapInt lcv) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
         if (norm(stateVec[lcv]) < 1e-15) {
             stateVec[lcv] = Complex16(0.0, 0.0);

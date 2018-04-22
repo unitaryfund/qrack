@@ -89,7 +89,7 @@ TEST_CASE("test_qengine_cpu_par_for")
         hit[i].store(false);
     }
 
-    qengine->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv) {
+    qengine->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -121,7 +121,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip")
         hit[i].store(false);
     }
 
-    qengine->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv) {
+    qengine->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -151,7 +151,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
         hit[i].store(false);
     }
 
-    qengine->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv) {
+    qengine->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv, const int cpu) {
         REQUIRE(lcv < NUM_ENTRIES);
         bool old = true;
         old = hit[lcv].exchange(old);
@@ -183,7 +183,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
     qengine->SetConcurrencyLevel(1);
 
-    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv) {
+    qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
         old = hit[lcv].exchange(old);
         REQUIRE(old == false);
@@ -256,6 +256,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
     REQUIRE(qftReg->MReg(0, 8) == 0);
     qftReg->SetReg(0, 8, 0x2b);
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
+{
+    qftReg->SetPermutation(0x55F0);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
+    qftReg->CNOT(8, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x55A5));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
+{
+    qftReg->SetPermutation(0x55F0);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
+    qftReg->AntiCNOT(8, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x555A));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
+{
+    qftReg->SetPermutation(0xCAC);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
+    qftReg->CCNOT(8, 4, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCA4));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
+{
+    qftReg->SetPermutation(0xCAC);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
+    qftReg->AntiCCNOT(8, 4, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAD));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")

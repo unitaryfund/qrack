@@ -550,6 +550,15 @@ public:
     /** Bitwise controlled-not */
     virtual void CNOT(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
 
+    /** Bitwise "anti-"controlled-not */
+    virtual void AntiCNOT(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
+
+    /** Bitwise doubly controlled-not */
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise doubly "anti-"controlled-not */
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
     /**
      * Bitwise "AND"
      *

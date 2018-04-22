@@ -37,21 +37,7 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         throw std::invalid_argument("CCNOT control bits cannot also be target.");
     }
 
-    const Complex16 pauliX[4] = {
-            Complex16(0.0, 0.0), Complex16(1.0, 0.0),
-            Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-
-    bitCapInt qPowers[4];
-    bitCapInt qPowersSorted[3];
-    qPowers[1] = 1 << control1;
-    qPowersSorted[0] = qPowers[1];
-    qPowers[2] = 1 << control2;
-    qPowersSorted[1] = qPowers[2];
-    qPowers[3] = 1 << target;
-    qPowersSorted[2] = qPowers[3];
-    qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
-    std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(qPowers[0], qPowers[1] + qPowers[2], pauliX, 3, qPowersSorted, false, false);
+    CCNOT(control1, control2, target, 1);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
@@ -66,32 +52,16 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
         throw std::invalid_argument("CCNOT control bits cannot also be target.");
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-
-    bitCapInt qPowers[4];
-    bitCapInt qPowersSorted[3];
-    qPowers[1] = 1 << control1;
-    qPowersSorted[0] = qPowers[1];
-    qPowers[2] = 1 << control2;
-    qPowersSorted[1] = qPowers[2];
-    qPowers[3] = 1 << target;
-    qPowersSorted[2] = qPowers[3];
-    qPowers[0] = qPowers[1] + qPowers[2] + qPowers[3];
-    std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(0, qPowers[3], pauliX, 3, qPowersSorted, false, false);
+    AntiCCNOT(control1, control2, target, 1);
 }
 
 /// Controlled not
 void QEngineCPU::CNOT(bitLenInt control, bitLenInt target)
 {
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
     if (control == target) {
         throw std::invalid_argument("CNOT control bit cannot also be target.");
     }
-
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliX, false);
+    CNOT(control, target, 1);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
@@ -102,9 +72,7 @@ void QEngineCPU::AntiCNOT(bitLenInt control, bitLenInt target)
     if (control == target) {
         throw std::invalid_argument("CNOT control bit cannot also be target.");
     }
-
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyAntiControlled2x2(control, target, pauliX, false);
+    AntiCNOT(control, target, 1);
 }
 
 /// Hadamard gate
