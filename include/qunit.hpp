@@ -180,8 +180,6 @@ protected:
     void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     void INCxx(INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
 
-    void Decompose(bitLenInt qubit);
-
     QInterfacePtr Entangle(std::initializer_list<bitLenInt *> bits);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
@@ -195,7 +193,7 @@ protected:
 
     void OrderContiguous(QInterfacePtr unit);
 
-    void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    void Detach(bitLenInt start, bitLenInt length, bool keepBits, QInterfacePtr dest);
 
     struct QSortEntry
     {
