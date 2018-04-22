@@ -941,7 +941,7 @@ public:
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise swap */
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length) = 0;
+    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)

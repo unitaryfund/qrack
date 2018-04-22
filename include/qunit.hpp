@@ -157,7 +157,6 @@ public:
     virtual unsigned char AdcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
     virtual unsigned char SbcSuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** @} */
 
