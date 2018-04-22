@@ -403,13 +403,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     shard2.unit = tmp.unit;
 }
 
-void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
-{
-    for (bitLenInt i = 0; i < length; i++) {
-        Swap(qubit1 + i, qubit2 + i);
-    }
-}
-
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
 #define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt)) &QInterface::OP
 #define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt)) &QInterface::OP

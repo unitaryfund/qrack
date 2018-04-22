@@ -14,6 +14,7 @@
 
 #include <random>
 #include <memory>
+#include <algorithm>
 
 #include "qinterface.hpp"
 
@@ -219,6 +220,8 @@ protected:
     virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void NormalizeState();
     virtual void UpdateRunningNorm();
 };
