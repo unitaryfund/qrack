@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Benn Bollay and Daniel Strano 2017, 2018. All rights reserved.
 //
-// This is a multithreaded, universal quantum register simulation, allowing
-// (nonphysical) register cloning and direct measurement of probability and
-// phase, to leverage what advantages classical emulation of qubits can have.
+// QUnit maintains explicit separability of qubits as on optimization on a QEngine.
+// See https://arxiv.org/abs/1710.05867
+// (The makers of Qrack have no affiliation with the authors of that paper.)
 //
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
