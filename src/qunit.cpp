@@ -105,7 +105,7 @@ std::map<QInterfacePtr, bitLenInt> QUnit::Cohere(std::vector<QInterfacePtr> toCo
     return ret;
 }
 
-void QUnit::Detach(bitLenInt start, bitLenInt length, bool keepBits, QInterfacePtr dest)
+void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */
 
@@ -117,14 +117,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, bool keepBits, QInterfaceP
     QInterfacePtr unit = shards[start].unit;
     bitLenInt mapped = shards[start].mapped;
 
-    if (keepBits) {
-        if (unit->GetQubitCount() == length) {
-            /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
-            return;
-        }
-        dest = CreateQuantumInterface(engine, engine, length, 0, rand_generator);
-    }
-
     if (dest && unit->GetQubitCount() > length) {
         unit->Decohere(mapped, length, dest);
     } else if (dest) {
@@ -133,44 +125,28 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, bool keepBits, QInterfaceP
         unit->Dispose(mapped, length);
     }
 
-    if (keepBits) {
-        /* Update the mappings. */
-        for (auto &&shard : shards) {
-            if (shard.unit == unit && shard.mapped >= mapped) {
-                if (shard.mapped < (mapped + length)) {
-                    shard.unit = dest;
-                    shard.mapped -= mapped;
-                }
-                else {
-                    shard.mapped -= length;
-                }
-            }
-        }
-    }
-    else {
         shards.erase(shards.begin() + start, shards.begin() + start + length);
 
-        if (unit->GetQubitCount() != length) {
-            /* Find the rest of the qubits. */
-            for (auto &&shard : shards) {
-                if (shard.unit == unit && shard.mapped > (mapped + length)) {
-                    shard.mapped -= length;
-                }
+    if (unit->GetQubitCount() != length) {
+        /* Find the rest of the qubits. */
+        for (auto &&shard : shards) {
+            if (shard.unit == unit && shard.mapped > (mapped + length)) {
+                shard.mapped -= length;
             }
         }
-
-        SetQubitCount(qubitCount - length);
     }
+
+    SetQubitCount(qubitCount - length);
 }
 
 void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
-    Detach(start, length, false, dest);
+    Detach(start, length, dest);
 }
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length)
 {
-    Detach(start, length, false, nullptr);
+    Detach(start, length, nullptr);
 }
 
 template <class It>
@@ -358,7 +334,30 @@ void QUnit::ProbArray(double* probArray)
 bool QUnit::M(bitLenInt qubit)
 {
     bool result = shards[qubit].unit->M(shards[qubit].mapped);
-    Detach(qubit, 1, true, nullptr);
+
+    QInterfacePtr unit = shards[qubit].unit;
+    bitLenInt mapped = shards[qubit].mapped;
+
+    if (unit->GetQubitCount() == 1) {
+        /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
+        return result;
+    }
+
+    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
+    unit->Decohere(mapped, 1, dest);
+
+    /* Update the mappings. */
+    for (auto &&shard : shards) {
+        if (shard.unit == unit && shard.mapped >= mapped) {
+            if (shard.mapped == mapped) {
+                shard.unit = dest;
+                shard.mapped -= mapped;
+            }
+            else {
+                shard.mapped--;
+            }
+        }
+    }
 
     return result;
 }
@@ -379,8 +378,8 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 
 void QUnit::SetBit(bitLenInt qubit, bool value)
 {
-    Detach(qubit, 1, true, nullptr);
     shards[qubit].unit->SetBit(shards[qubit].mapped, value);
+    Detach(qubit, 1, nullptr);
 }
 
 /// Set register bits to given permutation
