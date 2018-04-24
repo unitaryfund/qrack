@@ -193,7 +193,7 @@ protected:
 
     void OrderContiguous(QInterfacePtr unit);
 
-    void Detach(bitLenInt start, bitLenInt length, bool keepBits, QInterfacePtr dest);
+    void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     struct QSortEntry
     {
