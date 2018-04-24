@@ -602,30 +602,24 @@ void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    shift %= length;
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Reverse(start, end);
-            Reverse(start, start + shift);
-            Reverse(start + shift, end);
-        }
+        Reverse(start, end);
+        Reverse(start, start + shift);
+        Reverse(start + shift, end);
     }
 }
 
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    shift %= length;
     if ((length > 0) && (shift > 0)) {
         bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Reverse(start + shift, end);
-            Reverse(start, start + shift);
-            Reverse(start, end);
-        }
+        Reverse(start + shift, end);
+        Reverse(start, start + shift);
+        Reverse(start, end);
     }
 }
 
