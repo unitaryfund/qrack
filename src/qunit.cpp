@@ -777,7 +777,7 @@ unsigned char QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bit
     EntangleRange(indexStart, 1, carryIndex, 1);
     OrderContiguous(shards[indexStart].unit);
 
-    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, carryIndex, values);
+    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 }
 
 unsigned char QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
@@ -786,7 +786,7 @@ unsigned char QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bit
     EntangleRange(indexStart, 1, carryIndex, 1);
     OrderContiguous(shards[indexStart].unit);
 
-    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, carryIndex, values);
+    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 }
 
 } // namespace Qrack
