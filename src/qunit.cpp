@@ -125,14 +125,16 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
         unit->Dispose(mapped, length);
     }
 
-        shards.erase(shards.begin() + start, shards.begin() + start + length);
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
 
-    if (unit->GetQubitCount() != length) {
-        /* Find the rest of the qubits. */
-        for (auto &&shard : shards) {
-            if (shard.unit == unit && shard.mapped > (mapped + length)) {
-                shard.mapped -= length;
-            }
+    if (unit->GetQubitCount() == length) {
+        return;
+    }
+
+    /* Find the rest of the qubits. */
+    for (auto shard : shards) {
+        if (shard.unit == unit && shard.mapped > (mapped + length)) {
+            shard.mapped -= length;
         }
     }
 
@@ -346,18 +348,9 @@ bool QUnit::M(bitLenInt qubit)
     QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
     unit->Decohere(mapped, 1, dest);
 
-    /* Update the mappings. */
-    for (auto &&shard : shards) {
-        if (shard.unit == unit && shard.mapped >= mapped) {
-            if (shard.mapped == mapped) {
-                shard.unit = dest;
-                shard.mapped -= mapped;
-            }
-            else {
-                shard.mapped--;
-            }
-        }
-    }
+    /* Update the mapping. */
+    shards[qubit].unit = dest;
+    shards[qubit].mapped = 0;
 
     return result;
 }
