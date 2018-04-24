@@ -126,6 +126,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
+    SetQubitCount(qubitCount - length);
 
     if (unit->GetQubitCount() == length) {
         return;
@@ -137,8 +138,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
             shard.mapped -= length;
         }
     }
-
-    SetQubitCount(qubitCount - length);
 }
 
 void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
@@ -349,8 +348,18 @@ bool QUnit::M(bitLenInt qubit)
     unit->Decohere(mapped, 1, dest);
 
     /* Update the mapping. */
-    shards[qubit].unit = dest;
-    shards[qubit].mapped = 0;
+    /* Update the mappings. */
+    for (auto &&shard : shards) {
+        if (shard.unit == unit && shard.mapped >= mapped) {
+            if (shard.mapped == mapped) {
+                shard.unit = dest;
+                shard.mapped = 0;
+            }
+            else {
+                shard.mapped--;
+            }
+        }
+}
 
     return result;
 }
@@ -372,7 +381,7 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 void QUnit::SetBit(bitLenInt qubit, bool value)
 {
     if (M(qubit) != value) {
-        shards[qubit].unit->X(shards[qubit].mapped, value);
+        shards[qubit].unit->X(shards[qubit].mapped);
     }
 }
 
