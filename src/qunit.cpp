@@ -378,8 +378,8 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 
 void QUnit::SetBit(bitLenInt qubit, bool value)
 {
+    M(qubit);
     shards[qubit].unit->SetBit(shards[qubit].mapped, value);
-    Detach(qubit, 1, nullptr);
 }
 
 /// Set register bits to given permutation
