@@ -359,7 +359,7 @@ bool QUnit::M(bitLenInt qubit)
                 shard.mapped--;
             }
         }
-}
+    }
 
     return result;
 }
