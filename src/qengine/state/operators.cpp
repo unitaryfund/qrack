@@ -26,18 +26,18 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     bitCapInt lengthPower = 1 << length;
     bitCapInt i;
     for (i = 0; i < length; i++) {
-        regMask += 1 << (start + i);
+        regMask |= 1 << (start + i);
     }
     otherMask -= regMask;
 
     Complex16 *nStateVec = new Complex16[maxQPower];
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt regRes = (lcv & (regMask));
-        bitCapInt regInt = regRes >> (start);
-        bitCapInt outInt = (regInt >> (length - shift)) | ((regInt << (shift)) & (lengthPower - 1));
-        nStateVec[(outInt << (start)) + otherRes] = stateVec[lcv];
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt regRes = lcv & regMask;
+        bitCapInt regInt = regRes >> start;
+        bitCapInt outInt = (regInt >> (length - shift)) | ((regInt << shift) & (lengthPower - 1));
+        nStateVec[(outInt << start) + otherRes] = stateVec[lcv];
     });
     delete []stateVec;
     stateVec = nStateVec;
@@ -56,18 +56,18 @@ void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     bitCapInt i;
 
     for (i = 0; i < length; i++) {
-        regMask += 1 << (start + i);
+        regMask |= 1 << (start + i);
     }
     otherMask -= regMask;
 
     Complex16 *nStateVec = new Complex16[maxQPower];
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt regRes = (lcv & (regMask));
-        bitCapInt regInt = regRes >> (start);
-        bitCapInt outInt = (regInt >> (shift)) | ((regInt << (length - shift)) & (lengthPower - 1));
-        nStateVec[(outInt << (start)) + otherRes] = stateVec[lcv];
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt regRes = lcv & regMask;
+        bitCapInt regInt = regRes >> start;
+        bitCapInt outInt = (regInt >> shift) | ((regInt << (length - shift)) & (lengthPower - 1));
+        nStateVec[(outInt << start) + otherRes] = stateVec[lcv];
     });
     delete []stateVec;
     stateVec = nStateVec;

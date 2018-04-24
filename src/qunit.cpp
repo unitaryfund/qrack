@@ -599,18 +599,34 @@ void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt
         }, control, target);
 }
 
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
-    shards[start].unit->ROL(shift, shards[start].mapped, length);
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            Reverse(start, end);
+            Reverse(start, start + shift);
+            Reverse(start + shift, end);
+        }
+    }
 }
 
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
-    shards[start].unit->ROR(shift, shards[start].mapped, length);
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            Reverse(start + shift, end);
+            Reverse(start, start + shift);
+            Reverse(start, end);
+        }
+    }
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
