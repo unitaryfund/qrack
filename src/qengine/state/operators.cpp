@@ -895,42 +895,47 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 }
 
 /// Set 8 bit register bits based on read from classical memory
-unsigned char QEngineCPU::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
+unsigned char QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     bitCapInt i, outputInt;
-    SetReg(outputStart, 8, 0);
+    SetReg(valueStart, valueLength, 0);
 
-    bitCapInt inputMask = 0xff << inputStart;
-    bitCapInt outputMask = 0xff << outputStart;
-    bitCapInt skipPower = 1 << outputStart;
+    bitLenInt valueBytes = (valueLength + 7) / 8;
+    bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
+    bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
+    bitCapInt skipPower = 1 << valueStart;
 
-    Complex16 *nStateVec = new Complex16[maxQPower];
+    Complex16* nStateVec = new Complex16[maxQPower];
     std::fill(nStateVec, nStateVec + maxQPower, Complex16(0.0, 0.0));
 
     par_for_skip(0, maxQPower, skipPower, 8, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt inputRes = lcv & (inputMask);
-        bitCapInt inputInt = inputRes >> (inputStart);
-        bitCapInt outputInt = values[inputInt];
-        bitCapInt outputRes = outputInt << (outputStart);
+        bitCapInt inputRes = lcv & inputMask;
+        bitCapInt inputInt = inputRes >> indexStart;
+        bitCapInt outputInt = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8 * j);
+        }
+        bitCapInt outputRes = outputInt << valueStart;
         nStateVec[outputRes | lcv] = stateVec[lcv];
     });
 
-    double prob, average;
-
+    double prob, average, totProb;
+    totProb = 0.0;
     for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> outputStart;
+        outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
+        totProb += prob;
         average += prob * outputInt;
     }
+    average /= totProb;
 
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 
     return (unsigned char)(average + 0.5);
 }
 
 /// Add based on an indexed load from classical memory
-unsigned char QEngineCPU::AdcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+unsigned char QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
 
     // This a quantum/classical interface method, similar to SuperposeReg8.
@@ -951,7 +956,7 @@ unsigned char QEngineCPU::AdcSuperposeReg8(
     }
 
     // We calloc a new stateVector for output.
-    Complex16 *nStateVec = new Complex16[maxQPower];
+    Complex16* nStateVec = new Complex16[maxQPower];
     std::fill(nStateVec, nStateVec + maxQPower, Complex16(0.0, 0.0));
 
     // We're going to loop over every eigenstate in the vector, (except, we
@@ -959,10 +964,11 @@ unsigned char QEngineCPU::AdcSuperposeReg8(
     // distinguish the different values of the input register, output register,
     // carry, and other bits that aren't involved in the operation.
     bitCapInt i, outputInt;
-    bitCapInt lengthPower = 1 << 8;
+    bitLenInt valueBytes = (valueLength + 7) / 8;
+    bitCapInt lengthPower = 1 << valueLength;
     bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt inputMask = 0xff << inputStart;
-    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
+    bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
 
@@ -970,23 +976,27 @@ unsigned char QEngineCPU::AdcSuperposeReg8(
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
-        bitCapInt otherRes = lcv & (otherMask);
+        bitCapInt otherRes = lcv & otherMask;
 
         // These are bits that index the classical memory we're loading from:
-        bitCapInt inputRes = lcv & (inputMask);
+        bitCapInt inputRes = lcv & inputMask;
 
         // If we read these as a char type, this is their value as a char:
-        bitCapInt inputInt = inputRes >> (inputStart);
+        bitCapInt inputInt = inputRes >> indexStart;
 
         // This is the initial value that's entangled with the "inputStart"
         // register in "outputStart."
-        bitCapInt outputRes = lcv & (outputMask);
+        bitCapInt outputRes = lcv & outputMask;
 
         // Maintaining the entanglement, we add the classical input value
         // corresponding with the state of the "inputStart" register to
         // "outputStart" register value its entangled with in this
         // iteration of the loop.
-        bitCapInt outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
+        bitCapInt outputInt = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8 * j);
+        }
+        outputInt += (outputRes >> valueStart) + carryIn;
 
         // If we exceed max char, we subtract 256 and entangle the carry as
         // set.
@@ -998,32 +1008,33 @@ unsigned char QEngineCPU::AdcSuperposeReg8(
         // We shift the output integer back to correspondence with its
         // register bits, and entangle it with the input and carry, and
         // shunt the uninvoled "other" bits from input to output.
-        outputRes = outputInt << outputStart;
+        outputRes = outputInt << valueStart;
 
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     });
 
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
-    double prob, average;
-
+    double prob, average, totProb;
+    totProb = 0.0;
     for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> outputStart;
+        outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
+        totProb += prob;
         average += prob * outputInt;
     }
+    average /= totProb;
 
     // Finally, we dealloc the old state vector and replace it with the one we
     // just calculated.
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 
     // Return the expectation value.
     return (unsigned char)(average + 0.5);
 }
 
 /// Subtract based on an indexed load from classical memory
-unsigned char QEngineCPU::SbcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+unsigned char QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     // This a quantum/classical interface method, similar to SuperposeReg8.
     // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
@@ -1044,17 +1055,18 @@ unsigned char QEngineCPU::SbcSuperposeReg8(
     }
 
     // We calloc a new stateVector for output.
-    Complex16 *nStateVec = new Complex16[maxQPower];
+    Complex16* nStateVec = new Complex16[maxQPower];
     std::fill(nStateVec, nStateVec + maxQPower, Complex16(0.0, 0.0));
 
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
     // other bits that aren't involved in the operation.
     bitCapInt i, outputInt;
-    bitCapInt lengthPower = 1 << 8;
+    bitLenInt valueBytes = (valueLength + 7) / 8;
+    bitCapInt lengthPower = 1 << valueLength;
     bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt inputMask = 0xff << inputStart;
-    bitCapInt outputMask = 0xff << outputStart;
+    bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
+    bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
     bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
     bitCapInt skipPower = 1 << carryIndex;
 
@@ -1062,24 +1074,27 @@ unsigned char QEngineCPU::SbcSuperposeReg8(
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
-        bitCapInt otherRes = lcv & (otherMask);
+        bitCapInt otherRes = lcv & otherMask;
 
-        // These are bits that index the classical memory we're loading
-        // from:
-        bitCapInt inputRes = lcv & (inputMask);
+        // These are bits that index the classical memory we're loading from:
+        bitCapInt inputRes = lcv & inputMask;
 
         // If we read these as a char type, this is their value as a char:
-        bitCapInt inputInt = inputRes >> (inputStart);
+        bitCapInt inputInt = inputRes >> indexStart;
 
         // This is the initial value that's entangled with the "inputStart"
         // register in "outputStart."
-        bitCapInt outputRes = lcv & (outputMask);
+        bitCapInt outputRes = lcv & outputMask;
 
         // Maintaining the entanglement, we subtract the classical input
         // value corresponding with the state of the "inputStart" register
         // from "outputStart" register value its entangled with in this
         // iteration of the loop.
-        bitCapInt outputInt = ((outputRes >> outputStart) + lengthPower) - (values[inputInt] + carryIn);
+        bitCapInt outputInt = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8 * j);
+        }
+        outputInt = (outputRes >> valueStart) + (lengthPower - (outputInt + carryIn));
 
         // If our subtractions results in less than 0, we add 256 and
         // entangle the carry as set.  (Since we're using unsigned types,
@@ -1095,24 +1110,26 @@ unsigned char QEngineCPU::SbcSuperposeReg8(
         // We shift the output integer back to correspondence with its
         // register bits, and entangle it with the input and carry, and
         // shunt the uninvoled "other" bits from input to output.
-        outputRes = outputInt << outputStart;
+        outputRes = outputInt << valueStart;
 
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     });
 
-    double prob, average;
-
     // At the end, just as a convenience, we return the expectation value for
-    // the subtraction result.
+    // the addition result.
+    double prob, average, totProb;
+    totProb = 0.0;
     for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> outputStart;
+        outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
+        totProb += prob;
         average += prob * outputInt;
     }
+    average /= totProb;
 
     // Finally, we dealloc the old state vector and replace it with the one we
     // just calculated.
-    ResetStateVec(std::move(nStateVec));
+    ResetStateVec(nStateVec);
 
     // Return the expectation value.
     return (unsigned char)(average + 0.5);

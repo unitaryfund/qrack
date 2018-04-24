@@ -763,43 +763,30 @@ void QUnit::PhaseFlip()
     }
 }
 
-unsigned char QUnit::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
+unsigned char QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    const bitLenInt length = 8;
-    EntangleRange(inputStart, length, outputStart, length);
-    OrderContiguous(shards[inputStart].unit);
+    EntangleRange(indexStart, indexLength, valueStart, valueLength);
+    OrderContiguous(shards[indexStart].unit);
 
-    return shards[inputStart].unit->SuperposeReg8(shards[inputStart].mapped, shards[outputStart].mapped, values);
+    return shards[indexStart].unit->IndexedLDA(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
 }
 
-unsigned char QUnit::AdcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+unsigned char QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    const bitLenInt length = 8;
-    EntangleRange(inputStart, length, outputStart, length);
-    OrderContiguous(shards[inputStart].unit);
-    unsigned char result = 0;
+    EntangleRange(indexStart, indexLength, valueStart, valueLength);
+    EntangleRange(indexStart, 1, carryIndex, 1);
+    OrderContiguous(shards[indexStart].unit);
 
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) {
-            result = unit->AdcSuperposeReg8(b1, b2, b3, values);
-        }, inputStart, outputStart, carryIndex);
-
-    return result;
+    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, carryIndex, values);
 }
 
-unsigned char QUnit::SbcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+unsigned char QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    const bitLenInt length = 8;
-    EntangleRange(inputStart, length, outputStart, length);
-    OrderContiguous(shards[inputStart].unit);
-    unsigned char result = 0;
+    EntangleRange(indexStart, indexLength, valueStart, valueLength);
+    EntangleRange(indexStart, 1, carryIndex, 1);
+    OrderContiguous(shards[indexStart].unit);
 
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) {
-            result = unit->SbcSuperposeReg8(b1, b2, b3, values);
-        }, inputStart, outputStart, carryIndex);
-
-    return result;
+    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, carryIndex, values);
 }
 
 } // namespace Qrack

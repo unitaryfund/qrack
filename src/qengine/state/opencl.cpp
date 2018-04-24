@@ -190,28 +190,6 @@ void QEngineOCL::DECC(
     INTC(clObj->GetDECCPtr(), toSub, start, length, carryIndex);
 }
 
-/** Set 8 bit register bits based on read from classical memory */
-unsigned char QEngineOCL::SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values)
-{
-    SetReg(outputStart, 8, 0);
-    bitCapInt inputMask = 0xff << inputStart;
-    bitCapInt outputMask = 0xff << outputStart;
-    bitCapInt bciArgs[10] = { maxQPower >> 8, inputStart, inputMask, outputStart, 0, 0, 0, 0, 0, 0 };
-
-    Complex16 *nStateVec = new Complex16[maxQPower];
-    DispatchCall(clObj->GetSR8Ptr(), bciArgs, nStateVec, values);
-
-    bitCapInt i, outputInt;
-    double prob, average;
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> outputStart;
-        prob = norm(nStateVec[i]);
-        average += prob * outputInt;
-    }
-    ResetStateVec(nStateVec);
-
-    return (unsigned char)(average + 0.5);
-}
 
 /** Add or Subtract based on an indexed load from classical memory */
 unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
@@ -252,20 +230,6 @@ unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
 
     // Return the expectation value.
     return (unsigned char)(average + 0.5);
-}
-
-/** Add based on an indexed load from classical memory */
-unsigned char QEngineOCL::AdcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
-{
-    return OpSuperposeReg8(clObj->GetADC8Ptr(), 0, inputStart, outputStart, carryIndex, values);
-}
-
-/** Subtract based on an indexed load from classical memory */
-unsigned char QEngineOCL::SbcSuperposeReg8(
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
-{
-    return OpSuperposeReg8(clObj->GetSBC8Ptr(), 1, inputStart, outputStart, carryIndex, values);
 }
 
 } // namespace Qrack
