@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Copyright 2017-2018, Daniel Strano and the Qrack and VM6502Q contributors.
 //
-// This is a multithreaded, universal quantum register simulation, allowing
-// (nonphysical) register cloning and direct measurement of probability and
-// phase, to leverage what advantages classical emulation of qubits can have.
+// QUnit maintains explicit separability of qubits as an optimization on a QEngine.
+// See https://arxiv.org/abs/1710.05867
+// (The makers of Qrack have no affiliation with the authors of that paper.)
 //
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -109,8 +109,10 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */
 
-    EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
+    if (length > 1) {
+        EntangleRange(start, length);
+        OrderContiguous(shards[start].unit);
+    }
 
     QInterfacePtr unit = shards[start].unit;
     bitLenInt mapped = shards[start].mapped;
@@ -124,6 +126,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
+    SetQubitCount(qubitCount - length);
 
     if (unit->GetQubitCount() == length) {
         return;
@@ -135,8 +138,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
             shard.mapped -= length;
         }
     }
-
-    SetQubitCount(qubitCount - length);
 }
 
 void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
@@ -147,19 +148,6 @@ void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 void QUnit::Dispose(bitLenInt start, bitLenInt length)
 {
     Detach(start, length, nullptr);
-}
-
-void QUnit::Decompose(bitLenInt qubit)
-{
-    std::shared_ptr<QInterface> unit = shards[qubit].unit;
-    bitCapInt permState = unit->MReg(0, unit->GetQubitCount());
-    for (auto &&shard : shards) {
-        if (shard.unit == unit) {
-            shard.unit = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
-            shard.unit->SetBit(0, ((1 << shard.mapped) & permState) > 0);
-            shard.mapped = 0;
-        }
-    }
 }
 
 template <class It>
@@ -348,11 +336,25 @@ bool QUnit::M(bitLenInt qubit)
 {
     bool result = shards[qubit].unit->M(shards[qubit].mapped);
 
-    /*
-     * Decomposes all of the bits in the shard, performing M() on each one and
-     * setting each new CU to the appropriate value.
-     */
-    Decompose(qubit);
+    QInterfacePtr unit = shards[qubit].unit;
+    bitLenInt mapped = shards[qubit].mapped;
+
+    if (unit->GetQubitCount() == 1) {
+        /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
+        return result;
+    }
+
+    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
+    unit->Decohere(mapped, 1, dest);
+
+    /* Update the mappings. */
+    shards[qubit].unit = dest;
+    shards[qubit].mapped = 0;
+    for (auto &&shard : shards) {
+        if (shard.unit == unit && shard.mapped > mapped) {
+            shard.mapped--;
+        }
+    }
 
     return result;
 }
@@ -363,7 +365,9 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
     bitCapInt result = 0;
 
     for (bitLenInt bit = 0; bit < length; bit++) {
-        result |= M(bit + start) << (bit + start);
+        if (M(bit + start)) {
+            result |= 1 << bit;
+        }
     }
 
     return result;
@@ -371,8 +375,9 @@ bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
 
 void QUnit::SetBit(bitLenInt qubit, bool value)
 {
-    shards[qubit].unit->SetBit(shards[qubit].mapped, value);
-    Decompose(qubit);
+    if (M(qubit) != value) {
+        shards[qubit].unit->X(shards[qubit].mapped);
+    }
 }
 
 /// Set register bits to given permutation
@@ -591,18 +596,28 @@ void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt
         }, control, target);
 }
 
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
-    shards[start].unit->ROL(shift, shards[start].mapped, length);
+    shift %= length;
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        Reverse(start, end);
+        Reverse(start, start + shift);
+        Reverse(start + shift, end);
+    }
 }
 
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
-    shards[start].unit->ROR(shift, shards[start].mapped, length);
+    shift %= length;
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        Reverse(start + shift, end);
+        Reverse(start, start + shift);
+        Reverse(start, end);
+    }
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
