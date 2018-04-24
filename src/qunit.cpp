@@ -347,17 +347,12 @@ bool QUnit::M(bitLenInt qubit)
     QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
     unit->Decohere(mapped, 1, dest);
 
-    /* Update the mapping. */
     /* Update the mappings. */
+    shards[qubit].unit = dest;
+    shards[qubit].mapped = 0;
     for (auto &&shard : shards) {
-        if (shard.unit == unit && shard.mapped >= mapped) {
-            if (shard.mapped == mapped) {
-                shard.unit = dest;
-                shard.mapped = 0;
-            }
-            else {
-                shard.mapped--;
-            }
+        if (shard.unit == unit && shard.mapped > mapped) {
+            shard.mapped--;
         }
     }
 
