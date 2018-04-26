@@ -35,8 +35,25 @@ typedef std::shared_ptr<QInterface> QInterfacePtr;
  * Use QINTERFACE_OPTIMAL for the best supported engine.
  */
 enum QInterfaceEngine {
+
+    /**
+     * Create a QEngineCPU leveraging only local CPU and memory resources.
+     */
     QINTERFACE_CPU = 0,
+    /**
+     * Create a QEngineOCL, derived from QEngineCPU, leveraging OpenCL hardware
+     * to increase the speed of certain calculations.
+     */
     QINTERFACE_OPENCL,
+
+    /**
+     * Create a QUnit, which utilizes other QInterface classes to minimize the
+     * amount of work that's needed for any given operation based on the
+     * entanglement of the bits involved.
+     *
+     * This, combined with QINTERFACE_OPTIMAL, is the recommended object to use
+     * as a library consumer.
+     */
     QINTERFACE_QUNIT,
 
     QINTERFACE_FIRST = QINTERFACE_CPU,
