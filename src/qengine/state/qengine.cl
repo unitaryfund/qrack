@@ -56,6 +56,20 @@ void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, const
     }
 }
 
+void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxI = ulongPtr[0];
+    ulong regMask = ulongPtr[1];
+    ulong otherMask = ulongPtr[2];
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        nStateVec[(lcv & otherMask) | ((~lcv) & regMask)] = stateVec[lcv];
+    }
+}
+
 void kernel rol(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
 {
     ulong ID, Nthreads, lcv;

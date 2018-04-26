@@ -38,6 +38,8 @@ public:
     /// Get a pointer to the Apply2x2 function kernel
     cl::Kernel* GetApply2x2Ptr();
     /// Get a pointer to the ROL function kernel
+    cl::Kernel* GetXPtr();
+    /// Get a pointer to the ROL function kernel
     cl::Kernel* GetROLPtr();
     /// Get a pointer to the ROR function kernel
     cl::Kernel* GetRORPtr();
@@ -65,6 +67,7 @@ private:
     cl::Program program;
     cl::CommandQueue queue;
     cl::Kernel apply2x2;
+    cl::Kernel x;
     cl::Kernel rol;
     cl::Kernel ror;
     cl::Kernel inc;

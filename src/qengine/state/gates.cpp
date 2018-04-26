@@ -113,18 +113,24 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
         // probability and phase of the input permutation to the output
         // permutation.  These are the bits that aren't involved in the
         // operation.
-        bitCapInt otherRes = (lcv & otherMask);
+
+        // bitCapInt otherRes = (lcv & otherMask);
 
         // These are the bits in the register that is being operated on. In
         // all permutation states, the bits acted on by the gate should be
         // transformed in the logically appropriate way from input
         // permutation to output permutation. Since this is an X gate, we
         // take the involved bits and bitwise NOT them.
-        bitCapInt inOutRes = ((~lcv) & inOutMask);
+
+        // bitCapInt inOutRes = ((~lcv) & inOutMask);
 
         // Now, we just transfer the untransformed input state's phase and
         // probability to the transformed output state.
-        nStateVec[inOutRes | otherRes] = stateVec[lcv];
+
+        // nStateVec[inOutRes | otherRes] = stateVec[lcv];
+
+        // (We can do this all in one line:)
+        nStateVec[(lcv & otherMask) | ((~lcv) & inOutMask)] = stateVec[lcv];
 
         // For other operations, like the quantum equivalent of a logical
         // "AND," we might have two input registers and one output

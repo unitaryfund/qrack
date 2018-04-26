@@ -51,6 +51,8 @@ public:
     }
 
     /* Operations that have an improved implementation. */
+    virtual void X(bitLenInt qubit); //Inherited overload
+    virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
