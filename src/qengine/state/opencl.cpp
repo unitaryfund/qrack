@@ -154,28 +154,17 @@ void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2)
 /// Bitwise swap
 void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
-    int distance = start1 - start2;
-    if (distance == 0) {
+    if (start1 == start2) {
         return;
     }
-    else if (distance < 0) {
-        distance *= -1;
-    }
-    if (distance < length) {
-        bitLenInt i;
-        for (i = 0; i < length; i++) {
-            Swap(start1 + i, start2 + i);
-        }
-    } else {
         
-        bitCapInt reg1Mask = ((1 << length) - 1) << start1;
-        bitCapInt reg2Mask = ((1 << length) - 1) << start2;
-        bitCapInt otherMask = maxQPower - 1;
-        otherMask ^= reg1Mask | reg2Mask;
-        bitCapInt bciArgs[10] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+    bitCapInt bciArgs[10] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
 
-        DispatchCall(clObj->GetSwapPtr(), bciArgs);
-    }
+    DispatchCall(clObj->GetSwapPtr(), bciArgs);
 }
 
 void QEngineOCL::ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length)

@@ -232,30 +232,21 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
     if (distance == 0) {
         return;
     }
-    else if (distance < 0) {
-        distance *= -1;
-    }
-    if (distance < length) {
-        bitLenInt i;
-        for (i = 0; i < length; i++) {
-            Swap(start1 + i, start2 + i);
-        }
-    } else {
-        bitCapInt reg1Mask = ((1 << length) - 1) << start1;
-        bitCapInt reg2Mask = ((1 << length) - 1) << start2;
-        bitCapInt otherMask = maxQPower - 1;
-        otherMask ^= reg1Mask | reg2Mask;
-        Complex16 *nStateVec = new Complex16[maxQPower];
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            bitCapInt otherRes = (lcv & otherMask);
-            bitCapInt reg1Res = ((lcv & reg1Mask) >> start1) << start2;
-            bitCapInt reg2Res = ((lcv & reg2Mask) >> start2) << start1;
-            nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
-        });
-        // We replace our old permutation state vector with the new one we just filled, at the end.
-        ResetStateVec(nStateVec);
-    }
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = ((lcv & reg1Mask) >> start1) << start2;
+        bitCapInt reg2Res = ((lcv & reg2Mask) >> start2) << start1;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
 }
 
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
