@@ -66,5 +66,3 @@ if (ENABLE_OPENCL)
 else (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=0)
 endif (ENABLE_OPENCL)
-
-
