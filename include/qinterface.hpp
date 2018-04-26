@@ -35,8 +35,25 @@ typedef std::shared_ptr<QInterface> QInterfacePtr;
  * Use QINTERFACE_OPTIMAL for the best supported engine.
  */
 enum QInterfaceEngine {
+
+    /**
+     * Create a QEngineCPU leveraging only local CPU and memory resources.
+     */
     QINTERFACE_CPU = 0,
+    /**
+     * Create a QEngineOCL, derived from QEngineCPU, leveraging OpenCL hardware
+     * to increase the speed of certain calculations.
+     */
     QINTERFACE_OPENCL,
+
+    /**
+     * Create a QUnit, which utilizes other QInterface classes to minimize the
+     * amount of work that's needed for any given operation based on the
+     * entanglement of the bits involved.
+     *
+     * This, combined with QINTERFACE_OPTIMAL, is the recommended object to use
+     * as a library consumer.
+     */
     QINTERFACE_QUNIT,
 
     QINTERFACE_FIRST = QINTERFACE_CPU,
@@ -881,7 +898,7 @@ public:
      * write in quantum parallel to more than one address of classical memory
      * at a time.
      */
-    virtual unsigned char SuperposeReg8(bitLenInt inputStart, bitLenInt outputStart, unsigned char* values) = 0;
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values) = 0;
 
     /**
      * Add to entangled 8 bit register state with a superposed
@@ -907,8 +924,7 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    virtual unsigned char AdcSuperposeReg8(
-        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values) = 0;
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /**
      * Subtract from an entangled 8 bit register state with a superposed
@@ -934,8 +950,7 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    virtual unsigned char SbcSuperposeReg8(
-        bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values) = 0;
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;

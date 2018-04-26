@@ -205,7 +205,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    unsigned char expectation = qftReg->SuperposeReg8(0, 8, testPage);
+    unsigned char expectation = qftReg->IndexedLDA(0, 8, 8, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
 }
 
@@ -222,12 +222,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
         testPage[j] = j;
     }
 
-    qftReg->SuperposeReg8(8, 0, testPage);
+    qftReg->IndexedLDA(8, 8, 0, 8, testPage);
 
     for (j = 0; j < 256; j++) {
         testPage[j] = 255 - j;
     }
-    unsigned char expectation = qftReg->AdcSuperposeReg8(8, 0, 16, testPage);
+    unsigned char expectation = qftReg->IndexedADC(8, 8, 0, 8, 16, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff));
     REQUIRE(expectation == 0xff);
 }
@@ -244,10 +244,71 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    qftReg->SuperposeReg8(8, 0, testPage);
+    qftReg->IndexedLDA(8, 8, 0, 8, testPage);
 
-    unsigned char expectation = qftReg->SbcSuperposeReg8(8, 0, 16, testPage);
+    unsigned char expectation = qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 << 16));
+    REQUIRE(expectation == 0x00);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
+{
+    int j;
+
+    qftReg->SetReg(0, 9, 0x03);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x03));
+
+    unsigned char testPage[1024];
+    for (j = 0; j < 512; j++) {
+        testPage[j * 2] = j & 0xff;
+        testPage[j * 2 + 1] = (j & 0x100) >> 8;
+    }
+    unsigned char expectation = qftReg->IndexedLDA(0, 9, 9, 9, testPage);
+    REQUIRE_THAT(qftReg, HasProbability(0, 17, 0x603));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
+{
+    int j;
+
+    qftReg->SetPermutation(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 18, 0));
+
+    qftReg->H(8, 9);
+    unsigned char testPage[1024];
+    for (j = 0; j < 512; j++) {
+        testPage[j * 2] = j & 0xff;
+        testPage[j * 2 + 1] = (j & 0x100) >> 8;
+    }
+
+    qftReg->IndexedLDA(9, 9, 0, 9, testPage);
+
+    for (j = 0; j < 512; j++) {
+        testPage[j * 2] = (511 - j) & 0xff;
+        testPage[j * 2 + 1] = ((511 - j) & 0x100) >> 8;
+    }
+    bitCapInt expectation = qftReg->IndexedADC(9, 9, 0, 9, 18, testPage);
+    REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x1ff));
+    REQUIRE(expectation == 0x1ff);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
+{
+    int j;
+
+    qftReg->SetPermutation(1 << 18);
+    REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
+
+    qftReg->H(8, 8);
+    unsigned char testPage[1024];
+    for (j = 0; j < 512; j++) {
+        testPage[j * 2] = j & 0xff;
+        testPage[j * 2 + 1] = (j & 0x100) >> 8;
+    }
+    qftReg->IndexedLDA(9, 9, 0, 9, testPage);
+
+    bitCapInt expectation = qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
+    REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
     REQUIRE(expectation == 0x00);
 }
 
@@ -548,7 +609,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
     qftReg->H(8, 8);
-    qftReg->SuperposeReg8(8, 0, toLoad);
+    qftReg->IndexedLDA(8, 8, 0, 8, toLoad);
 
     // std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
@@ -559,13 +620,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
         qftReg->INC(100, 0, 8);
         // This ends the "oracle."
         qftReg->X(16);
-        qftReg->SbcSuperposeReg8(8, 0, 16, toLoad);
+        qftReg->IndexedSBC(8, 8, 0, 8, 16, toLoad);
         qftReg->X(16);
         qftReg->H(8, 8);
         qftReg->ZeroPhaseFlip(8, 8);
         qftReg->H(8, 8);
         qftReg->PhaseFlip();
-        qftReg->AdcSuperposeReg8(8, 0, 16, toLoad);
+        qftReg->IndexedADC(8, 8, 0, 8, 16, toLoad);
         // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
     }
 
@@ -598,7 +659,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
     // Divide qftReg into two registers of 8 bits each
     qftReg->SetPermutation(0);
     qftReg->H(8, 8);
-    qftReg->SuperposeReg8(8, 0, toSearch);
+    qftReg->IndexedLDA(8, 8, 0, 8, toSearch);
     qftReg->H(8, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
