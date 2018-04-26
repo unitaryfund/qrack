@@ -51,12 +51,12 @@ public:
     cl::Kernel* GetINCCPtr();
     /// Get a pointer to the DECC function kernel
     cl::Kernel* GetDECCPtr();
-    /// Get a pointer to the SuperposeReg8 function kernel
-    cl::Kernel* GetSR8Ptr();
-    /// Get a pointer to the AdcSuperposeReg8 function kernel
-    cl::Kernel* GetADC8Ptr();
-    /// Get a pointer to the SbcSuperposeReg8 function kernel
-    cl::Kernel* GetSBC8Ptr();
+    /// Get a pointer to the IndexedLDA function kernel
+    cl::Kernel* GetLDAPtr();
+    /// Get a pointer to the IndexedADC function kernel
+    cl::Kernel* GetADCPtr();
+    /// Get a pointer to the IndexedSBC function kernel
+    cl::Kernel* GetSBCPtr();
 
 private:
     std::vector<cl::Platform> all_platforms;
@@ -74,9 +74,9 @@ private:
     cl::Kernel dec;
     cl::Kernel incc;
     cl::Kernel decc;
-    cl::Kernel superposeReg8;
-    cl::Kernel adcReg8;
-    cl::Kernel sbcReg8;
+    cl::Kernel indexedLda;
+    cl::Kernel indexedAdc;
+    cl::Kernel indexedSbc;
 
     OCLEngine(); // Private so that it can  not be called
     OCLEngine(int plat, int dev); // Private so that it can  not be called

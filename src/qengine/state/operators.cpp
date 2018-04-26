@@ -963,13 +963,12 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // already know the carry is zero).  This bit masks let us quickly
     // distinguish the different values of the input register, output register,
     // carry, and other bits that aren't involved in the operation.
-    bitCapInt i, outputInt;
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt lengthPower = 1 << valueLength;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
     bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
-    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1 << carryIndex;
 
     par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv, const int cpu) {
@@ -1015,6 +1014,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
+    bitCapInt i, outputInt;
     double prob, average, totProb;
     totProb = 0.0;
     for (i = 0; i < maxQPower; i++) {
@@ -1061,13 +1061,12 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
     // other bits that aren't involved in the operation.
-    bitCapInt i, outputInt;
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt lengthPower = 1 << valueLength;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
     bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
-    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1 << carryIndex;
 
     par_for_skip(0, maxQPower, skipPower, 1, [&](const bitCapInt lcv, const int cpu) {
@@ -1117,6 +1116,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
+    bitCapInt i, outputInt;
     double prob, average, totProb;
     totProb = 0.0;
     for (i = 0; i < maxQPower; i++) {

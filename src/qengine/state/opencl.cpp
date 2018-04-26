@@ -237,7 +237,7 @@ void QEngineOCL::DECC(
 
 
 /** Add or Subtract based on an indexed load from classical memory */
-unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
+bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
     bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
 {
     // The carry has to first to be measured for its input value.
@@ -262,19 +262,22 @@ unsigned char QEngineOCL::OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn,
     DispatchCall(call, bciArgs, nStateVec, values);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
-    double prob, average;
+    double prob, average, totProb;
+    totProb = 0.0;
     bitCapInt i, outputInt;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> outputStart;
         prob = norm(nStateVec[i]);
+        totProb += prob;
         average += prob * outputInt;
     }
+    average /= totProb;
 
     // Finally, we dealloc the old state vector and replace it with the one we just calculated.
     ResetStateVec(nStateVec);
 
     // Return the expectation value.
-    return (unsigned char)(average + 0.5);
+    return (bitCapInt)(average + 0.5);
 }
 
 } // namespace Qrack

@@ -220,7 +220,7 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
     }
 }
 
-void kernel superposeReg8(
+void kernel indexedLda(
     global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
 {
     ulong ID, Nthreads, lcv;
@@ -251,7 +251,7 @@ void kernel superposeReg8(
     }
 }
 
-void kernel adcReg8(
+void kernel indexedAdc(
     global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
 {
     ulong ID, Nthreads, lcv;
@@ -295,7 +295,7 @@ void kernel adcReg8(
     }
 }
 
-void kernel sbcReg8(
+void kernel indexedSbc(
     global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
 {
     ulong ID, Nthreads, lcv;

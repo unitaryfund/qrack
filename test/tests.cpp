@@ -247,6 +247,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     qftReg->IndexedLDA(8, 8, 0, 8, testPage);
 
     bitCapInt expectation = qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
+    qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 << 16));
     REQUIRE(expectation == 0x00);
 }
@@ -274,7 +275,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
     qftReg->SetPermutation(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 0));
 
-    qftReg->H(8, 9);
+    qftReg->H(9, 9);
     unsigned char testPage[1024];
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
@@ -299,7 +300,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     qftReg->SetPermutation(1 << 18);
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
 
-    qftReg->H(8, 8);
+    qftReg->H(9, 9);
     unsigned char testPage[1024];
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
@@ -308,6 +309,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     qftReg->IndexedLDA(9, 9, 0, 9, testPage);
 
     bitCapInt expectation = qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
+    qftReg->H(9, 9);
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
     REQUIRE(expectation == 0x00);
 }

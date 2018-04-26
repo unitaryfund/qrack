@@ -30,9 +30,9 @@ cl::Kernel* OCLEngine::GetINCPtr() { return &inc; }
 cl::Kernel* OCLEngine::GetDECPtr() { return &dec; }
 cl::Kernel* OCLEngine::GetINCCPtr() { return &incc; }
 cl::Kernel* OCLEngine::GetDECCPtr() { return &decc; }
-cl::Kernel* OCLEngine::GetSR8Ptr() { return &superposeReg8; }
-cl::Kernel* OCLEngine::GetADC8Ptr() { return &adcReg8; }
-cl::Kernel* OCLEngine::GetSBC8Ptr() { return &sbcReg8; }
+cl::Kernel* OCLEngine::GetLDAPtr() { return &indexedLda; }
+cl::Kernel* OCLEngine::GetADCPtr() { return &indexedAdc; }
+cl::Kernel* OCLEngine::GetSBCPtr() { return &indexedSbc; }
 
 OCLEngine::OCLEngine() { InitOCL(0, 0); }
 OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
@@ -87,9 +87,9 @@ void OCLEngine::InitOCL(int plat, int dev)
     dec = cl::Kernel(program, "dec");
     incc = cl::Kernel(program, "incc");
     decc = cl::Kernel(program, "decc");
-    superposeReg8 = cl::Kernel(program, "superposeReg8");
-    adcReg8 = cl::Kernel(program, "adcReg8");
-    sbcReg8 = cl::Kernel(program, "sbcReg8");
+    indexedLda = cl::Kernel(program, "indexedLda");
+    indexedAdc = cl::Kernel(program, "indexedAdc");
+    indexedSbc = cl::Kernel(program, "indexedSbc");
 }
 
 OCLEngine* OCLEngine::m_pInstance = NULL;
