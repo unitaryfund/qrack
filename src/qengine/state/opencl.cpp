@@ -156,11 +156,9 @@ void QEngineOCL::INTC(cl::Kernel* call,
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~(regMask | carryMask));
-    bitCapInt otherPower = 1<<(qubitCount - length - 1);
-    bitCapInt skipMask = (~otherMask) & (maxQPower - 1);
 
-    bitCapInt bciArgs[10] = { maxQPower >> 1, regMask, otherMask, lengthPower, carryMask, start, toMod,
-        otherPower, skipMask, 0 };
+    bitCapInt bciArgs[10] = { maxQPower >> 1, regMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0,
+        0 };
 
     DispatchCall(call, bciArgs);
 }
