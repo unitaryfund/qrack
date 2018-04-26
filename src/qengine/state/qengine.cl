@@ -70,6 +70,27 @@ void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2
     }
 }
 
+void kernel swap(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxI = ulongPtr[0];
+    ulong reg1Mask = ulongPtr[1];
+    ulong reg2Mask = ulongPtr[2];
+    ulong otherMask = ulongPtr[3];
+    ulong start1 = ulongPtr[4];
+    ulong start2 = ulongPtr[5];
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        nStateVec[
+            (((lcv & reg2Mask) >> start2) << start1) |
+            (((lcv & reg1Mask) >> start1) << start2) |
+            (lcv & otherMask)
+        ] = stateVec[lcv];
+    }
+}
+
 void kernel rol(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
 {
     ulong ID, Nthreads, lcv;

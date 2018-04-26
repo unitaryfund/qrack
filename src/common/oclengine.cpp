@@ -24,6 +24,7 @@ cl::Context* OCLEngine::GetContextPtr() { return &context; }
 cl::CommandQueue* OCLEngine::GetQueuePtr() { return &queue; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
 cl::Kernel* OCLEngine::GetXPtr() { return &x; }
+cl::Kernel* OCLEngine::GetSwapPtr() { return &swap; }
 cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
 cl::Kernel* OCLEngine::GetRORPtr() { return &ror; }
 cl::Kernel* OCLEngine::GetINCPtr() { return &inc; }
@@ -81,6 +82,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     queue = cl::CommandQueue(context, default_device);
     apply2x2 = cl::Kernel(program, "apply2x2");
     x = cl::Kernel(program, "x");
+    swap = cl::Kernel(program, "swap");
     rol = cl::Kernel(program, "rol");
     ror = cl::Kernel(program, "ror");
     inc = cl::Kernel(program, "inc");

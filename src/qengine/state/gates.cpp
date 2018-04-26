@@ -249,8 +249,8 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = (lcv & otherMask);
-            bitCapInt reg1Res = ((lcv & reg1Mask) >> (start1)) << (start2);
-            bitCapInt reg2Res = ((lcv & reg2Mask) >> (start2)) << (start1);
+            bitCapInt reg1Res = ((lcv & reg1Mask) >> start1) << start2;
+            bitCapInt reg2Res = ((lcv & reg2Mask) >> start2) << start1;
             nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
         });
         // We replace our old permutation state vector with the new one we just filled, at the end.
