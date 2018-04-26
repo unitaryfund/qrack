@@ -763,7 +763,7 @@ void QUnit::PhaseFlip()
     }
 }
 
-unsigned char QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
     OrderContiguous(shards[indexStart].unit);
@@ -771,7 +771,7 @@ unsigned char QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bit
     return shards[indexStart].unit->IndexedLDA(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
 }
 
-unsigned char QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
     EntangleRange(indexStart, 1, carryIndex, 1);
@@ -780,7 +780,7 @@ unsigned char QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bit
     return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 }
 
-unsigned char QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
     EntangleRange(indexStart, 1, carryIndex, 1);

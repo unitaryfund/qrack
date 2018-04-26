@@ -881,7 +881,7 @@ public:
      * write in quantum parallel to more than one address of classical memory
      * at a time.
      */
-    virtual unsigned char IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values) = 0;
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values) = 0;
 
     /**
      * Add to entangled 8 bit register state with a superposed
@@ -907,7 +907,7 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    virtual unsigned char IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /**
      * Subtract from an entangled 8 bit register state with a superposed
@@ -933,7 +933,7 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    virtual unsigned char IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;

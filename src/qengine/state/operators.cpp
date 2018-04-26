@@ -895,7 +895,7 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 }
 
 /// Set 8 bit register bits based on read from classical memory
-unsigned char QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     bitCapInt i, outputInt;
     SetReg(valueStart, valueLength, 0);
@@ -908,7 +908,7 @@ unsigned char QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength
     Complex16* nStateVec = new Complex16[maxQPower];
     std::fill(nStateVec, nStateVec + maxQPower, Complex16(0.0, 0.0));
 
-    par_for_skip(0, maxQPower, skipPower, 8, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, skipPower, valueLength, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt inputRes = lcv & inputMask;
         bitCapInt inputInt = inputRes >> indexStart;
         bitCapInt outputInt = 0;
@@ -931,11 +931,11 @@ unsigned char QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength
 
     ResetStateVec(nStateVec);
 
-    return (unsigned char)(average + 0.5);
+    return (bitCapInt)(average + 0.5);
 }
 
 /// Add based on an indexed load from classical memory
-unsigned char QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
 
     // This a quantum/classical interface method, similar to SuperposeReg8.
@@ -1030,11 +1030,11 @@ unsigned char QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength
     ResetStateVec(nStateVec);
 
     // Return the expectation value.
-    return (unsigned char)(average + 0.5);
+    return (bitCapInt)(average + 0.5);
 }
 
 /// Subtract based on an indexed load from classical memory
-unsigned char QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     // This a quantum/classical interface method, similar to SuperposeReg8.
     // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
@@ -1132,7 +1132,7 @@ unsigned char QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength
     ResetStateVec(nStateVec);
 
     // Return the expectation value.
-    return (unsigned char)(average + 0.5);
+    return (bitCapInt)(average + 0.5);
 }
 
 };
