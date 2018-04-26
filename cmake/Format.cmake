@@ -1,6 +1,3 @@
-
-
-# clang-format-5.0 -style=file -i $(FORMAT_SRC) $(FORMAT_HDRS)
 set( FORMAT_EXCLUDE_FILES "catch.hpp" "_build")
 
 find_program ( CLANG_FORMAT clang-format-5.0 )
