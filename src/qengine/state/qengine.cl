@@ -102,6 +102,48 @@ void kernel ror(global double2* stateVec, constant ulong* ulongPtr, global doubl
     }
 }
 
+void kernel inc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, i;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxI = ulongPtr[0];
+    ulong inOutMask = ulongPtr[1];
+    ulong otherMask = ulongPtr[2];
+    ulong lengthMask = ulongPtr[3] - 1;
+    ulong inOutStart = ulongPtr[4];
+    ulong toAdd = ulongPtr[5];
+    ulong otherRes, inOutRes;
+    for (i = ID; i < maxI; i += Nthreads) {
+        otherRes = (i & otherMask);
+        inOutRes = (i & inOutMask);
+        inOutRes = (((inOutRes >> inOutStart) + toAdd) & lengthMask) << inOutStart;
+        nStateVec[inOutRes | otherRes] = stateVec[i];
+    }
+}
+
+void kernel dec(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, i;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxI = ulongPtr[0];
+    ulong inOutMask = ulongPtr[1];
+    ulong otherMask = ulongPtr[2];
+    ulong lengthMask = ulongPtr[3] - 1;
+    ulong inOutStart = ulongPtr[4];
+    ulong toSub = ulongPtr[5];
+    ulong otherRes, inOutRes;
+    for (i = ID; i < maxI; i += Nthreads) {
+        otherRes = (i & otherMask);
+        inOutRes = (i & inOutMask);
+        inOutRes = (((lengthMask + 1 + (inOutRes >> inOutStart)) - toSub) & lengthMask) << inOutStart;
+        nStateVec[inOutRes | otherRes] = stateVec[i];
+    }
+}
+
 void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
 {
     ulong ID, Nthreads, lcv;

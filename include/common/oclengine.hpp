@@ -41,6 +41,10 @@ public:
     cl::Kernel* GetROLPtr();
     /// Get a pointer to the ROR function kernel
     cl::Kernel* GetRORPtr();
+    /// Get a pointer to the INC function kernel
+    cl::Kernel* GetINCPtr();
+    /// Get a pointer to the DEC function kernel
+    cl::Kernel* GetDECPtr();
     /// Get a pointer to the INCC function kernel
     cl::Kernel* GetINCCPtr();
     /// Get a pointer to the DECC function kernel
@@ -63,6 +67,8 @@ private:
     cl::Kernel apply2x2;
     cl::Kernel rol;
     cl::Kernel ror;
+    cl::Kernel inc;
+    cl::Kernel dec;
     cl::Kernel incc;
     cl::Kernel decc;
     cl::Kernel superposeReg8;

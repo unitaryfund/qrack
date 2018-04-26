@@ -25,6 +25,8 @@ cl::CommandQueue* OCLEngine::GetQueuePtr() { return &queue; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
 cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
 cl::Kernel* OCLEngine::GetRORPtr() { return &ror; }
+cl::Kernel* OCLEngine::GetINCPtr() { return &inc; }
+cl::Kernel* OCLEngine::GetDECPtr() { return &dec; }
 cl::Kernel* OCLEngine::GetINCCPtr() { return &incc; }
 cl::Kernel* OCLEngine::GetDECCPtr() { return &decc; }
 cl::Kernel* OCLEngine::GetSR8Ptr() { return &superposeReg8; }
@@ -79,6 +81,8 @@ void OCLEngine::InitOCL(int plat, int dev)
     apply2x2 = cl::Kernel(program, "apply2x2");
     rol = cl::Kernel(program, "rol");
     ror = cl::Kernel(program, "ror");
+    inc = cl::Kernel(program, "inc");
+    dec = cl::Kernel(program, "dec");
     incc = cl::Kernel(program, "incc");
     decc = cl::Kernel(program, "decc");
     superposeReg8 = cl::Kernel(program, "superposeReg8");

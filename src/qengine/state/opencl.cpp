@@ -148,6 +148,31 @@ void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     ROx(clObj->GetRORPtr(), shift, start, length);
 }
 
+/// Add or Subtract integer (without sign or carry)
+void QEngineOCL::INT(cl::Kernel* call,
+    bitCapInt toMod, const bitLenInt start, const bitLenInt length)
+{
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt otherMask = (maxQPower - 1) & ~(regMask);
+
+    bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, lengthPower, start, toMod, 0, 0, 0, 0 };
+
+    DispatchCall(call, bciArgs);
+}
+
+/** Increment integer (without sign, with carry) */
+void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
+{
+    INT(clObj->GetINCPtr(), toAdd, start, length);
+}
+
+/** Subtract integer (without sign, with carry) */
+void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
+{
+    INT(clObj->GetDECPtr(), toSub, start, length);
+}
+
 /// Add or Subtract integer (without sign, with carry)
 void QEngineOCL::INTC(cl::Kernel* call,
     bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)

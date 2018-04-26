@@ -53,6 +53,8 @@ public:
     /* Operations that have an improved implementation. */
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
@@ -67,8 +69,9 @@ protected:
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm);
 
-    /* A couple utility functions used by the operations above. */
+    /* Utility functions used by the operations above. */
     void ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length);
+    void INT(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
     void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
 
     unsigned char OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn, bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
