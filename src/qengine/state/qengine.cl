@@ -66,7 +66,7 @@ void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2
     ulong regMask = ulongPtr[1];
     ulong otherMask = ulongPtr[2];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        nStateVec[(lcv & otherMask) | ((~lcv) & regMask)] = stateVec[lcv];
+        nStateVec[lcv] = stateVec[(lcv & otherMask) | ((~lcv) & regMask)];
     }
 }
 
