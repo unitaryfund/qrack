@@ -83,11 +83,11 @@ void kernel swap(global double2* stateVec, constant ulong* ulongPtr, global doub
     ulong start1 = ulongPtr[4];
     ulong start2 = ulongPtr[5];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        nStateVec[
-            (((lcv & reg2Mask) >> start2) << start1) |
-            (((lcv & reg1Mask) >> start1) << start2) |
-            (lcv & otherMask)
-        ] = stateVec[lcv];
+        nStateVec[lcv] = stateVec[ 
+                                  (((lcv & reg2Mask) >> start2) << start1) |
+                                  (((lcv & reg1Mask) >> start1) << start2) |
+                                  (lcv & otherMask)
+                                 ];
     }
 }
 
@@ -104,13 +104,13 @@ void kernel rol(global double2* stateVec, constant ulong* ulongPtr, global doubl
     ulong start = ulongPtr[4];
     ulong shift = ulongPtr[5];
     ulong length = ulongPtr[6];
-    ulong otherRes, regRes, regInt, outInt;
+    ulong otherRes, regRes, regInt, inInt;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = (lcv & otherMask);
         regRes = (lcv & regMask);
         regInt = regRes >> start;
-        outInt = ((regInt >> (length - shift)) | (regInt << shift)) & lengthMask;
-        nStateVec[(outInt << start) | otherRes] = stateVec[lcv];
+        inInt = ((regInt >> shift) | (regInt << (length - shift))) & lengthMask;
+        nStateVec[lcv] = stateVec[(inInt << start) | otherRes];
     }
 }
 
@@ -127,13 +127,13 @@ void kernel ror(global double2* stateVec, constant ulong* ulongPtr, global doubl
     ulong start = ulongPtr[4];
     ulong shift = ulongPtr[5];
     ulong length = ulongPtr[6];
-    ulong otherRes, regRes, regInt, outInt;
+    ulong otherRes, regRes, regInt, inInt;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = (lcv & otherMask);
         regRes = (lcv & regMask);
         regInt = regRes >> start;
-        outInt = ((regInt >> shift) | (regInt << (length - shift))) & lengthMask;
-        nStateVec[(outInt << start) | otherRes] = stateVec[lcv];
+        inInt = ((regInt >> (length - shift)) | (regInt << shift)) & lengthMask;
+        nStateVec[lcv] = stateVec[(inInt << start) | otherRes];
     }
 }
 
@@ -149,12 +149,12 @@ void kernel inc(global double2* stateVec, constant ulong* ulongPtr, global doubl
     ulong lengthMask = ulongPtr[3] - 1;
     ulong inOutStart = ulongPtr[4];
     ulong toAdd = ulongPtr[5];
-    ulong otherRes, inOutRes;
+    ulong otherRes, inRes;
     for (i = ID; i < maxI; i += Nthreads) {
         otherRes = (i & otherMask);
-        inOutRes = (i & inOutMask);
-        inOutRes = (((inOutRes >> inOutStart) + toAdd) & lengthMask) << inOutStart;
-        nStateVec[inOutRes | otherRes] = stateVec[i];
+        inRes = (i & inOutMask);
+        inRes = (((lengthMask + 1 + (inRes >> inOutStart)) - toAdd) & lengthMask) << inOutStart;
+        nStateVec[i] = stateVec[inRes | otherRes];
     }
 }
 
@@ -170,12 +170,12 @@ void kernel dec(global double2* stateVec, constant ulong* ulongPtr, global doubl
     ulong lengthMask = ulongPtr[3] - 1;
     ulong inOutStart = ulongPtr[4];
     ulong toSub = ulongPtr[5];
-    ulong otherRes, inOutRes;
+    ulong otherRes, inRes;
     for (i = ID; i < maxI; i += Nthreads) {
         otherRes = (i & otherMask);
-        inOutRes = (i & inOutMask);
-        inOutRes = (((lengthMask + 1 + (inOutRes >> inOutStart)) - toSub) & lengthMask) << inOutStart;
-        nStateVec[inOutRes | otherRes] = stateVec[i];
+        inRes = (i & inOutMask);
+        inRes = (((inRes >> inOutStart) + toSub) & lengthMask) << inOutStart;
+        nStateVec[i] = stateVec[inRes | otherRes];
     }
 }
 

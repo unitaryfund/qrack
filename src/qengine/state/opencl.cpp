@@ -50,24 +50,29 @@ void QEngineOCL::ReInitOCL()
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
-void QEngineOCL::ResetStateVec(Complex16 *nStateVec)
+void QEngineOCL::ResetStateVec(StateVecAlloc nStateVecAlloc)
 {
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
-    QEngineCPU::ResetStateVec(nStateVec);
+    QEngineCPU::ResetStateVec(nStateVecAlloc);
     ReInitOCL();
 }
 
 void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec, unsigned char* values)
 {
     /* Allocate a temporary nStateVec, or use the one supplied. */
-    Complex16 *nStateVec = nVec ? nVec : new Complex16[maxQPower];
+    StateVecAlloc nStateVecAlloc;
+    Complex16* nStateVec;
+    if (!nVec) {
+        nStateVecAlloc = AllocStateVec(maxQPower);
+        nStateVec = nStateVecAlloc.aligned;
+    }
     std::fill(nStateVec, nStateVec + maxQPower, Complex16(0.0, 0.0));
 
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     cl::Context context = *(clObj->GetContextPtr());
-    cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, nStateVec);
+    cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(Complex16) * maxQPower, nStateVec);
     call->setArg(0, stateBuffer);
     call->setArg(1, ulongBuffer);
     call->setArg(2, nStateBuffer);
@@ -85,7 +90,7 @@ void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN
 
     if (!nVec) {
         /* a nStateVec wasn't passed in; swap the one allocated here with stateVec */
-        ResetStateVec(nStateVec);
+        ResetStateVec(nStateVecAlloc);
     }
 }
 
@@ -279,7 +284,8 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
     bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn,
         carryMask, lengthPower, 0 };
 
-    Complex16 *nStateVec = new Complex16[maxQPower];
+    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
+    Complex16* nStateVec = nStateVecAlloc.aligned;
     DispatchCall(call, bciArgs, nStateVec, values);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
@@ -295,7 +301,7 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
     average /= totProb;
 
     // Finally, we dealloc the old state vector and replace it with the one we just calculated.
-    ResetStateVec(nStateVec);
+    ResetStateVec(nStateVecAlloc);
 
     // Return the expectation value.
     return (bitCapInt)(average + 0.5);

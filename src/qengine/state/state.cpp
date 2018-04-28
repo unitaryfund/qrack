@@ -44,7 +44,10 @@ QEngineCPU::QEngineCPU(
 
     runningNorm = 1.0;
     SetQubitCount(qBitCount);
-    stateVec = new Complex16[maxQPower];
+
+    StateVecAlloc stateVecAlloc = AllocStateVec(maxQPower);
+    stateVec = stateVecAlloc.aligned;
+    stateVecUnaligned = stateVecAlloc.unaligned;
     std::fill(stateVec, stateVec + maxQPower, Complex16(0.0, 0.0));
     if (phaseFac == Complex16(-999.0, -999.0)) {
         double angle = Rand() * 2.0 * M_PI;
@@ -63,16 +66,17 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
 {
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
-    ResetStateVec(new Complex16[maxQPower]);
+    ResetStateVec(AllocStateVec(maxQPower));
 
     QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
     std::copy(src->GetState(), src->GetState() + (1 << (src->GetQubitCount())), stateVec);
 }
 
-void QEngineCPU::ResetStateVec(Complex16 *nStateVec)
+void QEngineCPU::ResetStateVec(StateVecAlloc nStateVecAlloc)
 {
-    delete []stateVec;
-    stateVec = nStateVec;
+    free(stateVecUnaligned);
+    stateVecUnaligned = nStateVecAlloc.unaligned;
+    stateVec = nStateVecAlloc.aligned;
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
@@ -161,7 +165,8 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
 
-    Complex16 *nStateVec = new Complex16[nMaxQPower];
+    StateVecAlloc nStateVecAlloc = AllocStateVec(nMaxQPower);
+    Complex16* nStateVec = nStateVecAlloc.aligned;
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
@@ -169,7 +174,7 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
     SetQubitCount(nQubitCount);
 
-    ResetStateVec(nStateVec);
+    ResetStateVec(nStateVecAlloc);
     UpdateRunningNorm();
 
     return result;
@@ -213,7 +218,8 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
 
     nMaxQPower = 1 << nQubitCount;
 
-    Complex16 *nStateVec = new Complex16[nMaxQPower];
+    StateVecAlloc nStateVecAlloc = AllocStateVec(nMaxQPower);
+    Complex16* nStateVec = nStateVecAlloc.aligned;
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask];
@@ -227,7 +233,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
     qubitCount = nQubitCount;
     maxQPower = nMaxQPower;
 
-    ResetStateVec(nStateVec);
+    ResetStateVec(nStateVecAlloc);
     UpdateRunningNorm();
 
     return ret;
@@ -272,14 +278,14 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
     }
 
-    Complex16 *sv;
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
-    sv = new Complex16[maxQPower];
-    ResetStateVec(sv);
+
+    StateVecAlloc svAlloc = AllocStateVec(maxQPower);
+    ResetStateVec(svAlloc);
 
     for (i = 0; i < partPower; i++) {
         destination->stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
@@ -318,8 +324,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     /* Disposing of the entire object. */
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);       // Leave as a single bit for safety.
-        Complex16 *sv = new Complex16[maxQPower];
-        ResetStateVec(sv);
+        ResetStateVec(AllocStateVec(maxQPower));
 
         return;
     }
@@ -338,8 +343,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 
     SetQubitCount(qubitCount - length);
 
-    Complex16 *sv = new Complex16[maxQPower];
-    ResetStateVec(sv);
+    StateVecAlloc svAlloc = AllocStateVec(maxQPower);
+    ResetStateVec(svAlloc);
 
     for (i = 0; i < maxQPower; i++) {
         stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
@@ -406,5 +411,18 @@ void QEngineCPU::NormalizeState()
 }
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
+
+StateVecAlloc QEngineCPU::AllocStateVec(bitCapInt elemCount)
+{
+    StateVecAlloc toRet;
+#if ENABLE_OPENCL
+    toRet.unaligned = (Complex16*)aligned_alloc(ALIGN_SIZE, sizeof(Complex16) * elemCount + ALIGN_SIZE);
+    toRet.aligned = toRet.unaligned;
+#else
+    toRet.unaligned = new Complex16[elemCount];
+    toRet.aligned = toRet.unaligned;
+#endif
+    return toRet;
+}
 
 } // namespace Qrack
