@@ -56,6 +56,58 @@ void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, const
     }
 }
 
+void kernel apply2x2norm(global double2* stateVec, constant double2* cmplxPtr, constant ulong* ulongPtr, global double* nrmParts)
+{
+    ulong ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    constant double2* mtrx = cmplxPtr;
+
+    double2 nrm = cmplxPtr[4];
+    ulong bitCount = ulongPtr[0];
+    ulong maxI = ulongPtr[1];
+    ulong offset1 = ulongPtr[2];
+    ulong offset2 = ulongPtr[3];
+    constant ulong* qPowersSorted = (ulongPtr + 4);
+
+    double2 Y0;
+    ulong i, iLow, iHigh;
+    double2 qubit[2];
+    unsigned char p;
+    lcv = ID;
+    iHigh = lcv;
+    i = 0;
+    for (p = 0; p < bitCount; p++) {
+        iLow = iHigh % qPowersSorted[p];
+        i += iLow;
+        iHigh = (iHigh - iLow) << 1;
+    }
+    i += iHigh;
+    while (i < maxI) {
+        qubit[0] = stateVec[i + offset1];
+        qubit[1] = stateVec[i + offset2];
+
+        Y0 = qubit[0];
+        qubit[0] = zmul(nrm, (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1])));
+        qubit[1] = zmul(nrm, (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1])));
+
+        stateVec[i + offset1] = qubit[0];
+        stateVec[i + offset2] = qubit[1];
+        nrmParts[ID] += dot(qubit[0], qubit[0]) + dot(qubit[1], qubit[1]);
+
+        lcv += Nthreads;
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < bitCount; p++) {
+            iLow = iHigh % qPowersSorted[p];
+            i += iLow;
+            iHigh = (iHigh - iLow) << 1;
+        }
+        i += iHigh;
+    }
+}
+
 void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
 {
     ulong ID, Nthreads, lcv;

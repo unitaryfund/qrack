@@ -37,6 +37,8 @@ public:
     cl::CommandQueue* GetQueuePtr();
     /// Get a pointer to the Apply2x2 function kernel
     cl::Kernel* GetApply2x2Ptr();
+    /// Get a pointer to the Apply2x2Norm function kernel
+    cl::Kernel* GetApply2x2NormPtr();
     /// Get a pointer to the ROL function kernel
     cl::Kernel* GetXPtr();
     /// Get a pointer to the ROL function kernel
@@ -69,6 +71,7 @@ private:
     cl::Program program;
     cl::CommandQueue queue;
     cl::Kernel apply2x2;
+    cl::Kernel apply2x2norm;
     cl::Kernel x;
     cl::Kernel swap;
     cl::Kernel rol;

@@ -23,6 +23,7 @@ namespace Qrack {
 cl::Context* OCLEngine::GetContextPtr() { return &context; }
 cl::CommandQueue* OCLEngine::GetQueuePtr() { return &queue; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
+cl::Kernel* OCLEngine::GetApply2x2NormPtr() { return &apply2x2norm; }
 cl::Kernel* OCLEngine::GetXPtr() { return &x; }
 cl::Kernel* OCLEngine::GetSwapPtr() { return &swap; }
 cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
@@ -81,6 +82,7 @@ void OCLEngine::InitOCL(int plat, int dev)
 
     queue = cl::CommandQueue(context, default_device);
     apply2x2 = cl::Kernel(program, "apply2x2");
+    apply2x2norm = cl::Kernel(program, "apply2x2norm");
     x = cl::Kernel(program, "x");
     swap = cl::Kernel(program, "swap");
     rol = cl::Kernel(program, "rol");

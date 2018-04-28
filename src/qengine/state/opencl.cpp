@@ -29,7 +29,7 @@ void QEngineOCL::InitOCL()
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(Complex16) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
-    nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+    nrmBuffer = cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
     loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256);
 
@@ -98,6 +98,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     Complex16 cmplx[CMPLX_NORM_LEN];
+    double* nrmParts;
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
@@ -111,19 +112,37 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(Complex16) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    if (doCalcNorm) {
+        nrmParts = new double[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
+        queue.enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+    }
     queue.finish();
 
-    cl::Kernel apply2x2 = *(clObj->GetApply2x2Ptr());
+    cl::Kernel apply2x2;
+    if (doCalcNorm) {
+         apply2x2 = *(clObj->GetApply2x2NormPtr());
+    } else {
+         apply2x2 = *(clObj->GetApply2x2Ptr());
+    }
     apply2x2.setArg(0, stateBuffer);
     apply2x2.setArg(1, cmplxBuffer);
     apply2x2.setArg(2, ulongBuffer);
+    if (doCalcNorm) {
+        apply2x2.setArg(3, nrmBuffer);
+    }
     queue.enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+            cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     if (doCalcNorm) {
-        UpdateRunningNorm();
+        queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+        runningNorm = 0.0;
+        for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
+            runningNorm += nrmParts[i];
+        }
+        delete[] nrmParts;
+        runningNorm = sqrt(runningNorm);
     } else {
         runningNorm = 1.0;
     }
