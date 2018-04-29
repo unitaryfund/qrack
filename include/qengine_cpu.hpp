@@ -32,11 +32,6 @@ void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt 
 template <class BidirectionalIterator>
 void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
 
-struct StateVecAlloc {
-    Complex16* unaligned;
-    Complex16* aligned;
-};
-
 /**
  * General purpose QEngineCPU implementation
  */

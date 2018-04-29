@@ -69,7 +69,7 @@ protected:
 
     void InitOCL();
     void ReInitOCL();
-    void ResetStateVec(Complex16* nStateVecAlloc);
+    void ResetStateVec(Complex16* nStateVec);
 
     void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, unsigned char* values = NULL, bitCapInt valuesLength = 0);
 

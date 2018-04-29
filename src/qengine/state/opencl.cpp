@@ -125,8 +125,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         apply2x2.setArg(3, nrmBuffer);
     }
     queue.enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
-            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-            cl::NDRange(1)); // local number (per group)
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     if (doCalcNorm) {
