@@ -26,13 +26,13 @@ void QEngineOCL::InitOCL()
 
     // create buffers on device (allocate space on GPU)
     stateBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(Complex16) * maxQPower, stateVec);
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(Complex16) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(Complex16) * 5);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
     nrmBuffer = cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
 
-    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
 void QEngineOCL::ReInitOCL()
@@ -46,7 +46,7 @@ void QEngineOCL::ReInitOCL()
     stateBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(Complex16) * maxQPower, stateVec);
 
-    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
 
 void QEngineOCL::ResetStateVec(Complex16* nStateVec)
@@ -128,7 +128,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
-    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
     if (doCalcNorm) {
         queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
         runningNorm = 0.0;
