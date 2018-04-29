@@ -39,7 +39,6 @@ protected:
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
     cl::Buffer maxBuffer;
-    cl::Buffer loadBuffer;
 
 public:
 
@@ -51,27 +50,37 @@ public:
     }
 
     /* Operations that have an improved implementation. */
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); //Inherited overload
+    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    using QEngineCPU::X;
+    virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values);
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
 protected:
     static const int BCI_ARG_LEN = 10;
 
     void InitOCL();
     void ReInitOCL();
-    void ResetStateVec(Complex16 *nStateVec);
+    void ResetStateVec(Complex16* nStateVec);
 
-    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, unsigned char* values = NULL);
+    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm);
 
-    /* A couple utility functions used by the operations above. */
+    /* Utility functions used by the operations above. */
     void ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length);
+    void INT(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
     void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
 
-    unsigned char OpSuperposeReg8(cl::Kernel *call, bitCapInt carryIn, bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values);
+    bitCapInt OpIndexed(cl::Kernel *call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 };
 
 }

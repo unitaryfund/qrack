@@ -61,6 +61,18 @@ Similarly, the "Decohere" and "Dispose" methods should only be used on qubits th
 
 Qrack is an experimental work in progress, and the author aims for both utility and correctness, but the project cannot be guaranteed to be fit for any purpose, express or implied. (See LICENSE.md for details.)
 
+## Performing code coverage
+
+```
+    $ cd _build
+    $ cmake -DENABLE_CODECOVERAGE=ON ..
+    $ make -j 8 unittest
+    $ ./unittest
+    $ make coverage
+    $ cd coverage_results
+    $ python -m SimpleHTTPServer
+```
+
 ## Copyright and License
 
 Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool chain development in particular, and also Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept). All rights reserved. (See "par_for.hpp" for additional information.)
