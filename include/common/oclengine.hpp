@@ -37,20 +37,30 @@ public:
     cl::CommandQueue* GetQueuePtr();
     /// Get a pointer to the Apply2x2 function kernel
     cl::Kernel* GetApply2x2Ptr();
+    /// Get a pointer to the Apply2x2Norm function kernel
+    cl::Kernel* GetApply2x2NormPtr();
+    /// Get a pointer to the X function kernel
+    cl::Kernel* GetXPtr();
+    /// Get a pointer to the Swap function kernel
+    cl::Kernel* GetSwapPtr();
     /// Get a pointer to the ROL function kernel
     cl::Kernel* GetROLPtr();
     /// Get a pointer to the ROR function kernel
     cl::Kernel* GetRORPtr();
+    /// Get a pointer to the INC function kernel
+    cl::Kernel* GetINCPtr();
+    /// Get a pointer to the DEC function kernel
+    cl::Kernel* GetDECPtr();
     /// Get a pointer to the INCC function kernel
     cl::Kernel* GetINCCPtr();
     /// Get a pointer to the DECC function kernel
     cl::Kernel* GetDECCPtr();
-    /// Get a pointer to the SuperposeReg8 function kernel
-    cl::Kernel* GetSR8Ptr();
-    /// Get a pointer to the AdcSuperposeReg8 function kernel
-    cl::Kernel* GetADC8Ptr();
-    /// Get a pointer to the SbcSuperposeReg8 function kernel
-    cl::Kernel* GetSBC8Ptr();
+    /// Get a pointer to the IndexedLDA function kernel
+    cl::Kernel* GetLDAPtr();
+    /// Get a pointer to the IndexedADC function kernel
+    cl::Kernel* GetADCPtr();
+    /// Get a pointer to the IndexedSBC function kernel
+    cl::Kernel* GetSBCPtr();
 
 private:
     std::vector<cl::Platform> all_platforms;
@@ -61,13 +71,18 @@ private:
     cl::Program program;
     cl::CommandQueue queue;
     cl::Kernel apply2x2;
+    cl::Kernel apply2x2norm;
+    cl::Kernel x;
+    cl::Kernel swap;
     cl::Kernel rol;
     cl::Kernel ror;
+    cl::Kernel inc;
+    cl::Kernel dec;
     cl::Kernel incc;
     cl::Kernel decc;
-    cl::Kernel superposeReg8;
-    cl::Kernel adcReg8;
-    cl::Kernel sbcReg8;
+    cl::Kernel indexedLda;
+    cl::Kernel indexedAdc;
+    cl::Kernel indexedSbc;
 
     OCLEngine(); // Private so that it can  not be called
     OCLEngine(int plat, int dev); // Private so that it can  not be called

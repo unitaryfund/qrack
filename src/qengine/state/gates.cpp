@@ -96,7 +96,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     // Sometimes we transform the state in place. Alternatively, we often
     // allocate a new permutation state vector to transfer old probabilities
     // and phases into.
-    Complex16 *nStateVec = new Complex16[maxQPower];
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     // This function call is a parallel "for" loop. We have several variants of
     // the parallel for loop. Some skip certain permutations in order to
@@ -113,18 +113,24 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
         // probability and phase of the input permutation to the output
         // permutation.  These are the bits that aren't involved in the
         // operation.
-        bitCapInt otherRes = (lcv & otherMask);
+
+        // bitCapInt otherRes = (lcv & otherMask);
 
         // These are the bits in the register that is being operated on. In
         // all permutation states, the bits acted on by the gate should be
         // transformed in the logically appropriate way from input
         // permutation to output permutation. Since this is an X gate, we
         // take the involved bits and bitwise NOT them.
-        bitCapInt inOutRes = ((~lcv) & inOutMask);
+
+        // bitCapInt inOutRes = ((~lcv) & inOutMask);
 
         // Now, we just transfer the untransformed input state's phase and
         // probability to the transformed output state.
-        nStateVec[inOutRes | otherRes] = stateVec[lcv];
+
+        // nStateVec[inOutRes | otherRes] = stateVec[lcv];
+
+        // (We can do this all in one line:)
+        nStateVec[(lcv & otherMask) | ((~lcv) & inOutMask)] = stateVec[lcv];
 
         // For other operations, like the quantum equivalent of a logical
         // "AND," we might have two input registers and one output
@@ -146,7 +152,8 @@ void QEngineCPU::CNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
     bitCapInt reg2Mask = ((1 << length) - 1) << start2;
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask;
-    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -165,7 +172,8 @@ void QEngineCPU::AntiCNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
     bitCapInt reg2Mask = ((1 << length) - 1) << start2;
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask;
-    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -185,7 +193,8 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target,
     bitCapInt reg3Mask = ((1 << length) - 1) << target;
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask | reg3Mask;
-    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -206,7 +215,8 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
     bitCapInt reg3Mask = ((1 << length) - 1) << target;
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask | reg3Mask;
-    Complex16 *nStateVec = new Complex16[maxQPower];
+
+    Complex16* nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -226,30 +236,22 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
     if (distance == 0) {
         return;
     }
-    else if (distance < 0) {
-        distance *= -1;
-    }
-    if (distance < length) {
-        bitLenInt i;
-        for (i = 0; i < length; i++) {
-            Swap(start1 + i, start2 + i);
-        }
-    } else {
-        bitCapInt reg1Mask = ((1 << length) - 1) << start1;
-        bitCapInt reg2Mask = ((1 << length) - 1) << start2;
-        bitCapInt otherMask = maxQPower - 1;
-        otherMask ^= reg1Mask | reg2Mask;
-        Complex16 *nStateVec = new Complex16[maxQPower];
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            bitCapInt otherRes = (lcv & otherMask);
-            bitCapInt reg1Res = ((lcv & reg1Mask) >> (start1)) << (start2);
-            bitCapInt reg2Res = ((lcv & reg2Mask) >> (start2)) << (start1);
-            nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
-        });
-        // We replace our old permutation state vector with the new one we just filled, at the end.
-        ResetStateVec(nStateVec);
-    }
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+
+    Complex16* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = ((lcv & reg1Mask) >> start1) << start2;
+        bitCapInt reg2Res = ((lcv & reg2Mask) >> start2) << start1;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
 }
 
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
