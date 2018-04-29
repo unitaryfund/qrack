@@ -46,7 +46,6 @@ protected:
     uint32_t randomSeed;
     double runningNorm;
     Complex16 *stateVec;
-    Complex16 *stateVecUnaligned;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
@@ -220,7 +219,7 @@ protected:
     /** Generate a random double from 0 to 1 */
     double Rand() { return rand_distribution(*rand_generator); }
 
-    virtual void ResetStateVec(StateVecAlloc nStateVecAlloc);
+    virtual void ResetStateVec(Complex16* nStateVec);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
@@ -230,6 +229,6 @@ protected:
     virtual void ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
     virtual void NormalizeState();
     virtual void UpdateRunningNorm();
-    virtual StateVecAlloc AllocStateVec(bitCapInt elemCount);
+    virtual Complex16* AllocStateVec(bitCapInt elemCount);
 };
 } // namespace Qrack

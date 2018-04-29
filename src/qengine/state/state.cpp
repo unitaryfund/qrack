@@ -45,9 +45,7 @@ QEngineCPU::QEngineCPU(
     runningNorm = 1.0;
     SetQubitCount(qBitCount);
 
-    StateVecAlloc stateVecAlloc = AllocStateVec(maxQPower);
-    stateVec = stateVecAlloc.aligned;
-    stateVecUnaligned = stateVecAlloc.unaligned;
+    stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, Complex16(0.0, 0.0));
     if (phaseFac == Complex16(-999.0, -999.0)) {
         double angle = Rand() * 2.0 * M_PI;
@@ -72,11 +70,10 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
     std::copy(src->GetState(), src->GetState() + (1 << (src->GetQubitCount())), stateVec);
 }
 
-void QEngineCPU::ResetStateVec(StateVecAlloc nStateVecAlloc)
+void QEngineCPU::ResetStateVec(Complex16* nStateVec)
 {
-    free(stateVecUnaligned);
-    stateVecUnaligned = nStateVecAlloc.unaligned;
-    stateVec = nStateVecAlloc.aligned;
+    free(stateVec);
+    stateVec = nStateVec;
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
@@ -165,8 +162,7 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     bitCapInt startMask = (1 << qubitCount) - 1;
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(nMaxQPower);
-    Complex16* nStateVec = nStateVecAlloc.aligned;
+    Complex16* nStateVec = AllocStateVec(nMaxQPower);
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
@@ -174,7 +170,7 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
     SetQubitCount(nQubitCount);
 
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
     UpdateRunningNorm();
 
     return result;
@@ -218,8 +214,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
 
     nMaxQPower = 1 << nQubitCount;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(nMaxQPower);
-    Complex16* nStateVec = nStateVecAlloc.aligned;
+    Complex16* nStateVec = AllocStateVec(nMaxQPower);
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask];
@@ -233,7 +228,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
     qubitCount = nQubitCount;
     maxQPower = nMaxQPower;
 
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
     UpdateRunningNorm();
 
     return ret;
@@ -284,8 +279,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         SetQubitCount(qubitCount - length);
     }
 
-    StateVecAlloc svAlloc = AllocStateVec(maxQPower);
-    ResetStateVec(svAlloc);
+    ResetStateVec(AllocStateVec(maxQPower));
 
     for (i = 0; i < partPower; i++) {
         destination->stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
@@ -343,8 +337,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 
     SetQubitCount(qubitCount - length);
 
-    StateVecAlloc svAlloc = AllocStateVec(maxQPower);
-    ResetStateVec(svAlloc);
+    ResetStateVec(AllocStateVec(maxQPower));
 
     for (i = 0; i < maxQPower; i++) {
         stateVec[i] = sqrt(partStateProb[i]) * Complex16(cos(partStateAngle[i]), sin(partStateAngle[i]));
@@ -412,17 +405,10 @@ void QEngineCPU::NormalizeState()
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
 
-StateVecAlloc QEngineCPU::AllocStateVec(bitCapInt elemCount)
+Complex16* QEngineCPU::AllocStateVec(bitCapInt elemCount)
 {
-    StateVecAlloc toRet;
-#if ENABLE_OPENCL
-    toRet.unaligned = (Complex16*)aligned_alloc(ALIGN_SIZE, sizeof(Complex16) * elemCount + ALIGN_SIZE);
-    toRet.aligned = toRet.unaligned;
-#else
-    toRet.unaligned = new Complex16[elemCount];
-    toRet.aligned = toRet.unaligned;
-#endif
-    return toRet;
+    // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
+    return (Complex16*)aligned_alloc(ALIGN_SIZE, ((sizeof(Complex16) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(Complex16) * elemCount);
 }
 
 } // namespace Qrack

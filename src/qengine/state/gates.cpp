@@ -96,8 +96,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     // Sometimes we transform the state in place. Alternatively, we often
     // allocate a new permutation state vector to transfer old probabilities
     // and phases into.
-    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
-    Complex16 *nStateVec = nStateVecAlloc.aligned;
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     // This function call is a parallel "for" loop. We have several variants of
     // the parallel for loop. Some skip certain permutations in order to
@@ -143,7 +142,7 @@ void QEngineCPU::X(bitLenInt start, bitLenInt length)
     });
     // We replace our old permutation state vector with the new one we just
     // filled, at the end.
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise CNOT
@@ -154,8 +153,7 @@ void QEngineCPU::CNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
-    Complex16 *nStateVec = nStateVecAlloc.aligned;
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -164,7 +162,7 @@ void QEngineCPU::CNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
         nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
     });
     // We replace our old permutation state vector with the new one we just filled, at the end.
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise "Anti-"CNOT - NOT operation if control is 0
@@ -175,8 +173,7 @@ void QEngineCPU::AntiCNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
-    Complex16 *nStateVec = nStateVecAlloc.aligned;
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -185,7 +182,7 @@ void QEngineCPU::AntiCNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
         nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
     });
     // We replace our old permutation state vector with the new one we just filled, at the end.
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise CCNOT
@@ -197,8 +194,7 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target,
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask | reg3Mask;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
-    Complex16 *nStateVec = nStateVecAlloc.aligned;
+    Complex16 *nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -208,7 +204,7 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target,
         nStateVec[reg1Res | reg2Res | reg3Res | otherRes] = stateVec[lcv];
     });
     // We replace our old permutation state vector with the new one we just filled, at the end.
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise "Anti-"CCNOT - NOT operation if both control bits are 0
@@ -220,8 +216,7 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask | reg3Mask;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
-    Complex16* nStateVec = nStateVecAlloc.aligned;
+    Complex16* nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -231,7 +226,7 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
         nStateVec[reg1Res | reg2Res | reg3Res | otherRes] = stateVec[lcv];
     });
     // We replace our old permutation state vector with the new one we just filled, at the end.
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
 }
 
 /// Bitwise swap
@@ -247,8 +242,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask;
 
-    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
-    Complex16* nStateVec = nStateVecAlloc.aligned;
+    Complex16* nStateVec = AllocStateVec(maxQPower);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = (lcv & otherMask);
@@ -257,7 +251,7 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
     });
     // We replace our old permutation state vector with the new one we just filled, at the end.
-    ResetStateVec(nStateVecAlloc);
+    ResetStateVec(nStateVec);
 }
 
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU

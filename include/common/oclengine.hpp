@@ -39,9 +39,9 @@ public:
     cl::Kernel* GetApply2x2Ptr();
     /// Get a pointer to the Apply2x2Norm function kernel
     cl::Kernel* GetApply2x2NormPtr();
-    /// Get a pointer to the ROL function kernel
+    /// Get a pointer to the X function kernel
     cl::Kernel* GetXPtr();
-    /// Get a pointer to the ROL function kernel
+    /// Get a pointer to the Swap function kernel
     cl::Kernel* GetSwapPtr();
     /// Get a pointer to the ROL function kernel
     cl::Kernel* GetROLPtr();
