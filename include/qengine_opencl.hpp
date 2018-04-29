@@ -52,7 +52,7 @@ public:
     /* Operations that have an improved implementation. */
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); //Inherited overload
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
-    virtual void X(bitLenInt qubit); //Inherited overload
+    using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);

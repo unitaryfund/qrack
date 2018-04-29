@@ -143,11 +143,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16*
 
 }
 
-void QEngineOCL::X(bitLenInt qubit)
-{
-    QEngineCPU::X(qubit);
-}
-
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
