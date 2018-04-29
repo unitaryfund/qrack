@@ -81,7 +81,7 @@ void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
-    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
+    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(Complex16) * maxQPower);
     if (!nVec) {
         /* a nStateVec wasn't passed in; swap the one allocated here with stateVec */
         ResetStateVec(nStateVec);
