@@ -294,7 +294,7 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
 }
 
 void kernel indexedLda(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, constant unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
@@ -304,28 +304,29 @@ void kernel indexedLda(
     ulong inputStart = ulongPtr[1];
     ulong inputMask = ulongPtr[2];
     ulong outputStart = ulongPtr[3];
+    ulong valueBytes = ulongPtr[4];
+    ulong valueLength = ulongPtr[5];
     ulong lowMask = (1 << outputStart) - 1;
     ulong inputRes, inputInt, outputRes, outputInt;
-    ulong i, iLow, iHigh;
-    unsigned char values[256];
-    for (lcv = 0; lcv < 256; lcv++) {
-        values[lcv] = values_global[lcv];
-    }
+    ulong i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
-        i = iLow + ((iHigh - iLow) << 8);
+        i = iLow + ((iHigh - iLow) << valueLength);
 
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
-        outputInt = values[inputInt];
+        outputInt = 0;
+        for (j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8 * j);
+        }
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | i] = stateVec[i];
     }
 }
 
 void kernel indexedAdc(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, constant unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
@@ -340,12 +341,9 @@ void kernel indexedAdc(
     ulong carryIn = ulongPtr[6];
     ulong carryMask = ulongPtr[7];
     ulong lengthPower = ulongPtr[8];
+    ulong valueBytes = ulongPtr[9];
     ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    ulong i, iLow, iHigh;
-    unsigned char values[256];
-    for (lcv = 0; lcv < 256; lcv++) {
-        values[lcv] = values_global[lcv];
-    }
+    ulong i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
@@ -355,7 +353,11 @@ void kernel indexedAdc(
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
-        outputInt = (outputRes >> outputStart) + values[inputInt] + carryIn;
+        outputInt = 0;
+        for (j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8 * j);
+        }
+        outputInt += (outputRes >> outputStart) + carryIn;
 
         carryRes = 0;
         if (outputInt >= lengthPower) {
@@ -364,12 +366,12 @@ void kernel indexedAdc(
         }
 
         outputRes = outputInt << outputStart;
-        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
+        nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     }
 }
 
 void kernel indexedSbc(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, global unsigned char* values_global)
+    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, constant unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
@@ -384,12 +386,9 @@ void kernel indexedSbc(
     ulong carryIn = ulongPtr[6];
     ulong carryMask = ulongPtr[7];
     ulong lengthPower = ulongPtr[8];
+    ulong valueBytes = ulongPtr[9];
     ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    ulong i, iLow, iHigh;
-    unsigned char values[256];
-    for (lcv = 0; lcv < 256; lcv++) {
-        values[lcv] = values_global[lcv];
-    }
+    ulong i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
@@ -399,7 +398,11 @@ void kernel indexedSbc(
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
-        outputInt = (outputRes >> outputStart) + lengthPower - (values[inputInt] + carryIn);
+        outputInt = 0;
+        for (j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8 * j);
+        }
+        outputInt = (outputRes >> outputStart) + (lengthPower - (outputInt + carryIn));
 
         carryRes = 0;
         if (outputInt >= lengthPower) {

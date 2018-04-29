@@ -31,7 +31,6 @@ void QEngineOCL::InitOCL()
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
     nrmBuffer = cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
-    loadBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * 256);
 
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
 }
@@ -57,7 +56,7 @@ void QEngineOCL::ResetStateVec(StateVecAlloc nStateVecAlloc)
     ReInitOCL();
 }
 
-void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec, unsigned char* values)
+void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec, unsigned char* values, bitCapInt valuesPower)
 {
     /* Allocate a temporary nStateVec, or use the one supplied. */
     StateVecAlloc nStateVecAlloc;
@@ -65,6 +64,9 @@ void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN
     if (!nVec) {
         nStateVecAlloc = AllocStateVec(maxQPower);
         nStateVec = nStateVecAlloc.aligned;
+    }
+    else {
+        nStateVec = nVec;
     }
     std::fill(nStateVec, nStateVec + maxQPower, Complex16(0.0, 0.0));
 
@@ -76,8 +78,9 @@ void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN
     call->setArg(0, stateBuffer);
     call->setArg(1, ulongBuffer);
     call->setArg(2, nStateBuffer);
+    cl::Buffer loadBuffer;
     if (values) {
-        queue.enqueueWriteBuffer(loadBuffer, CL_FALSE, 0, sizeof(unsigned char) * 256, values);
+        loadBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         call->setArg(3, loadBuffer);
     }
     queue.finish();
@@ -87,7 +90,6 @@ void QEngineOCL::DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN
         cl::NDRange(1)); // local number (per group)
 
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_WRITE, 0, sizeof(Complex16) * maxQPower);
-
     if (!nVec) {
         /* a nStateVec wasn't passed in; swap the one allocated here with stateVec */
         ResetStateVec(nStateVecAlloc);
@@ -280,10 +282,38 @@ void QEngineOCL::DECC(
     INTC(clObj->GetDECCPtr(), toSub, start, length, carryIndex);
 }
 
+/** Set 8 bit register bits based on read from classical memory */
+bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+{
+    SetReg(valueStart, valueLength, 0);
+    bitLenInt valueBytes = (valueLength + 7) / 8;
+    bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
+    bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
+    bitCapInt bciArgs[10] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes, valueLength, 0, 0, 0 };
+
+    StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
+    Complex16* nStateVec = nStateVecAlloc.aligned;
+    DispatchCall(clObj->GetLDAPtr(), bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
+
+    double prob, average, totProb;
+    totProb = 0.0;
+    bitCapInt i, outputInt;
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> valueStart;
+        prob = norm(nStateVec[i]);
+        totProb += prob;
+        average += prob * outputInt;
+    }
+    average /= totProb;
+
+    ResetStateVec(nStateVecAlloc);
+
+    return (unsigned char)(average + 0.5);
+}
 
 /** Add or Subtract based on an indexed load from classical memory */
 bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
-    bitLenInt inputStart, bitLenInt outputStart, bitLenInt carryIndex, unsigned char* values)
+    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     // The carry has to first to be measured for its input value.
     if (M(carryIndex)) {
@@ -295,24 +325,25 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
         X(carryIndex);
     }
 
-    bitCapInt lengthPower = 1 << 8;
+    bitLenInt valueBytes = (valueLength + 7) / 8;
+    bitCapInt lengthPower = 1 << valueLength;
     bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt inputMask = 0xff << inputStart;
-    bitCapInt outputMask = 0xff << outputStart;
-    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask));
-    bitCapInt bciArgs[10] = { maxQPower >> 1, inputStart, inputMask, outputStart, outputMask, otherMask, carryIn,
-        carryMask, lengthPower, 0 };
+    bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
+    bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
+    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask | carryMask));
+    bitCapInt bciArgs[10] = { maxQPower >> 1, indexStart, inputMask, valueStart, outputMask, otherMask, carryIn,
+        carryMask, lengthPower, valueBytes };
 
     StateVecAlloc nStateVecAlloc = AllocStateVec(maxQPower);
     Complex16* nStateVec = nStateVecAlloc.aligned;
-    DispatchCall(call, bciArgs, nStateVec, values);
+    DispatchCall(call, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     double prob, average, totProb;
     totProb = 0.0;
     bitCapInt i, outputInt;
     for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> outputStart;
+        outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
         totProb += prob;
         average += prob * outputInt;
@@ -324,6 +355,19 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
 
     // Return the expectation value.
     return (bitCapInt)(average + 0.5);
+}
+
+
+/** Add based on an indexed load from classical memory */
+bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+{
+    return OpIndexed(clObj->GetADCPtr(), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+}
+
+/** Subtract based on an indexed load from classical memory */
+bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+{
+    return OpIndexed(clObj->GetSBCPtr(), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 } // namespace Qrack
