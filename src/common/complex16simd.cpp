@@ -53,17 +53,13 @@ Complex16Simd Complex16Simd::operator*=(const Complex16Simd& other)
 Complex16Simd Complex16Simd::operator*(const double rhs) const { return _mm_mul_pd(_val, _mm_set1_pd(rhs)); }
 Complex16Simd Complex16Simd::operator/(const Complex16Simd& other) const
 {
-    __v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
-    double denom = temp[0] + temp[1];
-    temp = (__v2df)(other._val);
-    return Complex16Simd(_mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_set_pd(-(temp[1]), temp[1])), _mm_mul_pd(_val, _mm_set1_pd(temp[0]))), _mm_set1_pd(denom)));
+    return Complex16Simd(_mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
+        _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))), _mm_set1_pd(norm(other))));
 }
 Complex16Simd Complex16Simd::operator/=(const Complex16Simd& other)
 {
-    __v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
-    double denom = temp[0] + temp[1];
-    temp = (__v2df)(other._val);
-    _val = _mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_set_pd(-(temp[1]), temp[1])), _mm_mul_pd(_val, _mm_set1_pd(temp[0]))), _mm_set1_pd(denom));
+    _val = _mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
+        _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))), _mm_set1_pd(norm(other)));
     return Complex16Simd(_val);
 }
 Complex16Simd Complex16Simd::operator/(const double rhs) const { return _mm_div_pd(_val, _mm_set1_pd(rhs)); }

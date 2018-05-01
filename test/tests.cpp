@@ -126,9 +126,9 @@ TEST_CASE("test_complex")
     test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
     REQUIRE(test);
 
-    cmplx3 = cmplx1;
-    cmplx3 /= cmplx2;
-    test = (real(cmplx3) > (-2.0 - EPSILON)) && (real(cmplx3) < (-2.0 + EPSILON));
+    cmplx3 = cmplx2;
+    cmplx3 /= cmplx1;
+    test = (real(cmplx3) > (-0.5 - EPSILON)) && (real(cmplx3) < (-0.5 + EPSILON));
     REQUIRE(test);
     test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
     REQUIRE(test);
