@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <math.h>
 #include <memory>
 #include <vector>
 #include <map>
@@ -431,7 +432,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around |1>
      * state.
      */
-    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex) = 0;
+    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * X axis rotation gate
@@ -445,7 +446,7 @@ public:
      *
      * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
      */
-    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex) = 0;
+    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled X axis rotation gate
@@ -460,7 +461,7 @@ public:
      * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
      * 2^denomPower} \f$ around Pauli x axis.
      */
-    virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Y axis rotation gate
@@ -475,7 +476,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Y
      * axis.
      */
-    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex) = 0;
+    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled Y axis rotation gate
@@ -491,7 +492,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
      * 2^denomPower} \f$ around Pauli Y axis.
      */
-    virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Z axis rotation gate
@@ -506,7 +507,7 @@ public:
      * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Z
      * axis.
      */
-    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex) = 0;
+    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled Z axis rotation gate
@@ -522,7 +523,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
      * 2^denomPower} \f$ around Pauli Z axis.
      */
-    virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled "phase shift gate"
@@ -539,7 +540,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
      * numerator} / 2^denomPower} \f$ around |1> state.
      */
-    virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /** @} */
 

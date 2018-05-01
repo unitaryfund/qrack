@@ -505,19 +505,9 @@ void QUnit::RT(double radians, bitLenInt qubit)
         }, qubit);
 }
 
-void QUnit::RTDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RTDyad(numerator, denominator, shards[qubit].mapped);
-}
-
 void QUnit::RX(double radians, bitLenInt qubit)
 {
     shards[qubit].unit->RX(radians, shards[qubit].mapped);
-}
-
-void QUnit::RXDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RXDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::RY(double radians, bitLenInt qubit)
@@ -525,32 +515,15 @@ void QUnit::RY(double radians, bitLenInt qubit)
     shards[qubit].unit->RY(radians, shards[qubit].mapped);
 }
 
-void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RYDyad(numerator, denominator, shards[qubit].mapped);
-}
-
 void QUnit::RZ(double radians, bitLenInt qubit)
 {
     shards[qubit].unit->RZ(radians, shards[qubit].mapped);
-}
-
-void QUnit::RZDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RZDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CRT(radians, b1, b2);
-        }, control, target);
-}
-
-void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRTDyad(numerator, denominator, b1, b2);
         }, control, target);
 }
 
@@ -561,13 +534,6 @@ void QUnit::CRX(double radians, bitLenInt control, bitLenInt target)
         }, control, target);
 }
 
-void QUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRXDyad(numerator, denominator, b1, b2);
-        }, control, target);
-}
-
 void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
@@ -575,24 +541,10 @@ void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
         }, control, target);
 }
 
-void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRYDyad(numerator, denominator, b1, b2);
-        }, control, target);
-}
-
 void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CRZ(radians, b1, b2);
-        }, control, target);
-}
-
-void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRZDyad(numerator, denominator, b1, b2);
         }, control, target);
 }
 
@@ -748,12 +700,9 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     EntangleRange(start, length);
+    EntangleRange(start, 1, flagIndex, 1);
     OrderContiguous(shards[start].unit);
-
-    /* Make sure the flag bit is entangled in the same QU. */
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2);
-        }, start, flagIndex);
+    shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 
 void QUnit::PhaseFlip()

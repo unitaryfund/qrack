@@ -616,9 +616,9 @@ void QEngineCPU::DECSC(
         bitCapInt outInt = (inOutInt - toSub) + (lengthPower);
         bitCapInt outRes;
         if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes;
+            outRes = (outInt << inOutStart) | otherRes;
         } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | carryMask;
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
         }
         bool isOverflow = false;
         // First negative:
@@ -653,6 +653,8 @@ void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, 
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    }
+    else {
         toSub++;
     }
     bitCapInt signMask = 1 << (length - 1);
@@ -674,9 +676,9 @@ void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, 
         bitCapInt outInt = (inOutInt - toSub) + (lengthPower);
         bitCapInt outRes;
         if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes | (carryMask);
+            outRes = (outInt << inOutStart) | otherRes;
         } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes;
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
         }
         bool isOverflow = false;
         // First negative:
@@ -776,10 +778,9 @@ void QEngineCPU::DECBCDC(
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt otherMask = (~(((1 << length) - 1) << start)) & (maxQPower - 1);
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & (~(regMask))) == lcv)
+        if ((lcv & otherMask) == lcv)
             stateVec[lcv] = -stateVec[lcv];
     });
 }
@@ -791,7 +792,7 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     bitCapInt flagMask = 1 << flagIndex;
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((((lcv & regMask) >> (start)) < greaterPerm) & ((lcv & flagMask) == flagMask))
+        if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
             stateVec[lcv] = -stateVec[lcv];
     });
 }

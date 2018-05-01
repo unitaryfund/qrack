@@ -97,12 +97,14 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
+#if ENABLE_OPENCL
         if (num_failed == 0 && !disable_opencl) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
+#endif
     }
 
     return num_failed;

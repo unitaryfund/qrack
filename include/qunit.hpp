@@ -98,21 +98,13 @@ public:
      */
 
     virtual void RT(double radians, bitLenInt qubit);
-    virtual void RTDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void RX(double radians, bitLenInt qubit);
-    virtual void RXDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void CRX(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void RY(double radians, bitLenInt qubit);
-    virtual void RYDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void CRY(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void RZ(double radians, bitLenInt qubit);
-    virtual void RZDyad(int numerator, int denominator, bitLenInt qubit);
     virtual void CRZ(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void CRT(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /** @} */
 

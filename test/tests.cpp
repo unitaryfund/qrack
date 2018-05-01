@@ -194,6 +194,53 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     });
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
+{
+    qftReg->SetPermutation(0x55F0);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
+    qftReg->CNOT(8, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x55A5));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
+{
+    qftReg->SetPermutation(0x55F0);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
+    qftReg->AntiCNOT(8, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x555A));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
+{
+    qftReg->SetPermutation(0xCAC);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
+    qftReg->CCNOT(8, 4, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCA4));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
+{
+    qftReg->SetPermutation(0xCAC);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
+    qftReg->AntiCCNOT(8, 4, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAD));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_not")
+{
+    qftReg->SetPermutation(0x1f);
+    qftReg->X(0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
+{
+    qftReg->SetPermutation(0xb2);
+    qftReg->Swap(0, 4, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
+}
+
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
     qftReg->SetReg(0, 8, 0x03);
@@ -731,52 +778,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_lsr")
     REQUIRE_THAT(qftReg, HasProbability(64));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
-{
-    REQUIRE(qftReg->M(0) == 0);
-    qftReg->SetReg(0, 8, 0x03);
-    REQUIRE(qftReg->M(0) == true);
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
-{
-    REQUIRE(qftReg->MReg(0, 8) == 0);
-    qftReg->SetReg(0, 8, 0x2b);
-    REQUIRE(qftReg->MReg(0, 8) == 0x2b);
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
-{
-    qftReg->SetPermutation(0x55F0);
-    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
-    qftReg->CNOT(8, 0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0x55A5));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
-{
-    qftReg->SetPermutation(0x55F0);
-    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
-    qftReg->AntiCNOT(8, 0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0x555A));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
-{
-    qftReg->SetPermutation(0xCAC);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
-    qftReg->CCNOT(8, 4, 0, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0xCA4));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
-{
-    qftReg->SetPermutation(0xCAC);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
-    qftReg->AntiCCNOT(8, 4, 0, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAD));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;
@@ -789,19 +790,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
         } else {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
         }
-    }
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
-{
-    int i;
-    int start = 0x08;
-
-    qftReg->SetPermutation(start);
-    for (i = 0; i < 8; i++) {
-        qftReg->DEC(9, 0, 8);
-        start -= 9;
-        REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
 }
 
@@ -822,6 +810,81 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
+{
+    int i;
+
+    qftReg->SetPermutation(0x95);
+    for (i = 0; i < 8; i++) {
+        qftReg->INCBCD(1, 0, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x96 + i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 4));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
+{
+    int i;
+
+    qftReg->SetPermutation(0x095);
+    for (i = 0; i < 8; i++) {
+        qftReg->INCBCDC(1, 0, 8, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x096 + i));
+        }
+        else if (i == 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02 + i - 5));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
+{
+    int i;
+
+    qftReg->SetPermutation(247 + 256);
+    for (i = 0; i < 10; i++) {
+        qftReg->INCSC(1, 0, 8, 9, 8);
+        if (i < 7) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 10, 249 + i));
+        } else if (i == 7) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 10, 0x100));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 10, 2 + i - 8));
+        }
+    }
+
+    qftReg->SetPermutation(247 + 256);
+    for (i = 0; i < 10; i++) {
+        qftReg->INCSC(1, 0, 8, 8);
+        if (i < 7) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 10, 249 + i));
+        } else if (i == 7) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 10, 0x100));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 10, 2 + i - 8));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
+{
+    int i;
+    int start = 0x08;
+
+    qftReg->SetPermutation(start);
+    for (i = 0; i < 8; i++) {
+        qftReg->DEC(9, 0, 8);
+        start -= 9;
+        REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 {
     int i;
@@ -829,7 +892,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
         qftReg->DECC(1, 0, 8, 8);
-
         if (i < 6) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {
@@ -840,30 +902,115 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
     int i;
 
-    qftReg->SetPermutation(0x07f);
-    for (i = 0; i < 8; i++) {
-        qftReg->INCSC(1, 8, 8, 18, 19);
-        REQUIRE_THAT(qftReg, HasProbability(0x07f + ((i + 1) << 8)));
+    qftReg->SetPermutation(7);
+    for (i = 0; i < 10; i++) {
+        qftReg->DECSC(1, 0, 8, 9, 8);
+        if (i < 6) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
+        } else if (i == 6) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0xff));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 253 - i + 7 + 256));
+        }
+    }
+
+    qftReg->SetPermutation(7);
+    for (i = 0; i < 10; i++) {
+        qftReg->DECSC(1, 0, 8, 8);
+        if (i < 6) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
+        } else if (i == 6) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0xff));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 253 - i + 7 + 256));
+        }
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_not")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    qftReg->SetPermutation(0x1f);
-    qftReg->X(0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
+    double qftProbs[20];
+    qftReg->SetPermutation(85);
+
+    int i, j;
+
+    // std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
+    //           << std::endl;
+
+    for (i = 0; i < 8; i += 2) {
+        qftReg->H(i);
+    }
+
+    // std::cout << "Initial:" << std::endl;
+    // for (i = 0; i < 8; i++) {
+    //     std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
+    // }
+
+    qftReg->QFT(0, 8);
+
+    // std::cout << "Final:" << std::endl;
+    // for (i = 0; i < 8; i++) {
+    //    qftProbs[i] = qftReg->Prob(i);
+    //    std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
+    //}
+
+    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an exception. 
+}
+/*
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
+{
+    qftReg->SetReg(0, 8, 0x01);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->H(1);
+    qftReg->ZeroPhaseFlip(1, 1);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+}
+*/
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
+{
+    qftReg->SetReg(0, 8, 0x01);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->H(1);
+    qftReg->CPhaseFlipIfLess(1, 1, 1, 0);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetReg(0, 8, 0x00);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->H(1);
+    qftReg->CPhaseFlipIfLess(1, 1, 1, 0);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")
 {
-    qftReg->SetPermutation(0xb2);
-    qftReg->Swap(0, 4, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
+    qftReg->SetReg(0, 8, 0x00);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->PhaseFlip();
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
+{
+    REQUIRE(qftReg->M(0) == 0);
+    qftReg->SetReg(0, 8, 0x03);
+    REQUIRE(qftReg->M(0) == true);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
+{
+    REQUIRE(qftReg->MReg(0, 8) == 0);
+    qftReg->SetReg(0, 8, 0x2b);
+    REQUIRE(qftReg->MReg(0, 8) == 0x2b);
+}
+
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
@@ -983,36 +1130,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     qftReg->H(9, 9);
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
     REQUIRE(expectation == 0x00);
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
-{
-    double qftProbs[20];
-    qftReg->SetPermutation(85);
-
-    int i, j;
-
-    // std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
-    //           << std::endl;
-
-    for (i = 0; i < 8; i += 2) {
-        qftReg->H(i);
-    }
-
-    // std::cout << "Initial:" << std::endl;
-    // for (i = 0; i < 8; i++) {
-    //     std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
-    // }
-
-    qftReg->QFT(0, 8);
-
-    // std::cout << "Final:" << std::endl;
-    // for (i = 0; i < 8; i++) {
-    //    qftProbs[i] = qftReg->Prob(i);
-    //    std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
-    //}
-
-    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an exception. 
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
