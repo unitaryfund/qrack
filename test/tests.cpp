@@ -429,8 +429,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_and")
 {
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
-    qftReg->CLAND(0, 0x0f, 4, 4); // 0x0e & 0x0f
-    REQUIRE_THAT(qftReg, HasProbability(0xee));
+    qftReg->CLAND(0, 0x0c, 4, 4); // 0x0e & 0x0f
+    REQUIRE_THAT(qftReg, HasProbability(0xce));
     qftReg->SetPermutation(0x3e);
     qftReg->AND(0, 4, 8, 4); // 0xe & 0x3
     REQUIRE_THAT(qftReg, HasProbability(0x23e));
@@ -438,10 +438,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_and")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_or")
 {
-    qftReg->SetPermutation(0x0e);
-    REQUIRE_THAT(qftReg, HasProbability(0x0e));
-    qftReg->CLOR(0, 0x0f, 4, 4); // 0x0e | 0x0f
-    REQUIRE_THAT(qftReg, HasProbability(0xfe));
+    qftReg->SetPermutation(0x0c);
+    REQUIRE_THAT(qftReg, HasProbability(0x0c));
+    qftReg->CLOR(0, 0x0d, 4, 4); // 0x0e | 0x0f
+    REQUIRE_THAT(qftReg, HasProbability(0xdc));
     qftReg->SetPermutation(0x3e);
     qftReg->OR(0, 4, 8, 4); // 0xe | 0x3
     REQUIRE_THAT(qftReg, HasProbability(0xf3e));
@@ -451,8 +451,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_xor")
 {
     qftReg->SetPermutation(0x0e);
     REQUIRE_THAT(qftReg, HasProbability(0x0e));
-    qftReg->CLXOR(0, 0x0f, 4, 4); // 0x0e ^ 0x0f
-    REQUIRE_THAT(qftReg, HasProbability(0x1e));
+    qftReg->CLXOR(0, 0x0d, 4, 4); // 0x0e ^ 0x0f
+    REQUIRE_THAT(qftReg, HasProbability(0x3e));
     qftReg->SetPermutation(0x3e);
     qftReg->XOR(0, 4, 8, 4); // 0xe ^ 0x3
     REQUIRE_THAT(qftReg, HasProbability(0xd3e));
