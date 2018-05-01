@@ -158,10 +158,10 @@ public:
      * @{
      */
 
+    virtual void CopyState(QUnitPtr orig);
     virtual void CopyState(QInterfacePtr orig);
     virtual double Prob(bitLenInt qubit);
     virtual double ProbAll(bitCapInt fullRegister);
-    virtual void ProbArray(double* probArray);
     virtual void SetBit(bitLenInt qubit1, bool value);
 
     /** @} */

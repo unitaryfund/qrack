@@ -38,19 +38,42 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std
     }
 }
 
+void QUnit::CopyState(QUnitPtr orig)
+{
+    shards.clear();
+    SetQubitCount(orig->GetQubitCount());
+
+    /* Set up the shards to refer to the new unit. */
+    std::map<QInterfacePtr, QInterfacePtr> otherUnits;
+    for (auto otherShard :orig->shards) {
+        QEngineShard shard;
+        shard.mapped = otherShard.mapped;
+        if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
+            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, engine, otherShard.unit->GetQubitCount(), 0, rand_generator);
+        }
+        shard.unit = otherUnits[otherShard.unit];
+        shards.push_back(shard);
+    }
+
+    for (auto otherUnit : otherUnits) {
+        otherUnits[otherUnit.first]->CopyState(otherUnit.first);
+    }
+}
+
 void QUnit::CopyState(QInterfacePtr orig)
 {
-    QInterfacePtr unit = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
+    QInterfacePtr unit = CreateQuantumInterface(engine, engine, orig->GetQubitCount(), 0, rand_generator);
     unit->CopyState(orig);
 
     shards.clear();
     SetQubitCount(orig->GetQubitCount());
 
     /* Set up the shards to refer to the new unit. */
-    bitLenInt i = 0;
-    for (auto shard : shards) {
+    for (bitLenInt i = 0; i < (orig->GetQubitCount()); i++) {
+        QEngineShard shard;
         shard.unit = unit;
-        shard.mapped = i++;
+        shard.mapped = i;
+        shards.push_back(shard);
     }
 }
 
@@ -330,13 +353,6 @@ double QUnit::ProbAll(bitCapInt perm)
     }
 
     return result;
-}
-
-void QUnit::ProbArray(double* probArray)
-{
-    for (size_t bit = 0; bit < shards.size(); bit++) {
-        probArray[bit] = Prob(bit);
-    }
 }
 
 /// Measure a bit

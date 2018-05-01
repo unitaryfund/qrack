@@ -17,8 +17,7 @@
 
 #include "catch.hpp"
 #include "qinterface.hpp"
-#include "qengine_cpu.hpp"
-#include "qunit.hpp"
+#include "qfactory.hpp"
 
 #include "tests.hpp"
 
@@ -73,6 +72,73 @@ void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
 void log(QInterfacePtr p)
 {
     std::cout << std::endl << std::showpoint << p << std::endl;
+}
+
+TEST_CASE("test_complex")
+{
+    bool test;
+    Complex16 cmplx1(1.0, -1.0);
+    Complex16 cmplx2(-0.5, 0.5);
+    Complex16 cmplx3(0.0, 0.0);
+
+    REQUIRE(cmplx1 != cmplx2);
+
+    REQUIRE(conj(cmplx1) == Complex16(1.0, 1.0));
+
+    test = (abs(cmplx1) > (sqrt(2.0) - EPSILON)) && (abs(cmplx1) < (sqrt(2.0) + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = polar(1.0, M_PI / 2.0);
+    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = cmplx1 + cmplx2;
+    test = (real(cmplx3) > (0.5 - EPSILON)) && (real(cmplx3) < (0.5 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (-0.5 - EPSILON)) && (imag(cmplx3) < (-0.5 + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = cmplx1 - cmplx2;
+    test = (real(cmplx3) > (1.5 - EPSILON)) && (real(cmplx3) < (1.5 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (-1.5 - EPSILON)) && (imag(cmplx3) < (-1.5 + EPSILON));
+    REQUIRE(test);
+
+
+    cmplx3 = cmplx1 * cmplx2;
+    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = cmplx1;
+    cmplx3 *= cmplx2;
+    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = cmplx1 / cmplx2;
+    test = (real(cmplx3) > (-2.0 - EPSILON)) && (real(cmplx3) < (-2.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = cmplx1;
+    cmplx3 /= cmplx2;
+    test = (real(cmplx3) > (-2.0 - EPSILON)) && (real(cmplx3) < (-2.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
+    REQUIRE(test);
+
+    cmplx3 = 2.0 * cmplx1;
+    test = (real(cmplx3) > (2.0 - EPSILON)) && (real(cmplx3) < (2.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
+    REQUIRE(test);
+
 }
 
 TEST_CASE("test_qengine_cpu_par_for")
@@ -793,6 +859,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
+{
+    int i;
+
+    qftReg->SetPermutation(250);
+    for (i = 0; i < 8; i++) {
+        qftReg->INCS(1, 0, 8, 9);
+        if (i < 5) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
+        }
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 {
     int i;
@@ -880,6 +961,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
     qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
         qftReg->DEC(9, 0, 8);
+        start -= 9;
+        REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
+{
+    int i;
+    int start = 0x08;
+
+    qftReg->SetPermutation(start);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECS(9, 0, 8, 9);
         start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
@@ -1166,6 +1260,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
     qftReg->Cohere(qftReg2);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
+{
+    qftReg->SetPermutation(0x02);
+    qftReg->SetBit(0, true);
+    qftReg->SetBit(1, false);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_proball")
+{
+    qftReg->SetPermutation(0x02);
+    REQUIRE(qftReg->ProbAll(0x02) > 0.99);
+    REQUIRE(qftReg->ProbAll(0x03) < 0.01);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")

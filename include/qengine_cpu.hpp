@@ -197,7 +197,6 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual double Prob(bitLenInt qubitIndex);
     virtual double ProbAll(bitCapInt fullRegister);
-    virtual void ProbArray(double* probArray);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /** @} */

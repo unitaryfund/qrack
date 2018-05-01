@@ -1000,13 +1000,6 @@ public:
     virtual double ProbAll(bitCapInt fullRegister) = 0;
 
     /**
-     * Direct measure of all bit probabilities in register to be in |1> state
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual void ProbArray(double* probArray) = 0;
-
-    /**
      * Set individual bit to pure |0> (false) or |1> (true) state
      *
      * To set a bit, the bit is first measured. If the result of measurement
