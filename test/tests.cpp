@@ -960,7 +960,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
     // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an exception. 
 }
-/*
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 {
     qftReg->SetReg(0, 8, 0x01);
@@ -970,7 +970,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
-*/
+
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {

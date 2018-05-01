@@ -198,6 +198,10 @@ QInterfacePtr QUnit::Entangle(std::initializer_list<bitLenInt *> bits)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
+    if (length == 1) {
+        return shards[start].unit;
+    }
+
     std::vector<bitLenInt> bits(length);
     std::vector<bitLenInt *> ebits(length);
     for (auto i = 0; i < length; i++) {
@@ -246,6 +250,10 @@ void QUnit::EntangleAndCall(F fn, B ... bits)
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
+    if (unit->GetQubitCount() == 1) {
+        return;
+    }
+
     /* Create a sortable collection of all of the bits that are in the unit. */
     std::vector<QSortEntry> bits(unit->GetQubitCount());
 
