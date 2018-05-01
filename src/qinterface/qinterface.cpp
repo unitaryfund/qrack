@@ -184,8 +184,8 @@ void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
         } else {
             Swap(end - 1, end - 2);
             ROL(shift, start, length);
-            Swap(end - 1, end - 2);
             SetReg(start, shift, 0);
+            Swap(end - 1, end - 2);
         }
     }
 }
@@ -200,8 +200,8 @@ void QInterface::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
         } else {
             Swap(end - 1, end - 2);
             ROR(shift, start, length);
+            SetReg(end - shift - 1, shift, 0);
             Swap(end - 1, end - 2);
-            SetReg(end - shift, shift, 0);
         }
     }
 }
@@ -223,12 +223,11 @@ void QInterface::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
 void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
         if (shift >= length) {
             SetReg(start, length, 0);
         } else {
+            SetReg(start, shift, 0);
             ROR(shift, start, length);
-            SetReg(end - shift, shift, 0);
         }
     }
 }
