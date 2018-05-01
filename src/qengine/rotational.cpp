@@ -36,7 +36,7 @@ void QEngineCPU::RTDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    RT((M_PI * numerator * 2) / denominator, qubit);
+    RT((M_PI * numerator * 2) / (1<<denominator), qubit);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
@@ -62,7 +62,7 @@ void QEngineCPU::RXDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    RX((-M_PI * numerator * 2) / denominator, qubit);
+    RX((-M_PI * numerator * 2) / (1<<denominator), qubit);
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
@@ -88,7 +88,7 @@ void QEngineCPU::RYDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    RY((-M_PI * numerator * 2) / denominator, qubit);
+    RY((-M_PI * numerator * 2) / (1<<denominator), qubit);
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
@@ -113,7 +113,7 @@ void QEngineCPU::RZDyad(int numerator, int denominator, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    RZ((-M_PI * numerator * 2) / denominator, qubit);
+    RZ((-M_PI * numerator * 2) / (1<<denominator), qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
@@ -140,7 +140,7 @@ void QEngineCPU::CRTDyad(int numerator, int denominator, bitLenInt control, bitL
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (control == target)
         throw std::invalid_argument("CRTDyad control bit cannot also be target.");
-    CRT((-M_PI * numerator * 2) / denominator, control, target);
+    CRT((-M_PI * numerator * 2) / (1<<denominator), control, target);
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
@@ -170,7 +170,7 @@ void QEngineCPU::CRXDyad(int numerator, int denominator, bitLenInt control, bitL
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (control == target)
         throw std::invalid_argument("CRXDyad control bit cannot also be target.");
-    CRX((-M_PI * numerator * 2) / denominator, control, target);
+    CRX((-M_PI * numerator * 2) / (1<<denominator), control, target);
 }
 
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
@@ -198,7 +198,7 @@ void QEngineCPU::CRYDyad(int numerator, int denominator, bitLenInt control, bitL
 {
     if (control == target)
         throw std::invalid_argument("CRYDyad control bit cannot also be target.");
-    CRY((-M_PI * numerator * 2) / denominator, control, target);
+    CRY((-M_PI * numerator * 2) / (1<<denominator), control, target);
 }
 
 /// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
@@ -224,7 +224,7 @@ void QEngineCPU::CRZDyad(int numerator, int denominator, bitLenInt control, bitL
 {
     if (control == target)
         throw std::invalid_argument("CRZDyad control bit cannot also be target.");
-    CRZ((-M_PI * numerator * 2) / denominator, control, target);
+    CRZ((-M_PI * numerator * 2) / (1<<denominator), control, target);
 }
 
 } // namespace Qrack
