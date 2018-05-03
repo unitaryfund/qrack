@@ -18,7 +18,7 @@ namespace Qrack {
 /** SIMD implementation of the double precision complex vector type of length 2. */
 
 Complex16x2Simd::Complex16x2Simd() {}
-Complex16x2Simd::Complex16x2Simd(__m256d v2) { _val2 = v2; }
+Complex16x2Simd::Complex16x2Simd(const __m256d& v2) { _val2 = v2; }
 Complex16x2Simd::Complex16x2Simd(double real1, double imag1, double real2, double imag2) { _val2 = _mm256_set_pd(imag1, real1, imag2, real2); }
 Complex16x2Simd Complex16x2Simd::operator+(const Complex16x2Simd& other) const
 {

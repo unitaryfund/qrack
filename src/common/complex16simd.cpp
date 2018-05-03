@@ -19,7 +19,7 @@ namespace Qrack {
 /** SIMD implementation of the double precision complex type. */
 
 Complex16Simd::Complex16Simd() {}
-Complex16Simd::Complex16Simd(__m128d v) { _val = v; }
+Complex16Simd::Complex16Simd(const __m128d& v) { _val = v; }
 Complex16Simd::Complex16Simd(double real, double imag) { _val = _mm_set_pd(imag, real); }
 Complex16Simd Complex16Simd::operator+(const Complex16Simd& other) const
 {

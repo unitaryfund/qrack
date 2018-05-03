@@ -25,7 +25,7 @@ struct Complex16Simd {
     __m128d _val;
 
     Complex16Simd();
-    Complex16Simd(__m128d v);
+    Complex16Simd(const __m128d& v);
     Complex16Simd(double real, double imag);
     Complex16Simd operator+(const Complex16Simd& other) const;
     Complex16Simd operator+=(const Complex16Simd& other);

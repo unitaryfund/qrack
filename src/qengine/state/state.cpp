@@ -108,9 +108,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
 #if ENABLE_AVX
-            ComplexUnion qubit;
-            qubit.cmplx[0] = stateVec[lcv + offset1];
-            qubit.cmplx[1] = stateVec[lcv + offset2];
+            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
             qubit.cmplx2 = nrm * ((mtrxCol1.cmplx2 * dupeLo(qubit.cmplx2)) + (mtrxCol2.cmplx2 * dupeHi(qubit.cmplx2)));
             rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
