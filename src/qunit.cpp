@@ -38,19 +38,42 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std
     }
 }
 
+void QUnit::CopyState(QUnitPtr orig)
+{
+    shards.clear();
+    SetQubitCount(orig->GetQubitCount());
+
+    /* Set up the shards to refer to the new unit. */
+    std::map<QInterfacePtr, QInterfacePtr> otherUnits;
+    for (auto otherShard :orig->shards) {
+        QEngineShard shard;
+        shard.mapped = otherShard.mapped;
+        if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
+            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, engine, otherShard.unit->GetQubitCount(), 0, rand_generator);
+        }
+        shard.unit = otherUnits[otherShard.unit];
+        shards.push_back(shard);
+    }
+
+    for (auto otherUnit : otherUnits) {
+        otherUnit.second->CopyState(otherUnit.first);
+    }
+}
+
 void QUnit::CopyState(QInterfacePtr orig)
 {
-    QInterfacePtr unit = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
+    QInterfacePtr unit = CreateQuantumInterface(engine, engine, orig->GetQubitCount(), 0, rand_generator);
     unit->CopyState(orig);
 
     shards.clear();
     SetQubitCount(orig->GetQubitCount());
 
     /* Set up the shards to refer to the new unit. */
-    bitLenInt i = 0;
-    for (auto shard : shards) {
+    for (bitLenInt i = 0; i < (orig->GetQubitCount()); i++) {
+        QEngineShard shard;
         shard.unit = unit;
-        shard.mapped = i++;
+        shard.mapped = i;
+        shards.push_back(shard);
     }
 }
 
@@ -198,6 +221,10 @@ QInterfacePtr QUnit::Entangle(std::initializer_list<bitLenInt *> bits)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
+    if (length == 1) {
+        return shards[start].unit;
+    }
+
     std::vector<bitLenInt> bits(length);
     std::vector<bitLenInt *> ebits(length);
     for (auto i = 0; i < length; i++) {
@@ -246,6 +273,10 @@ void QUnit::EntangleAndCall(F fn, B ... bits)
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
+    if (unit->GetQubitCount() == 1) {
+        return;
+    }
+
     /* Create a sortable collection of all of the bits that are in the unit. */
     std::vector<QSortEntry> bits(unit->GetQubitCount());
 
@@ -322,13 +353,6 @@ double QUnit::ProbAll(bitCapInt perm)
     }
 
     return result;
-}
-
-void QUnit::ProbArray(double* probArray)
-{
-    for (size_t bit = 0; bit < shards.size(); bit++) {
-        probArray[bit] = Prob(bit);
-    }
 }
 
 /// Measure a bit
@@ -505,19 +529,9 @@ void QUnit::RT(double radians, bitLenInt qubit)
         }, qubit);
 }
 
-void QUnit::RTDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RTDyad(numerator, denominator, shards[qubit].mapped);
-}
-
 void QUnit::RX(double radians, bitLenInt qubit)
 {
     shards[qubit].unit->RX(radians, shards[qubit].mapped);
-}
-
-void QUnit::RXDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RXDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::RY(double radians, bitLenInt qubit)
@@ -525,32 +539,15 @@ void QUnit::RY(double radians, bitLenInt qubit)
     shards[qubit].unit->RY(radians, shards[qubit].mapped);
 }
 
-void QUnit::RYDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RYDyad(numerator, denominator, shards[qubit].mapped);
-}
-
 void QUnit::RZ(double radians, bitLenInt qubit)
 {
     shards[qubit].unit->RZ(radians, shards[qubit].mapped);
-}
-
-void QUnit::RZDyad(int numerator, int denominator, bitLenInt qubit)
-{
-    shards[qubit].unit->RZDyad(numerator, denominator, shards[qubit].mapped);
 }
 
 void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CRT(radians, b1, b2);
-        }, control, target);
-}
-
-void QUnit::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRTDyad(numerator, denominator, b1, b2);
         }, control, target);
 }
 
@@ -561,13 +558,6 @@ void QUnit::CRX(double radians, bitLenInt control, bitLenInt target)
         }, control, target);
 }
 
-void QUnit::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRXDyad(numerator, denominator, b1, b2);
-        }, control, target);
-}
-
 void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
@@ -575,24 +565,10 @@ void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
         }, control, target);
 }
 
-void QUnit::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRYDyad(numerator, denominator, b1, b2);
-        }, control, target);
-}
-
 void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
             unit->CRZ(radians, b1, b2);
-        }, control, target);
-}
-
-void QUnit::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CRZDyad(numerator, denominator, b1, b2);
         }, control, target);
 }
 
@@ -748,12 +724,9 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     EntangleRange(start, length);
+    EntangleRange(start, 1, flagIndex, 1);
     OrderContiguous(shards[start].unit);
-
-    /* Make sure the flag bit is entangled in the same QU. */
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
-            unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2);
-        }, start, flagIndex);
+    shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 
 void QUnit::PhaseFlip()

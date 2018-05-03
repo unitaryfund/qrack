@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <math.h>
 #include <memory>
 #include <vector>
 #include <map>
@@ -428,10 +429,10 @@ public:
     /**
      * Dyadic fraction phase shift gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around |1>
+     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around |1>
      * state.
      */
-    virtual void RTDyad(int numerator, int denominator, bitLenInt qubitIndex) = 0;
+    virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * X axis rotation gate
@@ -443,9 +444,9 @@ public:
     /**
      * Dyadic fraction X axis rotation gate
      *
-     * Rotates \f$ e^{i*{\pi * numerator} / denominator} \f$ on Pauli x axis.
+     * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
      */
-    virtual void RXDyad(int numerator, int denominator, bitLenInt qubitIndex) = 0;
+    virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled X axis rotation gate
@@ -458,9 +459,9 @@ public:
      * Controlled dyadic fraction X axis rotation gate
      *
      * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * denominator} \f$ around Pauli x axis.
+     * 2^denomPower} \f$ around Pauli x axis.
      */
-    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Y axis rotation gate
@@ -472,10 +473,10 @@ public:
     /**
      * Dyadic fraction Y axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Y
+     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Y
      * axis.
      */
-    virtual void RYDyad(int numerator, int denominator, bitLenInt qubitIndex) = 0;
+    virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled Y axis rotation gate
@@ -489,9 +490,9 @@ public:
      * Controlled dyadic fraction y axis rotation gate
      *
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * denominator} \f$ around Pauli Y axis.
+     * 2^denomPower} \f$ around Pauli Y axis.
      */
-    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Z axis rotation gate
@@ -503,10 +504,10 @@ public:
     /**
      * Dyadic fraction Z axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Z
+     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Z
      * axis.
      */
-    virtual void RZDyad(int numerator, int denominator, bitLenInt qubitIndex) = 0;
+    virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled Z axis rotation gate
@@ -520,9 +521,9 @@ public:
      * Controlled dyadic fraction Z axis rotation gate
      *
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * denominator} \f$ around Pauli Z axis.
+     * 2^denomPower} \f$ around Pauli Z axis.
      */
-    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled "phase shift gate"
@@ -537,9 +538,9 @@ public:
      * Controlled dyadic fraction "phase shift gate"
      *
      * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
-     * numerator} / denominator} \f$ around |1> state.
+     * numerator} / 2^denomPower} \f$ around |1> state.
      */
-    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -614,10 +615,10 @@ public:
     /**
      * Bitwise dyadic fraction phase shift gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around |1>
+     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around |1>
      * state.
      */
-    virtual void RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    virtual void RTDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise X axis rotation gate
@@ -629,9 +630,9 @@ public:
     /**
      * Bitwise dyadic fraction X axis rotation gate
      *
-     * Rotates \f$ e^{i*{\pi * numerator} / denominator} \f$ on Pauli x axis.
+     * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
      */
-    virtual void RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    virtual void RXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled X axis rotation gate
@@ -644,9 +645,9 @@ public:
      * Bitwise controlled dyadic fraction X axis rotation gate
      *
      * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * denominator} \f$ around Pauli x axis.
+     * 2^denomPower} \f$ around Pauli x axis.
      */
-    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise Y axis rotation gate
@@ -658,10 +659,10 @@ public:
     /**
      * Bitwise dyadic fraction Y axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Y
+     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Y
      * axis.
      */
-    virtual void RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    virtual void RYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled Y axis rotation gate
@@ -675,9 +676,9 @@ public:
      * Bitwise controlled dyadic fraction y axis rotation gate
      *
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * denominator} \f$ around Pauli Y axis.
+     * 2^denomPower} \f$ around Pauli Y axis.
      */
-    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise Z axis rotation gate
@@ -689,10 +690,10 @@ public:
     /**
      * Bitwise dyadic fraction Z axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / denominator} \f$ around Pauli Z
+     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Z
      * axis.
      */
-    virtual void RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length);
+    virtual void RZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled Z axis rotation gate
@@ -706,9 +707,9 @@ public:
      * Bitwise controlled dyadic fraction Z axis rotation gate
      *
      * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * denominator} \f$ around Pauli Z axis.
+     * 2^denomPower} \f$ around Pauli Z axis.
      */
-    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled "phase shift gate"
@@ -722,9 +723,9 @@ public:
      * Bitwise controlled dyadic fraction "phase shift gate"
      *
      * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
-     * numerator} / denominator} \f$ around |1> state.
+     * numerator} / 2^denomPower} \f$ around |1> state.
      */
-    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled Y gate
@@ -997,13 +998,6 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual double ProbAll(bitCapInt fullRegister) = 0;
-
-    /**
-     * Direct measure of all bit probabilities in register to be in |1> state
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual void ProbArray(double* probArray) = 0;
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state

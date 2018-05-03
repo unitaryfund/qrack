@@ -110,21 +110,13 @@ public:
      */
 
     virtual void RT(double radians, bitLenInt qubitIndex);
-    virtual void RTDyad(int numerator, int denominator, bitLenInt qubitIndex);
     virtual void RX(double radians, bitLenInt qubitIndex);
-    virtual void RXDyad(int numerator, int denominator, bitLenInt qubitIndex);
     virtual void CRX(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void RY(double radians, bitLenInt qubitIndex);
-    virtual void RYDyad(int numerator, int denominator, bitLenInt qubitIndex);
     virtual void CRY(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void RZ(double radians, bitLenInt qubitIndex);
-    virtual void RZDyad(int numerator, int denominator, bitLenInt qubitIndex);
     virtual void CRZ(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
     virtual void CRT(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -205,7 +197,6 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual double Prob(bitLenInt qubitIndex);
     virtual double ProbAll(bitCapInt fullRegister);
-    virtual void ProbArray(double* probArray);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /** @} */
