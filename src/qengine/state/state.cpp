@@ -379,19 +379,6 @@ double QEngineCPU::ProbAll(bitCapInt fullRegister)
     return norm(stateVec[fullRegister]);
 }
 
-/// PSEUDO-QUANTUM Direct measure of all bit probabilities in register to be in |1> state
-void QEngineCPU::ProbArray(double* probArray)
-{
-    if (runningNorm != 1.0) {
-        NormalizeState();
-    }
-
-    bitCapInt lcv;
-    for (lcv = 0; lcv < maxQPower; lcv++) {
-        probArray[lcv] = norm(stateVec[lcv]);
-    }
-}
-
 void QEngineCPU::NormalizeState()
 {
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {

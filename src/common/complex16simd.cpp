@@ -41,33 +41,25 @@ Complex16Simd Complex16Simd::operator-=(const Complex16Simd& other)
 }
 Complex16Simd Complex16Simd::operator*(const Complex16Simd& other) const
 {
-    return Complex16Simd(_mm_add_pd(_mm_mul_pd(_val, _mm_shuffle_pd(other._val, -(other._val), 3)),
-        _mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, other._val, 0))));
+    return Complex16Simd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd((-other._val), other._val, 3)),
+        _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))));
 }
 Complex16Simd Complex16Simd::operator*=(const Complex16Simd& other)
 {
-    _val = _mm_add_pd(_mm_mul_pd(_val, _mm_shuffle_pd(other._val, -(other._val), 3)),
-        _mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, other._val, 0)));
+    _val = _mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd((-other._val), other._val, 3)),
+        _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0)));
     return Complex16Simd(_val);
 }
 Complex16Simd Complex16Simd::operator*(const double rhs) const { return _mm_mul_pd(_val, _mm_set1_pd(rhs)); }
 Complex16Simd Complex16Simd::operator/(const Complex16Simd& other) const
 {
-    __v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
-    double denom = temp[0] + temp[1];
-    temp = (__v2df)(other._val);
-    return Complex16Simd(_mm_div_pd(_mm_add_pd(_mm_mul_pd(_val, _mm_set_pd(-(temp[1]), temp[1])),
-                                        _mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_set1_pd(temp[0]))),
-        _mm_set1_pd(denom)));
+    return Complex16Simd(_mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
+        _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))), _mm_set1_pd(norm(other))));
 }
 Complex16Simd Complex16Simd::operator/=(const Complex16Simd& other)
 {
-    __v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
-    double denom = temp[0] + temp[1];
-    temp = (__v2df)(other._val);
-    _val = _mm_div_pd(_mm_add_pd(_mm_mul_pd(_val, _mm_set_pd(-(temp[1]), temp[1])),
-                          _mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_set1_pd(temp[0]))),
-        _mm_set1_pd(denom));
+    _val = _mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
+        _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))), _mm_set1_pd(norm(other)));
     return Complex16Simd(_val);
 }
 Complex16Simd Complex16Simd::operator/(const double rhs) const { return _mm_div_pd(_val, _mm_set1_pd(rhs)); }
@@ -122,6 +114,6 @@ double norm(const Complex16Simd& cmplx)
 double abs(const Complex16Simd& cmplx) { return sqrt(norm(cmplx)); }
 Complex16Simd polar(const double rho, const double theta = 0)
 {
-    return Complex16Simd(_mm_set1_pd(rho) * _mm_set_pd(cos(theta), sin(theta)));
+    return Complex16Simd(_mm_set1_pd(rho) * _mm_set_pd(sin(theta), cos(theta)));
 }
 } // namespace Qrack
