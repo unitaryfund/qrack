@@ -121,8 +121,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     std::shared_ptr<std::default_random_engine> rng = std::make_shared<std::default_random_engine>();
     rng->seed(rngSeed);
 
-    engineType = testEngineType;
-    subEngineType = testSubEngineType;
-
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 20, 0, rng);
 }

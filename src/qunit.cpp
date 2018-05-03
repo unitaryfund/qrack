@@ -56,7 +56,7 @@ void QUnit::CopyState(QUnitPtr orig)
     }
 
     for (auto otherUnit : otherUnits) {
-        otherUnits[otherUnit.first]->CopyState(otherUnit.first);
+        otherUnit.second->CopyState(otherUnit.first);
     }
 }
 

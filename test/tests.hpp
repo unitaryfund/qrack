@@ -105,13 +105,6 @@ inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePt
 class QInterfaceTestFixture {
 protected:
     Qrack::QInterfacePtr qftReg;
-    /*
-     * Default engine type to run the tests with. Global because catch doesn't
-     * support parameterization.
-     */
-    enum Qrack::QInterfaceEngine engineType;
-    enum Qrack::QInterfaceEngine subEngineType;
-
 public:
     QInterfaceTestFixture();
 };
