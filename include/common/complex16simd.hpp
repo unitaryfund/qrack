@@ -14,6 +14,10 @@
 
 #include <emmintrin.h>
 
+#if ENABLE_AVX
+#include <smmintrin.h>
+#endif
+
 namespace Qrack {
 
 /** SIMD implementation of the double precision complex type. */

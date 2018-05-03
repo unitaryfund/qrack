@@ -61,9 +61,4 @@ Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2) { return _mm256_permute2f1
 Complex16x2Simd dupeHi(const Complex16x2Simd& cmplx2) { return _mm256_permute2f128_pd(cmplx2._val2, cmplx2._val2, 17); }
 // Imperative function definitions:
 Complex16x2Simd operator*(const double lhs, const Complex16x2Simd& rhs) { return _mm256_mul_pd(_mm256_set1_pd(lhs), rhs._val2); }
-double norm(const Complex16x2Simd& cmplx2)
-{
-    __v4df temp = (__v4df)_mm256_mul_pd(cmplx2._val2, cmplx2._val2);
-    return (temp[0] + temp[1] + temp[2] + temp[3]);
-}
 } // namespace Qrack

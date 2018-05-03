@@ -14,6 +14,7 @@
 
 #include <emmintrin.h>
 #include <immintrin.h>
+#include <smmintrin.h>
 
 #include "complex16simd.hpp"
 
@@ -42,7 +43,6 @@ Complex16x2Simd operator/(const double lhs, const Complex16x2Simd& rhs);
 
 Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2);
 Complex16x2Simd dupeHi(const Complex16x2Simd& cmplx2);
-double norm(const Complex16x2Simd& cmplx2);
 
 union ComplexUnion {
     Complex16x2Simd cmplx2;

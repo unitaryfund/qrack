@@ -113,7 +113,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             qubit.cmplx[1] = stateVec[lcv + offset2];
 
             qubit.cmplx2 = nrm * ((mtrxCol1.cmplx2 * dupeLo(qubit.cmplx2)) + (mtrxCol2.cmplx2 * dupeHi(qubit.cmplx2)));
-            rngNrm[cpu] += norm(qubit.cmplx2);
+            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];

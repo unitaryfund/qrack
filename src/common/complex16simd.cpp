@@ -108,8 +108,12 @@ Complex16Simd conj(const Complex16Simd& cmplx)
 }
 double norm(const Complex16Simd& cmplx)
 {
+#if ENABLE_AVX
+    return _mm_cvtsd_f64(_mm_dp_pd(cmplx._val, cmplx._val, 0xf1));
+#else
     __v2df temp = (__v2df)_mm_mul_pd(cmplx._val, cmplx._val);
     return (temp[0] + temp[1]);
+#endif
 }
 double abs(const Complex16Simd& cmplx) { return sqrt(norm(cmplx)); }
 Complex16Simd polar(const double rho, const double theta = 0)
