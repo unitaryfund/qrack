@@ -1,28 +1,46 @@
 cmake_minimum_required (VERSION 3.9)
-project (QRack VERSION 1.0 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 1.0 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
 
 include ("cmake/Coverage.cmake")
 include ("cmake/Format.cmake" )
+include ("cmake/AVX.cmake" )
 
 include_directories ("include" "include/common")
 
 # Declare the library
-add_library (qrack STATIC
-    src/common/complex16simd.cpp
-    src/common/parallel_for.cpp
-    src/qinterface/qinterface.cpp
-    src/qengine/qengine.cpp
-    src/qengine/operators.cpp
-    src/qengine/gates.cpp
-    src/qengine/rotational.cpp
-    src/qengine/state/state.cpp
-    src/qengine/state/operators.cpp
-    src/qengine/state/gates.cpp
-    src/qunit.cpp
-    )
+if (ENABLE_AVX)
+    add_library (qrack STATIC
+        src/common/complex16simd.cpp
+        src/common/complex16x2simd.cpp
+        src/common/parallel_for.cpp
+        src/qinterface/qinterface.cpp
+        src/qengine/qengine.cpp
+        src/qengine/operators.cpp
+        src/qengine/gates.cpp
+        src/qengine/rotational.cpp
+        src/qengine/state/state.cpp
+        src/qengine/state/operators.cpp
+        src/qengine/state/gates.cpp
+        src/qunit.cpp
+        )
+else (ENABLE_AVX)
+    add_library (qrack STATIC
+        src/common/complex16simd.cpp
+        src/common/parallel_for.cpp
+        src/qinterface/qinterface.cpp
+        src/qengine/qengine.cpp
+        src/qengine/operators.cpp
+        src/qengine/gates.cpp
+        src/qengine/rotational.cpp
+        src/qengine/state/state.cpp
+        src/qengine/state/operators.cpp
+        src/qengine/state/gates.cpp
+        src/qunit.cpp
+        )
+endif (ENABLE_AVX)
 
 # Declare the unittest executable
 add_executable (unittest
@@ -48,9 +66,15 @@ enable_testing()
 
 target_include_directories (unittest PUBLIC test)
 
-target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
-
+if (ENABLE_AVX)
+    target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_definitions (qrack PUBLIC ENABLE_AVX=1)
+else (ENABLE_AVX)
+    target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_definitions (qrack PUBLIC ENABLE_AVX=0)
+endif (ENABLE_AVX)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -59,6 +83,7 @@ set_target_properties (qrack PROPERTIES
 # Install common headers
 install (FILES
     include/common/complex16simd.hpp
+    include/common/complex16x2simd.hpp
     include/common/oclengine.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
@@ -69,6 +94,7 @@ install (FILES
     include/qunit.hpp
     include/common/oclengine.hpp
     include/common/complex16simd.hpp
+    include/common/complex16x2simd.hpp
     include/common/parallel_for.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp

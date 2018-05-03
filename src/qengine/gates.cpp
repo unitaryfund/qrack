@@ -31,7 +31,7 @@ void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
+    const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
     qPowers[0] = 1 << qubit1;
@@ -54,7 +54,7 @@ void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         throw std::invalid_argument("CCNOT control bits cannot also be target.");
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
+    const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     ApplyDoublyControlled2x2(control1, control2, target, pauliX, false);
 }
 
@@ -70,7 +70,7 @@ void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
         throw std::invalid_argument("CCNOT control bits cannot also be target.");
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
+    const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     ApplyDoublyAntiControlled2x2(control1, control2, target, pauliX, false);
 }
 
@@ -83,7 +83,7 @@ void QEngineCPU::CNOT(bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CNOT control bit cannot also be target.");
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
+    const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     ApplyControlled2x2(control, target, pauliX, false);
 }
 
@@ -96,7 +96,7 @@ void QEngineCPU::AntiCNOT(bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CNOT control bit cannot also be target.");
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
+    const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     ApplyAntiControlled2x2(control, target, pauliX, false);
 }
 
@@ -106,8 +106,8 @@ void QEngineCPU::H(bitLenInt qubit)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
     // bits.");
-    const Complex16 had[4] = { Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
-        Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0) };
+    const complex had[4] = { complex(1.0 / M_SQRT2, 0.0), complex(1.0 / M_SQRT2, 0.0),
+        complex(1.0 / M_SQRT2, 0.0), complex(-1.0 / M_SQRT2, 0.0) };
     ApplySingleBit(qubit, had, true);
 }
 
@@ -116,7 +116,7 @@ void QEngineCPU::X(bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
+    const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     ApplySingleBit(qubit, pauliX, false);
 }
 
@@ -125,7 +125,7 @@ void QEngineCPU::Y(bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const Complex16 pauliY[4] = { Complex16(0.0, 0.0), Complex16(0.0, -1.0), Complex16(0.0, 1.0), Complex16(0.0, 0.0) };
+    const complex pauliY[4] = { complex(0.0, 0.0), complex(0.0, -1.0), complex(0.0, 1.0), complex(0.0, 0.0) };
     ApplySingleBit(qubit, pauliY, false);
 }
 
@@ -134,7 +134,7 @@ void QEngineCPU::Z(bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const Complex16 pauliZ[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(-1.0, 0.0) };
+    const complex pauliZ[4] = { complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0) };
     ApplySingleBit(qubit, pauliZ, false);
 }
 
@@ -145,7 +145,7 @@ void QEngineCPU::CY(bitLenInt control, bitLenInt target)
     // bits.");
     if (control == target)
         throw std::invalid_argument("CY control bit cannot also be target.");
-    const Complex16 pauliY[4] = { Complex16(0.0, 0.0), Complex16(0.0, -1.0), Complex16(0.0, 1.0), Complex16(0.0, 0.0) };
+    const complex pauliY[4] = { complex(0.0, 0.0), complex(0.0, -1.0), complex(0.0, 1.0), complex(0.0, 0.0) };
     ApplyControlled2x2(control, target, pauliY, false);
 }
 
@@ -156,7 +156,7 @@ void QEngineCPU::CZ(bitLenInt control, bitLenInt target)
     // bits.");
     if (control == target)
         throw std::invalid_argument("CZ control bit cannot also be target.");
-    const Complex16 pauliZ[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(-1.0, 0.0) };
+    const complex pauliZ[4] = { complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0) };
     ApplyControlled2x2(control, target, pauliZ, false);
 }
 

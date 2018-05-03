@@ -22,8 +22,10 @@
 #define bitsInByte 8
 
 #include "common/complex16simd.hpp"
+#include "common/complex16x2simd.hpp"
 
-#define Complex16 Complex16Simd
+#define complex Complex16Simd
+#define complex2 Complex16x2Simd
 
 namespace Qrack {
 
@@ -101,7 +103,7 @@ public:
     int GetMaxQPower() { return maxQPower; }
 
     /** Set an arbitrary pure quantum state */
-    virtual void SetQuantumState(Complex16* inputState) = 0;
+    virtual void SetQuantumState(complex* inputState) = 0;
 
     /** Set to a specific permutation */
     virtual void SetPermutation(bitCapInt perm) = 0;
