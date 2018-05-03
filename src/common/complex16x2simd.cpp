@@ -10,16 +10,22 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#define CMPLX_INC
 #include "common/complex16x2simd.hpp"
 
 namespace Qrack {
+
+ComplexUnion::ComplexUnion(const Complex16Simd& cmplx0, const Complex16Simd& cmplx1) {
+    cmplx[0] = cmplx0;
+    cmplx[1] = cmplx1;
+}
 
 /** SIMD implementation of the double precision complex vector type of length 2. */
 
 Complex16x2Simd::Complex16x2Simd() {}
 Complex16x2Simd::Complex16x2Simd(const __m256d& v2) { _val2 = v2; }
-Complex16x2Simd::Complex16x2Simd(double real1, double imag1, double real2, double imag2) { _val2 = _mm256_set_pd(imag1, real1, imag2, real2); }
+Complex16x2Simd::Complex16x2Simd(const double& real1, const double& imag1, const double& real2, const double& imag2) {
+    _val2 = _mm256_set_pd(imag1, real1, imag2, real2);
+}
 Complex16x2Simd Complex16x2Simd::operator+(const Complex16x2Simd& other) const
 {
     return Complex16x2Simd(_mm256_add_pd(_val2, other._val2));

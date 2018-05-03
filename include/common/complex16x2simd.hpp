@@ -26,7 +26,7 @@ struct Complex16x2Simd {
 
     Complex16x2Simd();
     Complex16x2Simd(const __m256d& v);
-    Complex16x2Simd(double real1, double imag1, double real2, double imag2);
+    Complex16x2Simd(const double& real1, const double& imag1, const double& real2, const double& imag2);
     Complex16x2Simd operator+(const Complex16x2Simd& other) const;
     Complex16x2Simd operator+=(const Complex16x2Simd& other);
     Complex16x2Simd operator-(const Complex16x2Simd& other) const;
@@ -49,9 +49,6 @@ union ComplexUnion {
     Complex16Simd cmplx[2];
 
     ComplexUnion() {};
-    ComplexUnion(Complex16Simd cmplx0, Complex16Simd cmplx1) {
-        cmplx[0] = cmplx0;
-        cmplx[1] = cmplx1;
-    }
+    ComplexUnion(const Complex16Simd& cmplx0, const Complex16Simd& cmplx1);
 };
 } // namespace Qrack
