@@ -22,8 +22,10 @@
 #define bitsInByte 8
 
 #include "common/complex16simd.hpp"
+#include "common/complex16x2simd.hpp"
 
 #define complex Complex16Simd
+#define complex2 Complex16x2Simd
 
 namespace Qrack {
 

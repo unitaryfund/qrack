@@ -92,11 +92,31 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     complex nrm = complex((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
     int numCores = GetConcurrencyLevel();
+#if ENABLE_AVX
+    complex2 nrm = complex2((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0, (bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);    
+    ComplexUnion mtrxCol1;
+    ComplexUnion mtrxCol2;
+    mtrxCol1.cmplx[0] = mtrx[0];
+    mtrxCol1.cmplx[1] = mtrx[2];
+    mtrxCol2.cmplx[0] = mtrx[1];
+    mtrxCol2.cmplx[1] = mtrx[3];
+#else
+    complex nrm = complex((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
+#endif
 
     if (doCalcNorm && (bitCount == 1)) {
         double* rngNrm = new double[numCores]; 
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+#if ENABLE_AVX
+            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
+
+            qubit.cmplx2 = nrm * ((mtrxCol1.cmplx2 * dupeLo(qubit.cmplx2)) + (mtrxCol2.cmplx2 * dupeHi(qubit.cmplx2)));
+            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+
+            stateVec[lcv + offset1] = qubit.cmplx[0];
+            stateVec[lcv + offset2] = qubit.cmplx[1];
+#else
             complex qubit[2];
 
             qubit[0] = stateVec[lcv + offset1];
@@ -109,6 +129,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
+#endif
         });
         runningNorm = 0.0;
         for (int i = 0; i < numCores; i++) {
@@ -119,6 +140,16 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+#if ENABLE_AVX
+            ComplexUnion qubit;
+            qubit.cmplx[0] = stateVec[lcv + offset1];
+            qubit.cmplx[1] = stateVec[lcv + offset2];
+
+            qubit.cmplx2 = nrm * ((mtrxCol1.cmplx2 * dupeLo(qubit.cmplx2)) + (mtrxCol2.cmplx2 * dupeHi(qubit.cmplx2)));
+
+            stateVec[lcv + offset1] = qubit.cmplx[0];
+            stateVec[lcv + offset2] = qubit.cmplx[1];
+#else
             complex qubit[2];
 
             qubit[0] = stateVec[lcv + offset1];
@@ -130,6 +161,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
+#endif
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
