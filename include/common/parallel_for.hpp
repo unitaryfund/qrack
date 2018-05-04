@@ -63,7 +63,7 @@ public:
         const bitCapInt, const bitCapInt, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
-    double par_norm(const bitCapInt maxQPower, const Complex16* stateArray);
+    double par_norm(const bitCapInt maxQPower, const complex* stateArray);
 };
 
 }

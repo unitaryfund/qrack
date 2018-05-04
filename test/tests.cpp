@@ -77,13 +77,13 @@ void log(QInterfacePtr p)
 TEST_CASE("test_complex")
 {
     bool test;
-    Complex16 cmplx1(1.0, -1.0);
-    Complex16 cmplx2(-0.5, 0.5);
-    Complex16 cmplx3(0.0, 0.0);
+    complex cmplx1(1.0, -1.0);
+    complex cmplx2(-0.5, 0.5);
+    complex cmplx3(0.0, 0.0);
 
     REQUIRE(cmplx1 != cmplx2);
 
-    REQUIRE(conj(cmplx1) == Complex16(1.0, 1.0));
+    REQUIRE(conj(cmplx1) == complex(1.0, 1.0));
 
     test = (abs(cmplx1) > (sqrt(2.0) - EPSILON)) && (abs(cmplx1) < (sqrt(2.0) + EPSILON));
     REQUIRE(test);
