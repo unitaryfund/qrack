@@ -23,7 +23,7 @@
 
 #include "common/complex16simd.hpp"
 
-#define complex complexSimd
+#define complex Complex16Simd
 
 namespace Qrack {
 
