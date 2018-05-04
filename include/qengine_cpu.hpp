@@ -40,17 +40,17 @@ class QEngineCPU : public QInterface, public ParallelFor
 protected:
     uint32_t randomSeed;
     double runningNorm;
-    Complex16 *stateVec;
+    complex *stateVec;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
 public:
     QEngineCPU(
-        bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, Complex16 phaseFac = Complex16(-999.0, -999.0));
+        bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0));
     ~QEngineCPU() { delete []stateVec; }
 
-    virtual void SetQuantumState(Complex16* inputState);
+    virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
@@ -201,7 +201,7 @@ public:
      * @{
      */
 
-    virtual Complex16* GetState();
+    virtual complex* GetState();
     virtual void CopyState(QInterfacePtr orig);
     virtual double Prob(bitLenInt qubitIndex);
     virtual double ProbAll(bitCapInt fullRegister);
@@ -214,16 +214,16 @@ protected:
     /** Generate a random double from 0 to 1 */
     double Rand() { return rand_distribution(*rand_generator); }
 
-    virtual void ResetStateVec(Complex16* nStateVec);
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount,
+    virtual void ResetStateVec(complex* nStateVec);
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
-    virtual void ApplySingleBit(bitLenInt qubitIndex, const Complex16* mtrx, bool doCalcNorm);
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm);
+    virtual void ApplySingleBit(bitLenInt qubitIndex, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void NormalizeState();
     virtual void UpdateRunningNorm();
-    virtual Complex16* AllocStateVec(bitCapInt elemCount);
+    virtual complex* AllocStateVec(bitCapInt elemCount);
 };
 } // namespace Qrack

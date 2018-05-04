@@ -21,7 +21,7 @@ void QEngineCPU::RT(double radians, bitLenInt qubit)
     //     throw std::invalid_argument("operation on bit index greater than total // bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    const Complex16 mtrx[4] = { Complex16(1.0, 0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(cosine, sine) };
+    const complex mtrx[4] = { complex(1.0, 0), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
     ApplySingleBit(qubit, mtrx, true);
 }
 
@@ -46,8 +46,8 @@ void QEngineCPU::RX(double radians, bitLenInt qubit)
     // throw std::invalid_argument("operation on bit index greater than total bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    Complex16 pauliRX[4] = { Complex16(cosine, 0.0), Complex16(0.0, -sine), Complex16(0.0, -sine),
-        Complex16(cosine, 0.0) };
+    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine),
+        complex(cosine, 0.0) };
     ApplySingleBit(qubit, pauliRX, true);
 }
 
@@ -72,8 +72,8 @@ void QEngineCPU::RY(double radians, bitLenInt qubit)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    Complex16 pauliRY[4] = { Complex16(cosine, 0.0), Complex16(-sine, 0.0), Complex16(sine, 0.0),
-        Complex16(cosine, 0.0) };
+    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0),
+        complex(cosine, 0.0) };
     ApplySingleBit(qubit, pauliRY, true);
 }
 
@@ -98,8 +98,8 @@ void QEngineCPU::RZ(double radians, bitLenInt qubit)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    const Complex16 pauliRZ[4] = { Complex16(cosine, -sine), Complex16(0.0, 0.0), Complex16(0.0, 0.0),
-        Complex16(cosine, sine) };
+    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0),
+        complex(cosine, sine) };
     ApplySingleBit(qubit, pauliRZ, true);
 }
 
@@ -127,7 +127,7 @@ void QEngineCPU::CRT(double radians, bitLenInt control, bitLenInt target)
 
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    const Complex16 mtrx[4] = { Complex16(1.0, 0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(cosine, sine) };
+    const complex mtrx[4] = { complex(1.0, 0), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
     ApplyControlled2x2(control, target, mtrx, true);
 }
 
@@ -152,8 +152,8 @@ void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRX control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    Complex16 pauliRX[4] = { Complex16(cosine, 0.0), Complex16(0.0, -sine), Complex16(0.0, -sine),
-        Complex16(cosine, 0.0) };
+    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine),
+        complex(cosine, 0.0) };
     ApplyControlled2x2(control, target, pauliRX, true);
 }
 
@@ -182,8 +182,8 @@ void QEngineCPU::CRY(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRY control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    Complex16 pauliRY[4] = { Complex16(cosine, 0.0), Complex16(-sine, 0.0), Complex16(sine, 0.0),
-        Complex16(cosine, 0.0) };
+    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0),
+        complex(cosine, 0.0) };
     ApplyControlled2x2(control, target, pauliRY, true);
 }
 
@@ -208,8 +208,8 @@ void QEngineCPU::CRZ(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRZ control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    const Complex16 pauliRZ[4] = { Complex16(cosine, -sine), Complex16(0.0, 0.0), Complex16(0.0, 0.0),
-        Complex16(cosine, sine) };
+    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0),
+        complex(cosine, sine) };
     ApplyControlled2x2(control, target, pauliRZ, true);
 }
 

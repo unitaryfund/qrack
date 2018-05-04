@@ -129,12 +129,12 @@ void ParallelFor::par_for_mask(
     par_for_inc(begin, end, incFn, fn);
 }
 
-double ParallelFor::par_norm(const bitCapInt maxQPower, const Complex16* stateArray)
+double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
 {
     // const double* sAD = reinterpret_cast<const double*>(stateArray);
     // double* sSAD = new double[maxQPower * 2];
     // std::partial_sort_copy(sAD, sAD + (maxQPower * 2), sSAD, sSAD + (maxQPower * 2));
-    // Complex16* sorted = reinterpret_cast<Complex16*>(sSAD);
+    // complex* sorted = reinterpret_cast<complex*>(sSAD);
 
     double nrmSqr = 0;
     if ((int)(maxQPower / ParStride) < numCores) {
