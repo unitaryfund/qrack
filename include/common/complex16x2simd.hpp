@@ -44,6 +44,9 @@ Complex16x2Simd operator/(const double lhs, const Complex16x2Simd& rhs);
 Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2);
 Complex16x2Simd dupeHi(const Complex16x2Simd& cmplx2);
 
+Complex16x2Simd matrixMul(const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit);
+Complex16x2Simd matrixMul(const double& nrm, const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit);
+
 union ComplexUnion {
     Complex16x2Simd cmplx2;
     Complex16Simd cmplx[2];

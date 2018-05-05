@@ -10,6 +10,8 @@ include ("cmake/AVX.cmake" )
 
 include_directories ("include" "include/common")
 
+set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
+
 # Declare the library
 if (ENABLE_AVX)
     add_library (qrack STATIC
@@ -67,11 +69,11 @@ enable_testing()
 target_include_directories (unittest PUBLIC test)
 
 if (ENABLE_AVX)
-    target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE -DPSTRIDE=${PSTRIDE})
     target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_definitions (qrack PUBLIC ENABLE_AVX=1)
 else (ENABLE_AVX)
-    target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (qrack PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE -DPSTRIDE=${PSTRIDE})
     target_compile_options (unittest PUBLIC -ggdb -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_definitions (qrack PUBLIC ENABLE_AVX=0)
 endif (ENABLE_AVX)

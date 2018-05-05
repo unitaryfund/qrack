@@ -16,8 +16,6 @@
 
 #include "common/parallel_for.hpp"
 
-#define ParStride 8
-
 namespace Qrack {
 
 /*
@@ -28,9 +26,9 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
 {
     std::atomic<bitCapInt> idx;
     idx = begin;
-    bitCapInt pStride = ParStride;
+    bitCapInt pStride = PSTRIDE;
 
-    if ((int)((end - begin) / ParStride) < numCores) {
+    if ((int)((end - begin) / pStride) < numCores) {
         std::vector<std::future<void>> futures(end - begin);
         bitCapInt j;
         int cpu, count;
@@ -137,7 +135,7 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
     // complex* sorted = reinterpret_cast<complex*>(sSAD);
 
     double nrmSqr = 0;
-    if ((int)(maxQPower / ParStride) < numCores) {
+    if ((int)(maxQPower / PSTRIDE) < numCores) {
         for (bitCapInt i = 0; i < maxQPower; i++) {
             nrmSqr += norm(stateArray[i]);
         }
@@ -147,7 +145,7 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
         idx = 0;
         double* nrmPart = new double[numCores];
         std::vector<std::future<void>> futures(numCores);
-        bitCapInt pStride = ParStride;
+        bitCapInt pStride = PSTRIDE;
         for (int cpu = 0; cpu != numCores; ++cpu) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart, pStride]() {
                 double sqrNorm = 0.0;

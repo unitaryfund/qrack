@@ -91,8 +91,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-#if ENABLE_AVX
-    complex2 nrm = complex2((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0, (bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);    
+    double nrm = 1.0 / runningNorm; 
+#if ENABLE_AVX  
     ComplexUnion mtrxCol1;
     ComplexUnion mtrxCol2;
     mtrxCol1.cmplx[0] = mtrx[0];
@@ -100,7 +100,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     mtrxCol2.cmplx[0] = mtrx[1];
     mtrxCol2.cmplx[1] = mtrx[3];
 #else
-    complex nrm = complex((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
+    complex nrm = complex(1.0 / runningNorm, 0.0);
 #endif
 
     if (doCalcNorm && (bitCount == 1)) {
@@ -110,7 +110,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 #if ENABLE_AVX
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
-            qubit.cmplx2 = nrm * ((mtrxCol1.cmplx2 * dupeLo(qubit.cmplx2)) + (mtrxCol2.cmplx2 * dupeHi(qubit.cmplx2)));
+            qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
             rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 
             stateVec[lcv + offset1] = qubit.cmplx[0];
@@ -118,10 +118,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 #else
             complex qubit[2];
 
-            qubit[0] = stateVec[lcv + offset1];
+            complex Y0 = stateVec[lcv + offset1];
             qubit[1] = stateVec[lcv + offset2];
 
-            complex Y0 = qubit[0];
             qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
             qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
             rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
@@ -140,23 +139,20 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
 #if ENABLE_AVX
-            ComplexUnion qubit;
-            qubit.cmplx[0] = stateVec[lcv + offset1];
-            qubit.cmplx[1] = stateVec[lcv + offset2];
+            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
-            qubit.cmplx2 = nrm * ((mtrxCol1.cmplx2 * dupeLo(qubit.cmplx2)) + (mtrxCol2.cmplx2 * dupeHi(qubit.cmplx2)));
+            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];
 #else
             complex qubit[2];
 
-            qubit[0] = stateVec[lcv + offset1];
+            complex Y0 = stateVec[lcv + offset1];
             qubit[1] = stateVec[lcv + offset2];
 
-            complex Y0 = qubit[0];
-            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+            qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
 
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
