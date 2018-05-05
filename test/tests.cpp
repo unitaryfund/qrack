@@ -16,7 +16,6 @@
 #include <stdlib.h>
 
 #include "catch.hpp"
-#include "qinterface.hpp"
 #include "qfactory.hpp"
 
 #include "tests.hpp"

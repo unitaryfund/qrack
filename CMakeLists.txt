@@ -15,8 +15,6 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 # Declare the library
 if (ENABLE_AVX)
     add_library (qrack STATIC
-        src/common/complex16simd.cpp
-        src/common/complex16x2simd.cpp
         src/common/parallel_for.cpp
         src/qinterface/qinterface.cpp
         src/qengine/qengine.cpp
@@ -30,7 +28,6 @@ if (ENABLE_AVX)
         )
 else (ENABLE_AVX)
     add_library (qrack STATIC
-        src/common/complex16simd.cpp
         src/common/parallel_for.cpp
         src/qinterface/qinterface.cpp
         src/qengine/qengine.cpp
