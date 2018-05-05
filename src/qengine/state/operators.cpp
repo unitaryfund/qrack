@@ -893,8 +893,6 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
         }
     });
 
-    UpdateRunningNorm();
-
     return result;
 }
 

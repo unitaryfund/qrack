@@ -198,7 +198,6 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
     SetQubitCount(nQubitCount);
 
     ResetStateVec(nStateVec);
-    UpdateRunningNorm();
 
     return result;
 }
@@ -256,7 +255,6 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
     maxQPower = nMaxQPower;
 
     ResetStateVec(nStateVec);
-    UpdateRunningNorm();
 
     return ret;
 }
@@ -321,9 +319,6 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
 
     delete []remainderStateProb;
     delete []remainderStateAngle;
-
-    UpdateRunningNorm();
-    destination->UpdateRunningNorm();
 }
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
@@ -372,8 +367,6 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 
     delete []partStateProb;
     delete []partStateAngle;
-
-    UpdateRunningNorm();
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state

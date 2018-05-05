@@ -63,8 +63,6 @@ bool QEngineCPU::M(bitLenInt qubit)
         });
     }
 
-    UpdateRunningNorm();
-
     return result;
 }
 
