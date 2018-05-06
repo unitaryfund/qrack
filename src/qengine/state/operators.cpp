@@ -921,8 +921,9 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
         nStateVec[outputRes | lcv] = stateVec[lcv];
     });
 
-    double prob, average, totProb;
-    totProb = 0.0;
+    double prob;
+    double totProb = 0.0;
+    double average = 0.0;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
@@ -1017,8 +1018,9 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
     bitCapInt i, outputInt;
-    double prob, average, totProb;
-    totProb = 0.0;
+    double prob;
+    double totProb = 0.0;
+    double average = 0.0;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
@@ -1119,8 +1121,9 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
     bitCapInt i, outputInt;
-    double prob, average, totProb;
-    totProb = 0.0;
+    double prob;
+    double totProb = 0.0;
+    double average = 0.0;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);

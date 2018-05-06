@@ -50,7 +50,8 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn, pStride]() {
-                bitCapInt j, k;
+                bitCapInt j;
+                bitCapInt k = 0;
                 bitCapInt strideEnd = end / pStride;
                 for (bitCapInt i = idx++; i < strideEnd; i = idx++) {
                     for (j = 0; j < pStride; j++) {
@@ -150,7 +151,8 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart, pStride]() {
                 double sqrNorm = 0.0;
                 // double smallSqrNorm = 0.0;
-                bitCapInt i, j , k;
+                bitCapInt i, j;
+                bitCapInt k = 0;
                 for (;;) {
                     i = idx++;
                     for (j = 0; j < pStride; j++) {

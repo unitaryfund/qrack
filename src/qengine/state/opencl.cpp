@@ -92,7 +92,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     complex cmplx[CMPLX_NORM_LEN];
-    double* nrmParts;
+    double* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
@@ -281,8 +281,9 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     complex* nStateVec = AllocStateVec(maxQPower);
     DispatchCall(clObj->GetLDAPtr(), bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
-    double prob, average, totProb;
-    totProb = 0.0;
+    double prob;
+    double average = 0.0;
+    double totProb = 0.0;
     bitCapInt i, outputInt;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
@@ -324,8 +325,9 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel *call, bitCapInt carryIn,
     DispatchCall(call, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
-    double prob, average, totProb;
-    totProb = 0.0;
+    double prob;
+    double average = 0.0;
+    double totProb = 0.0;
     bitCapInt i, outputInt;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
