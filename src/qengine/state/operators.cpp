@@ -778,10 +778,8 @@ void QEngineCPU::DECBCDC(
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    bitCapInt otherMask = (~(((1 << length) - 1) << start)) & (maxQPower - 1);
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & otherMask) == lcv)
-            stateVec[lcv] = -stateVec[lcv];
+    par_for_skip(0, maxQPower, 1 << start, length, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] = -stateVec[lcv];
     });
 }
 
