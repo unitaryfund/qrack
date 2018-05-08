@@ -23,6 +23,10 @@
 
 #include "common/complex16simd.hpp"
 
+#if ENABLE_AVX
+#include "common/complex16x2simd.hpp"
+#endif
+
 #define complex Complex16Simd
 
 namespace Qrack {

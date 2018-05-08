@@ -88,83 +88,20 @@ void QEngineCPU::SetQuantumState(complex* inputState)
  * A fundamental operation used by almost all gates.
  */
 #if ENABLE_AVX
-#include <emmintrin.h>
-#include <immintrin.h>
-#include <smmintrin.h>
 
-/** SIMD implementation of the double precision complex vector type of 2 complex numbers, only for AVX Apply2x2. */
-struct Complex16x2Simd {
-    __m256d _val2;
-
-    inline Complex16x2Simd() {};
-    inline Complex16x2Simd(const __m256d& v2) { _val2 = v2; }
-    inline Complex16x2Simd(const double& real1, const double& imag1, const double& real2, const double& imag2) {
-        _val2 = _mm256_set_pd(imag1, real1, imag2, real2);
-    }
-    inline Complex16x2Simd operator+(const Complex16x2Simd& other) const
-    {
-        return _mm256_add_pd(_val2, other._val2);
-    }
-    inline Complex16x2Simd operator+=(const Complex16x2Simd& other)
-    {
-        _val2 = _mm256_add_pd(_val2, other._val2);
-        return _val2;
-    }
-    inline Complex16x2Simd operator-(const Complex16x2Simd& other) const
-    {
-        return _mm256_sub_pd(_val2, other._val2);
-    }
-    inline Complex16x2Simd operator-=(const Complex16x2Simd& other)
-    {
-        _val2 = _mm256_sub_pd(_val2, other._val2);
-        return _val2;
-    }
-    inline Complex16x2Simd operator*(const Complex16x2Simd& other) const
-    {
-        return _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5), _mm256_shuffle_pd((-other._val2), other._val2, 15)),
-            _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
-    }
-    inline Complex16x2Simd operator*=(const Complex16x2Simd& other)
-    {
-        _val2 = _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5), _mm256_shuffle_pd((-other._val2), other._val2, 15)),
-            _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
-        return _val2;
-    }
-    inline Complex16x2Simd operator*(const double rhs) const { return _mm256_mul_pd(_val2, _mm256_set1_pd(rhs)); }
-    inline Complex16x2Simd operator-() const { return -_val2; }
-    inline Complex16x2Simd operator*=(const double& other)
-    {
-        _val2 = _mm256_mul_pd(_val2, _mm256_set1_pd(other));
-        return _val2;
-    }
-};
-
-inline Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2) { return _mm256_permute2f128_pd(cmplx2._val2, cmplx2._val2, 0); }
-inline Complex16x2Simd dupeHi(const Complex16x2Simd& cmplx2) { return _mm256_permute2f128_pd(cmplx2._val2, cmplx2._val2, 17); }
-inline Complex16x2Simd matrixMul(const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit) {
-    __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
-    __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
-    return _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5), _mm256_shuffle_pd(-dupeLo, dupeLo, 15)), _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))), _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5), _mm256_shuffle_pd(-dupeHi, dupeHi, 15)), _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
-}
-inline Complex16x2Simd matrixMul(const double& nrm, const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit) {
-    __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
-    __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
-    return _mm256_mul_pd(_mm256_set1_pd(nrm),_mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5), _mm256_shuffle_pd(-dupeLo, dupeLo, 15)), _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))), _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5), _mm256_shuffle_pd(-dupeHi, dupeHi, 15)), _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0)))));
-}
-inline Complex16x2Simd operator*(const double lhs, const Complex16x2Simd& rhs) { return _mm256_mul_pd(_mm256_set1_pd(lhs), rhs._val2); }
+#include "common/complex16x2simd.hpp"
+#define complex2 Complex16x2Simd
 
 union ComplexUnion {
-    Complex16x2Simd cmplx2;
-    Complex16Simd cmplx[2];
+    complex2 cmplx2;
+    complex cmplx[2];
 
     inline ComplexUnion() {};
-    inline ComplexUnion(const Complex16Simd& cmplx0, const Complex16Simd& cmplx1) {
+    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1) {
         cmplx[0] = cmplx0;
         cmplx[1] = cmplx1;
     }
 };
-
-#define complex2 Complex16x2Simd
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
