@@ -26,9 +26,8 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
 {
     std::atomic<bitCapInt> idx;
     idx = begin;
-    bitCapInt pStride = PSTRIDE;
 
-    if ((int)((end - begin) / pStride) < numCores) {
+    if ((int)((end - begin) / PSTRIDE) < numCores) {
         std::vector<std::future<void>> futures(end - begin);
         bitCapInt j;
         int cpu, count;
@@ -49,13 +48,13 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
     else {
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn, pStride]() {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn]() {
                 bitCapInt j;
                 bitCapInt k = 0;
-                bitCapInt strideEnd = end / pStride;
+                bitCapInt strideEnd = end / PSTRIDE;
                 for (bitCapInt i = idx++; i < strideEnd; i = idx++) {
-                    for (j = 0; j < pStride; j++) {
-                        k = inc(i * pStride + j, cpu);
+                    for (j = 0; j < PSTRIDE; j++) {
+                        k = inc(i * PSTRIDE + j, cpu);
                         /* Easiest to clamp on end. */
                         if (k >= end) {
                             break;
@@ -130,11 +129,6 @@ void ParallelFor::par_for_mask(
 
 double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
 {
-    // const double* sAD = reinterpret_cast<const double*>(stateArray);
-    // double* sSAD = new double[maxQPower * 2];
-    // std::partial_sort_copy(sAD, sAD + (maxQPower * 2), sSAD, sSAD + (maxQPower * 2));
-    // complex* sorted = reinterpret_cast<complex*>(sSAD);
-
     double nrmSqr = 0;
     if ((int)(maxQPower / PSTRIDE) < numCores) {
         for (bitCapInt i = 0; i < maxQPower; i++) {
@@ -146,17 +140,16 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
         idx = 0;
         double* nrmPart = new double[numCores];
         std::vector<std::future<void>> futures(numCores);
-        bitCapInt pStride = PSTRIDE;
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart, pStride]() {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
                 double sqrNorm = 0.0;
                 // double smallSqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {
                     i = idx++;
-                    for (j = 0; j < pStride; j++) {
-                        k = i * pStride + j;
+                    for (j = 0; j < PSTRIDE; j++) {
+                        k = i * PSTRIDE + j;
                         if (k >= maxQPower)
                             break;
                         sqrNorm += norm(stateArray[k]);

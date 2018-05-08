@@ -87,27 +87,97 @@ void QEngineCPU::SetQuantumState(complex* inputState)
  *
  * A fundamental operation used by almost all gates.
  */
+#if ENABLE_AVX
+#include <emmintrin.h>
+#include <immintrin.h>
+#include <smmintrin.h>
+
+/** SIMD implementation of the double precision complex vector type of 2 complex numbers, only for AVX Apply2x2. */
+struct Complex16x2Simd {
+    __m256d _val2;
+
+    inline Complex16x2Simd() {};
+    inline Complex16x2Simd(const __m256d& v2) { _val2 = v2; }
+    inline Complex16x2Simd(const double& real1, const double& imag1, const double& real2, const double& imag2) {
+        _val2 = _mm256_set_pd(imag1, real1, imag2, real2);
+    }
+    inline Complex16x2Simd operator+(const Complex16x2Simd& other) const
+    {
+        return _mm256_add_pd(_val2, other._val2);
+    }
+    inline Complex16x2Simd operator+=(const Complex16x2Simd& other)
+    {
+        _val2 = _mm256_add_pd(_val2, other._val2);
+        return _val2;
+    }
+    inline Complex16x2Simd operator-(const Complex16x2Simd& other) const
+    {
+        return _mm256_sub_pd(_val2, other._val2);
+    }
+    inline Complex16x2Simd operator-=(const Complex16x2Simd& other)
+    {
+        _val2 = _mm256_sub_pd(_val2, other._val2);
+        return _val2;
+    }
+    inline Complex16x2Simd operator*(const Complex16x2Simd& other) const
+    {
+        return _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5), _mm256_shuffle_pd((-other._val2), other._val2, 15)),
+            _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
+    }
+    inline Complex16x2Simd operator*=(const Complex16x2Simd& other)
+    {
+        _val2 = _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5), _mm256_shuffle_pd((-other._val2), other._val2, 15)),
+            _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
+        return _val2;
+    }
+    inline Complex16x2Simd operator*(const double rhs) const { return _mm256_mul_pd(_val2, _mm256_set1_pd(rhs)); }
+    inline Complex16x2Simd operator-() const { return -_val2; }
+    inline Complex16x2Simd operator*=(const double& other)
+    {
+        _val2 = _mm256_mul_pd(_val2, _mm256_set1_pd(other));
+        return _val2;
+    }
+};
+
+inline Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2) { return _mm256_permute2f128_pd(cmplx2._val2, cmplx2._val2, 0); }
+inline Complex16x2Simd dupeHi(const Complex16x2Simd& cmplx2) { return _mm256_permute2f128_pd(cmplx2._val2, cmplx2._val2, 17); }
+inline Complex16x2Simd matrixMul(const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit) {
+    __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
+    __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
+    return _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5), _mm256_shuffle_pd(-dupeLo, dupeLo, 15)), _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))), _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5), _mm256_shuffle_pd(-dupeHi, dupeHi, 15)), _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
+}
+inline Complex16x2Simd matrixMul(const double& nrm, const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit) {
+    __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
+    __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
+    return _mm256_mul_pd(_mm256_set1_pd(nrm),_mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5), _mm256_shuffle_pd(-dupeLo, dupeLo, 15)), _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))), _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5), _mm256_shuffle_pd(-dupeHi, dupeHi, 15)), _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0)))));
+}
+inline Complex16x2Simd operator*(const double lhs, const Complex16x2Simd& rhs) { return _mm256_mul_pd(_mm256_set1_pd(lhs), rhs._val2); }
+
+union ComplexUnion {
+    Complex16x2Simd cmplx2;
+    Complex16Simd cmplx[2];
+
+    inline ComplexUnion() {};
+    inline ComplexUnion(const Complex16Simd& cmplx0, const Complex16Simd& cmplx1) {
+        cmplx[0] = cmplx0;
+        cmplx[1] = cmplx1;
+    }
+};
+
+#define complex2 Complex16x2Simd
+
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
     double nrm = 1.0 / runningNorm; 
-#if ENABLE_AVX  
-    ComplexUnion mtrxCol1;
-    ComplexUnion mtrxCol2;
-    mtrxCol1.cmplx[0] = mtrx[0];
-    mtrxCol1.cmplx[1] = mtrx[2];
-    mtrxCol2.cmplx[0] = mtrx[1];
-    mtrxCol2.cmplx[1] = mtrx[3];
-#else
-    complex nrm = complex(1.0 / runningNorm, 0.0);
-#endif
+    ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
+    ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
     if (doCalcNorm && (bitCount == 1)) {
         double* rngNrm = new double[numCores]; 
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
-#if ENABLE_AVX
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
@@ -115,7 +185,43 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];
+        });
+        runningNorm = 0.0;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
+        runningNorm = sqrt(runningNorm);
+    }
+    else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
+
+            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+            stateVec[lcv + offset1] = qubit.cmplx[0];
+            stateVec[lcv + offset2] = qubit.cmplx[1];
+        });
+        if (doCalcNorm) {
+            UpdateRunningNorm();
+        }
+        else {
+            runningNorm = 1.0;
+        }
+    }
+}
 #else
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+    const bitCapInt* qPowersSorted, bool doCalcNorm)
+{
+    int numCores = GetConcurrencyLevel();
+    double nrm = 1.0 / runningNorm; 
+    complex nrm = complex(1.0 / runningNorm, 0.0);
+
+    if (doCalcNorm && (bitCount == 1)) {
+        double* rngNrm = new double[numCores]; 
+        std::fill(rngNrm, rngNrm + numCores, 0.0);
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
 
             complex Y0 = stateVec[lcv + offset1];
@@ -127,7 +233,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
-#endif
         });
         runningNorm = 0.0;
         for (int i = 0; i < numCores; i++) {
@@ -138,14 +243,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
-#if ENABLE_AVX
-            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
-
-            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
-            stateVec[lcv + offset1] = qubit.cmplx[0];
-            stateVec[lcv + offset2] = qubit.cmplx[1];
-#else
             complex qubit[2];
 
             complex Y0 = stateVec[lcv + offset1];
@@ -156,7 +253,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
-#endif
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
@@ -166,6 +262,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
     }
 }
+#endif
 
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
