@@ -77,7 +77,7 @@ void QUnit::CopyState(QInterfacePtr orig)
     }
 }
 
-void QUnit::SetQuantumState(Complex16* inputState)
+void QUnit::SetQuantumState(complex* inputState)
 {
     auto unit = CreateQuantumInterface(engine, engine, qubitCount, 0, rand_generator);
     unit->SetQuantumState(inputState);
@@ -105,7 +105,7 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     clone->CopyState(toCopy);
 
     /* Destroy the quantum state in toCopy. */
-    Complex16 emptyState[] = {Complex16(0, 0), Complex16(0, 0)};
+    complex emptyState[] = {complex(0, 0), complex(0, 0)};
     toCopy->SetQuantumState(emptyState);
 
     /* Update shards to reference the cloned state. */

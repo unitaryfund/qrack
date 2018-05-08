@@ -16,7 +16,6 @@
 #include <stdlib.h>
 
 #include "catch.hpp"
-#include "qinterface.hpp"
 #include "qfactory.hpp"
 
 #include "tests.hpp"
@@ -77,13 +76,13 @@ void log(QInterfacePtr p)
 TEST_CASE("test_complex")
 {
     bool test;
-    Complex16 cmplx1(1.0, -1.0);
-    Complex16 cmplx2(-0.5, 0.5);
-    Complex16 cmplx3(0.0, 0.0);
+    complex cmplx1(1.0, -1.0);
+    complex cmplx2(-0.5, 0.5);
+    complex cmplx3(0.0, 0.0);
 
     REQUIRE(cmplx1 != cmplx2);
 
-    REQUIRE(conj(cmplx1) == Complex16(1.0, 1.0));
+    REQUIRE(conj(cmplx1) == complex(1.0, 1.0));
 
     test = (abs(cmplx1) > (sqrt(2.0) - EPSILON)) && (abs(cmplx1) < (sqrt(2.0) + EPSILON));
     REQUIRE(test);
@@ -1506,3 +1505,54 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
+#if 0
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
+{
+    clock_t t, all;
+    t = clock();
+    all = t;
+
+    int i, j;
+
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
+
+    const int TARGET_PROB = 100;
+
+    for (j = 0; j < 100; j++) {
+        // Our input to the subroutine "oracle" is 8 bits.
+        qftReg->SetPermutation(0);
+        qftReg->H(0, 8);
+
+        // std::cout << "Iterations:" << std::endl;
+        // Twelve iterations maximizes the probablity for 256 searched elements.
+        for (i = 0; i < 12; i++) {
+            // Our "oracle" is true for an input of "100" and false for all other inputs.
+            qftReg->DEC(100, 0, 8);
+            qftReg->ZeroPhaseFlip(0, 8);
+            qftReg->INC(100, 0, 8);
+            // This ends the "oracle."
+            qftReg->H(0, 8);
+            qftReg->ZeroPhaseFlip(0, 8);
+            qftReg->H(0, 8);
+            qftReg->PhaseFlip();
+            // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        }
+
+        // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
+        // std::cout << "Full Result:    " << qftReg << std::endl;
+        // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+
+        qftReg->MReg(0, 8);
+
+        //REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+
+        if (((j + 1) % 10) == 0) {
+            t = clock() - t;
+            std::cout<<"Iteration "<<j<<" time:"<<(t * 1000.0 /CLOCKS_PER_SEC)<<std::endl;
+        }
+    }
+    all = clock() - all;
+    std::cout<<"All time:"<<(all * 1000.0 /CLOCKS_PER_SEC)<<std::endl;
+}
+#endif

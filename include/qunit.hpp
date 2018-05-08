@@ -44,7 +44,7 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
-    virtual void SetQuantumState(Complex16* inputState);
+    virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     virtual bitLenInt Cohere(QInterfacePtr toCopy);
     virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);

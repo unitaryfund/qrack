@@ -15,8 +15,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "qinterface.hpp"
-
 #include "qfactory.hpp"
 
 #define CATCH_CONFIG_RUNNER /* Access to the configuration. */

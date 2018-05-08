@@ -69,11 +69,11 @@ protected:
 
     void InitOCL();
     void ReInitOCL();
-    void ResetStateVec(Complex16* nStateVec);
+    void ResetStateVec(complex* nStateVec);
 
-    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], Complex16 *nVec = NULL, unsigned char* values = NULL, bitCapInt valuesLength = 0);
+    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex *nVec = NULL, unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const Complex16* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm);
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm);
 
     /* Utility functions used by the operations above. */
     void ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length);
