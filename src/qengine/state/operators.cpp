@@ -863,7 +863,7 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 
     /*
      * The value of 'lcv' should not exceed lengthPower unless the stateVec is
-     * in an bug-induced topology - some value in stateVec must always be a
+     * in a bug-induced topology - some value in stateVec must always be a
      * vector.
      */
     while ((!foundPerm) && (lcv < maxQPower)) {

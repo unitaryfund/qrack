@@ -322,17 +322,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->DECC(1, 0, n-1, n-1);});
 }
 
+/*
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
+{
+    benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->DECBCD(1, 0, n-1);});
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
+{
+    benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->DECBCDC(1, 0, n-1, n-1);});
+}
+*/
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
     benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->DECSC(1, 0, n-2, n-2, n-1);});
 }
 
-/*
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
     benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->QFT(0, n);});
 }
-*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 {
@@ -355,12 +365,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
     benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->M(n-1);});
 }
 
-/*
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
 {
     benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->MReg(0, n);});
 }
-*/
 
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")

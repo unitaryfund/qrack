@@ -27,7 +27,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
     std::atomic<bitCapInt> idx;
     idx = begin;
 
-    if ((int)((end - begin) / PSTRIDE) < numCores) {
+    if ((int)(end - begin) < numCores) {
         std::vector<std::future<void>> futures(end - begin);
         bitCapInt j;
         int cpu, count;
@@ -38,6 +38,37 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
             }
             futures[cpu] = std::async(std::launch::async, [j, cpu, fn]() {
                 fn(j, cpu);
+            });
+        }
+        count = cpu;
+        for (cpu = 0; cpu < count; cpu++) {
+            futures[cpu].get();
+        }
+    }
+    else if (((int)(end - begin) / PSTRIDE) < numCores) {
+        int parStride = (end - begin) / numCores;
+        int remainder = (end - begin) - (parStride * numCores);
+        std::vector<std::future<void>> futures(end - begin);
+        int cpu, count;
+        int offset = 0;
+        for (cpu = 0; cpu < numCores; cpu++) {
+            bitCapInt workUnit = parStride;
+            if (remainder) {
+                workUnit++;
+                remainder--;
+            }
+            offset += workUnit;
+            futures[cpu] = std::async(std::launch::async, [cpu, workUnit, offset, parStride, end, inc, fn]() {
+                bitCapInt j;
+                bitCapInt k = 0;
+                for (j = 0; j < workUnit; j++) {
+                    k = inc(offset + j, cpu);
+                    /* Easiest to clamp on end. */
+                    if (k >= end) {
+                        break;
+                    }
+                    fn(k, cpu);
+                }
             });
         }
         count = cpu;
@@ -111,20 +142,32 @@ void ParallelFor::par_for_mask(
     /* Pre-calculate the masks to simplify the increment function later. */
     bitCapInt masks[maskLen][2];
 
+    bool allLow = true;
     for (int i = 0; i < maskLen; i++) {
         masks[i][0] = maskArray[i] - 1; // low mask
         masks[i][1] = (~(masks[i][0] + maskArray[i])); // high mask
+        if (maskArray[maskLen - i - 1] != (end >> (i + 1))) {
+            allLow = false;
+        }
     }
 
-    IncrementFunc incFn = [&masks, maskLen](bitCapInt i, int cpu) {
-        /* Push i apart, one mask at a time. */
-        for (int m = 0; m < maskLen; m++) {
-            i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
-        }
-        return i;
-    };
+    IncrementFunc incFn;
+    if (allLow) {
+        incFn = [](const bitCapInt i, int cpu) { return i; };
 
-    par_for_inc(begin, end, incFn, fn);
+        par_for_inc(begin, end >> maskLen, incFn, fn);
+    }
+    else {
+        incFn = [&masks, maskLen](bitCapInt i, int cpu) {
+            /* Push i apart, one mask at a time. */
+            for (int m = 0; m < maskLen; m++) {
+                i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
+            }
+            return i;
+        };
+
+        par_for_inc(begin, end, incFn, fn);
+    }
 }
 
 double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)

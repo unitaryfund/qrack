@@ -17,8 +17,6 @@ namespace Qrack {
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
 void QEngineCPU::RT(double radians, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total // bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     const complex mtrx[4] = { complex(1.0, 0), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
@@ -28,8 +26,6 @@ void QEngineCPU::RT(double radians, bitLenInt qubit)
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
 void QEngineCPU::RX(double radians, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    // throw std::invalid_argument("operation on bit index greater than total bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine),
@@ -40,8 +36,6 @@ void QEngineCPU::RX(double radians, bitLenInt qubit)
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
 void QEngineCPU::RY(double radians, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0),
@@ -52,8 +46,6 @@ void QEngineCPU::RY(double radians, bitLenInt qubit)
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
 void QEngineCPU::RZ(double radians, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
     const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0),
@@ -64,8 +56,6 @@ void QEngineCPU::RZ(double radians, bitLenInt qubit)
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
 void QEngineCPU::CRT(double radians, bitLenInt control, bitLenInt target)
 {
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (control == target) {
         throw std::invalid_argument("control bit cannot also be target.");
     }
@@ -79,8 +69,6 @@ void QEngineCPU::CRT(double radians, bitLenInt control, bitLenInt target)
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
 void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target)
 {
-    // if (control >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (control == target)
         throw std::invalid_argument("CRX control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
@@ -93,8 +81,6 @@ void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target)
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
 void QEngineCPU::CRY(double radians, bitLenInt control, bitLenInt target)
 {
-    // if (control >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     if (control == target)
         throw std::invalid_argument("CRY control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
