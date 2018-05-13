@@ -836,27 +836,22 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
         NormalizeState();
     }
 
-    bool foundPerm;
     double prob = Rand();
     double angle = Rand() * 2.0 * M_PI;
     double cosine = cos(angle);
     double sine = sin(angle);
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
-    double probArray[lengthPower];
-    double lowerProb, largestProb, nrmlzr;
+    double* probArray = new double[lengthPower]();
+    double lowerProb, largestProb;
+    double nrmlzr = 1.0;
     bitCapInt lcv, result;
-
-    for (lcv = 0; lcv < lengthPower; lcv++) {
-        probArray[lcv] = 0.0;
-    }
 
     for (lcv = 0; lcv < maxQPower; lcv++) {
         probArray[(lcv & regMask) >> start] += norm(stateVec[lcv]);
     }
 
     lcv = 0;
-    foundPerm = false;
     lowerProb = 0.0;
     largestProb = 0.0;
     result = lengthPower - 1;
@@ -866,11 +861,11 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
      * in a bug-induced topology - some value in stateVec must always be a
      * vector.
      */
-    while ((!foundPerm) && (lcv < maxQPower)) {
+    while (lcv < lengthPower) {
         if ((probArray[lcv] + lowerProb) > prob) {
-            foundPerm = true;
             result = lcv;
             nrmlzr = probArray[lcv];
+            lcv = lengthPower;
         } else {
             if (largestProb <= probArray[lcv]) {
                 largestProb = probArray[lcv];
@@ -882,14 +877,16 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
         }
     }
 
-    bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / nrmlzr;
+    delete[] probArray;
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & resultPtr) == resultPtr) {
-            stateVec[lcv] = nrm * stateVec[lcv];
+    bitCapInt resultPtr = result << start;
+    complex nrm = complex(cosine, sine) / sqrt(nrmlzr);
+
+    par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
+        if ((i & regMask) == resultPtr) {
+            stateVec[i] = nrm * stateVec[i];
         } else {
-            stateVec[lcv] = complex(0.0, 0.0);
+            stateVec[i] = complex(0.0, 0.0);
         }
     });
 
