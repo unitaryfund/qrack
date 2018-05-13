@@ -995,6 +995,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
+{
+    int i;
+
+    qftReg->SetPermutation(0x94);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCD(1, 0, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x93 - i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x89 - i + 4));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
+{
+    int i;
+
+    qftReg->SetPermutation(0x005);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCDC(1, 0, 8, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x103 - i));
+        }
+        else if (i == 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x099));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x197 - i + 5));
+        }
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
     int i;

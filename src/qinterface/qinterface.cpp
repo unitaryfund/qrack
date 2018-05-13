@@ -241,7 +241,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
         for (i = start; i < end; i++) {
             H(i);
             for (j = 1; j < (end - i); j++) {
-                CRTDyad(1, 1 << j, i + j, i);
+                CRTDyad(1, j, i + j, i);
             }
         }
     }
@@ -266,7 +266,7 @@ void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    RT((M_PI * numerator * 2) / pow(2, denomPower), qubit);
+    RT((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
 }
 
 /**

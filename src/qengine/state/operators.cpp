@@ -709,6 +709,8 @@ void QEngineCPU::DECBCDC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    }
+    else {
         toSub++;
     }
     bitCapInt nibbleCount = length / 4;
@@ -753,14 +755,14 @@ void QEngineCPU::DECBCDC(
         if (isValid) {
             bitCapInt outInt = 0;
             bitCapInt outRes = 0;
-            bitCapInt carryRes = 0;
+            bitCapInt carryRes = carryMask;
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] < 0) {
                     nibbles[j] += 10;
                     if ((unsigned char)(j + 1) < nibbleCount) {
                         nibbles[j + 1]--;
                     } else {
-                        carryRes = carryMask;
+                        carryRes = 0;
                     }
                 }
                 outInt |= nibbles[j] << (j * 4);
