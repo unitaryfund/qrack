@@ -48,17 +48,16 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
     else if (((int)(end - begin) / PSTRIDE) < numCores) {
         int parStride = (end - begin) / numCores;
         int remainder = (end - begin) - (parStride * numCores);
-        std::vector<std::future<void>> futures(end - begin);
+        std::vector<std::future<void>> futures(numCores);
         int cpu, count;
         int offset = 0;
         for (cpu = 0; cpu < numCores; cpu++) {
             bitCapInt workUnit = parStride;
-            if (remainder) {
+            if (remainder > 0) {
                 workUnit++;
                 remainder--;
             }
-            offset += workUnit;
-            futures[cpu] = std::async(std::launch::async, [cpu, workUnit, offset, parStride, end, inc, fn]() {
+            futures[cpu] = std::async(std::launch::async, [cpu, workUnit, offset, end, inc, fn]() {
                 bitCapInt j;
                 bitCapInt k = 0;
                 for (j = 0; j < workUnit; j++) {
@@ -70,6 +69,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
                     fn(k, cpu);
                 }
             });
+            offset += workUnit;
         }
         count = cpu;
         for (cpu = 0; cpu < count; cpu++) {
