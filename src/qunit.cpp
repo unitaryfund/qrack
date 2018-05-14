@@ -156,7 +156,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     }
 
     /* Find the rest of the qubits. */
-    for (auto shard : shards) {
+    for (auto &&shard : shards) {
         if (shard.unit == unit && shard.mapped > (mapped + length)) {
             shard.mapped -= length;
         }

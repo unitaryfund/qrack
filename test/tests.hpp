@@ -147,7 +147,7 @@ public:
     {
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
-        for (int j = length; j >= 0; j--) {
+        for (int j = (length - 1); j >= 0; j--) {
             ss << !!((int)(mask & (1 << j)));
         }
         return ss.str();

@@ -38,7 +38,7 @@ bool QEngineCPU::M(bitLenInt qubit)
             nrmlzr = oneChance;
         }
 
-        nrm = complex(cosine, sine) / nrmlzr;
+        nrm = complex(cosine, sine) / sqrt(nrmlzr);
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
@@ -49,10 +49,10 @@ bool QEngineCPU::M(bitLenInt qubit)
         });
     } else {
         if (oneChance < 1.0) {
-            nrmlzr = sqrt(1.0 - oneChance);
+            nrmlzr = 1.0 - oneChance;
         }
 
-        nrm = complex(cosine, sine) / nrmlzr;
+        nrm = complex(cosine, sine) / sqrt(nrmlzr);
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             if ((lcv & qPowers) == 0) {
