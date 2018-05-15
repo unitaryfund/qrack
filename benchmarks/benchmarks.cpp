@@ -352,7 +352,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {
-    benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->CPhaseFlipIfLess(1, 0, n, n);});
+    benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->CPhaseFlipIfLess(1, 0, n - 1, n - 1);});
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")

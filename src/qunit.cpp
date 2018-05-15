@@ -296,6 +296,14 @@ void QUnit::OrderContiguous(QInterfacePtr unit)
 void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenInt low, bitLenInt high)
 {
     bitLenInt i = low, j = high;
+    if (i == (j - 1)) {
+        if (bits[j] < bits[i]) {
+            unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
+            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped);     /* Change the global mapping. */
+            std::swap(bits[i].mapped, bits[j].mapped);                /* Change the contents of the sorting array. */
+        }
+        return;
+    }
     QSortEntry pivot = bits[(low + high) / 2];
 
     while (i <= j) {
@@ -305,11 +313,14 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenIn
         while (bits[j] > pivot) {
             j--;
         }
-        if (i <= j) {
-            /* Note: Using the length variant to avoid a likely-temporary bug in the single-bit variant. */
+        if (i < j) {
             unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
             std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped);     /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped);                /* Change the contents of the sorting array. */
+            i++;
+            j--;
+        }
+        else if (i == j) {
             i++;
             j--;
         }
@@ -724,9 +735,10 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     EntangleRange(start, length);
-    EntangleRange(start, 1, flagIndex, 1);
     OrderContiguous(shards[start].unit);
-    shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
+    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) {
+        unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2);
+    }, start, flagIndex);
 }
 
 void QUnit::PhaseFlip()
