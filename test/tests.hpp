@@ -15,13 +15,21 @@
 #include <iomanip>
 #include <sstream>
 
-#include "qinterface.hpp"
+#include "qfactory.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.5
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
+/*
+ * Default engine type to run the tests with. Global because catch doesn't
+ * support parameterization.
+ */
+extern enum QInterfaceEngine testEngineType;
+extern enum QInterfaceEngine testSubEngineType;
+extern std::shared_ptr<std::default_random_engine> rng;
+
 inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::QInterfacePtr qftReg);
 inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr qftReg);
 inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePtr qftReg);

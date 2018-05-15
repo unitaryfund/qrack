@@ -153,9 +153,7 @@ void ParallelFor::par_for_mask(
 
     IncrementFunc incFn;
     if (allLow) {
-        incFn = [](const bitCapInt i, int cpu) { return i; };
-
-        par_for_inc(begin, end >> maskLen, incFn, fn);
+        par_for(begin, end >> maskLen, fn);
     }
     else {
         incFn = [&masks, maskLen](bitCapInt i, int cpu) {

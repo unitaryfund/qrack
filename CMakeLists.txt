@@ -58,8 +58,8 @@ add_test (NAME qrack_tests
 
 # Declare the benchmark executable
 add_executable (benchmarks
-    benchmarks/benchmarks_main.cpp
-    benchmarks/benchmarks.cpp
+    test/test_main.cpp
+    test/benchmarks.cpp
     )
 
 target_link_libraries (benchmarks
@@ -79,7 +79,7 @@ enable_testing()
 # Run the unittest executable on 'make test'
 
 target_include_directories (unittest PUBLIC test)
-target_include_directories (benchmarks PUBLIC benchmarks)
+target_include_directories (benchmarks PUBLIC test)
 
 if (ENABLE_AVX)
     target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE -DPSTRIDE=${PSTRIDE})
