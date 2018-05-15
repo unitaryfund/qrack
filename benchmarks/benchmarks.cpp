@@ -32,12 +32,14 @@ using namespace Qrack;
 
 void benchmarkLoop(std::shared_ptr<std::default_random_engine> rng, QInterfaceEngine engineType, QInterfaceEngine subEngineType,std::function<void(QInterfacePtr, int)> fn) {
 
-    std::cout<<std::endl;
-    std::cout<<"All Time, ";
-    std::cout<<"Average, ";
-    std::cout<<"Std. Error"<<std::endl;
-
     const int ITERATIONS = 100;
+
+    std::cout<<std::endl;
+    std::cout<<ITERATIONS<<" iterations";
+    std::cout<<std::endl;
+    std::cout<<"# of Qubits, ";
+    std::cout<<"Average Time (ms), ";
+    std::cout<<"Std. Error (ms)"<<std::endl;
 
     clock_t start, t, all;
     clock_t trials[ITERATIONS];
@@ -74,7 +76,7 @@ void benchmarkLoop(std::shared_ptr<std::default_random_engine> rng, QInterfaceEn
         }
         stdet = sqrt(stdet / ITERATIONS);
 
-        std::cout<<(all * 1000.0 / CLOCKS_PER_SEC)<<", ";
+        std::cout<<(int)j<<", ";
         std::cout<<(avgt * 1000.0 / CLOCKS_PER_SEC)<<", ";
         std::cout<<(stdet * 1000.0 / CLOCKS_PER_SEC)<<std::endl;
     }
@@ -98,11 +100,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
 {
     benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->AntiCCNOT(0, n/3, (2*n)/3, n/3);});
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_not")
-{
-    benchmarkLoop(rng, engineType, subEngineType, [&](QInterfacePtr qftReg, int n){qftReg->X(0, n);});
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
