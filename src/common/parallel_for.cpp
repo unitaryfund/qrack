@@ -142,17 +142,17 @@ void ParallelFor::par_for_mask(
     /* Pre-calculate the masks to simplify the increment function later. */
     bitCapInt masks[maskLen][2];
 
-    bool allLow = true;
+    bool onlyLow = true;
     for (int i = 0; i < maskLen; i++) {
         masks[i][0] = maskArray[i] - 1; // low mask
         masks[i][1] = (~(masks[i][0] + maskArray[i])); // high mask
         if (maskArray[maskLen - i - 1] != (end >> (i + 1))) {
-            allLow = false;
+            onlyLow = false;
         }
     }
 
     IncrementFunc incFn;
-    if (allLow) {
+    if (onlyLow) {
         par_for(begin, end >> maskLen, fn);
     }
     else {

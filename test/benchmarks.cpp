@@ -42,11 +42,11 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
     std::cout<<"Sample Std. Deviation (ms), ";
     std::cout<<"Fastest (ms), ";
     std::cout<<"1st Quartile (ms), ";
-    std::cout<<"Median (ms)";
+    std::cout<<"Median (ms), ";
     std::cout<<"3rd Quartile (ms), ";
     std::cout<<"Slowest (ms)"<<std::endl;
 
-    clock_t startClock, tClock, allClock;
+    clock_t startClock, tClock, iterClock;
     clock_t trialClocks[ITERATIONS];
 
     int i, numBits;
@@ -58,7 +58,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
     for (numBits = 3; numBits <= 20; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, numBits, 0, rng);
         startClock = clock();
-        allClock = startClock;
+        iterClock = startClock;
         tClock = startClock;
         avgt = 0.0;
         for (i = 0; i < ITERATIONS; i++) {
@@ -67,12 +67,11 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
             fn(qftReg, numBits);
 
             // Display timing
-            tClock = clock() - allClock;
+            tClock = clock() - iterClock;
             trialClocks[i] = tClock;
             avgt += tClock;
-            allClock = clock();
+            iterClock = clock();
         }
-        allClock = clock() - startClock;
         avgt /= ITERATIONS;
 
         stdet = 0.0;
@@ -83,14 +82,14 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
 
         std::sort(trialClocks, trialClocks + ITERATIONS);
 
-        std::cout<<(int)numBits<<", ";
-        std::cout<<(avgt * 1000.0 / CLOCKS_PER_SEC)<<",";
-        std::cout<<(stdet * 1000.0 / CLOCKS_PER_SEC)<<",";
-        std::cout<<(trialClocks[0] * 1000.0 / CLOCKS_PER_SEC)<<",";
-        std::cout<<(trialClocks[ITERATIONS / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)<<",";
-        std::cout<<(trialClocks[ITERATIONS / 2 - 1] * 1000.0 / CLOCKS_PER_SEC)<<",";
-        std::cout<<(trialClocks[(3 * ITERATIONS) / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)<<",";
-        std::cout<<(trialClocks[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC)<<std::endl;
+        std::cout<<(int)numBits<<", "; /* # of Qubits */
+        std::cout<<(avgt * 1000.0 / CLOCKS_PER_SEC)<<","; /* Average Time (ms) */
+        std::cout<<(stdet * 1000.0 / CLOCKS_PER_SEC)<<","; /* Sample Std. Deviation (ms) */
+        std::cout<<(trialClocks[0] * 1000.0 / CLOCKS_PER_SEC)<<","; /* Fastest (ms) */
+        std::cout<<(trialClocks[ITERATIONS / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)<<","; /* 1st Quartile (ms) */
+        std::cout<<(trialClocks[ITERATIONS / 2 - 1] * 1000.0 / CLOCKS_PER_SEC)<<","; /* Median (ms) */
+        std::cout<<(trialClocks[(3 * ITERATIONS) / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)<<","; /* 3rd Quartile (ms) */
+        std::cout<<(trialClocks[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC)<<std::endl; /* Slowest (ms) */
     }
 }
 

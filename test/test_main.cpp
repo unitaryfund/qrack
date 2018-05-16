@@ -20,13 +20,11 @@
 #define CATCH_CONFIG_RUNNER /* Access to the configuration. */
 #include "tests.hpp"
 
-namespace Qrack {
-    enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
-    enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
-    std::shared_ptr<std::default_random_engine> rng;
-}
-
 using namespace Qrack;
+
+enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
+enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
+std::shared_ptr<std::default_random_engine> rng;
 
 int main(int argc, char* argv[])
 {
