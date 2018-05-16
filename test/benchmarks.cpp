@@ -39,7 +39,12 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
     std::cout<<std::endl;
     std::cout<<"# of Qubits, ";
     std::cout<<"Average Time (ms), ";
-    std::cout<<"Std. Error (ms)"<<std::endl;
+    std::cout<<"Sample Std. Deviation (ms), ";
+    std::cout<<"Fastest (ms), ";
+    std::cout<<"1st Quartile (ms), ";
+    std::cout<<"Median (ms)";
+    std::cout<<"3rd Quartile (ms), ";
+    std::cout<<"Slowest (ms)"<<std::endl;
 
     clock_t startClock, tClock, allClock;
     clock_t trialClocks[ITERATIONS];
@@ -76,9 +81,16 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
         }
         stdet = sqrt(stdet / ITERATIONS);
 
+        std::sort(trialClocks, trialClocks + ITERATIONS);
+
         std::cout<<(int)numBits<<", ";
-        std::cout<<(avgt * 1000.0 / CLOCKS_PER_SEC)<<", ";
-        std::cout<<(stdet * 1000.0 / CLOCKS_PER_SEC)<<std::endl;
+        std::cout<<(avgt * 1000.0 / CLOCKS_PER_SEC)<<",";
+        std::cout<<(stdet * 1000.0 / CLOCKS_PER_SEC)<<",";
+        std::cout<<(trialClocks[0] * 1000.0 / CLOCKS_PER_SEC)<<",";
+        std::cout<<(trialClocks[ITERATIONS / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)<<",";
+        std::cout<<(trialClocks[ITERATIONS / 2 - 1] * 1000.0 / CLOCKS_PER_SEC)<<",";
+        std::cout<<(trialClocks[(3 * ITERATIONS) / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)<<",";
+        std::cout<<(trialClocks[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC)<<std::endl;
     }
 }
 
