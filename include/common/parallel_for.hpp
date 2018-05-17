@@ -19,14 +19,16 @@
 
 namespace Qrack {
 
-class ParallelFor 
-{
+class ParallelFor {
 private:
     int32_t numCores;
 
 public:
-    ParallelFor() : numCores(1) { }
-    virtual ~ParallelFor() { }
+    ParallelFor()
+        : numCores(1)
+    {
+    }
+    virtual ~ParallelFor() {}
 
     void SetConcurrencyLevel(int32_t num) { numCores = num; }
     int32_t GetConcurrencyLevel() { return numCores; }
@@ -66,4 +68,4 @@ public:
     double par_norm(const bitCapInt maxQPower, const complex* stateArray);
 };
 
-}
+} // namespace Qrack

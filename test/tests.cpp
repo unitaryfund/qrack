@@ -23,11 +23,12 @@
 using namespace Qrack;
 
 #define EPSILON 0.001
-#define REQUIRE_FLOAT(A, B) do {                                            \
-        double __tmp_a = A;                                                 \
-        double __tmp_b = B;                                                 \
-        REQUIRE(__tmp_a < (__tmp_b + EPSILON));                             \
-        REQUIRE(__tmp_b > (__tmp_b - EPSILON));                             \
+#define REQUIRE_FLOAT(A, B)                                                                                            \
+    do {                                                                                                               \
+        double __tmp_a = A;                                                                                            \
+        double __tmp_b = B;                                                                                            \
+        REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
+        REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
 void print_bin(int bits, int d);
@@ -65,13 +66,9 @@ void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
         REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
         REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
     }
-
 }
 
-void log(QInterfacePtr p)
-{
-    std::cout << std::endl << std::showpoint << p << std::endl;
-}
+void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
 
 TEST_CASE("test_complex")
 {
@@ -105,7 +102,6 @@ TEST_CASE("test_complex")
     test = (imag(cmplx3) > (-1.5 - EPSILON)) && (imag(cmplx3) < (-1.5 + EPSILON));
     REQUIRE(test);
 
-
     cmplx3 = cmplx1 * cmplx2;
     test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
     REQUIRE(test);
@@ -137,7 +133,6 @@ TEST_CASE("test_complex")
     REQUIRE(test);
     test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
     REQUIRE(test);
-
 }
 
 TEST_CASE("test_qengine_cpu_par_for")
@@ -304,7 +299,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
     qftReg->Swap(0, 4, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
-
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
@@ -914,8 +908,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
         qftReg->INCBCDC(1, 0, 8, 8);
         if (i < 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x096 + i));
-        }
-        else if (i == 4) {
+        } else if (i == 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
         } else {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02 + i - 5));
@@ -995,6 +988,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
+{
+    int i;
+
+    qftReg->SetPermutation(0x94);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCD(1, 0, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x93 - i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x89 - i + 4));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
+{
+    int i;
+
+    qftReg->SetPermutation(0x005);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCDC(1, 0, 8, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x103 - i));
+        } else if (i == 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x099));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x197 - i + 5));
+        }
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
     int i;
@@ -1051,7 +1076,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
     //    std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
     //}
 
-    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an exception. 
+    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an
+    // exception.
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
@@ -1063,7 +1089,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
-
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {
@@ -1103,7 +1128,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
     qftReg->SetReg(0, 8, 0x2b);
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
-
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
@@ -1477,7 +1501,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-	qftReg->Swap(0, 1);
+    qftReg->Swap(0, 1);
 
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
@@ -1495,7 +1519,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-	qftReg->Swap(0, 1, 1);
+    qftReg->Swap(0, 1, 1);
 
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
@@ -1505,54 +1529,3 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
-#if 0
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
-{
-    clock_t t, all;
-    t = clock();
-    all = t;
-
-    int i, j;
-
-    // Grover's search inverts the function of a black box subroutine.
-    // Our subroutine returns true only for an input of 100.
-
-    const int TARGET_PROB = 100;
-
-    for (j = 0; j < 100; j++) {
-        // Our input to the subroutine "oracle" is 8 bits.
-        qftReg->SetPermutation(0);
-        qftReg->H(0, 8);
-
-        // std::cout << "Iterations:" << std::endl;
-        // Twelve iterations maximizes the probablity for 256 searched elements.
-        for (i = 0; i < 12; i++) {
-            // Our "oracle" is true for an input of "100" and false for all other inputs.
-            qftReg->DEC(100, 0, 8);
-            qftReg->ZeroPhaseFlip(0, 8);
-            qftReg->INC(100, 0, 8);
-            // This ends the "oracle."
-            qftReg->H(0, 8);
-            qftReg->ZeroPhaseFlip(0, 8);
-            qftReg->H(0, 8);
-            qftReg->PhaseFlip();
-            // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
-        }
-
-        // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-        // std::cout << "Full Result:    " << qftReg << std::endl;
-        // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
-
-        qftReg->MReg(0, 8);
-
-        //REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
-
-        if (((j + 1) % 10) == 0) {
-            t = clock() - t;
-            std::cout<<"Iteration "<<j<<" time:"<<(t * 1000.0 /CLOCKS_PER_SEC)<<std::endl;
-        }
-    }
-    all = clock() - all;
-    std::cout<<"All time:"<<(all * 1000.0 /CLOCKS_PER_SEC)<<std::endl;
-}
-#endif

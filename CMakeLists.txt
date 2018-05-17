@@ -56,6 +56,21 @@ add_test (NAME qrack_tests
     COMMAND unittest
     )
 
+# Declare the benchmark executable
+add_executable (benchmarks
+    test/test_main.cpp
+    test/benchmarks.cpp
+    )
+
+target_link_libraries (benchmarks
+    qrack
+    pthread
+    )
+
+add_test (NAME qrack_benchmarks
+    COMMAND benchmarks
+    )
+
 # Included after the library and other modules have been declared
 include ("cmake/OpenCL.cmake" )
 
@@ -64,14 +79,17 @@ enable_testing()
 # Run the unittest executable on 'make test'
 
 target_include_directories (unittest PUBLIC test)
+target_include_directories (benchmarks PUBLIC test)
 
 if (ENABLE_AVX)
     target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE -DPSTRIDE=${PSTRIDE})
     target_compile_options (unittest PUBLIC -O3 -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (benchmarks PUBLIC -O3 -std=c++11 -Wall -Werror -mavx -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_definitions (qrack PUBLIC ENABLE_AVX=1)
 else (ENABLE_AVX)
     target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE -DPSTRIDE=${PSTRIDE})
     target_compile_options (unittest PUBLIC -O3 -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (benchmarks PUBLIC -O3 -std=c++11 -Wall -Werror -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_definitions (qrack PUBLIC ENABLE_AVX=0)
 endif (ENABLE_AVX)
 

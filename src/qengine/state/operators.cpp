@@ -471,8 +471,8 @@ void QEngineCPU::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
         bitCapInt maxLCV = iterPower * endPower;
         for (i = 0; i < startPower; i++) {
             for (j = 0; j < maxLCV; j += endPower) {
-                rotate(stateVec + i + j, stateVec + (toSub * startPower) + i + j,
-                    stateVec + endPower + i + j, startPower);
+                rotate(
+                    stateVec + i + j, stateVec + (toSub * startPower) + i + j, stateVec + endPower + i + j, startPower);
             }
         }
     }
@@ -653,8 +653,7 @@ void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, 
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-    }
-    else {
+    } else {
         toSub++;
     }
     bitCapInt signMask = 1 << (length - 1);
@@ -709,6 +708,7 @@ void QEngineCPU::DECBCDC(
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
+    } else {
         toSub++;
     }
     bitCapInt nibbleCount = length / 4;
@@ -753,14 +753,14 @@ void QEngineCPU::DECBCDC(
         if (isValid) {
             bitCapInt outInt = 0;
             bitCapInt outRes = 0;
-            bitCapInt carryRes = 0;
+            bitCapInt carryRes = carryMask;
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] < 0) {
                     nibbles[j] += 10;
                     if ((unsigned char)(j + 1) < nibbleCount) {
                         nibbles[j + 1]--;
                     } else {
-                        carryRes = carryMask;
+                        carryRes = 0;
                     }
                 }
                 outInt |= nibbles[j] << (j * 4);
@@ -778,9 +778,8 @@ void QEngineCPU::DECBCDC(
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    par_for_skip(0, maxQPower, 1 << start, length, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] = -stateVec[lcv];
-    });
+    par_for_skip(
+        0, maxQPower, 1 << start, length, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
@@ -834,41 +833,36 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
         NormalizeState();
     }
 
-    bool foundPerm;
     double prob = Rand();
     double angle = Rand() * 2.0 * M_PI;
     double cosine = cos(angle);
     double sine = sin(angle);
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
-    double probArray[lengthPower];
-    double lowerProb, largestProb, nrmlzr;
+    double* probArray = new double[lengthPower]();
+    double lowerProb, largestProb;
+    double nrmlzr = 1.0;
     bitCapInt lcv, result;
-
-    for (lcv = 0; lcv < lengthPower; lcv++) {
-        probArray[lcv] = 0.0;
-    }
 
     for (lcv = 0; lcv < maxQPower; lcv++) {
         probArray[(lcv & regMask) >> start] += norm(stateVec[lcv]);
     }
 
     lcv = 0;
-    foundPerm = false;
     lowerProb = 0.0;
     largestProb = 0.0;
     result = lengthPower - 1;
 
     /*
      * The value of 'lcv' should not exceed lengthPower unless the stateVec is
-     * in an bug-induced topology - some value in stateVec must always be a
+     * in a bug-induced topology - some value in stateVec must always be a
      * vector.
      */
-    while ((!foundPerm) && (lcv < maxQPower)) {
+    while (lcv < lengthPower) {
         if ((probArray[lcv] + lowerProb) > prob) {
-            foundPerm = true;
             result = lcv;
             nrmlzr = probArray[lcv];
+            lcv = lengthPower;
         } else {
             if (largestProb <= probArray[lcv]) {
                 largestProb = probArray[lcv];
@@ -880,14 +874,16 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
         }
     }
 
-    bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / nrmlzr;
+    delete[] probArray;
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & resultPtr) == resultPtr) {
-            stateVec[lcv] = nrm * stateVec[lcv];
+    bitCapInt resultPtr = result << start;
+    complex nrm = complex(cosine, sine) / sqrt(nrmlzr);
+
+    par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
+        if ((i & regMask) == resultPtr) {
+            stateVec[i] = nrm * stateVec[i];
         } else {
-            stateVec[lcv] = complex(0.0, 0.0);
+            stateVec[i] = complex(0.0, 0.0);
         }
     });
 
@@ -895,7 +891,8 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 }
 
 /// Set 8 bit register bits based on read from classical memory
-bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QEngineCPU::IndexedLDA(
+    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     bitCapInt i, outputInt;
     SetReg(valueStart, valueLength, 0);
@@ -936,7 +933,8 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 }
 
 /// Add based on an indexed load from classical memory
-bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
 
     // This a quantum/classical interface method, similar to SuperposeReg8.
@@ -1036,7 +1034,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 }
 
 /// Subtract based on an indexed load from classical memory
-bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     // This a quantum/classical interface method, similar to SuperposeReg8.
     // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
@@ -1138,4 +1137,4 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     return (bitCapInt)(average + 0.5);
 }
 
-};
+}; // namespace Qrack

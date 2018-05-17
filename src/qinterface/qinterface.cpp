@@ -110,7 +110,6 @@ void QInterface::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
     }
 }
 
-
 /// "AND" compare two bit ranges in QInterface, and store result in range starting at output
 void QInterface::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
@@ -241,7 +240,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
         for (i = start; i < end; i++) {
             H(i);
             for (j = 1; j < (end - i); j++) {
-                CRTDyad(1, 1 << j, i + j, i);
+                CRTDyad(1, j, i + j, i);
             }
         }
     }
@@ -266,7 +265,7 @@ void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
 {
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    RT((M_PI * numerator * 2) / pow(2, denomPower), qubit);
+    RT((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
 }
 
 /**
@@ -397,7 +396,8 @@ void QInterface::CRT(double radians, bitLenInt control, bitLenInt target, bitLen
     }
 }
 
-/// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state
+/// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
+/// 2^denomPower) around |1> state
 void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
 {
     // if (control >= qubitCount)

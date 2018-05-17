@@ -27,8 +27,7 @@ struct QEngineShard {
 class QUnit;
 typedef std::shared_ptr<QUnit> QUnitPtr;
 
-class QUnit : public QInterface
-{
+class QUnit : public QInterface {
 protected:
     QInterfaceEngine engine;
     std::vector<QEngineShard> shards;
@@ -42,7 +41,8 @@ protected:
     }
 
 public:
-    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr);
+    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
+        std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
@@ -120,14 +120,16 @@ public:
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void DECSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -145,9 +147,12 @@ public:
     virtual void PhaseFlip();
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values);
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values);
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
 
     /** @} */
@@ -170,35 +175,29 @@ protected:
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
     void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    void INCxx(INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
+    void INCxx(
+        INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
 
-    QInterfacePtr Entangle(std::initializer_list<bitLenInt *> bits);
+    QInterfacePtr Entangle(std::initializer_list<bitLenInt*> bits);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
 
     template <class It> QInterfacePtr EntangleIterator(It first, It last);
 
-    template <typename F, typename ... B>
-    void EntangleAndCallMember(F fn, B ... bits);
-    template <typename F, typename ... B>
-    void EntangleAndCall(F fn, B ... bits);
+    template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
+    template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
 
     void OrderContiguous(QInterfacePtr unit);
 
     void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
-    struct QSortEntry
-    {
+    struct QSortEntry {
         bitLenInt bit;
         bitLenInt mapped;
-        bool operator<(const QSortEntry &rhs) {
-            return mapped < rhs.mapped;
-        }
-        bool operator>(const QSortEntry &rhs) {
-            return mapped > rhs.mapped;
-        }
+        bool operator<(const QSortEntry& rhs) { return mapped < rhs.mapped; }
+        bool operator>(const QSortEntry& rhs) { return mapped > rhs.mapped; }
     };
-    void SortUnit(QInterfacePtr unit, std::vector<QSortEntry> &bits, bitLenInt low, bitLenInt high);
+    void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
 
     /* Debugging and diagnostic routines. */
     void DumpShards();

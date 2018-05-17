@@ -15,13 +15,22 @@
 #include <iomanip>
 #include <sstream>
 
-#include "qinterface.hpp"
+#include "qfactory.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.5
 
+/*
+ * Default engine type to run the tests with. Global because catch doesn't
+ * support parameterization.
+ */
+extern enum Qrack::QInterfaceEngine testEngineType;
+extern enum Qrack::QInterfaceEngine testSubEngineType;
+extern std::shared_ptr<std::default_random_engine> rng;
+
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
+
 inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::QInterfacePtr qftReg);
 inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr qftReg);
 inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePtr qftReg);
@@ -105,6 +114,7 @@ inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePt
 class QInterfaceTestFixture {
 protected:
     Qrack::QInterfacePtr qftReg;
+
 public:
     QInterfaceTestFixture();
 };
@@ -147,7 +157,7 @@ public:
     {
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
-        for (int j = length; j >= 0; j--) {
+        for (int j = (length - 1); j >= 0; j--) {
             ss << !!((int)(mask & (1 << j)));
         }
         return ss.str();

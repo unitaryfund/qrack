@@ -25,9 +25,9 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(
     bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, complex phaseFac)
-    : QInterface(qBitCount),
-      stateVec(NULL),
-      rand_distribution(0.0, 1.0)
+    : QInterface(qBitCount)
+    , stateVec(NULL)
+    , rand_distribution(0.0, 1.0)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -55,10 +55,7 @@ QEngineCPU::QEngineCPU(
     }
 }
 
-complex* QEngineCPU::GetState()
-{
-    return stateVec;
-}
+complex* QEngineCPU::GetState() { return stateVec; }
 
 void QEngineCPU::CopyState(QInterfacePtr orig)
 {
@@ -77,10 +74,7 @@ void QEngineCPU::ResetStateVec(complex* nStateVec)
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineCPU::SetQuantumState(complex* inputState)
-{
-    std::copy(inputState, inputState + maxQPower, stateVec);
-}
+void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
 
 /**
  * Apply a 2x2 matrix to the state vector
@@ -96,8 +90,9 @@ union ComplexUnion {
     complex2 cmplx2;
     complex cmplx[2];
 
-    inline ComplexUnion() {};
-    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1) {
+    inline ComplexUnion(){};
+    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
+    {
         cmplx[0] = cmplx0;
         cmplx[1] = cmplx1;
     }
@@ -107,12 +102,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    double nrm = 1.0 / runningNorm; 
+    double nrm = 1.0 / runningNorm;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
     if (doCalcNorm && (bitCount == 1)) {
-        double* rngNrm = new double[numCores]; 
+        double* rngNrm = new double[numCores];
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
@@ -129,8 +124,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
         delete[] rngNrm;
         runningNorm = sqrt(runningNorm);
-    }
-    else {
+    } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
@@ -141,8 +135,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
-        }
-        else {
+        } else {
             runningNorm = 1.0;
         }
     }
@@ -152,11 +145,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    double nrm = 1.0 / runningNorm; 
+    double nrm = 1.0 / runningNorm;
     complex nrm = complex(1.0 / runningNorm, 0.0);
 
     if (doCalcNorm && (bitCount == 1)) {
-        double* rngNrm = new double[numCores]; 
+        double* rngNrm = new double[numCores];
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
@@ -177,8 +170,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
         delete[] rngNrm;
         runningNorm = sqrt(runningNorm);
-    }
-    else {
+    } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
 
@@ -193,8 +185,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
-        }
-        else {
+        } else {
             runningNorm = 1.0;
         }
     }
@@ -344,15 +335,15 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         destination->stateVec[i] = sqrt(partStateProb[i]) * complex(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
-    delete []partStateProb;
-    delete []partStateAngle;
+    delete[] partStateProb;
+    delete[] partStateAngle;
 
     for (i = 0; i < remainderPower; i++) {
         stateVec[i] = sqrt(remainderStateProb[i]) * complex(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
     }
 
-    delete []remainderStateProb;
-    delete []remainderStateAngle;
+    delete[] remainderStateProb;
+    delete[] remainderStateAngle;
 }
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
@@ -373,15 +364,14 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 
     /* Disposing of the entire object. */
     if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1);       // Leave as a single bit for safety.
+        SetQubitCount(1); // Leave as a single bit for safety.
         ResetStateVec(AllocStateVec(maxQPower));
 
         return;
     }
 
-
-    double *partStateProb = new double[1<<(qubitCount - length)]();
-    double *partStateAngle = new double[1<<(qubitCount - length)];
+    double* partStateProb = new double[1 << (qubitCount - length)]();
+    double* partStateAngle = new double[1 << (qubitCount - length)];
     double prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
@@ -399,8 +389,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         stateVec[i] = sqrt(partStateProb[i]) * complex(cos(partStateAngle[i]), sin(partStateAngle[i]));
     }
 
-    delete []partStateProb;
-    delete []partStateAngle;
+    delete[] partStateProb;
+    delete[] partStateAngle;
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
@@ -449,7 +439,8 @@ void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVe
 complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
 {
     // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
-    return (complex*)aligned_alloc(ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+    return (complex*)aligned_alloc(
+        ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
 }
 
 } // namespace Qrack

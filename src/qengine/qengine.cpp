@@ -32,7 +32,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
-template void rotate<complex *>(complex *first, complex *middle, complex *last, bitCapInt stride);
+template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
 void QEngineCPU::ApplySingleBit(bitLenInt qubit, const complex* mtrx, bool doCalcNorm)
 {
@@ -63,7 +63,8 @@ void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, con
     Apply2x2(0, qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+void QEngineCPU::ApplyDoublyControlled2x2(
+    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[3];
@@ -75,7 +76,8 @@ void QEngineCPU::ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2
     Apply2x2(qPowers[0] + qPowers[1], qPowers[0] + qPowers[1] + qPowers[2], mtrx, 3, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+void QEngineCPU::ApplyDoublyAntiControlled2x2(
+    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[3];
