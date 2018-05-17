@@ -441,9 +441,7 @@ TEST_CASE("test_grover")
 {
     QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 8, 0, rng);
 
-    clock_t t, all;
-    t = clock();
-    all = t;
+    clock_t iterClock;
 
     int i, j;
 
@@ -452,12 +450,17 @@ TEST_CASE("test_grover")
 
     const int TARGET_PROB = 100;
 
+    std::cout << "Time of maximum probability search (ms)" << std::endl;
+
     for (j = 0; j < 100; j++) {
+
+        // Start timing of one Grover's search
+        iterClock = clock();
+
         // Our input to the subroutine "oracle" is 8 bits.
         qftReg->SetPermutation(0);
         qftReg->H(0, 8);
 
-        // std::cout << "Iterations:" << std::endl;
         // Twelve iterations maximizes the probablity for 256 searched elements.
         for (i = 0; i < 12; i++) {
             // Our "oracle" is true for an input of "100" and false for all other inputs.
@@ -469,22 +472,11 @@ TEST_CASE("test_grover")
             qftReg->ZeroPhaseFlip(0, 8);
             qftReg->H(0, 8);
             qftReg->PhaseFlip();
-            // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
         }
-
-        // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-        // std::cout << "Full Result:    " << qftReg << std::endl;
-        // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
         qftReg->MReg(0, 8);
 
-        //REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
-
-        if (((j + 1) % 10) == 0) {
-            t = clock() - t;
-            std::cout<<"Iteration "<<j<<" time:"<<(t * 1000.0 /CLOCKS_PER_SEC)<<std::endl;
-        }
+        iterClock = clock() - iterClock;
+        std::cout << (iterClock * 1000.0 / CLOCKS_PER_SEC) << std::endl;
     }
-    all = clock() - all;
-    std::cout<<"All time:"<<(all * 1000.0 /CLOCKS_PER_SEC)<<std::endl;
 }
