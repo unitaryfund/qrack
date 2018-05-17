@@ -379,8 +379,7 @@ TEST_CASE("test_mreg")
     benchmarkLoop([&](QInterfacePtr qftReg, int n) { qftReg->MReg(0, n); });
 }
 
-TEST_CASE("test_superposition_reg")
-{
+unsigned char* initLDADummyPage() {
     bitCapInt i, j;
 
     bitCapInt wordLength = (MaxQubits / 16 + 1);
@@ -391,22 +390,19 @@ TEST_CASE("test_superposition_reg")
             testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
         }
     }
+    return testPage;
+}
+
+TEST_CASE("test_superposition_reg")
+{
+    unsigned char* testPage = initLDADummyPage();
     benchmarkLoop([&](QInterfacePtr qftReg, int n) { qftReg->IndexedLDA(0, n / 2, n / 2, n / 2, testPage); });
     delete[] testPage;
 }
 
 TEST_CASE("test_adc_superposition_reg")
 {
-    bitCapInt i, j;
-
-    bitCapInt wordLength = (MaxQubits / 16 + 1);
-    bitCapInt indexLength = (1 << (MaxQubits / 2));
-    unsigned char* testPage = new unsigned char[wordLength * indexLength];
-    for (j = 0; j < indexLength; j++) {
-        for (i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
-        }
-    }
+    unsigned char* testPage = initLDADummyPage();
     benchmarkLoop([&](QInterfacePtr qftReg, int n) {
         qftReg->IndexedADC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
@@ -415,16 +411,7 @@ TEST_CASE("test_adc_superposition_reg")
 
 TEST_CASE("test_sbc_superposition_reg")
 {
-    bitCapInt i, j;
-
-    bitCapInt wordLength = (MaxQubits / 16 + 1);
-    bitCapInt indexLength = (1 << (MaxQubits / 2));
-    unsigned char* testPage = new unsigned char[wordLength * indexLength];
-    for (j = 0; j < indexLength; j++) {
-        for (i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
-        }
-    }
+    unsigned char* testPage = initLDADummyPage();
     benchmarkLoop([&](QInterfacePtr qftReg, int n) {
         qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
