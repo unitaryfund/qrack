@@ -36,16 +36,13 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
             if (j >= end) {
                 break;
             }
-            futures[cpu] = std::async(std::launch::async, [j, cpu, fn]() {
-                fn(j, cpu);
-            });
+            futures[cpu] = std::async(std::launch::async, [j, cpu, fn]() { fn(j, cpu); });
         }
         count = cpu;
         for (cpu = 0; cpu < count; cpu++) {
             futures[cpu].get();
         }
-    }
-    else if (((int)(end - begin) / PSTRIDE) < numCores) {
+    } else if (((int)(end - begin) / PSTRIDE) < numCores) {
         int parStride = (end - begin) / numCores;
         int remainder = (end - begin) - (parStride * numCores);
         std::vector<std::future<void>> futures(numCores);
@@ -75,8 +72,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
         for (cpu = 0; cpu < count; cpu++) {
             futures[cpu].get();
         }
-    }
-    else {
+    } else {
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn]() {
@@ -154,8 +150,7 @@ void ParallelFor::par_for_mask(
     IncrementFunc incFn;
     if (onlyLow) {
         par_for(begin, end >> maskLen, fn);
-    }
-    else {
+    } else {
         incFn = [&masks, maskLen](bitCapInt i, int cpu) {
             /* Push i apart, one mask at a time. */
             for (int m = 0; m < maskLen; m++) {
@@ -175,8 +170,7 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
         for (bitCapInt i = 0; i < maxQPower; i++) {
             nrmSqr += norm(stateArray[i]);
         }
-    }
-    else {
+    } else {
         std::atomic<bitCapInt> idx;
         idx = 0;
         double* nrmPart = new double[numCores];
@@ -208,7 +202,7 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
         }
         delete[] nrmPart;
     }
-    
+
     return sqrt(nrmSqr);
 }
-}
+} // namespace Qrack

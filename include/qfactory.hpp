@@ -24,7 +24,7 @@ namespace Qrack {
 
 /** Factory method to create specific engine implementations. */
 template <typename... Ts>
-QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts ... args)
+QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts... args)
 {
     switch (engine) {
     case QINTERFACE_CPU:
@@ -40,4 +40,4 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     }
 }
 
-}
+} // namespace Qrack

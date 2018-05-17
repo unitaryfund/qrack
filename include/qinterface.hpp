@@ -12,10 +12,10 @@
 
 #pragma once
 
+#include <map>
 #include <math.h>
 #include <memory>
 #include <vector>
-#include <map>
 
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
@@ -90,13 +90,10 @@ protected:
     }
 
 public:
-    QInterface(bitLenInt n)
-    {
-        SetQubitCount(n);
-    }
+    QInterface(bitLenInt n) { SetQubitCount(n); }
 
     /** Destructor of QInterface */
-    virtual ~QInterface() {};
+    virtual ~QInterface(){};
 
     /** Get the count of bits in this register */
     int GetQubitCount() { return qubitCount; }
@@ -903,7 +900,8 @@ public:
      * write in quantum parallel to more than one address of classical memory
      * at a time.
      */
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values) = 0;
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values) = 0;
 
     /**
      * Add to entangled 8 bit register state with a superposed
@@ -929,7 +927,8 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /**
      * Subtract from an entangled 8 bit register state with a superposed
@@ -955,7 +954,8 @@ public:
      * (with carry) operations on a state usually initially prepared with
      * SuperposeReg8().
      */
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
@@ -972,7 +972,6 @@ public:
             first++;
         }
     }
-
 
     /** @} */
 

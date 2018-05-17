@@ -28,8 +28,7 @@ void QEngineCPU::RX(double radians, bitLenInt qubit)
 {
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine),
-        complex(cosine, 0.0) };
+    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine), complex(cosine, 0.0) };
     ApplySingleBit(qubit, pauliRX, true);
 }
 
@@ -38,8 +37,7 @@ void QEngineCPU::RY(double radians, bitLenInt qubit)
 {
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0),
-        complex(cosine, 0.0) };
+    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0), complex(cosine, 0.0) };
     ApplySingleBit(qubit, pauliRY, true);
 }
 
@@ -48,8 +46,7 @@ void QEngineCPU::RZ(double radians, bitLenInt qubit)
 {
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0),
-        complex(cosine, sine) };
+    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
     ApplySingleBit(qubit, pauliRZ, true);
 }
 
@@ -73,8 +70,7 @@ void QEngineCPU::CRX(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRX control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine),
-        complex(cosine, 0.0) };
+    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine), complex(cosine, 0.0) };
     ApplyControlled2x2(control, target, pauliRX, false);
 }
 
@@ -85,8 +81,7 @@ void QEngineCPU::CRY(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRY control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0),
-        complex(cosine, 0.0) };
+    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0), complex(cosine, 0.0) };
     ApplyControlled2x2(control, target, pauliRY, false);
 }
 
@@ -97,8 +92,7 @@ void QEngineCPU::CRZ(double radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRZ control bit cannot also be target.");
     double cosine = cos(radians / 2.0);
     double sine = sin(radians / 2.0);
-    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0),
-        complex(cosine, sine) };
+    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
     ApplyControlled2x2(control, target, pauliRZ, false);
 }
 

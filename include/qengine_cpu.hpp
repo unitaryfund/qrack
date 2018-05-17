@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <random>
-#include <memory>
 #include <algorithm>
+#include <memory>
+#include <random>
 
 #include "qinterface.hpp"
 
@@ -35,20 +35,19 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : public QInterface, public ParallelFor
-{
+class QEngineCPU : public QInterface, public ParallelFor {
 protected:
     uint32_t randomSeed;
     double runningNorm;
-    complex *stateVec;
+    complex* stateVec;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<double> rand_distribution;
 
 public:
-    QEngineCPU(
-        bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0));
-    ~QEngineCPU() { delete []stateVec; }
+    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
+        complex phaseFac = complex(-999.0, -999.0));
+    ~QEngineCPU() { delete[] stateVec; }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
@@ -57,7 +56,10 @@ public:
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
 
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest)); }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest));
+    }
 
     virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
@@ -179,9 +181,12 @@ public:
     virtual void PhaseFlip();
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values);
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values);
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
@@ -211,8 +216,10 @@ protected:
     virtual void ApplySingleBit(bitLenInt qubitIndex, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyControlled2x2(
+        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyAntiControlled2x2(
+        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void NormalizeState();
     virtual void UpdateRunningNorm();
     virtual complex* AllocStateVec(bitCapInt elemCount);

@@ -24,22 +24,16 @@ namespace Qrack {
 struct Complex16Simd {
     __m128d _val;
 
-    inline Complex16Simd() { };
+    inline Complex16Simd(){};
     inline Complex16Simd(const __m128d& v) { _val = v; }
     inline Complex16Simd(double real, double imag) { _val = _mm_set_pd(imag, real); }
-    inline Complex16Simd operator+(const Complex16Simd& other) const
-    {
-        return _mm_add_pd(_val, other._val);
-    }
+    inline Complex16Simd operator+(const Complex16Simd& other) const { return _mm_add_pd(_val, other._val); }
     inline Complex16Simd operator+=(const Complex16Simd& other)
     {
         _val = _mm_add_pd(_val, other._val);
         return _val;
     }
-    inline Complex16Simd operator-(const Complex16Simd& other) const
-    {
-        return _mm_sub_pd(_val, other._val);
-    }
+    inline Complex16Simd operator-(const Complex16Simd& other) const { return _mm_sub_pd(_val, other._val); }
     inline Complex16Simd operator-=(const Complex16Simd& other)
     {
         _val = _mm_sub_pd(_val, other._val);
@@ -65,8 +59,10 @@ struct Complex16Simd {
         __v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
         double nrm = (temp[0] + temp[1]);
 #endif
-        return _mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
-            _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))), _mm_set1_pd(nrm));
+        return _mm_div_pd(
+            _mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
+                _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))),
+            _mm_set1_pd(nrm));
     }
     inline Complex16Simd operator/=(const Complex16Simd& other)
     {
@@ -76,8 +72,10 @@ struct Complex16Simd {
         __v2df temp = (__v2df)_mm_mul_pd(other._val, other._val);
         double nrm = (temp[0] + temp[1]);
 #endif
-        _val = _mm_div_pd(_mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
-            _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))), _mm_set1_pd(nrm));
+        _val = _mm_div_pd(
+            _mm_add_pd(_mm_mul_pd(_mm_shuffle_pd(_val, _val, 1), _mm_shuffle_pd(other._val, -(other._val), 3)),
+                _mm_mul_pd(_val, _mm_shuffle_pd(other._val, other._val, 0))),
+            _mm_set1_pd(nrm));
         return _val;
     }
     inline Complex16Simd operator/(const double rhs) const { return _mm_div_pd(_val, _mm_set1_pd(rhs)); }
@@ -89,8 +87,8 @@ struct Complex16Simd {
     inline Complex16Simd operator-() const { return -_val; }
     inline Complex16Simd operator*=(const double& other)
     {
-       _val = _mm_mul_pd(_val, _mm_set1_pd(other));
-       return _val;
+        _val = _mm_mul_pd(_val, _mm_set1_pd(other));
+        return _val;
     }
     inline bool operator==(const Complex16Simd& rhs) const
     {
@@ -104,7 +102,10 @@ struct Complex16Simd {
     }
 };
 
-inline Complex16Simd operator*(const double& lhs, const Complex16Simd& rhs) { return _mm_mul_pd(_mm_set1_pd(lhs), rhs._val); }
+inline Complex16Simd operator*(const double& lhs, const Complex16Simd& rhs)
+{
+    return _mm_mul_pd(_mm_set1_pd(lhs), rhs._val);
+}
 inline Complex16Simd operator/(const double& lhs, const Complex16Simd& rhs)
 {
     __v2df temp = (__v2df)_mm_mul_pd(rhs._val, rhs._val);

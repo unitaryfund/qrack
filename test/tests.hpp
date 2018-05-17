@@ -114,6 +114,7 @@ inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePt
 class QInterfaceTestFixture {
 protected:
     Qrack::QInterfacePtr qftReg;
+
 public:
     QInterfaceTestFixture();
 };

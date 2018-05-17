@@ -41,11 +41,10 @@ int main(int argc, char* argv[])
      * Allow disabling running OpenCL tests on the command line, even if
      * supported.
      */
-    auto cli = session.cli() |
-            Opt(disable_qengine)["--disable-qengine"]("Disable basic QEngine tests") |
-            Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
-            Opt(disable_qunit)["--disable-qunit"]("Disable QUnit implementation tests") |
-            Opt(disable_cpu)["--disable-cpu"]("Disable the CPU-based implementation tests");
+    auto cli = session.cli() | Opt(disable_qengine)["--disable-qengine"]("Disable basic QEngine tests") |
+        Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
+        Opt(disable_qunit)["--disable-qunit"]("Disable QUnit implementation tests") |
+        Opt(disable_cpu)["--disable-cpu"]("Disable the CPU-based implementation tests");
 
     session.cli(cli);
 
@@ -78,7 +77,8 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QEngine -> OpenCL ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
+                .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
 #endif
@@ -96,7 +96,8 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && !disable_opencl) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
+                .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
 #endif

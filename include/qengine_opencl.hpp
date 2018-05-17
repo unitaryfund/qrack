@@ -29,8 +29,7 @@ namespace Qrack {
 class OCLEngine;
 
 /** OpenCL enhanced QEngineCPU implementation. */
-class QEngineOCL : public QEngineCPU
-{
+class QEngineOCL : public QEngineCPU {
 protected:
     OCLEngine* clObj;
     cl::CommandQueue queue;
@@ -41,16 +40,14 @@ protected:
     cl::Buffer maxBuffer;
 
 public:
-
-    QEngineOCL(
-        bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr)
         : QEngineCPU(qBitCount, initState, rgp)
     {
         InitOCL();
     }
 
     /* Operations that have an improved implementation. */
-    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); //Inherited overload
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
     using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
@@ -60,9 +57,12 @@ public:
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values);
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values);
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
 protected:
     static const int BCI_ARG_LEN = 10;
@@ -71,16 +71,20 @@ protected:
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
 
-    void DispatchCall(cl::Kernel *call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex *nVec = NULL, unsigned char* values = NULL, bitCapInt valuesLength = 0);
+    void DispatchCall(cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
+        unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount, const bitCapInt* qPowersSorted, bool doCalcNorm);
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm);
 
     /* Utility functions used by the operations above. */
-    void ROx(cl::Kernel *call, bitLenInt shift, bitLenInt start, bitLenInt length);
+    void ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenInt length);
     void INT(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
-    void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
+    void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
+        const bitLenInt carryIndex);
 
-    bitCapInt OpIndexed(cl::Kernel *call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    bitCapInt OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
+        bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 };
 
-}
+} // namespace Qrack

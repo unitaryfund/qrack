@@ -100,14 +100,13 @@ void QEngineCPU::AntiCNOT(bitLenInt control, bitLenInt target)
     ApplyAntiControlled2x2(control, target, pauliX, false);
 }
 
-
 /// Hadamard gate
 void QEngineCPU::H(bitLenInt qubit)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
     // bits.");
-    const complex had[4] = { complex(1.0 / M_SQRT2, 0.0), complex(1.0 / M_SQRT2, 0.0),
-        complex(1.0 / M_SQRT2, 0.0), complex(-1.0 / M_SQRT2, 0.0) };
+    const complex had[4] = { complex(1.0 / M_SQRT2, 0.0), complex(1.0 / M_SQRT2, 0.0), complex(1.0 / M_SQRT2, 0.0),
+        complex(-1.0 / M_SQRT2, 0.0) };
     ApplySingleBit(qubit, had, true);
 }
 
