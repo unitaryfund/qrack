@@ -379,7 +379,8 @@ TEST_CASE("test_mreg")
     benchmarkLoop([&](QInterfacePtr qftReg, int n) { qftReg->MReg(0, n); });
 }
 
-unsigned char* initLDADummyPage() {
+unsigned char* initLDADummyPage()
+{
     bitCapInt i, j;
 
     bitCapInt wordLength = (MaxQubits / 16 + 1);
@@ -387,7 +388,7 @@ unsigned char* initLDADummyPage() {
     unsigned char* testPage = new unsigned char[wordLength * indexLength];
     for (j = 0; j < indexLength; j++) {
         for (i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
+            testPage[j * wordLength + i] = (j & (0xff << (8 * i))) >> (8 * i);
         }
     }
     return testPage;
