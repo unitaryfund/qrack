@@ -31,6 +31,8 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
+const bitLenInt MaxQubits = 20;
+
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 {
 
@@ -57,7 +59,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
-    for (numBits = 3; numBits <= 20; numBits++) {
+    for (numBits = 3; numBits <= MaxQubits; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, numBits, 0, rng);
         avgt = 0.0;
         for (i = 0; i < ITERATIONS; i++) {
@@ -379,42 +381,54 @@ TEST_CASE("test_mreg")
 
 TEST_CASE("test_superposition_reg")
 {
-    int j;
+    bitCapInt i, j;
 
-    unsigned char testPage[2048];
-    for (j = 0; j < 1024; j++) {
-        testPage[j * 2] = j & 0xff;
-        testPage[j * 2 + 1] = (j & 0x100) >> 8;
+    bitCapInt wordLength = (MaxQubits / 16 + 1);
+    bitCapInt indexLength = (1 << (MaxQubits / 2));
+    unsigned char* testPage = new unsigned char[wordLength * indexLength];
+    for (j = 0; j < indexLength; j++) {
+        for (i = 0; i < wordLength; i++) {
+            testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
+        }
     }
     benchmarkLoop([&](QInterfacePtr qftReg, int n) { qftReg->IndexedLDA(0, n / 2, n / 2, n / 2, testPage); });
+    delete[] testPage;
 }
 
 TEST_CASE("test_adc_superposition_reg")
 {
-    int j;
+    bitCapInt i, j;
 
-    unsigned char testPage[2048];
-    for (j = 0; j < 1024; j++) {
-        testPage[j * 2] = j & 0xff;
-        testPage[j * 2 + 1] = (j & 0x100) >> 8;
+    bitCapInt wordLength = (MaxQubits / 16 + 1);
+    bitCapInt indexLength = (1 << (MaxQubits / 2));
+    unsigned char* testPage = new unsigned char[wordLength * indexLength];
+    for (j = 0; j < indexLength; j++) {
+        for (i = 0; i < wordLength; i++) {
+            testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
+        }
     }
     benchmarkLoop([&](QInterfacePtr qftReg, int n) {
         qftReg->IndexedADC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
+    delete[] testPage;
 }
 
 TEST_CASE("test_sbc_superposition_reg")
 {
-    int j;
+    bitCapInt i, j;
 
-    unsigned char testPage[2048];
-    for (j = 0; j < 1024; j++) {
-        testPage[j * 2] = j & 0xff;
-        testPage[j * 2 + 1] = (j & 0x100) >> 8;
+    bitCapInt wordLength = (MaxQubits / 16 + 1);
+    bitCapInt indexLength = (1 << (MaxQubits / 2));
+    unsigned char* testPage = new unsigned char[wordLength * indexLength];
+    for (j = 0; j < indexLength; j++) {
+        for (i = 0; i < wordLength; i++) {
+            testPage[j * wordLength + i] = (j & (0xff<<(8 * i))) >> (8 * i);
+        }
     }
     benchmarkLoop([&](QInterfacePtr qftReg, int n) {
         qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
+    delete[] testPage;
 }
 
 TEST_CASE("test_setbit")
