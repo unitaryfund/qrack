@@ -26,7 +26,7 @@ struct Complex16Simd {
 
     inline Complex16Simd(){};
     inline Complex16Simd(const __m128d& v) { _val = v; }
-    inline Complex16Simd(double real, double imag) { _val = _mm_set_pd(imag, real); }
+    inline Complex16Simd(const double& real, const double& imag) { _val = _mm_set_pd(imag, real); }
     inline Complex16Simd operator+(const Complex16Simd& other) const { return _mm_add_pd(_val, other._val); }
     inline Complex16Simd operator+=(const Complex16Simd& other)
     {
