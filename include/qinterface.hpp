@@ -855,7 +855,7 @@ public:
      *
      * While a QInterface represents an interacting set of qubit-based
      * registers, or a virtual quantum chip, the registers need to interact in
-     * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
+     * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
      * method similar to the X addressing mode of the MOS 6502 chip, if the X
      * register can be in a state of coherent superposition when it loads from
      * RAM.
@@ -909,23 +909,23 @@ public:
      *
      * inputStart" is the start index of 8 qubits that act as an index into the
      * 256 byte "values" array. The "outputStart" bits would usually already be
-     * entangled with the "inputStart" bits via a SuperposeReg8() operation.
+     * entangled with the "inputStart" bits via a IndexedLDA() operation.
      * With the "inputStart" bits being a "key" and the "outputStart" bits
      * being a value, the permutation state |key, value> is mapped to |key,
      * value + values[key]>. This is similar to classical parallel addition of
      * two arrays.  However, when either of the registers are measured, both
      * registers will collapse into one random VALID key-value pair, with any
-     * addition or subtraction done to the "value." See SuperposeReg8() for
+     * addition or subtraction done to the "value." See IndexedLDA() for
      * context.
      *
      * While a QInterface represents an interacting set of qubit-based
      * registers, or a virtual quantum chip, the registers need to interact in
-     * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
+     * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
      * method similar to the X addressing mode of the MOS 6502 chip, if the X
      * register can be in a state of coherent superposition when it loads from
-     * RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract
+     * RAM. "IndexedADC" and "IndexedSBC" perform add and subtract
      * (with carry) operations on a state usually initially prepared with
-     * SuperposeReg8().
+     * IndexedLDA().
      */
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
@@ -936,23 +936,23 @@ public:
      *
      * "inputStart" is the start index of 8 qubits that act as an index into
      * the 256 byte "values" array. The "outputStart" bits would usually
-     * already be entangled with the "inputStart" bits via a SuperposeReg8()
+     * already be entangled with the "inputStart" bits via a IndexedLDA()
      * operation.  With the "inputStart" bits being a "key" and the
      * "outputStart" bits being a value, the permutation state |key, value> is
      * mapped to |key, value - values[key]>. This is similar to classical
      * parallel addition of two arrays.  However, when either of the registers
      * are measured, both registers will collapse into one random VALID
      * key-value pair, with any addition or subtraction done to the "value."
-     * See QInterface::SuperposeReg8 for context.
+     * See QInterface::IndexedLDA for context.
      *
      * While a QInterface represents an interacting set of qubit-based
      * registers, or a virtual quantum chip, the registers need to interact in
-     * some way with (classical or quantum) RAM. SuperposeReg8 is a RAM access
+     * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
      * method similar to the X addressing mode of the MOS 6502 chip, if the X
      * register can be in a state of coherent superposition when it loads from
-     * RAM. "AdcSuperposReg8" and "SbcSuperposeReg8" perform add and subtract
+     * RAM. "IndexedADC" and "IndexedSBC" perform add and subtract
      * (with carry) operations on a state usually initially prepared with
-     * SuperposeReg8().
+     * IndexedLDA().
      */
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
