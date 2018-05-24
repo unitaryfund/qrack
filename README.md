@@ -75,7 +75,9 @@ Qrack is an experimental work in progress, and the author aims for both utility 
 
 ## Copyright and License
 
-Copyright (c) Daniel Strano 2017, (with many thanks to Benn Bollay for tool chain development in particular, and also Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept). All rights reserved. (See "par_for.hpp" for additional information.)
+Copyright (c) Daniel Strano 2017 and the Qrack contributors. All rights reserved.
+
+Daniel Strano would like to specifically note that Benn Bollay is in particular almost entirely responsible for the implementation of QUnit and tooling, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. He basically did half the work of making Qrack; an unfortunate quirk of merging credits him a very disproportionately low amount of the work on the Github commit history. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept.
 
 Licensed under the GNU General Public License V3.
 
