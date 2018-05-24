@@ -51,16 +51,6 @@ Most platforms offer a standardized way of installing OpenCL, however for VMWare
 1.  Install OpenGL headers: `$ sudo apt install mesa-common-dev`
 1.  Adjust the `makefile` to have the appropriate search paths
 
-## Note about unitarity and arithmetic
-
-The project's author notes that the ADD and SUB variants in the current version of the project break unitarity and are not on rigorous footing. They are included in the project (commented out) as the basis for work on correct implementations. INC and DEC, however, are unitary and function much like SWAP operations. ADD and SUB operations are provisional and will be corrected.
-
-Similarly, AND/OR/XOR are only provided for convenience and generally entail a measurement of the output bit. For register-based virtual quantum processors, we suspect it will be a common requirement that an output register be measured, cleared, and loaded with the output logical comparison operations, but this will generally require measurement and therefore break unitarity and introduce a random phase factor. CCNOT and X gates (composed for convenience as "AntiCCNOT" gates) could instead be operated on a target bit with a known input state to achieve a similar result in a unitary fashion, but this is left to the particular virtual machine implementation.
-
-Similarly, the "Decohere" and "Dispose" methods should only be used on qubits that are guaranteed to be separable. (Meauring a set of qubits "breaks" its entanglements.)
-
-Qrack is an experimental work in progress, and the author aims for both utility and correctness, but the project cannot be guaranteed to be fit for any purpose, express or implied. (See LICENSE.md for details.)
-
 ## Performing code coverage
 
 ```
@@ -77,7 +67,7 @@ Qrack is an experimental work in progress, and the author aims for both utility 
 
 Copyright (c) Daniel Strano 2017 and the Qrack contributors. All rights reserved.
 
-Daniel Strano would like to specifically note that Benn Bollay is in particular almost entirely responsible for the implementation of QUnit and tooling, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. He basically did half the work of making Qrack; an unfortunate quirk of merging credits him a very disproportionately low amount of the work on the Github commit history. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept.
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews.  Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept.
 
 Licensed under the GNU General Public License V3.
 
