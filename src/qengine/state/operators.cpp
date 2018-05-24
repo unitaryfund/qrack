@@ -937,8 +937,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
 
-    // This a quantum/classical interface method, similar to SuperposeReg8.
-    // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
+    // This a quantum/classical interface method, similar to IndexedLDA.
+    // Like IndexedLDA, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
     // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
     // are ADded with Carry (ADC) to values entangled in the "outputStart" register with the "inputStart" register.
 
@@ -1037,8 +1037,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    // This a quantum/classical interface method, similar to SuperposeReg8.
-    // Like SuperposeReg8, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
+    // This a quantum/classical interface method, similar to IndexedLDA.
+    // Like IndexedLDA, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
     // the "inputStart" register. Instead of just loading this page superposed into "outputStart," though, its values
     // are SuBtracted with Carry (SBC) from values entangled in the "outputStart" register with the "inputStart"
     // register.
