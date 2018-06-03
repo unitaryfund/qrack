@@ -14,3 +14,4 @@ Makefile
 cmake_install.cmake
 qrack.pc
 _build/
+include/OpenCL/

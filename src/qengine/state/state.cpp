@@ -441,7 +441,8 @@ complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
     // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
 #ifdef __APPLE__
     void* toRet;
-    posix_memalign(&toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+    posix_memalign(
+        &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
 #else
     return (complex*)aligned_alloc(
