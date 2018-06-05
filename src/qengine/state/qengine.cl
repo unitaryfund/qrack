@@ -108,6 +108,21 @@ void kernel apply2x2norm(global double2* stateVec, constant double2* cmplxPtr, c
     }
 }
 
+void kernel cohere(global double2* stateVec1, global double2* stateVec2, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong nMaxQPower = ulongPtr[0];
+    ulong startMask = ulongPtr[1];
+    ulong endMask = ulongPtr[2];
+    ulong qubitCount = ulongPtr[3];
+    for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
+        nStateVec[lcv] = zmul(stateVec1[lcv & startMask], stateVec2[(lcv & endMask) >> qubitCount]);
+    }
+}
+
 void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
 {
     ulong ID, Nthreads, lcv;

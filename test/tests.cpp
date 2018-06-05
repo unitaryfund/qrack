@@ -1278,7 +1278,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
 
     qftReg->Dispose(0, qftReg->GetQubitCount() - 4);
     qftReg->SetPermutation(0x0b);
-    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0x02);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0x02, rng);
 
     qftReg->Cohere(qftReg2);
 

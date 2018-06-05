@@ -27,6 +27,10 @@
 namespace Qrack {
 
 class OCLEngine;
+    
+class QEngineOCL;
+    
+typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
@@ -49,6 +53,9 @@ public:
     /* Operations that have an improved implementation. */
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    using QEngineCPU::Cohere;
+    virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);

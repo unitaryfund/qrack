@@ -13,6 +13,8 @@
 #include "oclengine.hpp"
 #include "qengine_opencl.hpp"
 
+#include <iostream>
+
 namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
@@ -144,6 +146,50 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     } else {
         runningNorm = 1.0;
     }
+}
+    
+bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
+{
+    bitLenInt result = qubitCount;
+    
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
+        
+    if (toCopy->runningNorm != 1.0) {
+        toCopy->NormalizeState();
+    }
+        
+    bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
+    bitCapInt nMaxQPower = 1 << nQubitCount;
+    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, startMask, endMask, qubitCount, 0, 0, 0, 0, 0, 0 };
+    
+    cl::Context context = *(clObj->GetContextPtr());
+    
+    queue.enqueueUnmapMemObject(stateBuffer, stateVec);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    
+    cl::Buffer stateBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * (1<<(toCopy->qubitCount)), toCopy->stateVec);
+    
+    complex* nStateVec = AllocStateVec(nMaxQPower);
+    cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * nMaxQPower, nStateVec);
+    cl::Kernel* call = clObj->GetCoherePtr();
+    call->setArg(0, stateBuffer);
+    call->setArg(1, stateBuffer2);
+    call->setArg(2, ulongBuffer);
+    call->setArg(3, nStateBuffer);
+    queue.finish();
+    
+    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+                               cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+                               cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * nMaxQPower);
+    SetQubitCount(nQubitCount);
+    ResetStateVec(nStateVec);
+    return result;
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index
