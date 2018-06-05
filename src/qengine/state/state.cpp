@@ -331,16 +331,16 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
 
     ResetStateVec(AllocStateVec(maxQPower));
 
-    for (i = 0; i < partPower; i++) {
-        destination->stateVec[i] = sqrt(partStateProb[i]) * complex(cos(partStateAngle[i]), sin(partStateAngle[i]));
-    }
+    par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+        destination->stateVec[lcv] = sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+    });
 
     delete[] partStateProb;
     delete[] partStateAngle;
 
-    for (i = 0; i < remainderPower; i++) {
-        stateVec[i] = sqrt(remainderStateProb[i]) * complex(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
-    }
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] = sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+    });
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
@@ -385,9 +385,9 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 
     ResetStateVec(AllocStateVec(maxQPower));
 
-    for (i = 0; i < maxQPower; i++) {
-        stateVec[i] = sqrt(partStateProb[i]) * complex(cos(partStateAngle[i]), sin(partStateAngle[i]));
-    }
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] = sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+    });
 
     delete[] partStateProb;
     delete[] partStateAngle;

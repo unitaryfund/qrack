@@ -5,6 +5,13 @@ inline double2 zmul(const double2 lhs, const double2 rhs)
     return (lhs * (double2)(rhs.y, -(rhs.y))) + (rhs.x * (double2)(lhs.y, lhs.x));
 }
 
+inline double arg(const double2 cmplx)
+{
+    if (cmplx.x == 0.0 && cmplx.y == 0.0)
+        return 0.0;
+    return atan2(cmplx.y, cmplx.x);
+}
+
 void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, constant ulong* ulongPtr)
 {
     ulong ID, Nthreads, lcv;
@@ -120,6 +127,45 @@ void kernel cohere(global double2* stateVec1, global double2* stateVec2, constan
     ulong qubitCount = ulongPtr[3];
     for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[lcv & startMask], stateVec2[(lcv & endMask) >> qubitCount]);
+    }
+}
+
+void kernel decohereprob(global double2* stateVec, constant ulong* ulongPtr, global double* partStateProb, global double* partStateAngle, global double* remainderStateProb, global double* remainderStateAngle)
+{
+    ulong ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxQPower = ulongPtr[0];
+    ulong mask = ulongPtr[1];
+    ulong startMask = ulongPtr[2];
+    ulong endMask = ulongPtr[3];
+    ulong start = ulongPtr[4];
+    ulong length = ulongPtr[5];
+    double prob, angle;
+    double2 amp;
+    for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
+        amp = stateVec[lcv];
+        prob = dot(amp, amp);
+        angle = arg(amp);
+        partStateProb[(lcv & mask) >> start] += prob;
+        partStateAngle[(lcv & mask) >> start] = angle;
+        remainderStateProb[(lcv & startMask) | ((lcv & endMask) >> length)] += prob;
+        remainderStateAngle[(lcv & startMask) | ((lcv & endMask) >> length)] = angle;
+    }
+}
+
+void kernel decohereamp(global double* stateProb, global double* stateAngle, constant ulong* ulongPtr, global double2* nStateVec)
+{
+    ulong ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong maxQPower = ulongPtr[0];
+    double angle;
+    for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
+        angle = stateAngle[lcv];
+        nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((double2)(angle + M_PI_2, angle));
     }
 }
 

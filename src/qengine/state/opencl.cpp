@@ -13,8 +13,6 @@
 #include "oclengine.hpp"
 #include "qengine_opencl.hpp"
 
-#include <iostream>
-
 namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
@@ -189,7 +187,111 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * nMaxQPower);
     SetQubitCount(nQubitCount);
     ResetStateVec(nStateVec);
+    
     return result;
+}
+    
+void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
+{
+    if (length == 0) {
+        return;
+    }
+        
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
+        
+    bitCapInt partPower = 1 << length;
+    bitCapInt remainderPower = 1 << (qubitCount - length);
+    bitCapInt mask = (partPower - 1) << start;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, mask, startMask, endMask, start, length, 0, 0, 0, 0 };
+        
+    double* partStateProb = new double[partPower]();
+    double* remainderStateProb = new double[remainderPower]();
+    double* partStateAngle = new double[partPower];
+    double* remainderStateAngle = new double[remainderPower];
+    
+    cl::Context context = *(clObj->GetContextPtr());
+    
+    queue.enqueueUnmapMemObject(stateBuffer, stateVec);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    
+    cl::Buffer probBuffer1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * partPower, partStateProb);
+    cl::Buffer angleBuffer1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * partPower, partStateAngle);
+    cl::Buffer probBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * remainderPower, remainderStateProb);
+    cl::Buffer angleBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * remainderPower, remainderStateAngle);
+    
+    cl::Kernel* call = clObj->GetDecohereProbPtr();
+    call->setArg(0, stateBuffer);
+    call->setArg(1, ulongBuffer);
+    call->setArg(2, probBuffer1);
+    call->setArg(3, angleBuffer1);
+    call->setArg(4, probBuffer2);
+    call->setArg(5, angleBuffer2);
+    queue.finish();
+    
+    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+                               cl::NDRange(1), // global number of work items
+                               cl::NDRange(1)); // local number (per group)
+    
+    queue.flush();
+    queue.finish();
+        
+    if ((maxQPower - partPower) == 0) {
+        SetQubitCount(1);
+    } else {
+        SetQubitCount(qubitCount - length);
+    }
+    
+    bciArgs[0] = partPower;
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.enqueueUnmapMemObject(destination->stateBuffer, destination->stateVec);
+    queue.finish();
+    
+    call = clObj->GetDecohereAmpPtr();
+    call->setArg(0, probBuffer1);
+    call->setArg(1, angleBuffer1);
+    call->setArg(2, ulongBuffer);
+    call->setArg(3, destination->stateBuffer);
+    queue.finish();
+    
+    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+                               cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+                               cl::NDRange(1)); // local number (per group)
+    
+    queue.enqueueMapBuffer(destination->stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * partPower);
+    
+    bciArgs[0] = maxQPower;
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+        
+    delete[] partStateProb;
+    delete[] partStateAngle;
+    
+    complex* nStateVec = AllocStateVec(maxQPower);
+    cl::Buffer nStateBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, nStateVec);
+    
+    queue.finish();
+    
+    call->setArg(0, probBuffer2);
+    call->setArg(1, angleBuffer2);
+    call->setArg(2, ulongBuffer);
+    call->setArg(3, nStateBuffer);
+    queue.finish();
+        
+    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+                               cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+                               cl::NDRange(1)); // local number (per group)
+    
+    queue.flush();
+    queue.finish();
+    
+    ResetStateVec(nStateVec);
+        
+    delete[] remainderStateProb;
+    delete[] remainderStateAngle;
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index

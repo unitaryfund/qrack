@@ -1253,7 +1253,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
     int j;
 
-    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decohere(0, 4, qftReg2);
