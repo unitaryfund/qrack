@@ -163,9 +163,9 @@ void ParallelFor::par_for_mask(
     }
 }
 
-double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
+real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
 {
-    double nrmSqr = 0;
+    real1 nrmSqr = 0;
     if ((int)(maxQPower / PSTRIDE) < numCores) {
         for (bitCapInt i = 0; i < maxQPower; i++) {
             nrmSqr += norm(stateArray[i]);
@@ -173,12 +173,11 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
     } else {
         std::atomic<bitCapInt> idx;
         idx = 0;
-        double* nrmPart = new double[numCores];
+        real1* nrmPart = new real1[numCores];
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
-                double sqrNorm = 0.0;
-                // double smallSqrNorm = 0.0;
+                real1 sqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {

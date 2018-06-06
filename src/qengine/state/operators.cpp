@@ -801,7 +801,7 @@ void QEngineCPU::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     if (length == 1) {
         SetBit(start, (value == 1));
     } else if ((start == 0) && (length == qubitCount)) {
-        double angle = Rand() * 2.0 * M_PI;
+        real1 angle = Rand() * 2.0 * M_PI;
 
         runningNorm = 1.0;
         std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
@@ -833,15 +833,15 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
         NormalizeState();
     }
 
-    double prob = Rand();
-    double angle = Rand() * 2.0 * M_PI;
-    double cosine = cos(angle);
-    double sine = sin(angle);
+    real1 prob = Rand();
+    real1 angle = Rand() * 2.0 * M_PI;
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
-    double* probArray = new double[lengthPower]();
-    double lowerProb, largestProb;
-    double nrmlzr = 1.0;
+    real1* probArray = new real1[lengthPower]();
+    real1 lowerProb, largestProb;
+    real1 nrmlzr = 1.0;
     bitCapInt lcv, result;
 
     for (lcv = 0; lcv < maxQPower; lcv++) {
@@ -916,9 +916,9 @@ bitCapInt QEngineCPU::IndexedLDA(
         nStateVec[outputRes | lcv] = stateVec[lcv];
     });
 
-    double prob;
-    double totProb = 0.0;
-    double average = 0.0;
+    real1 prob;
+    real1 totProb = 0.0;
+    real1 average = 0.0;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
@@ -1014,9 +1014,9 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
     bitCapInt i, outputInt;
-    double prob;
-    double totProb = 0.0;
-    double average = 0.0;
+    real1 prob;
+    real1 totProb = 0.0;
+    real1 average = 0.0;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);
@@ -1118,9 +1118,9 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // At the end, just as a convenience, we return the expectation value for
     // the addition result.
     bitCapInt i, outputInt;
-    double prob;
-    double totProb = 0.0;
-    double average = 0.0;
+    real1 prob;
+    real1 totProb = 0.0;
+    real1 average = 0.0;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(nStateVec[i]);

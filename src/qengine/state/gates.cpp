@@ -22,17 +22,17 @@ bool QEngineCPU::M(bitLenInt qubit)
     }
 
     bool result;
-    double prob = Rand();
-    double angle = Rand() * 2.0 * M_PI;
-    double cosine = cos(angle);
-    double sine = sin(angle);
+    real1 prob = Rand();
+    real1 angle = Rand() * 2.0 * M_PI;
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
     complex nrm;
 
     bitCapInt qPowers = 1 << qubit;
-    double oneChance = Prob(qubit);
+    real1 oneChance = Prob(qubit);
 
     result = (prob < oneChance) && oneChance > 0.0;
-    double nrmlzr = 1.0;
+    real1 nrmlzr = 1.0;
     if (result) {
         if (oneChance > 0.0) {
             nrmlzr = oneChance;

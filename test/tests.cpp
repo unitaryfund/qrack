@@ -25,14 +25,14 @@ using namespace Qrack;
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
-        double __tmp_a = A;                                                                                            \
-        double __tmp_b = B;                                                                                            \
+        real1 __tmp_a = A;                                                                                            \
+        real1 __tmp_b = B;                                                                                            \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
 void print_bin(int bits, int d);
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
+//void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
 void log(QInterfacePtr p);
 
 void print_bin(int bits, int d)
@@ -44,6 +44,7 @@ void print_bin(int bits, int d)
     }
 }
 
+#if 0
 void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
 {
     /* Validate that 'a' and 'b' are the same. */
@@ -67,9 +68,11 @@ void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
         REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
     }
 }
+#endif
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
 
+#if 0
 TEST_CASE("test_complex")
 {
     bool test;
@@ -134,6 +137,7 @@ TEST_CASE("test_complex")
     test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
     REQUIRE(test);
 }
+#endif
 
 TEST_CASE("test_qengine_cpu_par_for")
 {
@@ -1051,7 +1055,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    double qftProbs[20];
+    real1 qftProbs[20];
     qftReg->SetPermutation(85);
 
     int i, j;

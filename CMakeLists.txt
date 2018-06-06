@@ -13,33 +13,18 @@ include_directories ("include" "include/common")
 set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 
 # Declare the library
-if (ENABLE_AVX)
-    add_library (qrack STATIC
-        src/common/parallel_for.cpp
-        src/qinterface/qinterface.cpp
-        src/qengine/qengine.cpp
-        src/qengine/operators.cpp
-        src/qengine/gates.cpp
-        src/qengine/rotational.cpp
-        src/qengine/state/state.cpp
-        src/qengine/state/operators.cpp
-        src/qengine/state/gates.cpp
-        src/qunit.cpp
-        )
-else (ENABLE_AVX)
-    add_library (qrack STATIC
-        src/common/parallel_for.cpp
-        src/qinterface/qinterface.cpp
-        src/qengine/qengine.cpp
-        src/qengine/operators.cpp
-        src/qengine/gates.cpp
-        src/qengine/rotational.cpp
-        src/qengine/state/state.cpp
-        src/qengine/state/operators.cpp
-        src/qengine/state/gates.cpp
-        src/qunit.cpp
-        )
-endif (ENABLE_AVX)
+add_library (qrack STATIC
+    src/common/parallel_for.cpp
+    src/qinterface/qinterface.cpp
+    src/qengine/qengine.cpp
+    src/qengine/operators.cpp
+    src/qengine/gates.cpp
+    src/qengine/rotational.cpp
+    src/qengine/state/state.cpp
+    src/qengine/state/operators.cpp
+    src/qengine/state/gates.cpp
+    src/qunit.cpp
+    )
 
 # Declare the unittest executable
 add_executable (unittest
@@ -81,11 +66,12 @@ enable_testing()
 target_include_directories (unittest PUBLIC test)
 target_include_directories (benchmarks PUBLIC test)
 
+if (ENABLE_COMPLEX8)
+    target_compile_definitions (qrack PUBLIC ENABLE_COMPLEX8=1)
+endif (ENABLE_COMPLEX8)
 if (ENABLE_AVX)
     target_compile_definitions (qrack PUBLIC ENABLE_AVX=1)
     set(QRACK_COMPILE_OPTS -mavx)
-else (ENABLE_AVX)
-    target_compile_definitions (qrack PUBLIC ENABLE_AVX=0)
 endif (ENABLE_AVX)
 
 if (APPLE)

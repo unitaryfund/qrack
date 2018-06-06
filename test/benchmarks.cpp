@@ -25,8 +25,8 @@ using namespace Qrack;
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
-        double __tmp_a = A;                                                                                            \
-        double __tmp_b = B;                                                                                            \
+        real1 __tmp_a = A;                                                                                            \
+        real1 __tmp_b = B;                                                                                            \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
@@ -55,7 +55,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 
     int i, numBits;
 
-    double avgt, stdet;
+    real1 avgt, stdet;
 
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.

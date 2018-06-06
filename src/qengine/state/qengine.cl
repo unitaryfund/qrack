@@ -1,35 +1,35 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
-inline double2 zmul(const double2 lhs, const double2 rhs)
+inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
-    return (lhs * (double2)(rhs.y, -(rhs.y))) + (rhs.x * (double2)(lhs.y, lhs.x));
+    return (lhs * (cmplx)(rhs.y, -(rhs.y))) + (rhs.x * (cmplx)(lhs.y, lhs.x));
 }
 
-inline double arg(const double2 cmplx)
+inline real1 arg(const cmplx cmp)
 {
-    if (cmplx.x == 0.0 && cmplx.y == 0.0)
+    if (cmp.x == 0.0 && cmp.y == 0.0)
         return 0.0;
-    return atan2(cmplx.y, cmplx.x);
+    return atan2(cmp.y, cmp.x);
 }
 
-void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, constant ulong* ulongPtr)
+void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant ulong* ulongPtr)
 {
     ulong ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    constant double2* mtrx = cmplxPtr;
+    constant cmplx* mtrx = cmplxPtr;
 
-    double2 nrm = cmplxPtr[4];
+    cmplx nrm = cmplxPtr[4];
     ulong bitCount = ulongPtr[0];
     ulong maxI = ulongPtr[1];
     ulong offset1 = ulongPtr[2];
     ulong offset2 = ulongPtr[3];
     constant ulong* qPowersSorted = (ulongPtr + 4);
 
-    double2 Y0;
+    cmplx Y0;
     ulong i, iLow, iHigh;
-    double2 qubit[2];
+    cmplx qubit[2];
     unsigned char p;
     lcv = ID;
     iHigh = lcv;
@@ -63,24 +63,24 @@ void kernel apply2x2(global double2* stateVec, constant double2* cmplxPtr, const
     }
 }
 
-void kernel apply2x2norm(global double2* stateVec, constant double2* cmplxPtr, constant ulong* ulongPtr, global double* nrmParts)
+void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant ulong* ulongPtr, global real1* nrmParts)
 {
     ulong ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    constant double2* mtrx = cmplxPtr;
+    constant cmplx* mtrx = cmplxPtr;
 
-    double2 nrm = cmplxPtr[4];
+    cmplx nrm = cmplxPtr[4];
     ulong bitCount = ulongPtr[0];
     ulong maxI = ulongPtr[1];
     ulong offset1 = ulongPtr[2];
     ulong offset2 = ulongPtr[3];
     constant ulong* qPowersSorted = (ulongPtr + 4);
 
-    double2 Y0;
+    cmplx Y0;
     ulong i, iLow, iHigh;
-    double2 qubit[2];
+    cmplx qubit[2];
     unsigned char p;
     lcv = ID;
     iHigh = lcv;
@@ -115,7 +115,7 @@ void kernel apply2x2norm(global double2* stateVec, constant double2* cmplxPtr, c
     }
 }
 
-void kernel cohere(global double2* stateVec1, global double2* stateVec2, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
     
@@ -130,7 +130,7 @@ void kernel cohere(global double2* stateVec1, global double2* stateVec2, constan
     }
 }
 
-void kernel decohereprob(global double2* stateVec, constant ulong* ulongPtr, global double* partStateProb, global double* partStateAngle, global double* remainderStateProb, global double* remainderStateAngle)
+void kernel decohereprob(global cmplx* stateVec, constant ulong* ulongPtr, global real1* partStateProb, global real1* partStateAngle, global real1* remainderStateProb, global real1* remainderStateAngle)
 {
     ulong ID, Nthreads, lcv;
     
@@ -142,8 +142,8 @@ void kernel decohereprob(global double2* stateVec, constant ulong* ulongPtr, glo
     ulong endMask = ulongPtr[3];
     ulong start = ulongPtr[4];
     ulong length = ulongPtr[5];
-    double prob, angle;
-    double2 amp;
+    real1 prob, angle;
+    cmplx amp;
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         amp = stateVec[lcv];
         prob = dot(amp, amp);
@@ -155,21 +155,21 @@ void kernel decohereprob(global double2* stateVec, constant ulong* ulongPtr, glo
     }
 }
 
-void kernel decohereamp(global double* stateProb, global double* stateAngle, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel decohereamp(global real1* stateProb, global real1* stateAngle, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
     ulong maxQPower = ulongPtr[0];
-    double angle;
+    real1 angle;
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
-        nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((double2)(angle + M_PI_2, angle));
+        nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
     }
 }
 
-void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel x(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
 
@@ -183,7 +183,7 @@ void kernel x(global double2* stateVec, constant ulong* ulongPtr, global double2
     }
 }
 
-void kernel swap(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel swap(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
 
@@ -204,7 +204,7 @@ void kernel swap(global double2* stateVec, constant ulong* ulongPtr, global doub
     }
 }
 
-void kernel rol(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel rol(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
 
@@ -227,7 +227,7 @@ void kernel rol(global double2* stateVec, constant ulong* ulongPtr, global doubl
     }
 }
 
-void kernel ror(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel ror(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
 
@@ -250,7 +250,7 @@ void kernel ror(global double2* stateVec, constant ulong* ulongPtr, global doubl
     }
 }
 
-void kernel inc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel inc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, i;
 
@@ -271,7 +271,7 @@ void kernel inc(global double2* stateVec, constant ulong* ulongPtr, global doubl
     }
 }
 
-void kernel dec(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel dec(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, i;
 
@@ -292,7 +292,7 @@ void kernel dec(global double2* stateVec, constant ulong* ulongPtr, global doubl
     }
 }
 
-void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel incc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
 
@@ -323,7 +323,7 @@ void kernel incc(global double2* stateVec, constant ulong* ulongPtr, global doub
     }
 }
 
-void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec)
+void kernel decc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;
 
@@ -355,7 +355,7 @@ void kernel decc(global double2* stateVec, constant ulong* ulongPtr, global doub
 }
 
 void kernel indexedLda(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, constant unsigned char* values)
+    global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec, constant unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
@@ -387,7 +387,7 @@ void kernel indexedLda(
 }
 
 void kernel indexedAdc(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, constant unsigned char* values)
+    global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec, constant unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 
@@ -432,7 +432,7 @@ void kernel indexedAdc(
 }
 
 void kernel indexedSbc(
-    global double2* stateVec, constant ulong* ulongPtr, global double2* nStateVec, constant unsigned char* values)
+    global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec, constant unsigned char* values)
 {
     ulong ID, Nthreads, lcv;
 

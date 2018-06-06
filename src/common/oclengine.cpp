@@ -39,7 +39,7 @@ cl::Kernel* OCLEngine::GetLDAPtr() { return &indexedLda; }
 cl::Kernel* OCLEngine::GetADCPtr() { return &indexedAdc; }
 cl::Kernel* OCLEngine::GetSBCPtr() { return &indexedSbc; }
 
-OCLEngine::OCLEngine() { InitOCL(0, 0); }
+OCLEngine::OCLEngine() { InitOCL(0, -1); }
 OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
@@ -63,6 +63,14 @@ void OCLEngine::InitOCL(int plat, int dev)
         std::cout << " No devices found. Check OpenCL installation!\n";
         exit(1);
     }
+    
+    if (dev < 0) {
+#ifdef ENABLE_COMPLEX8
+        dev = all_devices.size() - 1;
+#else
+        dev = 0;
+#endif
+    }
 
     // use device[1] because that's a GPU; device[0] is the CPU
     default_device = all_devices[dev];
@@ -75,7 +83,12 @@ void OCLEngine::InitOCL(int plat, int dev)
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
 
-    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
+#if ENABLE_COMPLEX8
+    sources.push_back({"#define cmplx float2\n#define real1 float\n#define SineShift M_PI_2_F\n", 68UL});
+#else
+    sources.push_back({"#define cmplx double2\n#define real1 double\n#define SineShift M_PI_2\n", 68UL});
+#endif
+    sources.push_back({(const char*)qengine_cl, (long unsigned int)qengine_cl_len});
 
     program = cl::Program(context, sources);
     if (program.build({ default_device }) != CL_SUCCESS) {

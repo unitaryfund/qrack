@@ -48,7 +48,7 @@ QEngineCPU::QEngineCPU(
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
     if (phaseFac == complex(-999.0, -999.0)) {
-        double angle = Rand() * 2.0 * M_PI;
+        real1 angle = Rand() * 2.0 * M_PI;
         stateVec[initState] = complex(cos(angle), sin(angle));
     } else {
         stateVec[initState] = phaseFac;
@@ -102,12 +102,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    double nrm = 1.0 / runningNorm;
+    real1 nrm = 1.0 / runningNorm;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
     if (doCalcNorm && (bitCount == 1)) {
-        double* rngNrm = new double[numCores];
+        real1* rngNrm = new real1[numCores];
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
@@ -145,11 +145,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    double nrm = 1.0 / runningNorm;
-    complex nrm = complex(1.0 / runningNorm, 0.0);
+    real1 nrm = 1.0 / runningNorm;
 
     if (doCalcNorm && (bitCount == 1)) {
-        double* rngNrm = new double[numCores];
+        real1* rngNrm = new real1[numCores];
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
@@ -308,11 +307,11 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt i;
 
-    double* partStateProb = new double[partPower]();
-    double* remainderStateProb = new double[remainderPower]();
-    double* partStateAngle = new double[partPower];
-    double* remainderStateAngle = new double[remainderPower];
-    double prob, angle;
+    real1* partStateProb = new real1[partPower]();
+    real1* remainderStateProb = new real1[remainderPower]();
+    real1* partStateAngle = new real1[partPower];
+    real1* remainderStateAngle = new real1[remainderPower];
+    real1 prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
@@ -370,9 +369,9 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
-    double* partStateProb = new double[1 << (qubitCount - length)]();
-    double* partStateAngle = new double[1 << (qubitCount - length)];
-    double prob, angle;
+    real1* partStateProb = new real1[1 << (qubitCount - length)]();
+    real1* partStateAngle = new real1[1 << (qubitCount - length)];
+    real1 prob, angle;
 
     for (i = 0; i < maxQPower; i++) {
         prob = norm(stateVec[i]);
@@ -394,14 +393,14 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-double QEngineCPU::Prob(bitLenInt qubit)
+real1 QEngineCPU::Prob(bitLenInt qubit)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
     bitCapInt qPower = 1 << qubit;
-    double oneChance = 0;
+    real1 oneChance = 0;
     bitCapInt lcv;
 
     for (lcv = 0; lcv < maxQPower; lcv++) {
@@ -414,7 +413,7 @@ double QEngineCPU::Prob(bitLenInt qubit)
 }
 
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-double QEngineCPU::ProbAll(bitCapInt fullRegister)
+real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -427,7 +426,8 @@ void QEngineCPU::NormalizeState()
 {
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
-        if (norm(stateVec[lcv]) < 1e-15) {
+        //"min_norm" is defined in qinterface.hpp
+        if (norm(stateVec[lcv]) < min_norm) {
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });

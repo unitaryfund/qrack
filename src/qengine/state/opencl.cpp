@@ -29,7 +29,7 @@ void QEngineOCL::InitOCL()
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * 5);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
     nrmBuffer = cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_READ_WRITE,
-        sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+        sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
 
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
@@ -94,7 +94,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     complex cmplx[CMPLX_NORM_LEN];
-    double* nrmParts = nullptr;
+    real1* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
@@ -109,9 +109,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     if (doCalcNorm) {
-        nrmParts = new double[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
+        nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
         queue.enqueueWriteBuffer(
-            nrmBuffer, CL_FALSE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+            nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
     }
     queue.finish();
 
@@ -134,7 +134,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.enqueueMapBuffer(stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
     if (doCalcNorm) {
         queue.enqueueReadBuffer(
-            nrmBuffer, CL_TRUE, 0, sizeof(double) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+            nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
         runningNorm = 0.0;
         for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
             runningNorm += nrmParts[i];
@@ -208,20 +208,20 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr desti
     bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, mask, startMask, endMask, start, length, 0, 0, 0, 0 };
         
-    double* partStateProb = new double[partPower]();
-    double* remainderStateProb = new double[remainderPower]();
-    double* partStateAngle = new double[partPower];
-    double* remainderStateAngle = new double[remainderPower];
+    real1* partStateProb = new real1[partPower]();
+    real1* remainderStateProb = new real1[remainderPower]();
+    real1* partStateAngle = new real1[partPower];
+    real1* remainderStateAngle = new real1[remainderPower];
     
     cl::Context context = *(clObj->GetContextPtr());
     
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     
-    cl::Buffer probBuffer1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * partPower, partStateProb);
-    cl::Buffer angleBuffer1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * partPower, partStateAngle);
-    cl::Buffer probBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * remainderPower, remainderStateProb);
-    cl::Buffer angleBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * remainderPower, remainderStateAngle);
+    cl::Buffer probBuffer1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
+    cl::Buffer angleBuffer1 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
+    cl::Buffer probBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb);
+    cl::Buffer angleBuffer2 = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
     
     cl::Kernel* call = clObj->GetDecohereProbPtr();
     call->setArg(0, stateBuffer);
@@ -427,9 +427,9 @@ bitCapInt QEngineOCL::IndexedLDA(
     complex* nStateVec = AllocStateVec(maxQPower);
     DispatchCall(clObj->GetLDAPtr(), bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
-    double prob;
-    double average = 0.0;
-    double totProb = 0.0;
+    real1 prob;
+    real1 average = 0.0;
+    real1 totProb = 0.0;
     bitCapInt i, outputInt;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
@@ -471,9 +471,9 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt i
     DispatchCall(call, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
-    double prob;
-    double average = 0.0;
-    double totProb = 0.0;
+    real1 prob;
+    real1 average = 0.0;
+    real1 totProb = 0.0;
     bitCapInt i, outputInt;
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;

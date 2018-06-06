@@ -16,18 +16,29 @@
 #include <math.h>
 #include <memory>
 #include <vector>
+#include <complex>
 
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
 
+#ifndef ENABLE_COMPLEX8
 #include "common/complex16simd.hpp"
+#endif
 
 #if ENABLE_AVX
 #include "common/complex16x2simd.hpp"
 #endif
 
-#define complex Complex16Simd
+#ifdef ENABLE_COMPLEX8
+    #define complex std::complex<float>
+    #define real1 float
+    #define min_norm 1e-9
+#else
+    #define complex Complex16Simd
+    #define real1 double
+    #define min_norm 1e-15
+#endif
 
 namespace Qrack {
 
@@ -425,7 +436,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    virtual void RT(double radians, bitLenInt qubitIndex) = 0;
+    virtual void RT(real1 radians, bitLenInt qubitIndex) = 0;
 
     /**
      * Dyadic fraction phase shift gate
@@ -440,7 +451,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(double radians, bitLenInt qubitIndex) = 0;
+    virtual void RX(real1 radians, bitLenInt qubitIndex) = 0;
 
     /**
      * Dyadic fraction X axis rotation gate
@@ -454,7 +465,7 @@ public:
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    virtual void CRX(double radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target) = 0;
 
     /**
      * Controlled dyadic fraction X axis rotation gate
@@ -469,7 +480,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(double radians, bitLenInt qubitIndex) = 0;
+    virtual void RY(real1 radians, bitLenInt qubitIndex) = 0;
 
     /**
      * Dyadic fraction Y axis rotation gate
@@ -485,7 +496,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    virtual void CRY(double radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target) = 0;
 
     /**
      * Controlled dyadic fraction y axis rotation gate
@@ -500,7 +511,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(double radians, bitLenInt qubitIndex) = 0;
+    virtual void RZ(real1 radians, bitLenInt qubitIndex) = 0;
 
     /**
      * Dyadic fraction Z axis rotation gate
@@ -516,7 +527,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    virtual void CRZ(double radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target) = 0;
 
     /**
      * Controlled dyadic fraction Z axis rotation gate
@@ -533,7 +544,7 @@ public:
      * \f$ around |1> state.
      */
 
-    virtual void CRT(double radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target) = 0;
 
     /**
      * Controlled dyadic fraction "phase shift gate"
@@ -611,7 +622,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    virtual void RT(double radians, bitLenInt start, bitLenInt length);
+    virtual void RT(real1 radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction phase shift gate
@@ -626,7 +637,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(double radians, bitLenInt start, bitLenInt length);
+    virtual void RX(real1 radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction X axis rotation gate
@@ -640,7 +651,7 @@ public:
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    virtual void CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction X axis rotation gate
@@ -655,7 +666,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(double radians, bitLenInt start, bitLenInt length);
+    virtual void RY(real1 radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction Y axis rotation gate
@@ -671,7 +682,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    virtual void CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction y axis rotation gate
@@ -686,7 +697,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(double radians, bitLenInt start, bitLenInt length);
+    virtual void RZ(real1 radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction Z axis rotation gate
@@ -702,7 +713,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    virtual void CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction Z axis rotation gate
@@ -718,7 +729,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
      * \f$ around |1> state.
      */
-    virtual void CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction "phase shift gate"
@@ -993,14 +1004,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual double Prob(bitLenInt qubitIndex) = 0;
+    virtual real1 Prob(bitLenInt qubitIndex) = 0;
 
     /**
      * Direct measure of full register probability to be in permutation state
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual double ProbAll(bitCapInt fullRegister) = 0;
+    virtual real1 ProbAll(bitCapInt fullRegister) = 0;
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state

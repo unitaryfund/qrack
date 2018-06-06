@@ -65,7 +65,7 @@ public:
         const bitCapInt, const bitCapInt, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
-    double par_norm(const bitCapInt maxQPower, const complex* stateArray);
+    real1 par_norm(const bitCapInt maxQPower, const complex* stateArray);
 };
 
 } // namespace Qrack

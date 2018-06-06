@@ -247,7 +247,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
 }
 
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-void QInterface::RT(double radians, bitLenInt start, bitLenInt length)
+void QInterface::RT(real1 radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         RT(radians, start + bit);
@@ -282,7 +282,7 @@ void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenI
 }
 
 /// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
-void QInterface::RX(double radians, bitLenInt start, bitLenInt length)
+void QInterface::RX(real1 radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         RX(radians, start + bit);
@@ -318,7 +318,7 @@ void QInterface::RXDyad(int numerator, int denominator, bitLenInt start, bitLenI
 }
 
 /// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
-void QInterface::RY(double radians, bitLenInt start, bitLenInt length)
+void QInterface::RY(real1 radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         RY(radians, start + bit);
@@ -354,7 +354,7 @@ void QInterface::RYDyad(int numerator, int denominator, bitLenInt start, bitLenI
 }
 
 /// z axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli z axis
-void QInterface::RZ(double radians, bitLenInt start, bitLenInt length)
+void QInterface::RZ(real1 radians, bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         RZ(radians, start + bit);
@@ -389,7 +389,7 @@ void QInterface::RZDyad(int numerator, int denominator, bitLenInt start, bitLenI
 }
 
 /// Controlled "phase shift gate"
-void QInterface::CRT(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CRT(radians, control + bit, target + bit);
@@ -418,7 +418,7 @@ void QInterface::CRTDyad(int numerator, int denominator, bitLenInt control, bitL
 }
 
 /// Controlled x axis rotation
-void QInterface::CRX(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CRX(radians, control + bit, target + bit);
@@ -451,7 +451,7 @@ void QInterface::CRXDyad(int numerator, int denominator, bitLenInt control, bitL
 }
 
 /// Controlled y axis rotation
-void QInterface::CRY(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CRY(radians, control + bit, target + bit);
@@ -482,7 +482,7 @@ void QInterface::CRYDyad(int numerator, int denominator, bitLenInt control, bitL
 }
 
 /// Controlled z axis rotation
-void QInterface::CRZ(double radians, bitLenInt control, bitLenInt target, bitLenInt length)
+void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CRZ(radians, control + bit, target + bit);
