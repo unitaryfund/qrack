@@ -203,10 +203,7 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr desti
         
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
-    bitCapInt mask = (partPower - 1) << start;
-    bitCapInt startMask = (1 << start) - 1;
-    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, mask, startMask, endMask, start, length, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
         
     real1* partStateProb = new real1[partPower]();
     real1* remainderStateProb = new real1[remainderPower]();
@@ -234,7 +231,7 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr desti
     
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
     queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
-                               cl::NDRange(1), // global number of work items
+                               cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
                                cl::NDRange(1)); // local number (per group)
     
     queue.flush();

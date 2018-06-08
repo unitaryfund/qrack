@@ -136,22 +136,34 @@ void kernel decohereprob(global cmplx* stateVec, constant ulong* ulongPtr, globa
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxQPower = ulongPtr[0];
-    ulong mask = ulongPtr[1];
-    ulong startMask = ulongPtr[2];
-    ulong endMask = ulongPtr[3];
-    ulong start = ulongPtr[4];
-    ulong length = ulongPtr[5];
-    real1 prob, angle;
+    ulong partPower = ulongPtr[0];
+    ulong remainderPower = ulongPtr[1];
+    ulong start = ulongPtr[2];
+    ulong len = ulongPtr[3];
+    ulong j, k, l;
     cmplx amp;
-    for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
-        amp = stateVec[lcv];
-        prob = dot(amp, amp);
-        angle = arg(amp);
-        partStateProb[(lcv & mask) >> start] += prob;
-        partStateAngle[(lcv & mask) >> start] = angle;
-        remainderStateProb[(lcv & startMask) | ((lcv & endMask) >> length)] += prob;
-        remainderStateAngle[(lcv & startMask) | ((lcv & endMask) >> length)] = angle;
+
+    for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        j = lcv % (1 << start);
+        j = j | ((lcv ^ j) << len);
+        for (k = 0; k < partPower; k++) {
+            l = j | (k << start);
+            amp = stateVec[l];
+            remainderStateProb[lcv] += dot(amp, amp);
+        }
+        remainderStateAngle[lcv] = arg(amp);
+    }
+
+    for (lcv = ID; lcv < partPower; lcv += Nthreads) {
+        j = lcv << start;
+        for (k = 0; k < remainderPower; k++) {
+            l = k % (1 << start);
+            l = l | ((k ^ l) << len);
+            l = j | l;
+            amp = stateVec[l];
+            partStateProb[lcv] += dot(amp, amp);
+        }
+        partStateAngle[lcv] = arg(amp);
     }
 }
 

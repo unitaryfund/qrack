@@ -302,9 +302,6 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
 
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
-    //bitCapInt mask = (partPower - 1) << start;
-    //bitCapInt startMask = (1 << start) - 1;
-    //bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
 
     real1* partStateProb = new real1[partPower]();
     real1* remainderStateProb = new real1[remainderPower]();
@@ -313,31 +310,25 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
-        real1 prob, angle;
         j = lcv % (1 << start);
         j = j | ((lcv ^ j) << length);
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
-            prob = norm(stateVec[l]);
-            angle = arg(stateVec[l]);
-            remainderStateProb[lcv] += prob;
-            remainderStateAngle[lcv] = angle;
+            remainderStateProb[lcv] += norm(stateVec[l]);
         }
+        remainderStateAngle[lcv] = arg(stateVec[j]);
     });
 
     par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
-        real1 prob, angle;
         j = lcv << start;
         for (k = 0; k < remainderPower; k++) {
             l = k % (1 << start);
             l = l | ((k ^ l) << length);
             l = j | l;
-            prob = norm(stateVec[l]);
-            angle = arg(stateVec[l]);
-            partStateProb[lcv] += prob;
-            partStateAngle[lcv] = angle;
+            partStateProb[lcv] += norm(stateVec[l]);
         }
+        remainderStateAngle[lcv] = arg(stateVec[j]);
     });
 
     if ((maxQPower - partPower) == 0) {
