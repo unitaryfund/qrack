@@ -26,10 +26,6 @@
 #include "common/complex16simd.hpp"
 #endif
 
-#if ENABLE_AVX
-#include "common/complex16x2simd.hpp"
-#endif
-
 #ifdef ENABLE_COMPLEX8
     #define complex std::complex<float>
     #define real1 float

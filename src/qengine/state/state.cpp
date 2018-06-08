@@ -14,6 +14,16 @@
 
 #include "qengine_cpu.hpp"
 
+#if ENABLE_AVX
+    #if ENABLE_COMPLEX8
+        #include "common/complex8x2simd.hpp"
+        #define complex2 Complex8x2Simd
+    #else
+        #include "common/complex16x2simd.hpp"
+        #define complex2 Complex16x2Simd
+    #endif
+#endif
+
 namespace Qrack {
 
 /**
@@ -81,10 +91,8 @@ void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, in
  *
  * A fundamental operation used by almost all gates.
  */
-#if ENABLE_AVX
 
-#include "common/complex16x2simd.hpp"
-#define complex2 Complex16x2Simd
+#if ENABLE_AVX
 
 union ComplexUnion {
     complex2 cmplx2;

@@ -71,10 +71,13 @@ if (ENABLE_COMPLEX8)
     message ("Single Accuracy: ON")
 else (ENABLE_COMPLEX8)
     message ("Single Accuracy: OFF")
+    if (ENABLE_AVX)
+        set(QRACK_COMPILE_OPTS -mavx)
+    endif (ENABLE_AVX)
 endif (ENABLE_COMPLEX8)
+
 if (ENABLE_AVX)
     target_compile_definitions (qrack PUBLIC ENABLE_AVX=1)
-    set(QRACK_COMPILE_OPTS -mavx)
 endif (ENABLE_AVX)
 
 if (APPLE)
@@ -93,6 +96,7 @@ set_target_properties (qrack PROPERTIES
 install (FILES
     include/common/complex16simd.hpp
     include/common/complex16x2simd.hpp
+    include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
@@ -104,6 +108,7 @@ install (FILES
     include/common/oclengine.hpp
     include/common/complex16simd.hpp
     include/common/complex16x2simd.hpp
+    include/common/complex8x2simd.hpp
     include/common/parallel_for.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp

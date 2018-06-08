@@ -24,9 +24,9 @@ struct Complex16x2Simd {
 
     inline Complex16x2Simd(){};
     inline Complex16x2Simd(const __m256d& v2) { _val2 = v2; }
-    inline Complex16x2Simd(const double& real1, const double& imag1, const double& real2, const double& imag2)
+    inline Complex16x2Simd(const double& r1, const double& i1, const double& r2, const double& i2)
     {
-        _val2 = _mm256_set_pd(imag1, real1, imag2, real2);
+        _val2 = _mm256_set_pd(i1, r1, i2, r2);
     }
     inline Complex16x2Simd operator+(const Complex16x2Simd& other) const { return _mm256_add_pd(_val2, other._val2); }
     inline Complex16x2Simd operator+=(const Complex16x2Simd& other)
