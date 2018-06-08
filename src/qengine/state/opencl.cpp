@@ -245,7 +245,7 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr desti
     } else {
         SetQubitCount(qubitCount - length);
     }
-    
+
     bciArgs[0] = partPower;
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     queue.enqueueUnmapMemObject(destination->stateBuffer, destination->stateVec);
@@ -285,8 +285,7 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr desti
                                cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
                                cl::NDRange(1)); // local number (per group)
     
-    queue.flush();
-    queue.finish();
+    queue.enqueueMapBuffer(nStateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
     
     ResetStateVec(nStateVec);
         
