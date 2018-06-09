@@ -14,7 +14,7 @@
 
 #include "qengine_cpu.hpp"
 
-#if ENABLE_AVX
+#if ENABLE_COMPLEX_X2
     #if ENABLE_COMPLEX8
         #include "common/complex8x2simd.hpp"
         #define complex2 Complex8x2Simd
@@ -92,7 +92,7 @@ void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, in
  * A fundamental operation used by almost all gates.
  */
 
-#if ENABLE_AVX
+#if ENABLE_COMPLEX_X2
 
 #if ENABLE_COMPLEX8
 union ComplexUnion {
