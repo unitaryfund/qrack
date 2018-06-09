@@ -84,9 +84,9 @@ void OCLEngine::InitOCL(int plat, int dev)
     cl::Program::Sources sources;
 
 #if ENABLE_COMPLEX8
-    sources.push_back({"#define cmplx float2\n#define real1 float\n#define SineShift M_PI_2_F\n", 68UL});
+    sources.push_back({"#define cmplx float2\n#define cmplx2 float4\n#define real1 float\n#define real2 float2\n#define SineShift M_PI_2_F\n#define REAL1 1.0f\n#define REAL0 0.0f\n", 149UL});
 #else
-    sources.push_back({"#define cmplx double2\n#define real1 double\n#define SineShift M_PI_2\n", 68UL});
+    sources.push_back({"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n#define cmplx double2\n#define real2 double2\n#define cmplx2 double4\n#define real1 double\n#define SineShift M_PI_2\n#define REAL1 1.0\n#define REAL0 0.0\n", 196UL});
 #endif
     sources.push_back({(const char*)qengine_cl, (long unsigned int)qengine_cl_len});
 

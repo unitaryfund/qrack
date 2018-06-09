@@ -1,14 +1,12 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-
 inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
-    return (lhs * (cmplx)(rhs.y, -(rhs.y))) + (rhs.x * (cmplx)(lhs.y, lhs.x));
+    return (cmplx)((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
 }
 
 inline real1 arg(const cmplx cmp)
 {
-    if (cmp.x == 0.0 && cmp.y == 0.0)
-        return 0.0;
+    if (cmp.x == REAL0 && cmp.y == REAL0)
+        return REAL0;
     return atan2(cmp.y, cmp.x);
 }
 
@@ -20,7 +18,7 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     Nthreads = get_global_size(0);
     constant cmplx* mtrx = cmplxPtr;
 
-    cmplx nrm = cmplxPtr[4];
+    real1 nrm = cmplxPtr[4].x;
     ulong bitCount = ulongPtr[0];
     ulong maxI = ulongPtr[1];
     ulong offset1 = ulongPtr[2];
@@ -41,12 +39,11 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     }
     i += iHigh;
     while (i < maxI) {
-        qubit[0] = stateVec[i + offset1];
+        Y0 = stateVec[i + offset1];
         qubit[1] = stateVec[i + offset2];
-
-        Y0 = qubit[0];
-        qubit[0] = zmul(nrm, (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1])));
-        qubit[1] = zmul(nrm, (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1])));
+ 
+        qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
+        qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
 
         stateVec[i + offset1] = qubit[0];
         stateVec[i + offset2] = qubit[1];
@@ -71,7 +68,7 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     Nthreads = get_global_size(0);
     constant cmplx* mtrx = cmplxPtr;
 
-    cmplx nrm = cmplxPtr[4];
+    real1 nrm = cmplxPtr[4].x;
     ulong bitCount = ulongPtr[0];
     ulong maxI = ulongPtr[1];
     ulong offset1 = ulongPtr[2];
@@ -92,12 +89,11 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     }
     i += iHigh;
     while (i < maxI) {
-        qubit[0] = stateVec[i + offset1];
+        Y0 = stateVec[i + offset1];
         qubit[1] = stateVec[i + offset2];
 
-        Y0 = qubit[0];
-        qubit[0] = zmul(nrm, (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1])));
-        qubit[1] = zmul(nrm, (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1])));
+        qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
+        qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
 
         stateVec[i + offset1] = qubit[0];
         stateVec[i + offset2] = qubit[1];
