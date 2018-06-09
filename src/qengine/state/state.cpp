@@ -94,6 +94,18 @@ void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, in
 
 #if ENABLE_AVX
 
+#if ENABLE_COMPLEX8
+union ComplexUnion {
+    complex2 cmplx2;
+    float comp[4];
+
+    inline ComplexUnion(){};
+    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
+    {
+        cmplx2 = complex2(real(cmplx0), imag(cmplx0), real(cmplx1), imag(cmplx1));
+    }
+};
+#else
 union ComplexUnion {
     complex2 cmplx2;
     complex cmplx[2];
@@ -105,6 +117,7 @@ union ComplexUnion {
         cmplx[1] = cmplx1;
     }
 };
+#endif
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
@@ -121,10 +134,15 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
-
+#if ENABLE_COMPLEX8
+            stateVec[lcv + offset1] = complex(qubit.comp[0], qubit.comp[1]);
+            stateVec[lcv + offset2] = complex(qubit.comp[2], qubit.comp[3]);
+            rngNrm[cpu] += norm(qubit.cmplx2);
+#else
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];
+            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+#endif
         });
         runningNorm = 0.0;
         for (int i = 0; i < numCores; i++) {
@@ -137,9 +155,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
             qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
+#if ENABLE_COMPLEX8
+            stateVec[lcv + offset1] = complex(qubit.comp[0], qubit.comp[1]);
+            stateVec[lcv + offset2] = complex(qubit.comp[2], qubit.comp[3]);
+#else
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];
+#endif
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
