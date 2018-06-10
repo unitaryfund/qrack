@@ -1,3 +1,5 @@
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
 inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
     return (cmplx)((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
@@ -5,8 +7,8 @@ inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 
 inline real1 arg(const cmplx cmp)
 {
-    if (cmp.x == REAL0 && cmp.y == REAL0)
-        return REAL0;
+    if (cmp.x == 0.0 && cmp.y == 0.0)
+        return 0.0;
     return atan2(cmp.y, cmp.x);
 }
 

@@ -6,7 +6,7 @@ include (GNUInstallDirs)
 
 include ("cmake/Coverage.cmake")
 include ("cmake/Format.cmake" )
-include ("cmake/Complex_x2.cmake" )
+include ("cmake/AVX.cmake" )
 
 include_directories ("include" "include/common")
 
@@ -71,14 +71,14 @@ if (ENABLE_COMPLEX8)
     message ("Single Accuracy: ON")
 else (ENABLE_COMPLEX8)
     message ("Single Accuracy: OFF")
-    if (ENABLE_COMPLEX_X2)
+    if (ENABLE_AVX)
         set(QRACK_COMPILE_OPTS -mavx)
-    endif (ENABLE_COMPLEX_X2)
+    endif (ENABLE_AVX)
 endif (ENABLE_COMPLEX8)
 
-if (ENABLE_COMPLEX_X2)
-    target_compile_definitions (qrack PUBLIC ENABLE_COMPLEX_X2=1)
-endif (ENABLE_COMPLEX_X2)
+if (ENABLE_AVX)
+    target_compile_definitions (qrack PUBLIC ENABLE_AVX=1)
+endif (ENABLE_AVX)
 
 if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
