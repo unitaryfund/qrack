@@ -32,35 +32,36 @@ bool QEngineCPU::M(bitLenInt qubit)
     real1 oneChance = Prob(qubit);
 
     result = (prob < oneChance) && oneChance > 0.0;
+    bitCapInt powerTest = result ? qPowers : 0;
     real1 nrmlzr = 1.0;
     if (result) {
         if (oneChance > 0.0) {
             nrmlzr = oneChance;
         }
-
-        nrm = complex(cosine, sine) / sqrt(nrmlzr);
-
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            if ((lcv & qPowers) == 0) {
-                stateVec[lcv] = complex(0.0, 0.0);
-            } else {
-                stateVec[lcv] = nrm * stateVec[lcv];
-            }
-        });
+        else {
+            runningNorm = 0.0;
+        }
     } else {
         if (oneChance < 1.0) {
             nrmlzr = 1.0 - oneChance;
         }
+        else {
+            runningNorm = 0.0;
+        }
+    }
 
-        nrm = complex(cosine, sine) / sqrt(nrmlzr);
+    nrm = complex(cosine, sine) / sqrt(nrmlzr);
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            if ((lcv & qPowers) == 0) {
-                stateVec[lcv] = nrm * stateVec[lcv];
-            } else {
-                stateVec[lcv] = complex(0.0, 0.0);
-            }
-        });
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if ((lcv & qPowers) == powerTest) {
+            stateVec[lcv] = nrm * stateVec[lcv];
+        } else {
+            stateVec[lcv] = complex(0.0, 0.0);
+        }
+    });
+
+    if (runningNorm != 1.0) {
+        UpdateRunningNorm();
     }
 
     return result;
