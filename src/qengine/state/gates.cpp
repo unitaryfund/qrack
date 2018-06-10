@@ -37,15 +37,13 @@ bool QEngineCPU::M(bitLenInt qubit)
     if (result) {
         if (oneChance > 0.0) {
             nrmlzr = oneChance;
-        }
-        else {
+        } else {
             runningNorm = 0.0;
         }
     } else {
         if (oneChance < 1.0) {
             nrmlzr = 1.0 - oneChance;
-        }
-        else {
+        } else {
             runningNorm = 0.0;
         }
     }

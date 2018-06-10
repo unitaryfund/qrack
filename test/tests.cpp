@@ -25,14 +25,14 @@ using namespace Qrack;
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
-        real1 __tmp_a = A;                                                                                            \
-        real1 __tmp_b = B;                                                                                            \
+        real1 __tmp_a = A;                                                                                             \
+        real1 __tmp_b = B;                                                                                             \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
 void print_bin(int bits, int d);
-//void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
+// void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
 void log(QInterfacePtr p);
 
 void print_bin(int bits, int d)

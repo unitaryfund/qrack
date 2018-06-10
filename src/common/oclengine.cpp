@@ -63,7 +63,7 @@ void OCLEngine::InitOCL(int plat, int dev)
         std::cout << " No devices found. Check OpenCL installation!\n";
         exit(1);
     }
-    
+
     if (dev < 0) {
 #ifdef ENABLE_COMPLEX8
         dev = all_devices.size() - 1;
@@ -84,11 +84,11 @@ void OCLEngine::InitOCL(int plat, int dev)
     cl::Program::Sources sources;
 
 #if ENABLE_COMPLEX8
-    sources.push_back({"#define cmplx float2\n#define real1 float\n#define SineShift M_PI_2_F\n", 68UL});
+    sources.push_back({ "#define cmplx float2\n#define real1 float\n#define SineShift M_PI_2_F\n", 68UL });
 #else
-    sources.push_back({"#define cmplx double2\n#define real1 double\n#define SineShift M_PI_2\n", 68UL});
+    sources.push_back({ "#define cmplx double2\n#define real1 double\n#define SineShift M_PI_2\n", 68UL });
 #endif
-    sources.push_back({(const char*)qengine_cl, (long unsigned int)qengine_cl_len});
+    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
     program = cl::Program(context, sources);
     if (program.build({ default_device }) != CL_SUCCESS) {

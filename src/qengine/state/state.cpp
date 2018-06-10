@@ -15,13 +15,13 @@
 #include "qengine_cpu.hpp"
 
 #if ENABLE_COMPLEX_X2
-    #if ENABLE_COMPLEX8
-        #include "common/complex8x2simd.hpp"
-        #define complex2 Complex8x2Simd
-    #else
-        #include "common/complex16x2simd.hpp"
-        #define complex2 Complex16x2Simd
-    #endif
+#if ENABLE_COMPLEX8
+#include "common/complex8x2simd.hpp"
+#define complex2 Complex8x2Simd
+#else
+#include "common/complex16x2simd.hpp"
+#define complex2 Complex16x2Simd
+#endif
 #endif
 
 namespace Qrack {
@@ -86,11 +86,11 @@ void QEngineCPU::ResetStateVec(complex* nStateVec)
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
 
-/**
- * Apply a 2x2 matrix to the state vector
- *
- * A fundamental operation used by almost all gates.
- */
+    /**
+     * Apply a 2x2 matrix to the state vector
+     *
+     * A fundamental operation used by almost all gates.
+     */
 
 #if ENABLE_COMPLEX_X2
 
@@ -370,14 +370,16 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-        destination->stateVec[lcv] = sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+        destination->stateVec[lcv] =
+            sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
     });
 
     delete[] partStateProb;
     delete[] partStateAngle;
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] = sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+        stateVec[lcv] =
+            sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
     });
 
     delete[] remainderStateProb;
@@ -484,7 +486,7 @@ void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVe
 
 complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
 {
-    // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
+// elemCount is always a power of two, but might be smaller than ALIGN_SIZE
 #ifdef __APPLE__
     void* toRet;
     posix_memalign(
