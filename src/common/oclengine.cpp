@@ -15,6 +15,12 @@
 #include "oclengine.hpp"
 #include "qenginecl.hpp"
 
+#if ENABLE_COMPLEX8
+#include "qheader_floatcl.hpp"
+#else
+#include "qheader_doublecl.hpp"
+#endif
+
 namespace Qrack {
 
 /// "Qrack::OCLEngine" manages the single OpenCL context
@@ -86,9 +92,9 @@ void OCLEngine::InitOCL(int plat, int dev)
     cl::Program::Sources sources;
 
 #if ENABLE_COMPLEX8
-    sources.push_back({ "#define cmplx float2\n#define real1 float\n#define SineShift M_PI_2_F\n", 68UL });
+    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
 #else
-    sources.push_back({ "#define cmplx double2\n#define real1 double\n#define SineShift M_PI_2\n", 68UL });
+    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
 #endif
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 

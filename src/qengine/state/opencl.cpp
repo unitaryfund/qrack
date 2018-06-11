@@ -321,10 +321,10 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    cl::Buffer probBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb);
-    cl::Buffer angleBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
+    cl::Buffer probBuffer = cl::Buffer(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb);
+    cl::Buffer angleBuffer = cl::Buffer(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
 
     cl::Kernel* call = clObj->GetDisposeProbPtr();
     call->setArg(0, stateBuffer);
@@ -421,7 +421,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         oneChance += oneChanceArray[i];
     }
 
-    if (oneChance > 1.0) oneChance = 1.0;
+    if (oneChance > 1.0)
+        oneChance = 1.0;
 
     return oneChance;
 }

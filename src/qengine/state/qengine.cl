@@ -1,4 +1,3 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #define bitCapInt ulong
 #define bitLenInt unsigned char
 
