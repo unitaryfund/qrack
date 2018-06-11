@@ -27,12 +27,16 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, const 
     std::atomic<bitCapInt> idx;
     idx = begin;
 
-    if (((int)itemCount) < numCores) {
+    if (itemCount <= 2) {
+        for (unsigned char lcv = 0; lcv < itemCount; lcv++) {
+            fn(inc(lcv + begin, 0), 0);
+        }
+    } else if (((int)itemCount) < numCores) {
         std::vector<std::future<void>> futures(itemCount);
         bitCapInt j;
         int cpu, count;
         for (cpu = 0; cpu < (int)itemCount; cpu++) {
-            j = inc(cpu + begin, 0);
+            j = inc(cpu + begin, cpu);
             if (j >= end) {
                 break;
             }
