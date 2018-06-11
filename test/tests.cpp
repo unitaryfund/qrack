@@ -32,7 +32,6 @@ using namespace Qrack;
     } while (0);
 
 void print_bin(int bits, int d);
-// void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
 void log(QInterfacePtr p);
 
 void print_bin(int bits, int d)
@@ -43,32 +42,6 @@ void print_bin(int bits, int d)
         mask >>= 1;
     }
 }
-
-#if 0
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
-{
-    /* Validate that 'a' and 'b' are the same. */
-    REQUIRE(b->GetQubitCount() == a->GetQubitCount());
-    REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
-
-    /* Test probabilities */
-    for (int i = 0; i < a->GetQubitCount(); i++) {
-        REQUIRE(a->Prob(i) == b->Prob(i));
-    }
-
-    /* Test the raw state vector, only valid under narrow conditions. */
-    for (int i = 0; i < a->GetMaxQPower(); i++) {
-        // if (a->GetState()[i]._val[0] != b->GetState()[i]._val[0] ||
-        //         a->GetState()[i]._val[1] != b->GetState()[i]._val[1]) {
-        //     print_bin(16, i); printf(". %f/%f != %f/%f\n", a->GetState()[i]._val[0], a->GetState()[i]._val[1],
-        //         b->GetState()[i]._val[0], b->GetState()[i]._val[1]);
-        // }
-
-        REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
-        REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
-    }
-}
-#endif
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
 

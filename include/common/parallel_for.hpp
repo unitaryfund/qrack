@@ -44,7 +44,7 @@ public:
      * Iterate through the permutations a maximum of end-begin times, allowing
      * the caller to control the incrementation offset through 'inc'.
      */
-    void par_for_inc(const bitCapInt begin, const bitCapInt end, const bitCapInt itemCount, IncrementFunc, ParallelFunc fn);
+    void par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc, ParallelFunc fn);
 
     /** Call fn once for every numerical value between begin and end. */
     void par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn);

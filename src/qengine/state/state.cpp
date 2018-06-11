@@ -447,7 +447,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     par_for(0, maxQPower>>1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt i = lcv & qMask;
         i |= ((lcv ^ i) << 1) | qPower;
-        oneChanceBuff[cpu] += norm(stateVec[i | qPower]);
+        oneChanceBuff[cpu] += norm(stateVec[i]);
     });
 
     for (int i = 0; i < numCores; i++) {
