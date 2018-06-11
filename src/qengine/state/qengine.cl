@@ -165,6 +165,31 @@ void kernel decohereprob(global cmplx* stateVec, constant ulong* ulongPtr, globa
     }
 }
 
+void kernel disposeprob(global cmplx* stateVec, constant ulong* ulongPtr, global real1* remainderStateProb, global real1* remainderStateAngle)
+{
+    ulong ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    ulong partPower = ulongPtr[0];
+    ulong remainderPower = ulongPtr[1];
+    ulong start = ulongPtr[2];
+    ulong len = ulongPtr[3];
+    ulong j, k, l;
+    cmplx amp;
+
+    for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        j = lcv % (1 << start);
+        j = j | ((lcv ^ j) << len);
+        for (k = 0; k < partPower; k++) {
+            l = j | (k << start);
+            amp = stateVec[l];
+            remainderStateProb[lcv] += dot(amp, amp);
+        }
+        remainderStateAngle[lcv] = arg(amp);
+    }
+}
+
 void kernel decohereamp(global real1* stateProb, global real1* stateAngle, constant ulong* ulongPtr, global cmplx* nStateVec)
 {
     ulong ID, Nthreads, lcv;

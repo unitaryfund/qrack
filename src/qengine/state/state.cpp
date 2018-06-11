@@ -397,40 +397,37 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
     }
 
     bitCapInt partPower = 1 << length;
-    bitCapInt mask = (partPower - 1) << start;
-    bitCapInt startMask = (1 << start) - 1;
-    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
-    bitCapInt i;
+    bitCapInt remainderPower = 1 << (qubitCount - length);
 
-    /* Disposing of the entire object. */
+    real1* remainderStateProb = new real1[remainderPower]();
+    real1* remainderStateAngle = new real1[remainderPower];
+
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt j, k, l;
+        j = lcv % (1 << start);
+        j = j | ((lcv ^ j) << length);
+        for (k = 0; k < partPower; k++) {
+            l = j | (k << start);
+            remainderStateProb[lcv] += norm(stateVec[l]);
+        }
+        remainderStateAngle[lcv] = arg(stateVec[j]);
+    });
+
     if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1); // Leave as a single bit for safety.
-        ResetStateVec(AllocStateVec(maxQPower));
-
-        return;
+        SetQubitCount(1);
+    } else {
+        SetQubitCount(qubitCount - length);
     }
-
-    real1* partStateProb = new real1[1 << (qubitCount - length)]();
-    real1* partStateAngle = new real1[1 << (qubitCount - length)];
-    real1 prob, angle;
-
-    for (i = 0; i < maxQPower; i++) {
-        prob = norm(stateVec[i]);
-        angle = arg(stateVec[i]);
-        partStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
-        partStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
-    }
-
-    SetQubitCount(qubitCount - length);
 
     ResetStateVec(AllocStateVec(maxQPower));
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] = sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] =
+            sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
     });
 
-    delete[] partStateProb;
-    delete[] partStateAngle;
+    delete[] remainderStateProb;
+    delete[] remainderStateAngle;
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state

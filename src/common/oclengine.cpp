@@ -26,6 +26,7 @@ cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
 cl::Kernel* OCLEngine::GetApply2x2NormPtr() { return &apply2x2norm; }
 cl::Kernel* OCLEngine::GetCoherePtr() { return &cohere; }
 cl::Kernel* OCLEngine::GetDecohereProbPtr() { return &decohereprob; }
+cl::Kernel* OCLEngine::GetDisposeProbPtr() { return &disposeprob; }
 cl::Kernel* OCLEngine::GetDecohereAmpPtr() { return &decohereamp; }
 cl::Kernel* OCLEngine::GetXPtr() { return &x; }
 cl::Kernel* OCLEngine::GetSwapPtr() { return &swap; }
@@ -103,6 +104,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     cohere = cl::Kernel(program, "cohere");
     decohereprob = cl::Kernel(program, "decohereprob");
     decohereamp = cl::Kernel(program, "decohereamp");
+    disposeprob = cl::Kernel(program, "disposeprob");
     swap = cl::Kernel(program, "swap");
     rol = cl::Kernel(program, "rol");
     ror = cl::Kernel(program, "ror");

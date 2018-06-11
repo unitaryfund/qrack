@@ -62,6 +62,7 @@ public:
     {
         return Decohere(start, length, std::dynamic_pointer_cast<QEngineOCL>(dest));
     }
+    virtual void Dispose(bitLenInt start, bitLenInt length);
     using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
