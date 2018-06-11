@@ -28,6 +28,7 @@ cl::Kernel* OCLEngine::GetCoherePtr() { return &cohere; }
 cl::Kernel* OCLEngine::GetDecohereProbPtr() { return &decohereprob; }
 cl::Kernel* OCLEngine::GetDisposeProbPtr() { return &disposeprob; }
 cl::Kernel* OCLEngine::GetDecohereAmpPtr() { return &decohereamp; }
+cl::Kernel* OCLEngine::GetProbPtr() { return &prob; }
 cl::Kernel* OCLEngine::GetXPtr() { return &x; }
 cl::Kernel* OCLEngine::GetSwapPtr() { return &swap; }
 cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
@@ -105,6 +106,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     decohereprob = cl::Kernel(program, "decohereprob");
     decohereamp = cl::Kernel(program, "decohereamp");
     disposeprob = cl::Kernel(program, "disposeprob");
+    prob = cl::Kernel(program, "prob");
     swap = cl::Kernel(program, "swap");
     rol = cl::Kernel(program, "rol");
     ror = cl::Kernel(program, "ror");

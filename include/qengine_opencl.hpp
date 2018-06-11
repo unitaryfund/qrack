@@ -78,6 +78,8 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
+    virtual real1 Prob(bitLenInt qubit);
+
 protected:
     static const int BCI_ARG_LEN = 10;
 

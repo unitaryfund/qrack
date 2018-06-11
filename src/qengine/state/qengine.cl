@@ -1,4 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#define bitCapInt ulong
+#define bitLenInt unsigned char
 
 inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
@@ -12,25 +14,25 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant ulong* ulongPtr)
+void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
     constant cmplx* mtrx = cmplxPtr;
 
     real1 nrm = cmplxPtr[4].x;
-    ulong bitCount = ulongPtr[0];
-    ulong maxI = ulongPtr[1];
-    ulong offset1 = ulongPtr[2];
-    ulong offset2 = ulongPtr[3];
-    constant ulong* qPowersSorted = (ulongPtr + 4);
+    bitCapInt bitCount = bitCapIntPtr[0];
+    bitCapInt maxI = bitCapIntPtr[1];
+    bitCapInt offset1 = bitCapIntPtr[2];
+    bitCapInt offset2 = bitCapIntPtr[3];
+    constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
     cmplx Y0;
-    ulong i, iLow, iHigh;
+    bitCapInt i, iLow, iHigh;
     cmplx qubit[2];
-    unsigned char p;
+    bitLenInt p;
     lcv = ID;
     iHigh = lcv;
     i = 0;
@@ -62,25 +64,25 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     }
 }
 
-void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant ulong* ulongPtr, global real1* nrmParts)
+void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
     constant cmplx* mtrx = cmplxPtr;
 
     real1 nrm = cmplxPtr[4].x;
-    ulong bitCount = ulongPtr[0];
-    ulong maxI = ulongPtr[1];
-    ulong offset1 = ulongPtr[2];
-    ulong offset2 = ulongPtr[3];
-    constant ulong* qPowersSorted = (ulongPtr + 4);
+    bitCapInt bitCount = bitCapIntPtr[0];
+    bitCapInt maxI = bitCapIntPtr[1];
+    bitCapInt offset1 = bitCapIntPtr[2];
+    bitCapInt offset2 = bitCapIntPtr[3];
+    constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
     cmplx Y0;
-    ulong i, iLow, iHigh;
+    bitCapInt i, iLow, iHigh;
     cmplx qubit[2];
-    unsigned char p;
+    bitLenInt p;
     lcv = ID;
     iHigh = lcv;
     i = 0;
@@ -113,32 +115,32 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     }
 }
 
-void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong nMaxQPower = ulongPtr[0];
-    ulong startMask = ulongPtr[1];
-    ulong endMask = ulongPtr[2];
-    ulong qubitCount = ulongPtr[3];
+    bitCapInt nMaxQPower = bitCapIntPtr[0];
+    bitCapInt startMask = bitCapIntPtr[1];
+    bitCapInt endMask = bitCapIntPtr[2];
+    bitCapInt qubitCount = bitCapIntPtr[3];
     for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[lcv & startMask], stateVec2[(lcv & endMask) >> qubitCount]);
     }
 }
 
-void kernel decohereprob(global cmplx* stateVec, constant ulong* ulongPtr, global real1* partStateProb, global real1* partStateAngle, global real1* remainderStateProb, global real1* remainderStateAngle)
+void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* partStateProb, global real1* partStateAngle, global real1* remainderStateProb, global real1* remainderStateAngle)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong partPower = ulongPtr[0];
-    ulong remainderPower = ulongPtr[1];
-    ulong start = ulongPtr[2];
-    ulong len = ulongPtr[3];
-    ulong j, k, l;
+    bitCapInt partPower = bitCapIntPtr[0];
+    bitCapInt remainderPower = bitCapIntPtr[1];
+    bitCapInt start = bitCapIntPtr[2];
+    bitCapInt len = bitCapIntPtr[3];
+    bitCapInt j, k, l;
     cmplx amp;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
@@ -165,17 +167,17 @@ void kernel decohereprob(global cmplx* stateVec, constant ulong* ulongPtr, globa
     }
 }
 
-void kernel disposeprob(global cmplx* stateVec, constant ulong* ulongPtr, global real1* remainderStateProb, global real1* remainderStateAngle)
+void kernel disposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong partPower = ulongPtr[0];
-    ulong remainderPower = ulongPtr[1];
-    ulong start = ulongPtr[2];
-    ulong len = ulongPtr[3];
-    ulong j, k, l;
+    bitCapInt partPower = bitCapIntPtr[0];
+    bitCapInt remainderPower = bitCapIntPtr[1];
+    bitCapInt start = bitCapIntPtr[2];
+    bitCapInt len = bitCapIntPtr[3];
+    bitCapInt j, k, l;
     cmplx amp;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
@@ -190,13 +192,13 @@ void kernel disposeprob(global cmplx* stateVec, constant ulong* ulongPtr, global
     }
 }
 
-void kernel decohereamp(global real1* stateProb, global real1* stateAngle, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel decohereamp(global real1* stateProb, global real1* stateAngle, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxQPower = ulongPtr[0];
+    bitCapInt maxQPower = bitCapIntPtr[0];
     real1 angle;
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
@@ -204,32 +206,55 @@ void kernel decohereamp(global real1* stateProb, global real1* stateAngle, const
     }
 }
 
-void kernel x(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong regMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
+    bitCapInt maxI = bitCapIntPtr[0] >> 1;
+    bitCapInt qPower = bitCapIntPtr[1];
+    bitCapInt qMask = qPower - 1;
+    real1 oneChancePart = 0.0;
+    cmplx amp;
+    bitCapInt i, j;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        i = lcv & qMask;
+        i |= ((lcv ^ i) << 1) | qPower;
+        amp = stateVec[i];
+        oneChancePart += dot(amp, amp);
+    }
+
+    oneChanceBuffer[ID] = oneChancePart;
+}
+
+void kernel x(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         nStateVec[lcv] = stateVec[(lcv & otherMask) | ((~lcv) & regMask)];
     }
 }
 
-void kernel swap(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel swap(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong reg1Mask = ulongPtr[1];
-    ulong reg2Mask = ulongPtr[2];
-    ulong otherMask = ulongPtr[3];
-    ulong start1 = ulongPtr[4];
-    ulong start2 = ulongPtr[5];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt reg1Mask = bitCapIntPtr[1];
+    bitCapInt reg2Mask = bitCapIntPtr[2];
+    bitCapInt otherMask = bitCapIntPtr[3];
+    bitCapInt start1 = bitCapIntPtr[4];
+    bitCapInt start2 = bitCapIntPtr[5];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         nStateVec[lcv] = stateVec[ 
                                   (((lcv & reg2Mask) >> start2) << start1) |
@@ -239,20 +264,20 @@ void kernel swap(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx*
     }
 }
 
-void kernel rol(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel rol(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong regMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
-    ulong lengthMask = ulongPtr[3] - 1;
-    ulong start = ulongPtr[4];
-    ulong shift = ulongPtr[5];
-    ulong length = ulongPtr[6];
-    ulong otherRes, regRes, regInt, inInt;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt start = bitCapIntPtr[4];
+    bitCapInt shift = bitCapIntPtr[5];
+    bitCapInt length = bitCapIntPtr[6];
+    bitCapInt otherRes, regRes, regInt, inInt;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = (lcv & otherMask);
         regRes = (lcv & regMask);
@@ -262,20 +287,20 @@ void kernel rol(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* 
     }
 }
 
-void kernel ror(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel ror(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong regMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
-    ulong lengthMask = ulongPtr[3] - 1;
-    ulong start = ulongPtr[4];
-    ulong shift = ulongPtr[5];
-    ulong length = ulongPtr[6];
-    ulong otherRes, regRes, regInt, inInt;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt start = bitCapIntPtr[4];
+    bitCapInt shift = bitCapIntPtr[5];
+    bitCapInt length = bitCapIntPtr[6];
+    bitCapInt otherRes, regRes, regInt, inInt;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = (lcv & otherMask);
         regRes = (lcv & regMask);
@@ -285,19 +310,19 @@ void kernel ror(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* 
     }
 }
 
-void kernel inc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel inc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, i;
+    bitCapInt ID, Nthreads, i;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inOutMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
-    ulong lengthMask = ulongPtr[3] - 1;
-    ulong inOutStart = ulongPtr[4];
-    ulong toAdd = ulongPtr[5];
-    ulong otherRes, inRes;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toAdd = bitCapIntPtr[5];
+    bitCapInt otherRes, inRes;
     for (i = ID; i < maxI; i += Nthreads) {
         otherRes = (i & otherMask);
         inRes = (i & inOutMask);
@@ -306,19 +331,19 @@ void kernel inc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* 
     }
 }
 
-void kernel dec(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel dec(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, i;
+    bitCapInt ID, Nthreads, i;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inOutMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
-    ulong lengthMask = ulongPtr[3] - 1;
-    ulong inOutStart = ulongPtr[4];
-    ulong toSub = ulongPtr[5];
-    ulong otherRes, inRes;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toSub = bitCapIntPtr[5];
+    bitCapInt otherRes, inRes;
     for (i = ID; i < maxI; i += Nthreads) {
         otherRes = (i & otherMask);
         inRes = (i & inOutMask);
@@ -327,20 +352,20 @@ void kernel dec(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* 
     }
 }
 
-void kernel incc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel incc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inOutMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
-    ulong lengthMask = ulongPtr[3] - 1;
-    ulong carryMask = ulongPtr[4];
-    ulong inOutStart = ulongPtr[5];
-    ulong toAdd = ulongPtr[6];
-    ulong otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt carryMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toAdd = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
@@ -358,20 +383,20 @@ void kernel incc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx*
     }
 }
 
-void kernel decc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec)
+void kernel decc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inOutMask = ulongPtr[1];
-    ulong otherMask = ulongPtr[2];
-    ulong lengthMask = ulongPtr[3] - 1;
-    ulong carryMask = ulongPtr[4];
-    ulong inOutStart = ulongPtr[5];
-    ulong toSub = ulongPtr[6];
-    ulong otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt carryMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toSub = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
@@ -390,21 +415,21 @@ void kernel decc(global cmplx* stateVec, constant ulong* ulongPtr, global cmplx*
 }
 
 void kernel indexedLda(
-    global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec, constant unsigned char* values)
+    global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inputStart = ulongPtr[1];
-    ulong inputMask = ulongPtr[2];
-    ulong outputStart = ulongPtr[3];
-    ulong valueBytes = ulongPtr[4];
-    ulong valueLength = ulongPtr[5];
-    ulong lowMask = (1 << outputStart) - 1;
-    ulong inputRes, inputInt, outputRes, outputInt;
-    ulong i, iLow, iHigh, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inputStart = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt outputStart = bitCapIntPtr[3];
+    bitCapInt valueBytes = bitCapIntPtr[4];
+    bitCapInt valueLength = bitCapIntPtr[5];
+    bitCapInt lowMask = (1 << outputStart) - 1;
+    bitCapInt inputRes, inputInt, outputRes, outputInt;
+    bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
@@ -422,24 +447,24 @@ void kernel indexedLda(
 }
 
 void kernel indexedAdc(
-    global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec, constant unsigned char* values)
+    global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inputStart = ulongPtr[1];
-    ulong inputMask = ulongPtr[2];
-    ulong outputStart = ulongPtr[3];
-    ulong outputMask = ulongPtr[4];
-    ulong otherMask = ulongPtr[5];
-    ulong carryIn = ulongPtr[6];
-    ulong carryMask = ulongPtr[7];
-    ulong lengthPower = ulongPtr[8];
-    ulong valueBytes = ulongPtr[9];
-    ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    ulong i, iLow, iHigh, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inputStart = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt outputStart = bitCapIntPtr[3];
+    bitCapInt outputMask = bitCapIntPtr[4];
+    bitCapInt otherMask = bitCapIntPtr[5];
+    bitCapInt carryIn = bitCapIntPtr[6];
+    bitCapInt carryMask = bitCapIntPtr[7];
+    bitCapInt lengthPower = bitCapIntPtr[8];
+    bitCapInt valueBytes = bitCapIntPtr[9];
+    bitCapInt otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
@@ -467,24 +492,24 @@ void kernel indexedAdc(
 }
 
 void kernel indexedSbc(
-    global cmplx* stateVec, constant ulong* ulongPtr, global cmplx* nStateVec, constant unsigned char* values)
+    global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    ulong ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    ulong maxI = ulongPtr[0];
-    ulong inputStart = ulongPtr[1];
-    ulong inputMask = ulongPtr[2];
-    ulong outputStart = ulongPtr[3];
-    ulong outputMask = ulongPtr[4];
-    ulong otherMask = ulongPtr[5];
-    ulong carryIn = ulongPtr[6];
-    ulong carryMask = ulongPtr[7];
-    ulong lengthPower = ulongPtr[8];
-    ulong valueBytes = ulongPtr[9];
-    ulong otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    ulong i, iLow, iHigh, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inputStart = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt outputStart = bitCapIntPtr[3];
+    bitCapInt outputMask = bitCapIntPtr[4];
+    bitCapInt otherMask = bitCapIntPtr[5];
+    bitCapInt carryIn = bitCapIntPtr[6];
+    bitCapInt carryMask = bitCapIntPtr[7];
+    bitCapInt lengthPower = bitCapIntPtr[8];
+    bitCapInt valueBytes = bitCapIntPtr[9];
+    bitCapInt otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);

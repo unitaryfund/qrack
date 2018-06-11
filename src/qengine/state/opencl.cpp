@@ -377,6 +377,55 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
     delete[] remainderStateAngle;
 }
 
+/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+real1 QEngineOCL::Prob(bitLenInt qubit)
+{
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
+
+    bitCapInt qPower = 1 << qubit;
+    real1 oneChance = 0.0;
+
+    int numCores = CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE;
+    real1* oneChanceArray = new real1[numCores]();
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    cl::Context context = *(clObj->GetContextPtr());
+
+    queue.enqueueUnmapMemObject(stateBuffer, stateVec);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+
+    cl::Buffer oneChanceBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * numCores, oneChanceArray);
+
+    cl::Kernel* call = clObj->GetProbPtr();
+    call->setArg(0, stateBuffer);
+    call->setArg(1, ulongBuffer);
+    call->setArg(2, oneChanceBuffer);
+    queue.finish();
+
+    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
+    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(stateBuffer, CL_FALSE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+    queue.enqueueMapBuffer(oneChanceBuffer, CL_FALSE, CL_MAP_READ, 0, sizeof(real1) * numCores);
+
+    queue.finish();
+
+    for (int i = 0; i < numCores; i++) {
+        oneChance += oneChanceArray[i];
+    }
+
+    if (oneChance > 1.0) oneChance = 1.0;
+
+    return oneChance;
+}
+
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)

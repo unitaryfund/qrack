@@ -47,6 +47,8 @@ public:
     cl::Kernel* GetDecohereAmpPtr();
     /// Get a pointer to the Dispose probability/angle decompose function kernel
     cl::Kernel* GetDisposeProbPtr();
+    /// Get a pointer to the Cohere function kernel
+    cl::Kernel* GetProbPtr();
     /// Get a pointer to the X function kernel
     cl::Kernel* GetXPtr();
     /// Get a pointer to the Swap function kernel
@@ -84,6 +86,7 @@ private:
     cl::Kernel decohereprob;
     cl::Kernel decohereamp;
     cl::Kernel disposeprob;
+    cl::Kernel prob;
     cl::Kernel x;
     cl::Kernel swap;
     cl::Kernel rol;
