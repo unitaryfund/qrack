@@ -105,6 +105,12 @@ void ParallelFor::par_for_skip(
      * number of extra bits to add.
      */
 
+    if ((skipMask << maskWidth) >= end) {
+        // If we're skipping trailing bits, this is much cheaper:
+        par_for(begin, skipMask, fn);
+        return;
+    }
+
     bitCapInt lowMask = skipMask - 1;
     bitCapInt highMask = ~lowMask;
 
