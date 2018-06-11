@@ -108,8 +108,16 @@ void ParallelFor::par_for_skip(
     bitCapInt lowMask = skipMask - 1;
     bitCapInt highMask = ~lowMask;
 
-    IncrementFunc incFn = [lowMask, highMask, maskWidth](
+    IncrementFunc incFn;
+    if (lowMask == 0) {
+        // If we're skipping leading bits, this is much cheaper:
+        incFn = [highMask, maskWidth](
+                              bitCapInt i, int cpu) { return (i << maskWidth); };
+    }
+    else {
+        incFn = [lowMask, highMask, maskWidth](
                               bitCapInt i, int cpu) { return ((i & lowMask) | ((i & highMask) << maskWidth)); };
+    }
 
     par_for_inc(begin, (end - begin) >> maskWidth, incFn, fn);
 }
