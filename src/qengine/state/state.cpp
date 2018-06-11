@@ -320,7 +320,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
  * destination object must be initialized to the correct number of bits, in 0
  * permutation state.
  */
-void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
     if (length == 0) {
         return;
@@ -333,9 +333,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
 
-    real1* partStateProb = new real1[partPower]();
     real1* remainderStateProb = new real1[remainderPower]();
-    real1* partStateAngle = new real1[partPower];
     real1* remainderStateAngle = new real1[remainderPower];
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
@@ -349,33 +347,36 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         remainderStateAngle[lcv] = arg(stateVec[j]);
     });
 
-    par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j, k, l;
-        j = lcv << start;
-        for (k = 0; k < remainderPower; k++) {
-            l = k % (1 << start);
-            l = l | ((k ^ l) << length);
-            l = j | l;
-            partStateProb[lcv] += norm(stateVec[l]);
-        }
-        remainderStateAngle[lcv] = arg(stateVec[j]);
-    });
-
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
 
+    if (destination != nullptr) {
+        real1* partStateProb = new real1[partPower]();
+        real1* partStateAngle = new real1[partPower];
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, k, l;
+            j = lcv << start;
+            for (k = 0; k < remainderPower; k++) {
+                l = k % (1 << start);
+                l = l | ((k ^ l) << length);
+                l = j | l;
+                partStateProb[lcv] += norm(stateVec[l]);
+            }
+            partStateAngle[lcv] = arg(stateVec[j]);
+        });
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) { destination->stateVec[lcv] = sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+        });
+
+        delete[] partStateProb;
+        delete[] partStateAngle;
+    }
+
     ResetStateVec(AllocStateVec(maxQPower));
-
-    par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-        destination->stateVec[lcv] =
-            sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
-    });
-
-    delete[] partStateProb;
-    delete[] partStateAngle;
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] =
@@ -386,48 +387,14 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     delete[] remainderStateAngle;
 }
 
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+{
+    DecohereDispose(start, length, destination);
+}
+
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 {
-    if (length == 0) {
-        return;
-    }
-
-    if (runningNorm != 1.0) {
-        NormalizeState();
-    }
-
-    bitCapInt partPower = 1 << length;
-    bitCapInt remainderPower = 1 << (qubitCount - length);
-
-    real1* remainderStateProb = new real1[remainderPower]();
-    real1* remainderStateAngle = new real1[remainderPower];
-
-    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j, k, l;
-        j = lcv % (1 << start);
-        j = j | ((lcv ^ j) << length);
-        for (k = 0; k < partPower; k++) {
-            l = j | (k << start);
-            remainderStateProb[lcv] += norm(stateVec[l]);
-        }
-        remainderStateAngle[lcv] = arg(stateVec[j]);
-    });
-
-    if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1);
-    } else {
-        SetQubitCount(qubitCount - length);
-    }
-
-    ResetStateVec(AllocStateVec(maxQPower));
-
-    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] =
-            sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
-    });
-
-    delete[] remainderStateProb;
-    delete[] remainderStateAngle;
+    DecohereDispose(start, length, nullptr);
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state

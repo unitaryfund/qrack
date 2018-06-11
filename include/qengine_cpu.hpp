@@ -211,6 +211,7 @@ protected:
     real1 Rand() { return rand_distribution(*rand_generator); }
 
     virtual void ResetStateVec(complex* nStateVec);
+    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void ApplySingleBit(bitLenInt qubitIndex, const complex* mtrx, bool doCalcNorm);
