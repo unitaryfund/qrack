@@ -27,23 +27,30 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, const 
     std::atomic<bitCapInt> idx;
     idx = begin;
 
-    if (itemCount <= 2) {
-        for (unsigned char lcv = 0; lcv < itemCount; lcv++) {
-            fn(inc(lcv + begin, 0), 0);
-        }
-    } else if (((int)itemCount) < numCores) {
+    if (itemCount == 0) {
+        return;
+    } else if (itemCount == 1) {
+        fn(inc(begin, 0), 0);
+    } else if (itemCount == 2) {
+        std::vector<std::future<void>> futures(2);
+        bitCapInt j = begin;
+        futures[0] = std::async(std::launch::async, [j, inc, fn]() { fn(inc(j, 0), 0); });
+        j++;
+        futures[1] = std::async(std::launch::async, [j, inc, fn]() { fn(inc(j, 1), 1); });
+        futures[0].get();
+        futures[1].get();
+    } else if (((int)itemCount) <= numCores) {
         std::vector<std::future<void>> futures(itemCount);
         bitCapInt j;
-        int cpu, count;
+        int cpu;
         for (cpu = 0; cpu < (int)itemCount; cpu++) {
-            j = inc(cpu + begin, cpu);
+            j = inc(begin + cpu, 0);
             if (j >= end) {
                 break;
             }
             futures[cpu] = std::async(std::launch::async, [j, cpu, fn]() { fn(j, cpu); });
         }
-        count = cpu;
-        for (cpu = 0; cpu < count; cpu++) {
+        for (cpu = 0; cpu < (int)itemCount; cpu++) {
             futures[cpu].get();
         }
     } else if (((int)(itemCount / PSTRIDE)) < numCores) {
@@ -51,7 +58,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, const 
         int remainder = itemCount - (parStride * numCores);
         std::vector<std::future<void>> futures(numCores);
         int cpu, count;
-        int offset = 0;
+        int offset = begin;
         for (cpu = 0; cpu < numCores; cpu++) {
             bitCapInt workUnit = parStride;
             if (remainder > 0) {
@@ -79,13 +86,13 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, const 
     } else {
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn]() {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, begin, end, inc, fn]() {
                 bitCapInt j;
                 bitCapInt k = 0;
                 bitCapInt strideEnd = end / PSTRIDE;
                 for (bitCapInt i = idx++; i < strideEnd; i = idx++) {
                     for (j = 0; j < PSTRIDE; j++) {
-                        k = inc(i * PSTRIDE + j, cpu);
+                        k = inc(begin + i * PSTRIDE + j, cpu);
                         /* Easiest to clamp on end. */
                         if (k >= end) {
                             break;
@@ -122,7 +129,7 @@ void ParallelFor::par_for_skip(
      * number of extra bits to add.
      */
     bitCapInt lowMask = skipMask - 1;
-    bitCapInt highMask = (~(lowMask + skipMask)) << (maskWidth - 1);
+    bitCapInt highMask = (~lowMask) << maskWidth;
 
     IncrementFunc incFn = [lowMask, highMask, maskWidth](
                               bitCapInt i, int cpu) { return ((i << maskWidth) & highMask) | (i & lowMask); };
