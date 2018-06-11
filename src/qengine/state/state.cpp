@@ -437,17 +437,17 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
         NormalizeState();
     }
 
-    bitCapInt qPower = 1 << qubit;
+    bitCapInt qPower = (1 << qubit);
+    bitCapInt qMask = qPower - 1;
     real1 oneChance = 0;
 
     int numCores = GetConcurrencyLevel();
-    real1* oneChanceBuff = new real1[numCores];
-    std::fill(oneChanceBuff, oneChanceBuff + numCores, 0.0);
+    real1* oneChanceBuff = new real1[numCores]();
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & qPower) == qPower) {
-            oneChanceBuff[cpu] += norm(stateVec[lcv]);
-        }
+    par_for(0, maxQPower>>1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt i = (lcv & qMask);
+        i |= ((lcv ^ i) << 1) | qPower;
+        oneChanceBuff[cpu] += norm(stateVec[i | qPower]);
     });
 
     for (int i = 0; i < numCores; i++) {

@@ -22,17 +22,17 @@ namespace Qrack {
  * Iterate through the permutations a maximum of end-begin times, allowing the
  * caller to control the incrementation offset through 'inc'.
  */
-void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, IncrementFunc inc, ParallelFunc fn)
+void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
     std::atomic<bitCapInt> idx;
     idx = begin;
 
-    if ((int)(end - begin) < numCores) {
-        std::vector<std::future<void>> futures(end - begin);
+    if (((int)itemCount) < numCores) {
+        std::vector<std::future<void>> futures(itemCount);
         bitCapInt j;
         int cpu, count;
-        for (cpu = begin; cpu < (int)end; cpu++) {
-            j = inc(cpu, 0);
+        for (cpu = 0; cpu < (int)itemCount; cpu++) {
+            j = inc(cpu + begin, 0);
             if (j >= end) {
                 break;
             }
@@ -42,9 +42,9 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
         for (cpu = 0; cpu < count; cpu++) {
             futures[cpu].get();
         }
-    } else if (((int)(end - begin) / PSTRIDE) < numCores) {
-        int parStride = (end - begin) / numCores;
-        int remainder = (end - begin) - (parStride * numCores);
+    } else if (((int)(itemCount / PSTRIDE)) < numCores) {
+        int parStride = itemCount / numCores;
+        int remainder = itemCount - (parStride * numCores);
         std::vector<std::future<void>> futures(numCores);
         int cpu, count;
         int offset = 0;
@@ -103,7 +103,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
 
 void ParallelFor::par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn)
 {
-    par_for_inc(begin, end, [](const bitCapInt i, int cpu) { return i; }, fn);
+    par_for_inc(begin, end, end - begin, [](const bitCapInt i, int cpu) { return i; }, fn);
 }
 
 void ParallelFor::par_for_skip(
@@ -123,7 +123,7 @@ void ParallelFor::par_for_skip(
     IncrementFunc incFn = [lowMask, highMask, maskWidth](
                               bitCapInt i, int cpu) { return ((i << maskWidth) & highMask) | (i & lowMask); };
 
-    par_for_inc(begin, end, incFn, fn);
+    par_for_inc(begin, end, (end - begin) >> maskWidth, incFn, fn);
 }
 
 void ParallelFor::par_for_mask(
@@ -159,7 +159,7 @@ void ParallelFor::par_for_mask(
             return i;
         };
 
-        par_for_inc(begin, end, incFn, fn);
+        par_for_inc(begin, end, (end - begin) >> maskLen, incFn, fn);
     }
 }
 
