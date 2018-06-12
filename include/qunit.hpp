@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Copyright 2017-2018, Daniel Strano and the Qrack and VM6502Q contributors.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // QUnit maintains explicit separability of qubits as an optimization on a QEngine.
 // See https://arxiv.org/abs/1710.05867
