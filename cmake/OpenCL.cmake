@@ -37,27 +37,29 @@ if (ENABLE_OPENCL)
     target_compile_options (qrack PUBLIC ${OPENCL_COMPILATION_OPTIONS})
     target_link_libraries (unittest ${LIB_OPENCL})
     target_link_libraries (benchmarks ${LIB_OPENCL})
+endif (ENABLE_OPENCL)
 
-    # Build the OpenCL command files
-    find_program (XXD_BIN xxd)
-    file (GLOB_RECURSE COMPILED_RESOURCES "src/qengine/state/*.cl")
-    foreach (INPUT_FILE ${COMPILED_RESOURCES})
-        get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
-        get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
-        get_filename_component (INPUT_DIR ${INPUT_FILE} DIRECTORY)
+# Build the OpenCL command files, at least to add them to the installed includes
+find_program (XXD_BIN xxd)
+file (GLOB_RECURSE COMPILED_RESOURCES "src/qengine/state/*.cl")
+foreach (INPUT_FILE ${COMPILED_RESOURCES})
+    get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
+    get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
+    get_filename_component (INPUT_DIR ${INPUT_FILE} DIRECTORY)
 
-        set (OUTPUT_FILE ${PROJECT_BINARY_DIR}/${INPUT_BASENAME}cl.hpp)
+    set (OUTPUT_FILE ${PROJECT_BINARY_DIR}/${INPUT_BASENAME}cl.hpp)
 
-        message (" Creating XXD Rule for ${INPUT_FILE} -> ${OUTPUT_FILE}")
-        add_custom_command (
-            WORKING_DIRECTORY ${INPUT_DIR}
-            OUTPUT ${OUTPUT_FILE}
-            COMMAND ${XXD_BIN} -i ${INPUT_NAME} > ${OUTPUT_FILE}
-            COMMENT "Building OpenCL Commands in ${INPUT_FILE}"
-            )
-        list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
-    endforeach ()
+    message (" Creating XXD Rule for ${INPUT_FILE} -> ${OUTPUT_FILE}")
+    add_custom_command (
+        WORKING_DIRECTORY ${INPUT_DIR}
+        OUTPUT ${OUTPUT_FILE}
+        COMMAND ${XXD_BIN} -i ${INPUT_NAME} > ${OUTPUT_FILE}
+        COMMENT "Building OpenCL Commands in ${INPUT_FILE}"
+        )
+    list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
+endforeach ()
 
+if (ENABLE_OPENCL)
     # Add the OpenCL objects to the library
     target_sources (qrack PRIVATE
         ${COMPILED_RESOURCES}

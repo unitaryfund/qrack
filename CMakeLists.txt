@@ -106,6 +106,12 @@ install (FILES
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
+# Install OpenCL kernels
+install (FILES
+    ${COMPILED_RESOURCES}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
+    )
+
 # Install the archive
 install (TARGETS qrack
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
