@@ -129,7 +129,7 @@ void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bi
     }
 }
 
-void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* partStateProb, global real1* partStateAngle, global real1* remainderStateProb, global real1* remainderStateAngle)
+void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb, global real1* partStateAngle)
 {
     bitCapInt ID, Nthreads, lcv;
     
