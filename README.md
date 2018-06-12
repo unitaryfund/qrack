@@ -74,7 +74,7 @@ https://www.khronos.org/registry/OpenCL/
 ```
 $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
-Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float.
+Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
 ## Reduce accuracy from double to float
 

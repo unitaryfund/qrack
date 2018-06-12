@@ -37,9 +37,7 @@ if (ENABLE_OPENCL)
     target_compile_options (qrack PUBLIC ${OPENCL_COMPILATION_OPTIONS})
     target_link_libraries (unittest ${LIB_OPENCL})
     target_link_libraries (benchmarks ${LIB_OPENCL})
-endif (ENABLE_OPENCL)
 
-if (ENABLE_OPENCL)
     # Build the OpenCL command files
     find_program (XXD_BIN xxd)
     file (GLOB_RECURSE COMPILED_RESOURCES "src/qengine/state/*.cl")
@@ -58,7 +56,6 @@ if (ENABLE_OPENCL)
             COMMENT "Building OpenCL Commands in ${INPUT_FILE}"
             )
         list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
-        list (APPEND COMPILED_RESOURCE_RESULTS ${OUTPUT_FILE})
     endforeach ()
 
     # Add the OpenCL objects to the library
