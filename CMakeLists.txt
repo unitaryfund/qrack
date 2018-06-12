@@ -107,10 +107,10 @@ install (FILES
     )
 
 # Install OpenCL kernels
-install (FILES
-    ${COMPILED_RESOURCE_RESULTS}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
-    )
+#install (FILES
+#    ${COMPILED_RESOURCE_RESULTS}
+#    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
+#    )
 
 # Install the archive
 install (TARGETS qrack
