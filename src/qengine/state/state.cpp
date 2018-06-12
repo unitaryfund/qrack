@@ -389,12 +389,12 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     delete[] remainderStateAngle;
 }
 
-void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, destination);
+    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, nullptr); }
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr)nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)

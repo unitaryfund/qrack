@@ -17,7 +17,7 @@
 #endif
 
 #ifdef __APPLE__
-#include <OpenCL/cl2.hpp>
+#include <OpenCL/cl.hpp>
 #else
 #include <CL/cl2.hpp>
 #endif
@@ -57,11 +57,7 @@ public:
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     using QEngineCPU::Decohere;
-    virtual void Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-    {
-        return Decohere(start, length, std::dynamic_pointer_cast<QEngineOCL>(dest));
-    }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
@@ -87,7 +83,8 @@ protected:
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
 
-    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
+    using QEngineCPU::DecohereDispose;
+    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
         unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
