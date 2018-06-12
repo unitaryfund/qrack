@@ -195,6 +195,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
 void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
 {
+    // "Dispose" is basically the same as decohere, except "Dispose" throws the removed bits away.
+
     if (length == 0) {
         return;
     }
@@ -212,6 +214,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.enqueueUnmapMemObject(stateBuffer, stateVec);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
+    // The "remainder" bits will always be maintained.
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower];
     cl::Buffer probBuffer1 = cl::Buffer(
@@ -219,17 +222,20 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     cl::Buffer angleBuffer1 = cl::Buffer(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
 
+    // Depending on whether we Decohere or Dispose, we have optimized kernels.
     cl::Kernel* call;
     if (destination != nullptr) {
         call = clObj->GetDecohereProbPtr();
     } else {
         call = clObj->GetDisposeProbPtr();
     }
+    // These arguments are common to both kernels.
     call->setArg(0, stateBuffer);
     call->setArg(1, ulongBuffer);
     call->setArg(2, probBuffer1);
     call->setArg(3, angleBuffer1);
 
+    // The removed "part" is only necessary for Decohere.
     real1* partStateProb = nullptr;
     real1* partStateAngle = nullptr;
     cl::Buffer probBuffer2, angleBuffer2;
@@ -247,12 +253,10 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     queue.finish();
 
+    // Call the kernel that calculates bit probability and angle.
     queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
-
-    queue.flush();
-    queue.finish();
 
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
@@ -260,8 +264,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         SetQubitCount(qubitCount - length);
     }
 
+    // Wait as long as possible before joining the kernel.
+    queue.flush();
+    queue.finish();
+
     call = clObj->GetDecohereAmpPtr();
 
+    // If we Decohere, calculate the state of the bit system removed.
     if (destination != nullptr) {
         bciArgs[0] = partPower;
         queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -285,6 +294,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         delete[] partStateAngle;
     }
 
+    //If we either Decohere or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPower;
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 

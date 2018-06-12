@@ -5,8 +5,7 @@ project (Qrack VERSION 1.0 DESCRIPTION "High Performance Quantum Bit Simulation"
 include (GNUInstallDirs)
 
 include ("cmake/Coverage.cmake")
-include ("cmake/Format.cmake" )
-include ("cmake/Complex_x2.cmake" )
+include ("cmake/Format.cmake")
 
 include_directories ("include" "include/common")
 
@@ -58,6 +57,12 @@ add_test (NAME qrack_benchmarks
 
 # Included after the library and other modules have been declared
 include ("cmake/OpenCL.cmake" )
+include ("cmake/Complex8.cmake")
+include ("cmake/Complex_x2.cmake")
+
+if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
+    set(QRACK_COMPILE_OPTS -mavx)
+endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
 
 enable_testing()
 
@@ -65,20 +70,6 @@ enable_testing()
 
 target_include_directories (unittest PUBLIC test)
 target_include_directories (benchmarks PUBLIC test)
-
-if (ENABLE_COMPLEX8)
-    target_compile_definitions (qrack PUBLIC ENABLE_COMPLEX8=1)
-    message ("Single Accuracy: ON")
-else (ENABLE_COMPLEX8)
-    message ("Single Accuracy: OFF")
-    if (ENABLE_COMPLEX_X2)
-        set(QRACK_COMPILE_OPTS -mavx)
-    endif (ENABLE_COMPLEX_X2)
-endif (ENABLE_COMPLEX8)
-
-if (ENABLE_COMPLEX_X2)
-    target_compile_definitions (qrack PUBLIC ENABLE_COMPLEX_X2=1)
-endif (ENABLE_COMPLEX_X2)
 
 if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
