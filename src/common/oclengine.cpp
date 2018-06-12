@@ -27,30 +27,38 @@ namespace Qrack {
 
 // Public singleton methods to get pointers to various methods
 cl::Context* OCLEngine::GetContextPtr() { return &context; }
-cl::CommandQueue* OCLEngine::GetQueuePtr() { return &queue; }
-cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
-cl::Kernel* OCLEngine::GetApply2x2NormPtr() { return &apply2x2norm; }
-cl::Kernel* OCLEngine::GetCoherePtr() { return &cohere; }
-cl::Kernel* OCLEngine::GetDecohereProbPtr() { return &decohereprob; }
-cl::Kernel* OCLEngine::GetDisposeProbPtr() { return &disposeprob; }
-cl::Kernel* OCLEngine::GetDecohereAmpPtr() { return &decohereamp; }
-cl::Kernel* OCLEngine::GetProbPtr() { return &prob; }
-cl::Kernel* OCLEngine::GetXPtr() { return &x; }
-cl::Kernel* OCLEngine::GetSwapPtr() { return &swap; }
-cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
-cl::Kernel* OCLEngine::GetRORPtr() { return &ror; }
-cl::Kernel* OCLEngine::GetINCPtr() { return &inc; }
-cl::Kernel* OCLEngine::GetDECPtr() { return &dec; }
-cl::Kernel* OCLEngine::GetINCCPtr() { return &incc; }
-cl::Kernel* OCLEngine::GetDECCPtr() { return &decc; }
-cl::Kernel* OCLEngine::GetLDAPtr() { return &indexedLda; }
-cl::Kernel* OCLEngine::GetADCPtr() { return &indexedAdc; }
-cl::Kernel* OCLEngine::GetSBCPtr() { return &indexedSbc; }
+cl::CommandQueue* OCLEngine::GetQueuePtr(const int& dev) { return &(queue[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetApply2x2Ptr(const int& dev) { return &(apply2x2[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetApply2x2NormPtr(const int& dev) { return &(apply2x2norm[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetCoherePtr(const int& dev) { return &(cohere[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetDecohereProbPtr(const int& dev) { return &(decohereprob[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetDisposeProbPtr(const int& dev) { return &(disposeprob[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetDecohereAmpPtr(const int& dev) { return &(decohereamp[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetProbPtr(const int& dev) { return &(prob[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetXPtr(const int& dev) { return &(x[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetSwapPtr(const int& dev) { return &(swap[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetROLPtr(const int& dev) { return &(rol[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetRORPtr(const int& dev) { return &(ror[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetINCPtr(const int& dev) { return &(inc[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetDECPtr(const int& dev) { return &(dec[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetINCCPtr(const int& dev) { return &(incc[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetDECCPtr(const int& dev) { return &(decc[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetLDAPtr(const int& dev) { return &(indexedLda[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetADCPtr(const int& dev) { return &(indexedAdc[PickIndex(dev)]); }
+cl::Kernel* OCLEngine::GetSBCPtr(const int& dev) { return &(indexedSbc[PickIndex(dev)]); }
 
 OCLEngine::OCLEngine() { InitOCL(0, -1); }
 OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
+
+int OCLEngine::PickIndex(const int& arg) {
+    if (arg < 0) {
+        return defaultDevIndex;
+    } else {
+        return arg;
+    }
+}
 
 void OCLEngine::InitOCL(int plat, int dev)
 {
@@ -72,21 +80,26 @@ void OCLEngine::InitOCL(int plat, int dev)
         exit(1);
     }
 
-    if (dev < 0) {
-#ifdef ENABLE_COMPLEX8
-        dev = all_devices.size() - 1;
-#else
-        dev = 0;
-#endif
-    }
+    // our algorithm relies on the device count being a power of 2
+    nodeCount = PowerOf2LessThan(all_devices.size());
 
-    // use device[1] because that's a GPU; device[0] is the CPU
+    if ((dev < 0) || (dev >= nodeCount)) {
+        // prefer device[1] because that's usually a GPU or accelerator; device[0] is usually the CPU
+        // also make sure that the default device is in our node list
+        dev = nodeCount - 1;
+    }
+    defaultDevIndex = dev;
     default_device = all_devices[dev];
-    std::cout << "Using device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
+    std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
+
+    for (int i = 0; i < nodeCount; i++) {
+        cluster_devices.push_back(all_devices[i]);
+        std::cout << "Cluster device #"<<i<<": "<< all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
+    }
 
     // a context is like a "runtime link" to the device and platform;
     // i.e. communication is possible
-    context = cl::Context({ default_device });
+    context = cl::Context(cluster_devices);
 
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
@@ -99,30 +112,33 @@ void OCLEngine::InitOCL(int plat, int dev)
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
     program = cl::Program(context, sources);
-    if (program.build({ default_device }) != CL_SUCCESS) {
-        std::cout << "Error building: " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << std::endl;
-        exit(1);
-    }
+    
+    for (int i = 0; i < nodeCount; i++) {
+        if (program.build({ cluster_devices[i] }) != CL_SUCCESS) {
+            std::cout << "Error building for device #"<<i<<": "<< program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << std::endl;
+            exit(1);
+        }
 
-    queue = cl::CommandQueue(context, default_device);
-    apply2x2 = cl::Kernel(program, "apply2x2");
-    apply2x2norm = cl::Kernel(program, "apply2x2norm");
-    x = cl::Kernel(program, "x");
-    cohere = cl::Kernel(program, "cohere");
-    decohereprob = cl::Kernel(program, "decohereprob");
-    decohereamp = cl::Kernel(program, "decohereamp");
-    disposeprob = cl::Kernel(program, "disposeprob");
-    prob = cl::Kernel(program, "prob");
-    swap = cl::Kernel(program, "swap");
-    rol = cl::Kernel(program, "rol");
-    ror = cl::Kernel(program, "ror");
-    inc = cl::Kernel(program, "inc");
-    dec = cl::Kernel(program, "dec");
-    incc = cl::Kernel(program, "incc");
-    decc = cl::Kernel(program, "decc");
-    indexedLda = cl::Kernel(program, "indexedLda");
-    indexedAdc = cl::Kernel(program, "indexedAdc");
-    indexedSbc = cl::Kernel(program, "indexedSbc");
+        queue.push_back(cl::CommandQueue(context, default_device));
+        apply2x2.push_back(cl::Kernel(program, "apply2x2"));
+        apply2x2norm.push_back(cl::Kernel(program, "apply2x2norm"));
+        x.push_back(cl::Kernel(program, "x"));
+        cohere.push_back(cl::Kernel(program, "cohere"));
+        decohereprob.push_back(cl::Kernel(program, "decohereprob"));
+        decohereamp.push_back(cl::Kernel(program, "decohereamp"));
+        disposeprob.push_back(cl::Kernel(program, "disposeprob"));
+        prob.push_back(cl::Kernel(program, "prob"));
+        swap.push_back(cl::Kernel(program, "swap"));
+        rol.push_back(cl::Kernel(program, "rol"));
+        ror.push_back(cl::Kernel(program, "ror"));
+        inc.push_back(cl::Kernel(program, "inc"));
+        dec.push_back(cl::Kernel(program, "dec"));
+        incc.push_back(cl::Kernel(program, "incc"));
+        decc.push_back(cl::Kernel(program, "decc"));
+        indexedLda.push_back(cl::Kernel(program, "indexedLda"));
+        indexedAdc.push_back(cl::Kernel(program, "indexedAdc"));
+        indexedSbc.push_back(cl::Kernel(program, "indexedSbc"));
+    }
 }
 
 OCLEngine* OCLEngine::m_pInstance = NULL;
@@ -141,6 +157,21 @@ OCLEngine* OCLEngine::Instance(int plat, int dev)
         std::cout << "Warning: Tried to reinitialize OpenCL environment with platform and device." << std::endl;
     }
     return m_pInstance;
+}
+
+unsigned long OCLEngine::PowerOf2LessThan(unsigned long number)
+{
+    unsigned long count = 0;
+
+    if (number <= 1) return number;
+
+    while(number != 0)
+    {
+        number >>= 1;
+        count++;
+    }
+
+    return (1 << (count - 1));
 }
 
 } // namespace Qrack
