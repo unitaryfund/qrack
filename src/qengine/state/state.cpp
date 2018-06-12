@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -13,6 +13,16 @@
 #include <thread>
 
 #include "qengine_cpu.hpp"
+
+#if ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX8
+#include "common/complex8x2simd.hpp"
+#define complex2 Complex8x2Simd
+#else
+#include "common/complex16x2simd.hpp"
+#define complex2 Complex16x2Simd
+#endif
+#endif
 
 namespace Qrack {
 
@@ -48,7 +58,7 @@ QEngineCPU::QEngineCPU(
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
     if (phaseFac == complex(-999.0, -999.0)) {
-        double angle = Rand() * 2.0 * M_PI;
+        real1 angle = Rand() * 2.0 * M_PI;
         stateVec[initState] = complex(cos(angle), sin(angle));
     } else {
         stateVec[initState] = phaseFac;
@@ -76,16 +86,26 @@ void QEngineCPU::ResetStateVec(complex* nStateVec)
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
 
-/**
- * Apply a 2x2 matrix to the state vector
- *
- * A fundamental operation used by almost all gates.
- */
-#if ENABLE_AVX
+    /**
+     * Apply a 2x2 matrix to the state vector
+     *
+     * A fundamental operation used by almost all gates.
+     */
 
-#include "common/complex16x2simd.hpp"
-#define complex2 Complex16x2Simd
+#if ENABLE_COMPLEX_X2
 
+#if ENABLE_COMPLEX8
+union ComplexUnion {
+    complex2 cmplx2;
+    float comp[4];
+
+    inline ComplexUnion(){};
+    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
+    {
+        cmplx2 = complex2(real(cmplx0), imag(cmplx0), real(cmplx1), imag(cmplx1));
+    }
+};
+#else
 union ComplexUnion {
     complex2 cmplx2;
     complex cmplx[2];
@@ -97,26 +117,32 @@ union ComplexUnion {
         cmplx[1] = cmplx1;
     }
 };
+#endif
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    double nrm = 1.0 / runningNorm;
+    real1 nrm = 1.0 / runningNorm;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
     if (doCalcNorm && (bitCount == 1)) {
-        double* rngNrm = new double[numCores];
+        real1* rngNrm = new real1[numCores];
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
-
+#if ENABLE_COMPLEX8
+            stateVec[lcv + offset1] = complex(qubit.comp[0], qubit.comp[1]);
+            stateVec[lcv + offset2] = complex(qubit.comp[2], qubit.comp[3]);
+            rngNrm[cpu] += norm(qubit.cmplx2);
+#else
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];
+            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+#endif
         });
         runningNorm = 0.0;
         for (int i = 0; i < numCores; i++) {
@@ -129,9 +155,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
 
             qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
+#if ENABLE_COMPLEX8
+            stateVec[lcv + offset1] = complex(qubit.comp[0], qubit.comp[1]);
+            stateVec[lcv + offset2] = complex(qubit.comp[2], qubit.comp[3]);
+#else
             stateVec[lcv + offset1] = qubit.cmplx[0];
             stateVec[lcv + offset2] = qubit.cmplx[1];
+#endif
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
@@ -145,11 +175,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    double nrm = 1.0 / runningNorm;
-    complex nrm = complex(1.0 / runningNorm, 0.0);
+    real1 nrm = 1.0 / runningNorm;
 
     if (doCalcNorm && (bitCount == 1)) {
-        double* rngNrm = new double[numCores];
+        real1* rngNrm = new real1[numCores];
         std::fill(rngNrm, rngNrm + numCores, 0.0);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
@@ -291,7 +320,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
  * destination object must be initialized to the correct number of bits, in 0
  * permutation state.
  */
-void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
     if (length == 0) {
         return;
@@ -303,25 +332,20 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
 
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
-    bitCapInt mask = (partPower - 1) << start;
-    bitCapInt startMask = (1 << start) - 1;
-    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
-    bitCapInt i;
 
-    double* partStateProb = new double[partPower]();
-    double* remainderStateProb = new double[remainderPower]();
-    double* partStateAngle = new double[partPower];
-    double* remainderStateAngle = new double[remainderPower];
-    double prob, angle;
+    real1* remainderStateProb = new real1[remainderPower]();
+    real1* remainderStateAngle = new real1[remainderPower];
 
-    for (i = 0; i < maxQPower; i++) {
-        prob = norm(stateVec[i]);
-        angle = arg(stateVec[i]);
-        partStateProb[(i & mask) >> start] += prob;
-        partStateAngle[(i & mask) >> start] = angle;
-        remainderStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
-        remainderStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
-    }
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt j, k, l;
+        j = lcv % (1 << start);
+        j = j | ((lcv ^ j) << length);
+        for (k = 0; k < partPower; k++) {
+            l = j | (k << start);
+            remainderStateProb[lcv] += norm(stateVec[l]);
+        }
+        remainderStateAngle[lcv] = arg(stateVec[j]);
+    });
 
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
@@ -329,92 +353,78 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
         SetQubitCount(qubitCount - length);
     }
 
+    if (destination != nullptr) {
+        real1* partStateProb = new real1[partPower]();
+        real1* partStateAngle = new real1[partPower];
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, k, l;
+            j = lcv << start;
+            for (k = 0; k < remainderPower; k++) {
+                l = k % (1 << start);
+                l = l | ((k ^ l) << length);
+                l = j | l;
+                partStateProb[lcv] += norm(stateVec[l]);
+            }
+            partStateAngle[lcv] = arg(stateVec[j]);
+        });
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            destination->stateVec[lcv] =
+                sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+        });
+
+        delete[] partStateProb;
+        delete[] partStateAngle;
+    }
+
     ResetStateVec(AllocStateVec(maxQPower));
 
-    for (i = 0; i < partPower; i++) {
-        destination->stateVec[i] = sqrt(partStateProb[i]) * complex(cos(partStateAngle[i]), sin(partStateAngle[i]));
-    }
-
-    delete[] partStateProb;
-    delete[] partStateAngle;
-
-    for (i = 0; i < remainderPower; i++) {
-        stateVec[i] = sqrt(remainderStateProb[i]) * complex(cos(remainderStateAngle[i]), sin(remainderStateAngle[i]));
-    }
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] =
+            sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+    });
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
-    if (length == 0) {
-        return;
-    }
-
-    if (runningNorm != 1.0) {
-        NormalizeState();
-    }
-
-    bitCapInt partPower = 1 << length;
-    bitCapInt mask = (partPower - 1) << start;
-    bitCapInt startMask = (1 << start) - 1;
-    bitCapInt endMask = (maxQPower - 1) ^ (mask | startMask);
-    bitCapInt i;
-
-    /* Disposing of the entire object. */
-    if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1); // Leave as a single bit for safety.
-        ResetStateVec(AllocStateVec(maxQPower));
-
-        return;
-    }
-
-    double* partStateProb = new double[1 << (qubitCount - length)]();
-    double* partStateAngle = new double[1 << (qubitCount - length)];
-    double prob, angle;
-
-    for (i = 0; i < maxQPower; i++) {
-        prob = norm(stateVec[i]);
-        angle = arg(stateVec[i]);
-        partStateProb[(i & startMask) | ((i & endMask) >> length)] += prob;
-        partStateAngle[(i & startMask) | ((i & endMask) >> length)] = angle;
-    }
-
-    SetQubitCount(qubitCount - length);
-
-    ResetStateVec(AllocStateVec(maxQPower));
-
-    for (i = 0; i < maxQPower; i++) {
-        stateVec[i] = sqrt(partStateProb[i]) * complex(cos(partStateAngle[i]), sin(partStateAngle[i]));
-    }
-
-    delete[] partStateProb;
-    delete[] partStateAngle;
+    DecohereDispose(start, length, destination);
 }
 
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, nullptr); }
+
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-double QEngineCPU::Prob(bitLenInt qubit)
+real1 QEngineCPU::Prob(bitLenInt qubit)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
     }
 
-    bitCapInt qPower = 1 << qubit;
-    double oneChance = 0;
-    bitCapInt lcv;
+    bitCapInt qPower = (1 << qubit);
+    bitCapInt qMask = qPower - 1;
+    real1 oneChance = 0;
 
-    for (lcv = 0; lcv < maxQPower; lcv++) {
-        if ((lcv & qPower) == qPower) {
-            oneChance += norm(stateVec[lcv]);
-        }
+    int numCores = GetConcurrencyLevel();
+    real1* oneChanceBuff = new real1[numCores]();
+
+    par_for(0, maxQPower >> 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt i = lcv & qMask;
+        i |= ((lcv ^ i) << 1) | qPower;
+        oneChanceBuff[cpu] += norm(stateVec[i]);
+    });
+
+    for (int i = 0; i < numCores; i++) {
+        oneChance += oneChanceBuff[i];
     }
 
     return oneChance;
 }
 
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-double QEngineCPU::ProbAll(bitCapInt fullRegister)
+real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
     if (runningNorm != 1.0) {
         NormalizeState();
@@ -427,7 +437,8 @@ void QEngineCPU::NormalizeState()
 {
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
-        if (norm(stateVec[lcv]) < 1e-15) {
+        //"min_norm" is defined in qinterface.hpp
+        if (norm(stateVec[lcv]) < min_norm) {
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
@@ -438,7 +449,7 @@ void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVe
 
 complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
 {
-    // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
+// elemCount is always a power of two, but might be smaller than ALIGN_SIZE
 #ifdef __APPLE__
     void* toRet;
     posix_memalign(

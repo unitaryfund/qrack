@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -22,48 +22,34 @@ namespace Qrack {
  * Iterate through the permutations a maximum of end-begin times, allowing the
  * caller to control the incrementation offset through 'inc'.
  */
-void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, IncrementFunc inc, ParallelFunc fn)
+void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    std::atomic<bitCapInt> idx;
-    idx = begin;
-
-    if ((int)(end - begin) < numCores) {
-        std::vector<std::future<void>> futures(end - begin);
+    if (((int)itemCount) <= numCores) {
+        std::vector<std::future<void>> futures(itemCount);
         bitCapInt j;
-        int cpu, count;
-        for (cpu = begin; cpu < (int)end; cpu++) {
-            j = inc(cpu, 0);
-            if (j >= end) {
-                break;
-            }
-            futures[cpu] = std::async(std::launch::async, [j, cpu, fn]() { fn(j, cpu); });
+        int cpu;
+        for (cpu = 0; cpu < (int)itemCount; cpu++) {
+            j = begin + cpu;
+            futures[cpu] = std::async(std::launch::async, [j, cpu, inc, fn]() { fn(inc(j, cpu), cpu); });
         }
-        count = cpu;
-        for (cpu = 0; cpu < count; cpu++) {
+        for (cpu = 0; cpu < (int)itemCount; cpu++) {
             futures[cpu].get();
         }
-    } else if (((int)(end - begin) / PSTRIDE) < numCores) {
-        int parStride = (end - begin) / numCores;
-        int remainder = (end - begin) - (parStride * numCores);
+    } else if (((int)(itemCount / PSTRIDE)) < numCores) {
+        int parStride = itemCount / numCores;
+        int remainder = itemCount - (parStride * numCores);
         std::vector<std::future<void>> futures(numCores);
         int cpu, count;
-        int offset = 0;
+        int offset = begin;
         for (cpu = 0; cpu < numCores; cpu++) {
             bitCapInt workUnit = parStride;
             if (remainder > 0) {
                 workUnit++;
                 remainder--;
             }
-            futures[cpu] = std::async(std::launch::async, [cpu, workUnit, offset, end, inc, fn]() {
-                bitCapInt j;
-                bitCapInt k = 0;
-                for (j = 0; j < workUnit; j++) {
-                    k = inc(offset + j, cpu);
-                    /* Easiest to clamp on end. */
-                    if (k >= end) {
-                        break;
-                    }
-                    fn(k, cpu);
+            futures[cpu] = std::async(std::launch::async, [cpu, workUnit, offset, inc, fn]() {
+                for (bitCapInt j = 0; j < workUnit; j++) {
+                    fn(inc(offset + j, cpu), cpu);
                 }
             });
             offset += workUnit;
@@ -73,22 +59,23 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
             futures[cpu].get();
         }
     } else {
+        std::atomic<bitCapInt> idx;
+        idx = 0;
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, end, inc, fn]() {
-                bitCapInt j;
-                bitCapInt k = 0;
-                bitCapInt strideEnd = end / PSTRIDE;
-                for (bitCapInt i = idx++; i < strideEnd; i = idx++) {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, begin, itemCount, inc, fn]() {
+                bitCapInt j, k, l;
+                for (bitCapInt i = idx++; true; i = idx++) {
+                    l = i * PSTRIDE;
                     for (j = 0; j < PSTRIDE; j++) {
-                        k = inc(i * PSTRIDE + j, cpu);
+                        k = j + l;
                         /* Easiest to clamp on end. */
-                        if (k >= end) {
+                        if (k >= itemCount) {
                             break;
                         }
-                        fn(k, cpu);
+                        fn(inc(begin + k, cpu), cpu);
                     }
-                    if (k >= end) {
+                    if (k >= itemCount) {
                         break;
                     }
                 }
@@ -103,7 +90,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt end, Increm
 
 void ParallelFor::par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn)
 {
-    par_for_inc(begin, end, [](const bitCapInt i, int cpu) { return i; }, fn);
+    par_for_inc(begin, end - begin, [](const bitCapInt i, int cpu) { return i; }, fn);
 }
 
 void ParallelFor::par_for_skip(
@@ -117,13 +104,26 @@ void ParallelFor::par_for_skip(
      * and the high mask will be ~(0x7 + 0x8) ==> ~0xf, shifted by the
      * number of extra bits to add.
      */
+
+    if ((skipMask << maskWidth) >= end) {
+        // If we're skipping trailing bits, this is much cheaper:
+        par_for(begin, skipMask, fn);
+        return;
+    }
+
     bitCapInt lowMask = skipMask - 1;
-    bitCapInt highMask = (~(lowMask + skipMask)) << (maskWidth - 1);
+    bitCapInt highMask = ~lowMask;
 
-    IncrementFunc incFn = [lowMask, highMask, maskWidth](
-                              bitCapInt i, int cpu) { return ((i << maskWidth) & highMask) | (i & lowMask); };
+    IncrementFunc incFn;
+    if (lowMask == 0) {
+        // If we're skipping leading bits, this is much cheaper:
+        incFn = [highMask, maskWidth](bitCapInt i, int cpu) { return (i << maskWidth); };
+    } else {
+        incFn = [lowMask, highMask, maskWidth](
+                    bitCapInt i, int cpu) { return ((i & lowMask) | ((i & highMask) << maskWidth)); };
+    }
 
-    par_for_inc(begin, end, incFn, fn);
+    par_for_inc(begin, (end - begin) >> maskWidth, incFn, fn);
 }
 
 void ParallelFor::par_for_mask(
@@ -159,13 +159,13 @@ void ParallelFor::par_for_mask(
             return i;
         };
 
-        par_for_inc(begin, end, incFn, fn);
+        par_for_inc(begin, (end - begin) >> maskLen, incFn, fn);
     }
 }
 
-double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
+real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
 {
-    double nrmSqr = 0;
+    real1 nrmSqr = 0;
     if ((int)(maxQPower / PSTRIDE) < numCores) {
         for (bitCapInt i = 0; i < maxQPower; i++) {
             nrmSqr += norm(stateArray[i]);
@@ -173,12 +173,11 @@ double ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArra
     } else {
         std::atomic<bitCapInt> idx;
         idx = 0;
-        double* nrmPart = new double[numCores];
+        real1* nrmPart = new real1[numCores];
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
-                double sqrNorm = 0.0;
-                // double smallSqrNorm = 0.0;
+                real1 sqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {

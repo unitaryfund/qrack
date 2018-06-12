@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -25,13 +25,13 @@ using namespace Qrack;
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
-        double __tmp_a = A;                                                                                            \
-        double __tmp_b = B;                                                                                            \
+        real1 __tmp_a = A;                                                                                             \
+        real1 __tmp_b = B;                                                                                             \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 20;
+const bitLenInt MaxQubits = 17;
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 {
@@ -55,7 +55,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 
     int i, numBits;
 
-    double avgt, stdet;
+    real1 avgt, stdet;
 
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
@@ -94,10 +94,10 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
         std::cout << (trialClocks[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC) << std::endl; /* Slowest (ms) */
     }
 }
-
+#if 0
 TEST_CASE("test_cnot")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
 }
 
 TEST_CASE("test_anticnot")
@@ -122,7 +122,7 @@ TEST_CASE("test_swap")
 
 TEST_CASE("test_x")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
 }
 
 TEST_CASE("test_y")
@@ -478,4 +478,37 @@ TEST_CASE("test_grover")
         iterClock = clock() - iterClock;
         std::cout << (iterClock * 1000.0 / CLOCKS_PER_SEC) << std::endl;
     }
+}
+#endif
+TEST_CASE("test_grover")
+{
+
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
+
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        int i;
+        int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
+
+        // Our input to the subroutine "oracle" is 8 bits.
+        qftReg->SetPermutation(0);
+        qftReg->H(0, n);
+
+        // Twelve iterations maximizes the probablity for 256 searched elements.
+        for (i = 0; i < optIter; i++) {
+            // Our "oracle" is true for an input of "100" and false for all other inputs.
+            qftReg->DEC(3, 0, n);
+            qftReg->ZeroPhaseFlip(0, n);
+            qftReg->INC(3, 0, n);
+            // This ends the "oracle."
+            qftReg->H(0, n);
+            qftReg->ZeroPhaseFlip(0, n);
+            qftReg->H(0, n);
+            qftReg->PhaseFlip();
+        }
+
+        REQUIRE_THAT(qftReg, HasProbability(0x3));
+
+        qftReg->MReg(0, n);
+    });
 }

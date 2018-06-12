@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -17,9 +17,9 @@
 #endif
 
 #ifdef __APPLE__
-#include <OpenCL/cl.hpp>
+#include <OpenCL/cl2.hpp>
 #else
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 #endif
 
 #include "qengine_cpu.hpp"
@@ -27,6 +27,10 @@
 namespace Qrack {
 
 class OCLEngine;
+
+class QEngineOCL;
+
+typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
@@ -49,6 +53,16 @@ public:
     /* Operations that have an improved implementation. */
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    using QEngineCPU::Cohere;
+    virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
+    using QEngineCPU::Decohere;
+    virtual void Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        return Decohere(start, length, std::dynamic_pointer_cast<QEngineOCL>(dest));
+    }
+    virtual void Dispose(bitLenInt start, bitLenInt length);
     using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -64,6 +78,8 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
+    virtual real1 Prob(bitLenInt qubit);
+
 protected:
     static const int BCI_ARG_LEN = 10;
 
@@ -71,6 +87,7 @@ protected:
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
 
+    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
         unsigned char* values = NULL, bitCapInt valuesLength = 0);
 

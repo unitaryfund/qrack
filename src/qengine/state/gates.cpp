@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -22,45 +22,44 @@ bool QEngineCPU::M(bitLenInt qubit)
     }
 
     bool result;
-    double prob = Rand();
-    double angle = Rand() * 2.0 * M_PI;
-    double cosine = cos(angle);
-    double sine = sin(angle);
+    real1 prob = Rand();
+    real1 angle = Rand() * 2.0 * M_PI;
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
     complex nrm;
 
     bitCapInt qPowers = 1 << qubit;
-    double oneChance = Prob(qubit);
+    real1 oneChance = Prob(qubit);
 
     result = (prob < oneChance) && oneChance > 0.0;
-    double nrmlzr = 1.0;
+    bitCapInt powerTest = result ? qPowers : 0;
+    real1 nrmlzr = 1.0;
     if (result) {
         if (oneChance > 0.0) {
             nrmlzr = oneChance;
+        } else {
+            runningNorm = 0.0;
         }
-
-        nrm = complex(cosine, sine) / sqrt(nrmlzr);
-
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            if ((lcv & qPowers) == 0) {
-                stateVec[lcv] = complex(0.0, 0.0);
-            } else {
-                stateVec[lcv] = nrm * stateVec[lcv];
-            }
-        });
     } else {
         if (oneChance < 1.0) {
             nrmlzr = 1.0 - oneChance;
+        } else {
+            runningNorm = 0.0;
         }
+    }
 
-        nrm = complex(cosine, sine) / sqrt(nrmlzr);
+    nrm = complex(cosine, sine) / sqrt(nrmlzr);
 
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            if ((lcv & qPowers) == 0) {
-                stateVec[lcv] = nrm * stateVec[lcv];
-            } else {
-                stateVec[lcv] = complex(0.0, 0.0);
-            }
-        });
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if ((lcv & qPowers) == powerTest) {
+            stateVec[lcv] = nrm * stateVec[lcv];
+        } else {
+            stateVec[lcv] = complex(0.0, 0.0);
+        }
+    });
+
+    if (runningNorm != 1.0) {
+        UpdateRunningNorm();
     }
 
     return result;

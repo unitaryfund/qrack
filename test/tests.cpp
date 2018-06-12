@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -25,14 +25,13 @@ using namespace Qrack;
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
-        double __tmp_a = A;                                                                                            \
-        double __tmp_b = B;                                                                                            \
+        real1 __tmp_a = A;                                                                                             \
+        real1 __tmp_b = B;                                                                                             \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
 void print_bin(int bits, int d);
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
 void log(QInterfacePtr p);
 
 void print_bin(int bits, int d)
@@ -44,32 +43,9 @@ void print_bin(int bits, int d)
     }
 }
 
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
-{
-    /* Validate that 'a' and 'b' are the same. */
-    REQUIRE(b->GetQubitCount() == a->GetQubitCount());
-    REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
-
-    /* Test probabilities */
-    for (int i = 0; i < a->GetQubitCount(); i++) {
-        REQUIRE(a->Prob(i) == b->Prob(i));
-    }
-
-    /* Test the raw state vector, only valid under narrow conditions. */
-    for (int i = 0; i < a->GetMaxQPower(); i++) {
-        // if (a->GetState()[i]._val[0] != b->GetState()[i]._val[0] ||
-        //         a->GetState()[i]._val[1] != b->GetState()[i]._val[1]) {
-        //     print_bin(16, i); printf(". %f/%f != %f/%f\n", a->GetState()[i]._val[0], a->GetState()[i]._val[1],
-        //         b->GetState()[i]._val[0], b->GetState()[i]._val[1]);
-        // }
-
-        REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
-        REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
-    }
-}
-
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
 
+#if 0
 TEST_CASE("test_complex")
 {
     bool test;
@@ -134,6 +110,7 @@ TEST_CASE("test_complex")
     test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
     REQUIRE(test);
 }
+#endif
 
 TEST_CASE("test_qengine_cpu_par_for")
 {
@@ -1051,7 +1028,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    double qftProbs[20];
+    real1 qftProbs[20];
     qftReg->SetPermutation(85);
 
     int i, j;
@@ -1253,7 +1230,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
     int j;
 
-    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decohere(0, 4, qftReg2);
@@ -1278,7 +1255,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
 
     qftReg->Dispose(0, qftReg->GetQubitCount() - 4);
     qftReg->SetPermutation(0x0b);
-    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0x02);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0x02, rng);
 
     qftReg->Cohere(qftReg2);
 

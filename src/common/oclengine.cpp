@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -15,6 +15,12 @@
 #include "oclengine.hpp"
 #include "qenginecl.hpp"
 
+#if ENABLE_COMPLEX8
+#include "qheader_floatcl.hpp"
+#else
+#include "qheader_doublecl.hpp"
+#endif
+
 namespace Qrack {
 
 /// "Qrack::OCLEngine" manages the single OpenCL context
@@ -24,6 +30,11 @@ cl::Context* OCLEngine::GetContextPtr() { return &context; }
 cl::CommandQueue* OCLEngine::GetQueuePtr() { return &queue; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr() { return &apply2x2; }
 cl::Kernel* OCLEngine::GetApply2x2NormPtr() { return &apply2x2norm; }
+cl::Kernel* OCLEngine::GetCoherePtr() { return &cohere; }
+cl::Kernel* OCLEngine::GetDecohereProbPtr() { return &decohereprob; }
+cl::Kernel* OCLEngine::GetDisposeProbPtr() { return &disposeprob; }
+cl::Kernel* OCLEngine::GetDecohereAmpPtr() { return &decohereamp; }
+cl::Kernel* OCLEngine::GetProbPtr() { return &prob; }
 cl::Kernel* OCLEngine::GetXPtr() { return &x; }
 cl::Kernel* OCLEngine::GetSwapPtr() { return &swap; }
 cl::Kernel* OCLEngine::GetROLPtr() { return &rol; }
@@ -36,7 +47,7 @@ cl::Kernel* OCLEngine::GetLDAPtr() { return &indexedLda; }
 cl::Kernel* OCLEngine::GetADCPtr() { return &indexedAdc; }
 cl::Kernel* OCLEngine::GetSBCPtr() { return &indexedSbc; }
 
-OCLEngine::OCLEngine() { InitOCL(0, 0); }
+OCLEngine::OCLEngine() { InitOCL(0, -1); }
 OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
@@ -61,6 +72,14 @@ void OCLEngine::InitOCL(int plat, int dev)
         exit(1);
     }
 
+    if (dev < 0) {
+#ifdef ENABLE_COMPLEX8
+        dev = all_devices.size() - 1;
+#else
+        dev = 0;
+#endif
+    }
+
     // use device[1] because that's a GPU; device[0] is the CPU
     default_device = all_devices[dev];
     std::cout << "Using device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
@@ -72,6 +91,11 @@ void OCLEngine::InitOCL(int plat, int dev)
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
 
+#if ENABLE_COMPLEX8
+    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
+#endif
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
     program = cl::Program(context, sources);
@@ -84,6 +108,11 @@ void OCLEngine::InitOCL(int plat, int dev)
     apply2x2 = cl::Kernel(program, "apply2x2");
     apply2x2norm = cl::Kernel(program, "apply2x2norm");
     x = cl::Kernel(program, "x");
+    cohere = cl::Kernel(program, "cohere");
+    decohereprob = cl::Kernel(program, "decohereprob");
+    decohereamp = cl::Kernel(program, "decohereamp");
+    disposeprob = cl::Kernel(program, "disposeprob");
+    prob = cl::Kernel(program, "prob");
     swap = cl::Kernel(program, "swap");
     rol = cl::Kernel(program, "rol");
     ror = cl::Kernel(program, "ror");

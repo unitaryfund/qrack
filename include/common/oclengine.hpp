@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -39,6 +39,16 @@ public:
     cl::Kernel* GetApply2x2Ptr();
     /// Get a pointer to the Apply2x2Norm function kernel
     cl::Kernel* GetApply2x2NormPtr();
+    /// Get a pointer to the Cohere function kernel
+    cl::Kernel* GetCoherePtr();
+    /// Get a pointer to the Decohere probability/angle decompose function kernel
+    cl::Kernel* GetDecohereProbPtr();
+    /// Get a pointer to the Decohere amplitude compose function kernel
+    cl::Kernel* GetDecohereAmpPtr();
+    /// Get a pointer to the Dispose probability/angle decompose function kernel
+    cl::Kernel* GetDisposeProbPtr();
+    /// Get a pointer to the Cohere function kernel
+    cl::Kernel* GetProbPtr();
     /// Get a pointer to the X function kernel
     cl::Kernel* GetXPtr();
     /// Get a pointer to the Swap function kernel
@@ -72,6 +82,11 @@ private:
     cl::CommandQueue queue;
     cl::Kernel apply2x2;
     cl::Kernel apply2x2norm;
+    cl::Kernel cohere;
+    cl::Kernel decohereprob;
+    cl::Kernel decohereamp;
+    cl::Kernel disposeprob;
+    cl::Kernel prob;
     cl::Kernel x;
     cl::Kernel swap;
     cl::Kernel rol;

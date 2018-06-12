@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Copyright 2017-2018, Daniel Strano and the Qrack and VM6502Q contributors.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // QUnit maintains explicit separability of qubits as an optimization on a QEngine.
 // See https://arxiv.org/abs/1710.05867
@@ -333,15 +333,15 @@ void QUnit::DumpShards()
     }
 }
 
-double QUnit::Prob(bitLenInt qubit)
+real1 QUnit::Prob(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
     return (shard.unit->Prob)(shard.mapped);
 }
 
-double QUnit::ProbAll(bitCapInt perm)
+real1 QUnit::ProbAll(bitCapInt perm)
 {
-    double result = 1.0;
+    real1 result = 1.0;
 
     std::map<QInterfacePtr, bitCapInt> perms;
 
@@ -498,36 +498,36 @@ void QUnit::CY(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2
 
 void QUnit::CZ(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2(CZ), control, target); }
 
-void QUnit::RT(double radians, bitLenInt qubit)
+void QUnit::RT(real1 radians, bitLenInt qubit)
 {
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt q) { unit->RT(radians, q); }, qubit);
 }
 
-void QUnit::RX(double radians, bitLenInt qubit) { shards[qubit].unit->RX(radians, shards[qubit].mapped); }
+void QUnit::RX(real1 radians, bitLenInt qubit) { shards[qubit].unit->RX(radians, shards[qubit].mapped); }
 
-void QUnit::RY(double radians, bitLenInt qubit) { shards[qubit].unit->RY(radians, shards[qubit].mapped); }
+void QUnit::RY(real1 radians, bitLenInt qubit) { shards[qubit].unit->RY(radians, shards[qubit].mapped); }
 
-void QUnit::RZ(double radians, bitLenInt qubit) { shards[qubit].unit->RZ(radians, shards[qubit].mapped); }
+void QUnit::RZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->RZ(radians, shards[qubit].mapped); }
 
-void QUnit::CRT(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRT(radians, b1, b2); }, control, target);
 }
 
-void QUnit::CRX(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRX(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRX(radians, b1, b2); }, control, target);
 }
 
-void QUnit::CRY(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRY(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRY(radians, b1, b2); }, control, target);
 }
 
-void QUnit::CRZ(double radians, bitLenInt control, bitLenInt target)
+void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRZ(radians, b1, b2); }, control, target);

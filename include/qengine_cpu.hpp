@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -38,11 +38,11 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 class QEngineCPU : public QInterface, public ParallelFor {
 protected:
     uint32_t randomSeed;
-    double runningNorm;
+    real1 runningNorm;
     complex* stateVec;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
-    std::uniform_real_distribution<double> rand_distribution;
+    std::uniform_real_distribution<real1> rand_distribution;
 
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
@@ -111,14 +111,14 @@ public:
      * @{
      */
 
-    virtual void RT(double radians, bitLenInt qubitIndex);
-    virtual void RX(double radians, bitLenInt qubitIndex);
-    virtual void CRX(double radians, bitLenInt control, bitLenInt target);
-    virtual void RY(double radians, bitLenInt qubitIndex);
-    virtual void CRY(double radians, bitLenInt control, bitLenInt target);
-    virtual void RZ(double radians, bitLenInt qubitIndex);
-    virtual void CRZ(double radians, bitLenInt control, bitLenInt target);
-    virtual void CRT(double radians, bitLenInt control, bitLenInt target);
+    virtual void RT(real1 radians, bitLenInt qubitIndex);
+    virtual void RX(real1 radians, bitLenInt qubitIndex);
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void RY(real1 radians, bitLenInt qubitIndex);
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void RZ(real1 radians, bitLenInt qubitIndex);
+    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -200,17 +200,18 @@ public:
 
     virtual complex* GetState();
     virtual void CopyState(QInterfacePtr orig);
-    virtual double Prob(bitLenInt qubitIndex);
-    virtual double ProbAll(bitCapInt fullRegister);
+    virtual real1 Prob(bitLenInt qubitIndex);
+    virtual real1 ProbAll(bitCapInt fullRegister);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /** @} */
 
 protected:
-    /** Generate a random double from 0 to 1 */
-    double Rand() { return rand_distribution(*rand_generator); }
+    /** Generate a random real1 from 0 to 1 */
+    real1 Rand() { return rand_distribution(*rand_generator); }
 
     virtual void ResetStateVec(complex* nStateVec);
+    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void ApplySingleBit(bitLenInt qubitIndex, const complex* mtrx, bool doCalcNorm);

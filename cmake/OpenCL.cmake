@@ -30,6 +30,7 @@ endif ()
 
 if (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=1)
+    target_compile_definitions (qrack PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
 
     # Include the necessary options and libraries to link against
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${OPENCL_INCLUDE_PATH})

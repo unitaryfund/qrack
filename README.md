@@ -69,6 +69,20 @@ https://www.khronos.org/registry/OpenCL/
     $ python -m SimpleHTTPServer
 ```
 
+## Vectorization optimization
+
+```
+$ cmake -DENABLE_COMPLEX_X2=ON ..
+```
+Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
+
+## Reduce accuracy from double to float
+
+```
+$ cmake -DENABLE_COMPLEX=ON ..
+```
+Reduce to float accuracy for complex numbers. Requires half as much RAM (1 additional qubit). Compatible with SSE 1.0 and single precision accelerator devices.
+
 ## Copyright and License
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2018. All rights reserved.
