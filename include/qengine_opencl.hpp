@@ -83,8 +83,7 @@ protected:
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
 
-    using QEngineCPU::DecohereDispose;
-    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
+    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
         unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
