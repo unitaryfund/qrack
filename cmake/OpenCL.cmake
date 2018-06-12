@@ -57,6 +57,7 @@ foreach (INPUT_FILE ${COMPILED_RESOURCES})
         COMMENT "Building OpenCL Commands in ${INPUT_FILE}"
         )
     list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
+    list (APPEND COMPILED_RESOURCE_RESULTS ${OUTPUT_FILE})
 endforeach ()
 
 if (ENABLE_OPENCL)

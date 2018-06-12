@@ -108,7 +108,7 @@ install (FILES
 
 # Install OpenCL kernels
 install (FILES
-    ${COMPILED_RESOURCES}
+    ${COMPILED_RESOURCE_RESULTS}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
