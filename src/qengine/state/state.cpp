@@ -369,7 +369,9 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
             partStateAngle[lcv] = arg(stateVec[j]);
         });
 
-        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) { destination->stateVec[lcv] = sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            destination->stateVec[lcv] =
+                sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
         });
 
         delete[] partStateProb;
@@ -392,10 +394,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr desti
     DecohereDispose(start, length, destination);
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
-{
-    DecohereDispose(start, length, nullptr);
-}
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)

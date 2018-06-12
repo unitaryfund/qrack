@@ -317,10 +317,7 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr desti
     DecohereDispose(start, length, destination);
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
-{
-    DecohereDispose(start, length, nullptr);
-}
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
