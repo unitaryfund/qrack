@@ -21,6 +21,9 @@ class QEngineOCLMulti;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface {
 protected:
+    bitLenInt subQubitCount;
+    bitCapInt subMaxQPower;
+    size_t subBufferSize;
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
@@ -29,7 +32,9 @@ public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int deviceCount = -1, std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
 private:
-    std::vector<cl::Buffer> SplitBuffer(QEngineOCLPtr b);
+    template <typename F> void SingleBitGate(std::vector<F> fns, bitLenInt bits);
+    
+    void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
     
     inline bitCapInt log2(bitCapInt n) {
         bitLenInt pow = 0;

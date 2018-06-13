@@ -17,11 +17,7 @@ namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
 
-std::vector<cl::Buffer> QEngineOCLMulti::SplitBuffer(QEngineOCLPtr) {
-    return std::vector<cl::Buffer>();
-}
-
-    QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int deviceCount, std::shared_ptr<std::default_random_engine> rgp)
+QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int deviceCount, std::shared_ptr<std::default_random_engine> rgp)
     : QInterface(qBitCount)
 {
     maxQPower = 1 << qubitCount;
@@ -33,20 +29,60 @@ std::vector<cl::Buffer> QEngineOCLMulti::SplitBuffer(QEngineOCLPtr) {
     
     bitLenInt devPow = log2(deviceCount);
     
-    bitLenInt subQubits = qubitCount >> (devPow - 1);
-    bitCapInt subMaxQPower = 1 << subQubits;
+    subQubitCount = qubitCount >> (devPow - 1);
+    subMaxQPower = 1 << subQubitCount;
+    subBufferSize = sizeof(complex) * subMaxQPower;
     bool foundInitState = false;
     bitCapInt subInitVal = 0;
         
     for (int i = 0; i < deviceCount; i++) {
         if ((!foundInitState) && (subMaxQPower * i > initState)) {
-            subInitVal = initState << log2(i);
+            subInitVal = initState - (subMaxQPower * i);
             foundInitState = true;
         }
-        substateEngines.push_back(std::make_shared<QEngineOCL>(QEngineOCL(subQubits, subInitVal, rgp, i)));
+        substateEngines.push_back(std::make_shared<QEngineOCL>(QEngineOCL(subQubitCount, subInitVal, rgp, i)));
         subInitVal = 0;
+    }
+}
+    
+void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer) {
+    queue->enqueueCopyBuffer(buff1, tempBuffer, subBufferSize, 0, subBufferSize);
+    queue->finish();
+    
+    queue->enqueueCopyBuffer(buff2, buff1, 0, subBufferSize, subBufferSize);
+    queue->finish();
+    
+    queue->enqueueCopyBuffer(tempBuffer, buff2, 0, subBufferSize, subBufferSize);
+    queue->finish();
+}
+    
+template <typename F> void QEngineOCLMulti::SingleBitGate(std::vector<F> fns, bitLenInt bit) {
+    // TODO: This logic only handles 2 devices, for the moment. Extend generally.
+    bool isSubLocal = (bit < subQubitCount);
+    bitLenInt localBit = bit;
+    
+    if (isSubLocal) {
+        for (auto fn : fns) {
+            fn(localBit);
+        }
+    } else {
+        localBit = subQubitCount;
+
+        cl::Context context = *(clObj->GetContextPtr());
+        cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize >> 1);
         
-        substateBuffers.push_back(SplitBuffer(substateEngines[i]));
+        cl::Buffer buff1 = substateEngines[0]->GetStateBuffer();
+        cl::Buffer buff2 = substateEngines[1]->GetStateBuffer();
+        
+        CommandQueuePtr queue = substateEngines[0]->GetQueuePtr();
+        
+        ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+        
+        for (auto fn : fns) {
+            fn(localBit);
+        }
+        
+        ShuffleBuffers(queue, buff1, buff2, tempBuffer);
     }
 }
 

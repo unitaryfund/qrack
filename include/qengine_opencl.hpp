@@ -53,6 +53,9 @@ public:
         deviceID = devID;
         InitOCL();
     }
+    
+    virtual cl::Buffer GetStateBuffer() { return stateBuffer; }
+    virtual CommandQueuePtr GetQueuePtr() { return queue; }
 
     /* Operations that have an improved implementation. */
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload
