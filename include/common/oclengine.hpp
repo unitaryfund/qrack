@@ -36,41 +36,41 @@ public:
     /// Get a pointer to the OpenCL queue
     cl::CommandQueue* GetQueuePtr(const int& dev = -1);
     /// Get a pointer to the Apply2x2 function kernel
-    cl::Kernel* GetApply2x2Ptr();
+    cl::Kernel* GetApply2x2Ptr(const int& dev = -1);
     /// Get a pointer to the Apply2x2Norm function kernel
-    cl::Kernel* GetApply2x2NormPtr();
+    cl::Kernel* GetApply2x2NormPtr(const int& dev = -1);
     /// Get a pointer to the Cohere function kernel
-    cl::Kernel* GetCoherePtr();
+    cl::Kernel* GetCoherePtr(const int& dev = -1);
     /// Get a pointer to the Decohere probability/angle decompose function kernel
-    cl::Kernel* GetDecohereProbPtr();
+    cl::Kernel* GetDecohereProbPtr(const int& dev = -1);
     /// Get a pointer to the Decohere amplitude compose function kernel
-    cl::Kernel* GetDecohereAmpPtr();
+    cl::Kernel* GetDecohereAmpPtr(const int& dev = -1);
     /// Get a pointer to the Dispose probability/angle decompose function kernel
-    cl::Kernel* GetDisposeProbPtr();
+    cl::Kernel* GetDisposeProbPtr(const int& dev = -1);
     /// Get a pointer to the Cohere function kernel
-    cl::Kernel* GetProbPtr();
+    cl::Kernel* GetProbPtr(const int& dev = -1);
     /// Get a pointer to the X function kernel
-    cl::Kernel* GetXPtr();
+    cl::Kernel* GetXPtr(const int& dev = -1);
     /// Get a pointer to the Swap function kernel
-    cl::Kernel* GetSwapPtr();
+    cl::Kernel* GetSwapPtr(const int& dev = -1);
     /// Get a pointer to the ROL function kernel
-    cl::Kernel* GetROLPtr();
+    cl::Kernel* GetROLPtr(const int& dev = -1);
     /// Get a pointer to the ROR function kernel
-    cl::Kernel* GetRORPtr();
+    cl::Kernel* GetRORPtr(const int& dev = -1);
     /// Get a pointer to the INC function kernel
-    cl::Kernel* GetINCPtr();
+    cl::Kernel* GetINCPtr(const int& dev = -1);
     /// Get a pointer to the DEC function kernel
-    cl::Kernel* GetDECPtr();
+    cl::Kernel* GetDECPtr(const int& dev = -1);
     /// Get a pointer to the INCC function kernel
-    cl::Kernel* GetINCCPtr();
+    cl::Kernel* GetINCCPtr(const int& dev = -1);
     /// Get a pointer to the DECC function kernel
-    cl::Kernel* GetDECCPtr();
+    cl::Kernel* GetDECCPtr(const int& dev = -1);
     /// Get a pointer to the IndexedLDA function kernel
-    cl::Kernel* GetLDAPtr();
+    cl::Kernel* GetLDAPtr(const int& dev = -1);
     /// Get a pointer to the IndexedADC function kernel
-    cl::Kernel* GetADCPtr();
+    cl::Kernel* GetADCPtr(const int& dev = -1);
     /// Get a pointer to the IndexedSBC function kernel
-    cl::Kernel* GetSBCPtr();
+    cl::Kernel* GetSBCPtr(const int& dev = -1);
     
 private:
     int nodeCount;
@@ -82,26 +82,26 @@ private:
     cl::Device default_device;
     std::vector<cl::Device> cluster_devices;
     cl::Context context;
-    cl::Program program;
+    std::vector<cl::Program> programs;
     std::vector<cl::CommandQueue> queue;
-    cl::Kernel apply2x2;
-    cl::Kernel apply2x2norm;
-    cl::Kernel cohere;
-    cl::Kernel decohereprob;
-    cl::Kernel decohereamp;
-    cl::Kernel disposeprob;
-    cl::Kernel prob;
-    cl::Kernel x;
-    cl::Kernel swap;
-    cl::Kernel rol;
-    cl::Kernel ror;
-    cl::Kernel inc;
-    cl::Kernel dec;
-    cl::Kernel incc;
-    cl::Kernel decc;
-    cl::Kernel indexedLda;
-    cl::Kernel indexedAdc;
-    cl::Kernel indexedSbc;
+    std::vector<cl::Kernel> apply2x2;
+    std::vector<cl::Kernel> apply2x2norm;
+    std::vector<cl::Kernel> cohere;
+    std::vector<cl::Kernel> decohereprob;
+    std::vector<cl::Kernel> decohereamp;
+    std::vector<cl::Kernel> disposeprob;
+    std::vector<cl::Kernel> prob;
+    std::vector<cl::Kernel> x;
+    std::vector<cl::Kernel> swap;
+    std::vector<cl::Kernel> rol;
+    std::vector<cl::Kernel> ror;
+    std::vector<cl::Kernel> inc;
+    std::vector<cl::Kernel> dec;
+    std::vector<cl::Kernel> incc;
+    std::vector<cl::Kernel> decc;
+    std::vector<cl::Kernel> indexedLda;
+    std::vector<cl::Kernel> indexedAdc;
+    std::vector<cl::Kernel> indexedSbc;
 
     OCLEngine(); // Private so that it can  not be called
     OCLEngine(int plat, int dev); // Private so that it can  not be called
