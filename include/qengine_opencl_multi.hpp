@@ -105,12 +105,11 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual void SetBit(bitLenInt qubitIndex1, bool value);
-
 
 protected:
     typedef void (QEngineOCL::*GFn)(bitLenInt);
-    void SingleBitGate(GFn fn, bitLenInt bits);
+    typedef void (QEngineOCL::*RGFn)(real1, bitLenInt);
+    template<typename F, typename ... Args> void SingleBitGate(bitLenInt order, F fn, Args ... gfnArgs);
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);

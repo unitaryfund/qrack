@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
+#include <future>
+
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
 
@@ -56,18 +58,17 @@ void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl
     queue->finish();
 }
     
-void QEngineOCLMulti::SingleBitGate(GFn fn, bitLenInt bit) {
-    // TODO: This logic only handles 2 devices, for the moment. Extend generally.
-    bool isSubLocal = (bit < subQubitCount);
-    bitLenInt localBit = bit;
-    
-    if (isSubLocal) {
-        for (int i = 0; i < substateEngines.size(); i++) {
-            ((substateEngines[i].get())->*fn)(localBit);
+template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitLenInt order, F fn, Args ... gfnArgs) {
+    int i;
+    std::vector<std::future<void>> futures(substateEngines.size());
+    if (order == 0) {
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*fn)(gfnArgs ...); });
+        }
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i].get();
         }
     } else {
-        localBit = subQubitCount;
-
         cl::Context context = *(clObj->GetContextPtr());
         cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
         
@@ -78,8 +79,11 @@ void QEngineOCLMulti::SingleBitGate(GFn fn, bitLenInt bit) {
         
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
         
-        for (int i = 0; i < substateEngines.size(); i++) {
-            ((substateEngines[i].get())->*fn)(localBit);
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*fn)(gfnArgs ...); });
+        }
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i].get();
         }
         
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
@@ -127,7 +131,13 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::H(bitLenInt qubitIndex) {
-    SingleBitGate(&QEngineOCL::H, qubitIndex);
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (GFn)(&QEngineOCL::H), subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (GFn)(&QEngineOCL::H), qubitIndex);
+    }
 }
     
 bool QEngineOCLMulti::M(bitLenInt qubitIndex) {
@@ -135,15 +145,33 @@ bool QEngineOCLMulti::M(bitLenInt qubitIndex) {
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
-    SingleBitGate(&QEngineOCL::X, qubitIndex);
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (GFn)(&QEngineOCL::X), subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (GFn)(&QEngineOCL::X), qubitIndex);
+    }
 }
     
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) {
-    SingleBitGate(&QEngineOCL::Y, qubitIndex);
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (GFn)(&QEngineOCL::Y), subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (GFn)(&QEngineOCL::Y), qubitIndex);
+    }
 }
     
 void QEngineOCLMulti::Z(bitLenInt qubitIndex) {
-    SingleBitGate(&QEngineOCL::Z, qubitIndex);
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (GFn)(&QEngineOCL::Z), subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (GFn)(&QEngineOCL::Z), qubitIndex);
+    }
 }
     
 void QEngineOCLMulti::CY(bitLenInt control, bitLenInt target) {
@@ -173,22 +201,46 @@ void QEngineOCLMulti::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenI
     throw "Not implemented";
 }
 void QEngineOCLMulti::RT(real1 radians, bitLenInt qubitIndex) {
-    throw "Not implemented";
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (RGFn)(&QEngineOCL::RT), radians, subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (RGFn)(&QEngineOCL::RT), radians, qubitIndex);
+    }
 }
 void QEngineOCLMulti::RX(real1 radians, bitLenInt qubitIndex) {
-    throw "Not implemented";
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (RGFn)(&QEngineOCL::RX), radians, subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (RGFn)(&QEngineOCL::RX), radians, qubitIndex);
+    }
 }
 void QEngineOCLMulti::CRX(real1 radians, bitLenInt control, bitLenInt target) {
     throw "Not implemented";
 }
 void QEngineOCLMulti::RY(real1 radians, bitLenInt qubitIndex) {
-    throw "Not implemented";
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (RGFn)(&QEngineOCL::RY), radians, subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (RGFn)(&QEngineOCL::RY), radians, qubitIndex);
+    }
 }
 void QEngineOCLMulti::CRY(real1 radians, bitLenInt control, bitLenInt target) {
     throw "Not implemented";
 }
 void QEngineOCLMulti::RZ(real1 radians, bitLenInt qubitIndex) {
-    throw "Not implemented";
+    bitLenInt order = qubitIndex - subQubitCount;
+    if (order > 0) {
+        SingleBitGate(order, (RGFn)(&QEngineOCL::RZ), radians, subQubitCount);
+    }
+    else {
+        SingleBitGate(0, (RGFn)(&QEngineOCL::RZ), radians, qubitIndex);
+    }
 }
 void QEngineOCLMulti::CRZ(real1 radians, bitLenInt control, bitLenInt target) {
     throw "Not implemented";
@@ -290,11 +342,6 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
 }
 real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister) {
     throw "Not implemented";
-}
-void QEngineOCLMulti::SetBit(bitLenInt qubitIndex1, bool value) {
-    if (M(qubitIndex1) != value) {
-        X(qubitIndex1);
-    }
 }
 
 } // namespace Qrack
