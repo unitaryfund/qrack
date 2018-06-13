@@ -25,6 +25,8 @@
 #include "qengine_cpu.hpp"
 
 namespace Qrack {
+    
+typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
 
 class OCLEngine;
 
@@ -37,7 +39,7 @@ class QEngineOCL : public QEngineCPU {
 protected:
     int deviceID;
     OCLEngine* clObj;
-    cl::CommandQueue queue;
+    CommandQueuePtr queue;
     cl::Buffer stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;

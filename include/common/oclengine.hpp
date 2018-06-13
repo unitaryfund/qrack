@@ -26,7 +26,7 @@
 
 namespace Qrack {
     
-    typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
+typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
 class OCLEngine {
@@ -38,7 +38,7 @@ public:
     /// Get a pointer to the OpenCL context
     cl::Context* GetContextPtr();
     /// Get a pointer to the OpenCL queue
-    cl::CommandQueue* GetQueuePtr(const int& dev = -1);
+    CommandQueuePtr GetQueuePtr(const int& dev = -1);
     /// Get a pointer to the Apply2x2 function kernel
     cl::Kernel* GetApply2x2Ptr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Apply2x2Norm function kernel

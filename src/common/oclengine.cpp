@@ -27,7 +27,7 @@ namespace Qrack {
 
 // Public singleton methods to get pointers to various methods
 cl::Context* OCLEngine::GetContextPtr() { return &context; }
-cl::CommandQueue* OCLEngine::GetQueuePtr(const int& dev) { return queue[(dev < 0) ? default_device_id : dev].get(); }
+CommandQueuePtr OCLEngine::GetQueuePtr(const int& dev) { return queue[(dev < 0) ? default_device_id : dev]; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr(CommandQueuePtr cqp) { return &(apply2x2[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetApply2x2NormPtr(CommandQueuePtr cqp) { return &(apply2x2norm[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetCoherePtr(CommandQueuePtr cqp) { return &(cohere[PickQueue(cqp)]); }
