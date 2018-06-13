@@ -35,6 +35,7 @@ typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
 protected:
+    int deviceID;
     OCLEngine* clObj;
     cl::CommandQueue queue;
     cl::Buffer stateBuffer;
@@ -44,9 +45,10 @@ protected:
     cl::Buffer maxBuffer;
 
 public:
-    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, int devID = -1)
         : QEngineCPU(qBitCount, initState, rgp)
     {
+        deviceID = devID;
         InitOCL();
     }
 
@@ -75,6 +77,9 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
     virtual real1 Prob(bitLenInt qubit);
+    
+    virtual int GetDeviceID() { return deviceID; }
+    virtual void SetDevice(const int& dID);
 
 protected:
     static const int BCI_ARG_LEN = 10;

@@ -16,6 +16,8 @@
 #error OpenCL has not been enabled
 #endif
 
+#include <map>
+
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
 #else
@@ -23,6 +25,8 @@
 #endif
 
 namespace Qrack {
+    
+    typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
 class OCLEngine {
@@ -36,45 +40,46 @@ public:
     /// Get a pointer to the OpenCL queue
     cl::CommandQueue* GetQueuePtr(const int& dev = -1);
     /// Get a pointer to the Apply2x2 function kernel
-    cl::Kernel* GetApply2x2Ptr(const int& dev = -1);
+    cl::Kernel* GetApply2x2Ptr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Apply2x2Norm function kernel
-    cl::Kernel* GetApply2x2NormPtr(const int& dev = -1);
+    cl::Kernel* GetApply2x2NormPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Cohere function kernel
-    cl::Kernel* GetCoherePtr(const int& dev = -1);
+    cl::Kernel* GetCoherePtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Decohere probability/angle decompose function kernel
-    cl::Kernel* GetDecohereProbPtr(const int& dev = -1);
+    cl::Kernel* GetDecohereProbPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Decohere amplitude compose function kernel
-    cl::Kernel* GetDecohereAmpPtr(const int& dev = -1);
+    cl::Kernel* GetDecohereAmpPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Dispose probability/angle decompose function kernel
-    cl::Kernel* GetDisposeProbPtr(const int& dev = -1);
+    cl::Kernel* GetDisposeProbPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Cohere function kernel
-    cl::Kernel* GetProbPtr(const int& dev = -1);
+    cl::Kernel* GetProbPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the X function kernel
-    cl::Kernel* GetXPtr(const int& dev = -1);
+    cl::Kernel* GetXPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Swap function kernel
-    cl::Kernel* GetSwapPtr(const int& dev = -1);
+    cl::Kernel* GetSwapPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the ROL function kernel
-    cl::Kernel* GetROLPtr(const int& dev = -1);
+    cl::Kernel* GetROLPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the ROR function kernel
-    cl::Kernel* GetRORPtr(const int& dev = -1);
+    cl::Kernel* GetRORPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the INC function kernel
-    cl::Kernel* GetINCPtr(const int& dev = -1);
+    cl::Kernel* GetINCPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the DEC function kernel
-    cl::Kernel* GetDECPtr(const int& dev = -1);
+    cl::Kernel* GetDECPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the INCC function kernel
-    cl::Kernel* GetINCCPtr(const int& dev = -1);
+    cl::Kernel* GetINCCPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the DECC function kernel
-    cl::Kernel* GetDECCPtr(const int& dev = -1);
+    cl::Kernel* GetDECCPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the IndexedLDA function kernel
-    cl::Kernel* GetLDAPtr(const int& dev = -1);
+    cl::Kernel* GetLDAPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the IndexedADC function kernel
-    cl::Kernel* GetADCPtr(const int& dev = -1);
+    cl::Kernel* GetADCPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the IndexedSBC function kernel
-    cl::Kernel* GetSBCPtr(const int& dev = -1);
+    cl::Kernel* GetSBCPtr(CommandQueuePtr cqp = nullptr);
     
 private:
     int nodeCount;
-    int defaultDevIndex;
+    int default_device_id;
+    CommandQueuePtr defaultQueue;
 
     std::vector<cl::Platform> all_platforms;
     cl::Platform default_platform;
@@ -82,26 +87,26 @@ private:
     cl::Device default_device;
     std::vector<cl::Device> cluster_devices;
     cl::Context context;
-    std::vector<cl::Program> programs;
-    std::vector<cl::CommandQueue> queue;
-    std::vector<cl::Kernel> apply2x2;
-    std::vector<cl::Kernel> apply2x2norm;
-    std::vector<cl::Kernel> cohere;
-    std::vector<cl::Kernel> decohereprob;
-    std::vector<cl::Kernel> decohereamp;
-    std::vector<cl::Kernel> disposeprob;
-    std::vector<cl::Kernel> prob;
-    std::vector<cl::Kernel> x;
-    std::vector<cl::Kernel> swap;
-    std::vector<cl::Kernel> rol;
-    std::vector<cl::Kernel> ror;
-    std::vector<cl::Kernel> inc;
-    std::vector<cl::Kernel> dec;
-    std::vector<cl::Kernel> incc;
-    std::vector<cl::Kernel> decc;
-    std::vector<cl::Kernel> indexedLda;
-    std::vector<cl::Kernel> indexedAdc;
-    std::vector<cl::Kernel> indexedSbc;
+    std::map<CommandQueuePtr, cl::Program> programs;
+    std::vector<CommandQueuePtr> queue;
+    std::map<CommandQueuePtr, cl::Kernel> apply2x2;
+    std::map<CommandQueuePtr, cl::Kernel> apply2x2norm;
+    std::map<CommandQueuePtr, cl::Kernel> cohere;
+    std::map<CommandQueuePtr, cl::Kernel> decohereprob;
+    std::map<CommandQueuePtr, cl::Kernel> decohereamp;
+    std::map<CommandQueuePtr, cl::Kernel> disposeprob;
+    std::map<CommandQueuePtr, cl::Kernel> prob;
+    std::map<CommandQueuePtr, cl::Kernel> x;
+    std::map<CommandQueuePtr, cl::Kernel> swap;
+    std::map<CommandQueuePtr, cl::Kernel> rol;
+    std::map<CommandQueuePtr, cl::Kernel> ror;
+    std::map<CommandQueuePtr, cl::Kernel> inc;
+    std::map<CommandQueuePtr, cl::Kernel> dec;
+    std::map<CommandQueuePtr, cl::Kernel> incc;
+    std::map<CommandQueuePtr, cl::Kernel> decc;
+    std::map<CommandQueuePtr, cl::Kernel> indexedLda;
+    std::map<CommandQueuePtr, cl::Kernel> indexedAdc;
+    std::map<CommandQueuePtr, cl::Kernel> indexedSbc;
 
     OCLEngine(); // Private so that it can  not be called
     OCLEngine(int plat, int dev); // Private so that it can  not be called
@@ -112,7 +117,7 @@ private:
     void InitOCL(int plat, int dev);
 
     unsigned long PowerOf2LessThan(unsigned long number);
-    int PickIndex(const int& arg);
+    CommandQueuePtr PickQueue(CommandQueuePtr);
 };
 
 } // namespace Qrack

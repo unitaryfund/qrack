@@ -16,12 +16,17 @@
 namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
+    
+void QEngineOCL::SetDevice(const int& dID) {
+    deviceID = dID;
+    queue = *(clObj->GetQueuePtr(deviceID));
+}
 
 void QEngineOCL::InitOCL()
 {
     clObj = OCLEngine::Instance();
 
-    queue = *(clObj->GetQueuePtr());
+    queue = *(clObj->GetQueuePtr(deviceID));
     cl::Context context = *(clObj->GetContextPtr());
 
     // create buffers on device (allocate space on GPU)
@@ -39,7 +44,7 @@ void QEngineOCL::ReInitOCL()
 {
     clObj = OCLEngine::Instance();
 
-    queue = *(clObj->GetQueuePtr());
+    queue = *(clObj->GetQueuePtr(deviceID));
     cl::Context context = *(clObj->GetContextPtr());
 
     // create buffers on device (allocate space on GPU)
