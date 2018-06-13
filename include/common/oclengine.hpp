@@ -76,6 +76,9 @@ public:
     /// Get a pointer to the IndexedSBC function kernel
     cl::Kernel* GetSBCPtr(CommandQueuePtr cqp = nullptr);
     
+    int GetNodeCount() { return nodeCount; }
+    int GetDefaultDeviceID() { return default_device_id; };
+    
 private:
     int nodeCount;
     int default_device_id;

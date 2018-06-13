@@ -102,6 +102,7 @@ install (FILES
     include/common/complex8x2simd.hpp
     include/common/parallel_for.hpp
     include/qengine_opencl.hpp
+    Include/qengine_opencl_multi.hpp
     include/qinterface.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
