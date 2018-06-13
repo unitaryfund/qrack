@@ -30,10 +30,89 @@ protected:
 
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int deviceCount = -1, std::shared_ptr<std::default_random_engine> rgp = nullptr);
-
-private:
-    template <typename F> void SingleBitGate(std::vector<F> fns, bitLenInt bits);
     
+    virtual void SetQuantumState(complex* inputState);
+    virtual void SetPermutation(bitCapInt perm);
+
+    virtual bitLenInt Cohere(QInterfacePtr toCopy);
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Dispose(bitLenInt start, bitLenInt length);
+
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void CNOT(bitLenInt control, bitLenInt target);
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
+
+    virtual void H(bitLenInt qubitIndex);
+    virtual bool M(bitLenInt qubitIndex);
+    virtual void X(bitLenInt qubitIndex);
+    virtual void Y(bitLenInt qubitIndex);
+    virtual void Z(bitLenInt qubitIndex);
+    virtual void CY(bitLenInt control, bitLenInt target);
+    virtual void CZ(bitLenInt control, bitLenInt target);
+
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void RT(real1 radians, bitLenInt qubitIndex);
+    virtual void RX(real1 radians, bitLenInt qubitIndex);
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void RY(real1 radians, bitLenInt qubitIndex);
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void RZ(real1 radians, bitLenInt qubitIndex);
+    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
+
+    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+    
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void INCSC(
+                       bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+    virtual void DECSC(
+                       bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlip();
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+                                 bitLenInt valueLength, unsigned char* values);
+    
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+                                 bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+                                 bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void CopyState(QInterfacePtr orig);
+    virtual real1 Prob(bitLenInt qubitIndex);
+    virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual void SetBit(bitLenInt qubitIndex1, bool value);
+
+
+protected:
+    typedef void (QEngineOCL::*GFn)(bitLenInt);
+    void SingleBitGate(GFn fn, bitLenInt bits);
+    
+private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
     
     inline bitCapInt log2(bitCapInt n) {
