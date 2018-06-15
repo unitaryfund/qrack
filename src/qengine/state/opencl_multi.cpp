@@ -11,6 +11,7 @@
 // for details.
 
 #include <future>
+#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
@@ -32,7 +33,7 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     
     bitLenInt devPow = log2(deviceCount);
     
-    subQubitCount = qubitCount >> (devPow - 1);
+    subQubitCount = qubitCount - devPow;
     subMaxQPower = 1 << subQubitCount;
     subBufferSize = sizeof(complex) * subMaxQPower >> 1;
     bool foundInitState = false;
@@ -98,7 +99,7 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitL
         
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
-            bitLenInt sqc = subQubitCount;
+            bitLenInt sqc = subQubitCount - 1;
             futures[i] = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
         }
         for (i = 0; i < substateEngines.size(); i++) {
@@ -164,7 +165,29 @@ void QEngineOCLMulti::SetQuantumState(complex* inputState) {
 }
 
 void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
-    throw "Not implemented";
+    std::future<void> ftr;
+    int i;
+    int j = 0;
+    for (i = 0; i < maxQPower; i+=subMaxQPower) {\
+        if ((perm >= i) && (perm < (i + subMaxQPower))) {
+            QEngineOCLPtr engine = substateEngines[j];
+            bitCapInt p = perm - i;
+            ftr = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p);});
+        }
+        else {
+            cl::Buffer buffer = substateEngines[j]->GetStateBuffer();
+            CommandQueuePtr queue = substateEngines[j]->GetQueuePtr();
+            queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+        }
+        j++;
+    }
+    std::cout<<"2"<<std::endl;
+    for (i = 0; i < substateEngines.size(); i++) {
+        CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
+        queue->flush();
+        queue->finish();
+    }
+    ftr.get();
 }
     
 bitLenInt QEngineOCLMulti::Cohere(QInterfacePtr toCopy) {
@@ -227,7 +250,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         }
     }
     
-    if (qubit < subQubitCount) {
+    if (qubit < (subQubitCount - 1)) {
         std::vector<std::future<void>> futures(substateEngines.size());
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
@@ -422,7 +445,7 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     
     // This logic only works for up to two devices.
     // TODO: Generalize to higher numbers of devices
-    if (qubitIndex < subQubitCount) {
+    if (qubitIndex < (subQubitCount - 1)) {
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
@@ -439,7 +462,9 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     return oneChance;
 }
 real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister) {
-    throw "Not implemented";
+    bitLenInt subIndex = fullRegister / subMaxQPower;
+    fullRegister -= subIndex * subMaxQPower;
+    return substateEngines[subIndex]->ProbAll(fullRegister);
 }
-
+    
 } // namespace Qrack

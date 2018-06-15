@@ -124,7 +124,7 @@ private:
     
     inline bitCapInt log2(bitCapInt n) {
         bitLenInt pow = 0;
-        bitLenInt p = n;
+        bitLenInt p = n >> 1;
         while (p != 0) {
             p >>= 1;
             pow++;

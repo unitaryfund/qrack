@@ -279,10 +279,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
 #endif
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
-    qftReg->SetReg(0, 8, 0x03);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
-    qftReg->X(1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->SetPermutation(0x80001);
+    qftReg->X(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
 }
 #if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
