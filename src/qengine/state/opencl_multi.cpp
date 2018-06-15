@@ -71,6 +71,20 @@ void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl
     queue->finish();
 }
     
+void QEngineOCLMulti::SwapBuffersLow(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer) {
+    queue->enqueueCopyBuffer(buff1, tempBuffer, subBufferSize, 0, subBufferSize);
+    queue->flush();
+    queue->finish();
+        
+    queue->enqueueCopyBuffer(buff2, buff1, subBufferSize, subBufferSize, subBufferSize);
+    queue->flush();
+    queue->finish();
+        
+    queue->enqueueCopyBuffer(tempBuffer, buff2, 0, subBufferSize, subBufferSize);
+    queue->flush();
+    queue->finish();
+}
+    
 template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs) {
     int i;
     if (runningNorm != 1.0) {
@@ -482,7 +496,54 @@ bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLengt
 }
     
 void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
-    throw "Swap not implemented";
+    
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+    
+    int i;
+    bitLenInt highBit, lowBit;
+    if (qubitIndex1 > qubitIndex2) {
+        highBit = qubitIndex1;
+        lowBit = qubitIndex2;
+    } else {
+        lowBit = qubitIndex1;
+        highBit = qubitIndex2;
+    }
+    // This logic is only correct for up to 2 devices
+    // TODO: Generalize logic to all powers of 2 devices
+    std::vector<std::future<void>> futures(substateEngines.size());
+    if (highBit < subQubitCount) {
+        for (i = 0; i < substateEngines.size(); i++) {
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, qubitIndex1, qubitIndex2]() { engine->Swap(qubitIndex1, qubitIndex2); });
+        }
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i].get();
+        }
+    } else {
+        cl::Context context = *(clObj->GetContextPtr());
+        cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
+        
+        cl::Buffer buff1 = substateEngines[0]->GetStateBuffer();
+        cl::Buffer buff2 = substateEngines[1]->GetStateBuffer();
+        
+        CommandQueuePtr queue = substateEngines[0]->GetQueuePtr();
+        
+        SwapBuffersLow(queue, buff1, buff2, tempBuffer);
+        
+        bitLenInt max = substateEngines.size();
+        bitLenInt min = max / 2;
+        for (i = min; i < max; i++) {
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, lowBit]() { engine->X(lowBit); });
+        }
+        for (i = min; i < max; i++) {
+            futures[i].get();
+        }
+        
+        SwapBuffersLow(queue, buff1, buff2, tempBuffer);
+    }
 }
 void QEngineOCLMulti::CopyState(QInterfacePtr orig) {
     throw "CopyState not implemented";

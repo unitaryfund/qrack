@@ -120,6 +120,7 @@ protected:
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
+    void SwapBuffersLow(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
     
     inline bitCapInt log2(bitCapInt n) {
         bitLenInt pow = 0;
