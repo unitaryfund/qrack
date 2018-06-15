@@ -373,24 +373,6 @@ void QEngineOCLMulti::CZ(bitLenInt control, bitLenInt target) {
     ControlledGate(control, target, (CGFn)(&QEngineOCL::CZ), (GFn)(&QEngineOCL::Z));
 }
     
-void QEngineOCLMulti::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
-    throw "AND not implemented";
-}
-void QEngineOCLMulti::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
-    throw "OR not implemented";
-}
-void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
-    throw "XOR not implemented";
-}
-void QEngineOCLMulti::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-    throw "CLAND not implemented";
-}
-void QEngineOCLMulti::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-    throw "CLOR not implemented";
-}
-void QEngineOCLMulti::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-    throw "CLXOR not implemented";
-}
 void QEngineOCLMulti::RT(real1 radians, bitLenInt qubitIndex) {
     SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RT), radians);
 }

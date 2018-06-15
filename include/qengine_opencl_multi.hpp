@@ -55,12 +55,6 @@ public:
     virtual void CY(bitLenInt control, bitLenInt target);
     virtual void CZ(bitLenInt control, bitLenInt target);
 
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
     virtual void RT(real1 radians, bitLenInt qubitIndex);
     virtual void RX(real1 radians, bitLenInt qubitIndex);
     virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);

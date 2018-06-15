@@ -393,7 +393,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz_reg")
     qftReg->H(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
-#if 0
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_and")
 {
     qftReg->SetPermutation(0x0e);
@@ -426,7 +426,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_xor")
     qftReg->XOR(0, 4, 8, 4); // 0xe ^ 0x3
     REQUIRE_THAT(qftReg, HasProbability(0xd3e));
 }
-#endif
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rt")
 {
     qftReg->SetReg(0, 8, 0x02);

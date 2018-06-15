@@ -30,6 +30,81 @@ void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
     X(control2);
 }
 
+// Logic Operators:
+
+void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+    /* Same bit, no action necessary. */
+    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
+        return;
+    }
+    
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
+        SetBit(outputBit, false);
+        if (inputBit1 == inputBit2) {
+            CNOT(inputBit1, outputBit);
+        } else {
+            CCNOT(inputBit1, inputBit2, outputBit);
+        }
+    } else {
+        throw std::invalid_argument("Invalid AND arguments.");
+    }
+}
+void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+    /* Same bit, no action necessary. */
+    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
+        return;
+    }
+    
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
+        SetBit(outputBit, true);
+        if (inputBit1 == inputBit2) {
+            AntiCNOT(inputBit1, outputBit);
+        } else {
+            AntiCCNOT(inputBit1, inputBit2, outputBit);
+        }
+    } else {
+        throw std::invalid_argument("Invalid OR arguments.");
+    }
+}
+void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+    if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+        SetBit(outputBit, false);
+        return;
+    }
+    
+    if (inputBit1 == outputBit) {
+        CNOT(inputBit2, outputBit);
+    } else if (inputBit2 == outputBit) {
+        CNOT(inputBit1, outputBit);
+    } else {
+        SetBit(outputBit, false);
+        CNOT(inputBit1, outputBit);
+        CNOT(inputBit2, outputBit);
+    }
+}
+void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
+    SetBit(outputBit, false);
+    if (inputClassicalBit && (inputQBit != outputBit)) {
+        CNOT(inputQBit, outputBit);
+    }
+}
+void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
+    if (inputClassicalBit) {
+        SetBit(outputBit, true);
+    } else if (inputQBit != outputBit) {
+        SetBit(outputBit, false);
+        CNOT(inputQBit, outputBit);
+    }
+}
+void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
+    if (inputQBit != outputBit) {
+        SetBit(outputBit, inputClassicalBit);
+        CNOT(inputQBit, outputBit);
+    } else if (inputClassicalBit) {
+        X(outputBit);
+    }
+}
+
 // Bit-wise apply "anti-"controlled-not to three registers
 void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {

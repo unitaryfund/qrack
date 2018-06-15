@@ -79,24 +79,6 @@ public:
     /** @} */
 
     /**
-     * \defgroup LogicGates Logic Gates
-     *
-     * Each bit is paired with a CL* variant that utilizes a classical bit as
-     * an input.
-     *
-     * @{
-     */
-
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-
-    /** @} */
-
-    /**
      * \defgroup RotGates Rotational gates:
      *
      * NOTE: Dyadic operation angle sign is reversed from radian rotation

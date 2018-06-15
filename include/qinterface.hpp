@@ -401,42 +401,42 @@ public:
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) = 0;
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) = 0;
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) = 0;
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      *  Quantum analog of classical "AND" gate. Takes one qubit input and one
      *  classical bit input. Measures the outputBit, then overwrites it with
      *  result.
      */
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) = 0;
+    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate. Takes one qubit input and one
      * classical bit input. Measures the outputBit, then overwrites it with
      * result.
      */
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) = 0;
+    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate. Takes one qubit input and one
      * classical bit input. Measures the outputBit, then overwrites it with
      * result.
      */
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) = 0;
+    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /** @} */
 
