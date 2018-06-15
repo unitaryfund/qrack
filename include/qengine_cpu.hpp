@@ -14,7 +14,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <random>
 
 #include "qinterface.hpp"
 
@@ -37,21 +36,20 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  */
 class QEngineCPU : public QInterface, public ParallelFor {
 protected:
-    uint32_t randomSeed;
+    bool doNormalize;
     real1 runningNorm;
     complex* stateVec;
 
-    std::shared_ptr<std::default_random_engine> rand_generator;
-    std::uniform_real_distribution<real1> rand_distribution;
-
 public:
-    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0));
+    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool partialInit = false);
     ~QEngineCPU() { delete[] stateVec; }
+    
+    virtual void EnableNormalize(bool doN) {
+        doNormalize = doN;
+    }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
-    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
@@ -199,13 +197,15 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual real1 GetNorm() { return runningNorm; }
+    virtual void SetNorm(real1 n) { runningNorm = n; }
+    virtual void NormalizeState(real1 norm = -999.0);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 
 protected:
-    /** Generate a random real1 from 0 to 1 */
-    real1 Rand() { return rand_distribution(*rand_generator); }
-
+    
     virtual void ResetStateVec(complex* nStateVec);
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
@@ -217,7 +217,6 @@ protected:
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void NormalizeState();
     virtual void UpdateRunningNorm();
     virtual complex* AllocStateVec(bitCapInt elemCount);
 };

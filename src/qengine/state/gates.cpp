@@ -15,13 +15,17 @@
 namespace Qrack {
 
 /// Measurement gate
-bool QEngineCPU::M(bitLenInt qubit)
+bool QEngineCPU::M(bitLenInt qubit) {
+    return ForceM(qubit, false, false);
+}
+    
+/// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
+bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
-    bool result;
     real1 prob = Rand();
     real1 angle = Rand() * 2.0 * M_PI;
     real1 cosine = cos(angle);
@@ -31,20 +35,15 @@ bool QEngineCPU::M(bitLenInt qubit)
     bitCapInt qPowers = 1 << qubit;
     real1 oneChance = Prob(qubit);
 
-    result = (prob < oneChance) && oneChance > 0.0;
+    result = doForce ? result : ((prob < oneChance) && (oneChance > 0.0));
     bitCapInt powerTest = result ? qPowers : 0;
-    real1 nrmlzr = 1.0;
     if (result) {
         if (oneChance > 0.0) {
             nrmlzr = oneChance;
-        } else {
-            runningNorm = 0.0;
         }
     } else {
         if (oneChance < 1.0) {
             nrmlzr = 1.0 - oneChance;
-        } else {
-            runningNorm = 0.0;
         }
     }
 
@@ -57,10 +56,6 @@ bool QEngineCPU::M(bitLenInt qubit)
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
-
-    if (runningNorm != 1.0) {
-        UpdateRunningNorm();
-    }
 
     return result;
 }

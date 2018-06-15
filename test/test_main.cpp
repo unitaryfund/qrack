@@ -34,6 +34,7 @@ int main(int argc, char* argv[])
     bool disable_opencl = false;
     bool disable_cpu = false;
     bool disable_qunit = false;
+    bool disable_opencl_multi = false;
 
     using namespace Catch::clara;
 
@@ -44,7 +45,8 @@ int main(int argc, char* argv[])
     auto cli = session.cli() | Opt(disable_qengine)["--disable-qengine"]("Disable basic QEngine tests") |
         Opt(disable_opencl)["--disable-opencl"]("Disable OpenCL even if supported") |
         Opt(disable_qunit)["--disable-qunit"]("Disable QUnit implementation tests") |
-        Opt(disable_cpu)["--disable-cpu"]("Disable the CPU-based implementation tests");
+        Opt(disable_cpu)["--disable-cpu"]("Disable the CPU-based implementation tests") |
+        Opt(disable_opencl_multi)["--disable-opencl-multi"]("Disable multiple device OpenCL tests");
 
     session.cli(cli);
 
@@ -99,6 +101,13 @@ int main(int argc, char* argv[])
             CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
                 .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
+            
+            if (num_failed == 0 && !disable_opencl_multi) {
+                session.config().stream() << "############ QEngineOCLMulti ############" << std::endl;
+                testEngineType = QINTERFACE_OPENCL_MULTI;
+                testSubEngineType = QINTERFACE_OPENCL_MULTI;
+                num_failed = session.run();
+            }
         }
 #endif
     }

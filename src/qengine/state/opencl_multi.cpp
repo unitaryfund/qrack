@@ -19,9 +19,10 @@ namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
 
-QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int deviceCount, std::shared_ptr<std::default_random_engine> rgp)
+QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int deviceCount)
     : QInterface(qBitCount)
 {
+    runningNorm = 1.0;
     maxQPower = 1 << qubitCount;
     
     clObj = OCLEngine::Instance();
@@ -35,37 +36,51 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int d
     subMaxQPower = 1 << subQubitCount;
     subBufferSize = sizeof(complex) * subMaxQPower >> 1;
     bool foundInitState = false;
+    bool partialInit = true;
     bitCapInt subInitVal;
-        
+ 
     for (int i = 0; i < deviceCount; i++) {
         if ((!foundInitState) && (subMaxQPower * i > initState)) {
             subInitVal = initState - (subMaxQPower * i);
             foundInitState = true;
+            partialInit = false;
         }
-        substateEngines.push_back(std::make_shared<QEngineOCL>(QEngineOCL(subQubitCount, subInitVal, rgp, i)));
+        substateEngines.push_back(std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rgp, i, partialInit));
+        substateEngines[i]->EnableNormalize(false);
         subInitVal = 0;
+        partialInit = true;
     }
 }
     
 void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer) {
     queue->enqueueCopyBuffer(buff1, tempBuffer, subBufferSize, 0, subBufferSize);
+    queue->flush();
     queue->finish();
     
     queue->enqueueCopyBuffer(buff2, buff1, 0, subBufferSize, subBufferSize);
+    queue->flush();
     queue->finish();
     
     queue->enqueueCopyBuffer(tempBuffer, buff2, 0, subBufferSize, subBufferSize);
+    queue->flush();
     queue->finish();
 }
     
 template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitLenInt bit, F fn, Args ... gfnArgs) {
+    int i;
+    if (runningNorm != 1.0) {
+        for (i = 0; i < substateEngines.size(); i++) {
+            substateEngines[i]->SetNorm(runningNorm);
+            substateEngines[i]->EnableNormalize(true);
+        }
+    }
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
-    int i;
     std::vector<std::future<void>> futures(substateEngines.size());
     if (bit < (subQubitCount - 1)) {
         for (i = 0; i < substateEngines.size(); i++) {
-            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*fn)(gfnArgs ..., bit); });
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, fn, bit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., bit); });
         }
         for (i = 0; i < substateEngines.size(); i++) {
             futures[i].get();
@@ -82,13 +97,21 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitL
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
         
         for (i = 0; i < substateEngines.size(); i++) {
-            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*fn)(gfnArgs ..., subQubitCount); });
+            QEngineOCLPtr engine = substateEngines[i];
+            bitLenInt sqc = subQubitCount;
+            futures[i] = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
         }
         for (i = 0; i < substateEngines.size(); i++) {
             futures[i].get();
         }
         
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+    }
+    
+    runningNorm = 0.0;
+    for (i = 0; i < substateEngines.size(); i++) {
+        runningNorm += substateEngines[i]->GetNorm();
+        substateEngines[i]->EnableNormalize(false);
     }
 }
     
@@ -99,14 +122,16 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     std::vector<std::future<void>> futures(substateEngines.size());
     if ((controlBit < (subQubitCount - 1)) && (targetBit < (subQubitCount - 1))) {
         for (i = 0; i < substateEngines.size(); i++) {
-            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*cfn)(gfnArgs ..., controlBit, targetBit); });
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, cfn, controlBit, targetBit, gfnArgs ...]() { ((engine.get())->*cfn)(gfnArgs ..., controlBit, targetBit); });
         }
         for (i = 0; i < substateEngines.size(); i++) {
             futures[i].get();
         }
     } else if (targetBit < (subQubitCount - 1)) {
         for (i = substateEngines.size() / 2; i < substateEngines.size(); i++) {
-            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*fn)(gfnArgs ..., targetBit); });
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
         }
         for (i = 0; i < substateEngines.size(); i++) {
             futures[i].get();
@@ -123,7 +148,8 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
             
         for (i = substateEngines.size() / 2; i < substateEngines.size(); i++) {
-            futures[i] = std::async(std::launch::async, [&]() { ((substateEngines[i].get())->*fn)(gfnArgs ..., targetBit - 1); });
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit - 1); });
         }
         for (i = 0; i < substateEngines.size(); i++) {
             futures[i].get();
@@ -177,8 +203,65 @@ void QEngineOCLMulti::H(bitLenInt qubitIndex) {
     SingleBitGate(qubitIndex, (GFn)(&QEngineOCL::H));
 }
     
-bool QEngineOCLMulti::M(bitLenInt qubitIndex) {
-    throw "Not implemented";
+bool QEngineOCLMulti::M(bitLenInt qubit) {
+    // TODO: Generalize to more than two devices.
+    
+    //if (runningNorm != 1.0) {
+    //    NormalizeState();
+    //}
+    
+    int i;
+    
+    real1 prob = Rand();
+    real1 oneChance = Prob(qubit);
+    
+    bool result = ((prob < oneChance) && (oneChance > 0.0));
+    real1 nrmlzr = 1.0;
+    if (result) {
+        if (oneChance > 0.0) {
+            nrmlzr = oneChance;
+        }
+    } else {
+        if (oneChance < 1.0) {
+            nrmlzr = 1.0 - oneChance;
+        }
+    }
+    
+    if (qubit < subQubitCount) {
+        std::vector<std::future<void>> futures(substateEngines.size());
+        for (i = 0; i < substateEngines.size(); i++) {
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, qubit, result, nrmlzr]() {
+                engine->ForceM(qubit, result, true, nrmlzr);
+            });
+        }
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i].get();
+        }
+    }
+    else {
+        bitLenInt init, max;
+        if (result) {
+            init = 1;
+            max = 2;
+        }
+        else {
+            init = 0;
+            max = 1;
+        }
+        for (i = init; i < max; i++) {
+            cl::Buffer buffer = substateEngines[i]->GetStateBuffer();
+            CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
+            queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+        }
+        for (i = init; i < max; i++) {
+            CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
+            queue->flush();
+            queue->finish();
+        }
+    }
+    
+    return result;
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
@@ -333,7 +416,27 @@ void QEngineOCLMulti::CopyState(QInterfacePtr orig) {
     throw "Not implemented";
 }
 real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
-    throw "Not implemented";
+    real1 oneChance = 0.0;
+    int i;
+    std::vector<std::future<real1>> futures(substateEngines.size());
+    
+    // This logic only works for up to two devices.
+    // TODO: Generalize to higher numbers of devices
+    if (qubitIndex < subQubitCount) {
+        for (i = 0; i < substateEngines.size(); i++) {
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
+        }
+        for (i = 0; i < substateEngines.size(); i++) {
+            oneChance += futures[i].get();
+        }
+    } else {
+        for (i = substateEngines.size() / 2; i < substateEngines.size(); i++) {
+            oneChance += substateEngines[i]->GetNorm();
+        }
+    }
+    
+    return oneChance;
 }
 real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister) {
     throw "Not implemented";

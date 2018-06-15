@@ -15,7 +15,7 @@
 #include "qengine_cpu.hpp"
 
 #if ENABLE_OPENCL
-#include "qengine_opencl.hpp"
+#include "qengine_opencl_multi.hpp"
 #endif
 
 #include "qunit.hpp"
@@ -32,6 +32,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
+    case QINTERFACE_OPENCL_MULTI:
+        return std::make_shared<QEngineOCLMulti>(args...);
 #endif
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);

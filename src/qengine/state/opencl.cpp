@@ -103,7 +103,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
-    cmplx[4] = complex((bitCount == 1) ? (1.0 / runningNorm) : 1.0, 0.0);
+    cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / runningNorm) : 1.0, 0.0);
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
@@ -155,11 +155,11 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
     bitLenInt result = qubitCount;
 
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
-    if (toCopy->runningNorm != 1.0) {
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != 1.0)) {
         toCopy->NormalizeState();
     }
 
@@ -206,7 +206,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         return;
     }
 
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
@@ -337,7 +337,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(st
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 

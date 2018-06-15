@@ -230,7 +230,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
         calls++;
     });
 }
-
+#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x55F0);
@@ -276,7 +276,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
     qftReg->Swap(0, 4, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
-
+#endif
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
     qftReg->SetReg(0, 8, 0x03);
@@ -284,7 +284,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
     qftReg->X(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
-
+#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
 {
     qftReg->SetReg(0, 8, 0x13);
@@ -1506,3 +1506,4 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
+#endif

@@ -23,13 +23,18 @@ class QEngineOCLMulti : public QInterface {
 protected:
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
+    real1 runningNorm;
     size_t subBufferSize;
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
+    
+    uint32_t randomSeed;
+    std::shared_ptr<std::default_random_engine> rand_generator;
+    std::uniform_real_distribution<real1> rand_distribution;
 
 public:
-    QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, int deviceCount = -1, std::shared_ptr<std::default_random_engine> rgp = nullptr);
+    QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, int deviceCount = -1);
     
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm);

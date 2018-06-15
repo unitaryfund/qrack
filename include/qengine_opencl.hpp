@@ -47,8 +47,8 @@ protected:
     cl::Buffer maxBuffer;
 
 public:
-    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, int devID = -1)
-        : QEngineCPU(qBitCount, initState, rgp)
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, int devID = -1, bool partialInit = false)
+        : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
     {
         deviceID = devID;
         InitOCL();
