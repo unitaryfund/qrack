@@ -13,6 +13,22 @@
 #include "qinterface.hpp"
 
 namespace Qrack {
+    
+void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
+{
+    X(control);
+    CNOT(control, target);
+    X(control);
+}
+    
+void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    X(control1);
+    X(control2);
+    CCNOT(control1, control2, target);
+    X(control1);
+    X(control2);
+}
 
 // Bit-wise apply "anti-"controlled-not to three registers
 void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)

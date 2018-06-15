@@ -45,9 +45,7 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     virtual void H(bitLenInt qubitIndex);
     virtual bool M(bitLenInt qubitIndex);
@@ -116,7 +114,7 @@ protected:
     typedef void (QEngineOCL::*CGFn)(bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
     template<typename F, typename ... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
-    template<typename CF, typename F, typename ... Args> void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
+    template<typename CF, typename F, typename ... Args> void ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);

@@ -272,7 +272,7 @@ public:
      *
      * If both controls are set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) = 0;
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Controlled NOT gate
@@ -286,7 +286,7 @@ public:
      *
      * If the control is set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target) = 0;
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Hadamard gate
