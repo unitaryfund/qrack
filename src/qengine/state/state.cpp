@@ -44,7 +44,7 @@ QEngineCPU::QEngineCPU(
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    runningNorm = 1.0;
+    runningNorm = partialInit ? 0.0 : 1.0;
     SetQubitCount(qBitCount);
 
     stateVec = AllocStateVec(maxQPower);
@@ -159,8 +159,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
-        } else {
-            runningNorm = 1.0;
         }
     }
 }
@@ -208,8 +206,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
-        } else {
-            runningNorm = 1.0;
         }
     }
 }
@@ -429,7 +425,9 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 
 void QEngineCPU::NormalizeState(real1 nrm)
 {
-    if (nrm >= 0) {
+    if (nrm < 0) {
+        nrm = 1.0;
+    } else {
         runningNorm = nrm;
     }
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
@@ -439,7 +437,7 @@ void QEngineCPU::NormalizeState(real1 nrm)
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
-    runningNorm = 1.0;
+    runningNorm = nrm;
 }
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }

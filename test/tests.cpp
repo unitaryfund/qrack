@@ -110,7 +110,6 @@ TEST_CASE("test_complex")
     test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
     REQUIRE(test);
 }
-#endif
 
 TEST_CASE("test_qengine_cpu_par_for")
 {
@@ -230,7 +229,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
         calls++;
     });
 }
-#if 0
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x55F0);

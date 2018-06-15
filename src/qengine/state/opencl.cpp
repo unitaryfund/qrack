@@ -146,8 +146,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
         delete[] nrmParts;
         runningNorm = sqrt(runningNorm);
-    } else {
-        runningNorm = 1.0;
     }
 }
 

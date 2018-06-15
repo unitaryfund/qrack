@@ -11,7 +11,6 @@
 // for details.
 
 #include <future>
-#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
@@ -41,7 +40,7 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     bitCapInt subInitVal;
  
     for (int i = 0; i < deviceCount; i++) {
-        if ((!foundInitState) && (subMaxQPower * i > initState)) {
+        if ((!foundInitState) && ((subMaxQPower * (i + 1)) > initState)) {
             subInitVal = initState - (subMaxQPower * i);
             foundInitState = true;
             partialInit = false;
@@ -69,12 +68,12 @@ void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl
     
 template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitLenInt bit, F fn, Args ... gfnArgs) {
     int i;
-    if (runningNorm != 1.0) {
-        for (i = 0; i < substateEngines.size(); i++) {
-            substateEngines[i]->SetNorm(runningNorm);
-            substateEngines[i]->EnableNormalize(true);
-        }
-    }
+    //if (runningNorm != 1.0) {
+    //    for (i = 0; i < substateEngines.size(); i++) {
+    //        substateEngines[i]->SetNorm(runningNorm);
+    //        substateEngines[i]->EnableNormalize(true);
+    //    }
+    //}
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
     std::vector<std::future<void>> futures(substateEngines.size());
@@ -109,11 +108,11 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitL
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
     }
     
-    runningNorm = 0.0;
-    for (i = 0; i < substateEngines.size(); i++) {
-        runningNorm += substateEngines[i]->GetNorm();
-        substateEngines[i]->EnableNormalize(false);
-    }
+    //runningNorm = 0.0;
+    //for (i = 0; i < substateEngines.size(); i++) {
+    //    runningNorm += substateEngines[i]->GetNorm();
+    //    substateEngines[i]->EnableNormalize(false);
+    //}
 }
     
 template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
@@ -175,16 +174,16 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
             ftr = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p);});
         }
         else {
+            substateEngines[j]->SetNorm(0.0);
             cl::Buffer buffer = substateEngines[j]->GetStateBuffer();
             CommandQueuePtr queue = substateEngines[j]->GetQueuePtr();
             queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+            queue->flush();
         }
         j++;
     }
-    std::cout<<"2"<<std::endl;
     for (i = 0; i < substateEngines.size(); i++) {
         CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
-        queue->flush();
         queue->finish();
     }
     ftr.get();
@@ -276,10 +275,10 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
             cl::Buffer buffer = substateEngines[i]->GetStateBuffer();
             CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
             queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+            queue->flush();
         }
         for (i = init; i < max; i++) {
             CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
-            queue->flush();
             queue->finish();
         }
     }
