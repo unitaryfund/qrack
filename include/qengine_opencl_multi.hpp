@@ -113,8 +113,10 @@ protected:
     typedef void (QEngineOCL::*RGFn)(real1, bitLenInt);
     typedef void (QEngineOCL::*CGFn)(bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
+    typedef void (QEngineOCL::*CCGFn)(bitLenInt, bitLenInt, bitLenInt);
     template<typename F, typename ... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
     template<typename CF, typename F, typename ... Args> void ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
+    template<typename CCF, typename CF, typename ... Args> void DoublyControlledGate(bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF cfn, CF fn, Args ... gfnArgs);
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);

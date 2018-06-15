@@ -32,6 +32,11 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     
     bitLenInt devPow = log2(deviceCount);
     
+    if (devPow > 1) {
+        // TODO: Logic only safe up to two devices.
+        devPow = 1;
+    }
+    
     subQubitCount = qubitCount - devPow;
     subMaxQPower = 1 << subQubitCount;
     subBufferSize = sizeof(complex) * subMaxQPower >> 1;
@@ -166,6 +171,55 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     }
 }
     
+template<typename CCF, typename CF, typename ... Args> void QEngineOCLMulti::DoublyControlledGate(bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF cfn, CF fn, Args ... gfnArgs) {
+    // This logic is only correct for up to 2 devices
+    // TODO: Generalize logic to all powers of 2 devices
+    int i;
+    std::vector<std::future<void>> futures(substateEngines.size());
+    if ((controlBit1 < subQubitCount) && (controlBit2 < subQubitCount) && (targetBit < subQubitCount)) {
+        for (i = 0; i < substateEngines.size(); i++) {
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, cfn, controlBit1, controlBit2, targetBit, gfnArgs ...]() { ((engine.get())->*cfn)(gfnArgs ..., controlBit1, controlBit2, targetBit); });
+        }
+        for (i = 0; i < substateEngines.size(); i++) {
+            futures[i].get();
+        }
+    } else {
+        bitLenInt max = substateEngines.size();
+        bitLenInt min = max / 2;
+        bitLenInt controlBit = (controlBit1 < controlBit2) ? controlBit1 : controlBit2;
+        if (targetBit < subQubitCount) {
+            for (i = min; i < max; i++) {
+                QEngineOCLPtr engine = substateEngines[i];
+                futures[i] = std::async(std::launch::async, [engine, fn, controlBit, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., controlBit, targetBit); });
+            }
+            for (i = min; i < max; i++) {
+                futures[i].get();
+            }
+        } else {
+            cl::Context context = *(clObj->GetContextPtr());
+            cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
+                
+            cl::Buffer buff1 = substateEngines[0]->GetStateBuffer();
+            cl::Buffer buff2 = substateEngines[1]->GetStateBuffer();
+                
+            CommandQueuePtr queue = substateEngines[0]->GetQueuePtr();
+                
+            ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+                
+            for (i = min; i < max; i++) {
+                QEngineOCLPtr engine = substateEngines[i];
+                futures[i] = std::async(std::launch::async, [engine, fn, controlBit, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., controlBit, targetBit - 1); });
+            }
+            for (i = min; i < max; i++) {
+                futures[i].get();
+            }
+                
+            ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+        }
+    }
+}
+    
 void QEngineOCLMulti::SetQuantumState(complex* inputState) {
     throw "SetQuantumState not implemented";
 }
@@ -213,7 +267,7 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
 }
     
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
-    throw "CCNOT not implemented";
+    DoublyControlledGate(control1, control2, target, (CCGFn)(&QEngineOCL::CCNOT), (CGFn)(&QEngineOCL::CNOT));
 }
     
 void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target) {
