@@ -425,10 +425,11 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 
 void QEngineCPU::NormalizeState(real1 nrm)
 {
-    if (nrm < 0) {
+    bool defaultNorm = nrm < 0.0;
+    if (defaultNorm) {
         nrm = 1.0;
     } else {
-        runningNorm = nrm;
+        nrm = runningNorm;
     }
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
@@ -437,7 +438,9 @@ void QEngineCPU::NormalizeState(real1 nrm)
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
-    runningNorm = nrm;
+    if (defaultNorm) {
+        runningNorm = nrm;
+    }
 }
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }

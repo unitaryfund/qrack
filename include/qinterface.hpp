@@ -867,7 +867,7 @@ public:
     virtual void PhaseFlip() = 0;
 
     /** Set register bits to given permutation */
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value) = 0;
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length) = 0;

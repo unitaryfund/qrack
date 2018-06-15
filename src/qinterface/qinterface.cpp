@@ -246,6 +246,13 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
+/// SetReg - Set bits from start to (length - 1) to given permutation
+void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt perm) {
+    for (int i = 0; i < length; i++) {
+        SetBit(start + i, (perm & (1 << i)) > 0);
+    }
+}
+
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
 void QInterface::RT(real1 radians, bitLenInt start, bitLenInt length)
 {

@@ -95,7 +95,6 @@ public:
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -116,7 +115,7 @@ protected:
     typedef void (QEngineOCL::*RGFn)(real1, bitLenInt);
     typedef void (QEngineOCL::*CGFn)(bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
-    template<typename F, typename ... Args> void SingleBitGate(bitLenInt bit, F fn, Args ... gfnArgs);
+    template<typename F, typename ... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
     template<typename CF, typename F, typename ... Args> void ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
 private:

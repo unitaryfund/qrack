@@ -66,18 +66,18 @@ void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl
     queue->finish();
 }
     
-template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitLenInt bit, F fn, Args ... gfnArgs) {
+template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs) {
     int i;
-    //if (runningNorm != 1.0) {
-    //    for (i = 0; i < substateEngines.size(); i++) {
-    //        substateEngines[i]->SetNorm(runningNorm);
-    //        substateEngines[i]->EnableNormalize(true);
-    //    }
-    //}
+    if (runningNorm != 1.0) {
+        for (i = 0; i < substateEngines.size(); i++) {
+            substateEngines[i]->SetNorm(runningNorm);
+            substateEngines[i]->EnableNormalize(true);
+        }
+    }
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
     std::vector<std::future<void>> futures(substateEngines.size());
-    if (bit < (subQubitCount - 1)) {
+    if (bit < subQubitCount) {
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, fn, bit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., bit); });
@@ -108,11 +108,13 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bitL
         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
     }
     
-    //runningNorm = 0.0;
-    //for (i = 0; i < substateEngines.size(); i++) {
-    //    runningNorm += substateEngines[i]->GetNorm();
-    //    substateEngines[i]->EnableNormalize(false);
-    //}
+    if (doNormalize) {
+        runningNorm = 0.0;
+        for (i = 0; i < substateEngines.size(); i++) {
+            runningNorm += substateEngines[i]->GetNorm();
+            substateEngines[i]->EnableNormalize(false);
+        }
+    }
 }
     
 template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
@@ -120,7 +122,7 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     // TODO: Generalize logic to all powers of 2 devices
     int i;
     std::vector<std::future<void>> futures(substateEngines.size());
-    if ((controlBit < (subQubitCount - 1)) && (targetBit < (subQubitCount - 1))) {
+    if ((controlBit < subQubitCount) && (targetBit < subQubitCount)) {
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, cfn, controlBit, targetBit, gfnArgs ...]() { ((engine.get())->*cfn)(gfnArgs ..., controlBit, targetBit); });
@@ -128,7 +130,7 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
         for (i = 0; i < substateEngines.size(); i++) {
             futures[i].get();
         }
-    } else if (targetBit < (subQubitCount - 1)) {
+    } else if (targetBit < subQubitCount) {
         for (i = substateEngines.size() / 2; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
@@ -160,7 +162,7 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
 }
     
 void QEngineOCLMulti::SetQuantumState(complex* inputState) {
-    throw "Not implemented";
+    throw "SetQuantumState not implemented";
 }
 
 void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
@@ -190,27 +192,27 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
 }
     
 bitLenInt QEngineOCLMulti::Cohere(QInterfacePtr toCopy) {
-    throw "Not implemented";
+    throw "Cohere not implemented";
 }
     
 std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfacePtr> toCopy) {
-    throw "Not implemented";
+    throw "Cohere not implemented";
 }
     
 void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) {
-    throw "Not implemented";
+    throw "Decohere not implemented";
 }
     
 void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "Dispose not implemented";
 }
     
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
-    throw "Not implemented";
+    throw "CCNOT not implemented";
 }
     
 void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
-    throw "Not implemented";
+    throw "AntiCCNOT not implemented";
 }
     
 void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target) {
@@ -218,11 +220,11 @@ void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target) {
-    throw "Not implemented";
+    throw "AntiCNOT not implemented";
 }
     
 void QEngineOCLMulti::H(bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (GFn)(&QEngineOCL::H));
+    SingleBitGate(true, qubitIndex, (GFn)(&QEngineOCL::H));
 }
     
 bool QEngineOCLMulti::M(bitLenInt qubit) {
@@ -249,7 +251,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         }
     }
     
-    if (qubit < (subQubitCount - 1)) {
+    if (qubit < subQubitCount) {
         std::vector<std::future<void>> futures(substateEngines.size());
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
@@ -287,15 +289,15 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (GFn)(&QEngineOCL::X));
+    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
 }
     
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (GFn)(&QEngineOCL::Y));
+    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::Y));
 }
     
 void QEngineOCLMulti::Z(bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (GFn)(&QEngineOCL::Z));
+    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::Z));
 }
     
 void QEngineOCLMulti::CY(bitLenInt control, bitLenInt target) {
@@ -307,40 +309,40 @@ void QEngineOCLMulti::CZ(bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
-    throw "Not implemented";
+    throw "AND not implemented";
 }
 void QEngineOCLMulti::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
-    throw "Not implemented";
+    throw "OR not implemented";
 }
 void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
-    throw "Not implemented";
+    throw "XOR not implemented";
 }
 void QEngineOCLMulti::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-    throw "Not implemented";
+    throw "CLAND not implemented";
 }
 void QEngineOCLMulti::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-    throw "Not implemented";
+    throw "CLOR not implemented";
 }
 void QEngineOCLMulti::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
-    throw "Not implemented";
+    throw "CLXOR not implemented";
 }
 void QEngineOCLMulti::RT(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (RGFn)(&QEngineOCL::RT), radians);
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RT), radians);
 }
 void QEngineOCLMulti::RX(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (RGFn)(&QEngineOCL::RX), radians);
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RX), radians);
 }
 void QEngineOCLMulti::CRX(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(control, target, (CRGFn)(&QEngineOCL::CRX), (RGFn)(&QEngineOCL::RX), radians);
 }
 void QEngineOCLMulti::RY(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (RGFn)(&QEngineOCL::RY), radians);
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RY), radians);
 }
 void QEngineOCLMulti::CRY(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(control, target, (CRGFn)(&QEngineOCL::CRY), (RGFn)(&QEngineOCL::RY), radians);
 }
 void QEngineOCLMulti::RZ(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(qubitIndex, (RGFn)(&QEngineOCL::RZ), radians);
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RZ), radians);
 }
 void QEngineOCLMulti::CRZ(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(control, target, (CRGFn)(&QEngineOCL::CRZ), (RGFn)(&QEngineOCL::RZ), radians);
@@ -350,92 +352,89 @@ void QEngineOCLMulti::CRT(real1 radians, bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "ROL not implemented";
 }
 void QEngineOCLMulti::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "ROR not implemented";
 }
     
 void QEngineOCLMulti::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "INC not implemented";
 }
 void QEngineOCLMulti::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "INCC not implemented";
 }
 void QEngineOCLMulti::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) {
-    throw "Not implemented";
+    throw "INCS not implemented";
 }
 void QEngineOCLMulti::INCSC(
                        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "INCSC not implemented";
 }
 void QEngineOCLMulti::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "INCSC not implemented";
 }
 void QEngineOCLMulti::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "INCBCD not implemented";
 }
 void QEngineOCLMulti::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "INCBCDC not implemented";
 }
 void QEngineOCLMulti::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "DEC not implemented";
 }
 void QEngineOCLMulti::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "DECC not implemented";
 }
 void QEngineOCLMulti::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) {
-    throw "Not implemented";
+    throw "DECS not implemented";
 }
 void QEngineOCLMulti::DECSC(
                        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "DECSC not implemented";
 }
 void QEngineOCLMulti::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "DECSC not implemented";
 }
 void QEngineOCLMulti::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "DECBCD not implemented";
 }
 void QEngineOCLMulti::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "Not implemented";
+    throw "DECBCDC not implemented";
 }
     
 void QEngineOCLMulti::ZeroPhaseFlip(bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "ZeroPhaseFlip not implemented";
 }
 void QEngineOCLMulti::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) {
-    throw "Not implemented";
+    throw "CPhaseFlipIfLess not implemented";
 }
 void QEngineOCLMulti::PhaseFlip() {
-    throw "Not implemented";
-}
-void QEngineOCLMulti::SetReg(bitLenInt start, bitLenInt length, bitCapInt value) {
-    throw "Not implemented";
+    throw "PhaseFlip not implemented";
 }
 bitCapInt QEngineOCLMulti::MReg(bitLenInt start, bitLenInt length) {
-    throw "Not implemented";
+    throw "MReg not implemented";
 }
     
 bitCapInt QEngineOCLMulti::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, unsigned char* values) {
-    throw "Not implemented";
+    throw "IndexedLDA not implemented";
 }
     
 bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    throw "Not implemented";
+    throw "IndexedADC not implemented";
 }
 bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    throw "Not implemented";
+    throw "IndexedSBC not implemented";
 }
     
 void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
-    throw "Not implemented";
+    throw "Swap not implemented";
 }
 void QEngineOCLMulti::CopyState(QInterfacePtr orig) {
-    throw "Not implemented";
+    throw "CopyState not implemented";
 }
 real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     real1 oneChance = 0.0;
@@ -444,7 +443,7 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     
     // This logic only works for up to two devices.
     // TODO: Generalize to higher numbers of devices
-    if (qubitIndex < (subQubitCount - 1)) {
+    if (qubitIndex < subQubitCount) {
         for (i = 0; i < substateEngines.size(); i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
