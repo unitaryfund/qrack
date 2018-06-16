@@ -157,7 +157,7 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
 template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
-    int i, j;
+    int i, j, k;
     
     if ((controlBit < subQubitCount) && (targetBit < subQubitCount)) {
         std::vector<std::future<void>> futures(subEngineCount);
@@ -181,35 +181,41 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
             }
         } else {
             bitLenInt order = qubitCount - (targetBit + 1);
+            bitLenInt diffOrder = (targetBit - controlBit) - 1;
             bitLenInt groups = 1 << order;
-            bitLenInt offset = subEngineCount / (2 * groups);
+            bitLenInt pairOffset = (subEngineCount / (2 * groups)) << diffOrder;
+            bitLenInt groupOffset = subEngineCount / (2 * groups) >> (order - diffOrder);
             
             cl::Context context = *(clObj->GetContextPtr());
             
             bitLenInt sqc = subQubitCount - 1;
             bool useTopDevice = subEngineCount > 2;
             
+            bitLenInt index;
+            
             for (i = 0; i < groups; i++) {
-                for (j = 0; j < offset; j++) {
-                    futures[j + (i * offset)] = std::async(std::launch::async, [this, useTopDevice, context, offset, i, j, fn, sqc, gfnArgs ...]() {
+                for (j = 0; j < pairOffset; j++) {
+                    for (k = 0; k < groupOffset; k++) {
+                        index = groupOffset / 2 + j + (i * groupOffset);
+                    futures[k + (j * groupOffset) + (i * groupOffset * pairOffset)] = std::async(std::launch::async, [this, useTopDevice, context, pairOffset, index, fn, sqc, gfnArgs ...]() {
                         cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
-                        cl::Buffer buff1 = substateEngines[offset / 2 + j + (i * offset)]->GetStateBuffer();
-                        cl::Buffer buff2 = substateEngines[j + ((i + 1) * offset)]->GetStateBuffer();
-                        QEngineOCLPtr engine = substateEngines[offset / 2 + j + (i * offset)];
+                        cl::Buffer buff1 = substateEngines[index]->GetStateBuffer();
+                        cl::Buffer buff2 = substateEngines[index + pairOffset]->GetStateBuffer();
+                        QEngineOCLPtr engine = substateEngines[index];
                         CommandQueuePtr queue = engine->GetQueuePtr();
                         
                         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
                         
                         if (useTopDevice) {
                             std::future<void> future1 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
-                            engine = substateEngines[j + ((i + 1) * offset)];
+                            engine = substateEngines[index + pairOffset];
                             std::future<void> future2 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
                             
                             future1.get();
                             future2.get();
                         }
                         else {
-                            engine = substateEngines[j + ((i + 1) * offset)];
+                            engine = substateEngines[index + pairOffset];
                             std::future<void> future = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
                             
                             future.get();
@@ -217,6 +223,7 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
                         
                         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
                     });
+                    }
                 }
             }
             for (i = 0; i < subEngineCount / 2; i++) {
