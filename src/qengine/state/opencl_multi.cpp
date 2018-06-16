@@ -32,10 +32,13 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     
     bitLenInt devPow = log2(deviceCount);
     
-    if (devPow > 1) {
-        // TODO: Logic only safe up to two devices.
-        devPow = 1;
+    // Maximum of 2^N devices for N qubits:
+    if (qubitCount <= devPow) {
+        devPow = qubitCount - 1;
     }
+    
+    deviceCount = 1 << devPow;
+    subEngineCount = deviceCount;
     
     subQubitCount = qubitCount - devPow;
     subMaxQPower = 1 << subQubitCount;
@@ -88,7 +91,7 @@ void QEngineOCLMulti::SwapBuffersLow(CommandQueuePtr queue, cl::Buffer buff1, cl
 template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs) {
     int i, j;
     if (runningNorm != 1.0) {
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             substateEngines[i]->SetNorm(runningNorm);
             substateEngines[i]->EnableNormalize(true);
         }
@@ -96,16 +99,16 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
     if (bit < subQubitCount) {
-        std::vector<std::future<void>> futures(substateEngines.size());
-        for (i = 0; i < substateEngines.size(); i++) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, fn, bit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., bit); });
         }
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
     } else {
-        std::vector<std::future<void>> futures(substateEngines.size() / 2);
+        std::vector<std::future<void>> futures(subEngineCount / 2);
         
         bitLenInt order = qubitCount - (bit + 1);
         bitLenInt groups = 1 << order;
@@ -137,14 +140,14 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
                 });
             }
         }
-        for (i = 0; i < substateEngines.size() / 2; i++) {
+        for (i = 0; i < subEngineCount / 2; i++) {
             futures[i].get();
         }
     }
     
     if (doNormalize) {
         runningNorm = 0.0;
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             runningNorm += substateEngines[i]->GetNorm();
             substateEngines[i]->EnableNormalize(false);
         }
@@ -154,48 +157,71 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
 template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
-    int i;
-    std::vector<std::future<void>> futures(substateEngines.size());
+    int i, j;
+    
     if ((controlBit < subQubitCount) && (targetBit < subQubitCount)) {
-        for (i = 0; i < substateEngines.size(); i++) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, cfn, controlBit, targetBit, gfnArgs ...]() { ((engine.get())->*cfn)(gfnArgs ..., controlBit, targetBit); });
         }
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
     } else {
-        bitLenInt max = substateEngines.size();
-        bitLenInt min = max / 2;
-        
-        if (targetBit < subQubitCount) {
-            for (i = min; i < max; i++) {
-                QEngineOCLPtr engine = substateEngines[i];
-                futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
+        std::vector<std::future<void>> futures(subEngineCount / 2);
+        if (targetBit < controlBit) {
+            if (subEngineCount <= 2) {
+                QEngineOCLPtr engine = substateEngines[1];
+                futures[0] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
+                futures[0].get();
             }
-            for (i = min; i < max; i++) {
-                futures[i].get();
+            else {
+                throw "CNOT case not implemented";
             }
         } else {
+            bitLenInt order = qubitCount - (targetBit + 1);
+            bitLenInt groups = 1 << order;
+            bitLenInt offset = subEngineCount / (2 * groups);
+            
             cl::Context context = *(clObj->GetContextPtr());
-            cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
-        
-            cl::Buffer buff1 = substateEngines[0]->GetStateBuffer();
-            cl::Buffer buff2 = substateEngines[1]->GetStateBuffer();
-        
-            CommandQueuePtr queue = substateEngines[0]->GetQueuePtr();
             
-            ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+            bitLenInt sqc = subQubitCount - 1;
+            bool useTopDevice = subEngineCount > 2;
             
-            for (i = min; i < max; i++) {
-                QEngineOCLPtr engine = substateEngines[i];
-                futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit - 1); });
+            for (i = 0; i < groups; i++) {
+                for (j = 0; j < offset; j++) {
+                    futures[j + (i * offset)] = std::async(std::launch::async, [this, useTopDevice, context, offset, i, j, fn, sqc, gfnArgs ...]() {
+                        cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
+                        cl::Buffer buff1 = substateEngines[offset / 2 + j + (i * offset)]->GetStateBuffer();
+                        cl::Buffer buff2 = substateEngines[j + ((i + 1) * offset)]->GetStateBuffer();
+                        QEngineOCLPtr engine = substateEngines[offset / 2 + j + (i * offset)];
+                        CommandQueuePtr queue = engine->GetQueuePtr();
+                        
+                        ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+                        
+                        if (useTopDevice) {
+                            std::future<void> future1 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
+                            engine = substateEngines[j + ((i + 1) * offset)];
+                            std::future<void> future2 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
+                            
+                            future1.get();
+                            future2.get();
+                        }
+                        else {
+                            engine = substateEngines[j + ((i + 1) * offset)];
+                            std::future<void> future = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
+                            
+                            future.get();
+                        }
+                        
+                        ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+                    });
+                }
             }
-            for (i = min; i < max; i++) {
+            for (i = 0; i < subEngineCount / 2; i++) {
                 futures[i].get();
             }
-            
-            ShuffleBuffers(queue, buff1, buff2, tempBuffer);
         }
     }
 }
@@ -204,17 +230,17 @@ template<typename CCF, typename CF, typename ... Args> void QEngineOCLMulti::Dou
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
     int i;
-    std::vector<std::future<void>> futures(substateEngines.size());
+    std::vector<std::future<void>> futures(subEngineCount);
     if ((controlBit1 < subQubitCount) && (controlBit2 < subQubitCount) && (targetBit < subQubitCount)) {
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, cfn, controlBit1, controlBit2, targetBit, gfnArgs ...]() { ((engine.get())->*cfn)(gfnArgs ..., controlBit1, controlBit2, targetBit); });
         }
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
     } else {
-        bitLenInt max = substateEngines.size();
+        bitLenInt max = subEngineCount;
         bitLenInt min = max / 2;
         bitLenInt controlBit = (controlBit1 < controlBit2) ? controlBit1 : controlBit2;
         if (targetBit < subQubitCount) {
@@ -272,7 +298,7 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
         }
         j++;
     }
-    for (i = 0; i < substateEngines.size(); i++) {
+    for (i = 0; i < subEngineCount; i++) {
         CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
         queue->finish();
     }
@@ -332,14 +358,14 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
     }
     
     if (qubit < subQubitCount) {
-        std::vector<std::future<void>> futures(substateEngines.size());
-        for (i = 0; i < substateEngines.size(); i++) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubit, result, nrmlzr]() {
                 engine->ForceM(qubit, result, true, nrmlzr);
             });
         }
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
     }
@@ -499,13 +525,13 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
     }
     // This logic is only correct for up to 2 devices
     // TODO: Generalize logic to all powers of 2 devices
-    std::vector<std::future<void>> futures(substateEngines.size());
+    std::vector<std::future<void>> futures(subEngineCount);
     if (highBit < subQubitCount) {
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubitIndex1, qubitIndex2]() { engine->Swap(qubitIndex1, qubitIndex2); });
         }
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
     } else {
@@ -519,7 +545,7 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
         
         SwapBuffersLow(queue, buff1, buff2, tempBuffer);
         
-        bitLenInt max = substateEngines.size();
+        bitLenInt max = subEngineCount;
         bitLenInt min = max / 2;
         for (i = min; i < max; i++) {
             QEngineOCLPtr engine = substateEngines[i];
@@ -538,20 +564,20 @@ void QEngineOCLMulti::CopyState(QInterfacePtr orig) {
 real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     real1 oneChance = 0.0;
     int i;
-    std::vector<std::future<real1>> futures(substateEngines.size());
+    std::vector<std::future<real1>> futures(subEngineCount);
     
     // This logic only works for up to two devices.
     // TODO: Generalize to higher numbers of devices
     if (qubitIndex < subQubitCount) {
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
         }
-        for (i = 0; i < substateEngines.size(); i++) {
+        for (i = 0; i < subEngineCount; i++) {
             oneChance += futures[i].get();
         }
     } else {
-        for (i = substateEngines.size() / 2; i < substateEngines.size(); i++) {
+        for (i = subEngineCount / 2; i < subEngineCount; i++) {
             oneChance += substateEngines[i]->GetNorm();
         }
     }

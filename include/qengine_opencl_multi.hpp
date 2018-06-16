@@ -23,6 +23,7 @@ class QEngineOCLMulti : public QInterface {
 protected:
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
+    bitLenInt subEngineCount;
     real1 runningNorm;
     size_t subBufferSize;
     OCLEngine* clObj;
