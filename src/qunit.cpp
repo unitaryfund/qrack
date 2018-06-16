@@ -533,30 +533,6 @@ void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRZ(radians, b1, b2); }, control, target);
 }
 
-/// "Circular shift right" - (Uses swap-based algorithm for speed)
-void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start, end);
-        Reverse(start, start + shift);
-        Reverse(start + shift, end);
-    }
-}
-
-/// "Circular shift right" - (Uses swap-based algorithm for speed)
-void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start + shift, end);
-        Reverse(start, start + shift);
-        Reverse(start, end);
-    }
-}
-
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);

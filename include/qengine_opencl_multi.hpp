@@ -63,9 +63,6 @@ public:
     virtual void RZ(real1 radians, bitLenInt qubitIndex);
     virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
-
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
     
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -87,7 +84,6 @@ public:
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, unsigned char* values);

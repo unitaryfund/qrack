@@ -609,5 +609,40 @@ void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitL
         CRZDyad(numerator, denominator, control + bit, target + bit);
     }
 }
+    
+// Bit-wise apply measurement gate to a register
+bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
+{
+    bitCapInt result = 0;
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        result |= M(start + bit) ? (1 << bit) : 0;
+    }
+    return result;
+}
+    
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
+void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    shift %= length;
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        Reverse(start, end);
+        Reverse(start, start + shift);
+        Reverse(start + shift, end);
+    }
+}
+    
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
+void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    shift %= length;
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        Reverse(start + shift, end);
+        Reverse(start, start + shift);
+        Reverse(start, end);
+    }
+}
+
 
 } // namespace Qrack

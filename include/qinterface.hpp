@@ -797,10 +797,10 @@ public:
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Circular shift left - shift bits left, and carry last bits. */
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Circular shift right - shift bits right, and carry first bits. */
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
@@ -870,7 +870,7 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) = 0;
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from

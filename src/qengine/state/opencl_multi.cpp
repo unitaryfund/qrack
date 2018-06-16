@@ -398,13 +398,6 @@ void QEngineOCLMulti::CRT(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(control, target, (CRGFn)(&QEngineOCL::CRT), (RGFn)(&QEngineOCL::RT), radians);
 }
     
-void QEngineOCLMulti::ROL(bitLenInt shift, bitLenInt start, bitLenInt length) {
-    throw "ROL not implemented";
-}
-void QEngineOCLMulti::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) {
-    throw "ROR not implemented";
-}
-    
 void QEngineOCLMulti::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
     throw "INC not implemented";
 }
@@ -458,9 +451,6 @@ void QEngineOCLMulti::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, b
 }
 void QEngineOCLMulti::PhaseFlip() {
     throw "PhaseFlip not implemented";
-}
-bitCapInt QEngineOCLMulti::MReg(bitLenInt start, bitLenInt length) {
-    throw "MReg not implemented";
 }
     
 bitCapInt QEngineOCLMulti::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
