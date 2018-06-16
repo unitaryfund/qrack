@@ -17,6 +17,7 @@
 #include <memory>
 #include <vector>
 #include <random>
+#include <ctime>
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
