@@ -170,33 +170,54 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
         }
     } else {
         std::vector<std::future<void>> futures(subEngineCount / 2);
+        cl::Context context = *(clObj->GetContextPtr());
+        
+        bitLenInt order, groups, diffOrder, pairOffset, groupOffset;
+        bool useTopDevice;
+        
         if (targetBit < controlBit) {
-            if (subEngineCount <= 2) {
-                QEngineOCLPtr engine = substateEngines[1];
-                futures[0] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
-                futures[0].get();
+            int pairPower =subEngineCount - (1 << (qubitCount - (targetBit + 1)));
+            
+            if (pairPower <= 0) {
+                
+                // Simple special case:
+                bitLenInt offset = 1 << (qubitCount - (controlBit + 1));
+                for (i = 0; i < (subEngineCount / 2); i++) {
+                    QEngineOCLPtr engine = substateEngines[(i * offset) + (subEngineCount / (2 *  offset))];
+                    futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
+                }
+                for (i = 0; i < subEngineCount / 2; i++) {
+                    futures[i].get();
+                }
+                
+                // We're done with the controlled gate:
+                return;
             }
             else {
-                throw "CNOT case not implemented";
+                pairOffset = log2(pairPower);
             }
+            
+            order = qubitCount - (controlBit + 1);
+            diffOrder = (controlBit - targetBit) - 1;
+            useTopDevice = true;
         } else {
-            bitLenInt order = qubitCount - (targetBit + 1);
-            bitLenInt diffOrder = (targetBit - controlBit) - 1;
-            bitLenInt groups = 1 << order;
-            bitLenInt pairOffset = (subEngineCount / (2 * groups)) << diffOrder;
-            bitLenInt groupOffset = subEngineCount / (2 * groups) >> (order - diffOrder);
+            order = qubitCount - (targetBit + 1);
+            diffOrder = (targetBit - controlBit) - 1;
+            pairOffset = (subEngineCount / (2 * (1 << order))) << diffOrder;
+            useTopDevice = subEngineCount > 2;
+        }
+        groups = 1 << order;
+        groupOffset = subEngineCount / (2 * groups) >> (diffOrder - order);
             
-            cl::Context context = *(clObj->GetContextPtr());
+        bitLenInt sqc = subQubitCount - 1;
             
-            bitLenInt sqc = subQubitCount - 1;
-            bool useTopDevice = subEngineCount > 2;
             
-            bitLenInt index;
+        bitLenInt index;
             
-            for (i = 0; i < groups; i++) {
-                for (j = 0; j < pairOffset; j++) {
-                    for (k = 0; k < groupOffset; k++) {
-                        index = groupOffset / 2 + j + (i * groupOffset);
+        for (i = 0; i < groups; i++) {
+            for (j = 0; j < pairOffset; j++) {
+                for (k = 0; k < groupOffset; k++) {
+                    index = groupOffset / 2 + j + (i * groupOffset);
                     futures[k + (j * groupOffset) + (i * groupOffset * pairOffset)] = std::async(std::launch::async, [this, useTopDevice, context, pairOffset, index, fn, sqc, gfnArgs ...]() {
                         cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
                         cl::Buffer buff1 = substateEngines[index]->GetStateBuffer();
@@ -223,12 +244,11 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
                         
                         ShuffleBuffers(queue, buff1, buff2, tempBuffer);
                     });
-                    }
                 }
             }
-            for (i = 0; i < subEngineCount / 2; i++) {
-                futures[i].get();
-            }
+        }
+        for (i = 0; i < subEngineCount / 2; i++) {
+            futures[i].get();
         }
     }
 }
