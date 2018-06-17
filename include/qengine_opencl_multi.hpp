@@ -108,7 +108,7 @@ protected:
     template<typename F, typename ... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
     template<typename CF, typename F, typename ... Args> void ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     template<typename CCF, typename CF, typename F, typename ... Args> void DoublyControlledGate(bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs);
-    template<typename CF, typename F, typename ... Args> void ControlledBody(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
+    template<typename CF, typename F, typename ... Args> void ControlledBody(bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);

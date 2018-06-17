@@ -167,7 +167,7 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
             futures[i].get();
         }
     } else {
-        ControlledBody(controlBit, targetBit, cfn, fn, gfnArgs ...);
+        ControlledBody(0, controlBit, targetBit, cfn, fn, gfnArgs ...);
     }
 }
     
@@ -196,11 +196,11 @@ template<typename CCF, typename CF, typename F, typename ... Args> void QEngineO
         
         if (lowControl < subQubitCount) {
             // CNOT logic
-            ControlledBody(highControl, targetBit, ccfn, cfn, gfnArgs ..., lowControl);
+            ControlledBody(0, highControl, targetBit, ccfn, cfn, gfnArgs ..., lowControl);
         }
         else {
             // Skip first group, if more than one group.
-            throw "CCNOT case not implemented";
+            ControlledBody(1, highControl, targetBit, cfn, fn, gfnArgs ...);
         }
     }
 }
@@ -495,7 +495,7 @@ real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister) {
     return substateEngines[subIndex]->ProbAll(fullRegister);
 }
     
-template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledBody(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
+template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledBody(bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
     int i, j, k;
     
     std::vector<std::future<void>> futures(subEngineCount / 2);
@@ -542,7 +542,13 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     
     bitLenInt index;
     
-    for (i = 0; i < groups; i++) {
+    bitLenInt controlPower = 1 << controlDepth;
+    bitLenInt firstGroup = 0;
+    if ((groups / controlPower) > 1) {
+        firstGroup = groups - (groups / controlPower);
+    }
+    
+    for (i = firstGroup; i < groups; i++) {
         for (j = 0; j < pairOffset; j++) {
             for (k = 0; k < groupOffset; k++) {
                 index = groupOffset / 2 + j + (i * groupOffset);
