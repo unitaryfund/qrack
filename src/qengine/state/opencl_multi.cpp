@@ -543,9 +543,9 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     bitLenInt index;
     
     bitLenInt controlPower = 1 << controlDepth;
-    bitLenInt firstGroup = 0;
-    if ((groups / controlPower) > 1) {
-        firstGroup = groups - (groups / controlPower);
+    bitLenInt firstGroup = groups - (groups / controlPower);
+    if (firstGroup >= groups) {
+        firstGroup = 0;
     }
     
     for (i = firstGroup; i < groups; i++) {
