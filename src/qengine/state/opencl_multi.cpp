@@ -445,6 +445,7 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
     }
 
     if ((qubitIndex1 < subQubitCount) && (qubitIndex2 < subQubitCount)) {
+        // Here, it's entirely contained within single nodes:
         std::vector<std::future<void>> futures(subEngineCount);
         int i;
         for (i = 0; i < subEngineCount; i++) {
@@ -454,6 +455,26 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
         for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
+    } else if ((qubitIndex1 >= subQubitCount) && (qubitIndex2 >= subQubitCount)) {
+        // Here, it's possible to swap entire engines:
+        qubitIndex1 -= subQubitCount;
+        qubitIndex2 -= subQubitCount;
+        
+        bitCapInt bit1Mask = 1 << qubitIndex1;
+        bitCapInt bit2Mask = 1 << qubitIndex2;
+        bitCapInt otherMask = (subEngineCount * 2) - 1;
+        otherMask ^= bit1Mask | bit2Mask;
+        
+        std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount);
+        
+        par_for(0, 1 << (qubitCount - subQubitCount), [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = (lcv & otherMask);
+            bitCapInt bit1Res = ((lcv & bit1Mask) >> qubitIndex1) << qubitIndex2;
+            bitCapInt bit2Res = ((lcv & bit2Mask) >> qubitIndex2) << qubitIndex1;
+            nSubstateEngines[bit1Res | bit2Res | otherRes] = substateEngines[lcv];
+        });
+        
+        substateEngines = nSubstateEngines;
     } else {
         // "Swap" is tricky, if we're distributed across nodes.
         // However, we get it virtually for free in a QUnit, so this is a low-priority case.

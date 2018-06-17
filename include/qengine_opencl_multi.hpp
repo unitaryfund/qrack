@@ -13,13 +13,14 @@
 #pragma once
 
 #include "qengine_opencl.hpp"
+#include "common/parallel_for.hpp"
 
 namespace Qrack {
     
 class QEngineOCLMulti;
 
 /** OpenCL enhanced QEngineCPU implementation. */
-class QEngineOCLMulti : public QInterface {
+class QEngineOCLMulti : public QInterface, public ParallelFor {
 protected:
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
