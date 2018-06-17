@@ -198,11 +198,11 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
             }
             
             order = qubitCount - (controlBit + 1);
-            diffOrder = (controlBit - targetBit) - 1;
+            diffOrder = (targetBit < subQubitCount) ? (controlBit - subQubitCount) : ((controlBit - targetBit) - 1);
             useTopDevice = true;
         } else {
             order = qubitCount - (targetBit + 1);
-            diffOrder = (targetBit - controlBit) - 1;
+            diffOrder = (controlBit < subQubitCount) ? (targetBit - subQubitCount) : ((targetBit - controlBit) - 1);
             pairOffset = (subEngineCount / (2 * (1 << order))) << diffOrder;
             useTopDevice = subEngineCount > 2;
         }
@@ -211,9 +211,8 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
             
         bitLenInt sqc = subQubitCount - 1;
             
-            
         bitLenInt index;
-            
+        
         for (i = 0; i < groups; i++) {
             for (j = 0; j < pairOffset; j++) {
                 for (k = 0; k < groupOffset; k++) {
@@ -540,20 +539,10 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
     if (qubitIndex1 == qubitIndex2) {
         return;
     }
-    
-    int i;
-    bitLenInt highBit, lowBit;
-    if (qubitIndex1 > qubitIndex2) {
-        highBit = qubitIndex1;
-        lowBit = qubitIndex2;
-    } else {
-        lowBit = qubitIndex1;
-        highBit = qubitIndex2;
-    }
-    // This logic is only correct for up to 2 devices
-    // TODO: Generalize logic to all powers of 2 devices
-    std::vector<std::future<void>> futures(subEngineCount);
-    if (highBit < subQubitCount) {
+
+    if ((qubitIndex1 < subQubitCount) && (qubitIndex2 < subQubitCount)) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        int i;
         for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubitIndex1, qubitIndex2]() { engine->Swap(qubitIndex1, qubitIndex2); });
@@ -562,27 +551,12 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
             futures[i].get();
         }
     } else {
-        cl::Context context = *(clObj->GetContextPtr());
-        cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
-        
-        cl::Buffer buff1 = substateEngines[0]->GetStateBuffer();
-        cl::Buffer buff2 = substateEngines[1]->GetStateBuffer();
-        
-        CommandQueuePtr queue = substateEngines[0]->GetQueuePtr();
-        
-        SwapBuffersLow(queue, buff1, buff2, tempBuffer);
-        
-        bitLenInt max = subEngineCount;
-        bitLenInt min = max / 2;
-        for (i = min; i < max; i++) {
-            QEngineOCLPtr engine = substateEngines[i];
-            futures[i] = std::async(std::launch::async, [engine, lowBit]() { engine->X(lowBit); });
-        }
-        for (i = min; i < max; i++) {
-            futures[i].get();
-        }
-        
-        SwapBuffersLow(queue, buff1, buff2, tempBuffer);
+        // "Swap" is tricky, if we're distributed across nodes.
+        // However, we get it virtually for free in a QUnit, so this is a low-priority case.
+        // Assuming our CNOT works, so does this:
+        CNOT(qubitIndex1, qubitIndex2);
+        CNOT(qubitIndex2, qubitIndex1);
+        CNOT(qubitIndex1, qubitIndex2);
     }
 }
 void QEngineOCLMulti::CopyState(QInterfacePtr orig) {
