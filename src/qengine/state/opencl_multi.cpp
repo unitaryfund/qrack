@@ -462,7 +462,7 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
         
         bitCapInt bit1Mask = 1 << qubitIndex1;
         bitCapInt bit2Mask = 1 << qubitIndex2;
-        bitCapInt otherMask = (subEngineCount * 2) - 1;
+        bitCapInt otherMask = subEngineCount - 1;
         otherMask ^= bit1Mask | bit2Mask;
         
         std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount);
