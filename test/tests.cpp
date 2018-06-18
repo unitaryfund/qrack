@@ -1387,16 +1387,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0x0b, rng);
     QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0x02, rng);
     qftReg->Cohere(qftReg2);
-    std::cout<<qftReg->Prob(0);
-    std::cout<<qftReg->Prob(1);
-    std::cout<<qftReg->Prob(2);
-    std::cout<<qftReg->Prob(3);
-    std::cout<<qftReg->Prob(4);
-    std::cout<<qftReg->Prob(5);
-    std::cout<<qftReg->Prob(6);
-    std::cout<<qftReg->Prob(7);
-    std::cout<<std::endl;
-    std::cout<<"Qubit count: "<<(int)qftReg->GetQubitCount()<<std::endl;
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 

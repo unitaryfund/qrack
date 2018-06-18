@@ -252,15 +252,15 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
     bitLenInt copySubEngineCount = toCopy->subEngineCount;
     
     std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount * copySubEngineCount);
-    std::vector<QEngineOCLPtr> tempEngines(subEngineCount * copySubEngineCount);
     
     for (i = 0; i < copySubEngineCount; i++) {
         toAddEngine = toCopy->substateEngines[i];
         queue = toAddEngine->GetQueuePtr();
+        std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
         for (j = 0; j < subEngineCount; j++) {
             nSubstateEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(substateEngines[j]);
             nSubstateEngines[j + (i * subEngineCount)]->Cohere(toAddEngine);
-            tempEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
+            tempEngines[j] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
         }
         
         if (subEngineCount == 1) {
@@ -268,8 +268,8 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
         }
         
         for (j = 0; j < (subEngineCount * divCount); j++) {
-            destEngine = j / divCount;
-            destIndex = j & (divCount - 1);
+            destEngine = (j / divCount) + (i * subEngineCount);
+            destIndex = j & (divCount - 1) ;
             sourceEngine = j & (subEngineCount - 1);
             sourceIndex = j / subEngineCount;
             
