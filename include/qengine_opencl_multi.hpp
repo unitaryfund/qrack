@@ -18,6 +18,7 @@
 namespace Qrack {
     
 class QEngineOCLMulti;
+typedef std::shared_ptr<QEngineOCLMulti> QEngineOCLMultiPtr;
 
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface, public ParallelFor {
@@ -25,6 +26,7 @@ protected:
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
     bitLenInt subEngineCount;
+    bitLenInt maxDeviceOrder;
     real1 runningNorm;
     size_t subBufferSize;
     OCLEngine* clObj;
@@ -38,10 +40,20 @@ protected:
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, int deviceCount = -1);
     
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = 1 << qubitCount;
+        subQubitCount = qubitCount - log2(subEngineCount);
+        subMaxQPower = 1 << subQubitCount;
+        subBufferSize = sizeof(complex) * subMaxQPower >> 1;
+    }
+    
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm);
 
-    virtual bitLenInt Cohere(QInterfacePtr toCopy);
+    virtual bitLenInt Cohere(QEngineOCLMultiPtr toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCLMulti>(toCopy)); }
     virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);

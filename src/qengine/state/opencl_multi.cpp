@@ -22,6 +22,8 @@ namespace Qrack {
 QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int deviceCount)
     : QInterface(qBitCount)
 {
+    rand_generator = rgp;
+    
     runningNorm = 1.0;
     maxQPower = 1 << qubitCount;
     
@@ -31,6 +33,7 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     }
     
     bitLenInt devPow = log2(deviceCount);
+    maxDeviceOrder = devPow;
     
     // Maximum of 2^N devices for N qubits:
     if (qubitCount <= devPow) {
@@ -235,8 +238,106 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
     ftr.get();
 }
     
-bitLenInt QEngineOCLMulti::Cohere(QInterfacePtr toCopy) {
-    throw "Cohere not implemented";
+bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
+    int i, j, destIndex, destEngine, sourceIndex, sourceEngine;
+    QEngineOCLPtr toAddEngine, origEngine;
+    
+    bitLenInt result = qubitCount;
+    
+    cl::Context context = *(clObj->GetContextPtr());
+    CommandQueuePtr queue;
+    
+    size_t divSize = subBufferSize << 1;
+    size_t divCount = 1 << (toCopy->subQubitCount);
+    bitLenInt copySubEngineCount = toCopy->subEngineCount;
+    
+    std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount * copySubEngineCount);
+    std::vector<QEngineOCLPtr> tempEngines(subEngineCount * copySubEngineCount);
+    
+    for (i = 0; i < copySubEngineCount; i++) {
+        toAddEngine = toCopy->substateEngines[i];
+        queue = toAddEngine->GetQueuePtr();
+        for (j = 0; j < subEngineCount; j++) {
+            nSubstateEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(substateEngines[j]);
+            nSubstateEngines[j + (i * subEngineCount)]->Cohere(toAddEngine);
+            tempEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
+        }
+        
+        if (subEngineCount == 1) {
+            break;
+        }
+        
+        for (j = 0; j < (subEngineCount * divCount); j++) {
+            destEngine = j / divCount;
+            destIndex = j & (divCount - 1);
+            sourceEngine = j & (subEngineCount - 1);
+            sourceIndex = j / subEngineCount;
+            
+            queue->enqueueCopyBuffer(
+                tempEngines[sourceEngine]->GetStateBuffer(),
+                nSubstateEngines[destEngine]->GetStateBuffer(),
+                sourceIndex * divSize, destIndex * divSize, divSize);
+            queue->flush();
+            queue->finish();
+        }
+    }
+    
+    size_t sbSize = (subBufferSize << (toCopy->subQubitCount)) << 1;
+    if (subEngineCount != copySubEngineCount) {
+        substateEngines.resize(copySubEngineCount);
+    }
+    SetQubitCount(qubitCount + (toCopy->GetQubitCount()));
+    
+    for (i = 0; i < copySubEngineCount; i++) {
+        QEngineOCLPtr toReplace = std::make_shared<QEngineOCL>(subQubitCount, 0, rand_generator, i, true);
+        toReplace->EnableNormalize(false);
+        for (j = 0; j < subEngineCount; j++) {
+            queue->enqueueCopyBuffer(
+                nSubstateEngines[j + (i * subEngineCount)]->GetStateBuffer(),
+                toReplace->GetStateBuffer(),
+                0, j * sbSize, sbSize);
+            queue->flush();
+            queue->finish();
+        }
+        substateEngines[i] = toReplace;
+    }
+    subEngineCount = copySubEngineCount;
+    
+    // If we have more capacity for nodes, due to extra qubits, split it up now.
+    bitLenInt diffOrder = (1 << maxDeviceOrder) - subEngineCount;
+    if (diffOrder > (toCopy->GetQubitCount())) {
+        diffOrder = toCopy->GetQubitCount();
+    }
+    if (diffOrder > 0) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        bitLenInt diffPower = 1 << (diffOrder - 1);
+        std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount * diffOrder);
+        for (i = 0; i < subEngineCount; i++) {
+            toAddEngine = substateEngines[i];
+            queue = toAddEngine->GetQueuePtr();
+            futures[i] = std::async(std::launch::async, [this, i, diffOrder, diffPower, toAddEngine, queue, &nSubstateEngines]() {
+                for (int j = 0; j < diffOrder; j++) {
+                    nSubstateEngines.push_back(std::make_shared<QEngineOCL>(subQubitCount - diffOrder, 0, rand_generator, i, true));
+                    nSubstateEngines[i]->EnableNormalize(false);
+                    queue->enqueueCopyBuffer(
+                        toAddEngine->GetStateBuffer(),
+                        nSubstateEngines[j + (i * diffOrder)]->GetStateBuffer(),
+                        (subBufferSize * j) / diffPower, 0, subBufferSize / diffPower);
+                    queue->flush();
+                    queue->finish();
+                }
+            });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i].get();
+        }
+        substateEngines = nSubstateEngines;
+        
+        subEngineCount = substateEngines.size();
+        SetQubitCount(qubitCount);
+    }
+    
+    return result;
 }
     
 std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfacePtr> toCopy) {

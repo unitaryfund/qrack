@@ -54,6 +54,21 @@ public:
         InitOCL();
     }
     
+    QEngineOCL(QEngineOCLPtr toCopy)
+    : QEngineCPU(toCopy->GetQubitCount(), 0, toCopy->rand_generator, complex(-999.0, -999.0), false)
+    {
+        deviceID = toCopy->deviceID;
+        doNormalize = toCopy->doNormalize;
+        InitOCL();
+        CopyState(toCopy);
+    }
+    
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = 1 << qubitCount;
+    }
+    
     virtual cl::Buffer GetStateBuffer() { return stateBuffer; }
     virtual CommandQueuePtr GetQueuePtr() { return queue; }
 
