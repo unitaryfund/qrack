@@ -297,47 +297,43 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
             sourceIndex = j / subEngineCount;
             
             queue->enqueueCopyBuffer(
-                tempEngines[sourceEngine]->GetStateBuffer(),
-                nSubstateEngines[destEngine]->GetStateBuffer(),
-                sourceIndex * divSize, destIndex * divSize, divSize);
+                                     tempEngines[sourceEngine]->GetStateBuffer(),
+                                     nSubstateEngines[destEngine]->GetStateBuffer(),
+                                     sourceIndex * divSize, destIndex * divSize, divSize);
             queue->flush();
             queue->finish();
         }
     }
     
     size_t sbSize = (subBufferSize << (toCopy->subQubitCount)) << 1;
-    
-    if (subEngineCount > 1) {
-        if (subEngineCount != copySubEngineCount) {
-            substateEngines.resize(copySubEngineCount);
-        }
-        
-        for (i = 0; i < copySubEngineCount; i++) {
-            QEngineOCLPtr toReplace = std::make_shared<QEngineOCL>(subQubitCount, 0, rand_generator, i, true);
-            toReplace->EnableNormalize(false);
-            for (j = 0; j < subEngineCount; j++) {
-                queue->enqueueCopyBuffer(
-                    nSubstateEngines[j + (i * subEngineCount)]->GetStateBuffer(),
-                    toReplace->GetStateBuffer(),
-                    0, j * sbSize, sbSize);
-                queue->flush();
-                queue->finish();
-            }
-            substateEngines[i] = toReplace;
-        }
-        subEngineCount = copySubEngineCount;
+    if (subEngineCount != copySubEngineCount) {
+        substateEngines.resize(copySubEngineCount);
     }
+    SetQubitCount(qubitCount + (toCopy->GetQubitCount()));
     
-    SetQubitCount(qubitCount + (toCopy->qubitCount));
+    for (i = 0; i < copySubEngineCount; i++) {
+        QEngineOCLPtr toReplace = std::make_shared<QEngineOCL>(subQubitCount, 0, rand_generator, i, true);
+        toReplace->EnableNormalize(false);
+        for (j = 0; j < subEngineCount; j++) {
+            queue->enqueueCopyBuffer(
+                                     nSubstateEngines[j + (i * subEngineCount)]->GetStateBuffer(),
+                                     toReplace->GetStateBuffer(),
+                                     0, j * sbSize, sbSize);
+            queue->flush();
+            queue->finish();
+        }
+        substateEngines[i] = toReplace;
+    }
+    subEngineCount = copySubEngineCount;
+    SetQubitCount(qubitCount);
     
     // If we have more capacity for nodes, due to extra qubits, split it up now.
-    bitLenInt diffOrder = (1 << maxDeviceOrder) - subEngineCount;
+    int diffOrder = (1 << maxDeviceOrder) - subEngineCount;
     if (diffOrder > (toCopy->GetQubitCount())) {
         diffOrder = toCopy->GetQubitCount();
     }
     
     if (diffOrder > 0) {
-        std::vector<std::future<void>> futures(subEngineCount);
         bitLenInt diffPower = 1 << diffOrder;
         std::vector<QEngineOCLPtr> nSubstateEngines;
         for (i = 0; i < subEngineCount; i++) {
@@ -387,8 +383,9 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
     int i;
     
     // Move the bits to be disposed to the end of the register, then reverse the "Cohere" operation.
-    if (start != 0) {
-        ROR(start, 0, qubitCount);
+    bitLenInt shiftForward = qubitCount - (start + length);
+    if (shiftForward != 0) {
+        ROL(shiftForward, 0, qubitCount);
     }
     
     // We can have a maximum of 2^N nodes for N qubits
@@ -423,10 +420,40 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
     
     SetQubitCount(qubitCount - length);
     
+    int destIndex, destEngine, sourceIndex, sourceEngine;
+    
+    cl::Context context = *(clObj->GetContextPtr());
+    CommandQueuePtr queue;
+    
+    size_t divCount = 1 << length;
+    size_t divSize = (subBufferSize << 1) / divCount;
+    
+    std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
+    
+    for (i = 0; i < subEngineCount; i++) {
+        tempEngines[i] = std::make_shared<QEngineOCL>(substateEngines[i]);
+    }
+    
+    for (i = 0; i < (subEngineCount * divCount); i++) {
+        sourceEngine = (i / divCount);
+        sourceIndex = i & (divCount - 1) ;
+        destEngine = i & (subEngineCount - 1);
+        destIndex = i / subEngineCount;
+        
+        queue = substateEngines[destEngine]->GetQueuePtr();
+        
+        queue->enqueueCopyBuffer(
+            tempEngines[sourceEngine]->GetStateBuffer(),
+            substateEngines[destEngine]->GetStateBuffer(),
+            sourceIndex * divSize, destIndex * divSize, divSize);
+        queue->flush();
+        queue->finish();
+    }
+    
     std::vector<std::future<void>> futures(subEngineCount);
     for (i = 0; i < subEngineCount; i++) {
         futures[i] = std::async(std::launch::async, [this, i, length]() {
-            substateEngines[i]->Dispose(0, length);
+            substateEngines[i]->Dispose(subQubitCount - length, length);
         });
     }
     
@@ -434,8 +461,8 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
         futures[i].get();
     }
     
-    if (start != 0) {
-        ROL(start, 0, qubitCount);
+    if (shiftForward != 0) {
+        ROR(shiftForward, 0, qubitCount);
     }
 }
     
