@@ -371,8 +371,8 @@ bool QUnit::M(bitLenInt qubit)
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
-    unit->Decohere(mapped, 1, dest);
+    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, result ? 1 : 0, rand_generator);
+    unit->Dispose(mapped, 1);
 
     /* Update the mappings. */
     shards[qubit].unit = dest;
