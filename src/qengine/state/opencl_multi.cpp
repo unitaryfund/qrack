@@ -239,13 +239,13 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
 }
     
 bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
-    int i, j, destIndex, destEngine, sourceIndex, sourceEngine;
-    QEngineOCLPtr toAddEngine, origEngine;
+    int i, j;
     
     bitLenInt result = qubitCount;
     
     cl::Context context = *(clObj->GetContextPtr());
     CommandQueuePtr queue;
+    QEngineOCLPtr toAddEngine;
     
     size_t divSize = subBufferSize << 1;
     size_t divCount = 1 << (toCopy->subQubitCount);
@@ -253,33 +253,46 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
     
     std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount * copySubEngineCount);
     
+    std::vector<std::future<void>> cohereFutures(copySubEngineCount);
+    
     for (i = 0; i < copySubEngineCount; i++) {
+        // Putting these two statements inside of the lambda led to a SIGILL on the test machine, probably due to a race condition.
         toAddEngine = toCopy->substateEngines[i];
         queue = toAddEngine->GetQueuePtr();
-        std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
-        for (j = 0; j < subEngineCount; j++) {
-            nSubstateEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(substateEngines[j]);
-            nSubstateEngines[j + (i * subEngineCount)]->Cohere(toAddEngine);
-            tempEngines[j] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
-        }
         
-        if (subEngineCount == 1) {
-            break;
-        }
-        
-        for (j = 0; j < (subEngineCount * divCount); j++) {
-            destEngine = (j / divCount) + (i * subEngineCount);
-            destIndex = j & (divCount - 1) ;
-            sourceEngine = j & (subEngineCount - 1);
-            sourceIndex = j / subEngineCount;
+        cohereFutures[i] = std::async(std::launch::async, [this, i, divSize, divCount, toCopy, toAddEngine, queue, &nSubstateEngines]() {
+            int j, destIndex, destEngine, sourceIndex, sourceEngine;
             
-            queue->enqueueCopyBuffer(
-                tempEngines[sourceEngine]->GetStateBuffer(),
-                nSubstateEngines[destEngine]->GetStateBuffer(),
-                sourceIndex * divSize, destIndex * divSize, divSize);
-            queue->flush();
-            queue->finish();
-        }
+            std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
+            
+            for (j = 0; j < subEngineCount; j++) {
+                nSubstateEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(substateEngines[j]);
+                nSubstateEngines[j + (i * subEngineCount)]->Cohere(toAddEngine);
+                tempEngines[j] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
+            }
+            
+            if (subEngineCount == 1) {
+                return;
+            }
+        
+            for (j = 0; j < (subEngineCount * divCount); j++) {
+                destEngine = (j / divCount) + (i * subEngineCount);
+                destIndex = j & (divCount - 1) ;
+                sourceEngine = j & (subEngineCount - 1);
+                sourceIndex = j / subEngineCount;
+            
+                queue->enqueueCopyBuffer(
+                    tempEngines[sourceEngine]->GetStateBuffer(),
+                    nSubstateEngines[destEngine]->GetStateBuffer(),
+                    sourceIndex * divSize, destIndex * divSize, divSize);
+                queue->flush();
+                queue->finish();
+            }
+        });
+    }
+    
+    for (i = 0; i < copySubEngineCount; i++) {
+        cohereFutures[i].get();
     }
     
     size_t sbSize = (subBufferSize << (toCopy->subQubitCount)) << 1;
