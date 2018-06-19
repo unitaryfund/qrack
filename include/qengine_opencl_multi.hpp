@@ -44,6 +44,7 @@ public:
     {
         qubitCount = qb;
         maxQPower = 1 << qubitCount;
+        subEngineCount = substateEngines.size();
         subQubitCount = qubitCount - log2(subEngineCount);
         subMaxQPower = 1 << subQubitCount;
         subBufferSize = sizeof(complex) * subMaxQPower >> 1;
@@ -54,8 +55,16 @@ public:
 
     virtual bitLenInt Cohere(QEngineOCLMultiPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCLMulti>(toCopy)); }
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QEngineOCLMultiPtr> toCopy);
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy) {
+        std::vector<QEngineOCLMultiPtr> toCpy(toCopy.size());
+        for (bitLenInt i = 0; i < (toCopy.size()); i++) {
+            toCpy[i] = std::dynamic_pointer_cast<QEngineOCLMulti>(toCopy[i]);
+        }
+        return Cohere(toCpy);
+    }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QEngineOCLMultiPtr dest);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineOCLMulti>(dest)); }
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
@@ -123,6 +132,10 @@ protected:
     template<typename CCF, typename CF, typename F, typename ... Args> void DoublyControlledGate(bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs);
     template<typename CF, typename F, typename ... Args> void ControlledBody(bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
+    // For scalable cluster distribution, these methods should ultimately be entirely removed:
+    void CombineAllEngines();
+    void SeparateAllEngines();
+    
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
     void SwapBuffersLow(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
@@ -136,5 +149,7 @@ private:
         }
         return pow;
     }
+    
+    template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
 };
 } // namespace Qrack

@@ -112,11 +112,6 @@ TEST_CASE("test_complex")
 #endif
 TEST_CASE("test_qengine_cpu_par_for")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     int NUM_ENTRIES = 2000;
@@ -145,11 +140,6 @@ TEST_CASE("test_qengine_cpu_par_for")
 
 TEST_CASE("test_qengine_cpu_par_for_skip")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     int NUM_ENTRIES = 2000;
@@ -180,11 +170,6 @@ TEST_CASE("test_qengine_cpu_par_for_skip")
 
 TEST_CASE("test_qengine_cpu_par_for_skip_wide")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     int NUM_ENTRIES = 2000;
@@ -214,11 +199,6 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
 
 TEST_CASE("test_qengine_cpu_par_for_mask")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     int NUM_ENTRIES = 2000;
@@ -834,11 +814,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_lsr")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(250);
@@ -854,11 +829,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(250);
@@ -874,11 +844,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(247 + 256);
@@ -896,11 +861,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(0x95);
@@ -916,11 +876,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(0x095);
@@ -938,11 +893,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(247 + 256);
@@ -972,11 +922,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
     int start = 0x08;
 
@@ -990,11 +935,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
     int start = 0x08;
 
@@ -1008,11 +948,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(7);
@@ -1030,11 +965,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(0x94);
@@ -1050,11 +980,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(0x005);
@@ -1072,11 +997,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     qftReg->SetPermutation(7);
@@ -1137,11 +1057,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(1);
@@ -1152,11 +1067,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(1);
@@ -1174,11 +1084,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     qftReg->SetReg(0, 8, 0x00);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
     qftReg->PhaseFlip();
@@ -1201,11 +1106,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetReg(0, 8, 0x03);
@@ -1221,11 +1121,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetPermutation(0);
@@ -1249,11 +1144,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetPermutation(1 << 16);
@@ -1274,11 +1164,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetReg(0, 9, 0x03);
@@ -1295,11 +1180,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetPermutation(0);
@@ -1325,11 +1205,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetPermutation(1 << 18);
@@ -1351,13 +1226,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
-    int j;
-
     QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
@@ -1369,12 +1237,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
 {
-    int j;
-
     qftReg->SetPermutation(0x2b);
     qftReg->Dispose(0, 4);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
+    
+    qftReg->SetPermutation(0x2b);
+    qftReg->Dispose(4, 4);
+    
+    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0xb));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
@@ -1402,11 +1273,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_proball")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     // Grover's search inverts the function of a black box subroutine.
@@ -1444,11 +1310,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
 
     // Grover's search to find a value in a lookup table.
@@ -1504,11 +1365,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int i;
     unsigned char toSearch[256];
 

@@ -25,7 +25,6 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     rand_generator = rgp;
     
     runningNorm = 1.0;
-    maxQPower = 1 << qubitCount;
     
     clObj = OCLEngine::Instance();
     if (deviceCount == -1) {
@@ -105,8 +104,6 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
             substateEngines[i]->EnableNormalize(true);
         }
     }
-    // This logic is only correct for up to 2 devices
-    // TODO: Generalize logic to all powers of 2 devices
     if (bit < subQubitCount) {
         std::vector<std::future<void>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
@@ -260,7 +257,8 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
     }
     ftr.get();
 }
-    
+ 
+#if 0
 bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
     int i, j, destIndex, destEngine, sourceIndex, sourceEngine;
     QEngineOCLPtr toAddEngine, origEngine;
@@ -358,7 +356,7 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
 
     return result;
 }
-    
+
 std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfacePtr> toCopy) {
     std::map<QInterfacePtr, bitLenInt> ret;
     
@@ -368,11 +366,46 @@ std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfac
     
     return ret;
 }
+#endif
     
-void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) {
-    throw "Decohere not implemented";
+bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
+    bitLenInt result;
+    CombineAllEngines();
+    toCopy->CombineAllEngines();
+    result = substateEngines[0]->Cohere(toCopy->substateEngines[0]);
+    SetQubitCount(qubitCount + toCopy->qubitCount);
+    SeparateAllEngines();
+    toCopy->SeparateAllEngines();
+    return result;
+}
+
+std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QEngineOCLMultiPtr> toCopy) {
+    std::map<QInterfacePtr, bitLenInt> ret;
+    
+    for (auto&& q : toCopy) {
+        ret[q] = Cohere(q);
+    }
+    
+    return ret;
 }
     
+void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QEngineOCLMultiPtr dest) {
+    CombineAllEngines();
+    dest->CombineAllEngines();
+    substateEngines[0]->Decohere(start, length, dest->substateEngines[0]);
+    SetQubitCount(qubitCount - length);
+    SeparateAllEngines();
+    dest->SeparateAllEngines();
+}
+
+void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
+    CombineAllEngines();
+    substateEngines[0]->Dispose(start, length);
+    SetQubitCount(qubitCount - length);
+    SeparateAllEngines();
+}
+    
+#if 0
 void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
     
     if (subEngineCount == 1) {
@@ -416,9 +449,8 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
         substateEngines = nSubstateEngines;
         
         subEngineCount = substateEngines.size();
+        subQubitCount = qubitCount - log2(subEngineCount);
     }
-    
-    SetQubitCount(qubitCount - length);
     
     int destIndex, destEngine, sourceIndex, sourceEngine;
     
@@ -426,7 +458,7 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
     CommandQueuePtr queue;
     
     size_t divCount = 1 << length;
-    size_t divSize = (subBufferSize << 1) / divCount;
+    size_t divSize = (sizeof(complex) * (1 << subQubitCount)) / divCount;
     
     std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
     
@@ -461,10 +493,13 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
         futures[i].get();
     }
     
+    SetQubitCount(qubitCount - length);
+    
     if (shiftForward != 0) {
         ROR(shiftForward, 0, qubitCount);
     }
 }
+#endif
     
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
     DoublyControlledGate(control1, control2, target, (CCGFn)(&QEngineOCL::CCNOT), (CGFn)(&QEngineOCL::CNOT), (GFn)(&QEngineOCL::X));
@@ -522,12 +557,12 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
     else {
         bitLenInt init, max;
         if (result) {
-            init = 1;
-            max = 2;
-        }
-        else {
             init = 0;
             max = 1;
+        }
+        else {
+            init = 1;
+            max = 2;
         }
         for (i = init; i < max; i++) {
             cl::Buffer buffer = substateEngines[i]->GetStateBuffer();
@@ -538,6 +573,12 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         for (i = init; i < max; i++) {
             CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
             queue->finish();
+        }
+        if (result) {
+            substateEngines[0]->SetNorm(oneChance);
+            substateEngines[0]->EnableNormalize(true);
+            substateEngines[0]->NormalizeState();
+            substateEngines[0]->EnableNormalize(false);
         }
     }
     
@@ -590,72 +631,118 @@ void QEngineOCLMulti::CRT(real1 radians, bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-    throw "INC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INC(toAdd, start, length);
+    }, {static_cast<bitLenInt>(start + length - 1)});
 }
 void QEngineOCLMulti::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "INCC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INCC(toAdd, start, length, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), carryIndex});
 }
 void QEngineOCLMulti::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) {
-    throw "INCS not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INCS(toAdd, start, length, overflowIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), overflowIndex});
 }
 void QEngineOCLMulti::INCSC(
                        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
-    throw "INCSC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), overflowIndex, carryIndex});
 }
 void QEngineOCLMulti::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "INCSC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INCSC(toAdd, start, length, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), carryIndex});
 }
 void QEngineOCLMulti::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-    throw "INCBCD not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INCBCD(toAdd, start, length);
+    }, {static_cast<bitLenInt>(start + length - 1)});
 }
 void QEngineOCLMulti::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "INCBCDC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->INCBCDC(toAdd, start, length, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), carryIndex});
 }
 void QEngineOCLMulti::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) {
-    throw "DEC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DEC(toSub, start, length);
+    }, {static_cast<bitLenInt>(start + length - 1)});
 }
 void QEngineOCLMulti::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "DECC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DECC(toSub, start, length, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), carryIndex});
 }
-void QEngineOCLMulti::DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) {
-    throw "DECS not implemented";
+void QEngineOCLMulti::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) {
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DECS(toSub, start, length, overflowIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), overflowIndex});
 }
 void QEngineOCLMulti::DECSC(
-                       bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
-    throw "DECSC not implemented";
+                       bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) {
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), overflowIndex, carryIndex});
 }
-void QEngineOCLMulti::DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "DECSC not implemented";
+void QEngineOCLMulti::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DECSC(toSub, start, length, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), carryIndex});
 }
-void QEngineOCLMulti::DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) {
-    throw "DECBCD not implemented";
+void QEngineOCLMulti::DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length) {
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DECBCD(toSub, start, length);
+    }, {static_cast<bitLenInt>(start + length - 1)});
 }
 void QEngineOCLMulti::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) {
-    throw "DECBCDC not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->DECBCDC(toSub, start, length, carryIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), carryIndex});
 }
     
 void QEngineOCLMulti::ZeroPhaseFlip(bitLenInt start, bitLenInt length) {
-    throw "ZeroPhaseFlip not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->ZeroPhaseFlip(start, length);
+    }, {static_cast<bitLenInt>(start + length - 1)});
 }
 void QEngineOCLMulti::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) {
-    throw "CPhaseFlipIfLess not implemented";
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }, {static_cast<bitLenInt>(start + length - 1), flagIndex});
 }
 void QEngineOCLMulti::PhaseFlip() {
-    throw "PhaseFlip not implemented";
+    for (bitLenInt i = 0; i < subEngineCount; i++) {
+        substateEngines[i]->PhaseFlip();
+    }
 }
     
 bitCapInt QEngineOCLMulti::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, unsigned char* values) {
-    throw "IndexedLDA not implemented";
+    bitCapInt result;
+    CombineAllEngines();
+    result = substateEngines[0]->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values);
+    SeparateAllEngines();
+    return result;
 }
     
 bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    throw "IndexedADC not implemented";
+    bitCapInt result;
+    CombineAllEngines();
+    result = substateEngines[0]->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    SeparateAllEngines();
+    return result;
 }
 bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    throw "IndexedSBC not implemented";
+    bitCapInt result;
+    CombineAllEngines();
+    result = substateEngines[0]->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    SeparateAllEngines();
+    return result;
 }
     
 void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
@@ -834,6 +921,80 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     }
     for (i = 0; i < subEngineCount / 2; i++) {
         futures[i].get();
+    }
+}
+    
+// For scalable cluster distribution, these methods should ultimately be entirely removed:
+void QEngineOCLMulti::CombineAllEngines() {
+    std::vector<QEngineOCLPtr> nSubEngines(1);
+    nSubEngines[0] = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0, true);
+    nSubEngines[0]->EnableNormalize(false);
+    
+    CommandQueuePtr queue;
+    size_t sbSize = sizeof(complex) * maxQPower / subEngineCount;
+    
+    for (bitLenInt i = 0; i < subEngineCount; i++) {
+        queue = substateEngines[i]->GetQueuePtr();
+        queue->enqueueCopyBuffer(
+            substateEngines[i]->GetStateBuffer(),
+            nSubEngines[0]->GetStateBuffer(),
+            0, i * sbSize, sbSize);
+        queue->flush();
+        queue->finish();
+    }
+    
+    substateEngines = nSubEngines;
+    SetQubitCount(qubitCount);
+}
+    
+void QEngineOCLMulti::SeparateAllEngines() {
+    bitLenInt engineCount = 1 << maxDeviceOrder;
+    if (maxDeviceOrder > qubitCount) {
+        engineCount = 1 << qubitCount;
+    }
+    std::vector<QEngineOCLPtr> nSubEngines(engineCount);
+    
+    CommandQueuePtr queue;
+    size_t sbSize = sizeof(complex) * (1 << qubitCount) / engineCount;
+    
+    for (bitLenInt i = 0; i < engineCount; i++) {
+        nSubEngines[i] = std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, i, true);
+        nSubEngines[i]->EnableNormalize(false);
+        queue = nSubEngines[i]->GetQueuePtr();
+        queue->enqueueCopyBuffer(
+            substateEngines[0]->GetStateBuffer(),
+            nSubEngines[i]->GetStateBuffer(),
+            i * sbSize, 0, sbSize);
+        queue->flush();
+        queue->finish();
+    }
+    
+    substateEngines = nSubEngines;
+    SetQubitCount(qubitCount);
+}
+    
+template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLenInt> bits) {
+    bitLenInt i;
+    bitLenInt highestBit = 0;
+    for (i = 0; i < bits.size(); i++) {
+        if (bits[i] > highestBit) {
+            highestBit = bits[i];
+        }
+    }
+        
+    if (highestBit < subQubitCount) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(substateEngines[i]); });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i].get();
+        }
+    }
+    else {
+        CombineAllEngines();
+        fn(substateEngines[0]);
+        SeparateAllEngines();
     }
 }
     
