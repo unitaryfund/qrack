@@ -1369,11 +1369,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
 {
-    if (testSubEngineType == QINTERFACE_OPENCL_MULTI) {
-        std::cout<<"skipped";
-        return;
-    }
-    
     int j;
 
     qftReg->SetPermutation(0x2b);

@@ -239,13 +239,13 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
 }
     
 bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
-    int i, j;
+    int i, j, destIndex, destEngine, sourceIndex, sourceEngine;
+    QEngineOCLPtr toAddEngine, origEngine;
     
     bitLenInt result = qubitCount;
     
     cl::Context context = *(clObj->GetContextPtr());
     CommandQueuePtr queue;
-    QEngineOCLPtr toAddEngine;
     
     size_t divSize = subBufferSize << 1;
     size_t divCount = 1 << (toCopy->subQubitCount);
@@ -253,49 +253,32 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
     
     std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount * copySubEngineCount);
     
-    std::vector<std::future<void>> cohereFutures(copySubEngineCount);
-    
-    std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
-    
-    int destIndex, destEngine, sourceIndex, sourceEngine;
-    
     for (i = 0; i < copySubEngineCount; i++) {
-        // Putting this statement inside of the lambda led to a SIGILL on the test machine, probably due to a race condition.
         toAddEngine = toCopy->substateEngines[i];
+        queue = toAddEngine->GetQueuePtr();
+        std::vector<QEngineOCLPtr> tempEngines(subEngineCount);
+        for (j = 0; j < subEngineCount; j++) {
+            nSubstateEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(substateEngines[j]);
+            nSubstateEngines[j + (i * subEngineCount)]->Cohere(toAddEngine);
+            tempEngines[j] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
+        }
         
-        cohereFutures[i] = std::async(std::launch::async, [this, i, divSize, divCount, toCopy, toAddEngine, queue, &nSubstateEngines]() {
-            for (int j = 0; j < subEngineCount; j++) {
-                nSubstateEngines[j + (i * subEngineCount)] = std::make_shared<QEngineOCL>(substateEngines[j]);
-                nSubstateEngines[j + (i * subEngineCount)]->Cohere(toAddEngine);
-            }
-        });
-    }
-    
-    for (i = 0; i < copySubEngineCount; i++) {
-        cohereFutures[i].get();
-    }
-    
-    if (subEngineCount > 1) {
-        for (i = 0; i < copySubEngineCount; i++) {
-            queue = (toCopy->substateEngines[i])->GetQueuePtr();
+        if (subEngineCount == 1) {
+            break;
+        }
+        
+        for (j = 0; j < (subEngineCount * divCount); j++) {
+            destEngine = (j / divCount) + (i * subEngineCount);
+            destIndex = j & (divCount - 1) ;
+            sourceEngine = j & (subEngineCount - 1);
+            sourceIndex = j / subEngineCount;
             
-            for (j = 0; j < subEngineCount; j++) {
-                tempEngines[j] = std::make_shared<QEngineOCL>(nSubstateEngines[j + (i * subEngineCount)]);
-            }
-            
-            for (j = 0; j < (subEngineCount * divCount); j++) {
-                destEngine = (j / divCount) + (i * subEngineCount);
-                destIndex = j & (divCount - 1) ;
-                sourceEngine = j & (subEngineCount - 1);
-                sourceIndex = j / subEngineCount;
-                
-                queue->enqueueCopyBuffer(
-                                         tempEngines[sourceEngine]->GetStateBuffer(),
-                                         nSubstateEngines[destEngine]->GetStateBuffer(),
-                                         sourceIndex * divSize, destIndex * divSize, divSize);
-                queue->flush();
-                queue->finish();
-            }
+            queue->enqueueCopyBuffer(
+                tempEngines[sourceEngine]->GetStateBuffer(),
+                nSubstateEngines[destEngine]->GetStateBuffer(),
+                sourceIndex * divSize, destIndex * divSize, divSize);
+            queue->flush();
+            queue->finish();
         }
     }
     
@@ -366,7 +349,59 @@ void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr 
 }
     
 void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
-    throw "Dispose not implemented";
+    int i;
+    
+    // Move the bits to be disposed to the end of the register, then reverse the "Cohere" operation.
+    if (start != 0) {
+        ROR(start, 0, qubitCount);
+    }
+    
+    // We can have a maximum of 2^N nodes for N qubits
+    if (subEngineCount > (1 << (qubitCount - length))) {
+        bitLenInt nSubEngineCount = 1 << (qubitCount - length);
+        std::vector<QEngineOCLPtr> nSubstateEngines(nSubEngineCount);
+        std::vector<std::future<void>> combineFutures(nSubEngineCount);
+        bitLenInt maxLcv = subEngineCount / nSubEngineCount;
+        bitLenInt nSubQubitCount = qubitCount / log2(nSubEngineCount);
+        for (i = 0; i < nSubEngineCount; i++) {
+            combineFutures[i] = std::async(std::launch::async, [this, i, maxLcv, nSubQubitCount, &nSubstateEngines]() {
+                nSubstateEngines[i] = std::make_shared<QEngineOCL>(nSubQubitCount, 0, rand_generator, i, true);
+                nSubstateEngines[i]->EnableNormalize(false);
+                CommandQueuePtr queue = nSubstateEngines[i]->GetQueuePtr();
+                for (int j = 0; j < maxLcv; j++) {
+                    queue->enqueueCopyBuffer(
+                        substateEngines[j + (i * maxLcv)]->GetStateBuffer(),
+                        nSubstateEngines[i]->GetStateBuffer(),
+                        0, j * (subBufferSize << 1), subBufferSize << 1);
+                    queue->flush();
+                    queue->finish();
+                }
+            });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            combineFutures[i].get();
+        }
+        substateEngines = nSubstateEngines;
+        
+        subEngineCount = substateEngines.size();
+    }
+    
+    SetQubitCount(qubitCount - length);
+    
+    std::vector<std::future<void>> futures(subEngineCount);
+    for (i = 0; i < subEngineCount; i++) {
+        futures[i] = std::async(std::launch::async, [this, i, length]() {
+            substateEngines[i]->Dispose(0, length);
+        });
+    }
+    
+    for (i = 0; i < subEngineCount; i++) {
+        futures[i].get();
+    }
+    
+    if (start != 0) {
+        ROL(start, 0, qubitCount);
+    }
 }
     
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) {
