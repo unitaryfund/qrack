@@ -47,7 +47,7 @@ bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr
         }
     }
 
-    nrm = complex(cosine, sine) / sqrt(nrmlzr);
+    nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if ((lcv & qPowers) == powerTest) {

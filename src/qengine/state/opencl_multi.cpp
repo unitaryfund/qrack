@@ -808,9 +808,7 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
 
     real1 oneChance = 0.0;
     int i, j, k;
-    
-    // This logic only works for up to two devices.
-    // TODO: Generalize to higher numbers of devices
+
     if (qubitIndex < subQubitCount) {
         std::vector<std::future<real1>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
@@ -939,9 +937,14 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
     
 // For scalable cluster distribution, these methods should ultimately be entirely removed:
 void QEngineOCLMulti::CombineAllEngines() {
-    std::vector<QEngineOCLPtr> nSubEngines(1);
-    nSubEngines[0] = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0, true);
-    nSubEngines[0]->EnableNormalize(false);
+    
+    if (subEngineCount == 1) {
+        return;
+    }
+    
+    QEngineOCLPtr nEngine;
+    nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0, true);
+    nEngine->EnableNormalize(false);
     
     CommandQueuePtr queue;
     size_t sbSize = sizeof(complex) * maxQPower / subEngineCount;
@@ -950,18 +953,26 @@ void QEngineOCLMulti::CombineAllEngines() {
         queue = substateEngines[i]->GetQueuePtr();
         queue->enqueueCopyBuffer(
             substateEngines[i]->GetStateBuffer(),
-            nSubEngines[0]->GetStateBuffer(),
+            nEngine->GetStateBuffer(),
             0, i * sbSize, sbSize);
         queue->flush();
         queue->finish();
     }
     
-    substateEngines = nSubEngines;
+    substateEngines.resize(1);
+    substateEngines[0] = nEngine;
     SetQubitCount(qubitCount);
 }
     
 void QEngineOCLMulti::SeparateAllEngines() {
     bitLenInt engineCount = 1 << maxDeviceOrder;
+    
+    if (engineCount == 1) {
+        return;
+    }
+    
+    bitLenInt i;
+    
     if (maxDeviceOrder > qubitCount) {
         engineCount = 1 << qubitCount;
     }
@@ -970,7 +981,7 @@ void QEngineOCLMulti::SeparateAllEngines() {
     CommandQueuePtr queue;
     size_t sbSize = sizeof(complex) * (1 << qubitCount) / engineCount;
     
-    for (bitLenInt i = 0; i < engineCount; i++) {
+    for (i = 0; i < engineCount; i++) {
         nSubEngines[i] = std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, i, true);
         nSubEngines[i]->EnableNormalize(false);
         queue = nSubEngines[i]->GetQueuePtr();

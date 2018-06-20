@@ -361,7 +361,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec[lcv] =
-                sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+                (real1)(sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
         });
 
         delete[] partStateProb;
@@ -372,7 +372,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] =
-            sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+            (real1)(sqrt(remainderStateProb[lcv])) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
     });
 
     delete[] remainderStateProb;

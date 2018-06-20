@@ -877,7 +877,7 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
     delete[] probArray;
 
     bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / sqrt(nrmlzr);
+    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
 
     par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
         if ((i & regMask) == resultPtr) {
