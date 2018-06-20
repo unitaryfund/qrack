@@ -722,28 +722,28 @@ void QEngineOCLMulti::PhaseFlip() {
     
 bitCapInt QEngineOCLMulti::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, unsigned char* values) {
-    bitCapInt result;
-    CombineAllEngines();
-    result = substateEngines[0]->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values);
-    SeparateAllEngines();
-    return result;
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values);
+    }, {static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1)});
+    
+    return 0;
 }
     
 bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    bitCapInt result;
-    CombineAllEngines();
-    result = substateEngines[0]->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-    SeparateAllEngines();
-    return result;
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    }, {static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1), carryIndex});
+    
+    return 0;
 }
 bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    bitCapInt result;
-    CombineAllEngines();
-    result = substateEngines[0]->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
-    SeparateAllEngines();
-    return result;
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    }, {static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1), carryIndex});
+    
+    return 0;
 }
     
 void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
@@ -805,14 +805,14 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     if (subEngineCount == 1) {
         return substateEngines[0]->Prob(qubitIndex);
     }
-    
+
     real1 oneChance = 0.0;
-    int i;
-    std::vector<std::future<real1>> futures(subEngineCount);
+    int i, j, k;
     
     // This logic only works for up to two devices.
     // TODO: Generalize to higher numbers of devices
     if (qubitIndex < subQubitCount) {
+        std::vector<std::future<real1>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
             futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
@@ -821,8 +821,20 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
             oneChance += futures[i].get();
         }
     } else {
-        for (i = subEngineCount / 2; i < subEngineCount; i++) {
-            oneChance += substateEngines[i]->GetNorm();
+        bitLenInt groupCount = 1<<(qubitCount - (qubitIndex + 1));
+        bitLenInt groupSize = 1 << ((qubitIndex + 1) - subQubitCount);
+        std::vector<std::future<real1>> futures(groupCount * groupSize);
+        k = 0;
+        for (i = 0; i < groupCount; i++) {
+            for (j = 0; j < (groupSize / 2); j++) {
+                QEngineOCLPtr engine = substateEngines[j + (i * groupSize) + (groupSize / 2)];
+                futures[k] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->GetNorm(); });
+            }
+            k++;
+        }
+        
+        for (i = 0; i < (subEngineCount / 2); i++) {
+            oneChance += futures[i].get();
         }
     }
     
