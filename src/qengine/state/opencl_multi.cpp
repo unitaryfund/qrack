@@ -829,8 +829,8 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
             for (j = 0; j < (groupSize / 2); j++) {
                 QEngineOCLPtr engine = substateEngines[j + (i * groupSize) + (groupSize / 2)];
                 futures[k] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->GetNorm(); });
+                k++;
             }
-            k++;
         }
         
         for (i = 0; i < (subEngineCount / 2); i++) {
