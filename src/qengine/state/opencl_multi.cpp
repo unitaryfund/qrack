@@ -519,13 +519,11 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         return substateEngines[0]->M(qubit);
     }
     
-    // TODO: Generalize to more than two devices.
-    
     //if (runningNorm != 1.0) {
     //    NormalizeState();
     //}
     
-    int i;
+    int i, j;
     
     real1 prob = Rand();
     real1 oneChance = Prob(qubit);
@@ -555,30 +553,33 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         }
     }
     else {
-        bitLenInt init, max;
+        bitLenInt groupCount = 1<<(qubitCount - (qubit + 1));
+        bitLenInt groupSize = 1 << ((qubit + 1) - subQubitCount);
+        bitLenInt keepOffset, clearOffset;
+        bitLenInt keepIndex, clearIndex;
         if (result) {
-            init = 0;
-            max = 1;
+            keepOffset = 1;
+            clearOffset = 0;
         }
         else {
-            init = 1;
-            max = 2;
+            keepOffset = 0;
+            clearOffset = 1;
         }
-        for (i = init; i < max; i++) {
-            cl::Buffer buffer = substateEngines[i]->GetStateBuffer();
-            CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
-            queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
-            queue->flush();
-        }
-        for (i = init; i < max; i++) {
-            CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
-            queue->finish();
-        }
-        if (result) {
-            substateEngines[0]->SetNorm(oneChance);
-            substateEngines[0]->EnableNormalize(true);
-            substateEngines[0]->NormalizeState();
-            substateEngines[0]->EnableNormalize(false);
+        for (i = 0; i < groupCount; i++) {
+            for (j = 0; j < (groupSize / 2); j++) {
+                clearIndex = j + (i * groupSize) + (clearOffset * groupSize);
+                keepIndex = j + (i * groupSize) + (keepOffset * groupSize);
+                
+                cl::Buffer buffer = substateEngines[clearIndex]->GetStateBuffer();
+                CommandQueuePtr queue = substateEngines[clearIndex]->GetQueuePtr();
+                queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+                queue->flush();
+                
+                substateEngines[keepIndex]->SetNorm(nrmlzr);
+                substateEngines[keepIndex]->EnableNormalize(true);
+                substateEngines[keepIndex]->NormalizeState();
+                substateEngines[keepIndex]->EnableNormalize(false);
+            }
         }
     }
     
