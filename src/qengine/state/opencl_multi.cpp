@@ -236,7 +236,7 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
     std::future<void> ftr;
     int i;
     int j = 0;
-    for (i = 0; i < maxQPower; i+=subMaxQPower) {\
+    for (i = 0; i < maxQPower; i+=subMaxQPower) {
         if ((perm >= i) && (perm < (i + subMaxQPower))) {
             QEngineOCLPtr engine = substateEngines[j];
             bitCapInt p = perm - i;
@@ -567,8 +567,8 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         }
         for (i = 0; i < groupCount; i++) {
             for (j = 0; j < (groupSize / 2); j++) {
-                clearIndex = j + (i * groupSize) + (clearOffset * groupSize);
-                keepIndex = j + (i * groupSize) + (keepOffset * groupSize);
+                clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
+                keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
                 
                 cl::Buffer buffer = substateEngines[clearIndex]->GetStateBuffer();
                 CommandQueuePtr queue = substateEngines[clearIndex]->GetQueuePtr();
@@ -1087,6 +1087,11 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
 }
     
 template <typename F, typename OF> void QEngineOCLMulti::RegOp(F fn, OF ofn, bitLenInt start, bitLenInt length) {
+    
+    if (subEngineCount == 1) {
+        fn(substateEngines[0], length);
+    }
+    
     bitLenInt i;
     bitLenInt highestBit = start + length - 1;
     
@@ -1114,6 +1119,11 @@ template <typename F, typename OF> void QEngineOCLMulti::RegOp(F fn, OF ofn, bit
 }
             
 template <typename F, typename OF> void QEngineOCLMulti::ControlledRegOp(F fn, OF ofn, bitLenInt control, bitLenInt target, bitLenInt length) {
+    
+    if (subEngineCount == 1) {
+        fn(substateEngines[0], length);
+    }
+    
     bitLenInt i;
     bitLenInt highestBit;
     if (target >= control) {
@@ -1146,6 +1156,11 @@ template <typename F, typename OF> void QEngineOCLMulti::ControlledRegOp(F fn, O
 }
     
 template <typename F, typename OF> void QEngineOCLMulti::DoublyControlledRegOp(F fn, OF ofn, bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length) {
+    
+    if (subEngineCount == 1) {
+        fn(substateEngines[0], length);
+    }
+    
     bitLenInt i;
     bitLenInt highestBit;
     if ((target >= control1) && (target >= control2)) {
