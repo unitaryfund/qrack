@@ -68,7 +68,9 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     virtual void H(bitLenInt qubitIndex);
     virtual bool M(bitLenInt qubitIndex);
@@ -117,7 +119,8 @@ public:
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-    virtual void CopyState(QInterfacePtr orig);
+    virtual void CopyState(QInterfacePtr orig) { CopyState(std::dynamic_pointer_cast<QEngineOCLMulti>(orig)); }
+    virtual void CopyState(QEngineOCLMultiPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     
@@ -126,9 +129,9 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    //virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    //virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    //virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     
 protected:
     typedef void (QEngineOCL::*GFn)(bitLenInt);
@@ -137,9 +140,9 @@ protected:
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CCGFn)(bitLenInt, bitLenInt, bitLenInt);
     template<typename F, typename ... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
-    template<typename CF, typename F, typename ... Args> void ControlledGate(bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
-    template<typename CCF, typename CF, typename F, typename ... Args> void DoublyControlledGate(bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs);
-    template<typename CF, typename F, typename ... Args> void ControlledBody(bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
+    template<typename CF, typename F, typename ... Args> void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
+    template<typename CCF, typename CF, typename F, typename ... Args> void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs);
+    template<typename CF, typename F, typename ... Args> void ControlledBody(bool anti, bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
     template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt start, bitLenInt length);
     template <typename F, typename OF> void ControlledRegOp(F fn, OF ofn, bitLenInt control, bitLenInt target, bitLenInt length);

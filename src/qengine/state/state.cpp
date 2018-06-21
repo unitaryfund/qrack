@@ -116,8 +116,12 @@ union ComplexUnion {
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    if (runningNorm <= 0.0) {
+        return;
+    }
+    
     int numCores = GetConcurrencyLevel();
-    real1 nrm = doNormalize ? (1.0 / runningNorm) : 1.0;
+    real1 nrm = doNormalize ? (1.0 / sqrt(runningNorm)) : 1.0;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
@@ -143,7 +147,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm += rngNrm[i];
         }
         delete[] rngNrm;
-        runningNorm = sqrt(runningNorm);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
@@ -166,8 +169,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    if (runningNorm <= 0.0) {
+        return;
+    }
+    
     int numCores = GetConcurrencyLevel();
-    real1 nrm = doNormalize ? (1.0 / runningNorm) : 1.0;
+    real1 nrm = doNormalize ? (1.0 / sqrt(runningNorm)) : 1.0;
 
     if (doCalcNorm && (bitCount == 1)) {
         real1* rngNrm = new real1[numCores];
@@ -190,7 +197,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm += rngNrm[i];
         }
         delete[] rngNrm;
-        runningNorm = sqrt(runningNorm);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
@@ -425,12 +431,15 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 
 void QEngineCPU::NormalizeState(real1 nrm)
 {
-    bool defaultNorm = nrm < 0.0;
-    if (defaultNorm) {
-        nrm = 1.0;
-    } else {
-        nrm = runningNorm;
+    if (nrm >= 0.0) {
+        runningNorm = nrm;
     }
+    if ((runningNorm <= 0.0) || (runningNorm == 1.0)) {
+        return;
+    }
+    
+    runningNorm = sqrt(runningNorm);
+    
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
         //"min_norm" is defined in qinterface.hpp
@@ -438,9 +447,8 @@ void QEngineCPU::NormalizeState(real1 nrm)
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
-    if (defaultNorm) {
-        runningNorm = nrm;
-    }
+    
+    runningNorm = 1.0;
 }
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }

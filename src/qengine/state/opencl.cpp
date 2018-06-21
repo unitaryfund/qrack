@@ -98,12 +98,16 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    if (runningNorm <= 0.0) {
+        return;
+    }
+    
     complex cmplx[CMPLX_NORM_LEN];
     real1* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
-    cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / runningNorm) : 1.0, 0.0);
+    cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
@@ -145,7 +149,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm += nrmParts[i];
         }
         delete[] nrmParts;
-        runningNorm = sqrt(runningNorm);
     }
 }
 

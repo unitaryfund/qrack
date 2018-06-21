@@ -190,7 +190,7 @@ public:
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
     virtual real1 GetNorm() { UpdateRunningNorm(); return runningNorm; }
     virtual void SetNorm(real1 n) { runningNorm = n; }
-    virtual void NormalizeState(real1 norm = -999.0);
+    virtual void NormalizeState(real1 nrm = -999.0);
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
