@@ -120,7 +120,16 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
-
+    
+    virtual void X(bitLenInt start, bitLenInt length);
+    virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    
 protected:
     typedef void (QEngineOCL::*GFn)(bitLenInt);
     typedef void (QEngineOCL::*RGFn)(real1, bitLenInt);
@@ -132,9 +141,14 @@ protected:
     template<typename CCF, typename CF, typename F, typename ... Args> void DoublyControlledGate(bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs);
     template<typename CF, typename F, typename ... Args> void ControlledBody(bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
+    template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt start, bitLenInt length);
+    template <typename F, typename OF> void ControlledRegOp(F fn, OF ofn, bitLenInt control, bitLenInt target, bitLenInt length);
+    template <typename F, typename OF> void DoublyControlledRegOp(F fn, OF ofn, bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+    
     // For scalable cluster distribution, these methods should ultimately be entirely removed:
     void CombineAllEngines();
     void SeparateAllEngines();
+    template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
@@ -149,7 +163,5 @@ private:
         }
         return pow;
     }
-    
-    template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
 };
 } // namespace Qrack
