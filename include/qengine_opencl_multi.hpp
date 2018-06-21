@@ -23,11 +23,11 @@ typedef std::shared_ptr<QEngineOCLMulti> QEngineOCLMultiPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface, public ParallelFor {
 protected:
+    real1 runningNorm;
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
     bitLenInt subEngineCount;
     bitLenInt maxDeviceOrder;
-    real1 runningNorm;
     size_t subBufferSize;
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
@@ -149,6 +149,8 @@ protected:
     void CombineAllEngines();
     void SeparateAllEngines();
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
+    
+    void NormalizeState();
     
 private:
     void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);

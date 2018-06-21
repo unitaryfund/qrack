@@ -166,17 +166,48 @@ void ParallelFor::par_for_mask(
 real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
 {
     real1 nrmSqr = 0;
-    if ((int)(maxQPower / PSTRIDE) < numCores) {
-        for (bitCapInt i = 0; i < maxQPower; i++) {
-            nrmSqr += norm(stateArray[i]);
+    if (((int)maxQPower) <= numCores) {
+        std::vector<std::future<real1>> futures(maxQPower);
+        bitCapInt j;
+        int cpu;
+        for (cpu = 0; cpu < (int)maxQPower; cpu++) {
+            j = cpu;
+            futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray[j]); });
+        }
+        for (cpu = 0; cpu < (int)maxQPower; cpu++) {
+            nrmSqr += futures[cpu].get();
+        }
+    } else if (((int)(maxQPower / PSTRIDE)) < numCores) {
+        int parStride = maxQPower / numCores;
+        int remainder = maxQPower - (parStride * numCores);
+        std::vector<std::future<real1>> futures(numCores);
+        int cpu, count;
+        int offset = 0;
+        for (cpu = 0; cpu < numCores; cpu++) {
+            bitCapInt workUnit = parStride;
+            if (remainder > 0) {
+                workUnit++;
+                remainder--;
+            }
+            futures[cpu] = std::async(std::launch::async, [workUnit, offset, stateArray]() {
+                real1 result = 0.0;
+                for (bitCapInt j = 0; j < workUnit; j++) {
+                    result += norm(stateArray[offset + j]);
+                }
+                return result;
+            });
+            offset += workUnit;
+        }
+        count = cpu;
+        for (cpu = 0; cpu < count; cpu++) {
+            nrmSqr += futures[cpu].get();
         }
     } else {
         std::atomic<bitCapInt> idx;
         idx = 0;
-        real1* nrmPart = new real1[numCores];
-        std::vector<std::future<void>> futures(numCores);
+        std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray, nrmPart]() {
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray]() {
                 real1 sqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;
@@ -191,15 +222,13 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
                     if (k >= maxQPower)
                         break;
                 }
-                nrmPart[cpu] = sqrNorm;
+                return sqrNorm;
             });
         }
 
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu].get();
-            nrmSqr += nrmPart[cpu];
+            nrmSqr += futures[cpu].get();
         }
-        delete[] nrmPart;
     }
 
     return sqrt(nrmSqr);

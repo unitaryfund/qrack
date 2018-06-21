@@ -232,21 +232,13 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x55F00);
-    std::cout<<"Past perm"<<std::endl;
     REQUIRE_THAT(qftReg, HasProbability(0x55F00));
-    std::cout<<"Past HasProb"<<std::endl;
     qftReg->CNOT(12, 4, 8);
-    std::cout<<"Past CNOT"<<std::endl;
     REQUIRE_THAT(qftReg, HasProbability(0x55A50));
-    std::cout<<"Past require"<<std::endl;
     qftReg->SetPermutation(0x40001);
-    std::cout<<"Past perm 2"<<std::endl;
     REQUIRE_THAT(qftReg, HasProbability(0x40001));
-    std::cout<<"Before"<<std::endl;
     qftReg->CNOT(18, 19);
-    std::cout<<"After"<<std::endl;
     REQUIRE_THAT(qftReg, HasProbability(0xC0001));
-    std::cout<<"Done"<<std::endl;
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")

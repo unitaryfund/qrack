@@ -11,6 +11,7 @@
 // for details.
 
 #include <future>
+#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
@@ -99,10 +100,7 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
     
     int i, j;
     if (runningNorm != 1.0) {
-        for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(runningNorm);
-            substateEngines[i]->EnableNormalize(true);
-        }
+        NormalizeState();
     }
     if (bit < subQubitCount) {
         std::vector<std::future<void>> futures(subEngineCount);
@@ -155,7 +153,6 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
         runningNorm = 0.0;
         for (i = 0; i < subEngineCount; i++) {
             runningNorm += substateEngines[i]->GetNorm();
-            substateEngines[i]->EnableNormalize(false);
         }
     }
 }
@@ -350,7 +347,6 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
         }
         
         substateEngines = nSubstateEngines;
-        subEngineCount = substateEngines.size();
         SetQubitCount(qubitCount);
     }
 
@@ -446,8 +442,8 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
         for (i = 0; i < subEngineCount; i++) {
             combineFutures[i].get();
         }
-        substateEngines = nSubstateEngines;
         
+        substateEngines = nSubstateEngines;
         subEngineCount = substateEngines.size();
         subQubitCount = qubitCount - log2(subEngineCount);
     }
@@ -519,9 +515,9 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
         return substateEngines[0]->M(qubit);
     }
     
-    //if (runningNorm != 1.0) {
-    //    NormalizeState();
-    //}
+    if (runningNorm != 1.0) {
+        NormalizeState();
+    }
     
     int i, j;
     
@@ -852,6 +848,7 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
         });
         
         substateEngines = nSubstateEngines;
+        SetQubitCount(qubitCount);
     } else {
         // "Swap" is tricky, if we're distributed across nodes.
         // However, we get it virtually for free in a QUnit, so this is a low-priority case.
@@ -883,9 +880,9 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
             oneChance += futures[i].get();
         }
     } else {
+        std::vector<std::future<real1>> futures(subEngineCount / 2);
         bitLenInt groupCount = 1<<(qubitCount - (qubitIndex + 1));
         bitLenInt groupSize = 1 << ((qubitIndex + 1) - subQubitCount);
-        std::vector<std::future<real1>> futures(groupCount * groupSize);
         k = 0;
         for (i = 0; i < groupCount; i++) {
             for (j = 0; j < (groupSize / 2); j++) {
@@ -895,7 +892,7 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
             }
         }
         
-        for (i = 0; i < (subEngineCount / 2); i++) {
+        for (i = 0; i < k; i++) {
             oneChance += futures[i].get();
         }
     }
@@ -1006,9 +1003,7 @@ void QEngineOCLMulti::CombineAllEngines() {
         return;
     }
     
-    QEngineOCLPtr nEngine;
-    nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0, true);
-    nEngine->EnableNormalize(false);
+    QEngineOCLPtr nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0, false);
     
     CommandQueuePtr queue;
     size_t sbSize = sizeof(complex) * maxQPower / subEngineCount;
@@ -1192,6 +1187,15 @@ template <typename F, typename OF> void QEngineOCLMulti::DoublyControlledRegOp(F
         for (i = subLength; i < length; i++) {
             ofn(control1 + i, control2 + i, target + i);
         }
+    }
+}
+
+void QEngineOCLMulti::NormalizeState() {
+    for (bitLenInt i = 0; i < subEngineCount; i++) {
+        substateEngines[i]->SetNorm(runningNorm);
+        substateEngines[i]->EnableNormalize(true);
+        substateEngines[i]->NormalizeState();
+        substateEngines[i]->EnableNormalize(false);
     }
 }
     
