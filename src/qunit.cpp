@@ -103,12 +103,7 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
     /* Create a clone of the quantum state in toCopy. */
-    QInterfacePtr clone = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
-    clone->CopyState(toCopy);
-
-    /* Destroy the quantum state in toCopy. */
-    complex emptyState[] = { complex(0, 0), complex(0, 0) };
-    toCopy->SetQuantumState(emptyState);
+    QInterfacePtr clone(toCopy);
 
     /* Update shards to reference the cloned state. */
     for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {

@@ -27,6 +27,7 @@
 namespace Qrack {
     
 typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
+typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class OCLEngine;
 
@@ -40,7 +41,7 @@ protected:
     int deviceID;
     OCLEngine* clObj;
     CommandQueuePtr queue;
-    cl::Buffer stateBuffer;
+    BufferPtr stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
@@ -69,7 +70,7 @@ public:
         maxQPower = 1 << qubitCount;
     }
     
-    virtual cl::Buffer GetStateBuffer() { return stateBuffer; }
+    virtual BufferPtr GetStateBufferPtr() { return stateBuffer; }
     virtual CommandQueuePtr GetQueuePtr() { return queue; }
 
     /* Operations that have an improved implementation. */

@@ -69,45 +69,48 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     }
 }
     
-void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer) {
-    queue->enqueueCopyBuffer(buff1, tempBuffer, subBufferSize, 0, subBufferSize);
+void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer) {
+    queue->enqueueCopyBuffer(*buff1, *tempBuffer, subBufferSize, 0, subBufferSize);
     queue->flush();
     queue->finish();
     
-    queue->enqueueCopyBuffer(buff2, buff1, 0, subBufferSize, subBufferSize);
+    queue->enqueueCopyBuffer(*buff2, *buff1, 0, subBufferSize, subBufferSize);
     queue->flush();
     queue->finish();
     
-    queue->enqueueCopyBuffer(tempBuffer, buff2, 0, 0, subBufferSize);
+    queue->enqueueCopyBuffer(*tempBuffer, *buff2, 0, 0, subBufferSize);
     queue->flush();
     queue->finish();
 }
     
-void QEngineOCLMulti::SwapBuffersLow(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer) {
-    queue->enqueueCopyBuffer(buff1, tempBuffer, subBufferSize, 0, subBufferSize);
+void QEngineOCLMulti::SwapBuffersLow(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer) {
+    queue->enqueueCopyBuffer(*buff1, *tempBuffer, subBufferSize, 0, subBufferSize);
     queue->flush();
     queue->finish();
         
-    queue->enqueueCopyBuffer(buff2, buff1, subBufferSize, subBufferSize, subBufferSize);
+    queue->enqueueCopyBuffer(*buff2, *buff1, subBufferSize, subBufferSize, subBufferSize);
     queue->flush();
     queue->finish();
         
-    queue->enqueueCopyBuffer(tempBuffer, buff2, 0, subBufferSize, subBufferSize);
+    queue->enqueueCopyBuffer(*tempBuffer, *buff2, 0, subBufferSize, subBufferSize);
     queue->flush();
     queue->finish();
 }
     
-template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs) {
+template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs) {
+    
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        (engine.get()->*fn)(gfnArgs ..., bit);
+    }, {bit});
+    return;
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         ((substateEngines[0].get())->*fn)(gfnArgs ..., bit);
         return;
     }
     
-    int i;
-    if (runningNorm != 1.0) {
-        NormalizeState();
-    }
+    int i, j;
     if (bit < subQubitCount) {
         std::vector<std::future<void>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
@@ -117,13 +120,6 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
         for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
-    }
-    else {
-        CombineAllEngines();
-        (substateEngines[0].get()->*fn)(gfnArgs ..., bit);
-        SeparateAllEngines();
-    }
-#if 0
     } else {
         std::vector<std::future<void>> futures(subEngineCount / 2);
         
@@ -131,31 +127,37 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
         bitLenInt groups = 1 << order;
         bitLenInt offset = 1 << ((qubitCount - subQubitCount) - (order + 1));
         
-        if ((offset == 0) || (offset > 1)) {
-            std::cout<<"offset="<<(int)offset<<std::endl;
-        }
-        
         cl::Context context = *(clObj->GetContextPtr());
         
-        bitLenInt sqc = subQubitCount - 1;
+        bitLenInt sqi = subQubitCount - 1;
         
         for (i = 0; i < groups; i++) {
             for (j = 0; j < offset; j++) {
-                futures[j + (i * offset)] = std::async(std::launch::async, [this, context, offset, i, j, fn, sqc, gfnArgs ...]() {
-                    cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
-                    cl::Buffer buff1 = substateEngines[j + (i * offset)]->GetStateBuffer();
-                    cl::Buffer buff2 = substateEngines[j + ((i + 1) * offset)]->GetStateBuffer();
-                    QEngineOCLPtr engine = substateEngines[j + (i * offset)];
-                    CommandQueuePtr queue = engine->GetQueuePtr();
+                futures[j + (i * offset)] = std::async(std::launch::async, [this, context, offset, i, j, fn, sqi, controlled, anti, gfnArgs ...]() {
+                    QEngineOCLPtr engine1 = substateEngines[j + (i * offset)];
+                    QEngineOCLPtr engine2 = substateEngines[j + ((i + 1) * offset)];
+                    CommandQueuePtr queue = engine1->GetQueuePtr();
+                    
+                    BufferPtr tempBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, subBufferSize);
+                    BufferPtr buff1 = engine1->GetStateBufferPtr();
+                    BufferPtr buff2 = engine2->GetStateBufferPtr();
                 
                     ShuffleBuffers(queue, buff1, buff2, tempBuffer);
                 
-                    std::future<void> future1 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
-                    engine = substateEngines[j + ((i + 1) * offset)];
-                    std::future<void> future2 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
-                
-                    future1.get();
-                    future2.get();
+                    if (controlled) {
+                        if (anti) {
+                            ((engine1.get())->*fn)(gfnArgs ..., sqi);
+                        }
+                        else {
+                            ((engine2.get())->*fn)(gfnArgs ..., sqi);
+                        }
+                    }
+                    else {
+                        std::future<void> future1 = std::async(std::launch::async, [engine1, fn, sqi, gfnArgs ...]() { ((engine1.get())->*fn)(gfnArgs ..., sqi); });
+                        std::future<void> future2 = std::async(std::launch::async, [engine2, fn, sqi, gfnArgs ...]() { ((engine2.get())->*fn)(gfnArgs ..., sqi); });
+                        future1.get();
+                        future2.get();
+                    }
                 
                     ShuffleBuffers(queue, buff1, buff2, tempBuffer);
                 });
@@ -165,19 +167,21 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
             futures[i].get();
         }
     }
-#endif
     
-    if (doNormalize) {
-        runningNorm = 0.0;
-        for (i = 0; i < subEngineCount; i++) {
-            runningNorm += substateEngines[i]->GetNorm();
-        }
-    }
+    //if (doNormalize) {
+    //    NormalizeState();
+    //}
 }
     
 template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
-        
+    
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        (engine.get()->*cfn)(gfnArgs ..., controlBit, targetBit);
+    }, {controlBit, targetBit});
+    return;
+    
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         ((substateEngines[0].get())->*cfn)(gfnArgs ..., controlBit, targetBit);
         return;
     }
@@ -194,16 +198,33 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
             futures[i].get();
         }
     } else {
-        CombineAndOp([&](QEngineOCLPtr engine) {
-            (engine.get()->*cfn)(gfnArgs ..., controlBit, targetBit);
-        }, {controlBit, targetBit});
-        //ControlledBody(anti, 0, controlBit, targetBit, cfn, fn, gfnArgs ...);
+        if (targetBit < controlBit) {
+            // TODO: For two nodes, non-controlled gate on bottom node:
+            std::vector<std::future<void>> futures(subEngineCount / 2);
+            bitLenInt offset = anti ? 0 : (subEngineCount / 2);
+            for (i = 0; i < (subEngineCount / 2); i++) {
+                QEngineOCLPtr engine = substateEngines[i + offset];
+                futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
+            }
+            for (i = 0; i < subEngineCount / 2; i++) {
+                futures[i].get();
+            }
+        }
+        else {
+            SingleBitGate(true, anti, false, targetBit, fn, gfnArgs ...);
+        }
     }
 }
     
 template<typename CCF, typename CF, typename F, typename ... Args> void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs) {
-        
+   
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        (engine.get()->*ccfn)(controlBit1, controlBit2, targetBit);
+    }, {controlBit1, controlBit2, targetBit});
+    return;
+    
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         ((substateEngines[0].get())->*ccfn)(gfnArgs ..., controlBit1, controlBit2, targetBit);
         return;
     }
@@ -220,11 +241,6 @@ template<typename CCF, typename CF, typename F, typename ... Args> void QEngineO
             futures[i].get();
         }
     } else  {
-            
-        CombineAndOp([&](QEngineOCLPtr engine) {
-            (engine.get()->*ccfn)(gfnArgs ..., controlBit1, controlBit2, targetBit);
-        }, {controlBit1, controlBit2, targetBit});
-#if 0
         bitLenInt lowControl, highControl;
         if (controlBit1 < controlBit2) {
             lowControl = controlBit1;
@@ -237,13 +253,12 @@ template<typename CCF, typename CF, typename F, typename ... Args> void QEngineO
             
         if (lowControl < subQubitCount) {
             // CNOT logic
-            ControlledBody(anti, 0, highControl, targetBit, ccfn, cfn, gfnArgs ..., lowControl);
+            //ControlledBody(anti, 0, highControl, targetBit, ccfn, cfn, gfnArgs ..., lowControl);
         }
         else {
             // Skip first group, if more than one group.
-            ControlledBody(anti, 1, highControl, targetBit, cfn, fn, gfnArgs ...);
+            //ControlledBody(anti, 1, highControl, targetBit, cfn, fn, gfnArgs ...);
         }
-#endif
     }
 }
 
@@ -256,6 +271,7 @@ void QEngineOCLMulti::SetQuantumState(complex* inputState) {
 
 void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         substateEngines[0]->SetPermutation(perm);
         return;
     }
@@ -270,9 +286,9 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
             ftr = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p);});
         }
         else {
-            cl::Buffer buffer = substateEngines[j]->GetStateBuffer();
+            BufferPtr buffer = substateEngines[j]->GetStateBufferPtr();
             CommandQueuePtr queue = substateEngines[j]->GetQueuePtr();
-            queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
+            queue->enqueueFillBuffer(*buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
             queue->flush();
         }
         j++;
@@ -321,8 +337,8 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
             sourceIndex = j / subEngineCount;
             
             queue->enqueueCopyBuffer(
-                                     tempEngines[sourceEngine]->GetStateBuffer(),
-                                     nSubstateEngines[destEngine]->GetStateBuffer(),
+                                     *(tempEngines[sourceEngine]->GetStateBufferPtr()),
+                                     *(nSubstateEngines[destEngine]->GetStateBufferPtr()),
                                      sourceIndex * divSize, destIndex * divSize, divSize);
             queue->flush();
             queue->finish();
@@ -340,8 +356,8 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
         toReplace->EnableNormalize(false);
         for (j = 0; j < subEngineCount; j++) {
             queue->enqueueCopyBuffer(
-                                     nSubstateEngines[j + (i * subEngineCount)]->GetStateBuffer(),
-                                     toReplace->GetStateBuffer(),
+                                     *(nSubstateEngines[j + (i * subEngineCount)]->GetStateBufferPtr()),
+                                     *(toReplace->GetStateBufferPtr()),
                                      0, j * sbSize, sbSize);
             queue->flush();
             queue->finish();
@@ -367,8 +383,8 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
                 nSubstateEngines.push_back(std::make_shared<QEngineOCL>(subQubitCount - diffOrder, 0, rand_generator, i, true));
                 nSubstateEngines[j + (i * diffOrder)]->EnableNormalize(false);
                 queue->enqueueCopyBuffer(
-                    toAddEngine->GetStateBuffer(),
-                    nSubstateEngines[j + (i * diffOrder)]->GetStateBuffer(),
+                    *(toAddEngine->GetStateBufferPtr()),
+                    *(nSubstateEngines[j + (i * diffOrder)]->GetStateBufferPtr()),
                     ((subBufferSize << 1) * j) / diffPower, 0, (subBufferSize << 1) / diffPower);
                 queue->flush();
                 queue->finish();
@@ -380,16 +396,6 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
     }
 
     return result;
-}
-
-std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfacePtr> toCopy) {
-    std::map<QInterfacePtr, bitLenInt> ret;
-    
-    for (auto&& q : toCopy) {
-        ret[q] = Cohere(q);
-    }
-    
-    return ret;
 }
 #endif
     
@@ -404,13 +410,14 @@ bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy) {
     return result;
 }
 
-std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QEngineOCLMultiPtr> toCopy) {
-    std::map<QInterfacePtr, bitLenInt> ret;
     
+std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfacePtr> toCopy) {
+    std::map<QInterfacePtr, bitLenInt> ret;
+        
     for (auto&& q : toCopy) {
         ret[q] = Cohere(q);
     }
-    
+        
     return ret;
 }
     
@@ -418,7 +425,12 @@ void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QEngineOCLMult
     CombineAllEngines();
     dest->CombineAllEngines();
     substateEngines[0]->Decohere(start, length, dest->substateEngines[0]);
-    SetQubitCount(qubitCount - length);
+    if (qubitCount <= length) {
+        SetQubitCount(1);
+    }
+    else {
+        SetQubitCount(qubitCount - length);
+    }
     SeparateAllEngines();
     dest->SeparateAllEngines();
 }
@@ -426,7 +438,12 @@ void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QEngineOCLMult
 void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
     CombineAllEngines();
     substateEngines[0]->Dispose(start, length);
-    SetQubitCount(qubitCount - length);
+    if (qubitCount <= length) {
+        SetQubitCount(1);
+    }
+    else {
+        SetQubitCount(qubitCount - length);
+    }
     SeparateAllEngines();
 }
     
@@ -434,6 +451,7 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
 void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         substateEngines[0]->Dispose(start, length);
         return;
     }
@@ -460,8 +478,8 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
                 CommandQueuePtr queue = nSubstateEngines[i]->GetQueuePtr();
                 for (int j = 0; j < maxLcv; j++) {
                     queue->enqueueCopyBuffer(
-                        substateEngines[j + (i * maxLcv)]->GetStateBuffer(),
-                        nSubstateEngines[i]->GetStateBuffer(),
+                        *(substateEngines[j + (i * maxLcv)]->GetStateBufferPtr()),
+                        *(nSubstateEngines[i]->GetStateBufferPtr()),
                         0, j * (subBufferSize << 1), subBufferSize << 1);
                     queue->flush();
                     queue->finish();
@@ -500,8 +518,8 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length) {
         queue = substateEngines[destEngine]->GetQueuePtr();
         
         queue->enqueueCopyBuffer(
-            tempEngines[sourceEngine]->GetStateBuffer(),
-            substateEngines[destEngine]->GetStateBuffer(),
+            *(tempEngines[sourceEngine]->GetStateBufferPtr()),
+            *(substateEngines[destEngine]->GetStateBuffer()),
             sourceIndex * divSize, destIndex * divSize, divSize);
         queue->flush();
         queue->finish();
@@ -543,12 +561,13 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::H(bitLenInt qubitIndex) {
-    SingleBitGate(true, qubitIndex, (GFn)(&QEngineOCL::H));
+    SingleBitGate(false, false, true, qubitIndex, (GFn)(&QEngineOCL::H));
 }
     
 bool QEngineOCLMulti::M(bitLenInt qubit) {
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         return substateEngines[0]->M(qubit);
     }
     
@@ -599,9 +618,9 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
                 clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
                 keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
                 
-                cl::Buffer buffer = substateEngines[clearIndex]->GetStateBuffer();
+                BufferPtr buffer = substateEngines[clearIndex]->GetStateBufferPtr();
                 CommandQueuePtr queue = substateEngines[clearIndex]->GetQueuePtr();
-                queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
+                queue->enqueueFillBuffer(*buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
                 queue->flush();
                 
                 substateEngines[keepIndex]->NormalizeState(nrmlzr);
@@ -613,15 +632,15 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
-    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
+    SingleBitGate(false, false, false, qubitIndex, (GFn)(&QEngineOCL::X));
 }
     
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) {
-    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::Y));
+    SingleBitGate(false, false, false, qubitIndex, (GFn)(&QEngineOCL::Y));
 }
     
 void QEngineOCLMulti::Z(bitLenInt qubitIndex) {
-    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::Z));
+    SingleBitGate(false, false, false, qubitIndex, (GFn)(&QEngineOCL::Z));
 }
     
 void QEngineOCLMulti::CY(bitLenInt control, bitLenInt target) {
@@ -633,22 +652,22 @@ void QEngineOCLMulti::CZ(bitLenInt control, bitLenInt target) {
 }
     
 void QEngineOCLMulti::RT(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RT), radians);
+    SingleBitGate(false, false, true, qubitIndex, (RGFn)(&QEngineOCL::RT), radians);
 }
 void QEngineOCLMulti::RX(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RX), radians);
+    SingleBitGate(false, false, true, qubitIndex, (RGFn)(&QEngineOCL::RX), radians);
 }
 void QEngineOCLMulti::CRX(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRX), (RGFn)(&QEngineOCL::RX), radians);
 }
 void QEngineOCLMulti::RY(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RY), radians);
+    SingleBitGate(false, false, true, qubitIndex, (RGFn)(&QEngineOCL::RY), radians);
 }
 void QEngineOCLMulti::CRY(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRY), (RGFn)(&QEngineOCL::RY), radians);
 }
 void QEngineOCLMulti::RZ(real1 radians, bitLenInt qubitIndex) {
-    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RZ), radians);
+    SingleBitGate(false, false, true, qubitIndex, (RGFn)(&QEngineOCL::RZ), radians);
 }
 void QEngineOCLMulti::CRZ(real1 radians, bitLenInt control, bitLenInt target) {
     ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRZ), (RGFn)(&QEngineOCL::RZ), radians);
@@ -845,6 +864,7 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
     }
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         substateEngines[0]->Swap(qubitIndex1, qubitIndex2);
         return;
     }
@@ -879,7 +899,9 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
             nSubstateEngines[bit1Res | bit2Res | otherRes] = substateEngines[lcv];
         });
         
-        substateEngines = nSubstateEngines;
+        for (int i = 0; i < subEngineCount; i++) {
+            substateEngines[i] = nSubstateEngines[i];
+        }
         SetQubitCount(qubitCount);
     } else {
         // "Swap" is tricky, if we're distributed across nodes.
@@ -900,6 +922,7 @@ void QEngineOCLMulti::CopyState(QEngineOCLMultiPtr orig) {
 real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex) {
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         return substateEngines[0]->Prob(qubitIndex);
     }
 
@@ -944,130 +967,41 @@ real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister) {
     return substateEngines[subIndex]->ProbAll(fullRegister);
 }
     
-template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledBody(bool anti, bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
-    int i, j, k;
-    
-    std::vector<std::future<void>> futures(subEngineCount / 2);
-    cl::Context context = *(clObj->GetContextPtr());
-    
-    bitLenInt order, groups, diffOrder, pairOffset, groupOffset;
-    bool useTopDevice;
-    
-    if (targetBit < controlBit) {
-        int pairPower = subEngineCount - (1 << (qubitCount - (targetBit + 1)));
-        
-        if (pairPower <= 0) {
-            
-            // Simple special case:
-            bitLenInt offset = 1 << (qubitCount - (controlBit + 1));
-            for (i = 0; i < (subEngineCount / 2); i++) {
-                QEngineOCLPtr engine = substateEngines[(i * offset) + (subEngineCount / (2 *  offset))];
-                futures[i] = std::async(std::launch::async, [engine,fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
-            }
-            for (i = 0; i < subEngineCount / 2; i++) {
-                futures[i].get();
-            }
-            
-            // We're done with the controlled gate:
-            return;
-        }
-        else {
-            pairOffset = log2(pairPower);
-        }
-        
-        order = qubitCount - (controlBit + 1);
-        diffOrder = (targetBit < subQubitCount) ? (controlBit - subQubitCount) : ((controlBit - targetBit) - 1);
-        useTopDevice = true;
-    } else {
-        order = qubitCount - (targetBit + 1);
-        diffOrder = (controlBit < subQubitCount) ? (targetBit - subQubitCount) : ((targetBit - controlBit) - 1);
-        pairOffset = (subEngineCount / (2 * (1 << order))) << diffOrder;
-        useTopDevice = subEngineCount > 2;
-    }
-    groups = 1 << order;
-    groupOffset = subEngineCount / (2 * groups) >> (diffOrder - order);
-    
-    bitLenInt sqc = subQubitCount - 1;
-    
-    bitLenInt index;
-    
-    bitLenInt controlPower = 1 << controlDepth;
-    bitLenInt firstGroup = groups - (groups / controlPower);
-    if (firstGroup >= groups) {
-        firstGroup = 0;
-    }
-    
-    for (i = firstGroup; i < groups; i++) {
-        for (j = 0; j < pairOffset; j++) {
-            for (k = 0; k < groupOffset; k++) {
-                index = groupOffset / 2 + j + (i * groupOffset);
-                futures[k + (j * groupOffset) + (i * groupOffset * pairOffset)] = std::async(std::launch::async, [this, anti, useTopDevice, context, pairOffset, index, fn, sqc, gfnArgs ...]() {
-                    cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, subBufferSize);
-                    cl::Buffer buff1 = substateEngines[index]->GetStateBuffer();
-                    cl::Buffer buff2 = substateEngines[index + pairOffset]->GetStateBuffer();
-                    QEngineOCLPtr engine = substateEngines[index];
-                    CommandQueuePtr queue = engine->GetQueuePtr();
-                    
-                    ShuffleBuffers(queue, buff1, buff2, tempBuffer);
-                    
-                    if (useTopDevice) {
-                        std::future<void> future1 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
-                        engine = substateEngines[index + pairOffset];
-                        std::future<void> future2 = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
-                        
-                        future1.get();
-                        future2.get();
-                    }
-                    else {
-                        if (anti) {
-                            engine = substateEngines[index];
-                        }
-                        else {
-                            engine = substateEngines[index + pairOffset];
-                        }
-                        std::future<void> future = std::async(std::launch::async, [engine, fn, sqc, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., sqc); });
-                        
-                        future.get();
-                    }
-                    
-                    ShuffleBuffers(queue, buff1, buff2, tempBuffer);
-                });
-            }
-        }
-    }
-    for (i = 0; i < subEngineCount / 2; i++) {
-        futures[i].get();
-    }
-}
-    
 // For scalable cluster distribution, these methods should ultimately be entirely removed:
 void QEngineOCLMulti::CombineAllEngines() {
-    
+        
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         return;
     }
-    
+        
     QEngineOCLPtr nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0);
-    
+        
     CommandQueuePtr queue;
     size_t sbSize = sizeof(complex) * maxQPower / subEngineCount;
-    
+        
     for (bitLenInt i = 0; i < subEngineCount; i++) {
         queue = substateEngines[i]->GetQueuePtr();
         queue->enqueueCopyBuffer(
-            substateEngines[i]->GetStateBuffer(),
-            nEngine->GetStateBuffer(),
+            *(substateEngines[i]->GetStateBufferPtr()),
+            *(nEngine->GetStateBufferPtr()),
             0, i * sbSize, sbSize);
         queue->flush();
         queue->finish();
     }
-    
+        
     substateEngines.resize(1);
     substateEngines[0] = nEngine;
     SetQubitCount(qubitCount);
 }
     
 void QEngineOCLMulti::SeparateAllEngines() {
+    
+    if (qubitCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
+        return;
+    }
+    
     bitLenInt engineCount = 1 << maxDeviceOrder;
     
     if (maxDeviceOrder >= qubitCount) {
@@ -1090,19 +1024,23 @@ void QEngineOCLMulti::SeparateAllEngines() {
         nSubEngines[i]->EnableNormalize(false);
         queue = nSubEngines[i]->GetQueuePtr();
         queue->enqueueCopyBuffer(
-            substateEngines[0]->GetStateBuffer(),
-            nSubEngines[i]->GetStateBuffer(),
+            *(substateEngines[0]->GetStateBufferPtr()),
+            *(nSubEngines[i]->GetStateBufferPtr()),
             i * sbSize, 0, sbSize);
         queue->flush();
         queue->finish();
     }
     
-    substateEngines = nSubEngines;
+    substateEngines.resize(engineCount);
+    for (i = 0; i < engineCount; i++) {
+        substateEngines[i] = nSubEngines[i];
+    }
     SetQubitCount(qubitCount);
 }
     
 template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLenInt> bits) {
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         fn(substateEngines[0]);
         return;
     }
@@ -1130,11 +1068,13 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
         SeparateAllEngines();
     }
 }
-    
+
 template <typename F, typename OF> void QEngineOCLMulti::RegOp(F fn, OF ofn, bitLenInt start, bitLenInt length) {
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         fn(substateEngines[0], length);
+        return;
     }
     
     bitLenInt i;
@@ -1171,7 +1111,9 @@ template <typename F, typename OF> void QEngineOCLMulti::RegOp(F fn, OF ofn, bit
 template <typename F, typename OF> void QEngineOCLMulti::ControlledRegOp(F fn, OF ofn, bitLenInt control, bitLenInt target, bitLenInt length) {
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         fn(substateEngines[0], length);
+        return;
     }
 
     bitLenInt i;
@@ -1213,7 +1155,9 @@ template <typename F, typename OF> void QEngineOCLMulti::ControlledRegOp(F fn, O
 template <typename F, typename OF> void QEngineOCLMulti::DoublyControlledRegOp(F fn, OF ofn, bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length) {
     
     if (subEngineCount == 1) {
+        substateEngines[0]->EnableNormalize(true);
         fn(substateEngines[0], length);
+        return;
     }
     
     bitLenInt i;
@@ -1257,11 +1201,9 @@ template <typename F, typename OF> void QEngineOCLMulti::DoublyControlledRegOp(F
 
 void QEngineOCLMulti::NormalizeState() {
     bitLenInt i;
-    if (runningNorm <= 0.0) {
-        runningNorm = 0.0;
-        for (i = 0; i < subEngineCount; i++) {
-            runningNorm += substateEngines[i]->GetNorm();
-        }
+    runningNorm = 0.0;
+    for (i = 0; i < subEngineCount; i++) {
+        runningNorm += substateEngines[i]->GetNorm();
     }
     
     if ((runningNorm > 0.0) && (runningNorm != 1.0)) {

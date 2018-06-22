@@ -281,6 +281,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
     qftReg->SetPermutation(0x80001);
     qftReg->X(19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    qftReg->X(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
@@ -1394,7 +1396,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
         qftReg->CNOT(i - 1, i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xAAAAB));
-
     for (int i = 1; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
     }

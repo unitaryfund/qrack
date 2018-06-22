@@ -55,14 +55,7 @@ public:
 
     virtual bitLenInt Cohere(QEngineOCLMultiPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCLMulti>(toCopy)); }
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QEngineOCLMultiPtr> toCopy);
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy) {
-        std::vector<QEngineOCLMultiPtr> toCpy(toCopy.size());
-        for (bitLenInt i = 0; i < (toCopy.size()); i++) {
-            toCpy[i] = std::dynamic_pointer_cast<QEngineOCLMulti>(toCopy[i]);
-        }
-        return Cohere(toCpy);
-    }
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QEngineOCLMultiPtr dest);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QEngineOCLMulti>(dest)); }
     virtual void Dispose(bitLenInt start, bitLenInt length);
@@ -139,10 +132,9 @@ protected:
     typedef void (QEngineOCL::*CGFn)(bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CCGFn)(bitLenInt, bitLenInt, bitLenInt);
-    template<typename F, typename ... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
+    template<typename F, typename ... Args> void SingleBitGate(bool controlled, bool anti, bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs);
     template<typename CF, typename F, typename ... Args> void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     template<typename CCF, typename CF, typename F, typename ... Args> void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs);
-    template<typename CF, typename F, typename ... Args> void ControlledBody(bool anti, bitLenInt controlDepth, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs);
     
     template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt start, bitLenInt length);
     template <typename F, typename OF> void ControlledRegOp(F fn, OF ofn, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -156,8 +148,8 @@ protected:
     void NormalizeState();
     
 private:
-    void ShuffleBuffers(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
-    void SwapBuffersLow(CommandQueuePtr queue, cl::Buffer buff1, cl::Buffer buff2, cl::Buffer tempBuffer);
+    void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
+    void SwapBuffersLow(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
     
     inline bitCapInt log2(bitCapInt n) {
         bitLenInt pow = 0;
