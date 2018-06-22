@@ -104,7 +104,7 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
         return;
     }
     
-    int i, j;
+    int i;
     if (runningNorm != 1.0) {
         NormalizeState();
     }
@@ -117,6 +117,13 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
         for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
+    }
+    else {
+        CombineAllEngines();
+        (substateEngines[0].get()->*fn)(gfnArgs ..., bit);
+        SeparateAllEngines();
+    }
+#if 0
     } else {
         std::vector<std::future<void>> futures(subEngineCount / 2);
         
@@ -158,6 +165,7 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
             futures[i].get();
         }
     }
+#endif
     
     if (doNormalize) {
         runningNorm = 0.0;
@@ -605,7 +613,10 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
-    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
+    CombineAndOp([&](QEngineOCLPtr engine) {
+        engine->X(qubitIndex);
+    }, {qubitIndex});
+    //SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
 }
     
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) {
