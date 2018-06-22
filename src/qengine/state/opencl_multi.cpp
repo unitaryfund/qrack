@@ -263,7 +263,7 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm) {
         else {
             cl::Buffer buffer = substateEngines[j]->GetStateBuffer();
             CommandQueuePtr queue = substateEngines[j]->GetQueuePtr();
-            queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+            queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
             queue->flush();
         }
         j++;
@@ -592,7 +592,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
                 
                 cl::Buffer buffer = substateEngines[clearIndex]->GetStateBuffer();
                 CommandQueuePtr queue = substateEngines[clearIndex]->GetQueuePtr();
-                queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subMaxQPower);
+                queue->enqueueFillBuffer(buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
                 queue->flush();
                 
                 substateEngines[keepIndex]->NormalizeState(nrmlzr);
