@@ -100,11 +100,6 @@ void QEngineOCLMulti::SwapBuffersLow(CommandQueuePtr queue, BufferPtr buff1, Buf
     
 template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize, bitLenInt bit, F fn, Args ... gfnArgs) {
     
-    CombineAndOp([&](QEngineOCLPtr engine) {
-        (engine.get()->*fn)(gfnArgs ..., bit);
-    }, {bit});
-    return;
-    
     if (subEngineCount == 1) {
         ((substateEngines[0].get())->*fn)(gfnArgs ..., bit);
         return;
@@ -423,7 +418,9 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
                 queue->enqueueFillBuffer(*buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
                 queue->flush();
                 
-                substateEngines[keepIndex]->NormalizeState(nrmlzr);
+                if (nrmlzr > 0.0) {
+                    substateEngines[keepIndex]->NormalizeState(nrmlzr);
+                }
             }
         }
     }
@@ -633,7 +630,7 @@ void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ou
     
 bitCapInt QEngineOCLMulti::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, unsigned char* values) {
-    CombineAndOp([&](QEngineOCLPtr engine) {
+    CombineAndOpSafe([&](QEngineOCLPtr engine) {
         engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values);
     }, {static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1)});
     
@@ -642,7 +639,7 @@ bitCapInt QEngineOCLMulti::IndexedLDA(bitLenInt indexStart, bitLenInt indexLengt
     
 bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    CombineAndOp([&](QEngineOCLPtr engine) {
+    CombineAndOpSafe([&](QEngineOCLPtr engine) {
         engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }, {static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1), carryIndex});
     
@@ -650,7 +647,7 @@ bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLengt
 }
 bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
                                  bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) {
-    CombineAndOp([&](QEngineOCLPtr engine) {
+    CombineAndOpSafe([&](QEngineOCLPtr engine) {
         engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }, {static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1), carryIndex});
     
@@ -773,6 +770,7 @@ void QEngineOCLMulti::CombineAllEngines() {
     }
         
     QEngineOCLPtr nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0);
+    nEngine->EnableNormalize(true);
         
     CommandQueuePtr queue;
     size_t sbSize = sizeof(complex) * maxQPower / subEngineCount;
@@ -848,6 +846,36 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
         std::vector<std::future<void>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
             futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(substateEngines[i]); });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i].get();
+        }
+    }
+    else {
+        CombineAllEngines();
+        fn(substateEngines[0]);
+        SeparateAllEngines();
+    }
+}
+    
+template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<bitLenInt> bits) {
+    if (subEngineCount == 1) {
+        fn(substateEngines[0]);
+        return;
+    }
+        
+    bitLenInt i;
+    bitLenInt highestBit = 0;
+    for (i = 0; i < bits.size(); i++) {
+        if (bits[i] > highestBit) {
+            highestBit = bits[i];
+        }
+    }
+        
+    if (highestBit < subQubitCount) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i] = std::async(std::launch::async, [this, fn, i]() { if (substateEngines[i]->GetNorm() > 0.0) fn(substateEngines[i]); });
         }
         for (i = 0; i < subEngineCount; i++) {
             futures[i].get();

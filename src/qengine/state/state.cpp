@@ -116,10 +116,6 @@ union ComplexUnion {
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    if (runningNorm <= 0.0) {
-        return;
-    }
-    
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (1.0 / sqrt(runningNorm)) : 1.0;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
@@ -160,7 +156,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec[lcv + offset2] = qubit.cmplx[1];
 #endif
         });
-        if (doCalcNorm) {
+        if (doNormalize && doCalcNorm) {
             UpdateRunningNorm();
         }
     }
@@ -169,10 +165,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    if (runningNorm <= 0.0) {
-        return;
-    }
-    
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (1.0 / sqrt(runningNorm)) : 1.0;
 
@@ -210,7 +202,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
         });
-        if (doCalcNorm) {
+        if (doNormalize && doCalcNorm) {
             UpdateRunningNorm();
         }
     }

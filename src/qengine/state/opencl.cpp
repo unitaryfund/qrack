@@ -97,10 +97,6 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    if (runningNorm <= 0.0) {
-        return;
-    }
-    
     complex cmplx[CMPLX_NORM_LEN];
     real1* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
@@ -140,7 +136,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(1)); // local number (per group)
 
     queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
-    if (doCalcNorm) {
+    if (doNormalize && doCalcNorm) {
         queue->enqueueReadBuffer(
             nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
         runningNorm = 0.0;
@@ -527,7 +523,9 @@ bitCapInt QEngineOCL::IndexedLDA(
         totProb += prob;
         average += prob * outputInt;
     }
-    average /= totProb;
+    if (totProb > 0.0) {
+        average /= totProb;
+    }
 
     ResetStateVec(nStateVec);
 
@@ -571,7 +569,9 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt i
         totProb += prob;
         average += prob * outputInt;
     }
-    average /= totProb;
+    if (totProb > 0.0) {
+        average /= totProb;
+    }
 
     // Finally, we dealloc the old state vector and replace it with the one we just calculated.
     ResetStateVec(nStateVec);
