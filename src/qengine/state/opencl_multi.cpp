@@ -46,14 +46,15 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::
     subQubitCount = qubitCount - devPow;
     subMaxQPower = 1 << subQubitCount;
     subBufferSize = sizeof(complex) * subMaxQPower >> 1;
-    bool foundInitState = false;
-    bool partialInit = true;
-    bitCapInt subInitVal;
     
     if (deviceCount == 1) {
         substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rgp));
         return;
     }
+    
+    bool foundInitState = false;
+    bool partialInit = true;
+    bitCapInt subInitVal;
  
     for (int i = 0; i < deviceCount; i++) {
         if ((!foundInitState) && ((subMaxQPower * (i + 1)) > initState)) {
@@ -1096,6 +1097,11 @@ void QEngineOCLMulti::SeparateAllEngines() {
 }
     
 template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLenInt> bits) {
+    if (subEngineCount == 1) {
+        fn(substateEngines[0]);
+        return;
+    }
+    
     bitLenInt i;
     bitLenInt highestBit = 0;
     for (i = 0; i < bits.size(); i++) {
