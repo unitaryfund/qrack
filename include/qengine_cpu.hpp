@@ -54,6 +54,7 @@ public:
     ~QEngineCPU() { delete[] stateVec; }
     
     virtual void EnableNormalize(bool doN) {
+        UpdateRunningNorm();
         doNormalize = doN;
     }
 

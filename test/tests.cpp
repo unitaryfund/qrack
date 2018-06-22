@@ -1069,19 +1069,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {
-    qftReg->SetReg(0, 8, 0x01);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
-    qftReg->H(1);
-    qftReg->CPhaseFlipIfLess(1, 1, 1, 0);
-    qftReg->H(1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+    qftReg->SetReg(0, 20, 0x40000);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40000));
+    qftReg->H(19);
+    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    qftReg->H(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC0000));
 
-    qftReg->SetReg(0, 8, 0x00);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
-    qftReg->H(1);
-    qftReg->CPhaseFlipIfLess(1, 1, 1, 0);
-    qftReg->H(1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->SetReg(0, 20, 0x00);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
+    qftReg->H(19);
+    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    qftReg->H(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")
