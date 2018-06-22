@@ -1064,15 +1064,16 @@ void QEngineOCLMulti::CombineAllEngines() {
 void QEngineOCLMulti::SeparateAllEngines() {
     bitLenInt engineCount = 1 << maxDeviceOrder;
     
+    if (maxDeviceOrder >= qubitCount) {
+        engineCount = 1 << (qubitCount - 1);
+    }
+    
     if (engineCount == 1) {
         return;
     }
     
     bitLenInt i;
     
-    if (maxDeviceOrder > qubitCount) {
-        engineCount = 1 << qubitCount;
-    }
     std::vector<QEngineOCLPtr> nSubEngines(engineCount);
     
     CommandQueuePtr queue;
