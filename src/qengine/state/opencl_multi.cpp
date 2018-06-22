@@ -605,10 +605,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
-    CombineAndOp([&](QEngineOCLPtr engine) {
-        engine->X(qubitIndex);
-    }, {qubitIndex});
-    //SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
+    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
 }
     
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) {
@@ -835,12 +832,12 @@ bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLengt
     
 void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) {
     
-    if (subEngineCount == 1) {
-        substateEngines[0]->Swap(qubitIndex1, qubitIndex2);
+    if (qubitIndex1 == qubitIndex2) {
         return;
     }
     
-    if (qubitIndex1 == qubitIndex2) {
+    if (subEngineCount == 1) {
+        substateEngines[0]->Swap(qubitIndex1, qubitIndex2);
         return;
     }
 

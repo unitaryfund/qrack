@@ -33,19 +33,19 @@ bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr
     complex nrm;
 
     bitCapInt qPowers = 1 << qubit;
-    real1 oneChance = Prob(qubit);
 
     if (!doForce) {
+        real1 oneChance = Prob(qubit);
         result = ((prob < oneChance) && (oneChance > 0.0));
         nrmlzr = 1.0;
+        if (result) {
+            nrmlzr = oneChance;
+        } else {
+            nrmlzr = 1.0 - oneChance;
+        }
     }
     
     bitCapInt powerTest = result ? qPowers : 0;
-    if (result) {
-        nrmlzr = oneChance;
-    } else {
-        nrmlzr = 1.0 - oneChance;
-    }
 
     nrm = complex(cosine, sine);
     if (nrmlzr > 0.0) {
