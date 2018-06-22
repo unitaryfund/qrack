@@ -613,10 +613,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit) {
 }
     
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
-    CombineAndOp([&](QEngineOCLPtr engine) {
-        engine->X(qubitIndex);
-    }, {qubitIndex});
-    //SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
+    SingleBitGate(false, qubitIndex, (GFn)(&QEngineOCL::X));
 }
     
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) {
