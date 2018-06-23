@@ -12,12 +12,12 @@
 
 #pragma once
 
+#include <ctime>
 #include <map>
 #include <math.h>
 #include <memory>
-#include <vector>
 #include <random>
-#include <ctime>
+#include <vector>
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -55,7 +55,7 @@ enum QInterfaceEngine {
      * to increase the speed of certain calculations.
      */
     QINTERFACE_OPENCL,
-    
+
     /**
      * Create a QEngineOCLMUlti, composed from multiple QEngineOCLs, using OpenCL
      * in parallel across 2^N devices, for N an integer >= 0.
@@ -93,7 +93,7 @@ class QInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
-    
+
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
@@ -103,16 +103,17 @@ protected:
         qubitCount = qb;
         maxQPower = 1 << qubitCount;
     }
-    
+
     /** Generate a random real1 from 0 to 1 */
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
-    : rand_distribution(0.0, 1.0) {
+        : rand_distribution(0.0, 1.0)
+    {
         SetQubitCount(n);
-        
+
         if (rgp == NULL) {
             rand_generator = std::make_shared<std::default_random_engine>();
             randomSeed = std::time(0);

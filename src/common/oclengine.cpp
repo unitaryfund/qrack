@@ -11,6 +11,7 @@
 // for details.
 
 #include <iostream>
+#include <memory>
 
 #include "oclengine.hpp"
 #include "qenginecl.hpp"
@@ -52,7 +53,8 @@ OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
-CommandQueuePtr OCLEngine::PickQueue(CommandQueuePtr cqp) {
+CommandQueuePtr OCLEngine::PickQueue(CommandQueuePtr cqp)
+{
     if (cqp == nullptr) {
         return defaultQueue;
     } else {
@@ -94,7 +96,7 @@ void OCLEngine::InitOCL(int plat, int dev)
 
     for (int i = 0; i < nodeCount; i++) {
         cluster_devices.push_back(all_devices[i]);
-        std::cout << "Cluster device #"<<i<<": "<< all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
+        std::cout << "Cluster device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
 
     // a context is like a "runtime link" to the device and platform;
@@ -118,12 +120,13 @@ void OCLEngine::InitOCL(int plat, int dev)
         }
         programs[queue[i]] = cl::Program(context, sources);
         cl::Program program = programs[queue[i]];
-        
-        if (program.build({cluster_devices[i]}) != CL_SUCCESS) {
-            std::cout << "Error building for device #" << i <<": " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(cluster_devices[i]) << std::endl;
+
+        if (program.build({ cluster_devices[i] }) != CL_SUCCESS) {
+            std::cout << "Error building for device #" << i << ": "
+                      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(cluster_devices[i]) << std::endl;
             exit(1);
         }
-        
+
         apply2x2[queue[i]] = cl::Kernel(program, "apply2x2");
         apply2x2norm[queue[i]] = cl::Kernel(program, "apply2x2norm");
         x[queue[i]] = cl::Kernel(program, "x");
@@ -167,10 +170,10 @@ unsigned long OCLEngine::PowerOf2LessThan(unsigned long number)
 {
     unsigned long count = 0;
 
-    if (number <= 1) return number;
+    if (number <= 1)
+        return number;
 
-    while(number != 0)
-    {
+    while (number != 0) {
         number >>= 1;
         count++;
     }

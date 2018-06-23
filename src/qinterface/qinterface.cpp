@@ -13,14 +13,14 @@
 #include "qinterface.hpp"
 
 namespace Qrack {
-    
+
 void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     X(control);
     CNOT(control, target);
     X(control);
 }
-    
+
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     X(control1);
@@ -32,12 +32,13 @@ void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt tar
 
 // Logic Operators:
 
-void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
     /* Same bit, no action necessary. */
     if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
         return;
     }
-    
+
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
         SetBit(outputBit, false);
         if (inputBit1 == inputBit2) {
@@ -49,12 +50,13 @@ void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
         throw std::invalid_argument("Invalid AND arguments.");
     }
 }
-void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
     /* Same bit, no action necessary. */
     if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
         return;
     }
-    
+
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
         SetBit(outputBit, true);
         if (inputBit1 == inputBit2) {
@@ -66,12 +68,13 @@ void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBi
         throw std::invalid_argument("Invalid OR arguments.");
     }
 }
-void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) {
+void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
     if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
         SetBit(outputBit, false);
         return;
     }
-    
+
     if (inputBit1 == outputBit) {
         CNOT(inputBit2, outputBit);
     } else if (inputBit2 == outputBit) {
@@ -82,13 +85,15 @@ void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
         CNOT(inputBit2, outputBit);
     }
 }
-void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
+void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
     SetBit(outputBit, false);
     if (inputClassicalBit && (inputQBit != outputBit)) {
         CNOT(inputQBit, outputBit);
     }
 }
-void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
+void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
     if (inputClassicalBit) {
         SetBit(outputBit, true);
     } else if (inputQBit != outputBit) {
@@ -96,7 +101,8 @@ void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt out
         CNOT(inputQBit, outputBit);
     }
 }
-void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) {
+void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
     if (inputQBit != outputBit) {
         SetBit(outputBit, inputClassicalBit);
         CNOT(inputQBit, outputBit);
@@ -338,7 +344,8 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
 }
 
 /// SetReg - Set bits from start to (length - 1) to given permutation
-void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt perm) {
+void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt perm)
+{
     for (int i = 0; i < length; i++) {
         SetBit(start + i, (perm & (1 << i)) > 0);
     }
@@ -609,7 +616,7 @@ void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitL
         CRZDyad(numerator, denominator, control + bit, target + bit);
     }
 }
-    
+
 // Bit-wise apply measurement gate to a register
 bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
 {
@@ -619,7 +626,7 @@ bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
     }
     return result;
 }
-    
+
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
@@ -631,7 +638,7 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
         Reverse(start + shift, end);
     }
 }
-    
+
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
@@ -643,6 +650,5 @@ void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
         Reverse(start, end);
     }
 }
-
 
 } // namespace Qrack

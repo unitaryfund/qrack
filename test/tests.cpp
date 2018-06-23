@@ -1240,10 +1240,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
     qftReg->Dispose(0, 4);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
-    
+
     qftReg->SetPermutation(0x2b);
     qftReg->Dispose(4, 4);
-    
+
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0xb));
 }
 

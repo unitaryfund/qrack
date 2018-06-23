@@ -656,7 +656,9 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 {
     EntangleRange(start, length);
     OrderContiguous(shards[start].unit);
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2); }, start, flagIndex);
+    EntangleAndCall(
+        [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2); },
+        start, flagIndex);
 }
 
 void QUnit::PhaseFlip()

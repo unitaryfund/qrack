@@ -75,7 +75,7 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
             maxProb = prob;
             maxProbIdx = i;
         }
-        //if (prob > 0.0) {
+        // if (prob > 0.0) {
         //    std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
         //}
     }

@@ -25,7 +25,7 @@
 #endif
 
 namespace Qrack {
-    
+
 typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
@@ -75,10 +75,10 @@ public:
     cl::Kernel* GetADCPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the IndexedSBC function kernel
     cl::Kernel* GetSBCPtr(CommandQueuePtr cqp = nullptr);
-    
+
     int GetNodeCount() { return nodeCount; }
     int GetDefaultDeviceID() { return default_device_id; };
-    
+
 private:
     int nodeCount;
     int default_device_id;

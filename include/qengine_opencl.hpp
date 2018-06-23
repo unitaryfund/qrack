@@ -25,7 +25,7 @@
 #include "qengine_cpu.hpp"
 
 namespace Qrack {
-    
+
 typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
@@ -48,28 +48,29 @@ protected:
     cl::Buffer maxBuffer;
 
 public:
-    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, int devID = -1, bool partialInit = false)
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
+        int devID = -1, bool partialInit = false)
         : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
     {
         deviceID = devID;
         InitOCL();
     }
-    
+
     QEngineOCL(QEngineOCLPtr toCopy)
-    : QEngineCPU(toCopy->GetQubitCount(), 0, toCopy->rand_generator, complex(-999.0, -999.0), false)
+        : QEngineCPU(toCopy->GetQubitCount(), 0, toCopy->rand_generator, complex(-999.0, -999.0), false)
     {
         deviceID = toCopy->deviceID;
         doNormalize = toCopy->doNormalize;
         InitOCL();
         CopyState(toCopy);
     }
-    
+
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
         maxQPower = 1 << qubitCount;
     }
-    
+
     virtual BufferPtr GetStateBufferPtr() { return stateBuffer; }
     virtual CommandQueuePtr GetQueuePtr() { return queue; }
 
@@ -98,7 +99,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
     virtual real1 Prob(bitLenInt qubit);
-    
+
     virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID);
 

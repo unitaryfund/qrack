@@ -230,7 +230,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
             nrmSqr += futures[cpu].get();
         }
     }
-    
+
     return nrmSqr;
 }
 } // namespace Qrack

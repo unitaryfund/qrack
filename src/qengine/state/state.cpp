@@ -33,8 +33,8 @@ namespace Qrack {
  * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
-QEngineCPU::QEngineCPU(
-    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool partialInit)
+QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
+    complex phaseFac, bool partialInit)
     : QInterface(qBitCount, rgp)
     , stateVec(NULL)
 {
@@ -369,8 +369,8 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] =
-            (real1)(sqrt(remainderStateProb[lcv])) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+        stateVec[lcv] = (real1)(sqrt(remainderStateProb[lcv])) *
+            complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
     });
 
     delete[] remainderStateProb;
@@ -382,7 +382,7 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
     DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr)nullptr); }
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
@@ -429,9 +429,9 @@ void QEngineCPU::NormalizeState(real1 nrm)
     if ((runningNorm <= 0.0) || (runningNorm == 1.0)) {
         return;
     }
-    
+
     runningNorm = sqrt(runningNorm);
-    
+
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= runningNorm;
         //"min_norm" is defined in qinterface.hpp
@@ -439,7 +439,7 @@ void QEngineCPU::NormalizeState(real1 nrm)
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
-    
+
     runningNorm = 1.0;
 }
 

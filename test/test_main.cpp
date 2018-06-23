@@ -85,13 +85,13 @@ int main(int argc, char* argv[])
                 .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
-        
+
         if (num_failed == 0 && !disable_opencl_multi) {
             session.config().stream() << "############ QEngineOCLMulti ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL_MULTI;
             testSubEngineType = QINTERFACE_OPENCL_MULTI;
             CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
-            .reset(); /* Get the OpenCL banner out of the way. */
+                .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
 #endif
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
                 .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
-        
+
         if (num_failed == 0 && !disable_opencl && !disable_opencl_multi) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL Multi ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL_MULTI;

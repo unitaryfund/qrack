@@ -41,9 +41,10 @@ protected:
     complex* stateVec;
 
 public:
-    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool partialInit = false);
+    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
+        complex phaseFac = complex(-999.0, -999.0), bool partialInit = false);
     QEngineCPU(QEngineCPUPtr toCopy)
-    : QInterface(0, nullptr)
+        : QInterface(0, nullptr)
     {
         doNormalize = toCopy->doNormalize;
         rand_generator = toCopy->rand_generator;
@@ -52,8 +53,9 @@ public:
         CopyState(toCopy);
     }
     ~QEngineCPU() { delete[] stateVec; }
-    
-    virtual void EnableNormalize(bool doN) {
+
+    virtual void EnableNormalize(bool doN)
+    {
         UpdateRunningNorm();
         doNormalize = doN;
     }
@@ -189,7 +191,11 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
-    virtual real1 GetNorm() { UpdateRunningNorm(); return runningNorm; }
+    virtual real1 GetNorm()
+    {
+        UpdateRunningNorm();
+        return runningNorm;
+    }
     virtual void SetNorm(real1 n) { runningNorm = n; }
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
@@ -197,7 +203,6 @@ public:
     /** @} */
 
 protected:
-    
     virtual void ResetStateVec(complex* nStateVec);
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
