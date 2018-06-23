@@ -170,11 +170,6 @@ template<typename F, typename ... Args> void QEngineOCLMulti::SingleBitGate(bool
     
 template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args ... gfnArgs) {
     
-    CombineAndOp([&](QEngineOCLPtr engine) {
-        (engine.get()->*cfn)(gfnArgs ..., controlBit, targetBit);
-    }, {controlBit, targetBit});
-    return;
-    
     if (subEngineCount == 1) {
         ((substateEngines[0].get())->*cfn)(gfnArgs ..., controlBit, targetBit);
         return;
@@ -192,20 +187,26 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
             futures[i].get();
         }
     } else {
-        if (targetBit < controlBit) {
+        int pairPower = subEngineCount - (1 << (qubitCount - (targetBit + 1)));
+        
+        if ((pairPower <= 0) && (targetBit < controlBit)) {
             // TODO: For two nodes, non-controlled gate on bottom node:
             std::vector<std::future<void>> futures(subEngineCount / 2);
-            bitLenInt offset = anti ? 0 : (subEngineCount / 2);
+            bitLenInt antiFactor = anti ? 0 : 1;
+            bitLenInt offset = 1 << (qubitCount - (controlBit + 1));
             for (i = 0; i < (subEngineCount / 2); i++) {
-                QEngineOCLPtr engine = substateEngines[i + offset];
-                futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
+                QEngineOCLPtr engine = substateEngines[(i * offset) + (subEngineCount / (2 * offset)) * antiFactor];
+                futures[i] = std::async(std::launch::async, [engine,fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
             }
             for (i = 0; i < subEngineCount / 2; i++) {
                 futures[i].get();
             }
         }
         else {
-            SingleBitGate(true, anti, false, targetBit, fn, gfnArgs ...);
+            CombineAndOp([&](QEngineOCLPtr engine) {
+                (engine.get()->*cfn)(gfnArgs ..., controlBit, targetBit);
+            }, {controlBit, targetBit});
+            //SingleBitGate(true, anti, false, targetBit, fn, gfnArgs ...);
         }
     }
 }
