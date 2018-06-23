@@ -186,73 +186,53 @@ template<typename CF, typename F, typename ... Args> void QEngineOCLMulti::Contr
         for (i = 0; i < subEngineCount; i++) {
             futures[i].get();
         }
+    } else if (targetBit < controlBit) {
+        std::vector<std::future<void>> futures(subEngineCount / 2);
+        bitLenInt offset = 1 << (qubitCount - (controlBit + 1));
+        // TODO: For two nodes, non-controlled gate on bottom node:
+        bitLenInt antiFactor = anti ? 0 : 1;
+        for (i = 0; i < (subEngineCount / 2); i++) {
+            QEngineOCLPtr engine = substateEngines[(i * offset) + (subEngineCount / (2 * offset)) * antiFactor];
+            futures[i] = std::async(std::launch::async, [engine, fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
+        }
+        for (i = 0; i < subEngineCount / 2; i++) {
+            futures[i].get();
+        }
     } else {
-        int pairPower = subEngineCount - (1 << (qubitCount - (targetBit + 1)));
-        
-        if ((pairPower <= 0) && (targetBit < controlBit)) {
-            // TODO: For two nodes, non-controlled gate on bottom node:
-            std::vector<std::future<void>> futures(subEngineCount / 2);
-            bitLenInt antiFactor = anti ? 0 : 1;
-            bitLenInt offset = 1 << (qubitCount - (controlBit + 1));
-            for (i = 0; i < (subEngineCount / 2); i++) {
-                QEngineOCLPtr engine = substateEngines[(i * offset) + (subEngineCount / (2 * offset)) * antiFactor];
-                futures[i] = std::async(std::launch::async, [engine,fn, targetBit, gfnArgs ...]() { ((engine.get())->*fn)(gfnArgs ..., targetBit); });
-            }
-            for (i = 0; i < subEngineCount / 2; i++) {
-                futures[i].get();
-            }
-        }
-        else {
-            CombineAndOp([&](QEngineOCLPtr engine) {
-                (engine.get()->*cfn)(gfnArgs ..., controlBit, targetBit);
-            }, {controlBit, targetBit});
-            //SingleBitGate(true, anti, false, targetBit, fn, gfnArgs ...);
-        }
+        CombineAndOp([&](QEngineOCLPtr engine) {
+            (engine.get()->*cfn)(gfnArgs ..., controlBit, targetBit);
+        }, {controlBit, targetBit});
+        return;
     }
 }
     
 template<typename CCF, typename CF, typename F, typename ... Args> void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn, CF cfn, F fn, Args ... gfnArgs) {
-   
-    CombineAndOp([&](QEngineOCLPtr engine) {
-        (engine.get()->*ccfn)(controlBit1, controlBit2, targetBit);
-    }, {controlBit1, controlBit2, targetBit});
-    return;
     
     if (subEngineCount == 1) {
         ((substateEngines[0].get())->*ccfn)(gfnArgs ..., controlBit1, controlBit2, targetBit);
         return;
     }
-        
-    int i;
-        
-    if ((controlBit1 < subQubitCount) && (controlBit2 < subQubitCount) && (targetBit < subQubitCount)) {
-        std::vector<std::future<void>> futures(subEngineCount);
-        for (i = 0; i < subEngineCount; i++) {
-            QEngineOCLPtr engine = substateEngines[i];
-            futures[i] = std::async(std::launch::async, [engine, ccfn, controlBit1, controlBit2, targetBit, gfnArgs ...]() { ((engine.get())->*ccfn)(gfnArgs ..., controlBit1, controlBit2, targetBit); });
-        }
-        for (i = 0; i < subEngineCount; i++) {
-            futures[i].get();
-        }
-    } else  {
-        bitLenInt lowControl, highControl;
-        if (controlBit1 < controlBit2) {
-            lowControl = controlBit1;
-            highControl = controlBit2;
-        }
-        else {
-            lowControl = controlBit2;
-            highControl = controlBit1;
-        }
-            
-        if (lowControl < subQubitCount) {
-            // CNOT logic
-            //ControlledBody(anti, 0, highControl, targetBit, ccfn, cfn, gfnArgs ..., lowControl);
-        }
-        else {
-            // Skip first group, if more than one group.
-            //ControlledBody(anti, 1, highControl, targetBit, cfn, fn, gfnArgs ...);
-        }
+    
+    bitLenInt lowControl, highControl;
+    if (controlBit1 < controlBit2) {
+        lowControl = controlBit1;
+        highControl = controlBit2;
+    }
+    else {
+        lowControl = controlBit2;
+        highControl = controlBit1;
+    }
+    
+    if (lowControl < subQubitCount) {
+        // CNOT logic
+        ControlledGate(anti, highControl, targetBit, ccfn, cfn, gfnArgs ..., lowControl);
+    }
+    else {
+        // Skip first group, if more than one group.
+        CombineAndOp([&](QEngineOCLPtr engine) {
+            (engine.get()->*ccfn)(gfnArgs ..., controlBit1, controlBit2, targetBit);
+        }, {controlBit1, controlBit2, targetBit});
+        return;
     }
 }
 
