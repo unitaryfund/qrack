@@ -52,16 +52,14 @@ public:
         int devID = -1, bool partialInit = false)
         : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
     {
-        deviceID = devID;
-        InitOCL();
+        InitOCL(devID);
     }
 
     QEngineOCL(QEngineOCLPtr toCopy)
         : QEngineCPU(toCopy->GetQubitCount(), 0, toCopy->rand_generator, complex(-999.0, -999.0), false)
     {
-        deviceID = toCopy->deviceID;
         doNormalize = toCopy->doNormalize;
-        InitOCL();
+        InitOCL(toCopy->deviceID);
         CopyState(toCopy);
     }
 
@@ -106,7 +104,7 @@ public:
 protected:
     static const int BCI_ARG_LEN = 10;
 
-    void InitOCL();
+    void InitOCL(int devID);
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
 

@@ -56,8 +56,10 @@ public:
 
     virtual void EnableNormalize(bool doN)
     {
-        UpdateRunningNorm();
         doNormalize = doN;
+        if (doNormalize) {
+            UpdateRunningNorm();
+        }
     }
 
     virtual void SetQuantumState(complex* inputState);

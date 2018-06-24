@@ -25,11 +25,16 @@ void QEngineOCL::SetDevice(const int& dID)
     queue = clObj->GetQueuePtr(deviceID);
 }
 
-void QEngineOCL::InitOCL()
+void QEngineOCL::InitOCL(int devID)
 {
     clObj = OCLEngine::Instance();
+    if (devID > (clObj->GetNodeCount())) {
+        SetDevice(devID % (clObj->GetNodeCount()));
+    }
+    else {
+        SetDevice(devID);
+    }
 
-    queue = clObj->GetQueuePtr(deviceID);
     cl::Context context = *(clObj->GetContextPtr());
 
     // create buffers on device (allocate space on GPU)
