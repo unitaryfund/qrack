@@ -54,13 +54,7 @@ public:
     }
     ~QEngineCPU() { delete[] stateVec; }
 
-    virtual void EnableNormalize(bool doN)
-    {
-        doNormalize = doN;
-        if (doNormalize) {
-            UpdateRunningNorm();
-        }
-    }
+    virtual void EnableNormalize(bool doN) { doNormalize = doN; }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
@@ -193,9 +187,11 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
-    virtual real1 GetNorm()
+    virtual real1 GetNorm(bool update = true)
     {
-        UpdateRunningNorm();
+        if (update) {
+            UpdateRunningNorm();
+        }
         return runningNorm;
     }
     virtual void SetNorm(real1 n) { runningNorm = n; }

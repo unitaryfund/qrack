@@ -110,8 +110,9 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
         ((substateEngines[0].get())->*fn)(gfnArgs..., bit);
         return;
     }
-
-    int i, j;
+    
+    bitLenInt i, j;
+    
     if (bit < subQubitCount) {
         std::vector<std::future<void>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
@@ -171,9 +172,20 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
         }
     }
 
-    // if (doNormalize) {
-    //    NormalizeState();
-    //}
+    if (doNormalize) {
+        std::vector<std::future<real1>> nf(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
+            nf[i] = std::async(std::launch::async, [this, i]() {
+                return substateEngines[i]->GetNorm();
+            });
+        }
+        runningNorm = 0.0;
+        for (i = 0; i <subEngineCount; i++) {
+            runningNorm += nf[i].get();
+        }
+        
+        NormalizeState();
+    }
 }
 
 template <typename CF, typename F, typename... Args>
@@ -364,9 +376,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
         return substateEngines[0]->M(qubit);
     }
 
-    // if (runningNorm != 1.0) {
-    //    NormalizeState();
-    //}
+    NormalizeState();
 
     int i, j;
 
@@ -707,10 +717,11 @@ void QEngineOCLMulti::CopyState(QEngineOCLMultiPtr orig)
 }
 real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex)
 {
-
     if (subEngineCount == 1) {
         return substateEngines[0]->Prob(qubitIndex);
     }
+    
+    NormalizeState();
 
     real1 oneChance = 0.0;
     bitLenInt i, j, k;
@@ -746,11 +757,10 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex)
 }
 real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister)
 {
+    NormalizeState();
+    
     bitLenInt subIndex = fullRegister / subMaxQPower;
     fullRegister -= subIndex * subMaxQPower;
-    // if (isnan(substateEngines[subIndex]->ProbAll(fullRegister))) {
-    //    std::cout<<"isNaN: subIndex="<<(int)subIndex<<" fullRegister="<<(int)fullRegister<<std::endl;
-    //}
     return substateEngines[subIndex]->ProbAll(fullRegister);
 }
 
@@ -928,17 +938,18 @@ template <typename F, typename OF> void QEngineOCLMulti::RegOp(F fn, OF ofn, bit
 void QEngineOCLMulti::NormalizeState()
 {
     bitLenInt i;
-    runningNorm = 0.0;
-    for (i = 0; i < subEngineCount; i++) {
-        runningNorm += substateEngines[i]->GetNorm();
-    }
-
-    if ((runningNorm > 0.0) && (runningNorm != 1.0)) {
+    if (runningNorm != 1.0) {
+        std::vector<std::future<void>> nf(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->NormalizeState(runningNorm);
+            nf[i] = std::async(std::launch::async, [this, i]() {
+                substateEngines[i]->NormalizeState(runningNorm);
+                substateEngines[i]->SetNorm(1.0);
+            });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            nf[i].get();
         }
     }
-
     runningNorm = 1.0;
 }
 

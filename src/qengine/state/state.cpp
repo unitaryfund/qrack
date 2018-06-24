@@ -423,17 +423,17 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 
 void QEngineCPU::NormalizeState(real1 nrm)
 {
-    if (nrm >= 0.0) {
-        runningNorm = nrm;
+    if (nrm < 0.0) {
+        nrm = runningNorm;
     }
-    if ((runningNorm <= 0.0) || (runningNorm == 1.0)) {
+    if ((nrm <= 0.0) || (nrm == 1.0)) {
         return;
     }
 
-    runningNorm = sqrt(runningNorm);
+    nrm = sqrt(nrm);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] /= runningNorm;
+        stateVec[lcv] /= nrm;
         //"min_norm" is defined in qinterface.hpp
         if (norm(stateVec[lcv]) < min_norm) {
             stateVec[lcv] = complex(0.0, 0.0);
