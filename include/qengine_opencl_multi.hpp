@@ -23,6 +23,7 @@ typedef std::shared_ptr<QEngineOCLMulti> QEngineOCLMultiPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface, public ParallelFor {
 protected:
+    bool isOverloaded;
     real1 runningNorm;
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
@@ -39,7 +40,7 @@ protected:
 
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int deviceCount = -1);
+        int deviceCount = -1, bool doOverload = false);
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -129,9 +130,9 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    // virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    // virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    // virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    //virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    //virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
+    //virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
 
 protected:
     typedef void (QEngineOCL::*GFn)(bitLenInt);
@@ -147,13 +148,8 @@ protected:
     void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn,
         CF cfn, F fn, Args... gfnArgs);
 
-    template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt start, bitLenInt length);
-    template <typename F, typename OF>
-    void ControlledRegOp(F fn, OF ofn, bitLenInt control, bitLenInt target, bitLenInt length);
-    template <typename F, typename OF>
-    void DoublyControlledRegOp(
-        F fn, OF ofn, bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-
+    template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt length, std::vector<bitLenInt> bits);
+    
     // For scalable cluster distribution, these methods should ultimately be entirely removed:
     void CombineAllEngines();
     void SeparateAllEngines();

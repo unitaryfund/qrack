@@ -21,19 +21,19 @@ namespace Qrack {
 
 void QEngineOCL::SetDevice(const int& dID)
 {
-    deviceID = dID;
+    if (dID >= 0) {
+        deviceID = dID % (clObj->GetNodeCount());
+    }
+    else {
+        deviceID = -1;
+    }
     queue = clObj->GetQueuePtr(deviceID);
 }
 
 void QEngineOCL::InitOCL(int devID)
 {
     clObj = OCLEngine::Instance();
-    if (devID > (clObj->GetNodeCount())) {
-        SetDevice(devID % (clObj->GetNodeCount()));
-    }
-    else {
-        SetDevice(devID);
-    }
+    SetDevice(devID);
 
     cl::Context context = *(clObj->GetContextPtr());
 
