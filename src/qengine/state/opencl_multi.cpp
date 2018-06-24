@@ -11,7 +11,6 @@
 // for details.
 
 #include <future>
-#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
@@ -233,7 +232,6 @@ template <typename CCF, typename CF, typename F, typename... Args>
 void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit,
     CCF ccfn, CF cfn, F fn, Args... gfnArgs)
 {
-
     if (subEngineCount == 1) {
         ((substateEngines[0].get())->*ccfn)(gfnArgs..., controlBit1, controlBit2, targetBit);
         return;
@@ -366,7 +364,7 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     ControlledGate(true, control, target, (CGFn)(&QEngineOCL::AntiCNOT), (GFn)(&QEngineOCL::X));
 }
-
+    
 void QEngineOCLMulti::H(bitLenInt qubitIndex) { SingleBitGate(false, false, true, qubitIndex, (GFn)(&QEngineOCL::H)); }
 
 bool QEngineOCLMulti::M(bitLenInt qubit)
@@ -571,7 +569,7 @@ void QEngineOCLMulti::PhaseFlip()
         substateEngines[i]->PhaseFlip();
     }
 }
-
+    
 void QEngineOCLMulti::X(bitLenInt start, bitLenInt length)
 {
     RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->X(start, len); }, [&](bitLenInt offset) { X(start + offset); }, length, { static_cast<bitLenInt>(start + length - 1) });
@@ -597,19 +595,61 @@ void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenIn
     RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->AntiCCNOT(control1, control2, target, len); }, [&](bitLenInt offset) { AntiCCNOT(control1 + offset, control2 + offset, target + offset); }, length, { static_cast<bitLenInt>(control1 + length - 1), static_cast<bitLenInt>(control2 + length - 1), static_cast<bitLenInt>(target + length - 1) });
 }
 
-#if 0
-void QEngineOCLMulti::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length) {
-    RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->AND(inputBit1, inputBit2, outputBit, len); }, [&](bitLenInt offset) { QInterface::AND(inputBit1 + offset, inputBit2 + offset, outputBit + offset); }, length, { static_cast<bitLenInt>(inputBit1 + length - 1), static_cast<bitLenInt>(inputBit2 + length - 1), static_cast<bitLenInt>(outputBit + length - 1) });
+void QEngineOCLMulti::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
+{
+    /* Same bit, no action necessary. */
+    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
+        return;
+    }
+
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
+        SetReg(outputBit, length, 0);
+        if (inputBit1 == inputBit2) {
+            CNOT(inputBit1, outputBit, length);
+        } else {
+            CCNOT(inputBit1, inputBit2, outputBit, length);
+        }
+    } else {
+        throw std::invalid_argument("Invalid AND arguments.");
+    }
 }
-    
-void QEngineOCLMulti::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length) {
-    RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->OR(inputBit1, inputBit2, outputBit, len); }, [&](bitLenInt offset) { QInterface::OR(inputBit1 + offset, inputBit2 + offset, outputBit + offset); }, length, { static_cast<bitLenInt>(inputBit1 + length - 1), static_cast<bitLenInt>(inputBit2 + length - 1), static_cast<bitLenInt>(outputBit + length - 1) });
+
+void QEngineOCLMulti::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
+{
+    /* Same bit, no action necessary. */
+    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
+        return;
+    }
+
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
+        SetReg(outputBit, length, (1 << length) - 1);
+        if (inputBit1 == inputBit2) {
+            AntiCNOT(inputBit1, outputBit, length);
+        } else {
+            AntiCCNOT(inputBit1, inputBit2, outputBit, length);
+        }
+    } else {
+        throw std::invalid_argument("Invalid OR arguments.");
+    }
 }
-    
-void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length) {
-    RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->XOR(inputBit1, inputBit2, outputBit, len); }, [&](bitLenInt offset) { QInterface::XOR(inputBit1 + offset, inputBit2 + offset, outputBit + offset); }, length, { static_cast<bitLenInt>(inputBit1 + length - 1), static_cast<bitLenInt>(inputBit2 + length - 1), static_cast<bitLenInt>(outputBit + length - 1) });
+
+void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
+{
+    if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+        SetReg(outputBit, length, 0);
+        return;
+    }
+
+    if (inputBit1 == outputBit) {
+        CNOT(inputBit2, outputBit, length);
+    } else if (inputBit2 == outputBit) {
+        CNOT(inputBit1, outputBit, length);
+    } else {
+        SetReg(outputBit, length, 0);
+        CNOT(inputBit1, outputBit, length);
+        CNOT(inputBit2, outputBit, length);
+    }
 }
-#endif
 
 bitCapInt QEngineOCLMulti::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
