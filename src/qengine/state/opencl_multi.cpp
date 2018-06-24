@@ -112,6 +112,19 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
     
     bitLenInt i, j;
     
+    if (runningNorm != 1.0) {
+        for (i = 0; i < subEngineCount; i++) {
+            substateEngines[i]->SetNorm(runningNorm);
+            substateEngines[i]->EnableNormalize(true);
+        }
+    }
+    else if (doNormalize) {
+        for (i = 0; i < subEngineCount; i++) {
+            substateEngines[i]->SetNorm(1.0);
+            substateEngines[i]->EnableNormalize(true);
+        }
+    }
+    
     if (bit < subQubitCount) {
         std::vector<std::future<void>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
@@ -182,8 +195,10 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
         for (i = 0; i <subEngineCount; i++) {
             runningNorm += nf[i].get();
         }
-        
-        NormalizeState();
+    }
+    
+    for (i = 0; i < subEngineCount; i++) {
+        substateEngines[i]->EnableNormalize(false);
     }
 }
 
