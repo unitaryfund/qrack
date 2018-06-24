@@ -117,6 +117,7 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
             substateEngines[i]->SetNorm(runningNorm);
             substateEngines[i]->EnableNormalize(true);
         }
+        runningNorm = 1.0;
     }
     else if (doNormalize) {
         for (i = 0; i < subEngineCount; i++) {
