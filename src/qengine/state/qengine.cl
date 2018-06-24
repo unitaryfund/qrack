@@ -216,7 +216,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt qMask = qPower - 1;
     real1 oneChancePart = 0.0;
     cmplx amp;
-    bitCapInt i, j;
+    bitCapInt i;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
@@ -532,5 +532,39 @@ void kernel indexedSbc(
 
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
+    }
+}
+
+void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    real1 min_norm = args_ptr[0];
+    real1 nrm = args_ptr[1];
+    cmplx amp;
+    
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        amp = stateVec[lcv] / nrm;
+        //"min_norm" is defined in qinterface.hpp
+        if (dot(amp, amp) < min_norm) {
+            amp = (cmplx)(0.0, 0.0);
+        }
+        stateVec[lcv] = amp;
+    }
+}
+
+void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr) {
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    cmplx amp;
+    
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        amp = stateVec[lcv];
+        norm_ptr[ID] += dot(amp, amp);
     }
 }

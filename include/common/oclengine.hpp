@@ -75,12 +75,16 @@ public:
     cl::Kernel* GetADCPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the IndexedSBC function kernel
     cl::Kernel* GetSBCPtr(CommandQueuePtr cqp = nullptr);
+    /// Get a pointer to the Normalize function kernel
+    cl::Kernel* GetNormalizePtr(CommandQueuePtr cqp = nullptr);
+    /// Get a pointer to the UpdateNorm function kernel
+    cl::Kernel* GetUpdateNormPtr(CommandQueuePtr cqp = nullptr);
 
-    int GetNodeCount() { return nodeCount; }
+    int GetDeviceCount() { return deviceCount; }
     int GetDefaultDeviceID() { return default_device_id; };
 
 private:
-    int nodeCount;
+    int deviceCount;
     int default_device_id;
     CommandQueuePtr defaultQueue;
 
@@ -110,6 +114,8 @@ private:
     std::map<CommandQueuePtr, cl::Kernel> indexedLda;
     std::map<CommandQueuePtr, cl::Kernel> indexedAdc;
     std::map<CommandQueuePtr, cl::Kernel> indexedSbc;
+    std::map<CommandQueuePtr, cl::Kernel> normalize;
+    std::map<CommandQueuePtr, cl::Kernel> updatenorm;
 
     OCLEngine(); // Private so that it can  not be called
     OCLEngine(int plat, int dev); // Private so that it can  not be called

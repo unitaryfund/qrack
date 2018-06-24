@@ -47,6 +47,8 @@ cl::Kernel* OCLEngine::GetDECCPtr(CommandQueuePtr cqp) { return &(decc[PickQueue
 cl::Kernel* OCLEngine::GetLDAPtr(CommandQueuePtr cqp) { return &(indexedLda[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetADCPtr(CommandQueuePtr cqp) { return &(indexedAdc[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetSBCPtr(CommandQueuePtr cqp) { return &(indexedSbc[PickQueue(cqp)]); }
+cl::Kernel* OCLEngine::GetNormalizePtr(CommandQueuePtr cqp) { return &(normalize[PickQueue(cqp)]); }
+cl::Kernel* OCLEngine::GetUpdateNormPtr(CommandQueuePtr cqp) { return &(updatenorm[PickQueue(cqp)]); }
 
 OCLEngine::OCLEngine() { InitOCL(0, -1); }
 OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
@@ -83,18 +85,18 @@ void OCLEngine::InitOCL(int plat, int dev)
     }
 
     // our algorithm relies on the device count being a power of 2
-    nodeCount = PowerOf2LessThan(all_devices.size());
+    deviceCount = PowerOf2LessThan(all_devices.size());
 
-    if ((dev < 0) || (dev >= nodeCount)) {
+    if ((dev < 0) || (dev >= deviceCount)) {
         // prefer device[1] because that's usually a GPU or accelerator; device[0] is usually the CPU
         // also make sure that the default device is in our node list
-        dev = nodeCount - 1;
+        dev = deviceCount - 1;
     }
     default_device_id = dev;
     default_device = all_devices[dev];
     std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
 
-    for (int i = 0; i < nodeCount; i++) {
+    for (int i = 0; i < deviceCount; i++) {
         cluster_devices.push_back(all_devices[i]);
         std::cout << "Cluster device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
@@ -113,7 +115,7 @@ void OCLEngine::InitOCL(int plat, int dev)
 #endif
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
-    for (int i = 0; i < nodeCount; i++) {
+    for (int i = 0; i < deviceCount; i++) {
         queue.push_back(std::make_shared<cl::CommandQueue>(cl::CommandQueue(context, cluster_devices[i])));
         if (i == dev) {
             defaultQueue = queue[i];
@@ -145,6 +147,8 @@ void OCLEngine::InitOCL(int plat, int dev)
         indexedLda[queue[i]] = cl::Kernel(program, "indexedLda");
         indexedAdc[queue[i]] = cl::Kernel(program, "indexedAdc");
         indexedSbc[queue[i]] = cl::Kernel(program, "indexedSbc");
+        normalize[queue[i]] = cl::Kernel(program, "nrmlze");
+        updatenorm[queue[i]] = cl::Kernel(program, "updatenorm");
     }
 }
 

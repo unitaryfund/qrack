@@ -31,7 +31,7 @@ QEngineOCLMulti::QEngineOCLMulti(
 
     clObj = OCLEngine::Instance();
     if (deviceCount == -1) {
-        deviceCount = clObj->GetNodeCount();
+        deviceCount = clObj->GetDeviceCount();
     }
 
     bitLenInt devPow = log2(deviceCount);

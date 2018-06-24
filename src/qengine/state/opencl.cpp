@@ -22,7 +22,7 @@ namespace Qrack {
 void QEngineOCL::SetDevice(const int& dID)
 {
     if (dID >= 0) {
-        deviceID = dID % (clObj->GetNodeCount());
+        deviceID = dID % (clObj->GetDeviceCount());
     }
     else {
         deviceID = -1;
@@ -75,7 +75,6 @@ void QEngineOCL::DispatchCall(
 {
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = nVec ? nVec : AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(0.0, 0.0));
 
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -83,6 +82,7 @@ void QEngineOCL::DispatchCall(
     cl::Context context = *(clObj->GetContextPtr());
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, nStateVec);
+    queue->enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
     call->setArg(0, *stateBuffer);
     call->setArg(1, ulongBuffer);
     call->setArg(2, *nStateBuffer);
@@ -603,6 +603,68 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     return OpIndexed(clObj->GetSBCPtr(queue), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+}
+
+void QEngineOCL::NormalizeState(real1 nrm)
+{
+    if (nrm < 0.0) {
+        nrm = runningNorm;
+    }
+    if ((nrm <= 0.0) || (nrm == 1.0)) {
+        return;
+    }
+    
+    cl::Context context = *(clObj->GetContextPtr());
+    real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
+    cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
+    
+    bitCapInt bciArgs[10] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    queue->enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+
+    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+    cl::Kernel* call = clObj->GetNormalizePtr(queue);
+    call->setArg(0, *stateBuffer);
+    call->setArg(1, ulongBuffer);
+    call->setArg(2, argsBuffer);
+    queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+                                cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+                                cl::NDRange(1)); // local number (per group)
+    
+    queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+
+    runningNorm = 1.0;
+}
+
+void QEngineOCL::UpdateRunningNorm() {
+    cl::Context context = *(clObj->GetContextPtr());
+    real1* nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
+    queue->enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+    
+    bitCapInt bciArgs[10] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue->flush();
+    
+    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+    cl::Kernel* call = clObj->GetUpdateNormPtr(queue);
+    
+    queue->finish();
+    
+    call->setArg(0, *stateBuffer);
+    call->setArg(1, ulongBuffer);
+    call->setArg(2, nrmBuffer);
+    queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+                                cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+                                cl::NDRange(1)); // local number (per group)
+    
+    queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+    
+    queue->enqueueReadBuffer(
+                             nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+    runningNorm = 0.0;
+    for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
+        runningNorm += nrmParts[i];
+    }
+    delete[] nrmParts;
 }
 
 } // namespace Qrack
