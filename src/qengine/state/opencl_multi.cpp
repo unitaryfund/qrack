@@ -21,12 +21,9 @@ namespace Qrack {
 #define CMPLX_NORM_LEN 5
 
 QEngineOCLMulti::QEngineOCLMulti(
-    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int deviceCount, bool doOverload)
+    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int deviceCount)
     : QInterface(qBitCount)
 {
-    //doOverload = true;
-    //isOverloaded = true;
-    //deviceCount = 4;
     
     rand_generator = rgp;
 
@@ -38,10 +35,6 @@ QEngineOCLMulti::QEngineOCLMulti(
     }
 
     bitLenInt devPow = log2(deviceCount);
-    if (doOverload && ((1 << devPow) < deviceCount)) {
-        isOverloaded = true;
-        devPow++;
-    }
     maxDeviceOrder = devPow;
 
     // Maximum of 2^N devices for N qubits:
@@ -209,7 +202,6 @@ void QEngineOCLMulti::ControlledGate(
     } else if (targetBit < controlBit) {
         std::vector<std::future<void>> futures(subEngineCount / 2);
         bitLenInt offset = 1 << (qubitCount - (controlBit + 1));
-        // TODO: For two nodes, non-controlled gate on bottom node:
         bitLenInt antiFactor = anti ? 0 : 1;
         for (i = 0; i < (subEngineCount / 2); i++) {
             QEngineOCLPtr engine = substateEngines[(i * offset) + (subEngineCount / (2 * offset)) * antiFactor];
@@ -724,19 +716,13 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex)
     bitLenInt i, j, k;
 
     if (qubitIndex < subQubitCount) {
-        if (isOverloaded) {
-            for (i = 0; i < subEngineCount; i++) {
-                oneChance += substateEngines[i]->Prob(qubitIndex);
-            }
-        } else {
-            std::vector<std::future<real1>> futures(subEngineCount);
-            for (i = 0; i < subEngineCount; i++) {
-                QEngineOCLPtr engine = substateEngines[i];
-                futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
-            }
-            for (i = 0; i < subEngineCount; i++) {
-                oneChance += futures[i].get();
-            }
+        std::vector<std::future<real1>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
+            QEngineOCLPtr engine = substateEngines[i];
+            futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            oneChance += futures[i].get();
         }
     } else {
         std::vector<std::future<real1>> futures(subEngineCount / 2);
@@ -848,18 +834,12 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
     }
 
     if (highestBit < subQubitCount) {
-        if (isOverloaded) {
-            for (i = 0; i < subEngineCount; i++) {
-                fn(substateEngines[i]);
-            }
-        } else {
-            std::vector<std::future<void>> futures(subEngineCount);
-            for (i = 0; i < subEngineCount; i++) {
-                futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(substateEngines[i]); });
-            }
-            for (i = 0; i < subEngineCount; i++) {
-                futures[i].get();
-            }
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(substateEngines[i]); });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i].get();
         }
     } else {
         CombineAllEngines();
@@ -884,24 +864,16 @@ template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<b
     }
 
     if (highestBit < subQubitCount) {
-        if (isOverloaded) {
-            for (i = 0; i < subEngineCount; i++) {
+        std::vector<std::future<void>> futures(subEngineCount);
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i] = std::async(std::launch::async, [this, fn, i]() {
                 if (substateEngines[i]->GetNorm() > 0.0) {
-                        fn(substateEngines[i]);
+                    fn(substateEngines[i]);
                 }
-            }
-        } else {
-            std::vector<std::future<void>> futures(subEngineCount);
-            for (i = 0; i < subEngineCount; i++) {
-                futures[i] = std::async(std::launch::async, [this, fn, i]() {
-                    if (substateEngines[i]->GetNorm() > 0.0) {
-                        fn(substateEngines[i]);
-                    }
-                });
-            }
-            for (i = 0; i < subEngineCount; i++) {
-                futures[i].get();
-            }
+            });
+        }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i].get();
         }
     } else {
         CombineAllEngines();
@@ -927,35 +899,22 @@ template <typename F, typename OF> void QEngineOCLMulti::RegOp(F fn, OF ofn, bit
 
     std::vector<std::future<void>> futures(subEngineCount);
     if (highestBit < subQubitCount) {
-        if (isOverloaded) {
-            for (i = 0; i < subEngineCount; i++) {
-                fn(substateEngines[i], length);
-            }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i] = std::async(std::launch::async, [this, fn, i, length]() { fn(substateEngines[i], length); });
         }
-        else {
-            for (i = 0; i < subEngineCount; i++) {
-                futures[i] = std::async(std::launch::async, [this, fn, i, length]() { fn(substateEngines[i], length); });
-            }
-            for (i = 0; i < subEngineCount; i++) {
-                futures[i].get();
-            }
+        for (i = 0; i < subEngineCount; i++) {
+            futures[i].get();
         }
     } else {
         bitLenInt bitDiff = (highestBit - subQubitCount) + 1;
         int subLength = length - bitDiff;
         if (subLength > 0) {
-            if (isOverloaded) {
-                for (i = 0; i < subEngineCount; i++) {
-                    fn(substateEngines[i], subLength);
-                }
-            } else {
-                for (i = 0; i < subEngineCount; i++) {
-                    futures[i] =
-                    std::async(std::launch::async, [this, fn, i, subLength]() { fn(substateEngines[i], subLength); });
-                }
-                for (i = 0; i < subEngineCount; i++) {
-                    futures[i].get();
-                }
+            for (i = 0; i < subEngineCount; i++) {
+                futures[i] =
+                std::async(std::launch::async, [this, fn, i, subLength]() { fn(substateEngines[i], subLength); });
+            }
+            for (i = 0; i < subEngineCount; i++) {
+                futures[i].get();
             }
         } else {
             subLength = 0;

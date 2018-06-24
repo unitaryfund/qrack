@@ -23,7 +23,6 @@ typedef std::shared_ptr<QEngineOCLMulti> QEngineOCLMultiPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface, public ParallelFor {
 protected:
-    bool isOverloaded;
     real1 runningNorm;
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
@@ -40,7 +39,7 @@ protected:
 
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int deviceCount = -1, bool doOverload = false);
+        int deviceCount = -1);
 
     virtual void SetQubitCount(bitLenInt qb)
     {
