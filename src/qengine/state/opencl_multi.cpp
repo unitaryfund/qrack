@@ -186,15 +186,9 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
     }
 
     if (doNormalize) {
-        std::vector<std::future<real1>> nf(subEngineCount);
-        for (i = 0; i < subEngineCount; i++) {
-            nf[i] = std::async(std::launch::async, [this, i]() {
-                return substateEngines[i]->GetNorm();
-            });
-        }
         runningNorm = 0.0;
-        for (i = 0; i <subEngineCount; i++) {
-            runningNorm += nf[i].get();
+        for (i = 0; i < subEngineCount; i++) {
+            runningNorm += substateEngines[i]->GetNorm(false);
         }
     }
     
