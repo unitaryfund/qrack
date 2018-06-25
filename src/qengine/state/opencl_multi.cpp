@@ -749,6 +749,14 @@ void QEngineOCLMulti::PhaseFlip()
     
 void QEngineOCLMulti::X(bitLenInt start, bitLenInt length)
 {
+    if ((start + length) > subQubitCount) {
+        bitLenInt len = (start + length) - subQubitCount;
+        length = subQubitCount;
+        
+        for (bitLenInt i = 0; i < len; i++) {
+            X(subQubitCount + i);
+        }
+    }
     RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->X(start, len); }, [&](bitLenInt offset) { X(start + offset); }, length, { static_cast<bitLenInt>(start + length - 1) });
 }
 
