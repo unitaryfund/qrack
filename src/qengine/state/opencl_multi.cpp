@@ -263,15 +263,8 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         highControl = controlBit1;
     }
 
-    if (lowControl < subQubitCount) {
-        // CNOT logic
-        ControlledGate(anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
-    } else {
-        // Skip first group, if more than one group.
-        CombineAndOp(
-            [&](QEngineOCLPtr engine) { (engine.get()->*ccfn)(gfnArgs..., controlBit1, controlBit2, targetBit); },
-            { controlBit1, controlBit2, targetBit });
-    }
+    // CNOT logic
+    ControlledGate(anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
 }
 
 void QEngineOCLMulti::SetQuantumState(complex* inputState)
