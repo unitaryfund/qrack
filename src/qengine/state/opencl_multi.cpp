@@ -587,7 +587,28 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
     return result;
 }
 
-void QEngineOCLMulti::X(bitLenInt qubitIndex) { SingleBitGate(0, false, false, qubitIndex, (GFn)(&QEngineOCL::X)); }
+void QEngineOCLMulti::X(bitLenInt qubitIndex) {
+    if (qubitIndex >= subQubitCount) {
+        qubitIndex -= subQubitCount;
+        
+        bitCapInt targetMask = 1 << qubitIndex;
+        bitCapInt otherMask = (subEngineCount - 1) ^ targetMask;
+        
+        std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount);
+        
+        par_for(0, 1 << (qubitCount - subQubitCount), [&](const bitCapInt lcv, const int cpu) {
+            nSubstateEngines[(lcv & otherMask) | (lcv ^ targetMask)] = substateEngines[lcv];
+        });
+        
+        for (bitLenInt i = 0; i < subEngineCount; i++) {
+            substateEngines[i] = nSubstateEngines[i];
+        }
+        SetQubitCount(qubitCount);
+    }
+    else {
+        SingleBitGate(0, false, false, qubitIndex, (GFn)(&QEngineOCL::X));
+    }
+}
 
 void QEngineOCLMulti::Y(bitLenInt qubitIndex) { SingleBitGate(0, false, false, qubitIndex, (GFn)(&QEngineOCL::Y)); }
 
