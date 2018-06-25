@@ -759,6 +759,12 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
         CNOT(qubitIndex1, qubitIndex2);
     }
 }
+    
+void QEngineOCLMulti::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->Swap(start1, start2, len); }, [&](bitLenInt offset) { Swap(start1 + offset, start2 + offset); }, length, { static_cast<bitLenInt>(start1 + length - 1), static_cast<bitLenInt>(start2 + length - 1) });
+}
+    
 void QEngineOCLMulti::CopyState(QEngineOCLMultiPtr orig)
 {
     CombineAllEngines();

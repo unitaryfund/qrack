@@ -119,6 +119,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
     virtual void CopyState(QInterfacePtr orig) { CopyState(std::dynamic_pointer_cast<QEngineOCLMulti>(orig)); }
     virtual void CopyState(QEngineOCLMultiPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
