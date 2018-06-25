@@ -112,17 +112,19 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
     
     bitLenInt i, j;
     
-    if (runningNorm != 1.0) {
-        for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(runningNorm);
-            substateEngines[i]->EnableNormalize(true);
+    if (!controlled) {
+        if (runningNorm != 1.0) {
+            for (i = 0; i < subEngineCount; i++) {
+                substateEngines[i]->SetNorm(runningNorm);
+                substateEngines[i]->EnableNormalize(true);
+            }
+            runningNorm = 1.0;
         }
-        runningNorm = 1.0;
-    }
-    else if (doNormalize) {
-        for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(1.0);
-            substateEngines[i]->EnableNormalize(true);
+        else if (doNormalize) {
+            for (i = 0; i < subEngineCount; i++) {
+                substateEngines[i]->SetNorm(1.0);
+                substateEngines[i]->EnableNormalize(true);
+            }
         }
     }
     
@@ -185,21 +187,22 @@ void QEngineOCLMulti::SingleBitGate(bool controlled, bool anti, bool doNormalize
         }
     }
 
-    if (doNormalize) {
-        runningNorm = 0.0;
-        for (i = 0; i < subEngineCount; i++) {
-            runningNorm += substateEngines[i]->GetNorm(false);
+    if (!controlled) {
+        if (doNormalize) {
+            runningNorm = 0.0;
+            for (i = 0; i < subEngineCount; i++) {
+                runningNorm += substateEngines[i]->GetNorm(false);
+            }
         }
-    }
-    
-    for (i = 0; i < subEngineCount; i++) {
-        substateEngines[i]->EnableNormalize(false);
+        
+        for (i = 0; i < subEngineCount; i++) {
+            substateEngines[i]->EnableNormalize(false);
+        }
     }
 }
 
 template <typename CF, typename F, typename... Args>
-void QEngineOCLMulti::ControlledGate(
-    bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs)
+void QEngineOCLMulti::ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs)
 {
 
     if (subEngineCount == 1) {
@@ -233,8 +236,13 @@ void QEngineOCLMulti::ControlledGate(
             futures[i].get();
         }
     } else {
-        CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
-            { controlBit, targetBit });
+        if (controlBit >= (subQubitCount - 1)) {
+            SingleBitGate(true, anti, false, targetBit, fn, gfnArgs ...);
+        }
+        else {
+            CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
+                         { controlBit, targetBit });
+        }
     }
 }
 
