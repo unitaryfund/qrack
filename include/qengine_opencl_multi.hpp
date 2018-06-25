@@ -157,6 +157,8 @@ protected:
     template <typename F> void CombineAndOpSafe(F fn, std::vector<bitLenInt> bits);
 
     void NormalizeState();
+    
+    void MetaX(bitLenInt start, bitLenInt length);
 
 private:
     void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);

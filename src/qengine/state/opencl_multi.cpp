@@ -587,23 +587,28 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
     return result;
 }
 
+// See QEngineCPU::X(start, length) in src/qengine/state/gates.cpp
+void QEngineOCLMulti::MetaX(bitLenInt start, bitLenInt length)
+{
+    bitCapInt targetMask = ((1 << length) - 1) << start;
+    bitCapInt otherMask = (subEngineCount - 1) ^ targetMask;
+
+    std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount);
+    
+    par_for(0, 1 << (qubitCount - subQubitCount), [&](const bitCapInt lcv, const int cpu) {
+        nSubstateEngines[(lcv & otherMask) | (lcv ^ targetMask)] = substateEngines[lcv];
+    });
+    
+    for (bitLenInt i = 0; i < subEngineCount; i++) {
+        substateEngines[i] = nSubstateEngines[i];
+    }
+    SetQubitCount(qubitCount);
+}
+
+
 void QEngineOCLMulti::X(bitLenInt qubitIndex) {
     if (qubitIndex >= subQubitCount) {
-        qubitIndex -= subQubitCount;
-        
-        bitCapInt targetMask = 1 << qubitIndex;
-        bitCapInt otherMask = (subEngineCount - 1) ^ targetMask;
-        
-        std::vector<QEngineOCLPtr> nSubstateEngines(subEngineCount);
-        
-        par_for(0, 1 << (qubitCount - subQubitCount), [&](const bitCapInt lcv, const int cpu) {
-            nSubstateEngines[(lcv & otherMask) | (lcv ^ targetMask)] = substateEngines[lcv];
-        });
-        
-        for (bitLenInt i = 0; i < subEngineCount; i++) {
-            substateEngines[i] = nSubstateEngines[i];
-        }
-        SetQubitCount(qubitCount);
+        MetaX(qubitIndex - subQubitCount, 1);
     }
     else {
         SingleBitGate(0, false, false, qubitIndex, (GFn)(&QEngineOCL::X));
@@ -750,12 +755,19 @@ void QEngineOCLMulti::PhaseFlip()
 void QEngineOCLMulti::X(bitLenInt start, bitLenInt length)
 {
     if ((start + length) > subQubitCount) {
-        bitLenInt len = (start + length) - subQubitCount;
-        length -= len;
-        
-        for (bitLenInt i = 0; i < len; i++) {
-            X(subQubitCount + i);
+        bitLenInt s, len;
+        if (start > subQubitCount) {
+            s = start;
+            len = length;
+            length = 0;
         }
+        else {
+            s = subQubitCount;
+            len = (start + length) - subQubitCount;
+            length -= len;
+        }
+        
+        MetaX(s, len);
     }
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->X(start, len); }, [&](bitLenInt offset) { X(start + offset); }, length, { static_cast<bitLenInt>(start + length - 1) });
