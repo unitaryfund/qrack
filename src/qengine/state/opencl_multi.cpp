@@ -240,8 +240,7 @@ void QEngineOCLMulti::ControlledGate(bool anti, bitLenInt controlBit, bitLenInt 
             SingleBitGate(true, anti, false, targetBit, fn, gfnArgs ...);
         }
         else {
-            CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
-                         { controlBit, targetBit });
+            SingleBitGate(false, anti, false, targetBit, cfn, gfnArgs ..., controlBit);
         }
     }
 }
