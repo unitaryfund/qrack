@@ -757,12 +757,12 @@ void QEngineOCLMulti::X(bitLenInt start, bitLenInt length)
     if ((start + length) > subQubitCount) {
         bitLenInt s, len;
         if (start > subQubitCount) {
-            s = start;
+            s = start - subQubitCount;
             len = length;
             length = 0;
         }
         else {
-            s = subQubitCount;
+            s = 0;
             len = (start + length) - subQubitCount;
             length -= len;
         }
