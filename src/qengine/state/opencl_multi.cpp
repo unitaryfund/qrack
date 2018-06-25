@@ -754,14 +754,9 @@ void QEngineOCLMulti::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
         // "Swap" is tricky, if we're distributed across nodes.
         // However, we get it virtually for free in a QUnit, so this is a low-priority case.
         // Assuming our CNOT works, so does this:
-        // CNOT(qubitIndex1, qubitIndex2);
-        // CNOT(qubitIndex2, qubitIndex1);
-        // CNOT(qubitIndex1, qubitIndex2);
-
-        // The above commented-out logic will work in general, but doesn't receive benefit from multiple device
-        // parallelism with the current CNOT implementation. We might as well use this.
-        CombineAndOp(
-            [&](QEngineOCLPtr engine) { engine.get()->Swap(qubitIndex1, qubitIndex2); }, { qubitIndex1, qubitIndex2 });
+        CNOT(qubitIndex1, qubitIndex2);
+        CNOT(qubitIndex2, qubitIndex1);
+        CNOT(qubitIndex1, qubitIndex2);
     }
 }
 void QEngineOCLMulti::CopyState(QEngineOCLMultiPtr orig)
