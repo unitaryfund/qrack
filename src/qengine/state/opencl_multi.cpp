@@ -399,7 +399,7 @@ void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt ta
                 nSubstateEngines[(controlRes | otherRes) & (~targetRes)] = substateEngines[lcv];
             }
             else {
-                nSubstateEngines[(controlRes | otherRes) & targetRes] = substateEngines[lcv];
+                nSubstateEngines[lcv] = substateEngines[lcv];
             }
         });
         
@@ -434,7 +434,7 @@ void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target)
                 nSubstateEngines[(controlRes | otherRes) & (~targetRes)] = substateEngines[lcv];
             }
             else {
-                nSubstateEngines[(controlRes | otherRes) & targetRes] = substateEngines[lcv];
+                nSubstateEngines[lcv] = substateEngines[lcv];
             }
         });
         
@@ -473,7 +473,7 @@ void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenIn
                 nSubstateEngines[(controlRes | otherRes) & (~targetRes)] = substateEngines[lcv];
             }
             else {
-                nSubstateEngines[(controlRes | otherRes) & targetRes] = substateEngines[lcv];
+                nSubstateEngines[lcv] = substateEngines[lcv];
             }
         });
         
@@ -507,7 +507,7 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target)
                 nSubstateEngines[(controlRes | otherRes) & (~targetRes)] = substateEngines[lcv];
             }
             else {
-                nSubstateEngines[(controlRes | otherRes) & targetRes] = substateEngines[lcv];
+                nSubstateEngines[lcv] = substateEngines[lcv];
             }
         });
         
