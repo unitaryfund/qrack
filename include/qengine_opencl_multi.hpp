@@ -143,13 +143,14 @@ protected:
     template <typename F, typename... Args>
     void SingleBitGate(bitLenInt cntrlDepth, bool anti, bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
     template <typename CF, typename F, typename... Args>
-    void ControlledGate(bitLenInt cntrlDepth, bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);
+    void ControlledGate(
+        bitLenInt cntrlDepth, bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);
     template <typename CCF, typename CF, typename F, typename... Args>
     void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn,
         CF cfn, F fn, Args... gfnArgs);
 
     template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt length, std::vector<bitLenInt> bits);
-    
+
     // For scalable cluster distribution, these methods should ultimately be entirely removed:
     void CombineAllEngines();
     void SeparateAllEngines();
@@ -157,7 +158,7 @@ protected:
     template <typename F> void CombineAndOpSafe(F fn, std::vector<bitLenInt> bits);
 
     void NormalizeState();
-    
+
     void MetaX(bitLenInt start, bitLenInt length);
 
 private:

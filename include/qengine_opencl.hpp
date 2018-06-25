@@ -100,7 +100,7 @@ public:
 
     virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID);
-    
+
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
 
