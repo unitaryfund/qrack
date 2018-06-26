@@ -27,14 +27,13 @@ void QEngineOCL::SetDevice(const int& dID)
         deviceID = -1;
     }
     queue = clObj->GetQueuePtr(deviceID);
+    context = *(clObj->GetContextPtr(queue));
 }
 
 void QEngineOCL::InitOCL(int devID)
 {
     clObj = OCLEngine::Instance();
     SetDevice(devID);
-
-    cl::Context context = *(clObj->GetContextPtr());
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
@@ -53,7 +52,7 @@ void QEngineOCL::ReInitOCL()
     clObj = OCLEngine::Instance();
 
     queue = clObj->GetQueuePtr(deviceID);
-    cl::Context context = *(clObj->GetContextPtr());
+    context = *(clObj->GetContextPtr(queue));
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
@@ -78,7 +77,6 @@ void QEngineOCL::DispatchCall(
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    cl::Context context = *(clObj->GetContextPtr());
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, nStateVec);
     queue->enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
@@ -175,8 +173,6 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, startMask, endMask, qubitCount, 0, 0, 0, 0, 0, 0 };
 
-    cl::Context context = *(clObj->GetContextPtr());
-
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
@@ -219,8 +215,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     bitCapInt partPower = 1 << length;
     bitCapInt remainderPower = 1 << (qubitCount - length);
     bitCapInt bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
-
-    cl::Context context = *(clObj->GetContextPtr());
 
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -354,8 +348,6 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     real1* oneChanceArray = new real1[numCores]();
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    cl::Context context = *(clObj->GetContextPtr());
 
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -613,7 +605,6 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
-    cl::Context context = *(clObj->GetContextPtr());
     real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
     cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
 
@@ -636,7 +627,6 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
 void QEngineOCL::UpdateRunningNorm()
 {
-    cl::Context context = *(clObj->GetContextPtr());
     real1* nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
     queue->enqueueWriteBuffer(
         nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);

@@ -41,6 +41,7 @@ protected:
     int deviceID;
     OCLEngine* clObj;
     CommandQueuePtr queue;
+    cl::Context context;
     BufferPtr stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
@@ -69,6 +70,7 @@ public:
         maxQPower = 1 << qubitCount;
     }
 
+    virtual complex* GetStateVector() { return stateVec; }
     virtual BufferPtr GetStateBufferPtr() { return stateBuffer; }
     virtual CommandQueuePtr GetQueuePtr() { return queue; }
 

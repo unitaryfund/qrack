@@ -27,7 +27,7 @@ namespace Qrack {
 /// "Qrack::OCLEngine" manages the single OpenCL context
 
 // Public singleton methods to get pointers to various methods
-cl::Context* OCLEngine::GetContextPtr() { return &context; }
+cl::Context* OCLEngine::GetContextPtr(CommandQueuePtr cqp) { return &(all_contexts[PickQueue(cqp)]); }
 CommandQueuePtr OCLEngine::GetQueuePtr(const int& dev) { return queue[(dev < 0) ? default_device_id : dev]; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr(CommandQueuePtr cqp) { return &(apply2x2[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetApply2x2NormPtr(CommandQueuePtr cqp) { return &(apply2x2norm[PickQueue(cqp)]); }
@@ -66,6 +66,7 @@ CommandQueuePtr OCLEngine::PickQueue(CommandQueuePtr cqp)
 
 void OCLEngine::InitOCL(int plat, int dev)
 {
+    int i;
     // get all platforms (drivers), e.g. NVIDIA
 
     cl::Platform::get(&all_platforms);
@@ -75,10 +76,14 @@ void OCLEngine::InitOCL(int plat, int dev)
         exit(1);
     }
     default_platform = all_platforms[plat];
-    std::cout << "Using platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
+    std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 
     // get default device (CPUs, GPUs) of the default platform
-    default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
+    for (int i = 0; i < (int)all_platforms.size(); i++) {
+        std::vector<cl::Device> platform_devices;
+        all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
+        all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
+    }
     if (all_devices.size() == 0) {
         std::cout << " No devices found. Check OpenCL installation!\n";
         exit(1);
@@ -96,14 +101,9 @@ void OCLEngine::InitOCL(int plat, int dev)
     default_device = all_devices[dev];
     std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
 
-    for (int i = 0; i < deviceCount; i++) {
-        cluster_devices.push_back(all_devices[i]);
-        std::cout << "Cluster device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
+    for (i = 0; i < deviceCount; i++) {
+        std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
-
-    // a context is like a "runtime link" to the device and platform;
-    // i.e. communication is possible
-    context = cl::Context(cluster_devices);
 
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
@@ -116,16 +116,20 @@ void OCLEngine::InitOCL(int plat, int dev)
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
     for (int i = 0; i < deviceCount; i++) {
-        queue.push_back(std::make_shared<cl::CommandQueue>(cl::CommandQueue(context, cluster_devices[i])));
+        // a context is like a "runtime link" to the device and platform;
+        // i.e. communication is possible
+        cl::Context context = cl::Context(all_devices[i]);
+        queue.push_back(std::make_shared<cl::CommandQueue>(cl::CommandQueue(context, all_devices[i])));
+        all_contexts[queue[i]] = context;
         if (i == dev) {
             defaultQueue = queue[i];
         }
         programs[queue[i]] = cl::Program(context, sources);
         cl::Program program = programs[queue[i]];
 
-        if (program.build({ cluster_devices[i] }) != CL_SUCCESS) {
+        if (program.build({ all_devices[i] }) != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": "
-                      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(cluster_devices[i]) << std::endl;
+                      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
             exit(1);
         }
 

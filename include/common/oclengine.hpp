@@ -36,7 +36,7 @@ public:
     /// If this is the first time instantiating the OpenCL context, you may specify platform number and device number.
     static OCLEngine* Instance(int plat, int dev);
     /// Get a pointer to the OpenCL context
-    cl::Context* GetContextPtr();
+    cl::Context* GetContextPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the OpenCL queue
     CommandQueuePtr GetQueuePtr(const int& dev = -1);
     /// Get a pointer to the Apply2x2 function kernel
@@ -92,8 +92,8 @@ private:
     cl::Platform default_platform;
     std::vector<cl::Device> all_devices;
     cl::Device default_device;
-    std::vector<cl::Device> cluster_devices;
-    cl::Context context;
+    std::map<CommandQueuePtr, cl::Context> all_contexts;
+    cl::Context default_context;
     std::map<CommandQueuePtr, cl::Program> programs;
     std::vector<CommandQueuePtr> queue;
     std::map<CommandQueuePtr, cl::Kernel> apply2x2;

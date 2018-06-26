@@ -162,8 +162,8 @@ protected:
     void MetaX(bitLenInt start, bitLenInt length);
 
 private:
-    void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
-    void SwapBuffersLow(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
+    //void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
+    void ShuffleBuffers(complex* stateVec1, complex* stateVec2);
 
     inline bitCapInt log2(bitCapInt n)
     {

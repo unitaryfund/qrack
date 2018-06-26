@@ -11,6 +11,7 @@
 // for details.
 
 #include <future>
+#include <algorithm>
 
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
@@ -71,34 +72,9 @@ QEngineOCLMulti::QEngineOCLMulti(
     }
 }
 
-void QEngineOCLMulti::ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer)
+void QEngineOCLMulti::ShuffleBuffers(complex* stateVec1, complex* stateVec2)
 {
-    queue->enqueueCopyBuffer(*buff1, *tempBuffer, subBufferSize, 0, subBufferSize);
-    queue->flush();
-    queue->finish();
-
-    queue->enqueueCopyBuffer(*buff2, *buff1, 0, subBufferSize, subBufferSize);
-    queue->flush();
-    queue->finish();
-
-    queue->enqueueCopyBuffer(*tempBuffer, *buff2, 0, 0, subBufferSize);
-    queue->flush();
-    queue->finish();
-}
-
-void QEngineOCLMulti::SwapBuffersLow(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer)
-{
-    queue->enqueueCopyBuffer(*buff1, *tempBuffer, subBufferSize, 0, subBufferSize);
-    queue->flush();
-    queue->finish();
-
-    queue->enqueueCopyBuffer(*buff2, *buff1, subBufferSize, subBufferSize, subBufferSize);
-    queue->flush();
-    queue->finish();
-
-    queue->enqueueCopyBuffer(*tempBuffer, *buff2, 0, subBufferSize, subBufferSize);
-    queue->flush();
-    queue->finish();
+    std::swap_ranges(stateVec1 + (subMaxQPower >> 1), stateVec1 + subMaxQPower, stateVec2);
 }
 
 template <typename F, typename... Args>
@@ -145,8 +121,6 @@ void QEngineOCLMulti::SingleBitGate(
         bitLenInt groups = 1 << order;
         bitLenInt offset = 1 << ((qubitCount - subQubitCount) - (order + 1));
 
-        cl::Context context = *(clObj->GetContextPtr());
-
         bitLenInt sqi = subQubitCount - 1;
 
         bitLenInt iInc;
@@ -161,16 +135,11 @@ void QEngineOCLMulti::SingleBitGate(
         for (i = 0; i < groups; i += iInc) {
             for (j = 0; j < offset; j++) {
                 futures[j + (i * offset)] = std::async(
-                    std::launch::async, [this, context, offset, i, j, fn, sqi, controlled, anti, gfnArgs...]() {
+                    std::launch::async, [this, offset, i, j, fn, sqi, controlled, anti, gfnArgs...]() {
                         QEngineOCLPtr engine1 = substateEngines[j + (i * offset)];
                         QEngineOCLPtr engine2 = substateEngines[j + ((i + 1) * offset)];
-                        CommandQueuePtr queue = engine1->GetQueuePtr();
 
-                        BufferPtr tempBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, subBufferSize);
-                        BufferPtr buff1 = engine1->GetStateBufferPtr();
-                        BufferPtr buff2 = engine2->GetStateBufferPtr();
-
-                        ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
 
                         if (controlled) {
                             if (anti) {
@@ -187,7 +156,7 @@ void QEngineOCLMulti::SingleBitGate(
                             future2.get();
                         }
 
-                        ShuffleBuffers(queue, buff1, buff2, tempBuffer);
+                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
                     });
             }
         }
@@ -300,27 +269,25 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm)
         return;
     }
 
-    std::future<void> ftr;
+    std::vector<std::future<void>> futures(subEngineCount);
     bitCapInt i;
     bitCapInt j = 0;
     for (i = 0; i < maxQPower; i += subMaxQPower) {
         if ((perm >= i) && (perm < (i + subMaxQPower))) {
             QEngineOCLPtr engine = substateEngines[j];
             bitCapInt p = perm - i;
-            ftr = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p); });
+            futures[j] = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p); });
         } else {
-            BufferPtr buffer = substateEngines[j]->GetStateBufferPtr();
-            CommandQueuePtr queue = substateEngines[j]->GetQueuePtr();
-            queue->enqueueFillBuffer(*buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
-            queue->flush();
+            futures[j] = std::async(std::launch::async, [this, j]() {
+                complex* sv = substateEngines[j]->GetStateVector();
+                std::fill(sv, sv + subMaxQPower, complex(0.0, 0.0));
+            });
         }
         j++;
     }
     for (i = 0; i < subEngineCount; i++) {
-        CommandQueuePtr queue = substateEngines[i]->GetQueuePtr();
-        queue->finish();
+        futures[i].get();
     }
-    ftr.get();
 }
 
 bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy)
@@ -545,10 +512,10 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
             futures[i].get();
         }
     } else {
+        std::vector<std::future<void>> futures(subEngineCount / 2);
         bitLenInt groupCount = 1 << (qubitCount - (qubit + 1));
         bitLenInt groupSize = 1 << ((qubit + 1) - subQubitCount);
         bitLenInt keepOffset, clearOffset;
-        bitLenInt keepIndex, clearIndex;
         if (result) {
             keepOffset = 1;
             clearOffset = 0;
@@ -558,18 +525,22 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
         }
         for (i = 0; i < groupCount; i++) {
             for (j = 0; j < (groupSize / 2); j++) {
-                clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
-                keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
+                futures[i] = std::async(std::launch::async, [this, i, j, &groupSize, &clearOffset, &keepOffset, &nrmlzr]() {
+                    bitLenInt clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
+                    bitLenInt keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
 
-                BufferPtr buffer = substateEngines[clearIndex]->GetStateBufferPtr();
-                CommandQueuePtr queue = substateEngines[clearIndex]->GetQueuePtr();
-                queue->enqueueFillBuffer(*buffer, complex(0.0, 0.0), 0, subBufferSize << 1);
-                queue->flush();
+                    complex* sv = substateEngines[clearIndex]->GetStateVector();
+                    std::fill(sv, sv + subMaxQPower, complex(0.0, 0.0));
 
-                if (nrmlzr > 0.0) {
-                    substateEngines[keepIndex]->NormalizeState(nrmlzr);
-                }
+                    if (nrmlzr > 0.0) {
+                        substateEngines[keepIndex]->NormalizeState(nrmlzr);
+                    }
+                });
             }
+        }
+
+        for (i = 0; i < (subEngineCount / 2); i++) {
+            futures[i].get();
         }
     }
 
@@ -1014,16 +985,11 @@ void QEngineOCLMulti::CombineAllEngines()
 
     QEngineOCLPtr nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0);
     nEngine->EnableNormalize(true);
-
-    CommandQueuePtr queue;
-    size_t sbSize = sizeof(complex) * maxQPower / subEngineCount;
+    bitCapInt sbSize = maxQPower / subEngineCount;
 
     for (bitLenInt i = 0; i < subEngineCount; i++) {
-        queue = substateEngines[i]->GetQueuePtr();
-        queue->enqueueCopyBuffer(
-            *(substateEngines[i]->GetStateBufferPtr()), *(nEngine->GetStateBufferPtr()), 0, i * sbSize, sbSize);
-        queue->flush();
-        queue->finish();
+        complex* sv = substateEngines[i]->GetStateVector();
+        std::copy(sv, sv + sbSize, nEngine->GetStateVector() + (i * sbSize));
     }
 
     substateEngines.resize(1);
@@ -1047,18 +1013,15 @@ void QEngineOCLMulti::SeparateAllEngines()
     bitLenInt i;
 
     std::vector<QEngineOCLPtr> nSubEngines(engineCount);
+    bitCapInt sbSize = (1 << qubitCount) / engineCount;
 
-    CommandQueuePtr queue;
-    size_t sbSize = sizeof(complex) * (1 << qubitCount) / engineCount;
+    complex* sv = substateEngines[0]->GetStateVector();
 
     for (i = 0; i < engineCount; i++) {
         nSubEngines[i] = std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, i, true);
         nSubEngines[i]->EnableNormalize(false);
-        queue = nSubEngines[i]->GetQueuePtr();
-        queue->enqueueCopyBuffer(
-            *(substateEngines[0]->GetStateBufferPtr()), *(nSubEngines[i]->GetStateBufferPtr()), i * sbSize, 0, sbSize);
-        queue->flush();
-        queue->finish();
+        
+        std::copy(sv + (i * sbSize), sv + ((i + 1) * sbSize), nSubEngines[i]->GetStateVector());
     }
 
     substateEngines.resize(engineCount);
