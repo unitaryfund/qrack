@@ -29,6 +29,7 @@ namespace Qrack {
 // Public singleton methods to get pointers to various methods
 cl::Context* OCLEngine::GetContextPtr(CommandQueuePtr cqp) { return &(all_contexts[PickQueue(cqp)]); }
 CommandQueuePtr OCLEngine::GetQueuePtr(const int& dev) { return queue[(dev < 0) ? default_device_id : dev]; }
+MutexPtr OCLEngine::GetMutexPtr(CommandQueuePtr cqp) { return all_mutexes[PickQueue(cqp)]; }
 cl::Kernel* OCLEngine::GetApply2x2Ptr(CommandQueuePtr cqp) { return &(apply2x2[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetApply2x2NormPtr(CommandQueuePtr cqp) { return &(apply2x2norm[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetCoherePtr(CommandQueuePtr cqp) { return &(cohere[PickQueue(cqp)]); }
@@ -121,6 +122,7 @@ void OCLEngine::InitOCL(int plat, int dev)
         cl::Context context = cl::Context(all_devices[i]);
         queue.push_back(std::make_shared<cl::CommandQueue>(cl::CommandQueue(context, all_devices[i])));
         all_contexts[queue[i]] = context;
+        all_mutexes[queue[i]] = std::make_shared<std::recursive_mutex>();
         if (i == dev) {
             defaultQueue = queue[i];
         }

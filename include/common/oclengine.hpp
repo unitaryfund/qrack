@@ -17,6 +17,7 @@
 #endif
 
 #include <map>
+#include <mutex>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
@@ -27,6 +28,7 @@
 namespace Qrack {
 
 typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
+typedef std::shared_ptr<std::recursive_mutex> MutexPtr;
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
 class OCLEngine {
@@ -39,6 +41,8 @@ public:
     cl::Context* GetContextPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the OpenCL queue
     CommandQueuePtr GetQueuePtr(const int& dev = -1);
+    /// Gets a pointer to the device-specific mutex
+    MutexPtr GetMutexPtr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Apply2x2 function kernel
     cl::Kernel* GetApply2x2Ptr(CommandQueuePtr cqp = nullptr);
     /// Get a pointer to the Apply2x2Norm function kernel
@@ -94,6 +98,7 @@ private:
     cl::Device default_device;
     std::map<CommandQueuePtr, cl::Context> all_contexts;
     cl::Context default_context;
+    std::map<CommandQueuePtr, MutexPtr> all_mutexes;
     std::map<CommandQueuePtr, cl::Program> programs;
     std::vector<CommandQueuePtr> queue;
     std::map<CommandQueuePtr, cl::Kernel> apply2x2;

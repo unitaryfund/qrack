@@ -28,6 +28,7 @@ void QEngineOCL::SetDevice(const int& dID)
     }
     queue = clObj->GetQueuePtr(deviceID);
     context = *(clObj->GetContextPtr(queue));
+    deviceMutexPtr = clObj->GetMutexPtr(queue);
 }
 
 void QEngineOCL::InitOCL(int devID)
@@ -51,9 +52,6 @@ void QEngineOCL::ReInitOCL()
 {
     clObj = OCLEngine::Instance();
 
-    queue = clObj->GetQueuePtr(deviceID);
-    context = *(clObj->GetContextPtr(queue));
-
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * maxQPower, stateVec);
@@ -66,6 +64,14 @@ void QEngineOCL::ResetStateVec(complex* nStateVec)
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     QEngineCPU::ResetStateVec(nStateVec);
     ReInitOCL();
+}
+
+template <typename F> void QEngineOCL::LockedCall(F fn)
+{
+    // When this engine instance is operating, it has to have exclusive use of the particular OpenCL device. We use a recursive_mutex, because this engine may make multiple calls to the OpenCL device on the same thread.
+    deviceMutexPtr->lock();
+    fn();
+    deviceMutexPtr->unlock();
 }
 
 void QEngineOCL::DispatchCall(
@@ -105,99 +111,106 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    complex cmplx[CMPLX_NORM_LEN];
-    real1* nrmParts = nullptr;
-    for (int i = 0; i < 4; i++) {
-        cmplx[i] = mtrx[i];
-    }
-    cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
-    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
-    for (int i = 0; i < bitCount; i++) {
-        bciArgs[4 + i] = qPowersSorted[i];
-    }
-
-    /* Slightly different call parameters than the rest of the calls. */
-    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
-    queue->enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
-    queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
-    if (doCalcNorm) {
-        nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
-        queue->enqueueWriteBuffer(
-            nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
-    }
-    queue->finish();
-
-    cl::Kernel apply2x2;
-    if (doCalcNorm) {
-        apply2x2 = *(clObj->GetApply2x2NormPtr(queue));
-    } else {
-        apply2x2 = *(clObj->GetApply2x2Ptr(queue));
-    }
-    apply2x2.setArg(0, *stateBuffer);
-    apply2x2.setArg(1, cmplxBuffer);
-    apply2x2.setArg(2, ulongBuffer);
-    if (doCalcNorm) {
-        apply2x2.setArg(3, nrmBuffer);
-    }
-    queue->enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
-
-    queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
-    if (doNormalize && doCalcNorm) {
-        queue->enqueueReadBuffer(
-            nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
-        runningNorm = 0.0;
-        for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
-            runningNorm += nrmParts[i];
+    LockedCall([&]() {
+        complex cmplx[CMPLX_NORM_LEN];
+        real1* nrmParts = nullptr;
+        for (int i = 0; i < 4; i++) {
+            cmplx[i] = mtrx[i];
         }
-        delete[] nrmParts;
-    }
+        cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
+        bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+        for (int i = 0; i < bitCount; i++) {
+            bciArgs[4 + i] = qPowersSorted[i];
+        }
+
+        /* Slightly different call parameters than the rest of the calls. */
+        queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+        queue->enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
+        queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+        if (doCalcNorm) {
+            nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
+            queue->enqueueWriteBuffer(
+                nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+        }
+        queue->finish();
+
+        cl::Kernel apply2x2;
+        if (doCalcNorm) {
+            apply2x2 = *(clObj->GetApply2x2NormPtr(queue));
+        } else {
+            apply2x2 = *(clObj->GetApply2x2Ptr(queue));
+        }
+        apply2x2.setArg(0, *stateBuffer);
+        apply2x2.setArg(1, cmplxBuffer);
+        apply2x2.setArg(2, ulongBuffer);
+        if (doCalcNorm) {
+            apply2x2.setArg(3, nrmBuffer);
+        }
+        queue->enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
+            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+            cl::NDRange(1)); // local number (per group)
+
+        queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+        if (doNormalize && doCalcNorm) {
+            queue->enqueueReadBuffer(
+                nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+            runningNorm = 0.0;
+            for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
+                runningNorm += nrmParts[i];
+            }
+            delete[] nrmParts;
+        }
+    });
 }
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
-    bitLenInt result = qubitCount;
+    bitLenInt toReturn;
+    LockedCall([&]() {
 
-    if (doNormalize && (runningNorm != 1.0)) {
-        NormalizeState();
-    }
+        bitLenInt result = qubitCount;
 
-    if ((toCopy->doNormalize) && (toCopy->runningNorm != 1.0)) {
-        toCopy->NormalizeState();
-    }
+        if (doNormalize && (runningNorm != 1.0)) {
+            NormalizeState();
+        }
 
-    bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
-    bitCapInt nMaxQPower = 1 << nQubitCount;
-    bitCapInt startMask = (1 << qubitCount) - 1;
-    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, startMask, endMask, qubitCount, 0, 0, 0, 0, 0, 0 };
+        if ((toCopy->doNormalize) && (toCopy->runningNorm != 1.0)) {
+            toCopy->NormalizeState();
+        }
 
-    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
-    queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+        bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
+        bitCapInt nMaxQPower = 1 << nQubitCount;
+        bitCapInt startMask = (1 << qubitCount) - 1;
+        bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
+        bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, startMask, endMask, qubitCount, 0, 0, 0, 0, 0, 0 };
 
-    BufferPtr stateBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY,
-        sizeof(complex) * (1 << (toCopy->qubitCount)), toCopy->stateVec);
+        queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+        queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    complex* nStateVec = AllocStateVec(nMaxQPower);
-    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * nMaxQPower, nStateVec);
-    cl::Kernel* call = clObj->GetCoherePtr(queue);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, *stateBuffer2);
-    call->setArg(2, ulongBuffer);
-    call->setArg(3, *nStateBuffer);
-    queue->finish();
+        BufferPtr stateBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY,
+            sizeof(complex) * (1 << (toCopy->qubitCount)), toCopy->stateVec);
 
-    queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        complex* nStateVec = AllocStateVec(nMaxQPower);
+        BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * nMaxQPower, nStateVec);
+        cl::Kernel* call = clObj->GetCoherePtr(queue);
+        call->setArg(0, *stateBuffer);
+        call->setArg(1, *stateBuffer2);
+        call->setArg(2, ulongBuffer);
+        call->setArg(3, *nStateBuffer);
+        queue->finish();
 
-    queue->enqueueMapBuffer(*nStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * nMaxQPower);
-    SetQubitCount(nQubitCount);
-    ResetStateVec(nStateVec);
+        queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+            cl::NDRange(1)); // local number (per group)
 
-    return result;
+        queue->enqueueMapBuffer(*nStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * nMaxQPower);
+        SetQubitCount(nQubitCount);
+        ResetStateVec(nStateVec);
+
+        toReturn = result;
+    });
+    return toReturn;
 }
 
 void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
@@ -329,7 +342,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
+    LockedCall([&]() { DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination)); });
 }
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
@@ -337,68 +350,79 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(st
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {
-    if (doNormalize && (runningNorm != 1.0)) {
-        NormalizeState();
-    }
+    real1 toReturn;
+    LockedCall([&]() {
 
-    bitCapInt qPower = 1 << qubit;
-    real1 oneChance = 0.0;
+        if (doNormalize && (runningNorm != 1.0)) {
+            NormalizeState();
+        }
 
-    int numCores = CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE;
-    real1* oneChanceArray = new real1[numCores]();
+        bitCapInt qPower = 1 << qubit;
+        real1 oneChance = 0.0;
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
+        int numCores = CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE;
+        real1* oneChanceArray = new real1[numCores]();
 
-    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
-    queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    cl::Buffer oneChanceBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * numCores, oneChanceArray);
+        queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+        queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    cl::Kernel* call = clObj->GetProbPtr(queue);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, oneChanceBuffer);
-    queue->finish();
+        cl::Buffer oneChanceBuffer =
+            cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * numCores, oneChanceArray);
 
-    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
-    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
-    queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::Kernel* call = clObj->GetProbPtr(queue);
+        call->setArg(0, *stateBuffer);
+        call->setArg(1, ulongBuffer);
+        call->setArg(2, oneChanceBuffer);
+        queue->finish();
 
-    queue->enqueueMapBuffer(*stateBuffer, CL_FALSE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
-    queue->enqueueMapBuffer(oneChanceBuffer, CL_FALSE, CL_MAP_READ, 0, sizeof(real1) * numCores);
+        // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
+        // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+        queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+            cl::NDRange(1)); // local number (per group)
 
-    queue->finish();
+        queue->enqueueMapBuffer(*stateBuffer, CL_FALSE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+        queue->enqueueMapBuffer(oneChanceBuffer, CL_FALSE, CL_MAP_READ, 0, sizeof(real1) * numCores);
 
-    for (int i = 0; i < numCores; i++) {
-        oneChance += oneChanceArray[i];
-    }
+        queue->finish();
 
-    if (oneChance > 1.0)
-        oneChance = 1.0;
+        for (int i = 0; i < numCores; i++) {
+            oneChance += oneChanceArray[i];
+        }
 
-    return oneChance;
+        if (oneChance > 1.0)
+            oneChance = 1.0;
+
+        toReturn = oneChance;
+    });
+    return toReturn;
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
 {
-    if (length == 1) {
-        X(start);
-        return;
-    }
+    LockedCall([&]() {
 
-    bitCapInt regMask = ((1 << length) - 1) << start;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
-    bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
+        if (length == 1) {
+            X(start);
+            return;
+        }
 
-    DispatchCall(clObj->GetXPtr(queue), bciArgs);
+        bitCapInt regMask = ((1 << length) - 1) << start;
+        bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
+        bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
+
+        DispatchCall(clObj->GetXPtr(queue), bciArgs);
+    });
 }
 
-void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2) { QEngineCPU::Swap(qubit1, qubit2); }
+void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    LockedCall([&]() { QEngineCPU::Swap(qubit1, qubit2); });
+}
 
 /// Bitwise swap
 void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
@@ -407,13 +431,16 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         return;
     }
 
-    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
-    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
-    bitCapInt otherMask = maxQPower - 1;
-    otherMask ^= reg1Mask | reg2Mask;
-    bitCapInt bciArgs[10] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
+    LockedCall([&]() {
 
-    DispatchCall(clObj->GetSwapPtr(queue), bciArgs);
+        bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+        bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+        bitCapInt otherMask = maxQPower - 1;
+        otherMask ^= reg1Mask | reg2Mask;
+        bitCapInt bciArgs[10] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
+
+        DispatchCall(clObj->GetSwapPtr(queue), bciArgs);
+    });
 }
 
 void QEngineOCL::ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenInt length)
@@ -429,13 +456,13 @@ void QEngineOCL::ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenI
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    ROx(clObj->GetROLPtr(queue), shift, start, length);
+    LockedCall([&]() { ROx(clObj->GetROLPtr(queue), shift, start, length); });
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
 void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    ROx(clObj->GetRORPtr(queue), shift, start, length);
+    LockedCall([&]() { ROx(clObj->GetRORPtr(queue), shift, start, length); });
 }
 
 /// Add or Subtract integer (without sign or carry)
@@ -453,13 +480,13 @@ void QEngineOCL::INT(cl::Kernel* call, bitCapInt toMod, const bitLenInt start, c
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
 {
-    INT(clObj->GetINCPtr(queue), toAdd, start, length);
+    LockedCall([&]() { INT(clObj->GetINCPtr(queue), toAdd, start, length); });
 }
 
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
 {
-    INT(clObj->GetDECPtr(queue), toSub, start, length);
+    LockedCall([&]() { INT(clObj->GetDECPtr(queue), toSub, start, length); });
 }
 
 /// Add or Subtract integer (without sign, with carry)
@@ -479,59 +506,70 @@ void QEngineOCL::INTC(
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
+    LockedCall([&]() {
 
-    INTC(clObj->GetINCCPtr(queue), toAdd, start, length, carryIndex);
+        bool hasCarry = M(carryIndex);
+        if (hasCarry) {
+            X(carryIndex);
+            toAdd++;
+        }
+
+        INTC(clObj->GetINCCPtr(queue), toAdd, start, length, carryIndex);
+    });
 }
 
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
+    LockedCall([&]() {
 
-    INTC(clObj->GetDECCPtr(queue), toSub, start, length, carryIndex);
+        bool hasCarry = M(carryIndex);
+        if (hasCarry) {
+            X(carryIndex);
+        } else {
+            toSub++;
+        }
+
+        INTC(clObj->GetDECCPtr(queue), toSub, start, length, carryIndex);
+    });
 }
 
 /** Set 8 bit register bits based on read from classical memory */
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    SetReg(valueStart, valueLength, 0);
-    bitLenInt valueBytes = (valueLength + 7) / 8;
-    bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
-    bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
-    bitCapInt bciArgs[10] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes, valueLength, 0,
-        0, 0 };
+    bitCapInt toReturn;
+    LockedCall([&]() {
 
-    complex* nStateVec = AllocStateVec(maxQPower);
-    DispatchCall(clObj->GetLDAPtr(queue), bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
+        SetReg(valueStart, valueLength, 0);
+        bitLenInt valueBytes = (valueLength + 7) / 8;
+        bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
+        bitCapInt outputMask = ((1 << valueLength) - 1) << valueStart;
+        bitCapInt bciArgs[10] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes, valueLength,
+            0, 0, 0 };
 
-    real1 prob;
-    real1 average = 0.0;
-    real1 totProb = 0.0;
-    bitCapInt i, outputInt;
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(nStateVec[i]);
-        totProb += prob;
-        average += prob * outputInt;
-    }
-    if (totProb > 0.0) {
-        average /= totProb;
-    }
+        complex* nStateVec = AllocStateVec(maxQPower);
+        DispatchCall(clObj->GetLDAPtr(queue), bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
-    ResetStateVec(nStateVec);
+        real1 prob;
+        real1 average = 0.0;
+        real1 totProb = 0.0;
+        bitCapInt i, outputInt;
+        for (i = 0; i < maxQPower; i++) {
+            outputInt = (i & outputMask) >> valueStart;
+            prob = norm(nStateVec[i]);
+            totProb += prob;
+            average += prob * outputInt;
+        }
+        if (totProb > 0.0) {
+            average /= totProb;
+        }
 
-    return (unsigned char)(average + 0.5);
+        ResetStateVec(nStateVec);
+
+        toReturn = (unsigned char)(average + 0.5);
+    });
+    return toReturn;
 }
 
 /** Add or Subtract based on an indexed load from classical memory */
@@ -586,14 +624,24 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt i
 bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    return OpIndexed(clObj->GetADCPtr(queue), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    bitCapInt toReturn;
+    LockedCall([&]() {
+        toReturn =
+            OpIndexed(clObj->GetADCPtr(queue), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    });
+    return toReturn;
 }
 
 /** Subtract based on an indexed load from classical memory */
 bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    return OpIndexed(clObj->GetSBCPtr(queue), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    bitCapInt toReturn;
+    LockedCall([&]() {
+        toReturn =
+            OpIndexed(clObj->GetSBCPtr(queue), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    });
+    return toReturn;
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)
@@ -605,57 +653,64 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
-    real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
-    cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
+    LockedCall([&]() {
 
-    bitCapInt bciArgs[10] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    queue->enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+        real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
+        cl::Buffer argsBuffer =
+            cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
 
-    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
-    cl::Kernel* call = clObj->GetNormalizePtr(queue);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, argsBuffer);
-    queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        bitCapInt bciArgs[10] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        queue->enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+        queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+        cl::Kernel* call = clObj->GetNormalizePtr(queue);
+        call->setArg(0, *stateBuffer);
+        call->setArg(1, ulongBuffer);
+        call->setArg(2, argsBuffer);
+        queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+            cl::NDRange(1)); // local number (per group)
 
-    runningNorm = 1.0;
+        queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+
+        runningNorm = 1.0;
+    });
 }
 
 void QEngineOCL::UpdateRunningNorm()
 {
-    real1* nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
-    queue->enqueueWriteBuffer(
-        nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+    LockedCall([&]() {
 
-    bitCapInt bciArgs[10] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
-    queue->flush();
+        real1* nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
+        queue->enqueueWriteBuffer(
+            nrmBuffer, CL_FALSE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
 
-    queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
-    cl::Kernel* call = clObj->GetUpdateNormPtr(queue);
+        bitCapInt bciArgs[10] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        queue->enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+        queue->flush();
 
-    queue->finish();
+        queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
+        cl::Kernel* call = clObj->GetUpdateNormPtr(queue);
 
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, nrmBuffer);
-    queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
-        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        queue->finish();
 
-    queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+        call->setArg(0, *stateBuffer);
+        call->setArg(1, ulongBuffer);
+        call->setArg(2, nrmBuffer);
+        queue->enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+            cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+            cl::NDRange(1)); // local number (per group)
 
-    queue->enqueueReadBuffer(
-        nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
-    runningNorm = 0.0;
-    for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
-        runningNorm += nrmParts[i];
-    }
-    delete[] nrmParts;
+        queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+
+        queue->enqueueReadBuffer(
+            nrmBuffer, CL_TRUE, 0, sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, nrmParts);
+        runningNorm = 0.0;
+        for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
+            runningNorm += nrmParts[i];
+        }
+        delete[] nrmParts;
+    });
 }
 
 } // namespace Qrack

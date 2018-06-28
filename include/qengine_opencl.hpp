@@ -42,6 +42,7 @@ protected:
     OCLEngine* clObj;
     CommandQueuePtr queue;
     cl::Context context;
+    MutexPtr deviceMutexPtr;
     BufferPtr stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
@@ -108,6 +109,8 @@ public:
 
 protected:
     static const int BCI_ARG_LEN = 10;
+
+    template <typename F> void LockedCall(F fn);
 
     void InitOCL(int devID);
     void ReInitOCL();

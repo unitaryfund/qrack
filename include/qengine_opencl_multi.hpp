@@ -163,7 +163,7 @@ protected:
     void MetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target);
 
 private:
-    //void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
+    // void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
     void ShuffleBuffers(complex* stateVec1, complex* stateVec2);
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);
