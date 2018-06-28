@@ -118,9 +118,8 @@ void QEngineOCLMulti::SingleBitGate(
     } else {
         std::vector<std::future<void>> futures(subEngineCount / 2);
 
-        bitLenInt order = qubitCount - (bit + 1);
-        bitLenInt groups = 1 << order;
-        bitLenInt offset = 1 << ((qubitCount - subQubitCount) - (order + 1));
+        bitLenInt groupCount = 1 << (qubitCount - (bit + 1));
+        bitLenInt groupSize = 1 << ((bit + 1) - subQubitCount);
 
         bitLenInt sqi = subQubitCount - 1;
 
@@ -133,12 +132,12 @@ void QEngineOCLMulti::SingleBitGate(
 
         bool controlled = cntrlDepth > 0;
 
-        for (i = 0; i < groups; i += iInc) {
-            for (j = 0; j < offset; j++) {
-                futures[j + (i * offset)] =
-                    std::async(std::launch::async, [this, offset, i, j, fn, sqi, controlled, anti, gfnArgs...]() {
-                        QEngineOCLPtr engine1 = substateEngines[j + (i * offset)];
-                        QEngineOCLPtr engine2 = substateEngines[j + ((i + 1) * offset)];
+        for (i = 0; i < groupCount; i += iInc) {
+            for (j = 0; j < (groupSize / 2); j++) {
+                futures[j + (i * (groupSize / 2))] =
+                    std::async(std::launch::async, [this, groupSize, i, j, fn, sqi, controlled, anti, gfnArgs...]() {
+                        QEngineOCLPtr engine1 = substateEngines[j + (i * groupSize)];
+                        QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
 
                         ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
 
@@ -218,13 +217,13 @@ void QEngineOCLMulti::ControlledGate(
     } else {
         CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
         { controlBit, targetBit });
-        return;
-
+#if 0
         if (controlBit >= (subQubitCount - 1)) {
             SingleBitGate(cntrlDepth + 1, anti, false, targetBit, fn, gfnArgs...);
         } else {
             SingleBitGate(cntrlDepth, anti, false, targetBit, cfn, gfnArgs..., controlBit);
         }
+#endif
     }
 }
 
@@ -456,7 +455,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
         }
         for (i = 0; i < groupCount; i++) {
             for (j = 0; j < (groupSize / 2); j++) {
-                futures[i] =
+                futures[j + (i * (groupSize / 2))] =
                     std::async(std::launch::async, [this, i, j, &groupSize, &clearOffset, &keepOffset, &nrmlzr]() {
                         bitLenInt clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
                         bitLenInt keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
