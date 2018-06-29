@@ -141,7 +141,7 @@ protected:
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CCGFn)(bitLenInt, bitLenInt, bitLenInt);
     template <typename F, typename... Args>
-    void SingleBitGate(bitLenInt cntrlDepth, bool anti, bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
+    void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
     template <typename CF, typename F, typename... Args>
     void ControlledGate(
         bitLenInt cntrlDepth, bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);
@@ -161,6 +161,7 @@ protected:
 
     void MetaX(bitLenInt start, bitLenInt length);
     void MetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target);
+    template <typename F, typename... Args> void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target,  F fn, Args... gfnArgs);
 
 private:
     // void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
