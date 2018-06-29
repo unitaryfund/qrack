@@ -34,7 +34,7 @@ QEngineOCLMulti::QEngineOCLMulti(
         deviceCount = clObj->GetDeviceCount();
     }
 
-    deviceCount = 8;
+    //deviceCount = 8;
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
 
