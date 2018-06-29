@@ -172,9 +172,62 @@ void QEngineOCLMulti::ControlledGate(
         MetaControlled(anti, { controlBit }, targetBit, fn, gfnArgs...);
     } else if (controlBit < (subQubitCount - 1)) {
         SingleBitGate(false, targetBit, cfn, gfnArgs..., controlBit);
+    } else if (controlBit == (subQubitCount - 1)) {
+        bitLenInt i, j;
+        bitLenInt k = 0;
+        bitLenInt groupCount = 1 << (qubitCount - (targetBit + 1));
+        bitLenInt groupSize = 1 << ((targetBit + 1) - subQubitCount);
+        std::vector<std::future<void>> futures((groupCount * groupSize) / 2);
+        bitLenInt sqi = subQubitCount - 1;
+
+        for (i = 0; i < groupCount; i++) {
+            for (j = 0; j < (groupSize / 2); j++) {
+                futures[k] =
+                    std::async(std::launch::async, [this, groupSize, i, j, fn, sqi, anti, gfnArgs...]() {
+                        QEngineOCLPtr engine1 = substateEngines[j + (i * groupSize)];
+                        QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
+
+                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+
+                        if (anti) {
+                            ((engine1.get())->*fn)(gfnArgs..., sqi);
+                        }
+                        else {
+                            ((engine2.get())->*fn)(gfnArgs..., sqi);
+                        }
+
+                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                    });
+                k++;
+            }
+        }
+        for (i = 0; i < k; i++) {
+            futures[i].get();
+        }
     } else {
-        CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
-        { controlBit, targetBit });
+        bitLenInt i, j;
+        bitLenInt k = 0;
+        bitLenInt groupCount = 1 << (qubitCount - (controlBit + 1));
+        bitLenInt groupSize = 1 << ((controlBit + 1) - subQubitCount);
+        std::vector<std::future<void>> futures((groupCount * groupSize) / 2);
+
+        for (i = 0; i < groupCount; i++) {
+            for (j = 0; j < (groupSize / 2); j++) {
+                futures[k] =
+                    std::async(std::launch::async, [this, groupSize, i, j, fn, targetBit, anti, gfnArgs...]() {
+                        if (anti) {
+                            ((substateEngines[j + (i * groupSize)].get())->*fn)(gfnArgs..., targetBit);
+                        }
+                        else {
+                            ((substateEngines[j + (i * groupSize) + (groupSize / 2)].get())->*fn)(gfnArgs..., targetBit);
+                        }
+                    });
+                k++;
+            }
+        }
+        for (i = 0; i < k; i++) {
+            futures[i].get();
+        }
     }
 }
 
@@ -200,6 +253,8 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         ControlledGate(0, anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
     } else if ((lowControl >= subQubitCount) && (targetBit >= subQubitCount)) {
         MetaControlled(anti, { controlBit1, controlBit2 }, targetBit, fn, gfnArgs...);
+    } else if (lowControl < (subQubitCount - 1)) {
+        ControlledGate(0, anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
     } else {
         CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*ccfn)(gfnArgs..., controlBit1, controlBit2, targetBit); },
             { controlBit1, controlBit2, targetBit });
