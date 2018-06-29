@@ -34,7 +34,7 @@ QEngineOCLMulti::QEngineOCLMulti(
         deviceCount = clObj->GetDeviceCount();
     }
 
-    //deviceCount = 4;
+    // deviceCount = 4;
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
 
@@ -216,7 +216,7 @@ void QEngineOCLMulti::ControlledGate(
         }
     } else {
         CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
-        { controlBit, targetBit });
+            { controlBit, targetBit });
 #if 0
         if (controlBit >= (subQubitCount - 1)) {
             SingleBitGate(cntrlDepth + 1, anti, false, targetBit, fn, gfnArgs...);
@@ -355,9 +355,9 @@ void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt ta
         MetaCNOT(false, { control1, control2 }, target);
     } else {
 #endif
-        DoublyControlledGate(false, control1, control2, target, (CCGFn)(&QEngineOCL::CCNOT), (CGFn)(&QEngineOCL::CNOT),
-            (GFn)(&QEngineOCL::X));
-//    }
+    DoublyControlledGate(false, control1, control2, target, (CCGFn)(&QEngineOCL::CCNOT), (CGFn)(&QEngineOCL::CNOT),
+        (GFn)(&QEngineOCL::X));
+    //    }
 }
 
 void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target)
@@ -371,8 +371,8 @@ void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target)
         MetaCNOT(false, { control }, target);
     } else {
 #endif
-        ControlledGate(0, false, control, target, (CGFn)(&QEngineOCL::CNOT), (GFn)(&QEngineOCL::X));
-//    }
+    ControlledGate(0, false, control, target, (CGFn)(&QEngineOCL::CNOT), (GFn)(&QEngineOCL::X));
+    //    }
 }
 
 void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -387,9 +387,9 @@ void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenIn
         MetaCNOT(true, { control1, control2 }, target);
     } else {
 #endif
-        DoublyControlledGate(true, control1, control2, target, (CCGFn)(&QEngineOCL::AntiCCNOT),
-            (CGFn)(&QEngineOCL::AntiCNOT), (GFn)(&QEngineOCL::X));
-//    }
+    DoublyControlledGate(true, control1, control2, target, (CCGFn)(&QEngineOCL::AntiCCNOT),
+        (CGFn)(&QEngineOCL::AntiCNOT), (GFn)(&QEngineOCL::X));
+    //    }
 }
 
 void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -403,8 +403,8 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target)
         MetaCNOT(true, { control }, target);
     } else {
 #endif
-        ControlledGate(0, true, control, target, (CGFn)(&QEngineOCL::AntiCNOT), (GFn)(&QEngineOCL::X));
-//    }
+    ControlledGate(0, true, control, target, (CGFn)(&QEngineOCL::AntiCNOT), (GFn)(&QEngineOCL::X));
+    //    }
 }
 
 void QEngineOCLMulti::H(bitLenInt qubitIndex) { SingleBitGate(0, false, true, qubitIndex, (GFn)(&QEngineOCL::H)); }
@@ -736,7 +736,7 @@ bitLenInt QEngineOCLMulti::SeparateMetaCNOT(
 
 void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(false, { control }, target, length);
+    // length = SeparateMetaCNOT(false, { control }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->CNOT(control, target, len); },
             [&](bitLenInt offset) { CNOT(control + offset, target + offset); }, length,
@@ -746,7 +746,7 @@ void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target, bitLenInt length
 
 void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(true, { control }, target, length);
+    // length = SeparateMetaCNOT(true, { control }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->AntiCNOT(control, target, len); },
             [&](bitLenInt offset) { AntiCNOT(control + offset, target + offset); }, length,
@@ -756,7 +756,7 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt le
 
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
+    // length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->CCNOT(control1, control2, target, len); },
             [&](bitLenInt offset) { CCNOT(control1 + offset, control2 + offset, target + offset); }, length,
@@ -767,7 +767,7 @@ void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt ta
 
 void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
+    // length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->AntiCCNOT(control1, control2, target, len); },
             [&](bitLenInt offset) { AntiCCNOT(control1 + offset, control2 + offset, target + offset); }, length,

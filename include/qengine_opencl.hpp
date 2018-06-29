@@ -110,8 +110,6 @@ public:
 protected:
     static const int BCI_ARG_LEN = 10;
 
-    template <typename F> void LockedCall(F fn);
-
     void InitOCL(int devID);
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
