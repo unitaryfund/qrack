@@ -34,7 +34,7 @@ QEngineOCLMulti::QEngineOCLMulti(
         deviceCount = clObj->GetDeviceCount();
     }
 
-    //deviceCount = 8;
+    //deviceCount = 16;
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
 
@@ -257,6 +257,67 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*ccfn)(gfnArgs..., controlBit1, controlBit2, targetBit); },
             { controlBit1, controlBit2, targetBit });
     }
+#if 0
+    } else if (targetBit >= subQubitCount) {
+        // lowControl == (subQubitCount - 1);
+        bitLenInt i, j;
+        bitLenInt k = 0;
+        bitLenInt groupCount = 1 << (qubitCount - (targetBit + 1));
+        bitLenInt groupSize = 1 << ((targetBit + 1) - subQubitCount);
+        std::vector<std::future<void>> futures((groupCount * groupSize) / 2);
+        bitLenInt sqi = subQubitCount - 1;
+
+        for (i = 0; i < groupCount; i++) {
+            for (j = (anti ? 0 : 1); j < (groupSize / 2); j+=2) {
+                futures[k] =
+                    std::async(std::launch::async, [this, groupSize, i, j, fn, sqi, anti, gfnArgs...]() {
+                        QEngineOCLPtr engine1 = substateEngines[j + (i * groupSize)];
+                        QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
+
+                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+
+                        if (anti) {
+                            ((engine1.get())->*fn)(gfnArgs..., sqi);
+                        }
+                        else {
+                            ((engine2.get())->*fn)(gfnArgs..., sqi);
+                        }
+
+                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                    });
+                k++;
+            }
+        }
+        for (i = 0; i < k; i++) {
+            futures[i].get();
+        }
+    } else {
+        // Both controls >= subQubitCount, targetBit < subQubitCount
+        bitLenInt i, j;
+        bitLenInt k = 0;
+        bitLenInt groupCount = 1 << (qubitCount - (lowControl + 1));
+        bitLenInt groupSize = 1 << ((lowControl + 1) - subQubitCount);
+        std::vector<std::future<void>> futures((groupCount * groupSize) / 2);
+
+        for (i = 0; i < groupCount; i++) {
+            for (j = (anti ? 0 : 1); j < (groupSize / 2); j+=2) {
+                futures[k] =
+                    std::async(std::launch::async, [this, groupSize, i, j, fn, targetBit, anti, gfnArgs...]() {
+                        if (anti) {
+                            ((substateEngines[j + (i * groupSize)].get())->*fn)(gfnArgs..., targetBit);
+                        }
+                        else {
+                            ((substateEngines[j + (i * groupSize) + (groupSize / 2)].get())->*fn)(gfnArgs..., targetBit);
+                        }
+                    });
+                k++;
+            }
+        }
+        for (i = 0; i < k; i++) {
+            futures[i].get();
+        }
+    }
+#endif
 }
 
 void QEngineOCLMulti::SetQuantumState(complex* inputState)
@@ -1125,38 +1186,11 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
 
 template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<bitLenInt> bits)
 {
-    if (subEngineCount == 1) {
-        fn(substateEngines[0]);
-        return;
-    }
-
-    bitLenInt i;
-    bitLenInt highestBit = 0;
-    for (i = 0; i < bits.size(); i++) {
-        if (bits[i] > highestBit) {
-            highestBit = bits[i];
+    CombineAndOp([&fn](QEngineOCLPtr engine) {
+        if (engine->GetNorm(true) > 0.0) {
+            fn(engine);
         }
-    }
-
-    if (highestBit >= subQubitCount) {
-        CombineEngines(highestBit);
-    }
-
-    std::vector<std::future<void>> futures(subEngineCount);
-    for (i = 0; i < subEngineCount; i++) {
-        futures[i] = std::async(std::launch::async, [this, fn, i]() {
-            if (substateEngines[i]->GetNorm() > 0.0) {
-                fn(substateEngines[i]);
-            }
-        });
-    }
-    for (i = 0; i < subEngineCount; i++) {
-        futures[i].get();
-    }
-
-    if (highestBit >= subQubitCount) {
-        SeparateEngines();
-    }
+    }, bits);
 }
 
 template <typename F, typename OF>
