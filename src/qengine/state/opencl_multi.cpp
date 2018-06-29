@@ -169,7 +169,7 @@ void QEngineOCLMulti::ControlledGate(
     if ((controlBit < subQubitCount) && (targetBit < subQubitCount)) {
         SingleBitGate(false, targetBit, cfn, gfnArgs..., controlBit);
     } else if ((controlBit >= subQubitCount) && (targetBit >= subQubitCount)) {
-        MetaControlled(anti, { controlBit }, targetBit, fn, gfnArgs...);
+        MetaControlled(anti, { static_cast<bitLenInt>(controlBit - subQubitCount) }, static_cast<bitLenInt>(targetBit - subQubitCount), fn, gfnArgs...);
     } else if (controlBit < (subQubitCount - 1)) {
         SingleBitGate(false, targetBit, cfn, gfnArgs..., controlBit);
     } else if (controlBit == (subQubitCount - 1)) {
@@ -249,10 +249,8 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         highControl = controlBit1;
     }
 
-    if (lowControl < (subQubitCount - 1)) {
-        ControlledGate(0, anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
-    } else if ((lowControl >= subQubitCount) && (targetBit >= subQubitCount)) {
-        MetaControlled(anti, { controlBit1, controlBit2 }, targetBit, fn, gfnArgs...);
+    if ((lowControl >= subQubitCount) && (targetBit >= subQubitCount)) {
+        MetaControlled(anti, { static_cast<bitLenInt>(controlBit1 - subQubitCount), static_cast<bitLenInt>(controlBit2 - subQubitCount) }, static_cast<bitLenInt>(targetBit - subQubitCount), fn, gfnArgs...);
     } else if (lowControl < (subQubitCount - 1)) {
         ControlledGate(0, anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
     } else {
@@ -528,7 +526,6 @@ template <typename F, typename... Args> void QEngineOCLMulti::MetaControlled(boo
     bitCapInt testMask = anti ? 0 : controlMask;
 
     bitCapInt targetMask = 1 << target;
-    //bitCapInt otherMask = (subEngineCount - 1) ^ (controlMask | targetMask);
     bitLenInt sqi = subQubitCount - 1;
 
     par_for(0, subEngineCount >> 1, [&](const bitCapInt lcv, const int cpu) {
