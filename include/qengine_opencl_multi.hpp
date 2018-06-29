@@ -152,8 +152,8 @@ protected:
     template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt length, std::vector<bitLenInt> bits);
 
     // For scalable cluster distribution, these methods should ultimately be entirely removed:
-    void CombineAllEngines();
-    void SeparateAllEngines();
+    void CombineEngines(bitLenInt bit);
+    void SeparateEngines();
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F> void CombineAndOpSafe(F fn, std::vector<bitLenInt> bits);
 

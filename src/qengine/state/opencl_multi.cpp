@@ -34,7 +34,7 @@ QEngineOCLMulti::QEngineOCLMulti(
         deviceCount = clObj->GetDeviceCount();
     }
 
-    // deviceCount = 4;
+    //deviceCount = 8;
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
 
@@ -189,6 +189,10 @@ void QEngineOCLMulti::ControlledGate(
         return;
     }
 
+    CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
+            { controlBit, targetBit });
+
+#if 0
     bitLenInt i;
 
     if ((controlBit < subQubitCount) && (targetBit < subQubitCount)) {
@@ -215,16 +219,13 @@ void QEngineOCLMulti::ControlledGate(
             futures[i].get();
         }
     } else {
-        CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*cfn)(gfnArgs..., controlBit, targetBit); },
-            { controlBit, targetBit });
-#if 0
         if (controlBit >= (subQubitCount - 1)) {
             SingleBitGate(cntrlDepth + 1, anti, false, targetBit, fn, gfnArgs...);
         } else {
             SingleBitGate(cntrlDepth, anti, false, targetBit, cfn, gfnArgs..., controlBit);
         }
-#endif
     }
+#endif
 }
 
 template <typename CCF, typename CF, typename F, typename... Args>
@@ -236,6 +237,9 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         return;
     }
 
+    CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*ccfn)(gfnArgs..., controlBit1, controlBit2, targetBit); },
+            { controlBit1, controlBit2, targetBit });
+#if 0
     bitLenInt lowControl, highControl;
     if (controlBit1 < controlBit2) {
         lowControl = controlBit1;
@@ -257,13 +261,14 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
             ControlledGate(0, anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
         }
     }
+#endif
 }
 
 void QEngineOCLMulti::SetQuantumState(complex* inputState)
 {
-    CombineAllEngines();
+    CombineEngines(qubitCount - 1);
     substateEngines[0]->SetQuantumState(inputState);
-    SeparateAllEngines();
+    SeparateEngines();
 }
 
 void QEngineOCLMulti::SetPermutation(bitCapInt perm)
@@ -297,12 +302,12 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm)
 bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy)
 {
     bitLenInt result;
-    CombineAllEngines();
-    toCopy->CombineAllEngines();
+    CombineEngines(qubitCount - 1);
+    toCopy->CombineEngines(toCopy->GetQubitCount() - 1);
     result = substateEngines[0]->Cohere(toCopy->substateEngines[0]);
     SetQubitCount(qubitCount + toCopy->qubitCount);
-    SeparateAllEngines();
-    toCopy->SeparateAllEngines();
+    SeparateEngines();
+    toCopy->SeparateEngines();
     return result;
 }
 
@@ -319,28 +324,28 @@ std::map<QInterfacePtr, bitLenInt> QEngineOCLMulti::Cohere(std::vector<QInterfac
 
 void QEngineOCLMulti::Decohere(bitLenInt start, bitLenInt length, QEngineOCLMultiPtr dest)
 {
-    CombineAllEngines();
-    dest->CombineAllEngines();
+    CombineEngines(qubitCount - 1);
+    dest->CombineEngines(dest->GetQubitCount() - 1);
     substateEngines[0]->Decohere(start, length, dest->substateEngines[0]);
     if (qubitCount <= length) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
-    SeparateAllEngines();
-    dest->SeparateAllEngines();
+    SeparateEngines();
+    dest->SeparateEngines();
 }
 
 void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length)
 {
-    CombineAllEngines();
+    CombineEngines(qubitCount - 1);
     substateEngines[0]->Dispose(start, length);
     if (qubitCount <= length) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
-    SeparateAllEngines();
+    SeparateEngines();
 }
 
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -933,11 +938,11 @@ void QEngineOCLMulti::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 
 void QEngineOCLMulti::CopyState(QEngineOCLMultiPtr orig)
 {
-    CombineAllEngines();
-    orig->CombineAllEngines();
+    CombineEngines(qubitCount - 1);
+    orig->CombineEngines(orig->GetQubitCount() - 1);
     substateEngines[0]->CopyState(orig->substateEngines[0]);
-    SeparateAllEngines();
-    orig->SeparateAllEngines();
+    SeparateEngines();
+    orig->SeparateEngines();
 }
 real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex)
 {
@@ -989,28 +994,42 @@ real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister)
 }
 
 // For scalable cluster distribution, these methods should ultimately be entirely removed:
-void QEngineOCLMulti::CombineAllEngines()
+void QEngineOCLMulti::CombineEngines(bitLenInt bit)
 {
 
     if (subEngineCount == 1) {
         return;
     }
 
-    QEngineOCLPtr nEngine = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, 0);
-    nEngine->EnableNormalize(true);
-    bitCapInt sbSize = maxQPower / subEngineCount;
+    bitLenInt i, j;
 
-    for (bitLenInt i = 0; i < subEngineCount; i++) {
-        complex* sv = substateEngines[i]->GetStateVector();
-        std::copy(sv, sv + sbSize, nEngine->GetStateVector() + (i * sbSize));
+    bitLenInt order = (qubitCount - (bit + 1));
+    bitLenInt groupCount = 1 << order;
+    bitLenInt groupSize = 1 << ((bit + 1) - subQubitCount);
+    std::vector<QEngineOCLPtr> nEngines(groupCount);
+    bitCapInt sbSize = maxQPower / subEngineCount;
+    
+    for (i = 0; i < groupCount; i++) {
+        nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, 0);
+        complex* nsv = nEngines[i]->GetStateVector();
+        for (j = 0; j < groupSize; j++) {
+            complex* sv = substateEngines[j + (i * groupSize)]->GetStateVector();
+            std::copy(sv, sv + sbSize, nsv + (j * sbSize));
+        }
     }
 
-    substateEngines.resize(1);
-    substateEngines[0] = nEngine;
+    if (order == 0) {
+        nEngines[0]->EnableNormalize(true);
+    }
+
+    substateEngines.resize(groupCount);
+    for (i = 0; i < groupCount; i++) {
+        substateEngines[i] = nEngines[i];
+    }
     SetQubitCount(qubitCount);
 }
 
-void QEngineOCLMulti::SeparateAllEngines()
+void QEngineOCLMulti::SeparateEngines()
 {
 
     bitLenInt engineCount = 1 << maxDeviceOrder;
@@ -1019,27 +1038,30 @@ void QEngineOCLMulti::SeparateAllEngines()
         engineCount = 1 << (qubitCount - 1);
     }
 
-    if (engineCount == 1) {
+    if (engineCount <= subEngineCount) {
         return;
     }
 
-    bitLenInt i;
+    bitLenInt i, j;
 
-    std::vector<QEngineOCLPtr> nSubEngines(engineCount);
+    bitLenInt groupSize = engineCount / subEngineCount;
+
+    std::vector<QEngineOCLPtr> nEngines(engineCount);
     bitCapInt sbSize = (1 << qubitCount) / engineCount;
 
-    complex* sv = substateEngines[0]->GetStateVector();
-
-    for (i = 0; i < engineCount; i++) {
-        nSubEngines[i] = std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, i, true);
-        nSubEngines[i]->EnableNormalize(false);
-
-        std::copy(sv + (i * sbSize), sv + ((i + 1) * sbSize), nSubEngines[i]->GetStateVector());
+    for (i = 0; i < subEngineCount; i++) {
+        complex* sv = substateEngines[i]->GetStateVector();
+        for (j = 0; j < groupSize; j++) {
+            QEngineOCLPtr nEngine = std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, j, true);
+            nEngine->EnableNormalize(false);
+            std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
+            nEngines[j + (i * groupSize)] = nEngine;
+        }
     }
 
     substateEngines.resize(engineCount);
     for (i = 0; i < engineCount; i++) {
-        substateEngines[i] = nSubEngines[i];
+        substateEngines[i] = nEngines[i];
     }
     SetQubitCount(qubitCount);
 }
@@ -1059,18 +1081,20 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
         }
     }
 
-    if (highestBit < subQubitCount) {
-        std::vector<std::future<void>> futures(subEngineCount);
-        for (i = 0; i < subEngineCount; i++) {
-            futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(substateEngines[i]); });
-        }
-        for (i = 0; i < subEngineCount; i++) {
-            futures[i].get();
-        }
-    } else {
-        CombineAllEngines();
-        fn(substateEngines[0]);
-        SeparateAllEngines();
+    if (highestBit >= subQubitCount) {
+        CombineEngines(highestBit);
+    }
+
+    std::vector<std::future<void>> futures(subEngineCount);
+    for (i = 0; i < subEngineCount; i++) {
+        futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(substateEngines[i]); });
+    }
+    for (i = 0; i < subEngineCount; i++) {
+        futures[i].get();
+    }
+
+    if (highestBit >= subQubitCount) {
+        SeparateEngines();
     }
 }
 
@@ -1089,22 +1113,24 @@ template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<b
         }
     }
 
-    if (highestBit < subQubitCount) {
-        std::vector<std::future<void>> futures(subEngineCount);
-        for (i = 0; i < subEngineCount; i++) {
-            futures[i] = std::async(std::launch::async, [this, fn, i]() {
-                if (substateEngines[i]->GetNorm() > 0.0) {
-                    fn(substateEngines[i]);
-                }
-            });
-        }
-        for (i = 0; i < subEngineCount; i++) {
-            futures[i].get();
-        }
-    } else {
-        CombineAllEngines();
-        fn(substateEngines[0]);
-        SeparateAllEngines();
+    if (highestBit >= subQubitCount) {
+        CombineEngines(highestBit);
+    }
+
+    std::vector<std::future<void>> futures(subEngineCount);
+    for (i = 0; i < subEngineCount; i++) {
+        futures[i] = std::async(std::launch::async, [this, fn, i]() {
+            if (substateEngines[i]->GetNorm() > 0.0) {
+                fn(substateEngines[i]);
+            }
+        });
+    }
+    for (i = 0; i < subEngineCount; i++) {
+        futures[i].get();
+    }
+
+    if (highestBit >= subQubitCount) {
+        SeparateEngines();
     }
 }
 
