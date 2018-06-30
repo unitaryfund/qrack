@@ -950,7 +950,7 @@ void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ou
 bitCapInt QEngineOCLMulti::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    CombineAndOp(
+    CombineAndOpSafe(
         [&](QEngineOCLPtr engine) { engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values); },
         { static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1) });
 
@@ -960,7 +960,7 @@ bitCapInt QEngineOCLMulti::IndexedLDA(
 bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    CombineAndOp(
+    CombineAndOpSafe(
         [&](QEngineOCLPtr engine) {
             engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         },
@@ -972,7 +972,7 @@ bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLengt
 bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    CombineAndOp(
+    CombineAndOpSafe(
         [&](QEngineOCLPtr engine) {
             engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         },

@@ -66,6 +66,7 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
 void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts)
 {
     bitCapInt ID, Nthreads, lcv;
+    real1 nrm1, nrm2;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
@@ -100,7 +101,15 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
 
         stateVec[i + offset1] = qubit[0];
         stateVec[i + offset2] = qubit[1];
-        nrmParts[ID] += dot(qubit[0], qubit[0]) + dot(qubit[1], qubit[1]);
+        nrm1 = dot(qubit[0], qubit[0]);
+        nrm2 = dot(qubit[1], qubit[1]);
+        if (nrm1 < min_norm) {
+            nrm1 = 0.0;
+        }
+        if (nrm2 >= min_norm) {
+            nrm1 += nrm2;
+        }
+        nrmParts[ID] += nrm1;
 
         lcv += Nthreads;
         iHigh = lcv;
@@ -561,12 +570,14 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
     cmplx amp;
+    real1 nrm;
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
-        if (dot(amp, amp) < min_norm) {
-            amp = (cmplx)(0.0, 0.0);
+        nrm = dot(amp, amp);
+        if (nrm < min_norm) {
+            nrm = 0.0;
         }
-        norm_ptr[ID] += dot(amp, amp);
+        norm_ptr[ID] += nrm;
     }
 }
