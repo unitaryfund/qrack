@@ -140,8 +140,7 @@ protected:
     typedef void (QEngineOCL::*CGFn)(bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CCGFn)(bitLenInt, bitLenInt, bitLenInt);
-    template <typename F, typename... Args>
-    void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
+    template <typename F, typename... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
     template <typename CF, typename F, typename... Args>
     void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);
     template <typename CCF, typename CF, typename F, typename... Args>
@@ -160,7 +159,12 @@ protected:
 
     void MetaX(bitLenInt start, bitLenInt length);
     void MetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target);
-    template <typename F, typename... Args> void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target,  F fn, Args... gfnArgs);
+    template <typename F, typename... Args>
+    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs);
+    template <typename F, typename... Args>
+    void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs);
+    template <typename F, typename... Args>
+    void ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt targetBit, F fn, Args... gfnArgs);
 
 private:
     // void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
