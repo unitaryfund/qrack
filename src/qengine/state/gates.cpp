@@ -46,11 +46,11 @@ bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr
     bitCapInt powerTest = result ? qPowers : 0;
 
     nrm = complex(cosine, sine);
-    if (nrmlzr > 0.0) {
+    if (nrmlzr > min_norm) {
         nrm /= (real1)(sqrt(nrmlzr));
     } else {
         nrm = complex(0.0, 0.0);
-        runningNorm = 0.0;
+        runningNorm = 1.0;
     }
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {

@@ -565,6 +565,9 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
+        if (dot(amp, amp) < min_norm) {
+            amp = (cmplx)(0.0, 0.0);
+        }
         norm_ptr[ID] += dot(amp, amp);
     }
 }

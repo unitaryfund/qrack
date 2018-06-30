@@ -34,7 +34,7 @@ QEngineOCLMulti::QEngineOCLMulti(
         deviceCount = clObj->GetDeviceCount();
     }
 
-    //deviceCount = 16;
+    deviceCount = 32;
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
 
@@ -516,9 +516,8 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
                         complex* sv = substateEngines[clearIndex]->GetStateVector();
                         std::fill(sv, sv + subMaxQPower, complex(0.0, 0.0));
 
-                        if (nrmlzr > 0.0) {
-                            substateEngines[keepIndex]->NormalizeState(nrmlzr);
-                        }
+                        substateEngines[keepIndex]->NormalizeState(nrmlzr);
+
                     });
             }
         }
@@ -1211,8 +1210,9 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
 
 template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<bitLenInt> bits)
 {
+    NormalizeState();
     CombineAndOp([&fn](QEngineOCLPtr engine) {
-        if (engine->GetNorm(true) > 0.0) {
+        if (engine->GetNorm() > min_norm) {
             fn(engine);
         }
     }, bits);

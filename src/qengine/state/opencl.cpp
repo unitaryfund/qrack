@@ -47,6 +47,7 @@ void QEngineOCL::InitOCL(int devID)
         sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
 
+    LockGuard locked_call(*deviceMutexPtr);
     queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
 }
 
@@ -63,7 +64,6 @@ void QEngineOCL::ReInitOCL()
 
 void QEngineOCL::ResetStateVec(complex* nStateVec)
 {
-    LockGuard locked_call(*deviceMutexPtr);
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     QEngineCPU::ResetStateVec(nStateVec);
     ReInitOCL();
@@ -113,7 +113,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
-    cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
+    cmplx[4] = complex((doNormalize && (bitCount == 1) && (runningNorm > min_norm)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
@@ -629,11 +629,16 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm < 0.0) {
         nrm = runningNorm;
     }
-    if ((nrm <= 0.0) || (nrm == 1.0)) {
+    if (nrm == 1.0) {
         return;
     }
-
     LockGuard locked_call(*deviceMutexPtr);
+    if (nrm <= 0.0) {
+        queue->enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
+        runningNorm = 1.0;
+        queue->finish();
+        return;
+    }
 
     real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
     cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
