@@ -20,6 +20,10 @@ bool QEngineCPU::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
+    if (runningNorm <= 0.0) {
+        return result;
+    }
+
     if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }

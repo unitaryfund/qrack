@@ -113,7 +113,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
-    cmplx[4] = complex((doNormalize && (bitCount == 1) && (runningNorm > min_norm)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
+    cmplx[4] = complex((doNormalize && (bitCount == 1)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
@@ -529,6 +529,10 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
+    if (runningNorm <= 0.0) {
+        return 0;
+    }
+
     LockGuard locked_call(*deviceMutexPtr);
 
     SetReg(valueStart, valueLength, 0);
@@ -564,6 +568,10 @@ bitCapInt QEngineOCL::IndexedLDA(
 bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
+    if (runningNorm <= 0.0) {
+        return 0;
+    }
+
     // The carry has to first to be measured for its input value.
     if (M(carryIndex)) {
         /*
@@ -635,7 +643,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     LockGuard locked_call(*deviceMutexPtr);
     if (nrm <= 0.0) {
         queue->enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
-        runningNorm = 1.0;
+        runningNorm = 0.0;
         queue->finish();
         return;
     }
