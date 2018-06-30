@@ -700,6 +700,11 @@ void QEngineOCL::UpdateRunningNorm()
     for (unsigned long int i = 0; i < CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE; i++) {
         runningNorm += nrmParts[i];
     }
+
+    if (runningNorm < min_norm) {
+        NormalizeState(0.0);
+    }
+
     delete[] nrmParts;
 }
 

@@ -541,7 +541,6 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
-    real1 min_norm = args_ptr[0];
     real1 nrm = args_ptr[1];
     cmplx amp;
     

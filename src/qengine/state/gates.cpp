@@ -52,18 +52,17 @@ bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr
     nrm = complex(cosine, sine);
     if (nrmlzr > min_norm) {
         nrm /= (real1)(sqrt(nrmlzr));
-    } else {
-        nrm = complex(0.0, 0.0);
-        runningNorm = 1.0;
-    }
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & qPowers) == powerTest) {
-            stateVec[lcv] = nrm * stateVec[lcv];
-        } else {
-            stateVec[lcv] = complex(0.0, 0.0);
-        }
-    });
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            if ((lcv & qPowers) == powerTest) {
+                stateVec[lcv] = nrm * stateVec[lcv];
+            } else {
+                stateVec[lcv] = complex(0.0, 0.0);
+            }
+        });
+    } else {
+        runningNorm = 0.0;
+    }
 
     return result;
 }

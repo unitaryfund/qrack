@@ -1121,6 +1121,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     
     for (i = 0; i < groupCount; i++) {
         nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, 0);
+        nEngines[i]->EnableNormalize(false);
         complex* nsv = nEngines[i]->GetStateVector();
         for (j = 0; j < groupSize; j++) {
             complex* sv = substateEngines[j + (i * groupSize)]->GetStateVector();
@@ -1206,6 +1207,14 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
     if (highestBit >= subQubitCount) {
         SeparateEngines();
     }
+}
+
+template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<bitLenInt> bits) {
+    CombineAndOp([&](QEngineOCLPtr engine) { 
+        if (engine->GetNorm() > min_norm) {
+            fn(engine);
+        }
+    }, bits);
 }
 
 template <typename F, typename OF>
