@@ -580,21 +580,44 @@ void QEngineOCLMulti::MetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLe
 
 template <typename F, typename... Args> void QEngineOCLMulti::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target,  F fn, Args... gfnArgs)
 {
+    bitLenInt i;
+
+    std::vector<bitLenInt> sortedMasks(1 + controls.size());
+    bitLenInt allMask = 1 << target;
+    sortedMasks[controls.size()] = allMask;
+
     bitCapInt controlMask = 0;
-    for (bitLenInt i = 0; i < controls.size(); i++) {
-        controlMask |= 1 << controls[i];
+    for (i = 0; i < controls.size(); i++) {
+        sortedMasks[i] = 1 << controls[i];
+        if (!anti) {
+            allMask |= sortedMasks[i];
+        }
+        controlMask |= sortedMasks[i];
+        sortedMasks[i]--;
     }
-    bitCapInt testMask = anti ? 0 : controlMask;
+
+    std::sort(sortedMasks.begin(), sortedMasks.end());
 
     bitCapInt targetMask = 1 << target;
     bitLenInt sqi = subQubitCount - 1;
 
-    par_for(0, subEngineCount >> 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j;
-        j = lcv & (targetMask - 1);
-        j = j | ((lcv ^ j) << 1);
+    bitLenInt maxLCV = subEngineCount >> (sortedMasks.size());
+    std::vector<std::future<void>> futures(maxLCV);
 
-        if ((lcv & controlMask) == testMask) {
+    for (i = 0; i < maxLCV; i++) {
+        futures[i] = std::async(
+            std::launch::async, [this, i, &sortedMasks, &allMask, &targetMask, &sqi, fn, gfnArgs ...]() {
+
+            bitCapInt j, k, jLo, jHi;
+            jHi = i;
+            j = 0;
+            for (k = 0; k < (sortedMasks.size()); k++) {
+                jLo = jHi & sortedMasks[k];
+                jHi = (jHi ^ jLo) << 1;
+                j |= jLo;
+            }
+            j |= jHi | allMask;
+
             QEngineOCLPtr engine1 = substateEngines[j];
             QEngineOCLPtr engine2 = substateEngines[j + targetMask];
 
@@ -608,8 +631,12 @@ template <typename F, typename... Args> void QEngineOCLMulti::MetaControlled(boo
             future2.get();
 
             ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
-        }
-    });
+        });
+    }
+
+    for (i = 0; i < maxLCV; i++) {
+        futures[i].get();
+    }
 }
 
 void QEngineOCLMulti::X(bitLenInt qubitIndex)
