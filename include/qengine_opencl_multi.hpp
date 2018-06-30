@@ -143,8 +143,7 @@ protected:
     template <typename F, typename... Args>
     void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
     template <typename CF, typename F, typename... Args>
-    void ControlledGate(
-        bitLenInt cntrlDepth, bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);
+    void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);
     template <typename CCF, typename CF, typename F, typename... Args>
     void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt targetBit, CCF ccfn,
         CF cfn, F fn, Args... gfnArgs);
