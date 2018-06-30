@@ -63,6 +63,7 @@ void QEngineOCL::ReInitOCL()
 
 void QEngineOCL::ResetStateVec(complex* nStateVec)
 {
+    LockGuard locked_call(*deviceMutexPtr);
     queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
     QEngineCPU::ResetStateVec(nStateVec);
     ReInitOCL();
