@@ -583,16 +583,14 @@ template <typename F, typename... Args> void QEngineOCLMulti::MetaControlled(boo
     bitLenInt i;
 
     std::vector<bitLenInt> sortedMasks(1 + controls.size());
-    bitLenInt allMask = 1 << target;
-    sortedMasks[controls.size()] = allMask;
+    sortedMasks[controls.size()] = 1 << target;
 
     bitCapInt controlMask = 0;
     for (i = 0; i < controls.size(); i++) {
         sortedMasks[i] = 1 << controls[i];
         if (!anti) {
-            allMask |= sortedMasks[i];
+            controlMask |= sortedMasks[i];
         }
-        controlMask |= sortedMasks[i];
         sortedMasks[i]--;
     }
 
@@ -606,7 +604,7 @@ template <typename F, typename... Args> void QEngineOCLMulti::MetaControlled(boo
 
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(
-            std::launch::async, [this, i, &sortedMasks, &allMask, &targetMask, &sqi, fn, gfnArgs ...]() {
+            std::launch::async, [this, i, &sortedMasks, &controlMask, &targetMask, &sqi, fn, gfnArgs ...]() {
 
             bitCapInt j, k, jLo, jHi;
             jHi = i;
@@ -616,7 +614,7 @@ template <typename F, typename... Args> void QEngineOCLMulti::MetaControlled(boo
                 jHi = (jHi ^ jLo) << 1;
                 j |= jLo;
             }
-            j |= jHi | allMask;
+            j |= jHi | controlMask;
 
             QEngineOCLPtr engine1 = substateEngines[j];
             QEngineOCLPtr engine2 = substateEngines[j + targetMask];
