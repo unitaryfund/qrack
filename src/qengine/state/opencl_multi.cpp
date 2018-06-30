@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <future>
+#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
@@ -288,35 +289,44 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         }
     } else if (lowControl >= subQubitCount) {
         // Both controls >= subQubitCount, targetBit < subQubitCount
-        bitLenInt i, j;
-        bitLenInt k = 0;
-        bitLenInt groupCount = 1 << (qubitCount - (highControl + 1));
-        bitLenInt groupSize = 1 << ((highControl + 1) - subQubitCount);
-        std::vector<std::future<void>> futures((groupCount * groupSize) / 4);
-        bitLenInt jStart = anti ? 0 : ((groupSize / 2) - 1);
-
-        for (i = 0; i < groupCount; i++) {
-            for (j = jStart; j < (groupSize / 2); j+=2) {
-                futures[k] =
-                    std::async(std::launch::async, [this, groupSize, i, j, fn, targetBit, anti, gfnArgs...]() {
-                        if (anti) {
-                            ((substateEngines[j + (i * groupSize)].get())->*fn)(gfnArgs..., targetBit);
-                        }
-                        else {
-                            ((substateEngines[j + (i * groupSize) + (groupSize / 2)].get())->*fn)(gfnArgs..., targetBit);
-                        }
-                    });
-                k++;
+        bitLenInt i, j, jLo;
+        bitLenInt maxLCV = subEngineCount >> 2;
+        bitLenInt lowMask = 1 << (lowControl - subQubitCount);
+        bitLenInt highMask = 1 << (highControl - subQubitCount);
+        std::vector<std::future<void>> futures(maxLCV);
+        for (i = 0; i < maxLCV; i++) {
+            j = i & (lowMask - 1);
+            j |= (i ^ j) << 1;
+            jLo = i & (highMask - 1);
+            j |= (i ^ jLo) << 1;
+            if (!anti) {
+                j |= lowMask | highMask;
             }
+            QEngineOCLPtr engine = substateEngines[j];
+            futures[i] = std::async(
+                std::launch::async, [engine, fn, lowControl, targetBit, gfnArgs...]() { ((engine.get())->*fn)(gfnArgs..., targetBit); });
         }
-        for (i = 0; i < k; i++) {
+        for (i = 0; i < maxLCV; i++) {
             futures[i].get();
         }
     } else {
-        //ControlledGate(anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
-        //std::cout<<"subQubitCount="<<(int)subQubitCount<<" lowControl="<<(int)lowControl<<" highControl="<<(int)highControl<<" targetBit="<<(int)targetBit<<std::endl;
-        CombineAndOp([&](QEngineOCLPtr engine) { (engine.get()->*ccfn)(gfnArgs..., controlBit1, controlBit2, targetBit); },
-            { controlBit1, controlBit2, targetBit });
+        bitLenInt i, j;
+        bitLenInt maxLCV = subEngineCount >> 2;
+        bitLenInt highMask = 1 << (highControl - subQubitCount);
+        std::vector<std::future<void>> futures(maxLCV);
+        for (i = 0; i < maxLCV; i++) {
+            j = i & (highMask - 1);
+            j |= (i ^ j) << 1;
+            if (!anti) {
+                j |= highMask;
+            }
+            QEngineOCLPtr engine = substateEngines[j];
+            futures[i] = std::async(
+                std::launch::async, [engine, cfn, lowControl, targetBit, gfnArgs...]() { ((engine.get())->*cfn)(gfnArgs..., lowControl, targetBit); });
+        }
+        for (i = 0; i < maxLCV; i++) {
+            futures[i].get();
+        }
     }
 }
 
