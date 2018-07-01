@@ -40,8 +40,10 @@ typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 class LockGuard {
 protected:
     std::shared_ptr<std::lock_guard<std::recursive_mutex>> lockGuard;
+
 public:
-    LockGuard(std::shared_ptr<std::recursive_mutex> mtx) {
+    LockGuard(std::shared_ptr<std::recursive_mutex> mtx)
+    {
         if (mtx != nullptr) {
             lockGuard = std::make_shared<std::lock_guard<std::recursive_mutex>>(*mtx);
         }

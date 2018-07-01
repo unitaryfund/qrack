@@ -205,12 +205,16 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         ControlledGate(anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
     } else if (lowControl >= subQubitCount) {
         // Both controls >= subQubitCount, targetBit < subQubitCount
-        SemiMetaControlled(anti, { static_cast<bitLenInt>(lowControl - subQubitCount), static_cast<bitLenInt>(highControl - subQubitCount) }, targetBit, fn, gfnArgs...);
+        SemiMetaControlled(anti,
+            { static_cast<bitLenInt>(lowControl - subQubitCount), static_cast<bitLenInt>(highControl - subQubitCount) },
+            targetBit, fn, gfnArgs...);
     } else if ((highControl >= subQubitCount) && (lowControl != (subQubitCount - 1))) {
         if (targetBit >= subQubitCount) {
-            MetaControlled(anti, { static_cast<bitLenInt>(highControl - subQubitCount) }, static_cast<bitLenInt>(targetBit - subQubitCount), cfn, gfnArgs..., lowControl);
+            MetaControlled(anti, { static_cast<bitLenInt>(highControl - subQubitCount) },
+                static_cast<bitLenInt>(targetBit - subQubitCount), cfn, gfnArgs..., lowControl);
         } else {
-            SemiMetaControlled(anti, { static_cast<bitLenInt>(highControl - subQubitCount) }, targetBit, cfn, gfnArgs..., lowControl);
+            SemiMetaControlled(
+                anti, { static_cast<bitLenInt>(highControl - subQubitCount) }, targetBit, cfn, gfnArgs..., lowControl);
         }
     } else {
         ControlledSkip(anti, 1, targetBit, fn, gfnArgs...);

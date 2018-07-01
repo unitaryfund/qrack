@@ -52,7 +52,11 @@ cl::Kernel* OCLEngine::GetNormalizePtr(CommandQueuePtr cqp) { return &(normalize
 cl::Kernel* OCLEngine::GetUpdateNormPtr(CommandQueuePtr cqp) { return &(updatenorm[PickQueue(cqp)]); }
 
 OCLEngine::OCLEngine() { InitOCL(0, -1); }
-OCLEngine::OCLEngine(int plat, int dev, bool singleNodeOverload) { overload = singleNodeOverload; InitOCL(plat, dev); }
+OCLEngine::OCLEngine(int plat, int dev, bool singleNodeOverload)
+{
+    overload = singleNodeOverload;
+    InitOCL(plat, dev);
+}
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 

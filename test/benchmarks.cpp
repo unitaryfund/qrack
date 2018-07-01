@@ -94,7 +94,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
         std::cout << (trialClocks[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC) << std::endl; /* Slowest (ms) */
     }
 }
-#if 0
+
 TEST_CASE("test_cnot")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
@@ -435,7 +435,7 @@ TEST_CASE("test_swap_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-
+#if 0
 TEST_CASE("test_grover")
 {
     QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 8, 0, rng);
@@ -479,7 +479,7 @@ TEST_CASE("test_grover")
         std::cout << (iterClock * 1000.0 / CLOCKS_PER_SEC) << std::endl;
     }
 }
-#endif
+
 TEST_CASE("test_grover")
 {
 
@@ -512,3 +512,4 @@ TEST_CASE("test_grover")
         qftReg->MReg(0, n);
     });
 }
+#endif

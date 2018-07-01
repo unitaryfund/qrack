@@ -158,7 +158,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
-    //LockGuard locked_call(deviceMutexPtr);
+    // LockGuard locked_call(deviceMutexPtr);
 
     bitLenInt result = qubitCount;
 
@@ -332,12 +332,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    //LockGuard locked_call(deviceMutexPtr);
+    // LockGuard locked_call(deviceMutexPtr);
     DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) {
-    //LockGuard locked_call(deviceMutexPtr);
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
+{
+    // LockGuard locked_call(deviceMutexPtr);
     DecohereDispose(start, length, (QEngineOCLPtr) nullptr);
 }
 
