@@ -31,9 +31,22 @@ typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class OCLEngine;
 
+class LockGuard;
+
 class QEngineOCL;
 
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
+
+class LockGuard {
+protected:
+    std::shared_ptr<std::lock_guard<std::recursive_mutex>> lockGuard;
+public:
+    LockGuard(std::shared_ptr<std::recursive_mutex> mtx) {
+        if (mtx != nullptr) {
+            lockGuard = std::make_shared<std::lock_guard<std::recursive_mutex>>(*mtx);
+        }
+    }
+};
 
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {

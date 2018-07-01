@@ -29,7 +29,7 @@ namespace Qrack {
 // Public singleton methods to get pointers to various methods
 cl::Context* OCLEngine::GetContextPtr(CommandQueuePtr cqp) { return &(all_contexts[PickQueue(cqp)]); }
 CommandQueuePtr OCLEngine::GetQueuePtr(const int& dev) { return queue[(dev < 0) ? default_device_id : dev]; }
-MutexPtr OCLEngine::GetMutexPtr(CommandQueuePtr cqp) { return all_mutexes[PickQueue(cqp)]; }
+MutexPtr OCLEngine::GetMutexPtr(CommandQueuePtr cqp) { return (overload ? all_mutexes[PickQueue(cqp)] : nullptr); }
 cl::Kernel* OCLEngine::GetApply2x2Ptr(CommandQueuePtr cqp) { return &(apply2x2[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetApply2x2NormPtr(CommandQueuePtr cqp) { return &(apply2x2norm[PickQueue(cqp)]); }
 cl::Kernel* OCLEngine::GetCoherePtr(CommandQueuePtr cqp) { return &(cohere[PickQueue(cqp)]); }
@@ -52,7 +52,7 @@ cl::Kernel* OCLEngine::GetNormalizePtr(CommandQueuePtr cqp) { return &(normalize
 cl::Kernel* OCLEngine::GetUpdateNormPtr(CommandQueuePtr cqp) { return &(updatenorm[PickQueue(cqp)]); }
 
 OCLEngine::OCLEngine() { InitOCL(0, -1); }
-OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
+OCLEngine::OCLEngine(int plat, int dev, bool singleNodeOverload) { overload = singleNodeOverload; InitOCL(plat, dev); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 

@@ -88,6 +88,7 @@ public:
     int GetDefaultDeviceID() { return default_device_id; };
 
 private:
+    bool overload;
     int deviceCount;
     int default_device_id;
     CommandQueuePtr defaultQueue;
@@ -123,7 +124,7 @@ private:
     std::map<CommandQueuePtr, cl::Kernel> updatenorm;
 
     OCLEngine(); // Private so that it can  not be called
-    OCLEngine(int plat, int dev); // Private so that it can  not be called
+    OCLEngine(int plat, int dev, bool singleNodeOverload = false); // Private so that it can  not be called
     OCLEngine(OCLEngine const&); // copy constructor is private
     OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
     static OCLEngine* m_pInstance;

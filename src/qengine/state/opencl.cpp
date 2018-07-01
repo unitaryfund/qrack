@@ -17,8 +17,6 @@
 
 namespace Qrack {
 
-typedef std::lock_guard<std::recursive_mutex> LockGuard;
-
 #define CMPLX_NORM_LEN 5
 
 void QEngineOCL::SetDevice(const int& dID)
@@ -47,7 +45,6 @@ void QEngineOCL::InitOCL(int devID)
         sizeof(real1) * CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     maxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt));
 
-    LockGuard locked_call(*deviceMutexPtr);
     queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
 }
 
@@ -106,7 +103,7 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     complex cmplx[CMPLX_NORM_LEN];
     real1* nrmParts = nullptr;
@@ -161,7 +158,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    //LockGuard locked_call(deviceMutexPtr);
 
     bitLenInt result = qubitCount;
 
@@ -335,16 +332,19 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    //LockGuard locked_call(deviceMutexPtr);
     DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) {
+    //LockGuard locked_call(deviceMutexPtr);
+    DecohereDispose(start, length, (QEngineOCLPtr) nullptr);
+}
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
@@ -395,7 +395,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     if (length == 1) {
         X(start);
@@ -411,7 +411,7 @@ void QEngineOCL::X(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     QEngineCPU::Swap(qubit1, qubit2);
 }
 
@@ -422,7 +422,7 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         return;
     }
 
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     bitCapInt reg1Mask = ((1 << length) - 1) << start1;
     bitCapInt reg2Mask = ((1 << length) - 1) << start2;
@@ -446,14 +446,14 @@ void QEngineOCL::ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenI
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     ROx(clObj->GetROLPtr(queue), shift, start, length);
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
 void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     ROx(clObj->GetRORPtr(queue), shift, start, length);
 }
 
@@ -472,14 +472,14 @@ void QEngineOCL::INT(cl::Kernel* call, bitCapInt toMod, const bitLenInt start, c
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     INT(clObj->GetINCPtr(queue), toAdd, start, length);
 }
 
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     INT(clObj->GetDECPtr(queue), toSub, start, length);
 }
 
@@ -500,7 +500,7 @@ void QEngineOCL::INTC(
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -514,7 +514,7 @@ void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt le
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
@@ -534,7 +534,7 @@ bitCapInt QEngineOCL::IndexedLDA(
         return 0;
     }
 
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
@@ -621,7 +621,7 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt i
 bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     return OpIndexed(clObj->GetADCPtr(queue), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
@@ -629,7 +629,7 @@ bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     return OpIndexed(clObj->GetSBCPtr(queue), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
@@ -641,7 +641,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm == 1.0) {
         return;
     }
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
     if (nrm < min_norm) {
         queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
         queue->enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
@@ -674,7 +674,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
 void QEngineOCL::UpdateRunningNorm()
 {
-    LockGuard locked_call(*deviceMutexPtr);
+    LockGuard locked_call(deviceMutexPtr);
 
     real1* nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
     queue->enqueueWriteBuffer(
