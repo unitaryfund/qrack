@@ -77,7 +77,6 @@ void OCLEngine::InitOCL(int plat, int dev)
         exit(1);
     }
     default_platform = all_platforms[plat];
-    std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 
     // get default device (CPUs, GPUs) of the default platform
     for (int i = 0; i < (int)all_platforms.size(); i++) {
@@ -100,11 +99,6 @@ void OCLEngine::InitOCL(int plat, int dev)
     }
     default_device_id = dev;
     default_device = all_devices[dev];
-    std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-
-    for (i = 0; i < deviceCount; i++) {
-        std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
-    }
 
     // create the program that we want to execute on the device
     cl::Program::Sources sources;
@@ -155,6 +149,13 @@ void OCLEngine::InitOCL(int plat, int dev)
         indexedSbc[queue[i]] = cl::Kernel(program, "indexedSbc");
         normalize[queue[i]] = cl::Kernel(program, "nrmlze");
         updatenorm[queue[i]] = cl::Kernel(program, "updatenorm");
+    }
+
+    // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
+    std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
+    std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
+    for (i = 0; i < deviceCount; i++) {
+        std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
 }
 
