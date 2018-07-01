@@ -242,10 +242,7 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm)
             bitCapInt p = perm - i;
             futures[j] = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p); });
         } else {
-            futures[j] = std::async(std::launch::async, [this, j]() {
-                complex* sv = substateEngines[j]->GetStateVector();
-                std::fill(sv, sv + subMaxQPower, complex(0.0, 0.0));
-            });
+            futures[j] = std::async(std::launch::async, [this, j]() { substateEngines[j]->NormalizeState(0.0); });
         }
         j++;
     }
@@ -412,9 +409,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
                         bitLenInt clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
                         bitLenInt keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
 
-                        complex* sv = substateEngines[clearIndex]->GetStateVector();
-                        std::fill(sv, sv + subMaxQPower, complex(0.0, 0.0));
-
+                        substateEngines[clearIndex]->NormalizeState(0.0);
                         substateEngines[keepIndex]->NormalizeState(nrmlzr);
 
                     });

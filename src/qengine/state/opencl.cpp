@@ -643,9 +643,12 @@ void QEngineOCL::NormalizeState(real1 nrm)
     }
     LockGuard locked_call(*deviceMutexPtr);
     if (nrm < min_norm) {
+        queue->enqueueUnmapMemObject(*stateBuffer, stateVec);
         queue->enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
+        queue->flush();
         runningNorm = 0.0;
         queue->finish();
+        queue->enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
         return;
     }
 
