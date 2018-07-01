@@ -207,8 +207,7 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         ControlledGate(anti, highControl, targetBit, ccfn, cfn, gfnArgs..., lowControl);
     } else if (targetBit >= subQubitCount) {
         // lowControl == (subQubitCount - 1);
-        SemiMetaControlled(
-            anti, { static_cast<bitLenInt>(highControl - subQubitCount) }, targetBit, cfn, gfnArgs..., lowControl);
+        ControlledSkip(anti, 1, targetBit, fn, gfnArgs...);
     } else if (lowControl >= subQubitCount) {
         // Both controls >= subQubitCount, targetBit < subQubitCount
         SemiMetaControlled(anti,
