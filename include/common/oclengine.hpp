@@ -31,8 +31,7 @@ class OCLDeviceContext;
 
 typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
 
-class OCLDeviceContext {
-public:
+struct OCLDeviceContext {
     cl::Context context;
     cl::CommandQueue queue;
     std::recursive_mutex mutex;
