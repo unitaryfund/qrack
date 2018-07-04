@@ -624,7 +624,8 @@ bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     LockGuard locked_call(device_context->mutex);
-    return OpIndexed(&(device_context->indexedAdc), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    return OpIndexed(
+        &(device_context->indexedAdc), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 /** Subtract based on an indexed load from classical memory */
@@ -632,7 +633,8 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     LockGuard locked_call(device_context->mutex);
-    return OpIndexed(&(device_context->indexedSbc), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    return OpIndexed(
+        &(device_context->indexedSbc), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)

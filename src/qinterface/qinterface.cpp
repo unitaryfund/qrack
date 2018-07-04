@@ -386,6 +386,120 @@ void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenI
     }
 }
 
+/**
+ * Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+ */
+void QInterface::ExpX(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpX(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli X exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$,
+ * exponentiation of the Pauli X operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    ExpX((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Dyadic fraction Pauli X exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$,
+ * exponentiation of the Pauli X operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpXDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
+ * Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+ */
+void QInterface::ExpY(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpY(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli Y exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$,
+ * exponentiation of the Pauli Y operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    ExpY((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Dyadic fraction Pauli Y exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$,
+ * exponentiation of the Pauli Y operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpYDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli Z exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$,
+ * exponentiation of the Pauli Z operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    ExpZ((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+ */
+void QInterface::ExpZ(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpZ(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli Z exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$,
+ * exponentiation of the Pauli Z operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpZDyad(numerator, denominator, start + bit);
+    }
+}
+
 /// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
 void QInterface::RX(real1 radians, bitLenInt start, bitLenInt length)
 {

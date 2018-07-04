@@ -469,4 +469,3 @@ TEST_CASE("test_grover")
         qftReg->MReg(0, n);
     });
 }
-

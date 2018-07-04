@@ -27,7 +27,8 @@ namespace Qrack {
 /// "Qrack::OCLEngine" manages the single OpenCL context
 
 // Public singleton methods to get pointers to various methods
-DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev) {
+DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
+{
     if (dev < 0) {
         return default_device_context;
     } else {
@@ -36,10 +37,7 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev) {
 }
 
 OCLEngine::OCLEngine() { InitOCL(0, -1); }
-OCLEngine::OCLEngine(int plat, int dev)
-{
-    InitOCL(plat, dev);
-}
+OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
@@ -98,7 +96,7 @@ void OCLEngine::InitOCL(int plat, int dev)
         all_device_contexts.push_back(std::make_shared<OCLDeviceContext>());
         all_device_contexts[i]->context = cl::Context(all_devices[i]);
         all_device_contexts[i]->queue = cl::CommandQueue(all_device_contexts[i]->context, all_devices[i]);
-        
+
         cl::Program program = cl::Program(all_device_contexts[i]->context, sources);
 
         if (program.build({ all_devices[i] }) != CL_SUCCESS) {
@@ -109,7 +107,7 @@ void OCLEngine::InitOCL(int plat, int dev)
 
         all_device_contexts[i]->apply2x2 = cl::Kernel(program, "apply2x2");
         all_device_contexts[i]->apply2x2norm = cl::Kernel(program, "apply2x2norm");
-        all_device_contexts[i]->x= cl::Kernel(program, "x");
+        all_device_contexts[i]->x = cl::Kernel(program, "x");
         all_device_contexts[i]->cohere = cl::Kernel(program, "cohere");
         all_device_contexts[i]->decohereprob = cl::Kernel(program, "decohereprob");
         all_device_contexts[i]->decohereamp = cl::Kernel(program, "decohereamp");

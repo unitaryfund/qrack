@@ -467,7 +467,8 @@ void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBi
         inputBit, outputBit);
 }
 
-void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit) {
+void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+{
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
 }
 
@@ -507,6 +508,12 @@ void QUnit::RX(real1 radians, bitLenInt qubit) { shards[qubit].unit->RX(radians,
 void QUnit::RY(real1 radians, bitLenInt qubit) { shards[qubit].unit->RY(radians, shards[qubit].mapped); }
 
 void QUnit::RZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->RZ(radians, shards[qubit].mapped); }
+
+void QUnit::ExpX(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpX(radians, shards[qubit].mapped); }
+
+void QUnit::ExpY(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpY(radians, shards[qubit].mapped); }
+
+void QUnit::ExpZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpZ(radians, shards[qubit].mapped); }
 
 void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {

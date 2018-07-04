@@ -95,10 +95,13 @@ public:
 
     virtual void RT(real1 radians, bitLenInt qubitIndex);
     virtual void RX(real1 radians, bitLenInt qubitIndex);
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
     virtual void RY(real1 radians, bitLenInt qubitIndex);
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
     virtual void RZ(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpX(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpY(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpZ(real1 radians, bitLenInt qubitIndex);
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 

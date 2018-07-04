@@ -608,7 +608,8 @@ void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenIn
     }
 }
 
-void QEngineOCLMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) {
+void QEngineOCLMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
+{
     SingleBitGate(doCalcNorm, qubitIndex, (ASBFn)(&QEngineOCL::ApplySingleBit), mtrx, doCalcNorm);
 }
 
@@ -643,21 +644,33 @@ void QEngineOCLMulti::RX(real1 radians, bitLenInt qubitIndex)
 {
     SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RX), radians);
 }
-void QEngineOCLMulti::CRX(real1 radians, bitLenInt control, bitLenInt target)
-{
-    ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRX), (RGFn)(&QEngineOCL::RX), radians);
-}
 void QEngineOCLMulti::RY(real1 radians, bitLenInt qubitIndex)
 {
     SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RY), radians);
 }
-void QEngineOCLMulti::CRY(real1 radians, bitLenInt control, bitLenInt target)
-{
-    ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRY), (RGFn)(&QEngineOCL::RY), radians);
-}
 void QEngineOCLMulti::RZ(real1 radians, bitLenInt qubitIndex)
 {
     SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RZ), radians);
+}
+void QEngineOCLMulti::ExpX(real1 radians, bitLenInt qubitIndex)
+{
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::ExpX), radians);
+}
+void QEngineOCLMulti::ExpY(real1 radians, bitLenInt qubitIndex)
+{
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::ExpY), radians);
+}
+void QEngineOCLMulti::ExpZ(real1 radians, bitLenInt qubitIndex)
+{
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::ExpZ), radians);
+}
+void QEngineOCLMulti::CRX(real1 radians, bitLenInt control, bitLenInt target)
+{
+    ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRX), (RGFn)(&QEngineOCL::RX), radians);
+}
+void QEngineOCLMulti::CRY(real1 radians, bitLenInt control, bitLenInt target)
+{
+    ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRY), (RGFn)(&QEngineOCL::RY), radians);
 }
 void QEngineOCLMulti::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {

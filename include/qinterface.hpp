@@ -265,7 +265,8 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be set to true.
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
+     * set to true.
      */
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
 
@@ -486,6 +487,48 @@ public:
      * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
      */
     virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpX(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpY(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZ(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled X axis rotation gate
@@ -765,6 +808,48 @@ public:
      * numerator} / 2^denomPower} \f$ around |1> state.
      */
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpX(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpY(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZ(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise controlled Y gate

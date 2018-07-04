@@ -50,6 +50,31 @@ void QEngineCPU::RZ(real1 radians, bitLenInt qubit)
     ApplySingleBit(pauliRZ, true, qubit);
 }
 
+/// Exponentiate Pauli X operator
+void QEngineCPU::ExpX(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expPauliX[4] = { complex(0.0, 0.0), phaseFac, phaseFac, complex(0.0, 0.0) };
+    ApplySingleBit(expPauliX, true, qubit);
+}
+
+/// Exponentiate Pauli Y operator
+void QEngineCPU::ExpY(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expPauliY[4] = { complex(0.0, 0.0), phaseFac * complex(0.0, -1.0), phaseFac * complex(0.0, 1.0),
+        complex(0.0, 0.0) };
+    ApplySingleBit(expPauliY, true, qubit);
+}
+
+/// Exponentiate Pauli Z operator
+void QEngineCPU::ExpZ(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expPauliZ[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), -phaseFac };
+    ApplySingleBit(expPauliZ, true, qubit);
+}
+
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
 void QEngineCPU::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {

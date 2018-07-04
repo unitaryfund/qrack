@@ -62,7 +62,8 @@ class OCLEngine {
 public:
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
     static OCLEngine* Instance();
-    /// If this is the first time instantiating the OpenCL context, you may specify the default platform number and default device number.
+    /// If this is the first time instantiating the OpenCL context, you may specify the default platform number and
+    /// default device number.
     static OCLEngine* Instance(int plat, int dev);
     /// Get a pointer to the OpenCL context
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
