@@ -56,6 +56,7 @@ public:
      *@{
      */
 
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);

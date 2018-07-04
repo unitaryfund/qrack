@@ -467,6 +467,10 @@ void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBi
         inputBit, outputBit);
 }
 
+void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit) {
+    shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
+}
+
 void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     EntangleAndCallMember(PTR3(CCNOT), inputBit1, inputBit2, outputBit);

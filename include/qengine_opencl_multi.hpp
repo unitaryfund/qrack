@@ -67,6 +67,8 @@ public:
     }
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
+    virtual void ApplySingleBit(const complex* mtrx,  bool doCalcNorm, bitLenInt qubitIndex);
+
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
@@ -140,6 +142,7 @@ protected:
     typedef void (QEngineOCL::*CGFn)(bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CRGFn)(real1, bitLenInt, bitLenInt);
     typedef void (QEngineOCL::*CCGFn)(bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QEngineOCL::*ASBFn)(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     template <typename F, typename... Args> void SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs);
     template <typename CF, typename F, typename... Args>
     void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs);

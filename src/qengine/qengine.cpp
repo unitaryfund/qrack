@@ -34,7 +34,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 
 template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
-void QEngineCPU::ApplySingleBit(bitLenInt qubit, const complex* mtrx, bool doCalcNorm)
+void QEngineCPU::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;

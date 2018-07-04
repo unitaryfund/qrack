@@ -263,6 +263,13 @@ public:
      */
 
     /**
+     * Apply an arbitrary single bit unitary transformation.
+     *
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be set to true.
+     */
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
+
+    /**
      * Doubly-controlled NOT gate
      *
      * If both controls are set to 1, the target bit is NOT-ed or X-ed.
