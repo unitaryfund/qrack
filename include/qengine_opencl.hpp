@@ -16,48 +16,28 @@
 #error OpenCL has not been enabled
 #endif
 
-#ifdef __APPLE__
-#include <OpenCL/cl.hpp>
-#else
-#include <CL/cl.hpp>
-#endif
-
+#include "common/oclengine.hpp"
 #include "qengine_cpu.hpp"
 
 namespace Qrack {
 
-typedef std::shared_ptr<cl::CommandQueue> CommandQueuePtr;
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
+typedef std::lock_guard<std::recursive_mutex> LockGuard;
 
 class OCLEngine;
-
-class LockGuard;
 
 class QEngineOCL;
 
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
-
-class LockGuard {
-protected:
-    std::shared_ptr<std::lock_guard<std::recursive_mutex>> lockGuard;
-
-public:
-    LockGuard(std::shared_ptr<std::recursive_mutex> mtx)
-    {
-        if (mtx != nullptr) {
-            lockGuard = std::make_shared<std::lock_guard<std::recursive_mutex>>(*mtx);
-        }
-    }
-};
 
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
 protected:
     int deviceID;
     OCLEngine* clObj;
-    CommandQueuePtr queue;
+    DeviceContextPtr device_context;
+    cl::CommandQueue queue;
     cl::Context context;
-    MutexPtr deviceMutexPtr;
     BufferPtr stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
@@ -87,8 +67,6 @@ public:
     }
 
     virtual complex* GetStateVector() { return stateVec; }
-    virtual BufferPtr GetStateBufferPtr() { return stateBuffer; }
-    virtual CommandQueuePtr GetQueuePtr() { return queue; }
 
     /* Operations that have an improved implementation. */
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload

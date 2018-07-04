@@ -64,7 +64,7 @@ if (ENABLE_OPENCL)
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
         src/qengine/state/opencl.cpp
-	src/qengine/state/opencl_multi.cpp
+        src/qengine/state/opencl_multi.cpp
         )
 
 else (ENABLE_OPENCL)

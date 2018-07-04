@@ -31,7 +31,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 17;
+const bitLenInt MaxQubits = 16;
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 {
@@ -97,7 +97,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn)
 
 TEST_CASE("test_cnot")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
 }
 
 TEST_CASE("test_anticnot")
@@ -122,7 +122,7 @@ TEST_CASE("test_swap")
 
 TEST_CASE("test_x")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
 
 TEST_CASE("test_y")
@@ -435,68 +435,25 @@ TEST_CASE("test_swap_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-#if 0
-TEST_CASE("test_grover")
-{
-    QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 8, 0, rng);
-
-    clock_t iterClock;
-
-    int i, j;
-
-    // Grover's search inverts the function of a black box subroutine.
-    // Our subroutine returns true only for an input of 100.
-
-    const int TARGET_PROB = 100;
-
-    std::cout << "Time of maximum probability search (ms)" << std::endl;
-
-    for (j = 0; j < 100; j++) {
-
-        // Start timing of one Grover's search
-        iterClock = clock();
-
-        // Our input to the subroutine "oracle" is 8 bits.
-        qftReg->SetPermutation(0);
-        qftReg->H(0, 8);
-
-        // Twelve iterations maximizes the probablity for 256 searched elements.
-        for (i = 0; i < 12; i++) {
-            // Our "oracle" is true for an input of "100" and false for all other inputs.
-            qftReg->DEC(100, 0, 8);
-            qftReg->ZeroPhaseFlip(0, 8);
-            qftReg->INC(100, 0, 8);
-            // This ends the "oracle."
-            qftReg->H(0, 8);
-            qftReg->ZeroPhaseFlip(0, 8);
-            qftReg->H(0, 8);
-            qftReg->PhaseFlip();
-        }
-
-        qftReg->MReg(0, 8);
-
-        iterClock = clock() - iterClock;
-        std::cout << (iterClock * 1000.0 / CLOCKS_PER_SEC) << std::endl;
-    }
-}
 
 TEST_CASE("test_grover")
 {
 
     // Grover's search inverts the function of a black box subroutine.
-    // Our subroutine returns true only for an input of 100.
+    // Our subroutine returns true only for an input of 3.
 
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
         int i;
+        // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+        // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
         int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
 
         // Our input to the subroutine "oracle" is 8 bits.
         qftReg->SetPermutation(0);
         qftReg->H(0, n);
 
-        // Twelve iterations maximizes the probablity for 256 searched elements.
         for (i = 0; i < optIter; i++) {
-            // Our "oracle" is true for an input of "100" and false for all other inputs.
+            // Our "oracle" is true for an input of "3" and false for all other inputs.
             qftReg->DEC(3, 0, n);
             qftReg->ZeroPhaseFlip(0, n);
             qftReg->INC(3, 0, n);
@@ -512,4 +469,4 @@ TEST_CASE("test_grover")
         qftReg->MReg(0, n);
     });
 }
-#endif
+
