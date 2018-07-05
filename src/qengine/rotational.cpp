@@ -50,6 +50,14 @@ void QEngineCPU::RZ(real1 radians, bitLenInt qubit)
     ApplySingleBit(pauliRZ, true, qubit);
 }
 
+/// Exponentiate identity operator
+void QEngineCPU::Exp(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expIdentity[4] = {  phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), phaseFac };
+    ApplySingleBit(expIdentity, true, qubit);
+}
+
 /// Exponentiate Pauli X operator
 void QEngineCPU::ExpX(real1 radians, bitLenInt qubit)
 {

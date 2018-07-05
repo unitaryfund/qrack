@@ -102,6 +102,7 @@ public:
     virtual void RX(real1 radians, bitLenInt qubit);
     virtual void RY(real1 radians, bitLenInt qubit);
     virtual void RZ(real1 radians, bitLenInt qubit);
+    virtual void Exp(real1 radians, bitLenInt qubit);
     virtual void ExpX(real1 radians, bitLenInt qubit);
     virtual void ExpY(real1 radians, bitLenInt qubit);
     virtual void ExpZ(real1 radians, bitLenInt qubit);

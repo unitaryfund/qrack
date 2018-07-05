@@ -776,6 +776,36 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crzdyad_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp")
+{
+    qftReg->SetPermutation(0x80001);
+    qftReg->Exp(2.0 * M_PI, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->Exp(2.0 * M_PI, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expdyad")
+{
+    qftReg->SetPermutation(0x80001);
+    qftReg->ExpDyad(4, 1, 19);
+    qftReg->SetPermutation(0x80001);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expdyad_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ExpDyad(4, 1, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_expx")
 {
     qftReg->SetPermutation(0x80001);

@@ -652,6 +652,10 @@ void QEngineOCLMulti::RZ(real1 radians, bitLenInt qubitIndex)
 {
     SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::RZ), radians);
 }
+void QEngineOCLMulti::Exp(real1 radians, bitLenInt qubitIndex)
+{
+    SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::Exp), radians);
+}
 void QEngineOCLMulti::ExpX(real1 radians, bitLenInt qubitIndex)
 {
     SingleBitGate(true, qubitIndex, (RGFn)(&QEngineOCL::ExpX), radians);

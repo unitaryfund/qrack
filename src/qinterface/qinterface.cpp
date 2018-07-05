@@ -387,6 +387,44 @@ void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenI
 }
 
 /**
+ * Bitwise (identity) exponentiation gate - Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+ */
+void QInterface::Exp(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        Exp(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+ * exponentiation of the identity operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    Exp((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+ * exponentiation of the identity operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
  * Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
  */
 void QInterface::ExpX(real1 radians, bitLenInt start, bitLenInt length)

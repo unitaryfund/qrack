@@ -489,6 +489,20 @@ public:
     virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
+     * (Identity) Exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     */
+    virtual void Exp(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction (identity) exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$, exponentiation of the identity operator
+     */
+    virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
      * Pauli X exponentiation gate
      *
      * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
@@ -498,7 +512,7 @@ public:
     /**
      * Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -512,7 +526,7 @@ public:
     /**
      * Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -526,7 +540,7 @@ public:
     /**
      * Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -810,6 +824,20 @@ public:
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
+     * Bitwise (identity) exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     */
+    virtual void Exp(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction (identity) exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$, exponentiation of the identity operator
+     */
+    virtual void ExpDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
      * Bitwise Pauli X exponentiation gate
      *
      * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
@@ -819,7 +847,7 @@ public:
     /**
      * Bitwise Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -833,7 +861,7 @@ public:
     /**
      * Bitwise Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -847,7 +875,7 @@ public:
     /**
      * Bitwise Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 

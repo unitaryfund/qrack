@@ -86,6 +86,7 @@ public:
     virtual void RX(real1 radians, bitLenInt qubitIndex);
     virtual void RY(real1 radians, bitLenInt qubitIndex);
     virtual void RZ(real1 radians, bitLenInt qubitIndex);
+    virtual void Exp(real1 radians, bitLenInt qubitIndex);
     virtual void ExpX(real1 radians, bitLenInt qubitIndex);
     virtual void ExpY(real1 radians, bitLenInt qubitIndex);
     virtual void ExpZ(real1 radians, bitLenInt qubitIndex);
