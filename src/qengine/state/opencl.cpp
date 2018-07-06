@@ -78,18 +78,18 @@ void QEngineOCL::DispatchCall(
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
 
     OCLDeviceCall ocl = device_context->Reserve(api_call);
-    ocl.call->setArg(0, *stateBuffer);
-    ocl.call->setArg(1, ulongBuffer);
-    ocl.call->setArg(2, *nStateBuffer);
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, *nStateBuffer);
     cl::Buffer loadBuffer;
     if (values) {
         loadBuffer =
             cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
-        ocl.call->setArg(3, loadBuffer);
+        ocl.call.setArg(3, loadBuffer);
     }
     queue.finish();
 
-    queue.enqueueNDRangeKernel(*(ocl.call), cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -134,13 +134,13 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     OCLDeviceCall ocl = device_context->Reserve(api_call);
 
-    ocl.call->setArg(0, *stateBuffer);
-    ocl.call->setArg(1, cmplxBuffer);
-    ocl.call->setArg(2, ulongBuffer);
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, cmplxBuffer);
+    ocl.call.setArg(2, ulongBuffer);
     if (doCalcNorm) {
-        ocl.call->setArg(3, nrmBuffer);
+        ocl.call.setArg(3, nrmBuffer);
     }
-    queue.enqueueNDRangeKernel(*(ocl.call), cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -186,13 +186,13 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
 
-    ocl.call->setArg(0, *stateBuffer);
-    ocl.call->setArg(1, *stateBuffer2);
-    ocl.call->setArg(2, ulongBuffer);
-    ocl.call->setArg(3, *nStateBuffer);
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, *stateBuffer2);
+    ocl.call.setArg(2, ulongBuffer);
+    ocl.call.setArg(3, *nStateBuffer);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(*(ocl.call), cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -241,10 +241,10 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
 
     // These arguments are common to both kernels.
-    prob_call.call->setArg(0, *stateBuffer);
-    prob_call.call->setArg(1, ulongBuffer);
-    prob_call.call->setArg(2, probBuffer1);
-    prob_call.call->setArg(3, angleBuffer1);
+    prob_call.call.setArg(0, *stateBuffer);
+    prob_call.call.setArg(1, ulongBuffer);
+    prob_call.call.setArg(2, probBuffer1);
+    prob_call.call.setArg(3, angleBuffer1);
 
     // The removed "part" is only necessary for Decohere.
     real1* partStateProb = nullptr;
@@ -258,14 +258,14 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         angleBuffer2 =
             cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
-        prob_call.call->setArg(4, probBuffer2);
-        prob_call.call->setArg(5, angleBuffer2);
+        prob_call.call.setArg(4, probBuffer2);
+        prob_call.call.setArg(5, angleBuffer2);
     }
 
     queue.finish();
 
     // Call the kernel that calculates bit probability and angle.
-    queue.enqueueNDRangeKernel(*(prob_call.call), cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(prob_call.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -286,13 +286,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         queue.enqueueUnmapMemObject(*(destination->stateBuffer), destination->stateVec);
         queue.finish();
 
-        amp_call.call->setArg(0, probBuffer2);
-        amp_call.call->setArg(1, angleBuffer2);
-        amp_call.call->setArg(2, ulongBuffer);
-        amp_call.call->setArg(3, *(destination->stateBuffer));
+        amp_call.call.setArg(0, probBuffer2);
+        amp_call.call.setArg(1, angleBuffer2);
+        amp_call.call.setArg(2, ulongBuffer);
+        amp_call.call.setArg(3, *(destination->stateBuffer));
         queue.finish();
 
-        queue.enqueueNDRangeKernel(*(amp_call.call), cl::NullRange, // kernel, offset
+        queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
             cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
             cl::NDRange(1)); // local number (per group)
 
@@ -313,13 +313,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     queue.finish();
 
-    amp_call.call->setArg(0, probBuffer1);
-    amp_call.call->setArg(1, angleBuffer1);
-    amp_call.call->setArg(2, ulongBuffer);
-    amp_call.call->setArg(3, *nStateBuffer);
+    amp_call.call.setArg(0, probBuffer1);
+    amp_call.call.setArg(1, angleBuffer1);
+    amp_call.call.setArg(2, ulongBuffer);
+    amp_call.call.setArg(3, *nStateBuffer);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(*(amp_call.call), cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -361,14 +361,14 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
 
-    ocl.call->setArg(0, *stateBuffer);
-    ocl.call->setArg(1, ulongBuffer);
-    ocl.call->setArg(2, oneChanceBuffer);
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, oneChanceBuffer);
     queue.finish();
 
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
-    queue.enqueueNDRangeKernel(*(ocl.call), cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -631,10 +631,10 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_NORMALIZE);
 
-    ocl.call->setArg(0, *stateBuffer);
-    ocl.call->setArg(1, ulongBuffer);
-    ocl.call->setArg(2, argsBuffer);
-    queue.enqueueNDRangeKernel(*(ocl.call), cl::NullRange, // kernel, offset
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, argsBuffer);
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -660,10 +660,10 @@ void QEngineOCL::UpdateRunningNorm()
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
-    ocl.call->setArg(0, *stateBuffer);
-    ocl.call->setArg(1, ulongBuffer);
-    ocl.call->setArg(2, nrmBuffer);
-    queue.enqueueNDRangeKernel(*(ocl.call), cl::NullRange, // kernel, offset
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, nrmBuffer);
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 

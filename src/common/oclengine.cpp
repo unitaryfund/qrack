@@ -105,26 +105,26 @@ void OCLEngine::InitOCL(int plat, int dev)
             exit(1);
         }
 
-        all_device_contexts[i]->calls[OCL_API_APPLY2X2] = std::make_shared<cl::Kernel>(program, "apply2x2");
-        all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = std::make_shared<cl::Kernel>(program, "apply2x2norm");
-        all_device_contexts[i]->calls[OCL_API_X] = std::make_shared<cl::Kernel>(program, "x");
-        all_device_contexts[i]->calls[OCL_API_COHERE] = std::make_shared<cl::Kernel>(program, "cohere");
-        all_device_contexts[i]->calls[OCL_API_DECOHEREPROB] = std::make_shared<cl::Kernel>(program, "decohereprob");
-        all_device_contexts[i]->calls[OCL_API_DECOHEREAMP] = std::make_shared<cl::Kernel>(program, "decohereamp");
-        all_device_contexts[i]->calls[OCL_API_DISPOSEPROB] = std::make_shared<cl::Kernel>(program, "disposeprob");
-        all_device_contexts[i]->calls[OCL_API_PROB] = std::make_shared<cl::Kernel>(program, "prob");
-        all_device_contexts[i]->calls[OCL_API_SWAP] = std::make_shared<cl::Kernel>(program, "swap");
-        all_device_contexts[i]->calls[OCL_API_ROL] = std::make_shared<cl::Kernel>(program, "rol");
-        all_device_contexts[i]->calls[OCL_API_ROR] = std::make_shared<cl::Kernel>(program, "ror");
-        all_device_contexts[i]->calls[OCL_API_INC] = std::make_shared<cl::Kernel>(program, "inc");
-        all_device_contexts[i]->calls[OCL_API_DEC] = std::make_shared<cl::Kernel>(program, "dec");
-        all_device_contexts[i]->calls[OCL_API_INCC] = std::make_shared<cl::Kernel>(program, "incc");
-        all_device_contexts[i]->calls[OCL_API_DECC] = std::make_shared<cl::Kernel>(program, "decc");
-        all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = std::make_shared<cl::Kernel>(program, "indexedLda");
-        all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = std::make_shared<cl::Kernel>(program, "indexedAdc");
-        all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = std::make_shared<cl::Kernel>(program, "indexedSbc");
-        all_device_contexts[i]->calls[OCL_API_NORMALIZE] = std::make_shared<cl::Kernel>(program, "nrmlze");
-        all_device_contexts[i]->calls[OCL_API_UPDATENORM] = std::make_shared<cl::Kernel>(program, "updatenorm");
+        all_device_contexts[i]->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
+        all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
+        all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
+        all_device_contexts[i]->calls[OCL_API_COHERE] = cl::Kernel(program, "cohere");
+        all_device_contexts[i]->calls[OCL_API_DECOHEREPROB] = cl::Kernel(program, "decohereprob");
+        all_device_contexts[i]->calls[OCL_API_DECOHEREAMP] = cl::Kernel(program, "decohereamp");
+        all_device_contexts[i]->calls[OCL_API_DISPOSEPROB] = cl::Kernel(program, "disposeprob");
+        all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
+        all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
+        all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
+        all_device_contexts[i]->calls[OCL_API_ROR] = cl::Kernel(program, "ror");
+        all_device_contexts[i]->calls[OCL_API_INC] = cl::Kernel(program, "inc");
+        all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
+        all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
+        all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
+        all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
+        all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
+        all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
+        all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
+        all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];
