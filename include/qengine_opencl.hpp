@@ -22,7 +22,6 @@
 namespace Qrack {
 
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
-typedef std::lock_guard<std::recursive_mutex> LockGuard;
 
 class OCLEngine;
 
@@ -108,19 +107,19 @@ protected:
     void ResetStateVec(complex* nStateVec);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void DispatchCall(cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
+    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
         unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
 
     /* Utility functions used by the operations above. */
-    void ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenInt length);
-    void INT(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
-    void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
+    void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
+    void INT(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
+    void INTC(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
 
-    bitCapInt OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
+    bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 };
 

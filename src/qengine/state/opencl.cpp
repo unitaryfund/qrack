@@ -21,8 +21,8 @@ namespace Qrack {
 
 void QEngineOCL::SetDevice(const int& dID)
 {
-    if (dID >= 0) {
-        deviceID = dID % (clObj->GetDeviceCount());
+    if ((dID >= clObj->GetDeviceCount()) || (dID < -1)) {
+        throw "Invalid OpenCL device selection";
     } else {
         deviceID = -1;
     }
@@ -50,8 +50,6 @@ void QEngineOCL::InitOCL(int devID)
 
 void QEngineOCL::ReInitOCL()
 {
-    clObj = OCLEngine::Instance();
-
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * maxQPower, stateVec);
@@ -61,14 +59,13 @@ void QEngineOCL::ReInitOCL()
 
 void QEngineOCL::ResetStateVec(complex* nStateVec)
 {
-    LockGuard locked_call(device_context->mutex);
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
     QEngineCPU::ResetStateVec(nStateVec);
     ReInitOCL();
 }
 
 void QEngineOCL::DispatchCall(
-    cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec, unsigned char* values, bitCapInt valuesPower)
+    OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec, unsigned char* values, bitCapInt valuesPower)
 {
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = nVec ? nVec : AllocStateVec(maxQPower);
@@ -79,18 +76,20 @@ void QEngineOCL::DispatchCall(
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, nStateVec);
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, *nStateBuffer);
+
+    std::shared_ptr<OCLDeviceCall> ocl = device_context->Reserve(api_call);
+    ocl->call->setArg(0, *stateBuffer);
+    ocl->call->setArg(1, ulongBuffer);
+    ocl->call->setArg(2, *nStateBuffer);
     cl::Buffer loadBuffer;
     if (values) {
         loadBuffer =
             cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
-        call->setArg(3, loadBuffer);
+        ocl->call->setArg(3, loadBuffer);
     }
     queue.finish();
 
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(*(ocl->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -104,8 +103,6 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    LockGuard locked_call(device_context->mutex);
-
     complex cmplx[CMPLX_NORM_LEN];
     real1* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
@@ -129,19 +126,21 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     queue.finish();
 
-    cl::Kernel apply2x2;
+    OCLAPI api_call;
     if (doCalcNorm) {
-        apply2x2 = device_context->apply2x2norm;
+        api_call = OCL_API_APPLY2X2_NORM;
     } else {
-        apply2x2 = device_context->apply2x2;
+        api_call = OCL_API_APPLY2X2;
     }
-    apply2x2.setArg(0, *stateBuffer);
-    apply2x2.setArg(1, cmplxBuffer);
-    apply2x2.setArg(2, ulongBuffer);
+    std::shared_ptr<OCLDeviceCall> ocl = device_context->Reserve(api_call);
+
+    ocl->call->setArg(0, *stateBuffer);
+    ocl->call->setArg(1, cmplxBuffer);
+    ocl->call->setArg(2, ulongBuffer);
     if (doCalcNorm) {
-        apply2x2.setArg(3, nrmBuffer);
+        ocl->call->setArg(3, nrmBuffer);
     }
-    queue.enqueueNDRangeKernel(apply2x2, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(*(ocl->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -159,8 +158,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
-    LockGuard locked_call(device_context->mutex);
-
     bitLenInt result = qubitCount;
 
     if (doNormalize && (runningNorm != 1.0)) {
@@ -186,14 +183,16 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     complex* nStateVec = AllocStateVec(nMaxQPower);
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * nMaxQPower, nStateVec);
-    cl::Kernel* call = &(device_context->cohere);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, *stateBuffer2);
-    call->setArg(2, ulongBuffer);
-    call->setArg(3, *nStateBuffer);
+
+    std::shared_ptr<OCLDeviceCall> ocl = device_context->Reserve(OCL_API_COHERE);
+
+    ocl->call->setArg(0, *stateBuffer);
+    ocl->call->setArg(1, *stateBuffer2);
+    ocl->call->setArg(2, ulongBuffer);
+    ocl->call->setArg(3, *nStateBuffer);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(*(ocl->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -211,6 +210,16 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     if (length == 0) {
         return;
     }
+
+    // Depending on whether we Decohere or Dispose, we have optimized kernels.
+    OCLAPI api_call;
+    if (destination != nullptr) {
+        api_call = OCL_API_DECOHEREPROB;
+    } else {
+        api_call = OCL_API_DISPOSEPROB;
+    }
+    std::shared_ptr<OCLDeviceCall> prob_call = device_context->Reserve(api_call);
+    std::shared_ptr<OCLDeviceCall> amp_call = device_context->Reserve(OCL_API_DECOHEREAMP);
 
     if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
@@ -231,18 +240,11 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     cl::Buffer angleBuffer1 = cl::Buffer(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
 
-    // Depending on whether we Decohere or Dispose, we have optimized kernels.
-    cl::Kernel* call;
-    if (destination != nullptr) {
-        call = &(device_context->decohereprob);
-    } else {
-        call = &(device_context->disposeprob);
-    }
     // These arguments are common to both kernels.
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, probBuffer1);
-    call->setArg(3, angleBuffer1);
+    prob_call->call->setArg(0, *stateBuffer);
+    prob_call->call->setArg(1, ulongBuffer);
+    prob_call->call->setArg(2, probBuffer1);
+    prob_call->call->setArg(3, angleBuffer1);
 
     // The removed "part" is only necessary for Decohere.
     real1* partStateProb = nullptr;
@@ -256,14 +258,14 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         angleBuffer2 =
             cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
-        call->setArg(4, probBuffer2);
-        call->setArg(5, angleBuffer2);
+        prob_call->call->setArg(4, probBuffer2);
+        prob_call->call->setArg(5, angleBuffer2);
     }
 
     queue.finish();
 
     // Call the kernel that calculates bit probability and angle.
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(*(prob_call->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -277,8 +279,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.flush();
     queue.finish();
 
-    call = &(device_context->decohereamp);
-
     // If we Decohere, calculate the state of the bit system removed.
     if (destination != nullptr) {
         bciArgs[0] = partPower;
@@ -286,13 +286,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         queue.enqueueUnmapMemObject(*(destination->stateBuffer), destination->stateVec);
         queue.finish();
 
-        call->setArg(0, probBuffer2);
-        call->setArg(1, angleBuffer2);
-        call->setArg(2, ulongBuffer);
-        call->setArg(3, *(destination->stateBuffer));
+        amp_call->call->setArg(0, probBuffer2);
+        amp_call->call->setArg(1, angleBuffer2);
+        amp_call->call->setArg(2, ulongBuffer);
+        amp_call->call->setArg(3, *(destination->stateBuffer));
         queue.finish();
 
-        queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+        queue.enqueueNDRangeKernel(*(amp_call->call), cl::NullRange, // kernel, offset
             cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
             cl::NDRange(1)); // local number (per group)
 
@@ -313,13 +313,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     queue.finish();
 
-    call->setArg(0, probBuffer1);
-    call->setArg(1, angleBuffer1);
-    call->setArg(2, ulongBuffer);
-    call->setArg(3, *nStateBuffer);
+    amp_call->call->setArg(0, probBuffer1);
+    amp_call->call->setArg(1, angleBuffer1);
+    amp_call->call->setArg(2, ulongBuffer);
+    amp_call->call->setArg(3, *nStateBuffer);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(*(amp_call->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -333,21 +333,14 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    LockGuard locked_call(device_context->mutex);
     DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
-{
-    LockGuard locked_call(device_context->mutex);
-    DecohereDispose(start, length, (QEngineOCLPtr) nullptr);
-}
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {
-    LockGuard locked_call(device_context->mutex);
-
     if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
@@ -366,15 +359,16 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     cl::Buffer oneChanceBuffer =
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * numCores, oneChanceArray);
 
-    cl::Kernel* call = &(device_context->prob);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, oneChanceBuffer);
+    std::shared_ptr<OCLDeviceCall> ocl = device_context->Reserve(OCL_API_PROB);
+
+    ocl->call->setArg(0, *stateBuffer);
+    ocl->call->setArg(1, ulongBuffer);
+    ocl->call->setArg(2, oneChanceBuffer);
     queue.finish();
 
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+    queue.enqueueNDRangeKernel(*(ocl->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -397,8 +391,6 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
 {
-    LockGuard locked_call(device_context->mutex);
-
     if (length == 1) {
         X(start);
         return;
@@ -408,14 +400,10 @@ void QEngineOCL::X(bitLenInt start, bitLenInt length)
     bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
     bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
 
-    DispatchCall(&(device_context->x), bciArgs);
+    DispatchCall(OCL_API_X, bciArgs);
 }
 
-void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    LockGuard locked_call(device_context->mutex);
-    QEngineCPU::Swap(qubit1, qubit2);
-}
+void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2) { QEngineCPU::Swap(qubit1, qubit2); }
 
 /// Bitwise swap
 void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
@@ -424,43 +412,33 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         return;
     }
 
-    LockGuard locked_call(device_context->mutex);
-
     bitCapInt reg1Mask = ((1 << length) - 1) << start1;
     bitCapInt reg2Mask = ((1 << length) - 1) << start2;
     bitCapInt otherMask = maxQPower - 1;
     otherMask ^= reg1Mask | reg2Mask;
     bitCapInt bciArgs[10] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
 
-    DispatchCall(&(device_context->swap), bciArgs);
+    DispatchCall(OCL_API_SWAP, bciArgs);
 }
 
-void QEngineOCL::ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenInt length)
+void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
     bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0 };
 
-    DispatchCall(call, bciArgs);
+    DispatchCall(api_call, bciArgs);
 }
 
 /// "Circular shift left" - shift bits left, and carry last bits.
-void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    LockGuard locked_call(device_context->mutex);
-    ROx(&(device_context->rol), shift, start, length);
-}
+void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length) { ROx(OCL_API_ROL, shift, start, length); }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    LockGuard locked_call(device_context->mutex);
-    ROx(&(device_context->ror), shift, start, length);
-}
+void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROx(OCL_API_ROR, shift, start, length); }
 
 /// Add or Subtract integer (without sign or carry)
-void QEngineOCL::INT(cl::Kernel* call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
+void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
 {
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
@@ -468,26 +446,24 @@ void QEngineOCL::INT(cl::Kernel* call, bitCapInt toMod, const bitLenInt start, c
 
     bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, lengthPower, start, toMod, 0, 0, 0, 0 };
 
-    DispatchCall(call, bciArgs);
+    DispatchCall(api_call, bciArgs);
 }
 
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
 {
-    LockGuard locked_call(device_context->mutex);
-    INT(&(device_context->inc), toAdd, start, length);
+    INT(OCL_API_INC, toAdd, start, length);
 }
 
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
 {
-    LockGuard locked_call(device_context->mutex);
-    INT(&(device_context->dec), toSub, start, length);
+    INT(OCL_API_DEC, toSub, start, length);
 }
 
 /// Add or Subtract integer (without sign, with carry)
 void QEngineOCL::INTC(
-    cl::Kernel* call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+    OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
@@ -496,28 +472,24 @@ void QEngineOCL::INTC(
 
     bitCapInt bciArgs[10] = { maxQPower >> 1, regMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0, 0 };
 
-    DispatchCall(call, bciArgs);
+    DispatchCall(api_call, bciArgs);
 }
 
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    LockGuard locked_call(device_context->mutex);
-
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
         toAdd++;
     }
 
-    INTC(&(device_context->incc), toAdd, start, length, carryIndex);
+    INTC(OCL_API_INCC, toAdd, start, length, carryIndex);
 }
 
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    LockGuard locked_call(device_context->mutex);
-
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -525,7 +497,7 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
         toSub++;
     }
 
-    INTC(&(device_context->decc), toSub, start, length, carryIndex);
+    INTC(OCL_API_DECC, toSub, start, length, carryIndex);
 }
 
 /** Set 8 bit register bits based on read from classical memory */
@@ -536,8 +508,6 @@ bitCapInt QEngineOCL::IndexedLDA(
         return 0;
     }
 
-    LockGuard locked_call(device_context->mutex);
-
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
@@ -546,7 +516,7 @@ bitCapInt QEngineOCL::IndexedLDA(
         0, 0 };
 
     complex* nStateVec = AllocStateVec(maxQPower);
-    DispatchCall(&(device_context->indexedLda), bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
+    DispatchCall(OCL_API_INDEXEDLDA, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
     real1 prob;
     real1 average = 0.0;
@@ -568,7 +538,7 @@ bitCapInt QEngineOCL::IndexedLDA(
 }
 
 /** Add or Subtract based on an indexed load from classical memory */
-bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
+bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     bool carryRes = M(carryIndex);
@@ -595,7 +565,7 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt i
         carryMask, lengthPower, valueBytes };
 
     complex* nStateVec = AllocStateVec(maxQPower);
-    DispatchCall(call, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
+    DispatchCall(api_call, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;
@@ -623,18 +593,14 @@ bitCapInt QEngineOCL::OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt i
 bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    LockGuard locked_call(device_context->mutex);
-    return OpIndexed(
-        &(device_context->indexedAdc), 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    return OpIndexed(OCL_API_INDEXEDADC, 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 /** Subtract based on an indexed load from classical memory */
 bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    LockGuard locked_call(device_context->mutex);
-    return OpIndexed(
-        &(device_context->indexedSbc), 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+    return OpIndexed(OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)
@@ -645,7 +611,6 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm == 1.0) {
         return;
     }
-    LockGuard locked_call(device_context->mutex);
     if (nrm < min_norm) {
         queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
         queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
@@ -663,11 +628,13 @@ void QEngineOCL::NormalizeState(real1 nrm)
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
-    cl::Kernel* call = &(device_context->normalize);
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, argsBuffer);
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+
+    std::shared_ptr<OCLDeviceCall> ocl = device_context->Reserve(OCL_API_NORMALIZE);
+
+    ocl->call->setArg(0, *stateBuffer);
+    ocl->call->setArg(1, ulongBuffer);
+    ocl->call->setArg(2, argsBuffer);
+    queue.enqueueNDRangeKernel(*(ocl->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
@@ -678,7 +645,6 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
 void QEngineOCL::UpdateRunningNorm()
 {
-    LockGuard locked_call(device_context->mutex);
 
     real1* nrmParts = new real1[CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE]();
     queue.enqueueWriteBuffer(
@@ -689,14 +655,15 @@ void QEngineOCL::UpdateRunningNorm()
     queue.flush();
 
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
-    cl::Kernel* call = &(device_context->updatenorm);
 
     queue.finish();
 
-    call->setArg(0, *stateBuffer);
-    call->setArg(1, ulongBuffer);
-    call->setArg(2, nrmBuffer);
-    queue.enqueueNDRangeKernel(*call, cl::NullRange, // kernel, offset
+    std::shared_ptr<OCLDeviceCall> ocl = device_context->Reserve(OCL_API_UPDATENORM);
+
+    ocl->call->setArg(0, *stateBuffer);
+    ocl->call->setArg(1, ulongBuffer);
+    ocl->call->setArg(2, nrmBuffer);
+    queue.enqueueNDRangeKernel(*(ocl->call), cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 

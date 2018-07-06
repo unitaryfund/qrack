@@ -54,7 +54,7 @@ void QEngineCPU::RZ(real1 radians, bitLenInt qubit)
 void QEngineCPU::Exp(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    complex expIdentity[4] = {  phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), phaseFac };
+    complex expIdentity[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), phaseFac };
     ApplySingleBit(expIdentity, true, qubit);
 }
 

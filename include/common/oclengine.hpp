@@ -27,34 +27,73 @@
 
 namespace Qrack {
 
+class OCLDeviceCall;
+
 class OCLDeviceContext;
 
 typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
 
-struct OCLDeviceContext {
+enum OCLAPI {
+    OCL_API_UNKNOWN = 0,
+    OCL_API_APPLY2X2,
+    OCL_API_APPLY2X2_NORM,
+    OCL_API_COHERE,
+    OCL_API_DECOHEREPROB,
+    OCL_API_DECOHEREAMP,
+    OCL_API_DISPOSEPROB,
+    OCL_API_PROB,
+    OCL_API_X,
+    OCL_API_SWAP,
+    OCL_API_ROL,
+    OCL_API_ROR,
+    OCL_API_INC,
+    OCL_API_DEC,
+    OCL_API_INCC,
+    OCL_API_DECC,
+    OCL_API_INDEXEDLDA,
+    OCL_API_INDEXEDADC,
+    OCL_API_INDEXEDSBC,
+    OCL_API_NORMALIZE,
+    OCL_API_UPDATENORM,
+};
+
+class OCLDeviceCall {
+protected:
+    std::lock_guard<std::recursive_mutex> guard;
+
+public:
+    std::shared_ptr<cl::Kernel> call;
+
+protected:
+    OCLDeviceCall(std::shared_ptr<std::recursive_mutex> m, std::shared_ptr<cl::Kernel> c)
+        : guard(*m)
+        , call(c)
+    {
+    }
+
+    friend class OCLDeviceContext;
+
+private:
+    OCLDeviceCall(const OCLDeviceCall&) = delete;
+    OCLDeviceCall& operator=(const OCLDeviceCall&) = delete;
+};
+
+class OCLDeviceContext {
+public:
     cl::Context context;
     cl::CommandQueue queue;
-    std::recursive_mutex mutex;
-    cl::Kernel apply2x2;
-    cl::Kernel apply2x2norm;
-    cl::Kernel cohere;
-    cl::Kernel decohereprob;
-    cl::Kernel decohereamp;
-    cl::Kernel disposeprob;
-    cl::Kernel prob;
-    cl::Kernel x;
-    cl::Kernel swap;
-    cl::Kernel rol;
-    cl::Kernel ror;
-    cl::Kernel inc;
-    cl::Kernel dec;
-    cl::Kernel incc;
-    cl::Kernel decc;
-    cl::Kernel indexedLda;
-    cl::Kernel indexedAdc;
-    cl::Kernel indexedSbc;
-    cl::Kernel normalize;
-    cl::Kernel updatenorm;
+
+protected:
+    std::shared_ptr<std::recursive_mutex> mutex;
+    std::map<OCLAPI, std::shared_ptr<cl::Kernel>> calls;
+
+public:
+    OCLDeviceContext() { mutex = std::make_shared<std::recursive_mutex>(); }
+    std::shared_ptr<OCLDeviceCall> Reserve(OCLAPI call)
+    {
+        return std::shared_ptr<OCLDeviceCall>(new OCLDeviceCall(mutex, calls[call]));
+    }
+    friend class OCLEngine;
 };
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
