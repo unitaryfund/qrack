@@ -62,8 +62,10 @@ protected:
     std::lock_guard<std::recursive_mutex> guard;
 
 public:
+    // A cl::Kernel is unique object which should always be taken by reference, or the OCLDeviceContext will lose ownership.
     cl::Kernel& call;
     OCLDeviceCall(const OCLDeviceCall&);
+    ~OCLDeviceCall();
 
 protected:
     OCLDeviceCall(std::shared_ptr<std::recursive_mutex> m, cl::Kernel& c)
