@@ -22,11 +22,7 @@ namespace Qrack {
 void QEngineOCL::SetDevice(const int& dID)
 {
 
-    if ((dID >= OCLEngine::Instance()->GetDeviceCount()) || (dID < -1)) {
-        throw "Invalid OpenCL device selection";
-    } else {
-        deviceID = -1;
-    }
+    deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
     queue = device_context->queue;

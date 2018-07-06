@@ -36,6 +36,8 @@ protected:
     DeviceContextPtr device_context;
     cl::CommandQueue queue;
     cl::Context context;
+    // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
+    // QEngineOCL itself, specifically by QEngineOCLMulti.
     BufferPtr stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
