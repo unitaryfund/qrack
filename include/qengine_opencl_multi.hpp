@@ -33,10 +33,6 @@ protected:
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
 
-    uint32_t randomSeed;
-    std::shared_ptr<std::default_random_engine> rand_generator;
-    std::uniform_real_distribution<real1> rand_distribution;
-
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         int deviceCount = -1);

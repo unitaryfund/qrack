@@ -9,6 +9,19 @@
 // Licensed under the GNU General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
+//
+// QEngineOCLMulti allows distribution of a single QEngine on multiple OpenCL devices. Its algorithms are similar to
+// those of the qHiPSTER project. (https://arxiv.org/abs/1601.07195) Unlike that project, it does not use an MPI
+// library. Device parallelism is therefore ostensibly limited to multiple processors on a single node, but transparent
+// OpenCL virtualization frameworks for clusters might allow this engine implementation to run as-is on a cluster, with
+// appropriate cluster configuration.
+//
+// A single engine is broken into 2^N equal-sized subengines, for an integer "N." These engines are indexed from 0 to
+// (2^N)-1 and enumerate all bit permutations from 0, at engine index 0 and substate amplitude index 0, in order up to
+// the last amplitude index of engine index (2^N)-1. Refer to https://arxiv.org/abs/1601.07195 to better understand the
+// single bit and controlled gate methods. When a gate operation that swaps permutation amplitudes without changing
+// their magnitude or phase crosses sub-engine boundaries, it is possible to swap entire sub-engine indices instead of
+// individual amplitudes, which is much cheaper.
 
 #include <algorithm>
 #include <future>
@@ -34,7 +47,6 @@ QEngineOCLMulti::QEngineOCLMulti(
         deviceCount = clObj->GetDeviceCount();
     }
 
-    // deviceCount = 64;
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
 
@@ -66,6 +78,7 @@ QEngineOCLMulti::QEngineOCLMulti(
             foundInitState = true;
             partialInit = false;
         }
+        // All sub-engines should have zero norm except for the one containing the initialization permutation:
         substateEngines.push_back(std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rgp, i, partialInit));
         substateEngines[i]->EnableNormalize(false);
         subInitVal = 0;
@@ -73,11 +86,15 @@ QEngineOCLMulti::QEngineOCLMulti(
     }
 }
 
+// Swap the high half of one sub-engine with the low half of another. This is necessary for gates which cross sub-engine
+// boundaries.
 void QEngineOCLMulti::ShuffleBuffers(complex* stateVec1, complex* stateVec2)
 {
     std::swap_ranges(stateVec1 + (subMaxQPower >> 1), stateVec1 + subMaxQPower, stateVec2);
 }
 
+// This underlies all single-bit gates, unless they can be carried out entirely at a "meta-qubit" level, by only
+// swapping sub-engine indices:
 template <typename F, typename... Args>
 void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args... gfnArgs)
 {
@@ -103,6 +120,7 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
     }
 
     if (bit < subQubitCount) {
+        // In this branch, the gate is entirely independent in the parallel sub-engines
         std::vector<std::future<void>> futures(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
             QEngineOCLPtr engine = substateEngines[i];
@@ -113,6 +131,10 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
             futures[i].get();
         }
     } else {
+        // Here, the gate requires data to cross sub-engine boundaries.
+        // It's always a matter of swapping the high halves of half the sub-engines with the low halves of the other
+        // half of engines, acting the maximum bit gate, (for the sub-engine bit count,) and swapping back. Depending on
+        // the bit index and number of sub-engines, we just have to determine which sub-engine to pair with which.
         std::vector<std::future<void>> futures(subEngineCount / 2);
 
         bitLenInt groupCount = 1 << (qubitCount - (bit + 1));
@@ -156,6 +178,7 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
     }
 }
 
+// This method underlies all controlled gates that can't be entirely carried out at the "meta-" level.
 template <typename CF, typename F, typename... Args>
 void QEngineOCLMulti::ControlledGate(
     bool anti, bitLenInt controlBit, bitLenInt targetBit, CF cfn, F fn, Args... gfnArgs)
@@ -167,13 +190,21 @@ void QEngineOCLMulti::ControlledGate(
     }
 
     if ((controlBit >= subQubitCount) && (targetBit >= subQubitCount)) {
+        // If both the control and target are "meta-," we can do this at a "meta-" level with a single-bit gate
+        // "payload."
         MetaControlled(anti, { static_cast<bitLenInt>(controlBit - subQubitCount) },
             static_cast<bitLenInt>(targetBit - subQubitCount), fn, gfnArgs...);
     } else if (controlBit >= subQubitCount) {
+        // If the control is "meta-," but the target is not, we do this semi- at a "meta-" level, again with a
+        // single-bit gate payload.
         SemiMetaControlled(anti, { static_cast<bitLenInt>(controlBit - subQubitCount) }, targetBit, fn, gfnArgs...);
     } else if (controlBit < (subQubitCount - 1)) {
+        // If both control and target bits fit within independent sub-engines, we can just do this parallelized over
+        // sub-engines with a two-bit gate.
         SingleBitGate(false, targetBit, cfn, gfnArgs..., controlBit);
     } else {
+        // There's a particular edge case not handled by any of the above, where both control and target fit in
+        // independent sub-engines, but the control bit is the highest bit in the sub-engine.
         ControlledSkip(anti, 0, targetBit, fn, gfnArgs...);
     }
 }
@@ -196,6 +227,8 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
         highControl = controlBit1;
     }
 
+    // Like singly-controlled gates, we can handle this entirely "meta-," "semi-meta-," or parallelized entirely
+    // independently within sub-engines.
     if ((lowControl >= subQubitCount) && (targetBit >= subQubitCount)) {
         MetaControlled(anti,
             { static_cast<bitLenInt>(controlBit1 - subQubitCount),
@@ -217,10 +250,13 @@ void QEngineOCLMulti::DoublyControlledGate(bool anti, bitLenInt controlBit1, bit
                 anti, { static_cast<bitLenInt>(highControl - subQubitCount) }, targetBit, cfn, gfnArgs..., lowControl);
         }
     } else {
+        // Again, there's a particular edge case not handled by any of the above, where the low control bit and the
+        // target bit fit in independent sub-engines, but the low control bit is the highest bit in the sub-engine.
         ControlledSkip(anti, 1, targetBit, fn, gfnArgs...);
     }
 }
 
+// This method has not been parallelized.
 void QEngineOCLMulti::SetQuantumState(complex* inputState)
 {
     CombineEngines(qubitCount - 1);
@@ -253,6 +289,7 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm)
     }
 }
 
+// Certain difficult and/or less essential methods have not been parallelized.
 bitLenInt QEngineOCLMulti::Cohere(QEngineOCLMultiPtr toCopy)
 {
     bitLenInt result;
@@ -302,6 +339,8 @@ void QEngineOCLMulti::Dispose(bitLenInt start, bitLenInt length)
     SeparateEngines();
 }
 
+// Single-bit gate wrappers and length variants follow. Some can have certain cases offloaded to (cheaper) "meta-"
+// variants.
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     if ((control1 >= subQubitCount) && (control2 >= subQubitCount) && (target >= subQubitCount)) {
@@ -473,6 +512,8 @@ void QEngineOCLMulti::MetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLe
     SetQubitCount(qubitCount);
 }
 
+// This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
+// instead of amplitude indices.
 template <typename F, typename... Args>
 void QEngineOCLMulti::MetaControlled(
     bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs)
@@ -534,6 +575,8 @@ void QEngineOCLMulti::MetaControlled(
     }
 }
 
+// This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to fit in
+// sub-engines).
 template <typename F, typename... Args>
 void QEngineOCLMulti::SemiMetaControlled(
     bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit, F fn, Args... gfnArgs)
@@ -572,6 +615,8 @@ void QEngineOCLMulti::SemiMetaControlled(
     }
 }
 
+// This is the particular edge case between any "meta-" gate and any gate entirely below the "meta-"/"embarrassingly
+// parallel" threshold, where a control bit is the most significant bit in a sub-engine.
 template <typename F, typename... Args>
 void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt targetBit, F fn, Args... gfnArgs)
 {
@@ -685,6 +730,8 @@ void QEngineOCLMulti::CRT(real1 radians, bitLenInt control, bitLenInt target)
     ControlledGate(false, control, target, (CRGFn)(&QEngineOCL::CRT), (RGFn)(&QEngineOCL::RT), radians);
 }
 
+// Non-primitive gates combine the bare minimum number of sub-engines into a single engine, in order to call the
+// underlying non-primitive gate on the engine.
 void QEngineOCLMulti::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     CombineAndOp([&](QEngineOCLPtr engine) { engine->INC(toAdd, start, length); },
@@ -1203,6 +1250,7 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
     }
 }
 
+// IndexedLDA/ADC/SBC operations don't behave on a stateVec with 0 norm.
 template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<bitLenInt> bits)
 {
     CombineAndOp(

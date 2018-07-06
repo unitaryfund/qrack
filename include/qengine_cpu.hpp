@@ -45,8 +45,8 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool partialInit = false);
     QEngineCPU(QEngineCPUPtr toCopy)
         : QInterface(toCopy->qubitCount, toCopy->rand_generator)
+        , doNormalize(toCopy->doNormalize)
     {
-        doNormalize = toCopy->doNormalize;
         CopyState(toCopy);
     }
     ~QEngineCPU() { delete[] stateVec; }

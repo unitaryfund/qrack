@@ -68,8 +68,8 @@ public:
     OCLDeviceCall(const OCLDeviceCall&);
 
 protected:
-    OCLDeviceCall(std::shared_ptr<std::recursive_mutex> m, cl::Kernel& c)
-        : guard(*m)
+    OCLDeviceCall(std::recursive_mutex& m, cl::Kernel& c)
+        : guard(m)
         , call(c)
     {
     }
@@ -82,15 +82,22 @@ private:
 
 class OCLDeviceContext {
 public:
+    cl::Platform platform;
+    cl::Device device;
     cl::Context context;
     cl::CommandQueue queue;
 
 protected:
-    std::shared_ptr<std::recursive_mutex> mutex;
+    std::recursive_mutex mutex;
     std::map<OCLAPI, cl::Kernel> calls;
 
 public:
-    OCLDeviceContext() { mutex = std::make_shared<std::recursive_mutex>(); }
+    OCLDeviceContext(cl::Platform& p, cl::Device& d)
+        : platform(p)
+        , device(d)
+        , mutex()
+    {
+    }
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
     friend class OCLEngine;
 };
@@ -100,29 +107,23 @@ class OCLEngine {
 public:
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
     static OCLEngine* Instance();
-    /// If this is the first time instantiating the OpenCL context, you may specify the default platform number and
-    /// default device number.
-    static OCLEngine* Instance(int plat, int dev);
     /// Get a pointer to the OpenCL context
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
-
     int GetDeviceCount() { return deviceCount; }
-    int GetDefaultDeviceID() { return default_device_id; };
+    void SetDefaultDeviceContext(DeviceContextPtr dcp);
 
 private:
     int deviceCount;
-    int default_device_id;
 
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 
     OCLEngine(); // Private so that it can  not be called
-    OCLEngine(int plat, int dev); // Private so that it can  not be called
     OCLEngine(OCLEngine const&); // copy constructor is private
     OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
     static OCLEngine* m_pInstance;
 
-    void InitOCL(int plat, int dev);
+    void InitOCL();
 
     unsigned long PowerOf2LessThan(unsigned long number);
 };

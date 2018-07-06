@@ -33,7 +33,6 @@ typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 class QEngineOCL : public QEngineCPU {
 protected:
     int deviceID;
-    OCLEngine* clObj;
     DeviceContextPtr device_context;
     cl::CommandQueue queue;
     cl::Context context;
@@ -52,11 +51,9 @@ public:
     }
 
     QEngineOCL(QEngineOCLPtr toCopy)
-        : QEngineCPU(toCopy->GetQubitCount(), 0, toCopy->rand_generator, complex(-999.0, -999.0), false)
+        : QEngineCPU(toCopy)
     {
-        doNormalize = toCopy->doNormalize;
         InitOCL(toCopy->deviceID);
-        CopyState(toCopy);
     }
 
     virtual void SetQubitCount(bitLenInt qb)

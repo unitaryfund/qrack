@@ -36,12 +36,13 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
     }
 }
 
-OCLEngine::OCLEngine() { InitOCL(0, -1); }
-OCLEngine::OCLEngine(int plat, int dev) { InitOCL(plat, dev); }
+void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
+
+OCLEngine::OCLEngine() { InitOCL(); }
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
-void OCLEngine::InitOCL(int plat, int dev)
+void OCLEngine::InitOCL()
 {
     int i;
     // get all platforms (drivers), e.g. NVIDIA
@@ -57,12 +58,15 @@ void OCLEngine::InitOCL(int plat, int dev)
         std::cout << " No platforms found. Check OpenCL installation!\n";
         exit(1);
     }
-    default_platform = all_platforms[plat];
 
-    // get default device (CPUs, GPUs) of the default platform
-    for (int i = 0; i < (int)all_platforms.size(); i++) {
+    // get all devices
+    std::vector<cl::Platform> devPlatVec;
+    for (size_t i = 0; i < all_platforms.size(); i++) {
         std::vector<cl::Device> platform_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
+        for (size_t j = 0; j < platform_devices.size(); j++) {
+            devPlatVec.push_back(all_platforms[i]);
+        }
         all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
     }
     if (all_devices.size() == 0) {
@@ -72,15 +76,10 @@ void OCLEngine::InitOCL(int plat, int dev)
 
     deviceCount = all_devices.size();
 
-    if ((dev < 0) || (dev >= deviceCount)) {
-        // prefer device[1] because that's usually a GPU or accelerator; device[0] is usually the CPU
-        // also make sure that the default device is in our node list
-        dev = deviceCount - 1;
-    }
-    default_device_id = dev;
-    default_device = all_devices[dev];
+    // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
+    int dev = deviceCount - 1;
 
-    // create the program that we want to execute on the device
+    // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
 
 #if ENABLE_COMPLEX8
@@ -93,7 +92,7 @@ void OCLEngine::InitOCL(int plat, int dev)
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
-        all_device_contexts.push_back(std::make_shared<OCLDeviceContext>());
+        all_device_contexts.push_back(std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]));
         all_device_contexts[i]->context = cl::Context(all_devices[i]);
         all_device_contexts[i]->queue = cl::CommandQueue(all_device_contexts[i]->context, all_devices[i]);
 
@@ -146,16 +145,6 @@ OCLEngine* OCLEngine::Instance()
 {
     if (!m_pInstance)
         m_pInstance = new OCLEngine();
-    return m_pInstance;
-}
-
-OCLEngine* OCLEngine::Instance(int plat, int dev)
-{
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine(plat, dev);
-    } else {
-        std::cout << "Warning: Tried to reinitialize OpenCL environment with platform and device." << std::endl;
-    }
     return m_pInstance;
 }
 

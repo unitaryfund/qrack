@@ -21,20 +21,15 @@ namespace Qrack {
 
 void QEngineOCL::SetDevice(const int& dID)
 {
-    if ((dID >= clObj->GetDeviceCount()) || (dID < -1)) {
+
+    if ((dID >= OCLEngine::Instance()->GetDeviceCount()) || (dID < -1)) {
         throw "Invalid OpenCL device selection";
     } else {
         deviceID = -1;
     }
-    device_context = clObj->GetDeviceContextPtr(deviceID);
+    device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
     queue = device_context->queue;
-}
-
-void QEngineOCL::InitOCL(int devID)
-{
-    clObj = OCLEngine::Instance();
-    SetDevice(devID);
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
@@ -47,6 +42,8 @@ void QEngineOCL::InitOCL(int devID)
 
     queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
 }
+
+void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
 
 void QEngineOCL::ReInitOCL()
 {
