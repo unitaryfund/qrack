@@ -24,17 +24,6 @@
 
 namespace Qrack {
 
-OCLDeviceCall::~OCLDeviceCall()
-{
-    cl_int err;
-    cl_uint count;
-    err = call.getInfo((cl_kernel_info)CL_KERNEL_REFERENCE_COUNT, &count);
-    if ((err != CL_SUCCESS) || (count <= 0)) {
-        // Can't throw an exception, because we're in a destructor.
-        std::cout<<"OpenCL Kernel has been corrupted. (Do not assign from OCLDeviceCall's call member. Only pass it by reference.)"<<std::endl;
-    }
-}
-
 /// "Qrack::OCLEngine" manages the single OpenCL context
 
 // Public singleton methods to get pointers to various methods
