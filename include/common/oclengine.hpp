@@ -63,6 +63,7 @@ protected:
 
 public:
     std::shared_ptr<cl::Kernel> call;
+    OCLDeviceCall(const OCLDeviceCall&);
 
 protected:
     OCLDeviceCall(std::shared_ptr<std::recursive_mutex> m, std::shared_ptr<cl::Kernel> c)
@@ -73,8 +74,6 @@ protected:
 
     friend class OCLDeviceContext;
 
-private:
-    OCLDeviceCall(const OCLDeviceCall&) = delete;
     OCLDeviceCall& operator=(const OCLDeviceCall&) = delete;
 };
 
@@ -89,9 +88,9 @@ protected:
 
 public:
     OCLDeviceContext() { mutex = std::make_shared<std::recursive_mutex>(); }
-    std::shared_ptr<OCLDeviceCall> Reserve(OCLAPI call)
+    OCLDeviceCall Reserve(OCLAPI call)
     {
-        return std::shared_ptr<OCLDeviceCall>(new OCLDeviceCall(mutex, calls[call]));
+        return OCLDeviceCall (mutex, calls[call]);
     }
     friend class OCLEngine;
 };
