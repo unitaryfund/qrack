@@ -12,9 +12,11 @@
 
 #pragma once
 
+#include <ctime>
 #include <map>
 #include <math.h>
 #include <memory>
+#include <random>
 #include <vector>
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
@@ -55,6 +57,12 @@ enum QInterfaceEngine {
     QINTERFACE_OPENCL,
 
     /**
+     * Create a QEngineOCLMUlti, composed from multiple QEngineOCLs, using OpenCL
+     * in parallel across 2^N devices, for N an integer >= 0.
+     */
+    QINTERFACE_OPENCL_MULTI,
+
+    /**
      * Create a QUnit, which utilizes other QInterface classes to minimize the
      * amount of work that's needed for any given operation based on the
      * entanglement of the bits involved.
@@ -86,14 +94,34 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
 
+    uint32_t randomSeed;
+    std::shared_ptr<std::default_random_engine> rand_generator;
+    std::uniform_real_distribution<real1> rand_distribution;
+
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
         maxQPower = 1 << qubitCount;
     }
 
+    /** Generate a random real1 from 0 to 1 */
+    virtual real1 Rand() { return rand_distribution(*rand_generator); }
+    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
+
 public:
-    QInterface(bitLenInt n) { SetQubitCount(n); }
+    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+        : rand_distribution(0.0, 1.0)
+    {
+        SetQubitCount(n);
+
+        if (rgp == NULL) {
+            rand_generator = std::make_shared<std::default_random_engine>();
+            randomSeed = std::time(0);
+            SetRandomSeed(randomSeed);
+        } else {
+            rand_generator = rgp;
+        }
+    }
 
     /** Destructor of QInterface */
     virtual ~QInterface(){};
@@ -235,6 +263,14 @@ public:
      */
 
     /**
+     * Apply an arbitrary single bit unitary transformation.
+     *
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
+     * set to true.
+     */
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
+
+    /**
      * Doubly-controlled NOT gate
      *
      * If both controls are set to 1, the target bit is NOT-ed or X-ed.
@@ -246,7 +282,7 @@ public:
      *
      * If both controls are set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) = 0;
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Controlled NOT gate
@@ -260,7 +296,7 @@ public:
      *
      * If the control is set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target) = 0;
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Hadamard gate
@@ -375,42 +411,42 @@ public:
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) = 0;
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) = 0;
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate
      *
      * Measures the outputBit, then overwrites it with result.
      */
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit) = 0;
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      *  Quantum analog of classical "AND" gate. Takes one qubit input and one
      *  classical bit input. Measures the outputBit, then overwrites it with
      *  result.
      */
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) = 0;
+    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate. Takes one qubit input and one
      * classical bit input. Measures the outputBit, then overwrites it with
      * result.
      */
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) = 0;
+    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate. Takes one qubit input and one
      * classical bit input. Measures the outputBit, then overwrites it with
      * result.
      */
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit) = 0;
+    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /** @} */
 
@@ -451,6 +487,62 @@ public:
      * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
      */
     virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * (Identity) Exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     */
+    virtual void Exp(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction (identity) exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$, exponentiation of the identity operator
+     */
+    virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpX(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpY(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
+
+    /**
+     * Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZ(real1 radians, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Dyadic fraction Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled X axis rotation gate
@@ -732,6 +824,62 @@ public:
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
+     * Bitwise (identity) exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     */
+    virtual void Exp(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction (identity) exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$, exponentiation of the identity operator
+     */
+    virtual void ExpDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpX(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction Pauli X exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     */
+    virtual void ExpXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpY(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction Pauli Y exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     */
+    virtual void ExpYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZ(real1 radians, bitLenInt start, bitLenInt length);
+
+    /**
+     * Bitwise Dyadic fraction Pauli Z exponentiation gate
+     *
+     * Applies \f$ e^{-i * \pi * numerator * \sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     */
+    virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+
+    /**
      * Bitwise controlled Y gate
      *
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
@@ -771,10 +919,10 @@ public:
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Circular shift left - shift bits left, and carry last bits. */
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Circular shift right - shift bits right, and carry first bits. */
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length) = 0;
+    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
@@ -841,10 +989,10 @@ public:
     virtual void PhaseFlip() = 0;
 
     /** Set register bits to given permutation */
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value) = 0;
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) = 0;
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from

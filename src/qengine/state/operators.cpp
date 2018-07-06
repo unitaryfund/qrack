@@ -877,7 +877,7 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
     delete[] probArray;
 
     bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / sqrt(nrmlzr);
+    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
 
     par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
         if ((i & regMask) == resultPtr) {
@@ -925,7 +925,9 @@ bitCapInt QEngineCPU::IndexedLDA(
         totProb += prob;
         average += prob * outputInt;
     }
-    average /= totProb;
+    if (totProb > 0.0) {
+        average /= totProb;
+    }
 
     ResetStateVec(nStateVec);
 
@@ -1023,7 +1025,9 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         totProb += prob;
         average += prob * outputInt;
     }
-    average /= totProb;
+    if (totProb > 0.0) {
+        average /= totProb;
+    }
 
     // Finally, we dealloc the old state vector and replace it with the one we
     // just calculated.
@@ -1127,7 +1131,9 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         totProb += prob;
         average += prob * outputInt;
     }
-    average /= totProb;
+    if (totProb > 0.0) {
+        average /= totProb;
+    }
 
     // Finally, we dealloc the old state vector and replace it with the one we
     // just calculated.

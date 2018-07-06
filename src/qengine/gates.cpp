@@ -107,7 +107,7 @@ void QEngineCPU::H(bitLenInt qubit)
     // bits.");
     const complex had[4] = { complex(1.0 / M_SQRT2, 0.0), complex(1.0 / M_SQRT2, 0.0), complex(1.0 / M_SQRT2, 0.0),
         complex(-1.0 / M_SQRT2, 0.0) };
-    ApplySingleBit(qubit, had, true);
+    ApplySingleBit(had, true, qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -116,7 +116,7 @@ void QEngineCPU::X(bitLenInt qubit)
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     const complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
-    ApplySingleBit(qubit, pauliX, false);
+    ApplySingleBit(pauliX, false, qubit);
 }
 
 /// Apply Pauli Y matrix to bit
@@ -125,7 +125,7 @@ void QEngineCPU::Y(bitLenInt qubit)
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     const complex pauliY[4] = { complex(0.0, 0.0), complex(0.0, -1.0), complex(0.0, 1.0), complex(0.0, 0.0) };
-    ApplySingleBit(qubit, pauliY, false);
+    ApplySingleBit(pauliY, false, qubit);
 }
 
 /// Apply Pauli Z matrix to bit
@@ -134,7 +134,7 @@ void QEngineCPU::Z(bitLenInt qubit)
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     const complex pauliZ[4] = { complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0) };
-    ApplySingleBit(qubit, pauliZ, false);
+    ApplySingleBit(pauliZ, false, qubit);
 }
 
 /// Apply controlled Pauli Y matrix to bit

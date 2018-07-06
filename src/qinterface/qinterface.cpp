@@ -14,6 +14,103 @@
 
 namespace Qrack {
 
+void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
+{
+    X(control);
+    CNOT(control, target);
+    X(control);
+}
+
+void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    X(control1);
+    X(control2);
+    CCNOT(control1, control2, target);
+    X(control1);
+    X(control2);
+}
+
+// Logic Operators:
+
+void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    /* Same bit, no action necessary. */
+    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
+        return;
+    }
+
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
+        SetBit(outputBit, false);
+        if (inputBit1 == inputBit2) {
+            CNOT(inputBit1, outputBit);
+        } else {
+            CCNOT(inputBit1, inputBit2, outputBit);
+        }
+    } else {
+        throw std::invalid_argument("Invalid AND arguments.");
+    }
+}
+void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    /* Same bit, no action necessary. */
+    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
+        return;
+    }
+
+    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
+        SetBit(outputBit, true);
+        if (inputBit1 == inputBit2) {
+            AntiCNOT(inputBit1, outputBit);
+        } else {
+            AntiCCNOT(inputBit1, inputBit2, outputBit);
+        }
+    } else {
+        throw std::invalid_argument("Invalid OR arguments.");
+    }
+}
+void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
+        SetBit(outputBit, false);
+        return;
+    }
+
+    if (inputBit1 == outputBit) {
+        CNOT(inputBit2, outputBit);
+    } else if (inputBit2 == outputBit) {
+        CNOT(inputBit1, outputBit);
+    } else {
+        SetBit(outputBit, false);
+        CNOT(inputBit1, outputBit);
+        CNOT(inputBit2, outputBit);
+    }
+}
+void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
+    SetBit(outputBit, false);
+    if (inputClassicalBit && (inputQBit != outputBit)) {
+        CNOT(inputQBit, outputBit);
+    }
+}
+void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
+    if (inputClassicalBit) {
+        SetBit(outputBit, true);
+    } else if (inputQBit != outputBit) {
+        SetBit(outputBit, false);
+        CNOT(inputQBit, outputBit);
+    }
+}
+void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
+    if (inputQBit != outputBit) {
+        SetBit(outputBit, inputClassicalBit);
+        CNOT(inputQBit, outputBit);
+    } else if (inputClassicalBit) {
+        X(outputBit);
+    }
+}
+
 // Bit-wise apply "anti-"controlled-not to three registers
 void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
@@ -246,6 +343,14 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
+/// SetReg - Set bits from start to (length - 1) to given permutation
+void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt perm)
+{
+    for (int i = 0; i < length; i++) {
+        SetBit(start + i, (perm & (1 << i)) > 0);
+    }
+}
+
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
 void QInterface::RT(real1 radians, bitLenInt start, bitLenInt length)
 {
@@ -278,6 +383,158 @@ void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenI
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         RTDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
+ * Bitwise (identity) exponentiation gate - Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+ */
+void QInterface::Exp(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        Exp(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+ * exponentiation of the identity operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    Exp((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+ * exponentiation of the identity operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
+ * Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+ */
+void QInterface::ExpX(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpX(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli X exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$,
+ * exponentiation of the Pauli X operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    ExpX((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Dyadic fraction Pauli X exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_x / 2^denomPower} \f$,
+ * exponentiation of the Pauli X operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpXDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
+ * Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+ */
+void QInterface::ExpY(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpY(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli Y exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$,
+ * exponentiation of the Pauli Y operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    ExpY((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Dyadic fraction Pauli Y exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_y / 2^denomPower} \f$,
+ * exponentiation of the Pauli Y operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpYDyad(numerator, denominator, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli Z exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$,
+ * exponentiation of the Pauli Z operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    ExpZ((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
+}
+
+/**
+ * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+ */
+void QInterface::ExpZ(real1 radians, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpZ(radians, start + bit);
+    }
+}
+
+/**
+ * Dyadic fraction Pauli Z exponentiation gate - Applies \f$ e^{-i * \pi * numerator *\sigma_z / 2^denomPower} \f$,
+ * exponentiation of the Pauli Z operator
+ *
+ * NOTE THAT DYADIC OPERATION ANGLE SIGN IS REVERSED FROM RADIAN ROTATION OPERATORS AND LACKS DIVISION BY A FACTOR OF
+ * TWO.
+ */
+void QInterface::ExpZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ExpZDyad(numerator, denominator, start + bit);
     }
 }
 
@@ -509,6 +766,40 @@ void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitL
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CRZDyad(numerator, denominator, control + bit, target + bit);
+    }
+}
+
+// Bit-wise apply measurement gate to a register
+bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
+{
+    bitCapInt result = 0;
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        result |= M(start + bit) ? (1 << bit) : 0;
+    }
+    return result;
+}
+
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
+void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    shift %= length;
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        Reverse(start, end);
+        Reverse(start, start + shift);
+        Reverse(start + shift, end);
+    }
+}
+
+/// "Circular shift right" - (Uses swap-based algorithm for speed)
+void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    shift %= length;
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        Reverse(start + shift, end);
+        Reverse(start, start + shift);
+        Reverse(start, end);
     }
 }
 

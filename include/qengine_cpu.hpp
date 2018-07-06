@@ -14,7 +14,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <random>
 
 #include "qinterface.hpp"
 
@@ -37,32 +36,32 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  */
 class QEngineCPU : public QInterface, public ParallelFor {
 protected:
-    uint32_t randomSeed;
+    bool doNormalize;
     real1 runningNorm;
     complex* stateVec;
 
-    std::shared_ptr<std::default_random_engine> rand_generator;
-    std::uniform_real_distribution<real1> rand_distribution;
-
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0));
+        complex phaseFac = complex(-999.0, -999.0), bool partialInit = false);
+    QEngineCPU(QEngineCPUPtr toCopy)
+        : QInterface(toCopy->qubitCount, toCopy->rand_generator)
+        , doNormalize(toCopy->doNormalize)
+    {
+        CopyState(toCopy);
+    }
     ~QEngineCPU() { delete[] stateVec; }
+
+    virtual void EnableNormalize(bool doN) { doNormalize = doN; }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
-    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
 
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-    {
-        Decohere(start, length, std::dynamic_pointer_cast<QEngineCPU>(dest));
-    }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /**
@@ -70,6 +69,7 @@ public:
      *@{
      */
 
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
@@ -85,24 +85,6 @@ public:
     /** @} */
 
     /**
-     * \defgroup LogicGates Logic Gates
-     *
-     * Each bit is paired with a CL* variant that utilizes a classical bit as
-     * an input.
-     *
-     * @{
-     */
-
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-
-    /** @} */
-
-    /**
      * \defgroup RotGates Rotational gates:
      *
      * NOTE: Dyadic operation angle sign is reversed from radian rotation
@@ -113,10 +95,14 @@ public:
 
     virtual void RT(real1 radians, bitLenInt qubitIndex);
     virtual void RX(real1 radians, bitLenInt qubitIndex);
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
     virtual void RY(real1 radians, bitLenInt qubitIndex);
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
     virtual void RZ(real1 radians, bitLenInt qubitIndex);
+    virtual void Exp(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpX(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpY(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpZ(real1 radians, bitLenInt qubitIndex);
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 
@@ -203,25 +189,30 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
+    virtual real1 GetNorm(bool update = true)
+    {
+        if (update) {
+            UpdateRunningNorm();
+        }
+        return runningNorm;
+    }
+    virtual void SetNorm(real1 n) { runningNorm = n; }
+    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 
 protected:
-    /** Generate a random real1 from 0 to 1 */
-    real1 Rand() { return rand_distribution(*rand_generator); }
-
     virtual void ResetStateVec(complex* nStateVec);
-    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
+    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
-    virtual void ApplySingleBit(bitLenInt qubitIndex, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void NormalizeState();
     virtual void UpdateRunningNorm();
     virtual complex* AllocStateVec(bitCapInt elemCount);
 };

@@ -20,7 +20,7 @@ void QEngineCPU::RT(real1 radians, bitLenInt qubit)
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
     const complex mtrx[4] = { complex(1.0, 0), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
-    ApplySingleBit(qubit, mtrx, true);
+    ApplySingleBit(mtrx, true, qubit);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
@@ -29,7 +29,7 @@ void QEngineCPU::RX(real1 radians, bitLenInt qubit)
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
     complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine), complex(cosine, 0.0) };
-    ApplySingleBit(qubit, pauliRX, true);
+    ApplySingleBit(pauliRX, true, qubit);
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
@@ -38,7 +38,7 @@ void QEngineCPU::RY(real1 radians, bitLenInt qubit)
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
     complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0), complex(cosine, 0.0) };
-    ApplySingleBit(qubit, pauliRY, true);
+    ApplySingleBit(pauliRY, true, qubit);
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
@@ -47,7 +47,40 @@ void QEngineCPU::RZ(real1 radians, bitLenInt qubit)
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
     const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
-    ApplySingleBit(qubit, pauliRZ, true);
+    ApplySingleBit(pauliRZ, true, qubit);
+}
+
+/// Exponentiate identity operator
+void QEngineCPU::Exp(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expIdentity[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), phaseFac };
+    ApplySingleBit(expIdentity, true, qubit);
+}
+
+/// Exponentiate Pauli X operator
+void QEngineCPU::ExpX(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expPauliX[4] = { complex(0.0, 0.0), phaseFac, phaseFac, complex(0.0, 0.0) };
+    ApplySingleBit(expPauliX, true, qubit);
+}
+
+/// Exponentiate Pauli Y operator
+void QEngineCPU::ExpY(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expPauliY[4] = { complex(0.0, 0.0), phaseFac * complex(0.0, -1.0), phaseFac * complex(0.0, 1.0),
+        complex(0.0, 0.0) };
+    ApplySingleBit(expPauliY, true, qubit);
+}
+
+/// Exponentiate Pauli Z operator
+void QEngineCPU::ExpZ(real1 radians, bitLenInt qubit)
+{
+    complex phaseFac = complex(cos(radians), sin(radians));
+    complex expPauliZ[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), -phaseFac };
+    ApplySingleBit(expPauliZ, true, qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state

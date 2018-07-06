@@ -15,13 +15,15 @@
 namespace Qrack {
 
 /// Measurement gate
-bool QEngineCPU::M(bitLenInt qubit)
+bool QEngineCPU::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
+
+/// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
+bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
-    bool result;
     real1 prob = Rand();
     real1 angle = Rand() * 2.0 * M_PI;
     real1 cosine = cos(angle);
@@ -29,37 +31,33 @@ bool QEngineCPU::M(bitLenInt qubit)
     complex nrm;
 
     bitCapInt qPowers = 1 << qubit;
-    real1 oneChance = Prob(qubit);
 
-    result = (prob < oneChance) && oneChance > 0.0;
-    bitCapInt powerTest = result ? qPowers : 0;
-    real1 nrmlzr = 1.0;
-    if (result) {
-        if (oneChance > 0.0) {
+    if (!doForce) {
+        real1 oneChance = Prob(qubit);
+        result = ((prob < oneChance) && (oneChance > 0.0));
+        nrmlzr = 1.0;
+        if (result) {
             nrmlzr = oneChance;
         } else {
-            runningNorm = 0.0;
-        }
-    } else {
-        if (oneChance < 1.0) {
             nrmlzr = 1.0 - oneChance;
-        } else {
-            runningNorm = 0.0;
         }
     }
 
-    nrm = complex(cosine, sine) / sqrt(nrmlzr);
+    bitCapInt powerTest = result ? qPowers : 0;
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & qPowers) == powerTest) {
-            stateVec[lcv] = nrm * stateVec[lcv];
-        } else {
-            stateVec[lcv] = complex(0.0, 0.0);
-        }
-    });
+    nrm = complex(cosine, sine);
+    if (nrmlzr > min_norm) {
+        nrm /= (real1)(sqrt(nrmlzr));
 
-    if (runningNorm != 1.0) {
-        UpdateRunningNorm();
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            if ((lcv & qPowers) == powerTest) {
+                stateVec[lcv] = nrm * stateVec[lcv];
+            } else {
+                stateVec[lcv] = complex(0.0, 0.0);
+            }
+        });
+    } else {
+        NormalizeState(0.0);
     }
 
     return result;

@@ -56,6 +56,7 @@ public:
      *@{
      */
 
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
@@ -99,10 +100,14 @@ public:
 
     virtual void RT(real1 radians, bitLenInt qubit);
     virtual void RX(real1 radians, bitLenInt qubit);
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
     virtual void RY(real1 radians, bitLenInt qubit);
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
     virtual void RZ(real1 radians, bitLenInt qubit);
+    virtual void Exp(real1 radians, bitLenInt qubit);
+    virtual void ExpX(real1 radians, bitLenInt qubit);
+    virtual void ExpY(real1 radians, bitLenInt qubit);
+    virtual void ExpZ(real1 radians, bitLenInt qubit);
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
     virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 
@@ -113,9 +118,6 @@ public:
      *
      * @{
      */
-
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);

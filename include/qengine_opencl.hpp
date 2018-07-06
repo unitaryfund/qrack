@@ -16,15 +16,12 @@
 #error OpenCL has not been enabled
 #endif
 
-#ifdef __APPLE__
-#include <OpenCL/cl2.hpp>
-#else
-#include <CL/cl2.hpp>
-#endif
-
+#include "common/oclengine.hpp"
 #include "qengine_cpu.hpp"
 
 namespace Qrack {
+
+typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class OCLEngine;
 
@@ -35,20 +32,39 @@ typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
 protected:
-    OCLEngine* clObj;
+    int deviceID;
+    DeviceContextPtr device_context;
     cl::CommandQueue queue;
-    cl::Buffer stateBuffer;
+    cl::Context context;
+    // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
+    // QEngineOCL itself, specifically by QEngineOCLMulti.
+    BufferPtr stateBuffer;
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
     cl::Buffer maxBuffer;
 
 public:
-    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr)
-        : QEngineCPU(qBitCount, initState, rgp)
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
+        int devID = -1, bool partialInit = false)
+        : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
     {
-        InitOCL();
+        InitOCL(devID);
     }
+
+    QEngineOCL(QEngineOCLPtr toCopy)
+        : QEngineCPU(toCopy)
+    {
+        InitOCL(toCopy->deviceID);
+    }
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = 1 << qubitCount;
+    }
+
+    virtual complex* GetStateVector() { return stateVec; }
 
     /* Operations that have an improved implementation. */
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload
@@ -57,11 +73,7 @@ public:
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     using QEngineCPU::Decohere;
-    virtual void Decohere(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-    {
-        return Decohere(start, length, std::dynamic_pointer_cast<QEngineOCL>(dest));
-    }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     using QEngineCPU::X;
     virtual void X(bitLenInt start, bitLenInt length);
@@ -80,27 +92,33 @@ public:
 
     virtual real1 Prob(bitLenInt qubit);
 
+    virtual int GetDeviceID() { return deviceID; }
+    virtual void SetDevice(const int& dID);
+
+    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void UpdateRunningNorm();
+
 protected:
     static const int BCI_ARG_LEN = 10;
 
-    void InitOCL();
+    void InitOCL(int devID);
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void DispatchCall(cl::Kernel* call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
+    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
         unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
 
     /* Utility functions used by the operations above. */
-    void ROx(cl::Kernel* call, bitLenInt shift, bitLenInt start, bitLenInt length);
-    void INT(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
-    void INTC(cl::Kernel* call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
+    void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
+    void INT(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
+    void INTC(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
 
-    bitCapInt OpIndexed(cl::Kernel* call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
+    bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 };
 

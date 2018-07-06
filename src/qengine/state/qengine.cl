@@ -66,6 +66,7 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
 void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts)
 {
     bitCapInt ID, Nthreads, lcv;
+    real1 nrm1, nrm2;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
@@ -100,7 +101,15 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
 
         stateVec[i + offset1] = qubit[0];
         stateVec[i + offset2] = qubit[1];
-        nrmParts[ID] += dot(qubit[0], qubit[0]) + dot(qubit[1], qubit[1]);
+        nrm1 = dot(qubit[0], qubit[0]);
+        nrm2 = dot(qubit[1], qubit[1]);
+        if (nrm1 < min_norm) {
+            nrm1 = 0.0;
+        }
+        if (nrm2 >= min_norm) {
+            nrm1 += nrm2;
+        }
+        nrmParts[ID] += nrm1;
 
         lcv += Nthreads;
         iHigh = lcv;
@@ -216,7 +225,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt qMask = qPower - 1;
     real1 oneChancePart = 0.0;
     cmplx amp;
-    bitCapInt i, j;
+    bitCapInt i;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
@@ -532,5 +541,43 @@ void kernel indexedSbc(
 
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
+    }
+}
+
+void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    real1 nrm = args_ptr[1];
+    cmplx amp;
+    
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        amp = stateVec[lcv] / nrm;
+        //"min_norm" is defined in qinterface.hpp
+        if (dot(amp, amp) < min_norm) {
+            amp = (cmplx)(0.0, 0.0);
+        }
+        stateVec[lcv] = amp;
+    }
+}
+
+void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr) {
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    cmplx amp;
+    real1 nrm;
+    
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        amp = stateVec[lcv];
+        nrm = dot(amp, amp);
+        if (nrm < min_norm) {
+            nrm = 0.0;
+        }
+        norm_ptr[ID] += nrm;
     }
 }

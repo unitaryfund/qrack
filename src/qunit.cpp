@@ -103,12 +103,7 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
     /* Create a clone of the quantum state in toCopy. */
-    QInterfacePtr clone = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
-    clone->CopyState(toCopy);
-
-    /* Destroy the quantum state in toCopy. */
-    complex emptyState[] = { complex(0, 0), complex(0, 0) };
-    toCopy->SetQuantumState(emptyState);
+    QInterfacePtr clone(toCopy);
 
     /* Update shards to reference the cloned state. */
     for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {
@@ -371,8 +366,8 @@ bool QUnit::M(bitLenInt qubit)
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
-    unit->Decohere(mapped, 1, dest);
+    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, result ? 1 : 0, rand_generator);
+    unit->Dispose(mapped, 1);
 
     /* Update the mappings. */
     shards[qubit].unit = dest;
@@ -472,6 +467,11 @@ void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBi
         inputBit, outputBit);
 }
 
+void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+{
+    shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
+}
+
 void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     EntangleAndCallMember(PTR3(CCNOT), inputBit1, inputBit2, outputBit);
@@ -509,6 +509,14 @@ void QUnit::RY(real1 radians, bitLenInt qubit) { shards[qubit].unit->RY(radians,
 
 void QUnit::RZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->RZ(radians, shards[qubit].mapped); }
 
+void QUnit::Exp(real1 radians, bitLenInt qubit) { shards[qubit].unit->Exp(radians, shards[qubit].mapped); }
+
+void QUnit::ExpX(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpX(radians, shards[qubit].mapped); }
+
+void QUnit::ExpY(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpY(radians, shards[qubit].mapped); }
+
+void QUnit::ExpZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpZ(radians, shards[qubit].mapped); }
+
 void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
@@ -531,30 +539,6 @@ void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRZ(radians, b1, b2); }, control, target);
-}
-
-/// "Circular shift right" - (Uses swap-based algorithm for speed)
-void QUnit::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start, end);
-        Reverse(start, start + shift);
-        Reverse(start + shift, end);
-    }
-}
-
-/// "Circular shift right" - (Uses swap-based algorithm for speed)
-void QUnit::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start + shift, end);
-        Reverse(start, start + shift);
-        Reverse(start, end);
-    }
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)

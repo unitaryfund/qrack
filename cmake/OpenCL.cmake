@@ -31,6 +31,7 @@ endif ()
 if (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=1)
     target_compile_definitions (qrack PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
+    target_compile_definitions (qrack PUBLIC CL_HPP_MINIMUM_OPENCL_VERSION=100)
 
     # Include the necessary options and libraries to link against
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${OPENCL_INCLUDE_PATH})
@@ -63,6 +64,7 @@ if (ENABLE_OPENCL)
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
         src/qengine/state/opencl.cpp
+        src/qengine/state/opencl_multi.cpp
         )
 
 else (ENABLE_OPENCL)

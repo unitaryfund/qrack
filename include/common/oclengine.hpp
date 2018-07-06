@@ -16,6 +16,9 @@
 #error OpenCL has not been enabled
 #endif
 
+#include <map>
+#include <mutex>
+
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
 #else
@@ -24,88 +27,105 @@
 
 namespace Qrack {
 
+class OCLDeviceCall;
+
+class OCLDeviceContext;
+
+typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
+
+enum OCLAPI {
+    OCL_API_UNKNOWN = 0,
+    OCL_API_APPLY2X2,
+    OCL_API_APPLY2X2_NORM,
+    OCL_API_COHERE,
+    OCL_API_DECOHEREPROB,
+    OCL_API_DECOHEREAMP,
+    OCL_API_DISPOSEPROB,
+    OCL_API_PROB,
+    OCL_API_X,
+    OCL_API_SWAP,
+    OCL_API_ROL,
+    OCL_API_ROR,
+    OCL_API_INC,
+    OCL_API_DEC,
+    OCL_API_INCC,
+    OCL_API_DECC,
+    OCL_API_INDEXEDLDA,
+    OCL_API_INDEXEDADC,
+    OCL_API_INDEXEDSBC,
+    OCL_API_NORMALIZE,
+    OCL_API_UPDATENORM,
+};
+
+class OCLDeviceCall {
+protected:
+    std::lock_guard<std::recursive_mutex> guard;
+
+public:
+    // A cl::Kernel is unique object which should always be taken by reference, or the OCLDeviceContext will lose
+    // ownership.
+    cl::Kernel& call;
+    OCLDeviceCall(const OCLDeviceCall&);
+
+protected:
+    OCLDeviceCall(std::recursive_mutex& m, cl::Kernel& c)
+        : guard(m)
+        , call(c)
+    {
+    }
+
+    friend class OCLDeviceContext;
+
+private:
+    OCLDeviceCall& operator=(const OCLDeviceCall&) = delete;
+};
+
+class OCLDeviceContext {
+public:
+    cl::Platform platform;
+    cl::Device device;
+    cl::Context context;
+    cl::CommandQueue queue;
+
+protected:
+    std::recursive_mutex mutex;
+    std::map<OCLAPI, cl::Kernel> calls;
+
+public:
+    OCLDeviceContext(cl::Platform& p, cl::Device& d)
+        : platform(p)
+        , device(d)
+        , mutex()
+    {
+    }
+    OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
+    friend class OCLEngine;
+};
+
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
 class OCLEngine {
 public:
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
     static OCLEngine* Instance();
-    /// If this is the first time instantiating the OpenCL context, you may specify platform number and device number.
-    static OCLEngine* Instance(int plat, int dev);
     /// Get a pointer to the OpenCL context
-    cl::Context* GetContextPtr();
-    /// Get a pointer to the OpenCL queue
-    cl::CommandQueue* GetQueuePtr();
-    /// Get a pointer to the Apply2x2 function kernel
-    cl::Kernel* GetApply2x2Ptr();
-    /// Get a pointer to the Apply2x2Norm function kernel
-    cl::Kernel* GetApply2x2NormPtr();
-    /// Get a pointer to the Cohere function kernel
-    cl::Kernel* GetCoherePtr();
-    /// Get a pointer to the Decohere probability/angle decompose function kernel
-    cl::Kernel* GetDecohereProbPtr();
-    /// Get a pointer to the Decohere amplitude compose function kernel
-    cl::Kernel* GetDecohereAmpPtr();
-    /// Get a pointer to the Dispose probability/angle decompose function kernel
-    cl::Kernel* GetDisposeProbPtr();
-    /// Get a pointer to the Cohere function kernel
-    cl::Kernel* GetProbPtr();
-    /// Get a pointer to the X function kernel
-    cl::Kernel* GetXPtr();
-    /// Get a pointer to the Swap function kernel
-    cl::Kernel* GetSwapPtr();
-    /// Get a pointer to the ROL function kernel
-    cl::Kernel* GetROLPtr();
-    /// Get a pointer to the ROR function kernel
-    cl::Kernel* GetRORPtr();
-    /// Get a pointer to the INC function kernel
-    cl::Kernel* GetINCPtr();
-    /// Get a pointer to the DEC function kernel
-    cl::Kernel* GetDECPtr();
-    /// Get a pointer to the INCC function kernel
-    cl::Kernel* GetINCCPtr();
-    /// Get a pointer to the DECC function kernel
-    cl::Kernel* GetDECCPtr();
-    /// Get a pointer to the IndexedLDA function kernel
-    cl::Kernel* GetLDAPtr();
-    /// Get a pointer to the IndexedADC function kernel
-    cl::Kernel* GetADCPtr();
-    /// Get a pointer to the IndexedSBC function kernel
-    cl::Kernel* GetSBCPtr();
+    DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
+    int GetDeviceCount() { return deviceCount; }
+    void SetDefaultDeviceContext(DeviceContextPtr dcp);
 
 private:
-    std::vector<cl::Platform> all_platforms;
-    cl::Platform default_platform;
-    std::vector<cl::Device> all_devices;
-    cl::Device default_device;
-    cl::Context context;
-    cl::Program program;
-    cl::CommandQueue queue;
-    cl::Kernel apply2x2;
-    cl::Kernel apply2x2norm;
-    cl::Kernel cohere;
-    cl::Kernel decohereprob;
-    cl::Kernel decohereamp;
-    cl::Kernel disposeprob;
-    cl::Kernel prob;
-    cl::Kernel x;
-    cl::Kernel swap;
-    cl::Kernel rol;
-    cl::Kernel ror;
-    cl::Kernel inc;
-    cl::Kernel dec;
-    cl::Kernel incc;
-    cl::Kernel decc;
-    cl::Kernel indexedLda;
-    cl::Kernel indexedAdc;
-    cl::Kernel indexedSbc;
+    int deviceCount;
+
+    std::vector<DeviceContextPtr> all_device_contexts;
+    DeviceContextPtr default_device_context;
 
     OCLEngine(); // Private so that it can  not be called
-    OCLEngine(int plat, int dev); // Private so that it can  not be called
     OCLEngine(OCLEngine const&); // copy constructor is private
     OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
     static OCLEngine* m_pInstance;
 
-    void InitOCL(int plat, int dev);
+    void InitOCL();
+
+    unsigned long PowerOf2LessThan(unsigned long number);
 };
 
 } // namespace Qrack

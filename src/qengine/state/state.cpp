@@ -33,35 +33,29 @@ namespace Qrack {
  * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
-QEngineCPU::QEngineCPU(
-    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, complex phaseFac)
-    : QInterface(qBitCount)
+QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
+    complex phaseFac, bool partialInit)
+    : QInterface(qBitCount, rgp)
     , stateVec(NULL)
-    , rand_distribution(0.0, 1.0)
 {
+    doNormalize = true;
     SetConcurrencyLevel(std::thread::hardware_concurrency());
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    if (rgp == NULL) {
-        rand_generator = std::make_shared<std::default_random_engine>();
-        randomSeed = std::time(0);
-        SetRandomSeed(randomSeed);
-    } else {
-        rand_generator = rgp;
-    }
-
-    runningNorm = 1.0;
+    runningNorm = partialInit ? 0.0 : 1.0;
     SetQubitCount(qBitCount);
 
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
-    if (phaseFac == complex(-999.0, -999.0)) {
-        real1 angle = Rand() * 2.0 * M_PI;
-        stateVec[initState] = complex(cos(angle), sin(angle));
-    } else {
-        stateVec[initState] = phaseFac;
+    if (!partialInit) {
+        if (phaseFac == complex(-999.0, -999.0)) {
+            real1 angle = Rand() * 2.0 * M_PI;
+            stateVec[initState] = complex(cos(angle), sin(angle));
+        } else {
+            stateVec[initState] = phaseFac;
+        }
     }
 }
 
@@ -123,7 +117,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    real1 nrm = 1.0 / runningNorm;
+    real1 nrm = doNormalize ? (1.0 / sqrt(runningNorm)) : 1.0;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
@@ -149,7 +143,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm += rngNrm[i];
         }
         delete[] rngNrm;
-        runningNorm = sqrt(runningNorm);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
@@ -163,10 +156,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec[lcv + offset2] = qubit.cmplx[1];
 #endif
         });
-        if (doCalcNorm) {
+        if (doNormalize && doCalcNorm) {
             UpdateRunningNorm();
-        } else {
-            runningNorm = 1.0;
         }
     }
 }
@@ -175,7 +166,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    real1 nrm = 1.0 / runningNorm;
+    real1 nrm = doNormalize ? (1.0 / sqrt(runningNorm)) : 1.0;
 
     if (doCalcNorm && (bitCount == 1)) {
         real1* rngNrm = new real1[numCores];
@@ -198,7 +189,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm += rngNrm[i];
         }
         delete[] rngNrm;
-        runningNorm = sqrt(runningNorm);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
@@ -212,10 +202,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
         });
-        if (doCalcNorm) {
+        if (doNormalize && doCalcNorm) {
             UpdateRunningNorm();
-        } else {
-            runningNorm = 1.0;
         }
     }
 }
@@ -230,11 +218,11 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 {
     bitLenInt result = qubitCount;
 
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
-    if (toCopy->runningNorm != 1.0) {
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != 1.0)) {
         toCopy->NormalizeState();
     }
 
@@ -277,13 +265,13 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
     bitCapInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
     for (i = 0; i < toCohereCount; i++) {
         QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
-        if (src->runningNorm != 1.0) {
+        if ((src->doNormalize) && (src->runningNorm != 1.0)) {
             src->NormalizeState();
         }
         mask[i] = ((1 << src->GetQubitCount()) - 1) << nQubitCount;
@@ -326,7 +314,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
         return;
     }
 
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
@@ -371,7 +359,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec[lcv] =
-                sqrt(partStateProb[lcv]) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+                (real1)(sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
         });
 
         delete[] partStateProb;
@@ -381,25 +369,25 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] =
-            sqrt(remainderStateProb[lcv]) * complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+        stateVec[lcv] = (real1)(sqrt(remainderStateProb[lcv])) *
+            complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
     });
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
 }
 
-void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, destination);
+    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, nullptr); }
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
@@ -426,22 +414,32 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
-    if (runningNorm != 1.0) {
+    if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
     }
 
     return norm(stateVec[fullRegister]);
 }
 
-void QEngineCPU::NormalizeState()
+void QEngineCPU::NormalizeState(real1 nrm)
 {
+    if (nrm < 0.0) {
+        nrm = runningNorm;
+    }
+    if ((nrm <= 0.0) || (nrm == 1.0)) {
+        return;
+    }
+
+    nrm = sqrt(nrm);
+
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] /= runningNorm;
+        stateVec[lcv] /= nrm;
         //"min_norm" is defined in qinterface.hpp
         if (norm(stateVec[lcv]) < min_norm) {
             stateVec[lcv] = complex(0.0, 0.0);
         }
     });
+
     runningNorm = 1.0;
 }
 
