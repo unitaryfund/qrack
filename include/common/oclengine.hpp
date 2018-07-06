@@ -62,7 +62,7 @@ protected:
     std::lock_guard<std::recursive_mutex> guard;
 
 public:
-    cl::Kernel call;
+    cl::Kernel& call;
     OCLDeviceCall(const OCLDeviceCall&);
 
 protected:
