@@ -89,10 +89,7 @@ protected:
 
 public:
     OCLDeviceContext() { mutex = std::make_shared<std::recursive_mutex>(); }
-    OCLDeviceCall Reserve(OCLAPI call)
-    {
-        return OCLDeviceCall (mutex, calls[call]);
-    }
+    OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
     friend class OCLEngine;
 };
 
