@@ -109,6 +109,7 @@ public:
     static OCLEngine* Instance();
     /// Get a pointer to the OpenCL context
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
+    std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
     int GetDeviceCount() { return deviceCount; }
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
 

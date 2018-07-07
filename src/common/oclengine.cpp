@@ -38,6 +38,8 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
     }
 }
 
+std::vector<DeviceContextPtr> OCLEngine::GetDeviceContextPtrVector() { return all_device_contexts; }
+
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
 OCLEngine::OCLEngine() { InitOCL(); }

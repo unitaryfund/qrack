@@ -32,10 +32,11 @@ protected:
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
+    std::vector<int> deviceIDs;
 
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int deviceCount = -1);
+        int deviceCount = -1, std::vector<int> devIDs = std::vector<int>());
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -174,6 +175,8 @@ private:
     void ShuffleBuffers(complex* stateVec1, complex* stateVec2);
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);
+
+    void Init();
 
     inline bitCapInt log2(bitCapInt n)
     {
