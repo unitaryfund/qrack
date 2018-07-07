@@ -33,38 +33,50 @@ namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
 
-QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, int deviceCount, std::vector<int> devIDs)
-    : QInterface(qBitCount)
+QEngineOCLMulti::QEngineOCLMulti(
+    bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int deviceCount)
+    : QInterface(qBitCount, rgp)
+    , deviceIDs()
 {
-    // It's possible to do a simple form of load balancing by assigning unequal portions of subengines to the same
-    // device:
-    // devIDs.resize(4);
-    // devIDs[0] = 1;
-    // devIDs[1] = 1;
-    // devIDs[2] = 1;
-    // devIDs[3] = 0;
-
     clObj = OCLEngine::Instance();
-    if (devIDs.size() > 0) {
-        deviceIDs = devIDs;
-        deviceCount = deviceIDs.size();
-    } else if (deviceCount == -1) {
+
+    if (deviceCount < 1) {
         deviceCount = clObj->GetDeviceCount();
     }
 
-    bitLenInt devPow = log2(deviceCount);
-    maxDeviceOrder = devPow;
-
-    if (deviceIDs.size() == 0) {
-        deviceIDs.resize(deviceCount);
-        for (int i = 0; i < deviceCount; i++) {
-            deviceIDs[i] = i;
-        }
+    deviceIDs.resize(deviceCount);
+    for (int i = 0; i < deviceCount; i++) {
+        deviceIDs[i] = i;
     }
 
-    rand_generator = rgp;
+    Init(qBitCount, initState);
+}
+
+QEngineOCLMulti::QEngineOCLMulti(
+    bitLenInt qBitCount, bitCapInt initState, std::vector<int> devIDs, std::shared_ptr<std::default_random_engine> rgp)
+    : QInterface(qBitCount, rgp)
+    , deviceIDs(devIDs)
+{
+    clObj = OCLEngine::Instance();
+    Init(qBitCount, initState);
+}
+
+void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
+{
+    // It's possible to do a simple form of load balancing by assigning unequal portions of subengines to the same
+    // device:
+    // deviceIDs.resize(4);
+    // deviceIDs[0] = 1;
+    // deviceIDs[1] = 1;
+    // deviceIDs[2] = 1;
+    // deviceIDs[3] = 0;
+
     runningNorm = 1.0;
+
+    int deviceCount = deviceIDs.size();
+
+    bitLenInt devPow = log2(deviceCount);
+    maxDeviceOrder = devPow;
 
     // Maximum of 2^N devices for N qubits:
     if (qubitCount <= devPow) {
@@ -79,7 +91,7 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState,
     subBufferSize = sizeof(complex) * subMaxQPower >> 1;
 
     if (deviceCount == 1) {
-        substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rgp));
+        substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rand_generator, deviceIDs[0]));
         substateEngines[0]->EnableNormalize(true);
         return;
     }
@@ -96,7 +108,7 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState,
         }
         // All sub-engines should have zero norm except for the one containing the initialization permutation:
         substateEngines.push_back(
-            std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rgp, deviceIDs[i], partialInit));
+            std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rand_generator, deviceIDs[i], partialInit));
         substateEngines[i]->EnableNormalize(false);
         subInitVal = 0;
         partialInit = true;
