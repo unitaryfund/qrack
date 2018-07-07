@@ -109,17 +109,16 @@ public:
     static OCLEngine* Instance();
     /// Get a pointer to the OpenCL context
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
+    /// Get the list of all available devices (and their supporting objects)
     std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
-    /// Set the list of DeviceContextPtr object available for use. If one take the result of
-    /// GetDeviceContextPtrVector(), trims items from it, and sets it with this method, all resources associated with
-    /// the removed items are freed.
+    /// Set the list of DeviceContextPtr object available for use. If one takes the result of GetDeviceContextPtrVector(), trims items from it, and sets it with this method, (at initialization, before any QEngine objects depend on them,) all resources associated with the removed items are freed.
     void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
-    int GetDeviceCount() { return deviceCount; }
+    /// Get the count of devices in the current list
+    int GetDeviceCount() { return all_device_contexts.size(); }
+    /// Pick a default device, QEngineOCL instances that don't specify a preferred device
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
 
 private:
-    int deviceCount;
-
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 

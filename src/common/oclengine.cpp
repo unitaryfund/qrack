@@ -85,7 +85,7 @@ void OCLEngine::InitOCL()
         exit(1);
     }
 
-    deviceCount = all_devices.size();
+    int deviceCount = all_devices.size();
 
     // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
     int dev = deviceCount - 1;
