@@ -2,7 +2,7 @@
 
 [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
 
-This is a multithreaded framework for developing classically emulated virtual universal quantum processors.
+This is a multithreaded framework for developing classically emulated virtual universal quantum processors. It has CPU, GPU, and multi-processor engine types.
 
 The intent of "Qrack" is to provide a framework for developing practical, computationally efficient, classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::QUnit." "Qrack::QEngineCPU" and "Qrack::QEngineOCL" represent fully entangled cases and underlie "Qrack::QUnit."
 
@@ -79,7 +79,7 @@ Multiply complex numbers two at a time instead of one at a time. Requires AVX fo
 ## Reduce accuracy from double to float
 
 ```
-$ cmake -DENABLE_COMPLEX=ON ..
+$ cmake -DENABLE_COMPLEX8=ON ..
 ```
 Reduce to float accuracy for complex numbers. Requires half as much RAM (1 additional qubit). Compatible with SSE 1.0 and single precision accelerator devices.
 
