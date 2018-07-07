@@ -176,8 +176,6 @@ private:
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);
 
-    void Init();
-
     inline bitCapInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
