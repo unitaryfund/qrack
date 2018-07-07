@@ -107,15 +107,15 @@ class OCLEngine {
 public:
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
     static OCLEngine* Instance();
-    /// Get a pointer to the OpenCL context
+    /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
-    /// Get the list of all available devices (and their supporting objects)
+    /// Get the list of all available devices (and their supporting objects).
     std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
     /// Set the list of DeviceContextPtr object available for use. If one takes the result of GetDeviceContextPtrVector(), trims items from it, and sets it with this method, (at initialization, before any QEngine objects depend on them,) all resources associated with the removed items are freed.
     void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
-    /// Get the count of devices in the current list
+    /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }
-    /// Pick a default device, QEngineOCL instances that don't specify a preferred device
+    /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
 
 private:
