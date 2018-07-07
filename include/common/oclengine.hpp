@@ -110,6 +110,10 @@ public:
     /// Get a pointer to the OpenCL context
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
     std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
+    /// Set the list of DeviceContextPtr object available for use. If one take the result of
+    /// GetDeviceContextPtrVector(), trims items from it, and sets it with this method, all resources associated with
+    /// the removed items are freed.
+    void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
     int GetDeviceCount() { return deviceCount; }
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
 

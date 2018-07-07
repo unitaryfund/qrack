@@ -39,6 +39,13 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
 }
 
 std::vector<DeviceContextPtr> OCLEngine::GetDeviceContextPtrVector() { return all_device_contexts; }
+void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp)
+{
+    all_device_contexts = vec;
+    if (dcp != nullptr) {
+        default_device_context = dcp;
+    }
+}
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
