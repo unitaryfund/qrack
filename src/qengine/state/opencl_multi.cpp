@@ -39,11 +39,11 @@ QEngineOCLMulti::QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState,
 {
     // It's possible to do a simple form of load balancing by assigning unequal portions of subengines to the same
     // device:
-    // deviceIDs.resize(4);
-    // deviceIDs[0] = 1;
-    // deviceIDs[1] = 1;
-    // deviceIDs[2] = 1;
-    // deviceIDs[3] = 0;
+    // devIDs.resize(4);
+    // devIDs[0] = 1;
+    // devIDs[1] = 1;
+    // devIDs[2] = 1;
+    // devIDs[3] = 0;
 
     clObj = OCLEngine::Instance();
     if (devIDs.size() > 0) {

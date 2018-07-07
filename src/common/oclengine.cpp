@@ -96,17 +96,26 @@ void OCLEngine::InitOCL()
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
-        all_device_contexts.push_back(std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]));
-        all_device_contexts[i]->context = cl::Context(all_devices[i]);
-        all_device_contexts[i]->queue = cl::CommandQueue(all_device_contexts[i]->context, all_devices[i]);
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]);
+        devCntxt->context = cl::Context(all_devices[i]);
+        devCntxt->queue = cl::CommandQueue(devCntxt->context, all_devices[i]);
 
-        cl::Program program = cl::Program(all_device_contexts[i]->context, sources);
+        cl::Program program = cl::Program(devCntxt->context, sources);
 
         if (program.build({ all_devices[i] }) != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
-            exit(1);
+
+            if (i == dev) {
+                default_device_context = all_device_contexts[0];
+                default_platform = all_platforms[0];
+                default_device = all_devices[0];
+            }
+
+            continue;
         }
+
+        all_device_contexts.push_back(devCntxt);
 
         all_device_contexts[i]->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
         all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
