@@ -97,6 +97,8 @@ public:
         , device(d)
         , mutex()
     {
+        context = cl::Context(d);
+        queue = cl::CommandQueue(context, d);
     }
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
     friend class OCLEngine;
@@ -111,7 +113,10 @@ public:
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
     /// Get the list of all available devices (and their supporting objects).
     std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
-    /// Set the list of DeviceContextPtr object available for use. If one takes the result of GetDeviceContextPtrVector(), trims items from it, and sets it with this method, (at initialization, before any QEngine objects depend on them,) all resources associated with the removed items are freed.
+    /** Set the list of DeviceContextPtr object available for use. If one takes the result of
+     * GetDeviceContextPtrVector(), trims items from it, and sets it with this method, (at initialization, before any
+     * QEngine objects depend on them,) all resources associated with the removed items are freed.
+     */
     void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
     /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }

@@ -104,8 +104,6 @@ void OCLEngine::InitOCL()
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]);
-        devCntxt->context = cl::Context(all_devices[i]);
-        devCntxt->queue = cl::CommandQueue(devCntxt->context, all_devices[i]);
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
@@ -113,6 +111,9 @@ void OCLEngine::InitOCL()
             std::cout << "Error building for device #" << i << ": "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
 
+            // The default device was set above to be the last device in the list. If we can't compile for it, we use
+            // the first device. If the default is the first device, and we can't compile for it, then we don't have any
+            // devices that can compile at all, and the environment needs to be fixed by the user.
             if (i == dev) {
                 default_device_context = all_device_contexts[0];
                 default_platform = all_platforms[0];
