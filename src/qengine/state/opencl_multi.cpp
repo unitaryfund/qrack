@@ -35,17 +35,45 @@ namespace Qrack {
 
 QEngineOCLMulti::QEngineOCLMulti(
     bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int deviceCount)
-    : QInterface(qBitCount)
+    : QInterface(qBitCount, rgp)
+    , deviceIDs()
 {
+    clObj = OCLEngine::Instance();
 
-    rand_generator = rgp;
+    if (deviceCount < 1) {
+        deviceCount = clObj->GetDeviceCount();
+    }
+
+    deviceIDs.resize(deviceCount);
+    for (int i = 0; i < deviceCount; i++) {
+        deviceIDs[i] = i;
+    }
+
+    Init(qBitCount, initState);
+}
+
+QEngineOCLMulti::QEngineOCLMulti(
+    bitLenInt qBitCount, bitCapInt initState, std::vector<int> devIDs, std::shared_ptr<std::default_random_engine> rgp)
+    : QInterface(qBitCount, rgp)
+    , deviceIDs(devIDs)
+{
+    clObj = OCLEngine::Instance();
+    Init(qBitCount, initState);
+}
+
+void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
+{
+    // It's possible to do a simple form of load balancing by assigning unequal portions of subengines to the same
+    // device:
+    // deviceIDs.resize(4);
+    // deviceIDs[0] = 1;
+    // deviceIDs[1] = 1;
+    // deviceIDs[2] = 1;
+    // deviceIDs[3] = 0;
 
     runningNorm = 1.0;
 
-    clObj = OCLEngine::Instance();
-    if (deviceCount == -1) {
-        deviceCount = clObj->GetDeviceCount();
-    }
+    int deviceCount = deviceIDs.size();
 
     bitLenInt devPow = log2(deviceCount);
     maxDeviceOrder = devPow;
@@ -63,7 +91,7 @@ QEngineOCLMulti::QEngineOCLMulti(
     subBufferSize = sizeof(complex) * subMaxQPower >> 1;
 
     if (deviceCount == 1) {
-        substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rgp));
+        substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rand_generator, deviceIDs[0]));
         substateEngines[0]->EnableNormalize(true);
         return;
     }
@@ -79,7 +107,8 @@ QEngineOCLMulti::QEngineOCLMulti(
             partialInit = false;
         }
         // All sub-engines should have zero norm except for the one containing the initialization permutation:
-        substateEngines.push_back(std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rgp, i, partialInit));
+        substateEngines.push_back(
+            std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rand_generator, deviceIDs[i], partialInit));
         substateEngines[i]->EnableNormalize(false);
         subInitVal = 0;
         partialInit = true;
@@ -1160,7 +1189,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     bitCapInt sbSize = maxQPower / subEngineCount;
 
     for (i = 0; i < groupCount; i++) {
-        nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, 0);
+        nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, deviceIDs[i]);
         nEngines[i]->EnableNormalize(false);
         complex* nsv = nEngines[i]->GetStateVector();
         for (j = 0; j < groupSize; j++) {
@@ -1204,7 +1233,7 @@ void QEngineOCLMulti::SeparateEngines()
         complex* sv = substateEngines[i]->GetStateVector();
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr nEngine =
-                std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, j, true);
+                std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
             std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
             nEngines[j + (i * groupSize)] = nEngine;

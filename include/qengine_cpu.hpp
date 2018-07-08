@@ -43,12 +43,7 @@ protected:
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool partialInit = false);
-    QEngineCPU(QEngineCPUPtr toCopy)
-        : QInterface(toCopy->qubitCount, toCopy->rand_generator)
-        , doNormalize(toCopy->doNormalize)
-    {
-        CopyState(toCopy);
-    }
+    QEngineCPU(QEngineCPUPtr toCopy);
     ~QEngineCPU() { delete[] stateVec; }
 
     virtual void EnableNormalize(bool doN) { doNormalize = doN; }

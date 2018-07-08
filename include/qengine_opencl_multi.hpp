@@ -32,10 +32,14 @@ protected:
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
+    std::vector<int> deviceIDs;
 
 public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         int deviceCount = -1);
+
+    QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::vector<int> devIDs,
+        std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -170,7 +174,8 @@ protected:
     void ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt targetBit, F fn, Args... gfnArgs);
 
 private:
-    // void ShuffleBuffers(CommandQueuePtr queue, BufferPtr buff1, BufferPtr buff2, BufferPtr tempBuffer);
+    void Init(bitLenInt qBitCount, bitCapInt initState);
+
     void ShuffleBuffers(complex* stateVec1, complex* stateVec2);
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);

@@ -41,8 +41,8 @@ if (ENABLE_OPENCL)
 
     # Build the OpenCL command files
     find_program (XXD_BIN xxd)
-    file (GLOB_RECURSE COMPILED_RESOURCES "src/qengine/state/*.cl")
-    foreach (INPUT_FILE ${COMPILED_RESOURCES})
+    file (GLOB_RECURSE COMPILABLE_RESOURCES "src/qengine/state/*.cl")
+    foreach (INPUT_FILE ${COMPILABLE_RESOURCES})
         get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
         get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
         get_filename_component (INPUT_DIR ${INPUT_FILE} DIRECTORY)
