@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "qrack_defines.hpp"
+#include "config.h"
 
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
