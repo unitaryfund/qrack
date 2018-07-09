@@ -29,7 +29,6 @@ if (ENABLE_OPENCL)
 endif ()
 
 if (ENABLE_OPENCL)
-    target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=1)
     target_compile_definitions (qrack PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
     target_compile_definitions (qrack PUBLIC CL_HPP_MINIMUM_OPENCL_VERSION=100)
 

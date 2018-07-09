@@ -1,0 +1,4 @@
+#cmakedefine ENABLE_OPENCL 1
+#cmakedefine ENABLE_COMPLEX_X2 1
+#cmakedefine ENABLE_COMPLEX8 1
+#cmakedefine PSTRIDE @PSTRIDE@
