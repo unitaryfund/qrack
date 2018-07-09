@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "config.h"
+
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
 #endif

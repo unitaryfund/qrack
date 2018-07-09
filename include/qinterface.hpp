@@ -22,6 +22,8 @@
 #define bitCapInt uint64_t
 #define bitsInByte 8
 
+#include "config.h"
+
 #if ENABLE_COMPLEX8
 #include <complex>
 #define complex std::complex<float>
