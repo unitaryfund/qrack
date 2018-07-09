@@ -16,7 +16,6 @@
 #error OpenCL has not been enabled
 #endif
 
-#include "common/oclengine.hpp"
 #include "qengine_cpu.hpp"
 
 namespace Qrack {

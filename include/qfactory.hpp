@@ -15,7 +15,6 @@
 #include "qengine_cpu.hpp"
 
 #if ENABLE_OPENCL
-#include "oclengine.hpp"
 #include "qengine_opencl_multi.hpp"
 #endif
 

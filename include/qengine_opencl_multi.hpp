@@ -13,6 +13,7 @@
 #pragma once
 
 #include "common/parallel_for.hpp"
+#include "common/oclengine.hpp"
 #include "qengine_opencl.hpp"
 
 namespace Qrack {
