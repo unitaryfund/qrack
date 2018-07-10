@@ -54,7 +54,7 @@ public:
      *
      * "devIDs" is a list of integers that represent the index of OpenCL devices in the OCLEngine singleton, to select
      * how equal sized sub-engines are distributed between devices in this engine. The QEngineOCLMulti will only have a
-     * power of 2 count of subengines at a time, and not more than one power of 2 devices per qubit. (2^N devices for N
+     * power of 2 count of subengines at a time, and not more than 1 power of 2 devices per qubit. (2^N devices for N
      * qubits.) Devices in excess of the highest power of two in the list count will essentially be ignored. Powers of 2
      * in excess of the qubit count will only be used if this engine acquires additional qubits. It might be possible to
      * load balance this way, for example, by allocating 3 sub-engines on one device index and one sub-engine on a
