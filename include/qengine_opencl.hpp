@@ -44,6 +44,17 @@ protected:
     cl::Buffer maxBuffer;
 
 public:
+    /**
+     * Initialize a Qrack::QEngineOCL object. Specify the number of qubits and an initial permutation state.
+     * Additionally, optionally specify a pointer to a random generator engine object, a device ID from the list of
+     * devices in the OCLEngine singleton, and a boolean that is set to "true" to initialize the state vector of the
+     * object to zero norm.
+     *
+     * "devID" is the index of an OpenCL device in the OCLEngine singleton, to select the device to run this engine on.
+     * "partialInit" is usually only set to true when this object is one of several collected in a
+     * Qrack::QEngineOCLMulti object, in which case this Qrack::QEngineOCL object might not contain the amplitude of the
+     * overall permutation state of the combined object.
+     */
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         int devID = -1, bool partialInit = false)
         : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)

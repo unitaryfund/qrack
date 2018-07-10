@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "common/parallel_for.hpp"
 #include "common/oclengine.hpp"
+#include "common/parallel_for.hpp"
 #include "qengine_opencl.hpp"
 
 namespace Qrack {
@@ -36,9 +36,31 @@ protected:
     std::vector<int> deviceIDs;
 
 public:
+    /**
+     * Initialize a Qrack::QEngineOCLMulti object. Specify the number of qubits and an initial permutation state.
+     * Additionally, optionally specify a pointer to a random generator engine object and a number of sub-engines,
+     * (usually one per device, though this can be over-allocated,) to break the object into. The "deviceCount" should
+     * be a power of 2, but it will be floored to a power of two if the parameter is not already a power of two. The
+     * QEngineOCL can not use more than 1 power of 2 devices per qubit. (2^N devices for N qubits.) Powers of 2 in
+     * excess of the qubit count will only be used if this engine acquires additional qubits.
+     */
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         int deviceCount = -1);
 
+    /**
+     * Initialize a Qrack::QEngineOCLMulit object. Specify the number of qubits and an initial permutation state.
+     * Additionally, optionally specify a list of device IDs for sub-engines and a pointer to a random generator engine
+     * object.
+     *
+     * "devIDs" is a list of integers that represent the index of OpenCL devices in the OCLEngine singleton, to select
+     * how equal sized sub-engines are distributed between devices in this engine. The QEngineOCLMulti will only have a
+     * power of 2 count of subengines at a time, and not more than one power of 2 devices per qubit. (2^N devices for N
+     * qubits.) Devices in excess of the highest power of two in the list count will essentially be ignored. Powers of 2
+     * in excess of the qubit count will only be used if this engine acquires additional qubits. It might be possible to
+     * load balance this way, for example, by allocating 3 sub-engines on one device index and one sub-engine on a
+     * second device index. (Whether this is an efficient load balancing mechanism will depend on the particulars of the
+     * system architecture and instance initialization.)
+     */
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::vector<int> devIDs,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
