@@ -12,7 +12,6 @@
 
 #include <iostream>
 #include <memory>
-#include <unistd.h>
 
 #include "oclengine.hpp"
 #include "qenginecl.hpp"
