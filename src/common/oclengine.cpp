@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <memory>
+#include <unistd.h>
 
 #include "oclengine.hpp"
 #include "qenginecl.hpp"
@@ -71,12 +72,12 @@ void OCLEngine::InitOCL()
     }
 
     // get all devices
-    std::vector<cl::Platform> devPlatVec;
+    std::vector<std::shared_ptr<cl::Platform>> devPlatVec;
     for (size_t i = 0; i < all_platforms.size(); i++) {
         std::vector<cl::Device> platform_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
         for (size_t j = 0; j < platform_devices.size(); j++) {
-            devPlatVec.push_back(all_platforms[i]);
+            devPlatVec.push_back(std::make_shared<cl::Platform>(all_platforms[i]));
         }
         all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
     }
@@ -103,12 +104,14 @@ void OCLEngine::InitOCL()
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]);
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(*(devPlatVec[i]), all_devices[i]);
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
-        if (program.build({ all_devices[i] }) != CL_SUCCESS) {
+        cl_int buildError = program.build({ all_devices[i] });
+        if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": "
+                      << buildError << ", " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
                       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
 
             // The default device was set above to be the last device in the list. If we can't compile for it, we use
