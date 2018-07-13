@@ -76,7 +76,8 @@ void OCLEngine::InitOCL()
         std::vector<cl::Device> platform_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
         for (size_t j = 0; j < platform_devices.size(); j++) {
-            // Some virtualization frameworks require the legacy copy constructor of cl::Platform for compatibility.
+            // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original list.
+            // Assigning the object from a new query is always fine, though. (They carry the same underlying platform IDs.)
             std::vector<cl::Platform> temp_platforms;
             cl::Platform::get(&temp_platforms);
             devPlatVec.push_back(temp_platforms[i]);

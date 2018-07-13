@@ -65,9 +65,9 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
 {
     // It's possible to do a simple form of load balancing by assigning unequal portions of subengines to the same
     // device:
-    deviceIDs.resize(0);
-    deviceIDs[0] = 2;
-    deviceIDs[1] = 0;
+    //deviceIDs.resize(0);
+    //deviceIDs[0] = 2;
+    //deviceIDs[1] = 0;
     // deviceIDs[2] = 1;
     // deviceIDs[3] = 0;
 
