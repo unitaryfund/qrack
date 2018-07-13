@@ -76,7 +76,11 @@ void OCLEngine::InitOCL()
         std::vector<cl::Device> platform_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
         for (size_t j = 0; j < platform_devices.size(); j++) {
-            devPlatVec.push_back(all_platforms[i]);
+            // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original list.
+            // Assigning the object from a new query is always fine, though. (They carry the same underlying platform IDs.)
+            std::vector<cl::Platform> temp_platforms;
+            cl::Platform::get(&temp_platforms);
+            devPlatVec.push_back(temp_platforms[i]);
         }
         all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
     }
@@ -107,8 +111,10 @@ void OCLEngine::InitOCL()
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
-        if (program.build({ all_devices[i] }) != CL_SUCCESS) {
+        cl_int buildError = program.build({ all_devices[i] });
+        if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": "
+                      << buildError << ", " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
                       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
 
             // The default device was set above to be the last device in the list. If we can't compile for it, we use
