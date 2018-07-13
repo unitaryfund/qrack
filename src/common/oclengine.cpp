@@ -71,12 +71,15 @@ void OCLEngine::InitOCL()
     }
 
     // get all devices
-    std::vector<std::shared_ptr<cl::Platform>> devPlatVec;
+    std::vector<cl::Platform> devPlatVec;
     for (size_t i = 0; i < all_platforms.size(); i++) {
         std::vector<cl::Device> platform_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
         for (size_t j = 0; j < platform_devices.size(); j++) {
-            devPlatVec.push_back(std::make_shared<cl::Platform>(all_platforms[i]));
+            // Some virtualization frameworks require the legacy copy constructor of cl::Platform for compatibility.
+            std::vector<cl::Platform> temp_platforms;
+            cl::Platform::get(&temp_platforms);
+            devPlatVec.push_back(temp_platforms[i]);
         }
         all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
     }
@@ -103,7 +106,7 @@ void OCLEngine::InitOCL()
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(*(devPlatVec[i]), all_devices[i]);
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]);
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
