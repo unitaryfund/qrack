@@ -114,6 +114,7 @@ protected:
     void InitOCL(int devID);
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
+    void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,

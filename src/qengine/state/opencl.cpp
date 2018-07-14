@@ -45,7 +45,7 @@ void QEngineOCL::ReInitOCL()
 {
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * maxQPower, stateVec);
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
 
     queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
 }
@@ -55,6 +55,14 @@ void QEngineOCL::ResetStateVec(complex* nStateVec)
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
     QEngineCPU::ResetStateVec(nStateVec);
     ReInitOCL();
+}
+
+void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
+{
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
+    stateBuffer = nStateBuffer;
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+    QEngineCPU::ResetStateVec(nStateVec);
 }
 
 void QEngineOCL::DispatchCall(
@@ -67,7 +75,7 @@ void QEngineOCL::DispatchCall(
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, nStateVec);
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
 
     OCLDeviceCall ocl = device_context->Reserve(api_call);
@@ -175,7 +183,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     complex* nStateVec = AllocStateVec(nMaxQPower);
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * nMaxQPower, nStateVec);
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower, nStateVec);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
 
@@ -302,7 +310,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, nStateVec);
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
 
     queue.finish();
 
