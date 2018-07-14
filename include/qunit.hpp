@@ -81,11 +81,17 @@ public:
      */
 
     virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** @} */
 
