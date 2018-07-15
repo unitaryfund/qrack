@@ -163,6 +163,7 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
         all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
         all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
+        all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];

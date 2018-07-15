@@ -115,6 +115,7 @@ public:
     virtual real1 Prob(bitLenInt qubit);
 
     virtual void PhaseFlip();
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
     virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID);

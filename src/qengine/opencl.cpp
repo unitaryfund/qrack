@@ -873,7 +873,30 @@ void QEngineOCL::PhaseFlip() {
     queue.finish();
 
     ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(0, ulongBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+}
+
+/// For chips with a zero flag, flip the phase of the state where the register equals zero.
+void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
+
+    bitCapInt bciArgs[10] = { maxQPower >> length, (1U <<start), length, 0, 0, 0, 0, 0, 0, 0 };
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
+
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
+
+    queue.finish();
+
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items

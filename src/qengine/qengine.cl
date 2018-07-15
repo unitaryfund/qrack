@@ -1188,3 +1188,22 @@ void kernel phaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
         stateVec[lcv] = -stateVec[lcv];
     }
 }
+
+void kernel zerophaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    bitCapInt ID, Nthreads, lcv;
+    bitCapInt i, iLow, iHigh;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt skipMask = bitCapIntPtr[1] - 1;
+    bitCapInt skipLength = bitCapIntPtr[2];
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & skipMask;
+        i = iLow + ((iHigh - iLow) << skipLength);
+
+        stateVec[i] = -stateVec[i];
+    }
+}
