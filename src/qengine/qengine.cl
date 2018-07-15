@@ -1176,3 +1176,15 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
         stateVec[i | discardPower] = (cmplx)(0.0, 0.0);
     }
 }
+
+void kernel phaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        stateVec[lcv] = -stateVec[lcv];
+    }
+}
