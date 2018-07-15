@@ -208,11 +208,22 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
-/// SetReg - Set bits from start to (length - 1) to given permutation
-void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt perm)
+/// Set register bits to given permutation
+void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
-    for (int i = 0; i < length; i++) {
-        SetBit(start + i, (perm & (1 << i)) > 0);
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        SetBit(start, (value == 1));
+    } else if ((start == 0) && (length == qubitCount)) {
+        SetPermutation(value);
+    } else {
+        bool bitVal;
+        bitCapInt regVal = MReg(start, length);
+        for (bitLenInt i = 0; i < length; i++) {
+            bitVal = regVal & (1 << i);
+            if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
+                X(start + i);
+        }
     }
 }
 
@@ -667,5 +678,17 @@ void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
         Reverse(start, end);
     }
 }
+
+std::map<QInterfacePtr, bitLenInt> QInterface::Cohere(std::vector<QInterfacePtr> toCopy)
+{
+    std::map<QInterfacePtr, bitLenInt> ret;
+
+    for (auto&& q : toCopy) {
+        ret[q] = Cohere(q);
+    }
+
+    return ret;
+}
+
 
 } // namespace Qrack

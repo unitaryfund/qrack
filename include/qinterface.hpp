@@ -95,6 +95,7 @@ class QInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
+    real1 runningNorm;
 
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
@@ -111,13 +112,14 @@ protected:
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) { throw "Apply2x2 not implemented in interface"; };
+        const bitCapInt* qPowersSorted, bool doCalcNorm) { throw "Apply2x2 not implemented in interface"; }
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0) { throw "ForceM not implemented in interface"; }
 
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
@@ -186,7 +188,7 @@ public:
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
     virtual bitLenInt Cohere(QInterfacePtr toCopy) = 0;
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy) = 0;
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,
@@ -363,7 +365,7 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex) = 0;
+    virtual bool M(bitLenInt qubitIndex);
 
     /**
      * X gate

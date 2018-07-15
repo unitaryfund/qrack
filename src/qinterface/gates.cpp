@@ -16,6 +16,9 @@
 
 namespace Qrack {
 
+/// Measurement gate
+bool QInterface::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
+
 /// Set individual bit to pure |0> (false) or |1> (true) state
 void QInterface::SetBit(bitLenInt qubit1, bool value)
 {

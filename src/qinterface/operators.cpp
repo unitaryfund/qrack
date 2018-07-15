@@ -158,5 +158,4 @@ void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
         X(outputBit);
     }
 }
-
 } // namespace Qrack

@@ -31,6 +31,8 @@ typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
 protected:
+    //bool doNormalize;
+    //complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
     cl::CommandQueue queue;
@@ -55,18 +57,10 @@ public:
      * Qrack::QEngineOCLMulti object, in which case this Qrack::QEngineOCL object might not contain the amplitude of the
      * overall permutation state of the combined object.
      */
-    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int devID = -1, bool partialInit = false)
-        : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
-    {
-        InitOCL(devID);
-    }
 
-    QEngineOCL(QEngineOCLPtr toCopy)
-        : QEngineCPU(toCopy)
-    {
-        InitOCL(toCopy->deviceID);
-    }
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
+        int devID = -1, bool partialInit = false);
+    QEngineOCL(QEngineOCLPtr toCopy);
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -75,17 +69,18 @@ public:
     }
 
     virtual complex* GetStateVector() { return stateVec; }
+    virtual void SetPermutation(bitCapInt perm);
 
     /* Operations that have an improved implementation. */
-    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2); // Inherited overload
+    using QInterface::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
-    using QEngineCPU::Cohere;
+    using QInterface::Cohere;
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
-    using QEngineCPU::Decohere;
+    using QInterface::Decohere;
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
-    using QEngineCPU::X;
+    using QInterface::X;
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -104,6 +99,8 @@ public:
 
     virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID);
+
+    virtual void SetQuantumState(complex* inputState);
 
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();

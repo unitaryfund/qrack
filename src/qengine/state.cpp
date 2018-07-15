@@ -68,6 +68,13 @@ QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
 
 complex* QEngineCPU::GetState() { return stateVec; }
 
+void QEngineCPU::SetPermutation(bitCapInt perm) {
+    std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
+    real1 angle = Rand() * 2.0 * M_PI;
+    stateVec[perm] = complex(cos(angle), sin(angle));
+    runningNorm = 1.0;
+}
+
 void QEngineCPU::CopyState(QInterfacePtr orig)
 {
     /* Set the size and reset the stateVec to the correct size. */

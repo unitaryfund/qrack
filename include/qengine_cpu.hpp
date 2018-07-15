@@ -37,7 +37,6 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 class QEngineCPU : public QInterface, public ParallelFor {
 protected:
     bool doNormalize;
-    real1 runningNorm;
     complex* stateVec;
 
 public:
@@ -49,7 +48,6 @@ public:
     virtual void EnableNormalize(bool doN) { doNormalize = doN; }
 
     virtual void SetQuantumState(complex* inputState);
-    virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
 
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
@@ -58,13 +56,6 @@ public:
 
     virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Dispose(bitLenInt start, bitLenInt length);
-
-    /**
-     * \defgroup BasicGates Basic quantum gate primitives
-     *@{
-     */
-
-    virtual bool M(bitLenInt qubitIndex);
 
     /** @} */
 
@@ -126,7 +117,7 @@ public:
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetPermutation(bitCapInt perm);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);

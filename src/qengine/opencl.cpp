@@ -19,6 +19,55 @@ namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
 
+QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int devID, bool partialInit)
+    : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
+{
+    InitOCL(devID);
+}
+
+QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
+    : QEngineCPU(toCopy)
+{
+    InitOCL(toCopy->deviceID);
+}
+
+#if 0
+QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int devID, bool partialInit)
+    : QInterface(qBitCount, rgp)
+    , stateVec(NULL)
+{
+    doNormalize = true;
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
+    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
+        throw std::invalid_argument(
+            "Cannot instantiate a register with greater capacity than native types on emulating system.");
+
+    runningNorm = partialInit ? 0.0 : 1.0;
+    SetQubitCount(qBitCount);
+
+    stateVec = AllocStateVec(maxQPower);
+    std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
+    if (!partialInit) {
+        if (phaseFac == complex(-999.0, -999.0)) {
+            real1 angle = Rand() * 2.0 * M_PI;
+            stateVec[initState] = complex(cos(angle), sin(angle));
+        } else {
+            stateVec[initState] = phaseFac;
+        }
+    }
+
+    InitOCL(devID);
+}
+
+QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
+    : QInterface(toCopy->qubitCount, toCopy->rand_generator)
+    , doNormalize(toCopy->doNormalize)
+{
+    CopyState(toCopy);
+    InitOCL(toCopy->deviceID);
+}
+#endif
+
 void QEngineOCL::SetDevice(const int& dID)
 {
 
@@ -53,7 +102,8 @@ void QEngineOCL::ReInitOCL()
 void QEngineOCL::ResetStateVec(complex* nStateVec)
 {
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
-    QEngineCPU::ResetStateVec(nStateVec);
+    free(stateVec);
+    stateVec = nStateVec;
     ReInitOCL();
 }
 
@@ -62,7 +112,17 @@ void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
     stateBuffer = nStateBuffer;
     queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
-    QEngineCPU::ResetStateVec(nStateVec);
+    free(stateVec);
+    stateVec = nStateVec;
+}
+
+void QEngineOCL::SetPermutation(bitCapInt perm) {
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
+    queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+    real1 angle = Rand() * 2.0 * M_PI;
+    stateVec[perm] = complex(cos(angle), sin(angle));
+    runningNorm = 1.0;
 }
 
 void QEngineOCL::DispatchCall(
@@ -404,8 +464,6 @@ void QEngineOCL::X(bitLenInt start, bitLenInt length)
     DispatchCall(OCL_API_X, bciArgs);
 }
 
-void QEngineOCL::Swap(bitLenInt qubit1, bitLenInt qubit2) { QEngineCPU::Swap(qubit1, qubit2); }
-
 /// Bitwise swap
 void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
@@ -604,6 +662,9 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     return OpIndexed(OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
+/// Set arbitrary pure quantum state, in unsigned int permutation basis
+void QEngineOCL::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
+
 void QEngineOCL::NormalizeState(real1 nrm)
 {
     if (nrm < 0.0) {
@@ -615,10 +676,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm < min_norm) {
         queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
         queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
-        queue.flush();
-        runningNorm = 0.0;
-        queue.finish();
         queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+        runningNorm = 0.0;
         return;
     }
 

@@ -46,8 +46,8 @@ public:
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
+    using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy);
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 

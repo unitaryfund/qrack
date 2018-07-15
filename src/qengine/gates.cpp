@@ -14,9 +14,6 @@
 
 namespace Qrack {
 
-/// Measurement gate
-bool QEngineCPU::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
-
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {

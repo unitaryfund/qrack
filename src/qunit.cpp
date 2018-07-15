@@ -114,17 +114,6 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     return oldCount;
 }
 
-std::map<QInterfacePtr, bitLenInt> QUnit::Cohere(std::vector<QInterfacePtr> toCopy)
-{
-    std::map<QInterfacePtr, bitLenInt> ret;
-
-    for (auto&& q : toCopy) {
-        ret[q] = Cohere(q);
-    }
-
-    return ret;
-}
-
 void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */

@@ -794,29 +794,6 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     });
 }
 
-/// Set register bits to given permutation
-void QEngineCPU::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
-{
-    // First, single bit operations are better optimized for this special case:
-    if (length == 1) {
-        SetBit(start, (value == 1));
-    } else if ((start == 0) && (length == qubitCount)) {
-        real1 angle = Rand() * 2.0 * M_PI;
-
-        runningNorm = 1.0;
-        std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
-        stateVec[value] = complex(cos(angle), sin(angle));
-    } else {
-        bool bitVal;
-        bitCapInt regVal = MReg(start, length);
-        for (bitLenInt i = 0; i < length; i++) {
-            bitVal = regVal & (1 << i);
-            if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
-                X(start + i);
-        }
-    }
-}
-
 /// Measure permutation state of a register
 bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 {
