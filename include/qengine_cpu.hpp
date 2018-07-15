@@ -20,8 +20,6 @@
 
 #include "common/parallel_for.hpp"
 
-#define ALIGN_SIZE 64
-
 namespace Qrack {
 
 class QEngineCPU;
@@ -136,7 +134,7 @@ public:
      * @{
      */
 
-    virtual complex* GetState();
+    virtual complex* GetStateVector();
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);

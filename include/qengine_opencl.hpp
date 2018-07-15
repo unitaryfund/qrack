@@ -16,7 +16,7 @@
 #error OpenCL has not been enabled
 #endif
 
-#include "qengine_cpu.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
@@ -29,9 +29,9 @@ class QEngineOCL;
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
 /** OpenCL enhanced QEngineCPU implementation. */
-class QEngineOCL : public QEngineCPU {
+class QEngineOCL : public QInterface {
 protected:
-    //complex* stateVec;
+    complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
     cl::CommandQueue queue;
@@ -60,8 +60,9 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int devID = -1, bool partialInit = false);
+        int devID = -1, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
     QEngineOCL(QEngineOCLPtr toCopy);
+    ~QEngineOCL() { delete[] stateVec; }
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -69,8 +70,20 @@ public:
         maxQPower = 1 << qubitCount;
     }
 
+    virtual void EnableNormalize(bool doN) { doNormalize = doN; }
+    virtual real1 GetNorm(bool update = true)
+    {
+        if (update) {
+            UpdateRunningNorm();
+        }
+        return runningNorm;
+    }
+    virtual void SetNorm(real1 n) { runningNorm = n; }
+
     virtual complex* GetStateVector() { return stateVec; }
     virtual void SetPermutation(bitCapInt perm);
+    virtual void CopyState(QInterfacePtr orig);
+    virtual real1 ProbAll(bitCapInt fullRegister);
 
     /* Operations that have an improved implementation. */
     using QInterface::X;
@@ -78,10 +91,8 @@ public:
     using QInterface::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
-    using QInterface::Cohere;
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
-    using QInterface::Decohere;
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -133,6 +144,7 @@ protected:
     void ReInitOCL();
     void ResetStateVec(complex* nStateVec);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
+    virtual complex* AllocStateVec(bitCapInt elemCount);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,

@@ -19,25 +19,11 @@ namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
 
-QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int devID, bool partialInit)
-    : QEngineCPU(qBitCount, initState, rgp, complex(-999.0, -999.0), partialInit)
-{
-    InitOCL(devID);
-}
-
-QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
-    : QEngineCPU(toCopy)
-{
-    InitOCL(toCopy->deviceID);
-}
-
-#if 0
-QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int devID, bool partialInit)
+QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int devID, bool partialInit, complex phaseFac)
     : QInterface(qBitCount, rgp)
     , stateVec(NULL)
 {
     doNormalize = true;
-    SetConcurrencyLevel(std::thread::hardware_concurrency());
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
@@ -60,13 +46,31 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 }
 
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
-    : QInterface(toCopy->qubitCount, toCopy->rand_generator)
-    , doNormalize(toCopy->doNormalize)
+    : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    , stateVec(NULL)
 {
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
 }
-#endif
+
+void QEngineOCL::CopyState(QInterfacePtr orig)
+{
+    /* Set the size and reset the stateVec to the correct size. */
+    SetQubitCount(orig->GetQubitCount());
+    ResetStateVec(AllocStateVec(maxQPower));
+
+    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
+    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
+}
+
+real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
+{
+    if (doNormalize && (runningNorm != 1.0)) {
+        NormalizeState();
+    }
+
+    return norm(stateVec[fullRegister]);
+}
 
 void QEngineOCL::SetDevice(const int& dID)
 {
@@ -1008,6 +1012,20 @@ void QEngineOCL::UpdateRunningNorm()
     }
 
     delete[] nrmParts;
+}
+
+complex* QEngineOCL::AllocStateVec(bitCapInt elemCount)
+{
+// elemCount is always a power of two, but might be smaller than ALIGN_SIZE
+#ifdef __APPLE__
+    void* toRet;
+    posix_memalign(
+        &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+    return (complex*)toRet;
+#else
+    return (complex*)aligned_alloc(
+        ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+#endif
 }
 
 } // namespace Qrack

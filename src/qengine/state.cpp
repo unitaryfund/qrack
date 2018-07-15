@@ -61,11 +61,14 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
     : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    , stateVec(NULL)
 {
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
+    stateVec = AllocStateVec(maxQPower);
     CopyState(toCopy);
 }
 
-complex* QEngineCPU::GetState() { return stateVec; }
+complex* QEngineCPU::GetStateVector() { return stateVec; }
 
 void QEngineCPU::SetPermutation(bitCapInt perm) {
     std::fill(stateVec, stateVec + maxQPower, complex(0.0, 0.0));
@@ -81,7 +84,7 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
     ResetStateVec(AllocStateVec(maxQPower));
 
     QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
-    std::copy(src->GetState(), src->GetState() + (1 << (src->GetQubitCount())), stateVec);
+    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
 }
 
 void QEngineCPU::ResetStateVec(complex* nStateVec)

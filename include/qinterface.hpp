@@ -36,6 +36,8 @@
 #define min_norm 1e-15
 #endif
 
+#define ALIGN_SIZE 64
+
 namespace Qrack {
 
 class QInterface;
