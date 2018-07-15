@@ -637,6 +637,48 @@ void QEngineOCL::DECBCD(bitCapInt toSub, const bitLenInt start, const bitLenInt 
     INTBCD(OCL_API_DECBCD, toSub, start, length);
 }
 
+/// Add or Subtract integer (BCD, with carry)
+void QEngineOCL::INTBCDC(
+    OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bitCapInt nibbleCount = length / 4;
+    if (nibbleCount * 4 != length) {
+        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+    }
+    bitCapInt inOutMask = ((1 << length) - 1) << start;
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ (inOutMask | carryMask);
+
+    bitCapInt bciArgs[10] = { maxQPower >> 1, inOutMask, otherMask, carryMask, start, toMod, nibbleCount, 0, 0, 0 };
+
+    DispatchCall(api_call, bciArgs);
+}
+
+/** Increment integer (BCD, with carry) */
+void QEngineOCL::INCBCDC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INTBCDC(OCL_API_INCBCDC, toAdd, start, length, carryIndex);
+}
+
+/** Subtract integer (BCD, with carry) */
+void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    INTBCDC(OCL_API_DECBCDC, toSub, start, length, carryIndex);
+}
+
 /** Set 8 bit register bits based on read from classical memory */
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)

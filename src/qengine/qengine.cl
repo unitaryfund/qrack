@@ -632,6 +632,154 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     }
 }
 
+void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt carryMask = bitCapIntPtr[3];
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toAdd = bitCapIntPtr[5];
+    bitCapInt nibbleCount = bitCapIntPtr[6];
+    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes;
+    char test1, test2;
+    unsigned char j;
+    // For 128 qubits, we would have 32 nibbles. For now, there's no reason not overallocate in
+    // fast private memory.
+    char nibbles[32];
+    bool isValid;
+    cmplx amp;
+    bitCapInt i, iLow, iHigh;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        partToAdd = toAdd;
+        inOutRes = i & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        isValid = true;
+
+        test1 = inOutInt & 15;
+        test2 = partToAdd % 10;
+        partToAdd /= 10;
+        nibbles[0] = test1 + test2;
+        if ((test1 > 9) || (test2 > 9)) {
+            isValid = false;
+        }
+
+        for (j = 1; j < nibbleCount; j++) {
+            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test2 = partToAdd % 10;
+            partToAdd /= 10;
+            nibbles[j] = test1 + test2;
+            if ((test1 > 9) || (test2 > 9)) {
+                isValid = false;
+            }
+        }
+        amp = stateVec[i];
+        if (isValid) {
+            outInt = 0;
+            outRes = 0;
+            carryRes = 0;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] > 9) {
+                    nibbles[j] -= 10;
+                    if ((unsigned char)(j + 1) < nibbleCount) {
+                        nibbles[j + 1]++;
+                    } else {
+                        carryRes = carryMask;
+                    }
+                }
+                outInt |= nibbles[j] << (j * 4);
+            }
+            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
+            nStateVec[outRes] = amp;
+        } else {
+            nStateVec[i] = amp;
+        }
+    }
+}
+
+void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt carryMask = bitCapIntPtr[3];
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toSub = bitCapIntPtr[5];
+    bitCapInt nibbleCount = bitCapIntPtr[6];
+    bitCapInt otherRes, partToSub, inOutRes, inOutInt, outInt, outRes, carryRes;
+    char test1, test2;
+    unsigned char j;
+    // For 128 qubits, we would have 32 nibbles. For now, there's no reason not overallocate in
+    // fast private memory.
+    char nibbles[32];
+    bool isValid;
+    cmplx amp;
+    bitCapInt i, iLow, iHigh;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        partToSub = toSub;
+        inOutRes = i & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        isValid = true;
+
+        test1 = inOutInt & 15;
+        test2 = partToSub % 10;
+        partToSub /= 10;
+        nibbles[0] = test1 - test2;
+        if (test1 > 9) {
+            isValid = false;
+        }
+
+        for (j = 1; j < nibbleCount; j++) {
+            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test2 = partToSub % 10;
+            partToSub /= 10;
+            nibbles[j] = test1 - test2;
+            if (test1 > 9) {
+                isValid = false;
+            }
+        }
+        amp = stateVec[i];
+        if (isValid) {
+            outInt = 0;
+            outRes = 0;
+            carryRes = carryMask;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] < 0) {
+                    nibbles[j] += 10;
+                    if ((unsigned char)(j + 1) < nibbleCount) {
+                        nibbles[j + 1]--;
+                    } else {
+                        carryRes = 0;
+                    }
+                }
+                outInt |= nibbles[j] << (j * 4);
+            }
+            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
+            nStateVec[outRes] = amp;
+        } else {
+            nStateVec[i] = amp;
+        }
+    }
+}
+
 void kernel indexedLda(
     global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {

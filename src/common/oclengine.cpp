@@ -154,8 +154,8 @@ void OCLEngine::InitOCL()
         //all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
         all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
         all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
-        //all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
-        //all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
+        all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
+        all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
         all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
