@@ -1207,3 +1207,26 @@ void kernel zerophaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntP
         stateVec[i] = -stateVec[i];
     }
 }
+
+void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    bitCapInt ID, Nthreads, lcv;
+    bitCapInt i, iLow, iHigh;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt skipPower = bitCapIntPtr[2];
+    bitCapInt greaterPerm = bitCapIntPtr[3];
+    bitCapInt start = bitCapIntPtr[4];
+    cmplx amp;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (skipPower - 1);
+        i = (iLow + ((iHigh - iLow) << 1)) | skipPower;
+
+        if (((i & regMask) >> start) < greaterPerm)
+            stateVec[i] = -stateVec[i];
+    }
+}
