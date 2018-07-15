@@ -73,24 +73,38 @@ public:
     virtual void SetPermutation(bitCapInt perm);
 
     /* Operations that have an improved implementation. */
+    using QInterface::X;
+    virtual void X(bitLenInt start, bitLenInt length);
     using QInterface::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
     using QInterface::Cohere;
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     using QInterface::Decohere;
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
-    using QInterface::X;
-    virtual void X(bitLenInt start, bitLenInt length);
+
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    //virtual void INCSC(
+    //    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    //virtual void DECSC(
+    //    bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    //virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    //virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    //virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    //virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -125,11 +139,12 @@ protected:
 
     /* Utility functions used by the operations above. */
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
-    void INT(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
-    void INTC(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
+    void INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
+    void INTC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
-    void INTS(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
+    void INTS(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt overflowIndex);
+    void INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);

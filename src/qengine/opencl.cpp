@@ -582,8 +582,6 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
     INTC(OCL_API_DECC, toSub, start, length, carryIndex);
 }
 
-
-
 /// Add or Subtract integer (with overflow, without carry)
 void QEngineOCL::INTS(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
@@ -609,6 +607,34 @@ void QEngineOCL::INCS(bitCapInt toAdd, const bitLenInt start, const bitLenInt le
 void QEngineOCL::DECS(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
 {
     INTS(OCL_API_DECS, toSub, start, length, overflowIndex);
+}
+
+/// Add or Subtract integer (BCD)
+void QEngineOCL::INTBCD(
+    OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
+{
+    bitCapInt nibbleCount = length / 4;
+    if (nibbleCount * 4 != length) {
+        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+    }
+    bitCapInt inOutMask = ((1 << length) - 1) << start;
+    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
+
+    bitCapInt bciArgs[10] = { maxQPower, inOutMask, otherMask, start, toMod, nibbleCount, 0, 0, 0, 0 };
+
+    DispatchCall(api_call, bciArgs);
+}
+
+/** Increment integer (BCD) */
+void QEngineOCL::INCBCD(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
+{
+    INTBCD(OCL_API_INCBCD, toAdd, start, length);
+}
+
+/** Subtract integer (BCD) */
+void QEngineOCL::DECBCD(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
+{
+    INTBCD(OCL_API_DECBCD, toSub, start, length);
 }
 
 /** Set 8 bit register bits based on read from classical memory */

@@ -524,6 +524,114 @@ void kernel decs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
+void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt inOutStart = bitCapIntPtr[3];
+    bitCapInt toAdd = bitCapIntPtr[4];
+    bitCapInt nibbleCount = bitCapIntPtr[5];
+    bitCapInt otherRes, partToAdd, inOutRes, inOutInt;
+    char test1, test2;
+    unsigned char j;
+    // For 128 qubits, we would have 32 nibbles. For now, there's no reason not overallocate in
+    // fast private memory.
+    char nibbles[32];
+    bool isValid;
+    cmplx amp;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = (lcv & (otherMask));
+        partToAdd = toAdd;
+        inOutRes = (lcv & (inOutMask));
+        inOutInt = inOutRes >> (inOutStart);
+        isValid = true;
+        for (j = 0; j < nibbleCount; j++) {
+            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test2 = (partToAdd % 10);
+            partToAdd /= 10;
+            nibbles[j] = test1 + test2;
+            if (test1 > 9) {
+                isValid = false;
+            }
+        }
+        amp = stateVec[lcv];
+        if (isValid) {
+            bitCapInt outInt = 0;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] > 9) {
+                    nibbles[j] -= 10;
+                    if ((unsigned char)(j + 1) < nibbleCount) {
+                        nibbles[j + 1]++;
+                    }
+                }
+                outInt |= nibbles[j] << (j * 4);
+            }
+            nStateVec[(outInt << (inOutStart)) | otherRes] = amp;
+        } else {
+            nStateVec[lcv] = amp;
+        }
+    }
+}
+
+void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt inOutStart = bitCapIntPtr[3];
+    bitCapInt toSub = bitCapIntPtr[4];
+    bitCapInt nibbleCount = bitCapIntPtr[5];
+    bitCapInt otherRes, partToSub, inOutRes, inOutInt;
+    char test1, test2;
+    unsigned char j;
+    // For 128 qubits, we would have 32 nibbles. For now, there's no reason not overallocate in
+    // fast private memory.
+    char nibbles[32];
+    bool isValid;
+    cmplx amp;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = lcv & otherMask;
+        partToSub = toSub;
+        inOutRes = lcv & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        isValid = true;
+        for (j = 0; j < nibbleCount; j++) {
+            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test2 = (partToSub % 10);
+            partToSub /= 10;
+            nibbles[j] = test1 - test2;
+            if (test1 > 9) {
+                isValid = false;
+            }
+        }
+        amp = stateVec[lcv];
+        if (isValid) {
+            bitCapInt outInt = 0;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] < 0) {
+                    nibbles[j] += 10;
+                    if ((unsigned char)(j + 1) < nibbleCount) {
+                        nibbles[j + 1]--;
+                    }
+                }
+                outInt |= nibbles[j] << (j * 4);
+            }
+            nStateVec[(outInt << (inOutStart)) | otherRes] = amp;
+        } else {
+            nStateVec[lcv] = amp;
+        }
+    }
+}
+
 void kernel indexedLda(
     global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
