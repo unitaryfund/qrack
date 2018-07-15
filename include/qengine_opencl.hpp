@@ -33,6 +33,7 @@ class QEngineOCL : public QInterface {
 protected:
     complex* stateVec;
     int deviceID;
+    bool isLocked;
     DeviceContextPtr device_context;
     cl::CommandQueue queue;
     cl::Context context;
@@ -80,6 +81,8 @@ public:
     }
     virtual void SetNorm(real1 n) { runningNorm = n; }
 
+    virtual void LockSync();
+    virtual void UnlockSync();
     virtual complex* GetStateVector() { return stateVec; }
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);

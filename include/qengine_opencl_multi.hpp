@@ -198,7 +198,7 @@ protected:
 private:
     void Init(bitLenInt qBitCount, bitCapInt initState);
 
-    void ShuffleBuffers(complex* stateVec1, complex* stateVec2);
+    void ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine2);
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);
 

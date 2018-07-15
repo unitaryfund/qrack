@@ -117,9 +117,13 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
 
 // Swap the high half of one sub-engine with the low half of another. This is necessary for gates which cross sub-engine
 // boundaries.
-void QEngineOCLMulti::ShuffleBuffers(complex* stateVec1, complex* stateVec2)
+void QEngineOCLMulti::ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine2)
 {
-    std::swap_ranges(stateVec1 + (subMaxQPower >> 1), stateVec1 + subMaxQPower, stateVec2);
+    engine1->LockSync();
+    engine2->LockSync();
+    std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower, engine2->GetStateVector());
+    engine1->UnlockSync();
+    engine2->UnlockSync();
 }
 
 // This underlies all single-bit gates, unless they can be carried out entirely at a "meta-qubit" level, by only
@@ -177,7 +181,7 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
                         QEngineOCLPtr engine1 = substateEngines[j + (i * groupSize)];
                         QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
 
-                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                        ShuffleBuffers(engine1, engine2);
 
                         std::future<void> future1 = std::async(std::launch::async,
                             [engine1, fn, sqi, gfnArgs...]() { ((engine1.get())->*fn)(gfnArgs..., sqi); });
@@ -186,7 +190,7 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
                         future1.get();
                         future2.get();
 
-                        ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                        ShuffleBuffers(engine1, engine2);
                     });
             }
         }
@@ -586,7 +590,7 @@ void QEngineOCLMulti::MetaControlled(
                 QEngineOCLPtr engine1 = substateEngines[j];
                 QEngineOCLPtr engine2 = substateEngines[j + targetMask];
 
-                ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                ShuffleBuffers(engine1, engine2);
 
                 std::future<void> future1 = std::async(
                     std::launch::async, [engine1, fn, sqi, gfnArgs...]() { ((engine1.get())->*fn)(gfnArgs..., sqi); });
@@ -595,7 +599,7 @@ void QEngineOCLMulti::MetaControlled(
                 future1.get();
                 future2.get();
 
-                ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                ShuffleBuffers(engine1, engine2);
             });
     }
 
@@ -664,7 +668,7 @@ void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenIn
                 QEngineOCLPtr engine1 = substateEngines[j + (i * groupSize)];
                 QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
 
-                ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                ShuffleBuffers(engine1, engine2);
 
                 if (anti) {
                     ((engine1.get())->*fn)(gfnArgs..., sqi);
@@ -672,7 +676,7 @@ void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenIn
                     ((engine2.get())->*fn)(gfnArgs..., sqi);
                 }
 
-                ShuffleBuffers(engine1->GetStateVector(), engine2->GetStateVector());
+                ShuffleBuffers(engine1, engine2);
             });
             k++;
         }
