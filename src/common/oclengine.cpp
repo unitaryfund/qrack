@@ -148,10 +148,10 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
         all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
         all_device_contexts[i]->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
-        //all_device_contexts[i]->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
-        //all_device_contexts[i]->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
-        //all_device_contexts[i]->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
-        //all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
+        all_device_contexts[i]->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
+        all_device_contexts[i]->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
+        all_device_contexts[i]->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
+        all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
         all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
         all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
         all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");

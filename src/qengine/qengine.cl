@@ -524,6 +524,220 @@ void kernel decs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
+void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> 1;
+    bitCapInt overflowMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt inOutStart = bitCapIntPtr[6];
+    bitCapInt toAdd = bitCapIntPtr[7];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
+    cmplx amp;
+    bool isOverflow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        inOutRes = i & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        inInt = toAdd;
+        outInt = inOutInt + toAdd;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
+        }
+        bool isOverflow = false;
+        // Both negative:
+        if (inOutInt & inInt & signMask) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask)
+                isOverflow = true;
+        }
+        // Both positive:
+        else if ((~inOutInt) & (~inInt) & signMask) {
+            if ((inOutInt + inInt) >= signMask)
+                isOverflow = true;
+        }
+        amp = stateVec[i];
+        if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
+            amp = -amp;
+        }
+        nStateVec[outRes] = amp;
+    }
+}
+
+void kernel decsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> 1;
+    bitCapInt overflowMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt inOutStart = bitCapIntPtr[6];
+    bitCapInt toSub = bitCapIntPtr[7];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
+    cmplx amp;
+    bool isOverflow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        inOutRes = i & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        inInt = toSub;
+        outInt = (inOutInt - toSub) + lengthPower;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
+        }
+        bool isOverflow = false;
+        // First negative:
+        if (inOutInt & (~inInt) & signMask) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask)
+                isOverflow = true;
+        }
+        // First positive:
+        else if (inOutInt & (~inInt) & signMask) {
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) >= signMask)
+                isOverflow = true;
+        }
+        amp = stateVec[i];
+        if (isOverflow && ((outRes & overflowMask) == overflowMask))  {
+            amp = -amp;
+        }
+        nStateVec[outRes] = amp;
+    }
+}
+
+void kernel incsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> 1;
+    bitCapInt carryMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toAdd = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
+    cmplx amp;
+    bool isOverflow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        inOutRes = i & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        inInt = toAdd;
+        outInt = inOutInt + toAdd;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
+        }
+        bool isOverflow = false;
+        // Both negative:
+        if (inOutInt & inInt & (signMask)) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask)
+                isOverflow = true;
+        }
+        // Both positive:
+        else if ((~inOutInt) & (~inInt) & signMask) {
+            if ((inOutInt + inInt) >= signMask)
+                isOverflow = true;
+        }
+        amp = stateVec[i];
+        if (isOverflow) {
+            amp = -amp;
+        }
+        nStateVec[outRes] = amp;
+    }
+}
+
+void kernel decsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> 1;
+    bitCapInt carryMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toSub = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
+    cmplx amp;
+    bool isOverflow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (carryMask - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        otherRes = i & otherMask;
+        inOutRes = i & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        inInt = toSub;
+        outInt = (inOutInt - toSub) + lengthPower;
+        if (outInt < (lengthPower)) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
+        }
+        bool isOverflow = false;
+        // First negative:
+        if (inOutInt & (~inInt) & signMask) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask)
+                isOverflow = true;
+        }
+        // First positive:
+        else if (inOutInt & (~inInt) & signMask) {
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) >= signMask)
+                isOverflow = true;
+        }
+        amp = stateVec[i];
+        if (isOverflow)  {
+            amp = -amp;
+        }
+        nStateVec[outRes] = amp;
+    }
+}
+
 void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, lcv;
