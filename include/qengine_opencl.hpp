@@ -89,6 +89,8 @@ public:
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -126,6 +128,8 @@ protected:
     void INT(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length);
     void INTC(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
+    void INTS(OCLAPI api_call, bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length,
+        const bitLenInt overflowIndex);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);

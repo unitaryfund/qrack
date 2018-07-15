@@ -422,6 +422,108 @@ void kernel decc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
+void kernel incs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> 1;
+    bitCapInt overflowMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toAdd = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
+    cmplx amp;
+    bool isOverflow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = lcv & otherMask;
+        inOutRes = lcv & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        inInt = toAdd;
+        outInt = inOutInt + toAdd;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes;
+        }
+        isOverflow = false;
+        // Both negative:
+        if (inOutInt & inInt & signMask) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask) {
+                isOverflow = true;
+            }
+        }
+        // Both positive:
+        else if ((~inOutInt) & (~inInt) & signMask) {
+            if ((inOutInt + inInt) >= signMask) {
+                isOverflow = true;
+            }
+        }
+        amp = stateVec[lcv];
+        if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
+            amp = -amp;
+        }
+        nStateVec[outRes] = amp;
+    }
+}
+
+void kernel decs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> 1;
+    bitCapInt overflowMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toSub = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
+    cmplx amp;
+    bool isOverflow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = lcv & otherMask;
+        inOutRes = lcv & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
+        inInt = overflowMask;
+        outInt = inOutInt - toSub + lengthPower;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes;
+        }
+        isOverflow = false;
+        // First negative:
+        if (inOutInt & (~inInt) & signMask) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask) {
+                isOverflow = true;
+            }
+        }
+        // First positive:
+        else if (inOutInt & (~inInt) & signMask) {
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) >= signMask) {
+                isOverflow = true;
+            }
+        }
+        amp = stateVec[lcv];
+        if (isOverflow && ((outRes & overflowMask) == overflowMask))  {
+            amp = -amp;
+        }
+        nStateVec[outRes] = amp;
+    }
+}
+
 void kernel indexedLda(
     global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
@@ -587,8 +689,9 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0] >> 1;
+    bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt qPower = bitCapIntPtr[1];
+    bitCapInt qMask = qPower - 1;
     bitCapInt savePower = bitCapIntPtr[2];
     bitCapInt discardPower = qPower ^ savePower;
     cmplx nrm = (cmplx)(args_ptr[0], args_ptr[1]);
@@ -596,10 +699,10 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        iLow = iHigh & (qPower - 1);
+        iLow = iHigh & qMask;
         i = iLow + ((iHigh - iLow) << 1);
 
-        stateVec[lcv | savePower] = nrm * stateVec[lcv];
-        stateVec[lcv | discardPower] = (cmplx)(0.0, 0.0);
+        stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
+        stateVec[i | discardPower] = (cmplx)(0.0, 0.0);
     }
 }

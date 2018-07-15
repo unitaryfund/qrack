@@ -223,7 +223,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm) {
     real1 r1_args[2] = { real(nrm), imag(nrm) };
     cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
 
-    bitCapInt bciArgs[10] = { maxQPower, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[10] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
@@ -580,6 +580,35 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
     }
 
     INTC(OCL_API_DECC, toSub, start, length, carryIndex);
+}
+
+
+
+/// Add or Subtract integer (with overflow, without carry)
+void QEngineOCL::INTS(
+    OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
+{
+
+    bitCapInt overflowMask = 1 << overflowIndex;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
+
+    bitCapInt bciArgs[10] = { maxQPower, regMask, otherMask, lengthPower, overflowMask, start, toMod, 0, 0, 0 };
+
+    DispatchCall(api_call, bciArgs);
+}
+
+/** Increment integer (without sign, with carry) */
+void QEngineOCL::INCS(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
+{
+    INTS(OCL_API_INCS, toAdd, start, length, overflowIndex);
+}
+
+/** Subtract integer (without sign, with carry) */
+void QEngineOCL::DECS(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
+{
+    INTS(OCL_API_DECS, toSub, start, length, overflowIndex);
 }
 
 /** Set 8 bit register bits based on read from classical memory */

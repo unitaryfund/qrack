@@ -146,6 +146,14 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
         all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
         all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
+        all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
+        all_device_contexts[i]->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
+        //all_device_contexts[i]->calls[OCL_API_INCSC] = cl::Kernel(program, "incsc");
+        //all_device_contexts[i]->calls[OCL_API_DECSC] = cl::Kernel(program, "decsc");
+        //all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
+        //all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
+        //all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
+        //all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
         all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
