@@ -57,6 +57,7 @@ enum OCLAPI {
     OCL_API_INDEXEDSBC,
     OCL_API_NORMALIZE,
     OCL_API_UPDATENORM,
+    OCL_API_APPLYM
 };
 
 class OCLDeviceCall {

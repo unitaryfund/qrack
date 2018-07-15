@@ -17,6 +17,36 @@
 namespace Qrack {
 
 /// Measurement gate
+
+/// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
+bool QInterface::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
+{
+    if (doNormalize && (runningNorm != 1.0)) {
+        NormalizeState();
+    }
+
+    if (!doForce) {
+        real1 prob = Rand();
+        real1 oneChance = Prob(qubit);
+        result = ((prob < oneChance) && (oneChance > 0.0));
+        nrmlzr = 1.0;
+        if (result) {
+            nrmlzr = oneChance;
+        } else {
+            nrmlzr = 1.0 - oneChance;
+        }
+    }
+    if (nrmlzr > min_norm) {
+        bitCapInt qPower = 1 << qubit;
+        real1 angle = Rand() * 2.0 * M_PI;
+        ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(sqrt(nrmlzr)));
+    } else {
+        NormalizeState(0.0);
+    }
+
+    return result;
+}
+
 bool QInterface::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
 
 /// Set individual bit to pure |0> (false) or |1> (true) state

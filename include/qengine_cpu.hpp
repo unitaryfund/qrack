@@ -36,7 +36,6 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  */
 class QEngineCPU : public QInterface, public ParallelFor {
 protected:
-    bool doNormalize;
     complex* stateVec;
 
 public:
@@ -149,7 +148,6 @@ public:
     }
     virtual void SetNorm(real1 n) { runningNorm = n; }
     virtual void NormalizeState(real1 nrm = -999.0);
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 
@@ -160,5 +158,6 @@ protected:
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();
     virtual complex* AllocStateVec(bitCapInt elemCount);
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 };
 } // namespace Qrack

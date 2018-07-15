@@ -217,6 +217,29 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
+void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm) {
+    bitCapInt powerTest = result ? qPower : 0;
+
+    real1 r1_args[2] = { real(nrm), imag(nrm) };
+    cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
+
+    bitCapInt bciArgs[10] = { maxQPower, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
+    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
+
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, argsBuffer);
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
+        cl::NDRange(1)); // local number (per group)
+
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+}
+
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
     bitLenInt result = qubitCount;

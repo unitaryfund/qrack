@@ -581,3 +581,25 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
         norm_ptr[ID] += nrm;
     }
 }
+
+void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0] >> 1;
+    bitCapInt qPower = bitCapIntPtr[1];
+    bitCapInt savePower = bitCapIntPtr[2];
+    bitCapInt discardPower = qPower ^ savePower;
+    cmplx nrm = (cmplx)(args_ptr[0], args_ptr[1]);
+    bitCapInt i, iLow, iHigh, j;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & (qPower - 1);
+        i = iLow + ((iHigh - iLow) << 1);
+
+        stateVec[lcv | savePower] = nrm * stateVec[lcv];
+        stateVec[lcv | discardPower] = (cmplx)(0.0, 0.0);
+    }
+}

@@ -31,7 +31,6 @@ typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCL : public QEngineCPU {
 protected:
-    //bool doNormalize;
     //complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
@@ -44,6 +43,8 @@ protected:
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
     cl::Buffer maxBuffer;
+
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
 public:
     /**

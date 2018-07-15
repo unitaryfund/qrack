@@ -14,50 +14,15 @@
 
 namespace Qrack {
 
-/// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
-bool QEngineCPU::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
-{
-    if (doNormalize && (runningNorm != 1.0)) {
-        NormalizeState();
-    }
-
-    real1 prob = Rand();
-    real1 angle = Rand() * 2.0 * M_PI;
-    real1 cosine = cos(angle);
-    real1 sine = sin(angle);
-    complex nrm;
-
-    bitCapInt qPowers = 1 << qubit;
-
-    if (!doForce) {
-        real1 oneChance = Prob(qubit);
-        result = ((prob < oneChance) && (oneChance > 0.0));
-        nrmlzr = 1.0;
-        if (result) {
-            nrmlzr = oneChance;
+void QEngineCPU::ApplyM(bitCapInt qPower, bool result, complex nrm) {
+    bitCapInt powerTest = result ? qPower : 0;
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if ((lcv & qPower) == powerTest) {
+            stateVec[lcv] = nrm * stateVec[lcv];
         } else {
-            nrmlzr = 1.0 - oneChance;
+            stateVec[lcv] = complex(0.0, 0.0);
         }
-    }
-
-    bitCapInt powerTest = result ? qPowers : 0;
-
-    nrm = complex(cosine, sine);
-    if (nrmlzr > min_norm) {
-        nrm /= (real1)(sqrt(nrmlzr));
-
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            if ((lcv & qPowers) == powerTest) {
-                stateVec[lcv] = nrm * stateVec[lcv];
-            } else {
-                stateVec[lcv] = complex(0.0, 0.0);
-            }
-        });
-    } else {
-        NormalizeState(0.0);
-    }
-
-    return result;
+    });
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index

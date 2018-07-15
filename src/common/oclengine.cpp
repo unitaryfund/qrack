@@ -151,6 +151,7 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
         all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
         all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
+        all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];

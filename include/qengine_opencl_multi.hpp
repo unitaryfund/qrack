@@ -24,7 +24,6 @@ typedef std::shared_ptr<QEngineOCLMulti> QEngineOCLMultiPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface, public ParallelFor {
 protected:
-    real1 runningNorm;
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
     bitLenInt subEngineCount;

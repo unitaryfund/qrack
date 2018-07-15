@@ -60,8 +60,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QInterface(toCopy->qubitCount, toCopy->rand_generator)
-    , doNormalize(toCopy->doNormalize)
+    : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
 {
     CopyState(toCopy);
 }

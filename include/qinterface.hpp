@@ -96,6 +96,7 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
     real1 runningNorm;
+    bool doNormalize;
 
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
@@ -119,11 +120,13 @@ protected:
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0) { throw "ForceM not implemented in interface"; }
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm) { throw "ApplyM not implemented in interface"; }
+    virtual void NormalizeState(real1 nrm = -999.0) { throw "NormalizeState not implemented in interface"; }
 
 public:
-    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
-        : rand_distribution(0.0, 1.0)
+    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
+        : doNormalize(doNorm)
+        , rand_distribution(0.0, 1.0)
     {
         SetQubitCount(n);
 
@@ -1176,6 +1179,13 @@ public:
      * factor.
      */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
+
+    /**
+     * Act as though a measurement was applied, except force the result of the measurement
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 };
