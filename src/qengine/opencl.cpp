@@ -85,11 +85,10 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    LockSync();
-    real1 prob = norm(stateVec[fullRegister]);
-    UnlockSync();
-
-    return prob;
+    queue.finish();
+    complex amp[1];
+    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * fullRegister, sizeof(complex), amp);
+    return norm(amp[0]);
 }
 
 void QEngineOCL::SetDevice(const int& dID)
