@@ -1195,11 +1195,16 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     for (i = 0; i < groupCount; i++) {
         nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, deviceIDs[i]);
         nEngines[i]->EnableNormalize(false);
+        nEngines[i]->LockSync();
         complex* nsv = nEngines[i]->GetStateVector();
         for (j = 0; j < groupSize; j++) {
-            complex* sv = substateEngines[j + (i * groupSize)]->GetStateVector();
+            QEngineOCLPtr eng = substateEngines[j + (i * groupSize)];
+            complex* sv = eng->GetStateVector();
+            eng->LockSync();
             std::copy(sv, sv + sbSize, nsv + (j * sbSize));
+            eng->UnlockSync();
         }
+        nEngines[i]->UnlockSync();
     }
 
     if (order == 0) {
@@ -1234,14 +1239,19 @@ void QEngineOCLMulti::SeparateEngines()
     bitCapInt sbSize = (1 << qubitCount) / engineCount;
 
     for (i = 0; i < subEngineCount; i++) {
-        complex* sv = substateEngines[i]->GetStateVector();
+        QEngineOCLPtr eng = substateEngines[i];
+        eng->LockSync();
+        complex* sv = eng->GetStateVector();        
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
+            nEngine->LockSync();
             std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
+            nEngine->UnlockSync();
             nEngines[j + (i * groupSize)] = nEngine;
         }
+        eng->UnlockSync();
     }
 
     substateEngines.resize(engineCount);
