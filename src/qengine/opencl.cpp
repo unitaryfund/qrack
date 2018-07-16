@@ -22,7 +22,6 @@ namespace Qrack {
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp, int devID, bool partialInit, complex phaseFac)
     : QInterface(qBitCount, rgp)
     , stateVec(NULL)
-    , isLocked(false)
 {
     doNormalize = true;
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -49,26 +48,17 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
     , stateVec(NULL)
-    , isLocked(false)
 {
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
 }
 
 void QEngineOCL::LockSync() {
-    if (!isLocked) {
-        queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
-        isLocked = true;
-    }
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
 }
 
 void QEngineOCL::UnlockSync() {
-    if (isLocked) {
-        queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
-        queue.flush();
-        queue.finish();
-        isLocked = false;
-    }
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
 }
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
@@ -143,10 +133,10 @@ void QEngineOCL::SetPermutation(bitCapInt perm) {
 
 
 void QEngineOCL::DispatchCall(
-    OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec, unsigned char* values, bitCapInt valuesPower)
+    OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower)
 {
     /* Allocate a temporary nStateVec, or use the one supplied. */
-    complex* nStateVec = nVec ? nVec : AllocStateVec(maxQPower);
+    complex* nStateVec = AllocStateVec(maxQPower);
 
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
@@ -238,7 +228,6 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm) {
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
-
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
@@ -269,9 +258,6 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    BufferPtr stateBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY,
-        sizeof(complex) * (1 << (toCopy->qubitCount)), toCopy->stateVec);
-
     complex* nStateVec = AllocStateVec(nMaxQPower);
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower, nStateVec);
@@ -279,7 +265,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *stateBuffer2);
+    ocl.call.setArg(1, *(toCopy->stateBuffer));
     ocl.call.setArg(2, ulongBuffer);
     ocl.call.setArg(3, *nStateBuffer);
 
@@ -373,14 +359,12 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     // If we Decohere, calculate the state of the bit system removed.
     if (destination != nullptr) {
         bciArgs[0] = partPower;
-        queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
-        queue.finish();
+        queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
         amp_call.call.setArg(0, probBuffer2);
         amp_call.call.setArg(1, angleBuffer2);
         amp_call.call.setArg(2, ulongBuffer);
         amp_call.call.setArg(3, *(destination->stateBuffer));
-        queue.finish();
 
         queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
             cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
@@ -410,7 +394,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         cl::NDRange(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE), // global number of work items
         cl::NDRange(1)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 
     ResetStateVec(nStateVec, nStateBuffer);
 
@@ -771,8 +755,7 @@ bitCapInt QEngineOCL::IndexedLDA(
     bitCapInt bciArgs[10] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes, valueLength, 0,
         0, 0 };
 
-    complex* nStateVec = AllocStateVec(maxQPower);
-    DispatchCall(OCL_API_INDEXEDLDA, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
+    DispatchCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << valueLength) * valueBytes);
 
     real1 prob;
     real1 average = 0.0;
@@ -808,7 +791,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
          * If the carry is set, we flip the carry bit. We always initially
          * clear the carry after testing for carry in.
          */
-        carryIn = !carryIn;
+        carryIn ^= 1U;
         X(carryIndex);
     }
 
@@ -821,8 +804,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitCapInt bciArgs[10] = { maxQPower >> 1, indexStart, inputMask, valueStart, outputMask, otherMask, carryIn,
         carryMask, lengthPower, valueBytes };
 
-    complex* nStateVec = AllocStateVec(maxQPower);
-    DispatchCall(api_call, bciArgs, nStateVec, values, (1 << valueLength) * valueBytes);
+    DispatchCall(api_call, bciArgs, values, (1 << valueLength) * valueBytes);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;

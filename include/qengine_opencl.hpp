@@ -33,7 +33,6 @@ class QEngineOCL : public QInterface {
 protected:
     complex* stateVec;
     int deviceID;
-    bool isLocked;
     DeviceContextPtr device_context;
     cl::CommandQueue queue;
     cl::Context context;
@@ -148,8 +147,7 @@ protected:
     virtual complex* AllocStateVec(bitCapInt elemCount);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], complex* nVec = NULL,
-        unsigned char* values = NULL, bitCapInt valuesLength = 0);
+    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
