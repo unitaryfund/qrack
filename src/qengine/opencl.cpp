@@ -124,10 +124,10 @@ void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 
 void QEngineOCL::SetPermutation(bitCapInt perm) {
     queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
-    LockSync();
     real1 angle = Rand() * 2.0 * M_PI;
-    stateVec[perm] = complex(cos(angle), sin(angle));
-    UnlockSync();
+    complex amp = complex(cos(angle), sin(angle));
+    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex));
+    queue.flush();
     runningNorm = 1.0;
 }
 
