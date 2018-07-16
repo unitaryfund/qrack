@@ -76,7 +76,10 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
     queue.finish();
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
-    ResetStateVec(AllocStateVec(maxQPower));
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+    ResetStateVec(nStateVec, nStateBuffer);
 
     QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
     src->LockSync();
@@ -120,22 +123,6 @@ void QEngineOCL::SetDevice(const int& dID)
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
-
-void QEngineOCL::ReInitOCL()
-{
-    queue.finish();
-    // create buffers on device (allocate space on GPU)
-    stateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
-}
-
-void QEngineOCL::ResetStateVec(complex* nStateVec)
-{
-    queue.finish();
-    free(stateVec);
-    stateVec = nStateVec;
-    ReInitOCL();
-}
 
 void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 {
@@ -303,7 +290,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     queue.flush();
 
     SetQubitCount(nQubitCount);
-    ResetStateVec(nStateVec);
+    ResetStateVec(nStateVec, nStateBuffer);
 
     return result;
 }
@@ -425,7 +412,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     queue.flush();
 
-    ResetStateVec(nStateVec);
+    ResetStateVec(nStateVec, nStateBuffer);
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;

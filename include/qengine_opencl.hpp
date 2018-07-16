@@ -144,8 +144,6 @@ protected:
     static const int BCI_ARG_LEN = 10;
 
     void InitOCL(int devID);
-    void ReInitOCL();
-    void ResetStateVec(complex* nStateVec);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount);
 
