@@ -768,7 +768,6 @@ bitCapInt QEngineOCL::IndexedLDA(
         average += prob * outputInt;
     }
     UnlockSync();
-
     if (totProb > 0.0) {
         average /= totProb;
     }
@@ -901,7 +900,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm < 0.0) {
         nrm = runningNorm;
     }
-    if (nrm == 1.0) {
+    if ((nrm == 1.0) || (runningNorm == 0.0)) {
         return;
     }
     if (nrm < min_norm) {
