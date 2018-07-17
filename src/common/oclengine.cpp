@@ -93,7 +93,7 @@ void OCLEngine::InitOCL()
     int deviceCount = all_devices.size();
 
     // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
-    int dev = 0;
+    int dev = deviceCount - 1;
 
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
