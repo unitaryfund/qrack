@@ -42,7 +42,6 @@ protected:
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
-    cl::Buffer maxBuffer;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
@@ -148,7 +147,8 @@ protected:
     virtual complex* AllocStateVec(bitCapInt elemCount);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
+    void DispatchCall(
+        OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
@@ -165,7 +165,8 @@ protected:
     void INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt overflowIndex, const bitLenInt carryIndex);
     void INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
-    void INTBCDC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
+    void INTBCDC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
+        const bitLenInt carryIndex);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);

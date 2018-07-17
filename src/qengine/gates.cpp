@@ -14,7 +14,8 @@
 
 namespace Qrack {
 
-void QEngineCPU::ApplyM(bitCapInt qPower, bool result, complex nrm) {
+void QEngineCPU::ApplyM(bitCapInt qPower, bool result, complex nrm)
+{
     bitCapInt powerTest = result ? qPower : 0;
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if ((lcv & qPower) == powerTest) {

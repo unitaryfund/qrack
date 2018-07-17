@@ -690,5 +690,4 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Cohere(std::vector<QInterfacePtr>
     return ret;
 }
 
-
 } // namespace Qrack

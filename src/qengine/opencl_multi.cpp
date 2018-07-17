@@ -65,7 +65,7 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
 {
     // It's possible to do a simple form of load balancing by assigning unequal portions of subengines to the same
     // device:
-    //deviceIDs.resize(4);
+    // deviceIDs.resize(4);
     // deviceIDs[0] = 1;
     // deviceIDs[1] = 1;
     // deviceIDs[2] = 1;
@@ -121,7 +121,8 @@ void QEngineOCLMulti::ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine
 {
     engine1->LockSync();
     engine2->LockSync();
-    std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower, engine2->GetStateVector());
+    std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower,
+        engine2->GetStateVector());
     engine1->UnlockSync();
     engine2->UnlockSync();
 }
@@ -1241,7 +1242,7 @@ void QEngineOCLMulti::SeparateEngines()
     for (i = 0; i < subEngineCount; i++) {
         QEngineOCLPtr eng = substateEngines[i];
         eng->LockSync();
-        complex* sv = eng->GetStateVector();        
+        complex* sv = eng->GetStateVector();
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);

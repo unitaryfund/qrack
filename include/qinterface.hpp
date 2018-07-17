@@ -115,7 +115,10 @@ protected:
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) { throw "Apply2x2 not implemented in interface"; }
+        const bitCapInt* qPowersSorted, bool doCalcNorm)
+    {
+        throw "Apply2x2 not implemented in interface";
+    }
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyControlled2x2(
