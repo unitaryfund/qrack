@@ -446,6 +446,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         oneChance += oneChanceArray[i];
     }
 
+    queue.enqueueUnmapMemObject(oneChanceBuffer, oneChanceArray);
+
     if (oneChance > 1.0)
         oneChance = 1.0;
 
