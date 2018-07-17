@@ -53,8 +53,8 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     InitOCL(toCopy->deviceID);
 }
 
-void QEngineOCL::LockSync() {
-    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(complex) * maxQPower);
+void QEngineOCL::LockSync(cl_int flags) {
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower);
 }
 
 void QEngineOCL::UnlockSync() {
@@ -72,8 +72,8 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
     ResetStateVec(nStateVec, nStateBuffer);
 
     QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
-    src->LockSync();
-    LockSync();
+    src->LockSync(CL_MAP_READ);
+    LockSync(CL_MAP_WRITE);
     std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
     src->UnlockSync();
     UnlockSync();
@@ -760,7 +760,7 @@ bitCapInt QEngineOCL::IndexedLDA(
     real1 average = 0.0;
     real1 totProb = 0.0;
     bitCapInt i, outputInt;
-    LockSync();
+    LockSync(CL_MAP_READ);
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(stateVec[i]);
@@ -809,7 +809,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     real1 average = 0.0;
     real1 totProb = 0.0;
     bitCapInt i, outputInt;
-    LockSync();
+    LockSync(CL_MAP_READ);
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
         prob = norm(stateVec[i]);
