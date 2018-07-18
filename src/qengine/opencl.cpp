@@ -151,7 +151,8 @@ void QEngineOCL::DispatchCall(
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
 
     OCLDeviceCall ocl = device_context->Reserve(api_call);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
@@ -195,8 +196,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     if (doCalcNorm) {
         nrmParts = new real1[nrmGroupCount]();
-        queue.enqueueWriteBuffer(
-            nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+        queue.enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
     }
 
     OCLAPI api_call;
@@ -219,8 +219,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     queue.flush();
     if (doNormalize && doCalcNorm) {
-        queue.enqueueReadBuffer(
-            nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+        queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
         runningNorm = 0.0;
         for (unsigned long int i = 0; i < nrmGroupCount; i++) {
             runningNorm += nrmParts[i];
@@ -240,7 +239,8 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
@@ -276,7 +276,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower, nStateVec);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *(toCopy->stateBuffer));
@@ -313,7 +314,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     }
     OCLDeviceCall prob_call = device_context->Reserve(api_call);
     OCLDeviceCall amp_call = device_context->Reserve(OCL_API_DECOHEREAMP);
-    //size_t groupSize = prob_call.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // prob_call.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
@@ -372,7 +374,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     // Wait as long as possible before joining the kernel.
     queue.finish();
 
-    //groupSize = amp_call.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // groupSize = amp_call.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     // If we Decohere, calculate the state of the bit system removed.
     if (destination != nullptr) {
@@ -452,7 +454,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * numCores, oneChanceArray);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
@@ -879,7 +882,8 @@ void QEngineOCL::PhaseFlip()
     }
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIP);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -902,7 +906,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -924,7 +929,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     }
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
 
@@ -970,7 +976,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_NORMALIZE);
-    //size_t groupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    // size_t groupSize =
+    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
@@ -988,13 +995,11 @@ void QEngineOCL::UpdateRunningNorm()
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
     real1* nrmParts = new real1[nrmGroupCount]();
-    queue.enqueueWriteBuffer(
-        nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+    queue.enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, nrmBuffer);
@@ -1002,8 +1007,7 @@ void QEngineOCL::UpdateRunningNorm()
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.enqueueReadBuffer(
-        nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+    queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
     runningNorm = 0.0;
     for (unsigned long int i = 0; i < nrmGroupCount; i++) {
         runningNorm += nrmParts[i];
