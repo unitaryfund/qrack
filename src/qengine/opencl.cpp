@@ -928,7 +928,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineOCL::SetQuantumState(complex* inputState) {
+void QEngineOCL::SetQuantumState(complex* inputState)
+{
     std::copy(inputState, inputState + maxQPower, stateVec);
     runningNorm = 1.0;
 }
