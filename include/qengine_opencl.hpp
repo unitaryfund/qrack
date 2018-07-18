@@ -42,6 +42,7 @@ protected:
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
+    size_t nrmGroupSize;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
