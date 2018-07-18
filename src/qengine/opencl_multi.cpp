@@ -110,6 +110,9 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
         substateEngines.push_back(
             std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rand_generator, deviceIDs[i], partialInit));
         substateEngines[i]->EnableNormalize(false);
+        if (partialInit) {
+            substateEngines[i]->SetNorm(0.0);
+        }
         subInitVal = 0;
         partialInit = true;
     }
@@ -1312,18 +1315,6 @@ template <typename F> void QEngineOCLMulti::CombineAndOp(F fn, std::vector<bitLe
     if (highestBit >= subQubitCount) {
         SeparateEngines();
     }
-}
-
-// IndexedLDA/ADC/SBC operations don't behave on a stateVec with 0 norm.
-template <typename F> void QEngineOCLMulti::CombineAndOpSafe(F fn, std::vector<bitLenInt> bits)
-{
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) {
-            if (engine->GetNorm() > min_norm) {
-                fn(engine);
-            }
-        },
-        bits);
 }
 
 template <typename F, typename OF>
