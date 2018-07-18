@@ -72,6 +72,7 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
     ResetStateVec(nStateVec, nStateBuffer);
 
     QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
+    runningNorm = src->runningNorm;
     src->LockSync(CL_MAP_READ);
     LockSync(CL_MAP_WRITE);
     std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
@@ -132,6 +133,10 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 void QEngineOCL::DispatchCall(
     OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower)
 {
+    if (runningNorm < min_norm) {
+        return;
+    }
+
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPower);
 
@@ -164,6 +169,10 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    if (runningNorm < min_norm) {
+        return;
+    }
+
     complex cmplx[CMPLX_NORM_LEN];
     real1* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
@@ -275,6 +284,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     SetQubitCount(nQubitCount);
     ResetStateVec(nStateVec, nStateBuffer);
+    runningNorm = 1.0;
 
     return result;
 }
@@ -395,6 +405,10 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.finish();
 
     ResetStateVec(nStateVec, nStateBuffer);
+    runningNorm = 1.0;
+    if (destination != nullptr) {
+        destination->runningNorm = 1.0;
+    }
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
@@ -751,7 +765,7 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    if (runningNorm <= 0.0) {
+    if (runningNorm < min_norm) {
         return 0;
     }
 
@@ -788,7 +802,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     bool carryRes = M(carryIndex);
-    if (runningNorm <= 0.0) {
+    if (runningNorm < min_norm) {
         return 0;
     }
     // The carry has to first to be measured for its input value.
@@ -849,6 +863,10 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
 void QEngineOCL::PhaseFlip()
 {
+    if (runningNorm < min_norm) {
+        return;
+    }
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIP);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -867,6 +885,10 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    if (runningNorm < min_norm) {
+        return;
+    }
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
@@ -884,6 +906,10 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    if (runningNorm < min_norm) {
+        return;
+    }
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
@@ -902,7 +928,10 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineOCL::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
+void QEngineOCL::SetQuantumState(complex* inputState) {
+    std::copy(inputState, inputState + maxQPower, stateVec);
+    runningNorm = 1.0;
+}
 
 void QEngineOCL::NormalizeState(real1 nrm)
 {

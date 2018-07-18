@@ -142,14 +142,18 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
 
     if (runningNorm != 1.0) {
         for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(runningNorm);
-            substateEngines[i]->EnableNormalize(true);
+            if (substateEngines[i]->GetNorm() > 0.0) {
+                substateEngines[i]->SetNorm(runningNorm);
+                substateEngines[i]->EnableNormalize(true);
+            }
         }
         runningNorm = 1.0;
     } else if (doNormalize) {
         for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(1.0);
-            substateEngines[i]->EnableNormalize(true);
+            if (substateEngines[i]->GetNorm() > 0.0) {
+                substateEngines[i]->SetNorm(1.0);
+                substateEngines[i]->EnableNormalize(true);
+            }
         }
     }
 
@@ -178,11 +182,19 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
         for (i = 0; i < groupCount; i++) {
             for (j = 0; j < (groupSize / 2); j++) {
                 futures[j + (i * (groupSize / 2))] =
-                    std::async(std::launch::async, [this, groupSize, i, j, fn, sqi, gfnArgs...]() {
+                    std::async(std::launch::async, [this, groupSize, i, j, fn, sqi, doNormalize, gfnArgs...]() {
                         QEngineOCLPtr engine1 = substateEngines[j + (i * groupSize)];
                         QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
 
                         ShuffleBuffers(engine1, engine2);
+
+                        engine1->SetNorm(1.0);
+                        engine2->SetNorm(1.0);
+
+                        if ((runningNorm != 1.0) || doNormalize) {
+                            engine1->EnableNormalize(true);
+                            engine2->EnableNormalize(true);
+                        }
 
                         std::future<void> future1 = std::async(std::launch::async,
                             [engine1, fn, sqi, gfnArgs...]() { ((engine1.get())->*fn)(gfnArgs..., sqi); });
@@ -593,6 +605,9 @@ void QEngineOCLMulti::MetaControlled(
 
                 ShuffleBuffers(engine1, engine2);
 
+                engine1->SetNorm(1.0);
+                engine2->SetNorm(1.0);
+
                 std::future<void> future1 = std::async(
                     std::launch::async, [engine1, fn, sqi, gfnArgs...]() { ((engine1.get())->*fn)(gfnArgs..., sqi); });
                 std::future<void> future2 = std::async(
@@ -670,6 +685,9 @@ void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenIn
                 QEngineOCLPtr engine2 = substateEngines[j + (i * groupSize) + (groupSize / 2)];
 
                 ShuffleBuffers(engine1, engine2);
+
+                engine1->SetNorm(1.0);
+                engine2->SetNorm(1.0);
 
                 if (anti) {
                     ((engine1.get())->*fn)(gfnArgs..., sqi);
@@ -1024,7 +1042,7 @@ void QEngineOCLMulti::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ou
 bitCapInt QEngineOCLMulti::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    CombineAndOpSafe(
+    CombineAndOp(
         [&](QEngineOCLPtr engine) { engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values); },
         { static_cast<bitLenInt>(indexStart + indexLength - 1), static_cast<bitLenInt>(valueStart + valueLength - 1) });
 
@@ -1034,7 +1052,7 @@ bitCapInt QEngineOCLMulti::IndexedLDA(
 bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    CombineAndOpSafe(
+    CombineAndOp(
         [&](QEngineOCLPtr engine) {
             engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         },
@@ -1046,7 +1064,7 @@ bitCapInt QEngineOCLMulti::IndexedADC(bitLenInt indexStart, bitLenInt indexLengt
 bitCapInt QEngineOCLMulti::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    CombineAndOpSafe(
+    CombineAndOp(
         [&](QEngineOCLPtr engine) {
             engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         },
@@ -1196,6 +1214,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     for (i = 0; i < groupCount; i++) {
         nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, deviceIDs[i]);
         nEngines[i]->EnableNormalize(false);
+        nEngines[i]->SetNorm(1.0);
         nEngines[i]->LockSync(CL_MAP_WRITE);
         complex* nsv = nEngines[i]->GetStateVector();
         for (j = 0; j < groupSize; j++) {
@@ -1247,6 +1266,7 @@ void QEngineOCLMulti::SeparateEngines()
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
+            nEngine->SetNorm(1.0);
             nEngine->LockSync(CL_MAP_WRITE);
             std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
             nEngine->UnlockSync();
