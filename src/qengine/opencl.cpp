@@ -103,14 +103,15 @@ void QEngineOCL::SetDevice(const int& dID)
     queue.finish();
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
-    nrmGroupSize = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 128;
+    nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 64;
+    nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * 5);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
-    nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupSize);
+    nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount);
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
@@ -163,8 +164,8 @@ void QEngineOCL::DispatchCall(
     }
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
     ResetStateVec(nStateVec, nStateBuffer);
@@ -193,9 +194,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     if (doCalcNorm) {
-        nrmParts = new real1[nrmGroupSize]();
+        nrmParts = new real1[nrmGroupCount]();
         queue.enqueueWriteBuffer(
-            nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupSize, nrmParts);
+            nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
     }
 
     OCLAPI api_call;
@@ -213,15 +214,15 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         ocl.call.setArg(3, nrmBuffer);
     }
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
     if (doNormalize && doCalcNorm) {
         queue.enqueueReadBuffer(
-            nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupSize, nrmParts);
+            nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
         runningNorm = 0.0;
-        for (unsigned long int i = 0; i < nrmGroupSize; i++) {
+        for (unsigned long int i = 0; i < nrmGroupCount; i++) {
             runningNorm += nrmParts[i];
         }
         delete[] nrmParts;
@@ -244,8 +245,8 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
 }
@@ -283,8 +284,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     ocl.call.setArg(3, *nStateBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
 
@@ -359,8 +360,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     // Call the kernel that calculates bit probability and angle.
     queue.enqueueNDRangeKernel(prob_call.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
@@ -384,8 +385,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         amp_call.call.setArg(3, *(destination->stateBuffer));
 
         queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
-            cl::NDRange(nrmGroupSize), // global number of work items
-            cl::NDRange(1)); // local number (per group)
+            cl::NDRange(nrmGroupCount), // global number of work items
+            cl::NDRange(nrmGroupSize)); // local number (per group)
 
         queue.finish();
 
@@ -408,8 +409,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     amp_call.call.setArg(3, *nStateBuffer);
 
     queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.finish();
 
@@ -460,8 +461,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.enqueueMapBuffer(oneChanceBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * numCores);
 
@@ -887,8 +888,8 @@ void QEngineOCL::PhaseFlip()
     ocl.call.setArg(1, ulongBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
 }
@@ -910,8 +911,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     ocl.call.setArg(1, ulongBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
 }
@@ -934,8 +935,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     ocl.call.setArg(1, ulongBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
 }
@@ -974,8 +975,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
 
@@ -986,9 +987,9 @@ void QEngineOCL::UpdateRunningNorm()
 {
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
-    real1* nrmParts = new real1[nrmGroupSize]();
+    real1* nrmParts = new real1[nrmGroupCount]();
     queue.enqueueWriteBuffer(
-        nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupSize, nrmParts);
+        nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
@@ -998,13 +999,13 @@ void QEngineOCL::UpdateRunningNorm()
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, nrmBuffer);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupSize), // global number of work items
-        cl::NDRange(1)); // local number (per group)
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.enqueueReadBuffer(
-        nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupSize, nrmParts);
+        nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
     runningNorm = 0.0;
-    for (unsigned long int i = 0; i < nrmGroupSize; i++) {
+    for (unsigned long int i = 0; i < nrmGroupCount; i++) {
         runningNorm += nrmParts[i];
     }
 
