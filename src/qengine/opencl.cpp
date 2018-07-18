@@ -103,8 +103,12 @@ void QEngineOCL::SetDevice(const int& dID)
     queue.finish();
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
-    nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 64;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+    nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 256;
+    size_t mWIS = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    if (nrmGroupCount > mWIS) {
+        nrmGroupCount = mWIS;
+    }
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
@@ -195,8 +199,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     if (doCalcNorm) {
-        nrmParts = new real1[nrmGroupCount]();
-        queue.enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+        queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
     }
 
     OCLAPI api_call;
@@ -218,7 +221,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
     queue.flush();
-    if (doNormalize && doCalcNorm) {
+    if (doCalcNorm) {
+        nrmParts = new real1[nrmGroupCount];
         queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
         runningNorm = 0.0;
         for (unsigned long int i = 0; i < nrmGroupCount; i++) {
@@ -995,7 +999,7 @@ void QEngineOCL::UpdateRunningNorm()
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
     real1* nrmParts = new real1[nrmGroupCount]();
-    queue.enqueueWriteBuffer(nrmBuffer, CL_FALSE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+    queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
