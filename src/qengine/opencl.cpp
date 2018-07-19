@@ -111,9 +111,6 @@ void QEngineOCL::SetDevice(const int& dID)
     if (nrmGroupCount > mWIS) {
         nrmGroupCount = mWIS;
     }
-    if ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) {
-        nrmGroupCount = ALIGN_SIZE / (sizeof(real1));
-    }
     if (nrmArray != nullptr) {
         delete[] nrmArray;
     }
@@ -210,12 +207,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     /* Slightly different call parameters than the rest of the calls. */
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
-    if (doCalcNorm) {
-        queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
-    }
-
     OCLAPI api_call;
     if (doCalcNorm) {
+        queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
         api_call = OCL_API_APPLY2X2_NORM;
     } else {
         api_call = OCL_API_APPLY2X2;
@@ -254,8 +248,6 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
@@ -291,8 +283,6 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower, nStateVec);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *(toCopy->stateBuffer));
@@ -464,8 +454,6 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
