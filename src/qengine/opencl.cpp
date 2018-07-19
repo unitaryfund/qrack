@@ -151,7 +151,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 void QEngineOCL::DispatchCall(
     OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower)
 {
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return;
     //}
 
@@ -189,7 +189,7 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return;
     //}
 
@@ -774,7 +774,7 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return 0;
     //}
 
@@ -811,7 +811,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     bool carryRes = M(carryIndex);
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return 0;
     //}
     // The carry has to first to be measured for its input value.
@@ -872,7 +872,7 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
 void QEngineOCL::PhaseFlip()
 {
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return;
     //}
 
@@ -896,7 +896,7 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return;
     //}
 
@@ -919,7 +919,7 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    //if (runningNorm < min_norm) {
+    // if (runningNorm < min_norm) {
     //    return;
     //}
 

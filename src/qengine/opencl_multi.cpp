@@ -925,7 +925,7 @@ bitLenInt QEngineOCLMulti::SeparateMetaCNOT(
 
 void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(false, { control }, target, length);
+    // length = SeparateMetaCNOT(false, { control }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->CNOT(control, target, len); },
             [&](bitLenInt offset) { CNOT(control + offset, target + offset); }, length,
@@ -935,7 +935,7 @@ void QEngineOCLMulti::CNOT(bitLenInt control, bitLenInt target, bitLenInt length
 
 void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(true, { control }, target, length);
+    // length = SeparateMetaCNOT(true, { control }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->AntiCNOT(control, target, len); },
             [&](bitLenInt offset) { AntiCNOT(control + offset, target + offset); }, length,
@@ -945,7 +945,7 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt le
 
 void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
+    // length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->CCNOT(control1, control2, target, len); },
             [&](bitLenInt offset) { CCNOT(control1 + offset, control2 + offset, target + offset); }, length,
@@ -956,7 +956,7 @@ void QEngineOCLMulti::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt ta
 
 void QEngineOCLMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
-    //length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
+    // length = SeparateMetaCNOT(false, { control1, control2 }, target, length);
     if (length > 0) {
         RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->AntiCCNOT(control1, control2, target, len); },
             [&](bitLenInt offset) { AntiCCNOT(control1 + offset, control2 + offset, target + offset); }, length,

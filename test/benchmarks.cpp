@@ -96,9 +96,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     }
 }
 
-void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) {
-    benchmarkLoopVariable(fn, MaxQubits);
-}
+void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVariable(fn, MaxQubits); }
 
 TEST_CASE("test_cnot")
 {
