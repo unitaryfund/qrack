@@ -23,6 +23,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     int devID, bool partialInit, complex phaseFac)
     : QInterface(qBitCount, rgp)
     , stateVec(NULL)
+    , nrmArray(NULL)
 {
     doNormalize = true;
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -49,6 +50,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
     , stateVec(NULL)
+    , nrmArray(NULL)
 {
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
@@ -104,18 +106,29 @@ void QEngineOCL::SetDevice(const int& dID)
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
-    nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 256;
+    nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 64 * nrmGroupSize;
     size_t mWIS = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > mWIS) {
         nrmGroupCount = mWIS;
     }
+    if ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) {
+        nrmGroupCount = ALIGN_SIZE / (sizeof(real1));
+    }
+    if (nrmArray != nullptr) {
+        delete[] nrmArray;
+    }
+#ifdef __APPLE__
+    posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+#else
+    nrmArray = (float*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+#endif
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * 5);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
-    nrmBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount);
+    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
@@ -184,7 +197,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 
     complex cmplx[CMPLX_NORM_LEN];
-    real1* nrmParts = nullptr;
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
@@ -222,13 +234,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     queue.flush();
     if (doCalcNorm) {
-        nrmParts = new real1[nrmGroupCount];
-        queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
+        queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
         runningNorm = 0.0;
         for (unsigned long int i = 0; i < nrmGroupCount; i++) {
-            runningNorm += nrmParts[i];
+            runningNorm += nrmArray[i];
         }
-        delete[] nrmParts;
+        queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
     }
 }
 
@@ -447,15 +458,10 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     bitCapInt qPower = 1 << qubit;
     real1 oneChance = 0.0;
 
-    int numCores = CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE;
-    real1* oneChanceArray = new real1[numCores]();
-
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
-
-    cl::Buffer oneChanceBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * numCores, oneChanceArray);
+    queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
     // size_t groupSize =
@@ -463,7 +469,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
-    ocl.call.setArg(2, oneChanceBuffer);
+    ocl.call.setArg(2, nrmBuffer);
 
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
@@ -471,14 +477,11 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.enqueueMapBuffer(oneChanceBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * numCores);
-
-    for (int i = 0; i < numCores; i++) {
-        oneChance += oneChanceArray[i];
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
+    for (size_t i = 0; i < nrmGroupCount; i++) {
+        oneChance += nrmArray[i];
     }
-
-    queue.enqueueUnmapMemObject(oneChanceBuffer, oneChanceArray);
-    queue.finish();
+    queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
 
     if (oneChance > 1.0)
         oneChance = 1.0;
@@ -998,7 +1001,6 @@ void QEngineOCL::UpdateRunningNorm()
 {
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
-    real1* nrmParts = new real1[nrmGroupCount]();
     queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1011,17 +1013,16 @@ void QEngineOCL::UpdateRunningNorm()
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.enqueueReadBuffer(nrmBuffer, CL_TRUE, 0, sizeof(real1) * nrmGroupCount, nrmParts);
     runningNorm = 0.0;
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
     for (unsigned long int i = 0; i < nrmGroupCount; i++) {
-        runningNorm += nrmParts[i];
+        runningNorm += nrmArray[i];
     }
+    queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
 
     if (runningNorm < min_norm) {
         NormalizeState(0.0);
     }
-
-    delete[] nrmParts;
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount)

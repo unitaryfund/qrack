@@ -42,6 +42,7 @@ protected:
     cl::Buffer cmplxBuffer;
     cl::Buffer ulongBuffer;
     cl::Buffer nrmBuffer;
+    real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
 
@@ -63,7 +64,10 @@ public:
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         int devID = -1, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
     QEngineOCL(QEngineOCLPtr toCopy);
-    ~QEngineOCL() { delete[] stateVec; }
+    ~QEngineOCL() { 
+        delete[] stateVec;
+        delete[] nrmArray;
+    }
 
     virtual void SetQubitCount(bitLenInt qb)
     {
