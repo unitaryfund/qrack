@@ -122,8 +122,8 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
 // boundaries.
 void QEngineOCLMulti::ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine2)
 {
-    engine1->LockSync();
-    engine2->LockSync();
+    engine1->LockSync(CL_MAP_READ | CL_MAP_WRITE);
+    engine2->LockSync(CL_MAP_READ | CL_MAP_WRITE);
     std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower,
         engine2->GetStateVector());
     engine1->UnlockSync();
@@ -145,18 +145,18 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
 
     if (runningNorm != 1.0) {
         for (i = 0; i < subEngineCount; i++) {
-            if (substateEngines[i]->GetNorm() > 0.0) {
+            if (substateEngines[i]->GetNorm(false) > 0.0) {
                 substateEngines[i]->SetNorm(runningNorm);
-                substateEngines[i]->EnableNormalize(true);
             }
+            substateEngines[i]->EnableNormalize(true);
         }
         runningNorm = 1.0;
     } else if (doNormalize) {
         for (i = 0; i < subEngineCount; i++) {
-            if (substateEngines[i]->GetNorm() > 0.0) {
+            if (substateEngines[i]->GetNorm(false) > 0.0) {
                 substateEngines[i]->SetNorm(1.0);
-                substateEngines[i]->EnableNormalize(true);
             }
+            substateEngines[i]->EnableNormalize(true);
         }
     }
 
@@ -193,18 +193,18 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
 
                         engine1->SetNorm(1.0);
                         engine2->SetNorm(1.0);
-
-                        if ((runningNorm != 1.0) || doNormalize) {
-                            engine1->EnableNormalize(true);
-                            engine2->EnableNormalize(true);
-                        }
-
                         std::future<void> future1 = std::async(std::launch::async,
                             [engine1, fn, sqi, gfnArgs...]() { ((engine1.get())->*fn)(gfnArgs..., sqi); });
                         std::future<void> future2 = std::async(std::launch::async,
                             [engine2, fn, sqi, gfnArgs...]() { ((engine2.get())->*fn)(gfnArgs..., sqi); });
                         future1.get();
                         future2.get();
+
+                        if (!doNormalize) {
+                            // Update running norm, if it won't happen at the end of the gate.
+                            engine1->GetNorm(true);
+                            engine2->GetNorm(true);
+                        }
 
                         ShuffleBuffers(engine1, engine2);
                     });
@@ -610,13 +610,16 @@ void QEngineOCLMulti::MetaControlled(
 
                 engine1->SetNorm(1.0);
                 engine2->SetNorm(1.0);
-
                 std::future<void> future1 = std::async(
                     std::launch::async, [engine1, fn, sqi, gfnArgs...]() { ((engine1.get())->*fn)(gfnArgs..., sqi); });
                 std::future<void> future2 = std::async(
                     std::launch::async, [engine2, fn, sqi, gfnArgs...]() { ((engine2.get())->*fn)(gfnArgs..., sqi); });
                 future1.get();
                 future2.get();
+                
+                // Update running norm at end
+                engine1->GetNorm(true);
+                engine2->GetNorm(true);
 
                 ShuffleBuffers(engine1, engine2);
             });
@@ -694,8 +697,10 @@ void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenIn
 
                 if (anti) {
                     ((engine1.get())->*fn)(gfnArgs..., sqi);
+                    engine1->GetNorm(true);
                 } else {
                     ((engine2.get())->*fn)(gfnArgs..., sqi);
+                    engine2->GetNorm(true);
                 }
 
                 ShuffleBuffers(engine1, engine2);
@@ -1217,12 +1222,13 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     for (i = 0; i < groupCount; i++) {
         nEngines[i] = std::make_shared<QEngineOCL>(qubitCount - order, 0, rand_generator, deviceIDs[i]);
         nEngines[i]->EnableNormalize(false);
-        nEngines[i]->SetNorm(1.0);
+        nEngines[i]->SetNorm(0.0);
         nEngines[i]->LockSync(CL_MAP_WRITE);
         complex* nsv = nEngines[i]->GetStateVector();
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr eng = substateEngines[j + (i * groupSize)];
             complex* sv = eng->GetStateVector();
+            nEngines[i]->SetNorm(nEngines[i]->GetNorm(false) + eng->GetNorm(false));
             eng->LockSync(CL_MAP_READ);
             std::copy(sv, sv + sbSize, nsv + (j * sbSize));
             eng->UnlockSync();
@@ -1269,10 +1275,11 @@ void QEngineOCLMulti::SeparateEngines()
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
-            nEngine->SetNorm(1.0);
             nEngine->LockSync(CL_MAP_WRITE);
             std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
             nEngine->UnlockSync();
+            // Update running normalization:
+            nEngine->GetNorm();
             nEngines[j + (i * groupSize)] = nEngine;
         }
         eng->UnlockSync();
