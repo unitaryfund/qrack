@@ -44,7 +44,7 @@ void print_bin(int bits, int d)
 }
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
-#if 0
+
 TEST_CASE("test_complex")
 {
     bool test;
@@ -56,60 +56,60 @@ TEST_CASE("test_complex")
 
     REQUIRE(conj(cmplx1) == complex(1.0, 1.0));
 
-    test = (abs(cmplx1) > (sqrt(2.0) - EPSILON)) && (abs(cmplx1) < (sqrt(2.0) + EPSILON));
+    test = ((real1)abs(cmplx1) > (real1)(sqrt(2.0) - EPSILON)) && ((real1)abs(cmplx1) < (real1)(sqrt(2.0) + EPSILON));
     REQUIRE(test);
 
     cmplx3 = polar(1.0, M_PI / 2.0);
-    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 + cmplx2;
-    test = (real(cmplx3) > (0.5 - EPSILON)) && (real(cmplx3) < (0.5 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.5 - EPSILON)) && (real(cmplx3) < (real1)(0.5 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (-0.5 - EPSILON)) && (imag(cmplx3) < (-0.5 + EPSILON));
+    test = (imag(cmplx3) > (real1)(-0.5 - EPSILON)) && (imag(cmplx3) < (real1)(-0.5 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 - cmplx2;
-    test = (real(cmplx3) > (1.5 - EPSILON)) && (real(cmplx3) < (1.5 + EPSILON));
+    test = (real(cmplx3) > (real1)(1.5 - EPSILON)) && (real(cmplx3) < (real1)(1.5 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (-1.5 - EPSILON)) && (imag(cmplx3) < (-1.5 + EPSILON));
+    test = (imag(cmplx3) > (real1)(-1.5 - EPSILON)) && (imag(cmplx3) < (real1)(-1.5 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 * cmplx2;
-    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1;
     cmplx3 *= cmplx2;
-    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 / cmplx2;
-    test = (real(cmplx3) > (-2.0 - EPSILON)) && (real(cmplx3) < (-2.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(-2.0 - EPSILON)) && (real(cmplx3) < (real1)(-2.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(0.0 - EPSILON)) && (imag(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx2;
     cmplx3 /= cmplx1;
-    test = (real(cmplx3) > (-0.5 - EPSILON)) && (real(cmplx3) < (-0.5 + EPSILON));
+    test = (real(cmplx3) > (real1)(-0.5 - EPSILON)) && (real(cmplx3) < (real1)(-0.5 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(0.0 - EPSILON)) && (imag(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
 
-    cmplx3 = 2.0 * cmplx1;
-    test = (real(cmplx3) > (2.0 - EPSILON)) && (real(cmplx3) < (2.0 + EPSILON));
+    cmplx3 = ((real1)2.0) * cmplx1;
+    test = (real(cmplx3) > (real1)(2.0 - EPSILON)) && (real(cmplx3) < (real1)(2.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(-2.0 - EPSILON)) && (imag(cmplx3) < (real1)(-2.0 + EPSILON));
     REQUIRE(test);
 }
-#endif
+
 TEST_CASE("test_qengine_cpu_par_for")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
@@ -1581,67 +1581,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));
 }
-
-/*
-TEST_CASE("test_qengine_cpu_coherence_swap")
-{
-    // Set up four engines, identical.
-    std::shared_ptr<std::default_random_engine> rng_a = std::make_shared<std::default_random_engine>();
-    std::shared_ptr<std::default_random_engine> rng_b = std::make_shared<std::default_random_engine>();
-    std::shared_ptr<std::default_random_engine> rng_c = std::make_shared<std::default_random_engine>();
-    rng_a->seed(10);
-    rng_b->seed(10);
-    rng_c->seed(10);
-
-    // 'a' is the guide.  'b' gets a reversed Cohere, and 'c' gets a normal Cohere for cross-check.
-    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng_a);
-    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng_a);
-    QEngineCPUPtr b_1 = std::make_shared<QEngineCPU>(8, 0, rng_b);
-    QEngineCPUPtr b_2 = std::make_shared<QEngineCPU>(8, 0, rng_b);
-    QEngineCPUPtr c_1 = std::make_shared<QEngineCPU>(8, 0, rng_c);
-    QEngineCPUPtr c_2 = std::make_shared<QEngineCPU>(8, 0, rng_c);
-
-    // Copy the state from 'a' to 'b' and 'c'
-    b_1->SetQuantumState(a_1->GetState());
-    b_2->SetQuantumState(a_2->GetState());
-    c_1->SetQuantumState(a_1->GetState());
-    c_2->SetQuantumState(a_2->GetState());
-
-    validate_equal(a_1, b_1);
-    validate_equal(a_2, b_2);
-    validate_equal(a_1, c_1);
-    validate_equal(a_2, c_2);
-
-    // Perform the same operation on 'a', 'b', and 'c'.
-    a_2->H(0, 8);
-    b_2->H(0, 8);
-    c_2->H(0, 8);
-
-    validate_equal(a_2, b_2);
-    validate_equal(a_2, c_2);
-
-    a_1->Cohere(a_2);       // Cohere [ reg_1, reg_2 ]
-    b_2->Cohere(b_1);       // Cohere [ reg_2, reg_1 ] - backwards
-    c_1->Cohere(c_2);       // Cohere [ reg_1, reg_2 ]
-
-    QEngineCPUPtr a = a_1;
-    QEngineCPUPtr b = b_2;
-    QEngineCPUPtr c = c_1;
-
-    REQUIRE(a->GetQubitCount() == 16);
-    REQUIRE(b->GetQubitCount() == 16);
-    REQUIRE(c->GetQubitCount() == 16);
-
-    // Validate 'a' == 'c'.
-    validate_equal(a, c);
-
-    // 'b' is backwards, swap the first 8 bits with the second 8 bits.
-    b->Swap(0, 8, 8);
-
-    // Validate that 'a' and 'b' are the same.
-    validate_equal(a, b);
-}
-*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
 {

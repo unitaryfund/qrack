@@ -19,8 +19,6 @@
 
 #include "common/parallel_for.hpp"
 
-#define ALIGN_SIZE 64
-
 namespace Qrack {
 
 class QEngineCPU;
@@ -36,8 +34,6 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  */
 class QEngineCPU : public QInterface, public ParallelFor {
 protected:
-    bool doNormalize;
-    real1 runningNorm;
     complex* stateVec;
 
 public:
@@ -49,7 +45,6 @@ public:
     virtual void EnableNormalize(bool doN) { doNormalize = doN; }
 
     virtual void SetQuantumState(complex* inputState);
-    virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
 
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
@@ -58,48 +53,6 @@ public:
 
     virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Dispose(bitLenInt start, bitLenInt length);
-
-    /**
-     * \defgroup BasicGates Basic quantum gate primitives
-     *@{
-     */
-
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void CNOT(bitLenInt control, bitLenInt target);
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
-    virtual void H(bitLenInt qubitIndex);
-    virtual bool M(bitLenInt qubitIndex);
-    virtual void X(bitLenInt qubitIndex);
-    virtual void Y(bitLenInt qubitIndex);
-    virtual void Z(bitLenInt qubitIndex);
-    virtual void CY(bitLenInt control, bitLenInt target);
-    virtual void CZ(bitLenInt control, bitLenInt target);
-
-    /** @} */
-
-    /**
-     * \defgroup RotGates Rotational gates:
-     *
-     * NOTE: Dyadic operation angle sign is reversed from radian rotation
-     * operators and lacks a division by a factor of two.
-     *
-     * @{
-     */
-
-    virtual void RT(real1 radians, bitLenInt qubitIndex);
-    virtual void RX(real1 radians, bitLenInt qubitIndex);
-    virtual void RY(real1 radians, bitLenInt qubitIndex);
-    virtual void RZ(real1 radians, bitLenInt qubitIndex);
-    virtual void Exp(real1 radians, bitLenInt qubitIndex);
-    virtual void ExpX(real1 radians, bitLenInt qubitIndex);
-    virtual void ExpY(real1 radians, bitLenInt qubitIndex);
-    virtual void ExpZ(real1 radians, bitLenInt qubitIndex);
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
-    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
-    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -112,15 +65,16 @@ public:
      * @{
      */
 
-    using QInterface::H;
+    using QInterface::X;
     virtual void X(bitLenInt start, bitLenInt length);
+    using QInterface::CNOT;
     virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);
+    using QInterface::AntiCNOT;
     virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
+    using QInterface::CCNOT;
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+    using QInterface::AntiCCNOT;
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
 
     /** @} */
 
@@ -160,7 +114,7 @@ public:
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetPermutation(bitCapInt perm);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
@@ -168,7 +122,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    using QInterface::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** @} */
@@ -179,11 +133,10 @@ public:
      * @{
      */
 
-    virtual complex* GetState();
+    virtual complex* GetStateVector();
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual void SetBit(bitLenInt qubitIndex1, bool value);
     virtual real1 GetNorm(bool update = true)
     {
         if (update) {
@@ -193,7 +146,6 @@ public:
     }
     virtual void SetNorm(real1 n) { runningNorm = n; }
     virtual void NormalizeState(real1 nrm = -999.0);
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 
@@ -202,13 +154,8 @@ protected:
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void UpdateRunningNorm();
     virtual complex* AllocStateVec(bitCapInt elemCount);
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 };
 } // namespace Qrack

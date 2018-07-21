@@ -29,12 +29,17 @@
 #define complex std::complex<float>
 #define real1 float
 #define min_norm 1e-9
+#define polar(A, B) std::polar(A, B)
 #else
 #include "common/complex16simd.hpp"
 #define complex Complex16Simd
 #define real1 double
 #define min_norm 1e-15
 #endif
+
+// The state vector must be an aligned piece of RAM, to be used by OpenCL.
+// We align to an ALIGN_SIZE byte boundary.
+#define ALIGN_SIZE 64
 
 namespace Qrack {
 
@@ -95,6 +100,8 @@ class QInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
+    real1 runningNorm;
+    bool doNormalize;
 
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
@@ -110,9 +117,21 @@ protected:
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
+    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyControlled2x2(
+        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyAntiControlled2x2(
+        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm) = 0;
+    virtual void NormalizeState(real1 nrm = -999.0) = 0;
+
 public:
-    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
-        : rand_distribution(0.0, 1.0)
+    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
+        : doNormalize(doNorm)
+        , rand_distribution(0.0, 1.0)
     {
         SetQubitCount(n);
 
@@ -177,7 +196,7 @@ public:
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
     virtual bitLenInt Cohere(QInterfacePtr toCopy) = 0;
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy) = 0;
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,
@@ -270,14 +289,14 @@ public:
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
 
     /**
      * Doubly-controlled NOT gate
      *
      * If both controls are set to 1, the target bit is NOT-ed or X-ed.
      */
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target) = 0;
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Anti doubly-controlled NOT gate
@@ -291,7 +310,7 @@ public:
      *
      * If the control is set to 1, the target bit is NOT-ed or X-ed.
      */
-    virtual void CNOT(bitLenInt control, bitLenInt target) = 0;
+    virtual void CNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Anti controlled NOT gate
@@ -305,7 +324,7 @@ public:
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
      */
-    virtual void H(bitLenInt qubitIndex) = 0;
+    virtual void H(bitLenInt qubitIndex);
 
     /**
      * Measurement gate
@@ -354,7 +373,7 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex) = 0;
+    virtual bool M(bitLenInt qubitIndex);
 
     /**
      * X gate
@@ -362,7 +381,7 @@ public:
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
-    virtual void X(bitLenInt qubitIndex) = 0;
+    virtual void X(bitLenInt qubitIndex);
 
     /**
      * Y gate
@@ -371,7 +390,7 @@ public:
      * "Y" operator is similar to a logical "NOT" with permutation phase
      * effects.
      */
-    virtual void Y(bitLenInt qubitIndex) = 0;
+    virtual void Y(bitLenInt qubitIndex);
 
     /**
      * Z gate
@@ -379,7 +398,7 @@ public:
      * Applies the Pauli "Z" operator to the qubit at "qubitIndex." The Pauli
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
-    virtual void Z(bitLenInt qubitIndex) = 0;
+    virtual void Z(bitLenInt qubitIndex);
 
     /**
      * Controlled Y gate
@@ -387,7 +406,7 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
      * to "target."
      */
-    virtual void CY(bitLenInt control, bitLenInt target) = 0;
+    virtual void CY(bitLenInt control, bitLenInt target);
 
     /**
      * Controlled Z gate
@@ -395,7 +414,7 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
      * to "target."
      */
-    virtual void CZ(bitLenInt control, bitLenInt target) = 0;
+    virtual void CZ(bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -466,7 +485,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    virtual void RT(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void RT(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction phase shift gate
@@ -481,7 +500,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void RX(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction X axis rotation gate
@@ -495,7 +514,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
      */
-    virtual void Exp(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void Exp(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
@@ -509,7 +528,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
      */
-    virtual void ExpX(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void ExpX(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli X exponentiation gate
@@ -523,7 +542,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
      */
-    virtual void ExpY(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void ExpY(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli Y exponentiation gate
@@ -537,7 +556,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
      */
-    virtual void ExpZ(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void ExpZ(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli Z exponentiation gate
@@ -551,7 +570,7 @@ public:
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction X axis rotation gate
@@ -566,7 +585,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void RY(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Y axis rotation gate
@@ -582,7 +601,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction y axis rotation gate
@@ -597,7 +616,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(real1 radians, bitLenInt qubitIndex) = 0;
+    virtual void RZ(real1 radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Z axis rotation gate
@@ -613,7 +632,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction Z axis rotation gate
@@ -630,7 +649,7 @@ public:
      * \f$ around |1> state.
      */
 
-    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target) = 0;
+    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction "phase shift gate"
@@ -1111,7 +1130,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
@@ -1165,6 +1184,17 @@ public:
      * factor.
      */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
+
+    /**
+     * Act as though a measurement was applied, except force the result of the measurement.
+     *
+     * That is, genuine measurement of a qubit in superposition has a probabilistic result. This method allows the
+     * programmer to choose the outcome of the measurement, and proceed as if the measurement randomly resulted in the
+     * chosen bit value.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 };

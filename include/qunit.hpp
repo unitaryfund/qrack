@@ -46,8 +46,8 @@ public:
 
     virtual void SetQuantumState(complex* inputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
+    using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy);
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -81,11 +81,17 @@ public:
      */
 
     virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
     virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** @} */
 
@@ -200,6 +206,14 @@ protected:
         bool operator>(const QSortEntry& rhs) { return mapped > rhs.mapped; }
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
+
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm)
+    {
+        throw "Apply2x2 not implemented in interface";
+    }
+    void ApplyM(bitCapInt qPower, bool result, complex nrm) { throw "ApplyM not implemented in interface"; }
+    void NormalizeState(real1 nrm = -999.0) { throw "NormalizeState not implemented in interface"; }
 
     /* Debugging and diagnostic routines. */
     void DumpShards();

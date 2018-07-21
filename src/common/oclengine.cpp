@@ -76,8 +76,9 @@ void OCLEngine::InitOCL()
         std::vector<cl::Device> platform_devices;
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
         for (size_t j = 0; j < platform_devices.size(); j++) {
-            // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original list.
-            // Assigning the object from a new query is always fine, though. (They carry the same underlying platform IDs.)
+            // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original
+            // list. Assigning the object from a new query is always fine, though. (They carry the same underlying
+            // platform IDs.)
             std::vector<cl::Platform> temp_platforms;
             cl::Platform::get(&temp_platforms);
             devPlatVec.push_back(temp_platforms[i]);
@@ -113,8 +114,8 @@ void OCLEngine::InitOCL()
 
         cl_int buildError = program.build({ all_devices[i] });
         if (buildError != CL_SUCCESS) {
-            std::cout << "Error building for device #" << i << ": "
-                      << buildError << ", " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
+            std::cout << "Error building for device #" << i << ": " << buildError << ", "
+                      << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
                       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
 
             // The default device was set above to be the last device in the list. If we can't compile for it, we use
@@ -146,11 +147,25 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
         all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
         all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
+        all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
+        all_device_contexts[i]->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
+        all_device_contexts[i]->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
+        all_device_contexts[i]->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
+        all_device_contexts[i]->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
+        all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
+        all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
+        all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
+        all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
+        all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
         all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
         all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
         all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
+        all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
+        all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
+        all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
+        all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];

@@ -24,12 +24,10 @@ typedef std::shared_ptr<QEngineOCLMulti> QEngineOCLMultiPtr;
 /** OpenCL enhanced QEngineCPU implementation. */
 class QEngineOCLMulti : public QInterface, public ParallelFor {
 protected:
-    real1 runningNorm;
     bitLenInt subQubitCount;
     bitCapInt subMaxQPower;
     bitLenInt subEngineCount;
     bitLenInt maxDeviceOrder;
-    size_t subBufferSize;
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
@@ -71,7 +69,6 @@ public:
         subEngineCount = substateEngines.size();
         subQubitCount = qubitCount - log2(subEngineCount);
         subMaxQPower = 1 << subQubitCount;
-        subBufferSize = sizeof(complex) * subMaxQPower >> 1;
     }
 
     virtual void SetQuantumState(complex* inputState);
@@ -183,9 +180,8 @@ protected:
     void CombineEngines(bitLenInt bit);
     void SeparateEngines();
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
-    template <typename F> void CombineAndOpSafe(F fn, std::vector<bitLenInt> bits);
 
-    void NormalizeState();
+    void NormalizeState(real1 nrm = -999.0);
 
     void MetaX(bitLenInt start, bitLenInt length);
     void MetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target);
@@ -196,10 +192,17 @@ protected:
     template <typename F, typename... Args>
     void ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt targetBit, F fn, Args... gfnArgs);
 
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm)
+    {
+        throw "Apply2x2 not implemented in interface";
+    }
+    void ApplyM(bitCapInt qPower, bool result, complex nrm) { throw "ApplyM not implemented in interface"; }
+
 private:
     void Init(bitLenInt qBitCount, bitCapInt initState);
 
-    void ShuffleBuffers(complex* stateVec1, complex* stateVec2);
+    void ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine2);
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);
 

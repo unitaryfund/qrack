@@ -10,7 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qengine_cpu.hpp"
+#include <algorithm>
+
+#include "qinterface.hpp"
 
 namespace Qrack {
 
@@ -34,14 +36,14 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 
 template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
-void QEngineCPU::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
 }
 
-void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
@@ -49,10 +51,10 @@ void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const c
     qPowers[1] = 1 << target;
     std::copy(qPowers, qPowers + 2, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(qPowers[0], qPowers[0] + qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
+    Apply2x2(qPowers[0], (qPowers[0]) | (qPowers[1]), mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+void QInterface::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
@@ -63,7 +65,7 @@ void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, con
     Apply2x2(0, qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyDoublyControlled2x2(
+void QInterface::ApplyDoublyControlled2x2(
     bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[3];
@@ -73,10 +75,11 @@ void QEngineCPU::ApplyDoublyControlled2x2(
     qPowers[2] = 1 << target;
     std::copy(qPowers, qPowers + 3, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(qPowers[0] + qPowers[1], qPowers[0] + qPowers[1] + qPowers[2], mtrx, 3, qPowersSorted, doCalcNorm);
+    Apply2x2(
+        (qPowers[0]) | (qPowers[1]), (qPowers[0]) | (qPowers[1]) | (qPowers[2]), mtrx, 3, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyDoublyAntiControlled2x2(
+void QInterface::ApplyDoublyAntiControlled2x2(
     bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     bitCapInt qPowers[3];

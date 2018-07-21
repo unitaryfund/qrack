@@ -10,12 +10,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qengine_cpu.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
-void QEngineCPU::RT(real1 radians, bitLenInt qubit)
+void QInterface::RT(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -24,7 +24,7 @@ void QEngineCPU::RT(real1 radians, bitLenInt qubit)
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
-void QEngineCPU::RX(real1 radians, bitLenInt qubit)
+void QInterface::RX(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -33,7 +33,7 @@ void QEngineCPU::RX(real1 radians, bitLenInt qubit)
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
-void QEngineCPU::RY(real1 radians, bitLenInt qubit)
+void QInterface::RY(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -42,7 +42,7 @@ void QEngineCPU::RY(real1 radians, bitLenInt qubit)
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
-void QEngineCPU::RZ(real1 radians, bitLenInt qubit)
+void QInterface::RZ(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -51,7 +51,7 @@ void QEngineCPU::RZ(real1 radians, bitLenInt qubit)
 }
 
 /// Exponentiate identity operator
-void QEngineCPU::Exp(real1 radians, bitLenInt qubit)
+void QInterface::Exp(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     complex expIdentity[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), phaseFac };
@@ -59,7 +59,7 @@ void QEngineCPU::Exp(real1 radians, bitLenInt qubit)
 }
 
 /// Exponentiate Pauli X operator
-void QEngineCPU::ExpX(real1 radians, bitLenInt qubit)
+void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     complex expPauliX[4] = { complex(0.0, 0.0), phaseFac, phaseFac, complex(0.0, 0.0) };
@@ -67,7 +67,7 @@ void QEngineCPU::ExpX(real1 radians, bitLenInt qubit)
 }
 
 /// Exponentiate Pauli Y operator
-void QEngineCPU::ExpY(real1 radians, bitLenInt qubit)
+void QInterface::ExpY(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     complex expPauliY[4] = { complex(0.0, 0.0), phaseFac * complex(0.0, -1.0), phaseFac * complex(0.0, 1.0),
@@ -76,7 +76,7 @@ void QEngineCPU::ExpY(real1 radians, bitLenInt qubit)
 }
 
 /// Exponentiate Pauli Z operator
-void QEngineCPU::ExpZ(real1 radians, bitLenInt qubit)
+void QInterface::ExpZ(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     complex expPauliZ[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), -phaseFac };
@@ -84,7 +84,7 @@ void QEngineCPU::ExpZ(real1 radians, bitLenInt qubit)
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
-void QEngineCPU::CRT(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {
     if (control == target) {
         throw std::invalid_argument("control bit cannot also be target.");
@@ -97,7 +97,7 @@ void QEngineCPU::CRT(real1 radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
-void QEngineCPU::CRX(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRX control bit cannot also be target.");
@@ -108,7 +108,7 @@ void QEngineCPU::CRX(real1 radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
-void QEngineCPU::CRY(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRY control bit cannot also be target.");
@@ -119,7 +119,7 @@ void QEngineCPU::CRY(real1 radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
-void QEngineCPU::CRZ(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {
     if (control == target)
         throw std::invalid_argument("CRZ control bit cannot also be target.");

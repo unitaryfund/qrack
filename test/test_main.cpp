@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
-        if (num_failed == 0 && !disable_opencl_multi) {
+        if (num_failed == 0 && !disable_opencl && !disable_opencl_multi) {
             session.config().stream() << "############ QEngineOCLMulti ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL_MULTI;
             testSubEngineType = QINTERFACE_OPENCL_MULTI;

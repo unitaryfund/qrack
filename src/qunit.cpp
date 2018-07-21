@@ -114,17 +114,6 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     return oldCount;
 }
 
-std::map<QInterfacePtr, bitLenInt> QUnit::Cohere(std::vector<QInterfacePtr> toCopy)
-{
-    std::map<QInterfacePtr, bitLenInt> ret;
-
-    for (auto&& q : toCopy) {
-        ret[q] = Cohere(q);
-    }
-
-    return ret;
-}
-
 void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */
@@ -539,6 +528,60 @@ void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRZ(radians, b1, b2); }, control, target);
+}
+
+void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
+{
+    if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
+        for (bitLenInt i = 0; i < length; i++) {
+            AND(inputStart1 + i, inputStart2 + i, outputStart + i);
+        }
+    }
+}
+
+void QUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+{
+    bool cBit;
+    for (bitLenInt i = 0; i < length; i++) {
+        cBit = (1 << i) & classicalInput;
+        CLAND(qInputStart + i, cBit, outputStart + i);
+    }
+}
+
+void QUnit::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
+{
+    if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
+        for (bitLenInt i = 0; i < length; i++) {
+            OR(inputStart1 + i, inputStart2 + i, outputStart + i);
+        }
+    }
+}
+
+void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+{
+    bool cBit;
+    for (bitLenInt i = 0; i < length; i++) {
+        cBit = (1 << i) & classicalInput;
+        CLOR(qInputStart + i, cBit, outputStart + i);
+    }
+}
+
+void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
+{
+    if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
+        for (bitLenInt i = 0; i < length; i++) {
+            XOR(inputStart1 + i, inputStart2 + i, outputStart + i);
+        }
+    }
+}
+
+void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+{
+    bool cBit;
+    for (bitLenInt i = 0; i < length; i++) {
+        cBit = (1 << i) & classicalInput;
+        CLXOR(qInputStart + i, cBit, outputStart + i);
+    }
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
