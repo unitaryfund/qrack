@@ -303,16 +303,6 @@ TEST_CASE("test_incc")
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCC(1, 0, n - 1, n - 1); });
 }
 
-TEST_CASE("test_incbcd")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCBCD(1, 0, n - 1); });
-}
-
-TEST_CASE("test_incbcdc")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCBCDC(1, 0, n - 1, n - 1); });
-}
-
 TEST_CASE("test_incsc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
@@ -331,16 +321,6 @@ TEST_CASE("test_decs")
 TEST_CASE("test_decc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECC(1, 0, n - 1, n - 1); });
-}
-
-TEST_CASE("test_decbcd")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECBCD(1, 0, n - 1); });
-}
-
-TEST_CASE("test_decbcdc")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECBCDC(1, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_decsc")
