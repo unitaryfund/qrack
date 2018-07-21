@@ -87,7 +87,7 @@ public:
     virtual void SetNorm(real1 n) { runningNorm = n; }
 
     // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
-    virtual void LockSync(cl_int flags = 3);
+    virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
     virtual complex* GetStateVector() { return stateVec; }
     virtual void SetPermutation(bitCapInt perm);

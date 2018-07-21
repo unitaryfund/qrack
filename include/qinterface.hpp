@@ -29,6 +29,7 @@
 #define complex std::complex<float>
 #define real1 float
 #define min_norm 1e-9
+#define polar(A, B) std::polar(A, B)
 #else
 #include "common/complex16simd.hpp"
 #define complex Complex16Simd
@@ -36,6 +37,8 @@
 #define min_norm 1e-15
 #endif
 
+// The state vector must be an aligned piece of RAM, to be used by OpenCL.
+// We align to an ALIGN_SIZE byte boundary.
 #define ALIGN_SIZE 64
 
 namespace Qrack {
@@ -1186,7 +1189,9 @@ public:
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
     /**
-     * Act as though a measurement was applied, except force the result of the measurement
+     * Act as though a measurement was applied, except force the result of the measurement.
+     *
+     * That is, genuine measurement of a qubit in superposition has a probabilistic result. This method allows the programmer to choose the outcome of the measurement, and proceed as if the measurement randomly resulted in the chosen bit value.
      *
      * \warning PSEUDO-QUANTUM
      */
