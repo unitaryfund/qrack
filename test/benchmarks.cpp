@@ -305,12 +305,12 @@ TEST_CASE("test_incc")
 
 TEST_CASE("test_incbcd")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->INCBCD(1, 0, n-1);});
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCBCD(1, 0, n - 1); });
 }
 
 TEST_CASE("test_incbcdc")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->INCBCDC(1, 0, n-1, n-1);});
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCBCDC(1, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incsc")
@@ -335,12 +335,12 @@ TEST_CASE("test_decc")
 
 TEST_CASE("test_decbcd")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->DECBCD(1, 0, n-1);});
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECBCD(1, 0, n - 1); });
 }
 
 TEST_CASE("test_decbcdc")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->DECBCDC(1, 0, n-1, n-1);});
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECBCDC(1, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_decsc")
@@ -450,30 +450,32 @@ TEST_CASE("test_grover")
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 3.
 
-    benchmarkLoopVariable([](QInterfacePtr qftReg, int n) {
-        int i;
-        // Twelve iterations maximizes the probablity for 256 searched elements, for example.
-        // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-        int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
+    benchmarkLoopVariable(
+        [](QInterfacePtr qftReg, int n) {
+            int i;
+            // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+            // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
+            int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
 
-        // Our input to the subroutine "oracle" is 8 bits.
-        qftReg->SetPermutation(0);
-        qftReg->H(0, n);
-
-        for (i = 0; i < optIter; i++) {
-            // Our "oracle" is true for an input of "3" and false for all other inputs.
-            qftReg->DEC(3, 0, n);
-            qftReg->ZeroPhaseFlip(0, n);
-            qftReg->INC(3, 0, n);
-            // This ends the "oracle."
+            // Our input to the subroutine "oracle" is 8 bits.
+            qftReg->SetPermutation(0);
             qftReg->H(0, n);
-            qftReg->ZeroPhaseFlip(0, n);
-            qftReg->H(0, n);
-            qftReg->PhaseFlip();
-        }
 
-        REQUIRE_THAT(qftReg, HasProbability(0x3));
+            for (i = 0; i < optIter; i++) {
+                // Our "oracle" is true for an input of "3" and false for all other inputs.
+                qftReg->DEC(3, 0, n);
+                qftReg->ZeroPhaseFlip(0, n);
+                qftReg->INC(3, 0, n);
+                // This ends the "oracle."
+                qftReg->H(0, n);
+                qftReg->ZeroPhaseFlip(0, n);
+                qftReg->H(0, n);
+                qftReg->PhaseFlip();
+            }
 
-        qftReg->MReg(0, n);
-    }, 16);
+            REQUIRE_THAT(qftReg, HasProbability(0x3));
+
+            qftReg->MReg(0, n);
+        },
+        16);
 }

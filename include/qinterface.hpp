@@ -1191,7 +1191,9 @@ public:
     /**
      * Act as though a measurement was applied, except force the result of the measurement.
      *
-     * That is, genuine measurement of a qubit in superposition has a probabilistic result. This method allows the programmer to choose the outcome of the measurement, and proceed as if the measurement randomly resulted in the chosen bit value.
+     * That is, genuine measurement of a qubit in superposition has a probabilistic result. This method allows the
+     * programmer to choose the outcome of the measurement, and proceed as if the measurement randomly resulted in the
+     * chosen bit value.
      *
      * \warning PSEUDO-QUANTUM
      */

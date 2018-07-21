@@ -152,10 +152,6 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 void QEngineOCL::DispatchCall(
     OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower)
 {
-    // if (runningNorm < min_norm) {
-    //    return;
-    //}
-
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPower);
 
@@ -167,8 +163,7 @@ void QEngineOCL::DispatchCall(
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
 
     OCLDeviceCall ocl = device_context->Reserve(api_call);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
@@ -191,10 +186,6 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    // if (runningNorm < min_norm) {
-    //    return;
-    //}
-
     doCalcNorm &= (bitCount == 1);
 
     complex cmplx[CMPLX_NORM_LEN];
@@ -326,8 +317,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     }
     OCLDeviceCall prob_call = device_context->Reserve(api_call);
     OCLDeviceCall amp_call = device_context->Reserve(OCL_API_DECOHEREAMP);
-    // size_t groupSize =
-    // prob_call.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     if (doNormalize && (runningNorm != 1.0)) {
         NormalizeState();
@@ -783,9 +772,6 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    // if (runningNorm < min_norm) {
-    //    return 0;
-    //}
 
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
@@ -820,9 +806,6 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     bool carryRes = M(carryIndex);
-    // if (runningNorm < min_norm) {
-    //    return 0;
-    //}
     // The carry has to first to be measured for its input value.
     if (carryRes) {
         /*
@@ -881,13 +864,7 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
 void QEngineOCL::PhaseFlip()
 {
-    // if (runningNorm < min_norm) {
-    //    return;
-    //}
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIP);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.finish();
@@ -906,13 +883,7 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    // if (runningNorm < min_norm) {
-    //    return;
-    //}
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
     queue.finish();
@@ -930,13 +901,7 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    // if (runningNorm < min_norm) {
-    //    return;
-    //}
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
 
@@ -984,8 +949,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_NORMALIZE);
-    // size_t groupSize =
-    // ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
+
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);

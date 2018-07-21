@@ -180,7 +180,6 @@ protected:
     void CombineEngines(bitLenInt bit);
     void SeparateEngines();
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
-    template <typename F> void CombineAndOpSafe(F fn, std::vector<bitLenInt> bits);
 
     void NormalizeState();
 
