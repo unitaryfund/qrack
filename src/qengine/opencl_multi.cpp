@@ -1337,8 +1337,15 @@ void QEngineOCLMulti::RegOp(F fn, OF ofn, bitLenInt length, std::vector<bitLenIn
     }
 }
 
-void QEngineOCLMulti::NormalizeState()
+void QEngineOCLMulti::NormalizeState(real1 nrm)
 {
+    if (nrm < 0.0) {
+        nrm = runningNorm;
+    }
+    if ((nrm <= 0.0) || (nrm == 1.0)) {
+        return;
+    }
+
     bitLenInt i;
     if (runningNorm != 1.0) {
         std::vector<std::future<void>> nf(subEngineCount);

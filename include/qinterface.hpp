@@ -118,18 +118,15 @@ protected:
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm)
-    {
-        throw "Apply2x2 not implemented in interface";
-    }
+        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm) { throw "ApplyM not implemented in interface"; }
-    virtual void NormalizeState(real1 nrm = -999.0) { throw "NormalizeState not implemented in interface"; }
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm) = 0;
+    virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)

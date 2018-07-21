@@ -207,6 +207,14 @@ protected:
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
 
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm)
+    {
+        throw "Apply2x2 not implemented in interface";
+    }
+    void ApplyM(bitCapInt qPower, bool result, complex nrm) { throw "ApplyM not implemented in interface"; }
+    void NormalizeState(real1 nrm = -999.0) { throw "NormalizeState not implemented in interface"; }
+
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
