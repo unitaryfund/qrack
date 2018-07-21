@@ -51,7 +51,7 @@ void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const c
     qPowers[1] = 1 << target;
     std::copy(qPowers, qPowers + 2, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(qPowers[0], qPowers[0] + qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
+    Apply2x2(qPowers[0], (qPowers[0]) | (qPowers[1]), mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
 void QInterface::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
@@ -75,7 +75,8 @@ void QInterface::ApplyDoublyControlled2x2(
     qPowers[2] = 1 << target;
     std::copy(qPowers, qPowers + 3, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(qPowers[0] + qPowers[1], qPowers[0] + qPowers[1] + qPowers[2], mtrx, 3, qPowersSorted, doCalcNorm);
+    Apply2x2(
+        (qPowers[0]) | (qPowers[1]), (qPowers[0]) | (qPowers[1]) | (qPowers[2]), mtrx, 3, qPowersSorted, doCalcNorm);
 }
 
 void QInterface::ApplyDoublyAntiControlled2x2(

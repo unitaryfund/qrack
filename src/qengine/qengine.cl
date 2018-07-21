@@ -32,34 +32,24 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     bitCapInt i, iLow, iHigh;
     cmplx qubit[2];
     bitLenInt p;
-    lcv = ID;
-    iHigh = lcv;
-    i = 0;
-    for (p = 0; p < bitCount; p++) {
-        iLow = iHigh % qPowersSorted[p];
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-    }
-    i += iHigh;
-    while (i < maxI) {
-        Y0 = stateVec[i + offset1];
-        qubit[1] = stateVec[i + offset2];
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < bitCount; p++) {
+            iLow = iHigh & (qPowersSorted[p] - 1);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1;
+        }
+        i |= iHigh;
+
+        Y0 = stateVec[i | offset1];
+        qubit[1] = stateVec[i | offset2];
  
         qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
         qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
 
-        stateVec[i + offset1] = qubit[0];
-        stateVec[i + offset2] = qubit[1];
-
-        lcv += Nthreads;
-        iHigh = lcv;
-        i = 0;
-        for (p = 0; p < bitCount; p++) {
-            iLow = iHigh % qPowersSorted[p];
-            i += iLow;
-            iHigh = (iHigh - iLow) << 1;
-        }
-        i += iHigh;
+        stateVec[i | offset1] = qubit[0];
+        stateVec[i | offset2] = qubit[1];
     }
 }
 
@@ -83,24 +73,24 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     bitCapInt i, iLow, iHigh;
     cmplx qubit[2];
     bitLenInt p;
-    lcv = ID;
-    iHigh = lcv;
-    i = 0;
-    for (p = 0; p < bitCount; p++) {
-        iLow = iHigh % qPowersSorted[p];
-        i += iLow;
-        iHigh = (iHigh - iLow) << 1;
-    }
-    i += iHigh;
-    while (i < maxI) {
-        Y0 = stateVec[i + offset1];
-        qubit[1] = stateVec[i + offset2];
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < bitCount; p++) {
+            iLow = iHigh & (qPowersSorted[p] - 1);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1;
+        }
+        i |= iHigh;
+
+        Y0 = stateVec[i | offset1];
+        qubit[1] = stateVec[i | offset2];
 
         qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
         qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
 
-        stateVec[i + offset1] = qubit[0];
-        stateVec[i + offset2] = qubit[1];
+        stateVec[i | offset1] = qubit[0];
+        stateVec[i | offset2] = qubit[1];
         nrm1 = dot(qubit[0], qubit[0]);
         nrm2 = dot(qubit[1], qubit[1]);
         if (nrm1 < min_norm) {
@@ -110,16 +100,6 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
             nrm1 += nrm2;
         }
         nrmParts[ID] += nrm1;
-
-        lcv += Nthreads;
-        iHigh = lcv;
-        i = 0;
-        for (p = 0; p < bitCount; p++) {
-            iLow = iHigh % qPowersSorted[p];
-            i += iLow;
-            iHigh = (iHigh - iLow) << 1;
-        }
-        i += iHigh;
     }
 }
 

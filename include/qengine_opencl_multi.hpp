@@ -28,7 +28,6 @@ protected:
     bitCapInt subMaxQPower;
     bitLenInt subEngineCount;
     bitLenInt maxDeviceOrder;
-    size_t subBufferSize;
     OCLEngine* clObj;
     std::vector<QEngineOCLPtr> substateEngines;
     std::vector<std::vector<cl::Buffer>> substateBuffers;
@@ -70,7 +69,6 @@ public:
         subEngineCount = substateEngines.size();
         subQubitCount = qubitCount - log2(subEngineCount);
         subMaxQPower = 1 << subQubitCount;
-        subBufferSize = sizeof(complex) * subMaxQPower >> 1;
     }
 
     virtual void SetQuantumState(complex* inputState);

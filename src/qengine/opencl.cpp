@@ -117,14 +117,14 @@ void QEngineOCL::SetDevice(const int& dID)
 #ifdef __APPLE__
     posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
 #else
-    nrmArray = (float*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+    nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
 #endif
 
     // create buffers on device (allocate space on GPU)
     stateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
-    cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * 5);
-    ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 10);
+    cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
+    ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
     nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
 }
 
@@ -145,7 +145,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
     real1 angle = Rand() * 2.0 * M_PI;
     complex amp = complex(cos(angle), sin(angle));
     queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex));
-    queue.flush();
+    queue.finish();
     runningNorm = 1.0;
 }
 
@@ -184,7 +184,7 @@ void QEngineOCL::DispatchCall(
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
@@ -195,13 +195,15 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     //    return;
     //}
 
+    doCalcNorm &= (bitCount == 1);
+
     complex cmplx[CMPLX_NORM_LEN];
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
     cmplx[4] =
         complex((doNormalize && (bitCount == 1) && (runningNorm > min_norm)) ? (1.0 / sqrt(runningNorm)) : 1.0, 0.0);
-    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower >> bitCount, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
     }
@@ -229,7 +231,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
     if (doCalcNorm) {
         queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
         runningNorm = 0.0;
@@ -259,7 +261,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 }
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
@@ -298,7 +300,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 
     SetQubitCount(nQubitCount);
     ResetStateVec(nStateVec, nStateBuffer);
@@ -898,7 +900,7 @@ void QEngineOCL::PhaseFlip()
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
@@ -923,7 +925,7 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 }
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -949,7 +951,7 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
@@ -968,8 +970,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
     if (nrm < min_norm) {
-        queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
         queue.finish();
+        queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
         runningNorm = 0.0;
         return;
     }
@@ -991,7 +993,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.flush();
+    queue.finish();
 
     runningNorm = 1.0;
 }
