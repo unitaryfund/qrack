@@ -166,6 +166,8 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
         all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
         all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
+        all_device_contexts[i]->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
+        all_device_contexts[i]->calls[OCL_API_DIV] = cl::Kernel(program, "div");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];

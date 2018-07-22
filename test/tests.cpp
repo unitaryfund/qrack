@@ -1206,6 +1206,33 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
+{
+    int i;
+
+    qftReg->SetPermutation(3);
+    bitCapInt res = 3;
+    for (i = 0; i < 8; i++) {
+        qftReg->MUL(2, 0, 8, 8, true);
+        res *= 2;
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+        res &= 255;
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
+{
+    int i;
+
+    qftReg->SetPermutation(256);
+    bitCapInt res = 256;
+    for (i = 0; i < 8; i++) {
+        qftReg->DIV(2, 0, 8, 8);
+        res /= 2;
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
     real1 qftProbs[20];

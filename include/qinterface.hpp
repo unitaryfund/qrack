@@ -989,6 +989,12 @@ public:
     /** Subtract BCD integer (without sign, with carry) */
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
+    /** Multiply by integer */
+    virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCary = false) = 0;
+
+    /** Multiply by power of integer */
+    virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
+
     /** @} */
 
     /**
