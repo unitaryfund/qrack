@@ -701,6 +701,26 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
     INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
 }
 
+void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
+{
+    EntangleRange(inOutStart, length);
+    EntangleRange(carryStart, length);
+    bitLenInt bits[2] = { inOutStart, carryStart };
+    Entangle({ &(bits[0]), &(bits[1]) });
+    OrderContiguous(shards[inOutStart].unit);
+    shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length, clearCarry);
+}
+
+void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+{
+    EntangleRange(inOutStart, length);
+    EntangleRange(carryStart, length);
+    bitLenInt bits[2] = { inOutStart, carryStart };
+    Entangle({ &(bits[0]), &(bits[1]) });
+    OrderContiguous(shards[inOutStart].unit);
+    shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
+}
+
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
