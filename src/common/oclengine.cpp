@@ -168,6 +168,8 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
         all_device_contexts[i]->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
         all_device_contexts[i]->calls[OCL_API_DIV] = cl::Kernel(program, "div");
+        all_device_contexts[i]->calls[OCL_API_CMUL] = cl::Kernel(program, "cmul");
+        all_device_contexts[i]->calls[OCL_API_CDIV] = cl::Kernel(program, "cdiv");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];

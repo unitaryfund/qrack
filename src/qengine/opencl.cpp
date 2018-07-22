@@ -808,6 +808,52 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
     }
 }
 
+/** Controlled multiplication by integer */
+void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
+    bitLenInt length, bool clearCarry)
+{
+    if (clearCarry) {
+        SetReg(carryStart, length, 0);
+    }
+    if (toMul == 0) {
+        SetReg(inOutStart, length, 0);
+        return;
+    }
+    if ((length > 0) && (toMul != 1)) {
+        bitCapInt lowMask = (1 << length) - 1;
+        bitCapInt inOutMask = lowMask << inOutStart;
+        bitCapInt carryMask = lowMask << carryStart;
+        bitCapInt controlPower = 1 << controlBit;
+        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
+
+        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (length + 1), toMul, lowMask, controlPower, inOutMask,
+            carryMask, otherMask, length, inOutStart, carryStart };
+
+        DispatchCall(OCL_API_CMUL, bciArgs);
+    }
+}
+
+/** Controlled division by integer */
+void QEngineOCL::CDIV(
+    bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
+{
+    if (toDiv == 0) {
+        throw "DIV by zero";
+    }
+    if ((length > 0) && (toDiv != 1)) {
+        bitCapInt lowMask = (1 << length) - 1;
+        bitCapInt inOutMask = lowMask << inOutStart;
+        bitCapInt carryMask = lowMask << carryStart;
+        bitCapInt controlPower = 1 << controlBit;
+        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
+
+        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (length + 1), toDiv, lowMask, controlPower, inOutMask,
+            carryMask, otherMask, length, inOutStart, carryStart };
+
+        DispatchCall(OCL_API_CDIV, bciArgs);
+    }
+}
+
 /** Set 8 bit register bits based on read from classical memory */
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)

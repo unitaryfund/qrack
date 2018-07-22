@@ -721,6 +721,29 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
+void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length,
+    bool clearCarry)
+{
+    EntangleRange(inOutStart, length);
+    EntangleRange(carryStart, length);
+    bitLenInt bits[3] = { inOutStart, carryStart, controlBit };
+    Entangle({ &(bits[0]), &(bits[1]), &(bits[2]) });
+    OrderContiguous(shards[inOutStart].unit);
+    shards[inOutStart].unit->CMUL(
+        toMul, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length, clearCarry);
+}
+
+void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
+{
+    EntangleRange(inOutStart, length);
+    EntangleRange(carryStart, length);
+    bitLenInt bits[3] = { inOutStart, carryStart, controlBit };
+    Entangle({ &(bits[0]), &(bits[1]), &(bits[2]) });
+    OrderContiguous(shards[inOutStart].unit);
+    shards[inOutStart].unit->CDIV(
+        toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length);
+}
+
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);

@@ -993,8 +993,16 @@ public:
     virtual void MUL(
         bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCary = false) = 0;
 
-    /** Multiply by power of integer */
+    /** Divide by integer */
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
+
+    /** Controlled multiplication by integer */
+    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
+        bitLenInt length, bool clearCarry = false) = 0;
+
+    /** Controlled division by power of integer */
+    virtual void CDIV(
+        bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length) = 0;
 
     /** @} */
 

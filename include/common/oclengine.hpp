@@ -72,7 +72,9 @@ enum OCLAPI {
     OCL_API_ZEROPHASEFLIP,
     OCL_API_CPHASEFLIPIFLESS,
     OCL_API_MUL,
-    OCL_API_DIV
+    OCL_API_DIV,
+    OCL_API_CMUL,
+    OCL_API_CDIV
 };
 
 class OCLDeviceCall {

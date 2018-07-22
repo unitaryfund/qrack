@@ -848,6 +848,21 @@ void QEngineOCLMulti::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carry
     CombineAndOp([&](QEngineOCLPtr engine) { engine->DIV(toDiv, inOutStart, carryStart, length); },
         { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1) });
 }
+void QEngineOCLMulti::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
+    bitLenInt length, bool clearCarry)
+{
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->CMUL(toMul, inOutStart, carryStart, controlBit, length, clearCarry); },
+        { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1),
+            controlBit });
+}
+void QEngineOCLMulti::CDIV(
+    bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
+{
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->CDIV(toDiv, inOutStart, carryStart, controlBit, length); },
+        { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1),
+            controlBit });
+}
 
 void QEngineOCLMulti::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
