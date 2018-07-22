@@ -1003,7 +1003,7 @@ public:
     /** Controlled division by power of integer */
     virtual void CDIV(
         bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length) = 0;
-
+  
     /** @} */
 
     /**
