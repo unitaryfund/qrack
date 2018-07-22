@@ -102,9 +102,8 @@ public:
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void MUL(
-        bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry = false);
-    virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    virtual void MulMod(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length);
+    virtual void ExpMod(bitCapInt base, bitLenInt exp, bitLenInt inOutStart, bitLenInt length);
 
     /** @} */
 

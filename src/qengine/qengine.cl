@@ -974,64 +974,6 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     }
 }
 
-void kernel mul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt ID, Nthreads, lcv;
-
-    ID = get_global_id(0);
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toMul = bitCapIntPtr[1];
-    bitCapInt lowMask = bitCapIntPtr[2];
-    bitCapInt highMask = bitCapIntPtr[3];
-    bitCapInt inOutMask = bitCapIntPtr[4];
-    bitCapInt carryMask = bitCapIntPtr[5];
-    bitCapInt otherMask = bitCapIntPtr[6];
-    bitCapInt len = bitCapIntPtr[7];
-    bitCapInt inOutStart = bitCapIntPtr[8];
-    bitCapInt carryStart = bitCapIntPtr[9];
-    bitCapInt iLowMask = (1 << carryStart) - 1;
-    bitCapInt otherRes, outInt, i, iHigh, iLow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & iLowMask;
-        i = iLow | ((iHigh ^ iLow) << len);
-
-        otherRes = i & otherMask;
-        outInt = ((i & inOutMask) >> inOutStart) * toMul;
-        nStateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> len) << carryStart) | otherRes] = stateVec[i];
-    }
-}
-
-void kernel div(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt ID, Nthreads, lcv;
-
-    ID = get_global_id(0);
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toDiv = bitCapIntPtr[1];
-    bitCapInt lowMask = bitCapIntPtr[2];
-    bitCapInt highMask = bitCapIntPtr[3];
-    bitCapInt inOutMask = bitCapIntPtr[4];
-    bitCapInt carryMask = bitCapIntPtr[5];
-    bitCapInt otherMask = bitCapIntPtr[6];
-    bitCapInt len = bitCapIntPtr[7];
-    bitCapInt inOutStart = bitCapIntPtr[8];
-    bitCapInt carryStart = bitCapIntPtr[9];
-    bitCapInt iLowMask = (1 << carryStart) - 1;
-    bitCapInt otherRes, outInt, i, iHigh, iLow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & iLowMask;
-        i = iLow | ((iHigh ^ iLow) << len);
-
-        otherRes = i & otherMask;
-        outInt = ((i & inOutMask) >> inOutStart) * toDiv;
-        nStateVec[i] = stateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> len) << carryStart) | otherRes];
-    }
-}
-
 void kernel indexedLda(
     global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {

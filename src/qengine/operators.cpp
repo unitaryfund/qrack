@@ -775,51 +775,38 @@ void QEngineCPU::DECBCDC(
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
-{
-    if (clearCarry) {
-        SetReg(carryStart, length, 0);
-    }
-    if ((length > 0) && (toMul != 1)) {
-        bitCapInt lowMask = (1 << length) - 1;
-        bitCapInt highMask = lowMask << length;
-        bitCapInt inOutMask = lowMask << inOutStart;
-        bitCapInt carryMask = lowMask << carryStart;
-        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
+void QEngineCPU::MulMod(bitCapInt toMul, bitLenInt inOutStart, bitLenInt length) {
+    bitCapInt lengthPower = 1 << length;
+    if ((length > 0) && (toMul > 0)) {
+        bitCapInt i, j;
+        bitCapInt regMask = ((1 << length) - 1) << inOutStart;
+        bitCapInt otherMask = ((1 << maxQPower) - 1) ^ regmask; 
 
-        complex* nStateVec = AllocStateVec(maxQPower);
-        std::fill(nStateVec, nStateVec + maxQPower, complex(0.0, 0.0));
-
-        par_for_skip(0, maxQPower, 1 << carryStart, length, [&](const bitCapInt lcv, const int cpu) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
-            bitCapInt outInt = ((lcv & inOutMask) >> inOutStart) * toMul;
-            nStateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> length) << carryStart) | otherRes] =
-                stateVec[lcv];
+            bitCapInt regRes = lcv & regMask;
+            bitCapInt regInt = regRes >> inOutStart;
+            nStateVec[((regInt * toMul) & regMask) | otherRes] = stateVec[lcv];
         });
         ResetStateVec(nStateVec);
     }
 }
 
-void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
-{
-    if (toDiv == 0) {
-        throw "DIV by zero";
-    }
-    if ((length > 0) && (toDiv != 1)) {
-        bitCapInt lowMask = (1 << length) - 1;
-        bitCapInt highMask = lowMask << length;
-        bitCapInt inOutMask = lowMask << inOutStart;
-        bitCapInt carryMask = lowMask << carryStart;
-        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
+void QEngineCPU::ExpMod(bitCapInt base, bitLenInt exp, bitLenInt inOutStart, bitLenInt length) {
+    bitCapInt lengthPower = 1 << length;
+    if ((length > 0) && (base > 0) && (exp > 0)) {
+        bitCapInt i, j;
+        bitCapInt regMask = ((1 << length) - 1) << inOutStart;
+        bitCapInt otherMask = ((1 << maxQPower) - 1) ^ regmask; 
 
-        complex* nStateVec = AllocStateVec(maxQPower);
-        std::fill(nStateVec, nStateVec + maxQPower, complex(0.0, 0.0));
-
-        par_for_skip(0, maxQPower, 1 << carryStart, length, [&](const bitCapInt lcv, const int cpu) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
-            bitCapInt outInt = ((lcv & inOutMask) >> inOutStart) * toDiv;
-            nStateVec[lcv] = stateVec[((outInt & lowMask) << inOutStart) |
-                (((outInt & highMask) >> length) << carryStart) | otherRes];
+            bitCapInt regRes = lcv & regMask;
+            bitCapInt regInt = regRes >> inOutStart;
+            for (bitLenInt k = 0; k < exp; k++) {
+                regInt *= toMul;
+            }
+            nStateVec[(regInt & regMask) | otherRes] = stateVec[lcv];
         });
         ResetStateVec(nStateVec);
     }
