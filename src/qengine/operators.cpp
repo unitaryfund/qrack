@@ -775,7 +775,8 @@ void QEngineCPU::DECBCDC(
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry) {
+void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
+{
     if (clearCarry) {
         SetReg(carryStart, length, 0);
     }
@@ -792,13 +793,15 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
         par_for_skip(0, maxQPower, 1 << carryStart, length, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt outInt = ((lcv & inOutMask) >> inOutStart) * toMul;
-            nStateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> length) << carryStart) | otherRes] = stateVec[lcv];
+            nStateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> length) << carryStart) | otherRes] =
+                stateVec[lcv];
         });
         ResetStateVec(nStateVec);
     }
 }
 
-void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) {
+void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+{
     if (toDiv == 0) {
         throw "DIV by zero";
     }
@@ -815,7 +818,8 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
         par_for_skip(0, maxQPower, 1 << carryStart, length, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt outInt = ((lcv & inOutMask) >> inOutStart) * toDiv;
-            nStateVec[lcv] = stateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> length) << carryStart) | otherRes];
+            nStateVec[lcv] = stateVec[((outInt & lowMask) << inOutStart) |
+                (((outInt & highMask) >> length) << carryStart) | otherRes];
         });
         ResetStateVec(nStateVec);
     }

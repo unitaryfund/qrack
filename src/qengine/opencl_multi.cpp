@@ -837,7 +837,8 @@ void QEngineOCLMulti::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length
     CombineAndOp([&](QEngineOCLPtr engine) { engine->DECBCDC(toSub, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1), carryIndex });
 }
-void QEngineOCLMulti::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
+void QEngineOCLMulti::MUL(
+    bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
 {
     CombineAndOp([&](QEngineOCLPtr engine) { engine->MUL(toMul, inOutStart, carryStart, length, clearCarry); },
         { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1) });

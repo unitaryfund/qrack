@@ -769,7 +769,8 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 }
 
 /** Multiply by integer */
-void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry) {
+void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
+{
     if (clearCarry) {
         SetReg(carryStart, length, 0);
     }
@@ -780,14 +781,16 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
         bitCapInt carryMask = lowMask << carryStart;
         bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
 
-        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMul, lowMask, highMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
+        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMul, lowMask, highMask, inOutMask, carryMask,
+            otherMask, length, inOutStart, carryStart };
 
         DispatchCall(OCL_API_MUL, bciArgs);
     }
 }
 
 /** Divide by integer */
-void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) {
+void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+{
     if (toDiv == 0) {
         throw "DIV by zero";
     }
@@ -798,7 +801,8 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
         bitCapInt carryMask = lowMask << carryStart;
         bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
 
-        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toDiv, lowMask, highMask, inOutMask, carryMask, otherMask, length, inOutStart, carryStart };
+        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toDiv, lowMask, highMask, inOutMask, carryMask,
+            otherMask, length, inOutStart, carryStart };
 
         DispatchCall(OCL_API_DIV, bciArgs);
     }
