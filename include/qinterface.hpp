@@ -1003,7 +1003,7 @@ public:
     /** Controlled division by power of integer */
     virtual void CDIV(
         bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length) = 0;
-  
+
     /** @} */
 
     /**
@@ -1038,7 +1038,8 @@ public:
      * the 256 byte "values" array. The "outputStart" bits are first cleared,
      * then the separable |input, 00000000> permutation state is mapped to
      * |input, values[input]>, with "values[input]" placed in the "outputStart"
-     * register.
+     * register. FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the
+     * unit tests suite code for an example of how to align the allocation.)
      *
      * While a QInterface represents an interacting set of qubit-based
      * registers, or a virtual quantum chip, the registers need to interact in
@@ -1105,6 +1106,9 @@ public:
      * addition or subtraction done to the "value." See IndexedLDA() for
      * context.
      *
+     * FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the unit tests
+     * suite code for an example of how to align the allocation.)
+     *
      * While a QInterface represents an interacting set of qubit-based
      * registers, or a virtual quantum chip, the registers need to interact in
      * some way with (classical or quantum) RAM. IndexedLDA is a RAM access
@@ -1131,6 +1135,9 @@ public:
      * are measured, both registers will collapse into one random VALID
      * key-value pair, with any addition or subtraction done to the "value."
      * See QInterface::IndexedLDA for context.
+     *
+     * FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the unit tests
+     * suite code for an example of how to align the allocation.)
      *
      * While a QInterface represents an interacting set of qubit-based
      * registers, or a virtual quantum chip, the registers need to interact in

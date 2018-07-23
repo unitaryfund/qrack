@@ -171,7 +171,7 @@ void QEngineOCL::DispatchCall(
     cl::Buffer loadBuffer;
     if (values) {
         loadBuffer =
-            cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
+            cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         ocl.call.setArg(3, loadBuffer);
     }
 
