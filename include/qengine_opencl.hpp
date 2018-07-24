@@ -90,6 +90,10 @@ public:
     virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
     virtual complex* GetStateVector() { return stateVec; }
+    virtual cl::Context& GetCLContext() { return context; }
+    virtual int GetCLContextID() { return device_context->context_id; }
+    virtual cl::CommandQueue& GetCLQueue() { return queue; }
+    virtual BufferPtr GetStateBuffer() { return stateBuffer; }
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
