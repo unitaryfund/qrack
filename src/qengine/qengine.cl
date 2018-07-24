@@ -8,8 +8,8 @@ inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 
 inline real1 arg(const cmplx cmp)
 {
-    if (cmp.x == 0.0 && cmp.y == 0.0)
-        return 0.0;
+    if (cmp.x == 0.0f && cmp.y == 0.0f)
+        return 0.0f;
     return atan2(cmp.y, cmp.x);
 }
 
@@ -94,7 +94,7 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
         nrm1 = dot(qubit[0], qubit[0]);
         nrm2 = dot(qubit[1], qubit[1]);
         if (nrm1 < min_norm) {
-            nrm1 = 0.0;
+            nrm1 = 0.0f;
         }
         if (nrm2 >= min_norm) {
             nrm1 += nrm2;
@@ -203,7 +203,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt maxI = bitCapIntPtr[0] >> 1;
     bitCapInt qPower = bitCapIntPtr[1];
     bitCapInt qMask = qPower - 1;
-    real1 oneChancePart = 0.0;
+    real1 oneChancePart = 0.0f;
     cmplx amp;
     bitCapInt i;
 
@@ -1237,7 +1237,7 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
         amp = stateVec[lcv] / nrm;
         //"min_norm" is defined in qinterface.hpp
         if (dot(amp, amp) < min_norm) {
-            amp = (cmplx)(0.0, 0.0);
+            amp = (cmplx)(0.0f, 0.0f);
         }
         stateVec[lcv] = amp;
     }
@@ -1256,7 +1256,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
         if (nrm < min_norm) {
-            nrm = 0.0;
+            nrm = 0.0f;
         }
         norm_ptr[ID] += nrm;
     }
@@ -1281,7 +1281,7 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
         i = iLow + ((iHigh - iLow) << 1);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
-        stateVec[i | discardPower] = (cmplx)(0.0, 0.0);
+        stateVec[i | discardPower] = (cmplx)(0.0f, 0.0f);
     }
 }
 
