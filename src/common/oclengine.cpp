@@ -73,10 +73,11 @@ void OCLEngine::InitOCL()
 
     // get all devices
     std::vector<cl::Platform> devPlatVec;
+    std::vector<std::vector<cl::Device>> all_platforms_devices;
     for (size_t i = 0; i < all_platforms.size(); i++) {
-        std::vector<cl::Device> platform_devices;
-        all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &platform_devices);
-        for (size_t j = 0; j < platform_devices.size(); j++) {
+        all_platforms_devices.push_back(std::vector<cl::Device>());
+        all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &(all_platforms_devices[i]));
+        for (size_t j = 0; j < all_platforms_devices[i].size(); j++) {
             // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original
             // list. Assigning the object from a new query is always fine, though. (They carry the same underlying
             // platform IDs.)
@@ -85,7 +86,7 @@ void OCLEngine::InitOCL()
             devPlatVec.push_back(temp_platforms[i]);
             device_platform_id.push_back(i);
         }
-        all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
+        all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
     }
     if (all_devices.size() == 0) {
         std::cout << " No devices found. Check OpenCL installation!\n";
@@ -114,7 +115,7 @@ void OCLEngine::InitOCL()
         // i.e. communication is possible
         if (device_platform_id[i] != plat_id) {
             plat_id = device_platform_id[i];
-            all_contexts.push_back(cl::Context(all_devices[i]));
+            all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
