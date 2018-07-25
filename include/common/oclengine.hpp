@@ -72,7 +72,9 @@ enum OCLAPI {
     OCL_API_ZEROPHASEFLIP,
     OCL_API_CPHASEFLIPIFLESS,
     OCL_API_MUL,
-    OCL_API_DIV
+    OCL_API_DIV,
+    OCL_API_CMUL,
+    OCL_API_CDIV
 };
 
 class OCLDeviceCall {
@@ -103,6 +105,7 @@ public:
     cl::Platform platform;
     cl::Device device;
     cl::Context context;
+    int context_id;
     cl::CommandQueue queue;
 
 protected:
@@ -110,12 +113,13 @@ protected:
     std::map<OCLAPI, cl::Kernel> calls;
 
 public:
-    OCLDeviceContext(cl::Platform& p, cl::Device& d)
+    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int cntxt_id)
         : platform(p)
         , device(d)
+        , context(c)
+        , context_id(cntxt_id)
         , mutex()
     {
-        context = cl::Context(d);
         queue = cl::CommandQueue(context, d);
     }
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }

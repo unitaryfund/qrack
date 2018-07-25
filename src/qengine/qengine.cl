@@ -8,8 +8,8 @@ inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 
 inline real1 arg(const cmplx cmp)
 {
-    if (cmp.x == 0.0 && cmp.y == 0.0)
-        return 0.0;
+    if (cmp.x == ZERO_R1 && cmp.y == ZERO_R1)
+        return ZERO_R1;
     return atan2(cmp.y, cmp.x);
 }
 
@@ -94,7 +94,7 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
         nrm1 = dot(qubit[0], qubit[0]);
         nrm2 = dot(qubit[1], qubit[1]);
         if (nrm1 < min_norm) {
-            nrm1 = 0.0;
+            nrm1 = ZERO_R1;
         }
         if (nrm2 >= min_norm) {
             nrm1 += nrm2;
@@ -203,7 +203,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt maxI = bitCapIntPtr[0] >> 1;
     bitCapInt qPower = bitCapIntPtr[1];
     bitCapInt qMask = qPower - 1;
-    real1 oneChancePart = 0.0;
+    real1 oneChancePart = ZERO_R1;
     cmplx amp;
     bitCapInt i;
 
@@ -1032,6 +1032,76 @@ void kernel div(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     }
 }
 
+void kernel cmul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toMul = bitCapIntPtr[1];
+    bitCapInt lowMask = bitCapIntPtr[2];
+    bitCapInt controlPower = bitCapIntPtr[3];
+    bitCapInt inOutMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt otherMask = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt inOutStart = bitCapIntPtr[8];
+    bitCapInt carryStart = bitCapIntPtr[9];
+    bitCapInt iLowMask = (1 << carryStart) - 1;
+    bitCapInt highMask = lowMask << len;
+    bitCapInt otherRes, outInt, i, iHigh, iLow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & iLowMask;
+        i = iLow | ((iHigh ^ iLow) << len);
+
+        iHigh = i;
+        iLow = iHigh & (controlPower - 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
+
+        otherRes = i & otherMask;
+        outInt = ((i & inOutMask) >> inOutStart) * toMul;
+        nStateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> len) << carryStart) | otherRes | controlPower] = stateVec[i | controlPower];
+        nStateVec[i] = stateVec[i];
+    }
+}
+
+void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toDiv = bitCapIntPtr[1];
+    bitCapInt lowMask = bitCapIntPtr[2];
+    bitCapInt controlPower = bitCapIntPtr[3];
+    bitCapInt inOutMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt otherMask = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt inOutStart = bitCapIntPtr[8];
+    bitCapInt carryStart = bitCapIntPtr[9];
+    bitCapInt iLowMask = (1 << carryStart) - 1;
+    bitCapInt highMask = lowMask << len;
+    bitCapInt otherRes, outInt, i, iHigh, iLow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & iLowMask;
+        i = iLow | ((iHigh ^ iLow) << len);
+
+        iHigh = i;
+        iLow = iHigh & (controlPower - 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
+
+        otherRes = i & otherMask;
+        outInt = ((i & inOutMask) >> inOutStart) * toDiv;
+        nStateVec[i | controlPower] = stateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> len) << carryStart) | otherRes | controlPower];
+        nStateVec[i] = stateVec[i];
+    }
+}
+
 void kernel indexedLda(
     global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
@@ -1167,7 +1237,7 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
         amp = stateVec[lcv] / nrm;
         //"min_norm" is defined in qinterface.hpp
         if (dot(amp, amp) < min_norm) {
-            amp = (cmplx)(0.0, 0.0);
+            amp = (cmplx)(ZERO_R1, ZERO_R1);
         }
         stateVec[lcv] = amp;
     }
@@ -1186,7 +1256,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
         if (nrm < min_norm) {
-            nrm = 0.0;
+            nrm = ZERO_R1;
         }
         norm_ptr[ID] += nrm;
     }
@@ -1211,7 +1281,7 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
         i = iLow + ((iHigh - iLow) << 1);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
-        stateVec[i | discardPower] = (cmplx)(0.0, 0.0);
+        stateVec[i | discardPower] = (cmplx)(ZERO_R1, ZERO_R1);
     }
 }
 

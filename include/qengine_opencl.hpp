@@ -90,6 +90,10 @@ public:
     virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
     virtual complex* GetStateVector() { return stateVec; }
+    virtual cl::Context& GetCLContext() { return context; }
+    virtual int GetCLContextID() { return device_context->context_id; }
+    virtual cl::CommandQueue& GetCLQueue() { return queue; }
+    virtual BufferPtr GetStateBuffer() { return stateBuffer; }
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
@@ -127,6 +131,10 @@ public:
     virtual void MUL(
         bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCary = false);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
+    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
+        bitLenInt length, bool clearCarry = false);
+    virtual void CDIV(
+        bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);

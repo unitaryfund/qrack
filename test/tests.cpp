@@ -22,6 +22,7 @@
 
 using namespace Qrack;
 
+#define ALIGN_SIZE 64
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
@@ -44,6 +45,19 @@ void print_bin(int bits, int d)
 }
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
+
+unsigned char* cl_alloc(size_t ucharCount)
+{
+#ifdef __APPLE__
+    void* toRet;
+    posix_memalign(&toRet, ALIGN_SIZE,
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+    return (unsigned char*)toRet;
+#else
+    return (unsigned char*)aligned_alloc(ALIGN_SIZE,
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+#endif
+}
 
 TEST_CASE("test_complex")
 {
@@ -1233,6 +1247,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
+{
+    int i;
+
+    qftReg->SetPermutation(3 | (1 << 16));
+    bitCapInt res = 3;
+    for (i = 0; i < 8; i++) {
+        qftReg->CMUL(2, 0, 8, 16, 8, true);
+        if ((i % 2) == 0) {
+            res *= 2;
+        }
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+        res &= 255;
+        qftReg->X(16);
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
+{
+    int i;
+
+    qftReg->SetPermutation(256 | (1 << 16));
+    bitCapInt res = 256;
+    for (i = 0; i < 8; i++) {
+        qftReg->CDIV(2, 0, 8, 16, 8);
+        if ((i % 2) == 0) {
+            res /= 2;
+        }
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+        qftReg->X(16);
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
     real1 qftProbs[20];
@@ -1320,7 +1367,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     qftReg->SetReg(0, 8, 0x03);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x03));
 
-    unsigned char testPage[256];
+    unsigned char* testPage = cl_alloc(256);
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
@@ -1336,7 +1383,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
 
     qftReg->H(8, 8);
-    unsigned char testPage[256];
+    unsigned char* testPage = cl_alloc(256);
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
@@ -1359,7 +1406,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 << 16));
 
     qftReg->H(8, 8);
-    unsigned char testPage[256];
+    unsigned char* testPage = cl_alloc(256);
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
@@ -1377,7 +1424,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
     qftReg->SetReg(0, 9, 0x03);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x03));
 
-    unsigned char testPage[1024];
+    unsigned char* testPage = cl_alloc(1024);
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
@@ -1394,7 +1441,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 0));
 
     qftReg->H(9, 9);
-    unsigned char testPage[1024];
+    unsigned char* testPage = cl_alloc(1024);
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
@@ -1418,7 +1465,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
 
     qftReg->H(9, 9);
-    unsigned char testPage[1024];
+    unsigned char* testPage = cl_alloc(1024);
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
@@ -1523,7 +1570,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 
     const int TARGET_PROB = 100 + (230 << 8);
 
-    unsigned char toLoad[256];
+    unsigned char* toLoad = cl_alloc(256);
     for (i = 0; i < 256; i++) {
         toLoad[i] = 1;
     }
@@ -1572,7 +1619,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 {
     int i;
-    unsigned char toSearch[256];
+    unsigned char* toSearch = cl_alloc(256);
 
     // Create the lookup table
     for (i = 0; i < 256; i++) {

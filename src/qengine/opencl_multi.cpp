@@ -118,12 +118,24 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
 // boundaries.
 void QEngineOCLMulti::ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine2)
 {
-    engine1->LockSync(CL_MAP_READ | CL_MAP_WRITE);
-    engine2->LockSync(CL_MAP_READ | CL_MAP_WRITE);
-    std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower,
-        engine2->GetStateVector());
-    engine1->UnlockSync();
-    engine2->UnlockSync();
+    if ((engine1->GetCLContextID()) == (engine2->GetCLContextID())) {
+        cl::Context& cntxt = engine1->GetCLContext();
+        cl::Buffer tempBuffer = cl::Buffer(cntxt, CL_MEM_READ_WRITE, sizeof(complex) * (subMaxQPower >> 1));
+        cl::CommandQueue& queue = engine1->GetCLQueue();
+        queue.enqueueCopyBuffer(*(engine1->GetStateBuffer()), tempBuffer, sizeof(complex) * (subMaxQPower >> 1), 0,
+            sizeof(complex) * (subMaxQPower >> 1));
+        queue.enqueueCopyBuffer(*(engine2->GetStateBuffer()), *(engine1->GetStateBuffer()), 0,
+            sizeof(complex) * (subMaxQPower >> 1), sizeof(complex) * (subMaxQPower >> 1));
+        queue.enqueueCopyBuffer(tempBuffer, *(engine2->GetStateBuffer()), 0, 0, sizeof(complex) * (subMaxQPower >> 1));
+        queue.finish();
+    } else {
+        engine1->LockSync(CL_MAP_READ | CL_MAP_WRITE);
+        engine2->LockSync(CL_MAP_READ | CL_MAP_WRITE);
+        std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower,
+            engine2->GetStateVector());
+        engine1->UnlockSync();
+        engine2->UnlockSync();
+    }
 }
 
 // This underlies all single-bit gates, unless they can be carried out entirely at a "meta-qubit" level, by only
@@ -848,6 +860,21 @@ void QEngineOCLMulti::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carry
     CombineAndOp([&](QEngineOCLPtr engine) { engine->DIV(toDiv, inOutStart, carryStart, length); },
         { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1) });
 }
+void QEngineOCLMulti::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
+    bitLenInt length, bool clearCarry)
+{
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->CMUL(toMul, inOutStart, carryStart, controlBit, length, clearCarry); },
+        { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1),
+            controlBit });
+}
+void QEngineOCLMulti::CDIV(
+    bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
+{
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->CDIV(toDiv, inOutStart, carryStart, controlBit, length); },
+        { static_cast<bitLenInt>(inOutStart + length - 1), static_cast<bitLenInt>(carryStart + length - 1),
+            controlBit });
+}
 
 void QEngineOCLMulti::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
@@ -1203,19 +1230,35 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     std::vector<QEngineOCLPtr> nEngines(groupCount);
     bitCapInt sbSize = maxQPower / subEngineCount;
 
+    bool isMapped;
+
     for (i = 0; i < groupCount; i++) {
         nEngines[i] = std::make_shared<QEngineOCL>((bit + 1), 0, rand_generator, deviceIDs[i]);
         nEngines[i]->EnableNormalize(false);
-        nEngines[i]->LockSync(CL_MAP_WRITE);
-        complex* nsv = nEngines[i]->GetStateVector();
+        isMapped = false;
+        complex* nsv = nullptr;
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr eng = substateEngines[j + (i * groupSize)];
-            complex* sv = eng->GetStateVector();
-            eng->LockSync(CL_MAP_READ);
-            std::copy(sv, sv + sbSize, nsv + (j * sbSize));
-            eng->UnlockSync();
+            if ((nEngines[i]->GetCLContextID()) == (eng->GetCLContextID())) {
+                cl::CommandQueue& queue = eng->GetCLQueue();
+                queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngines[i]->GetStateBuffer()), 0,
+                    j * sizeof(complex) * sbSize, sizeof(complex) * sbSize);
+                queue.finish();
+            } else {
+                if (!isMapped) {
+                    nEngines[i]->LockSync(CL_MAP_WRITE);
+                    nsv = nEngines[i]->GetStateVector();
+                    isMapped = true;
+                }
+                complex* sv = eng->GetStateVector();
+                eng->LockSync(CL_MAP_READ);
+                std::copy(sv, sv + sbSize, nsv + (j * sbSize));
+                eng->UnlockSync();
+            }
         }
-        nEngines[i]->UnlockSync();
+        if (isMapped) {
+            nEngines[i]->UnlockSync();
+        }
     }
 
     if (order == 0) {
@@ -1249,20 +1292,36 @@ void QEngineOCLMulti::SeparateEngines()
     std::vector<QEngineOCLPtr> nEngines(engineCount);
     bitCapInt sbSize = maxQPower / engineCount;
 
+    bool isMapped;
+
     for (i = 0; i < subEngineCount; i++) {
         QEngineOCLPtr eng = substateEngines[i];
-        eng->LockSync(CL_MAP_READ);
-        complex* sv = eng->GetStateVector();
+        isMapped = false;
+        complex* sv = nullptr;
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
-            nEngine->LockSync(CL_MAP_WRITE);
-            std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
-            nEngine->UnlockSync();
+            if ((nEngine->GetCLContextID()) == (eng->GetCLContextID())) {
+                cl::CommandQueue& queue = eng->GetCLQueue();
+                queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngine->GetStateBuffer()),
+                    j * sizeof(complex) * sbSize, 0, sizeof(complex) * sbSize);
+                queue.finish();
+            } else {
+                if (!isMapped) {
+                    eng->LockSync(CL_MAP_READ);
+                    sv = eng->GetStateVector();
+                    isMapped = true;
+                }
+                nEngine->LockSync(CL_MAP_WRITE);
+                std::copy(sv + (j * sbSize), sv + ((j + 1) * sbSize), nEngine->GetStateVector());
+                nEngine->UnlockSync();
+            }
             nEngines[j + (i * groupSize)] = nEngine;
         }
-        eng->UnlockSync();
+        if (isMapped) {
+            eng->UnlockSync();
+        }
     }
 
     substateEngines.resize(engineCount);

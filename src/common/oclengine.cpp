@@ -60,6 +60,7 @@ void OCLEngine::InitOCL()
 
     std::vector<cl::Platform> all_platforms;
     std::vector<cl::Device> all_devices;
+    std::vector<int> device_platform_id;
     cl::Platform default_platform;
     cl::Device default_device;
 
@@ -82,6 +83,7 @@ void OCLEngine::InitOCL()
             std::vector<cl::Platform> temp_platforms;
             cl::Platform::get(&temp_platforms);
             devPlatVec.push_back(temp_platforms[i]);
+            device_platform_id.push_back(i);
         }
         all_devices.insert(all_devices.end(), platform_devices.begin(), platform_devices.end());
     }
@@ -105,10 +107,17 @@ void OCLEngine::InitOCL()
 #endif
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
+    int plat_id = -1;
+    std::vector<cl::Context> all_contexts;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i]);
+        if (device_platform_id[i] != plat_id) {
+            plat_id = device_platform_id[i];
+            all_contexts.push_back(cl::Context(all_devices[i]));
+        }
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
+            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
@@ -168,6 +177,8 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
         all_device_contexts[i]->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
         all_device_contexts[i]->calls[OCL_API_DIV] = cl::Kernel(program, "div");
+        all_device_contexts[i]->calls[OCL_API_CMUL] = cl::Kernel(program, "cmul");
+        all_device_contexts[i]->calls[OCL_API_CDIV] = cl::Kernel(program, "cdiv");
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];
