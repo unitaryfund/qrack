@@ -122,12 +122,13 @@ void QEngineOCLMulti::ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine
         cl::Context& cntxt = engine1->GetCLContext();
         cl::Buffer tempBuffer = cl::Buffer(cntxt, CL_MEM_READ_WRITE, sizeof(complex) * (subMaxQPower >> 1));
         cl::CommandQueue& queue = engine1->GetCLQueue();
-        queue.enqueueCopyBuffer(*(engine1->GetStateBuffer()), tempBuffer, sizeof(complex) * (subMaxQPower >> 1), 0, sizeof(complex) * (subMaxQPower >> 1));
-        queue.enqueueCopyBuffer(*(engine2->GetStateBuffer()), *(engine1->GetStateBuffer()), 0, sizeof(complex) * (subMaxQPower >> 1), sizeof(complex) * (subMaxQPower >> 1));
+        queue.enqueueCopyBuffer(*(engine1->GetStateBuffer()), tempBuffer, sizeof(complex) * (subMaxQPower >> 1), 0,
+            sizeof(complex) * (subMaxQPower >> 1));
+        queue.enqueueCopyBuffer(*(engine2->GetStateBuffer()), *(engine1->GetStateBuffer()), 0,
+            sizeof(complex) * (subMaxQPower >> 1), sizeof(complex) * (subMaxQPower >> 1));
         queue.enqueueCopyBuffer(tempBuffer, *(engine2->GetStateBuffer()), 0, 0, sizeof(complex) * (subMaxQPower >> 1));
         queue.finish();
-    }
-    else {
+    } else {
         engine1->LockSync(CL_MAP_READ | CL_MAP_WRITE);
         engine2->LockSync(CL_MAP_READ | CL_MAP_WRITE);
         std::swap_ranges(engine1->GetStateVector() + (subMaxQPower >> 1), engine1->GetStateVector() + subMaxQPower,
@@ -1240,7 +1241,8 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
             QEngineOCLPtr eng = substateEngines[j + (i * groupSize)];
             if ((nEngines[i]->GetCLContextID()) == (eng->GetCLContextID())) {
                 cl::CommandQueue& queue = eng->GetCLQueue();
-                queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngines[i]->GetStateBuffer()), 0, j * sizeof(complex) * sbSize, sizeof(complex) * sbSize);
+                queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngines[i]->GetStateBuffer()), 0,
+                    j * sizeof(complex) * sbSize, sizeof(complex) * sbSize);
                 queue.finish();
             } else {
                 if (!isMapped) {
@@ -1302,7 +1304,8 @@ void QEngineOCLMulti::SeparateEngines()
             nEngine->EnableNormalize(false);
             if ((nEngine->GetCLContextID()) == (eng->GetCLContextID())) {
                 cl::CommandQueue& queue = eng->GetCLQueue();
-                queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngine->GetStateBuffer()), j * sizeof(complex) * sbSize, 0, sizeof(complex) * sbSize);
+                queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngine->GetStateBuffer()),
+                    j * sizeof(complex) * sbSize, 0, sizeof(complex) * sbSize);
                 queue.finish();
             } else {
                 if (!isMapped) {

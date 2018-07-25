@@ -116,7 +116,8 @@ void OCLEngine::InitOCL()
             plat_id = device_platform_id[i];
             all_contexts.push_back(cl::Context(all_devices[i]));
         }
-        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
+        std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
+            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
