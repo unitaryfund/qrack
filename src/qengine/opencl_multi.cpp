@@ -1235,7 +1235,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
         nEngines[i] = std::make_shared<QEngineOCL>((bit + 1), 0, rand_generator, deviceIDs[i]);
         nEngines[i]->EnableNormalize(false);
         isMapped = false;
-        complex* nsv = nEngines[i]->GetStateVector();
+        complex* nsv = nullptr;
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr eng = substateEngines[j + (i * groupSize)];
             if ((nEngines[i]->GetCLContextID()) == (eng->GetCLContextID())) {
@@ -1245,6 +1245,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
             } else {
                 if (!isMapped) {
                     nEngines[i]->LockSync(CL_MAP_WRITE);
+                    nsv = nEngines[i]->GetStateVector();
                     isMapped = true;
                 }
                 complex* sv = eng->GetStateVector();
@@ -1294,18 +1295,19 @@ void QEngineOCLMulti::SeparateEngines()
     for (i = 0; i < subEngineCount; i++) {
         QEngineOCLPtr eng = substateEngines[i];
         isMapped = false;
-        complex* sv = eng->GetStateVector();
+        complex* sv = nullptr;
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
-            if ((nEngines[i]->GetCLContextID()) == (eng->GetCLContextID())) {
+            if ((nEngine->GetCLContextID()) == (eng->GetCLContextID())) {
                 cl::CommandQueue& queue = eng->GetCLQueue();
                 queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngine->GetStateBuffer()), j * sizeof(complex) * sbSize, 0, sizeof(complex) * sbSize);
                 queue.finish();
             } else {
                 if (!isMapped) {
                     eng->LockSync(CL_MAP_READ);
+                    sv = eng->GetStateVector();
                     isMapped = true;
                 }
                 nEngine->LockSync(CL_MAP_WRITE);
