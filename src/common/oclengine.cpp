@@ -183,7 +183,7 @@ void OCLEngine::InitOCL()
 
         if (i == dev) {
             default_device_context = all_device_contexts[i];
-            default_platform = all_platforms[i];
+            default_platform = all_platforms[plat_id];
             default_device = all_devices[i];
         }
     }
