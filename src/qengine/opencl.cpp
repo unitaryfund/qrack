@@ -23,7 +23,9 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     int devID, bool partialInit, complex phaseFac)
     : QInterface(qBitCount, rgp)
     , stateVec(NULL)
+    , deviceID(-1)
     , nrmArray(NULL)
+    , didInit(false)
 {
     doNormalize = true;
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -45,15 +47,19 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     }
 
     InitOCL(devID);
+    didInit = true;
 }
 
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
     , stateVec(NULL)
+    , deviceID(-1)
     , nrmArray(NULL)
+    , didInit(false)
 {
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
+    didInit = true;
 }
 
 void QEngineOCL::LockSync(cl_int flags)
@@ -61,7 +67,16 @@ void QEngineOCL::LockSync(cl_int flags)
     queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower);
 }
 
-void QEngineOCL::UnlockSync() { queue.enqueueUnmapMemObject(*stateBuffer, stateVec); }
+void QEngineOCL::UnlockSync() {
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
+    queue.finish();
+}
+
+void QEngineOCL::Sync()
+{
+    LockSync(CL_MAP_READ);
+    UnlockSync();
+}
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
@@ -96,33 +111,46 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 
 void QEngineOCL::SetDevice(const int& dID)
 {
+    if (didInit) {
+        // If we're "switching" to the device we already have, don't reinitialize.
+        if (dID == deviceID) {
+            return;
+        }
+
+        // Otherwise, we're about to switch to a new device, so finish the queue, first.
+        Sync();
+    }
 
     deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
     queue = device_context->queue;
 
-    queue.finish();
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
+    bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 64 * nrmGroupSize;
     size_t mWIS = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > mWIS) {
         nrmGroupCount = mWIS;
     }
-    if (nrmArray != nullptr) {
-        delete[] nrmArray;
-    }
+    if (nrmArray == nullptr) {
 #ifdef __APPLE__
-    posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+        posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
 #else
-    nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
 #endif
+    } else if (nrmGroupCount != oldNrmGroupCount) {
+        delete[] nrmArray;
+#ifdef __APPLE__
+        posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+#else
+        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+#endif
+    }
 
     // create buffers on device (allocate space on GPU)
-    stateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+    stateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
     nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
@@ -222,7 +250,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize)); // local number (per group)
 
-    queue.finish();
     if (doCalcNorm) {
         queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
         runningNorm = 0.0;
@@ -231,6 +258,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
         queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
     }
+    queue.finish();
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -468,6 +496,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         oneChance += nrmArray[i];
     }
     queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
+    queue.finish();
 
     if (oneChance > 1.0)
         oneChance = 1.0;
@@ -1023,6 +1052,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm < min_norm) {
         queue.finish();
         queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
+        queue.finish();
         runningNorm = 0.0;
         return;
     }
@@ -1071,6 +1101,7 @@ void QEngineOCL::UpdateRunningNorm()
         runningNorm += nrmArray[i];
     }
     queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
+    queue.finish();
 
     if (runningNorm < min_norm) {
         NormalizeState(0.0);

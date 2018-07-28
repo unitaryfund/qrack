@@ -45,6 +45,7 @@ protected:
     real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
+    bool didInit;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
@@ -89,6 +90,7 @@ public:
     // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
     virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
+    virtual void Sync();
     virtual complex* GetStateVector() { return stateVec; }
     virtual cl::Context& GetCLContext() { return context; }
     virtual int GetCLContextID() { return device_context->context_id; }
