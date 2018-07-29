@@ -201,6 +201,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
     // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
     queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
+    queue.finish();
 }
 
 void QEngineOCL::SetQubitCount(bitLenInt qb)
@@ -342,7 +343,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(ngs)); // local number (per group)
 
     if (doCalcNorm) {
-        queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
+        queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc);
         runningNorm = 0.0;
         for (unsigned long int i = 0; i < ngc; i++) {
             runningNorm += nrmArray[i];
@@ -628,7 +629,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs)); // local number (per group)
 
-    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc);
     for (size_t i = 0; i < ngc; i++) {
         oneChance += nrmArray[i];
     }
