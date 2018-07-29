@@ -47,6 +47,7 @@ protected:
     size_t nrmGroupSize;
     unsigned int procElemCount;
     bool didInit;
+    bool useDeviceMem;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
@@ -72,11 +73,7 @@ public:
         delete[] nrmArray;
     }
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        qubitCount = qb;
-        maxQPower = 1 << qubitCount;
-    }
+    virtual void SetQubitCount(bitLenInt qb);
 
     virtual void EnableNormalize(bool doN) { doNormalize = doN; }
     virtual real1 GetNorm(bool update = true)
@@ -153,7 +150,7 @@ public:
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
 
     virtual int GetDeviceID() { return deviceID; }
-    virtual void SetDevice(const int& dID);
+    virtual void SetDevice(const int& dID, const bool& forceReInit = false);
 
     virtual void SetQuantumState(complex* inputState);
 
