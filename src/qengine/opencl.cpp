@@ -238,9 +238,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.finish();
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+
     OCLAPI api_call;
     if (doCalcNorm) {
-        queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
         api_call = OCL_API_APPLY2X2_NORM;
     } else {
         api_call = OCL_API_APPLY2X2;
@@ -482,9 +482,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    queue.finish();
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
-    queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
     queue.finish();
@@ -1088,9 +1086,6 @@ void QEngineOCL::NormalizeState(real1 nrm)
 void QEngineOCL::UpdateRunningNorm()
 {
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
-
-    queue.finish();
-    queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);

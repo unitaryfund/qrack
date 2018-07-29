@@ -45,6 +45,7 @@ protected:
     real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
+    unsigned int procElemCount;
     bool didInit;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);

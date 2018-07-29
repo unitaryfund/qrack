@@ -1257,15 +1257,18 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt maxI = bitCapIntPtr[0];
     cmplx amp;
     real1 nrm;
-    
+    real1 partNrm = ZERO_R1;
+
+
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
         if (nrm < min_norm) {
             nrm = ZERO_R1;
         }
-        norm_ptr[ID] += nrm;
+        partNrm += nrm;
     }
+    norm_ptr[ID] = partNrm;
 }
 
 void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
