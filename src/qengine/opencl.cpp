@@ -73,6 +73,7 @@ void QEngineOCL::LockSync(cl_int flags)
 
 void QEngineOCL::UnlockSync()
 {
+    queue.finish();
     if (useDeviceMem) {
         queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
     } else {
@@ -120,8 +121,8 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    queue.finish();
     complex amp[1];
+    queue.finish();
     queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * fullRegister, sizeof(complex), amp);
     return norm(amp[0]);
 }
@@ -146,13 +147,13 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
-    unsigned int procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
     long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     useDeviceMem = (maxDevMem > (sizeof(complex) * maxQPower * 3));
     nrmGroupCount = procElemCount * 64 * nrmGroupSize;
-    size_t mWIS = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
-    if (nrmGroupCount > mWIS) {
-        nrmGroupCount = mWIS;
+    maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    if (nrmGroupCount > maxWorkItems) {
+        nrmGroupCount = maxWorkItems;
     }
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
@@ -247,6 +248,19 @@ void QEngineOCL::DispatchCall(
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
     queue.flush();
 
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = nrmGroupCount;
+    size_t ngs = nrmGroupSize;
+    if (ngc > maxI) {
+        ngc = maxI;
+    }
+    if (ngs > (ngc / procElemCount)) {
+        ngs = (ngc / procElemCount);
+        if (ngs == 0) {
+            ngs = 1;
+        }
+    }
+
     OCLDeviceCall ocl = device_context->Reserve(api_call);
 
     queue.finish();
@@ -261,8 +275,8 @@ void QEngineOCL::DispatchCall(
     }
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize)); // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
 
     queue.finish();
     ResetStateVec(nStateVec, nStateBuffer);
@@ -281,7 +295,19 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.flush();
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxQPower >> bitCount, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    bitCapInt maxI = maxQPower >> bitCount;
+    size_t ngc = nrmGroupCount;
+    size_t ngs = nrmGroupSize;
+    if (ngc > maxI) {
+        ngc = maxI;
+    }
+    if (ngs > (ngc / procElemCount)) {
+        ngs = (ngc / procElemCount);
+        if (ngs == 0) {
+            ngs = 1;
+        }
+    }
+    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
     }
@@ -305,13 +331,13 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         ocl.call.setArg(3, nrmBuffer);
     }
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize)); // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
 
     if (doCalcNorm) {
         queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
         runningNorm = 0.0;
-        for (unsigned long int i = 0; i < nrmGroupCount; i++) {
+        for (unsigned long int i = 0; i < ngc; i++) {
             runningNorm += nrmArray[i];
         }
         queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
@@ -326,15 +352,31 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     real1 r1_args[2] = { real(nrm), imag(nrm) };
     cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
-    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.finish();
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = nrmGroupCount;
+    size_t ngs = nrmGroupSize;
+    if (ngc > maxI) {
+        ngc = maxI;
+    }
+    if (ngs > (ngc / procElemCount)) {
+        ngs = (ngc / procElemCount);
+        if (ngs == 0) {
+            ngs = 1;
+        }
+    }
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
+    queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, argsBuffer);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize)); // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
 
     queue.finish();
 }
@@ -552,6 +594,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+    queue.finish();
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
@@ -1077,14 +1120,29 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
     queue.finish();
-    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
 
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = nrmGroupCount;
+    size_t ngs = nrmGroupSize;
+    if (ngc > maxI) {
+        ngc = maxI;
+    }
+    if (ngs > (ngc / procElemCount)) {
+        ngs = (ngc / procElemCount);
+        if (ngs == 0) {
+            ngs = 1;
+        }
+    }
+
+    queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize)); // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
 
     queue.finish();
 }
@@ -1097,14 +1155,28 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, regMask, 1U << flagIndex, greaterPerm, start, 0, 0, 0, 0, 0 };
     queue.finish();
-    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = nrmGroupCount;
+    size_t ngs = nrmGroupSize;
+    if (ngc > maxI) {
+        ngc = maxI;
+    }
+    if (ngs > (ngc / procElemCount)) {
+        ngs = (ngc / procElemCount);
+        if (ngs == 0) {
+            ngs = 1;
+        }
+    }
 
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
 
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize)); // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
 
     queue.finish();
 }
@@ -1158,6 +1230,7 @@ void QEngineOCL::UpdateRunningNorm()
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    queue.finish();
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     ocl.call.setArg(0, *stateBuffer);
