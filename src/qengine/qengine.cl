@@ -206,7 +206,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0] >> 1;
+    bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt qPower = bitCapIntPtr[1];
     bitCapInt qMask = qPower - 1;
     real1 oneChancePart = ZERO_R1;

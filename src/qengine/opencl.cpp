@@ -64,11 +64,13 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
 
 void QEngineOCL::LockSync(cl_int flags)
 {
+    queue.finish();
     if (useDeviceMem) {
         queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
     } else {
         queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower);
     }
+    queue.finish();
 }
 
 void QEngineOCL::UnlockSync()
@@ -78,8 +80,8 @@ void QEngineOCL::UnlockSync()
         queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
     } else {
         queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
-        queue.finish();
     }
+    queue.finish();
 }
 
 void QEngineOCL::Sync()
@@ -182,7 +184,9 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         if (didInit) {
             BufferPtr nStateBuffer =
                 std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
+            queue.finish();
             queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
+            queue.finish();
             stateBuffer = nStateBuffer;
         } else {
             stateBuffer = std::make_shared<cl::Buffer>(
@@ -498,8 +502,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         prob_call.call.setArg(5, angleBuffer2);
     }
 
-    queue.finish();
-
     // Call the kernel that calculates bit probability and angle.
     queue.enqueueNDRangeKernel(prob_call.call, cl::NullRange, // kernel, offset
         cl::NDRange(nrmGroupCount), // global number of work items
@@ -593,10 +595,24 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     bitCapInt qPower = 1 << qubit;
     real1 oneChance = 0.0;
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     queue.finish();
-    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = nrmGroupCount;
+    size_t ngs = nrmGroupSize;
+    if (ngc > maxI) {
+        ngc = maxI;
+    }
+    if (ngs > (ngc / procElemCount)) {
+        ngs = (ngc / procElemCount);
+        if (ngs == 0) {
+            ngs = 1;
+        }
+    }
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
     queue.finish();
@@ -607,11 +623,11 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize)); // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
 
     queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount);
-    for (size_t i = 0; i < nrmGroupCount; i++) {
+    for (size_t i = 0; i < ngc; i++) {
         oneChance += nrmArray[i];
     }
     queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
