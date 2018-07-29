@@ -179,9 +179,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #endif
     }
 
-    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-    std::fill(nrmArray, nrmArray + nrmGroupCount, (real1)0.0);
-
     // create buffers on device (allocate space on GPU)
     if (useDeviceMem) {
         if (didInit) {
@@ -202,6 +199,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
     nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+    queue.enqueueFillBuffer(nrmBuffer, (real1)0.0, 0, sizeof(real1) * nrmGroupCount);
 }
 
 void QEngineOCL::SetQubitCount(bitLenInt qb)
