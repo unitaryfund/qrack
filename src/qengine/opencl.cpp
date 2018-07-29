@@ -219,6 +219,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 {
     queue.finish();
     queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
+    queue.finish();
     real1 angle = Rand() * 2.0 * M_PI;
     complex amp = complex(cos(angle), sin(angle));
     queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex));
