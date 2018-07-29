@@ -129,10 +129,17 @@ void QEngineOCL::SetDevice(const int& dID)
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
-    nrmGroupCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 64 * nrmGroupSize;
+    unsigned int procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    nrmGroupCount = procElemCount * 64 * nrmGroupSize;
     size_t mWIS = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > mWIS) {
         nrmGroupCount = mWIS;
+    }
+    if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
+        nrmGroupSize = (nrmGroupCount / procElemCount);
+        if (nrmGroupSize == 0) {
+            nrmGroupSize = 1;
+        }
     }
     if (nrmArray == nullptr) {
 #ifdef __APPLE__

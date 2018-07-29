@@ -28,9 +28,8 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     bitCapInt offset2 = bitCapIntPtr[3];
     constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
-    cmplx Y0;
+    cmplx Y0, Y1;
     bitCapInt i, iLow, iHigh;
-    cmplx qubit[2];
     bitLenInt p;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -43,13 +42,10 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
         i |= iHigh;
 
         Y0 = stateVec[i | offset1];
-        qubit[1] = stateVec[i | offset2];
- 
-        qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
-        qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
+        Y1 = stateVec[i | offset2]; 
 
-        stateVec[i | offset1] = qubit[0];
-        stateVec[i | offset2] = qubit[1];
+        stateVec[i | offset1] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], Y1));
+        stateVec[i | offset2] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
     }
 }
 
@@ -69,10 +65,11 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     bitCapInt offset2 = bitCapIntPtr[3];
     constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
-    cmplx Y0;
+    cmplx Y0, Y1, YT;
     bitCapInt i, iLow, iHigh;
-    cmplx qubit[2];
     bitLenInt p;
+    real1 partNrm = ZERO_R1;
+
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         i = 0;
@@ -83,24 +80,25 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
         }
         i |= iHigh;
 
-        Y0 = stateVec[i | offset1];
-        qubit[1] = stateVec[i | offset2];
+        YT = stateVec[i | offset1];
+        Y1 = stateVec[i | offset2];
 
-        qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
-        qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
+        Y0 = nrm * (zmul(mtrx[0], YT) + zmul(mtrx[1], Y1));
+        Y1 = nrm * (zmul(mtrx[2], YT) + zmul(mtrx[3], Y1));
 
-        stateVec[i | offset1] = qubit[0];
-        stateVec[i | offset2] = qubit[1];
-        nrm1 = dot(qubit[0], qubit[0]);
-        nrm2 = dot(qubit[1], qubit[1]);
+        stateVec[i | offset1] = Y0;
+        stateVec[i | offset2] = Y1;
+        nrm1 = dot(Y0, Y0);
+        nrm2 = dot(Y1, Y1);
         if (nrm1 < min_norm) {
             nrm1 = ZERO_R1;
         }
         if (nrm2 >= min_norm) {
             nrm1 += nrm2;
         }
-        nrmParts[ID] += nrm1;
+        partNrm += nrm1;
     }
+    nrmParts[ID] = partNrm;
 }
 
 void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
@@ -130,27 +128,32 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
     bitCapInt len = bitCapIntPtr[3];
     bitCapInt j, k, l;
     cmplx amp;
+    real1 partProb;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv % (1 << start);
         j = j | ((lcv ^ j) << len);
+        partProb = ZERO_R1;
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
             amp = stateVec[l];
-            remainderStateProb[lcv] += dot(amp, amp);
+            partProb += dot(amp, amp);
         }
+        remainderStateProb[lcv] = partProb;
         remainderStateAngle[lcv] = arg(amp);
     }
 
     for (lcv = ID; lcv < partPower; lcv += Nthreads) {
         j = lcv << start;
+        partProb = ZERO_R1;
         for (k = 0; k < remainderPower; k++) {
             l = k % (1 << start);
             l = l | ((k ^ l) << len);
             l = j | l;
             amp = stateVec[l];
-            partStateProb[lcv] += dot(amp, amp);
+            partProb += dot(amp, amp);
         }
+        partStateProb[lcv] = partProb;
         partStateAngle[lcv] = arg(amp);
     }
 }
@@ -167,15 +170,18 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     bitCapInt len = bitCapIntPtr[3];
     bitCapInt j, k, l;
     cmplx amp;
+    real1 partProb;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv % (1 << start);
         j = j | ((lcv ^ j) << len);
+        partProb = ZERO_R1;
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
             amp = stateVec[l];
-            remainderStateProb[lcv] += dot(amp, amp);
+            partProb += dot(amp, amp);
         }
+        remainderStateProb[lcv] = partProb;
         remainderStateAngle[lcv] = arg(amp);
     }
 }
