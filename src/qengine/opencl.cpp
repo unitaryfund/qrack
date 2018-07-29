@@ -71,7 +71,8 @@ void QEngineOCL::LockSync(cl_int flags)
     }
 }
 
-void QEngineOCL::UnlockSync() {
+void QEngineOCL::UnlockSync()
+{
     if (useDeviceMem) {
         queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
     } else {
@@ -99,7 +100,8 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
     } else {
         /* Allocate a temporary nStateVec, or use the one supplied. */
         nStateVec = AllocStateVec(maxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+        nStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     }
     ResetStateVec(nStateVec, nStateBuffer);
 
@@ -177,14 +179,17 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // create buffers on device (allocate space on GPU)
     if (useDeviceMem) {
         if (didInit) {
-            BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
+            BufferPtr nStateBuffer =
+                std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
             queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
             stateBuffer = nStateBuffer;
         } else {
-            stateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+            stateBuffer = std::make_shared<cl::Buffer>(
+                context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
         }
     } else {
-        stateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+        stateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     }
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
@@ -196,7 +201,6 @@ void QEngineOCL::SetQubitCount(bitLenInt qb)
     qubitCount = qb;
     maxQPower = 1 << qubitCount;
 }
-
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
 
@@ -237,7 +241,8 @@ void QEngineOCL::DispatchCall(
     } else {
         /* Allocate a temporary nStateVec, or use the one supplied. */
         nStateVec = AllocStateVec(maxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+        nStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     }
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
     queue.flush();
@@ -365,7 +370,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower);
     } else {
         nStateVec = AllocStateVec(nMaxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower, nStateVec);
+        nStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * nMaxQPower, nStateVec);
     }
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
@@ -498,8 +504,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     complex* nStateVec = NULL;
     BufferPtr nStateBuffer;
     if (useDeviceMem) {
-        nStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
+        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
     } else {
         nStateVec = AllocStateVec(maxQPower);
         nStateBuffer = std::make_shared<cl::Buffer>(
