@@ -179,6 +179,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #endif
     }
 
+    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+    for (bitCapInt i = 0; i < nrmGroupCount; i++) {
+        nrmArray[i] = 0.0;
+    }
+
     // create buffers on device (allocate space on GPU)
     if (useDeviceMem) {
         if (didInit) {
