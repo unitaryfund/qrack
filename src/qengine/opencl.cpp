@@ -165,7 +165,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         }
     }
 
-    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+    size_t nrmVecAlignSize =
+        ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
 
     if (!didInit) {
 #ifdef __APPLE__
