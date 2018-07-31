@@ -152,8 +152,9 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-    long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    useDeviceMem = (maxDevMem > (sizeof(complex) * maxQPower * 3));
+    long unsigned int maxAllocMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    useDeviceMem = (maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3));
     nrmGroupCount = procElemCount * 64 * nrmGroupSize;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > maxWorkItems) {
