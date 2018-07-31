@@ -165,18 +165,20 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         }
     }
 
+    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+
     if (!didInit) {
 #ifdef __APPLE__
-        posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+        posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #else
-        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
     } else if (nrmGroupCount != oldNrmGroupCount) {
         delete[] nrmArray;
 #ifdef __APPLE__
-        posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+        posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #else
-        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
+        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
     }
 
@@ -187,6 +189,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
                 std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
             queue.finish();
             queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
+            queue.finish();
             stateBuffer = nStateBuffer;
         } else {
             stateBuffer = std::make_shared<cl::Buffer>(
