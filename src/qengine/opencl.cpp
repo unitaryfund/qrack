@@ -189,7 +189,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
                 std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
             queue.finish();
             queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
-            queue.finish();
             stateBuffer = nStateBuffer;
         } else {
             stateBuffer = std::make_shared<cl::Buffer>(
@@ -229,12 +228,12 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 {
     queue.finish();
     queue.enqueueFillBuffer(*stateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
-    queue.finish();
     real1 angle = Rand() * 2.0 * M_PI;
     complex amp = complex(cos(angle), sin(angle));
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex));
     queue.finish();
+    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex));
     runningNorm = 1.0;
+    queue.finish();
 }
 
 void QEngineOCL::DispatchCall(
@@ -1205,8 +1204,10 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(complex* inputState)
 {
+    LockSync(CL_MAP_WRITE);
     std::copy(inputState, inputState + maxQPower, stateVec);
     runningNorm = 1.0;
+    UnlockSync();
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)
