@@ -49,6 +49,7 @@ protected:
     unsigned int procElemCount;
     bool didInit;
     bool useDeviceMem;
+    bool syncWrite;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
