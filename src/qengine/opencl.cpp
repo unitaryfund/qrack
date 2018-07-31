@@ -66,9 +66,7 @@ void QEngineOCL::LockSync(cl_int flags)
 {
     queue.finish();
     if (useDeviceMem) {
-        if (flags & CL_MAP_READ) {
-            queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
-        }
+        queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
         syncWrite = (flags & CL_MAP_WRITE);
     } else {
         queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower);
