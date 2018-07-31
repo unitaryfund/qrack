@@ -700,7 +700,7 @@ void QEngineOCLMulti::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenIn
 
 void QEngineOCLMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
 {
-    SingleBitGate(true, qubitIndex, (ASBFn)(&QEngineOCL::ApplySingleBit), mtrx, doCalcNorm);
+    SingleBitGate(doCalcNorm, qubitIndex, (ASBFn)(&QEngineOCL::ApplySingleBit), mtrx, doCalcNorm);
 }
 
 void QEngineOCLMulti::X(bitLenInt qubitIndex)
