@@ -25,7 +25,6 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     , stateVec(NULL)
     , deviceID(-1)
     , nrmArray(NULL)
-    , didInit(false)
 {
     doNormalize = true;
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
@@ -47,7 +46,6 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     }
 
     InitOCL(devID);
-    didInit = true;
 }
 
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
@@ -55,11 +53,9 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , stateVec(NULL)
     , deviceID(-1)
     , nrmArray(NULL)
-    , didInit(false)
 {
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
-    didInit = true;
 }
 
 void QEngineOCL::LockSync(cl_int flags)
@@ -133,6 +129,8 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 
 void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
+    bool didInit = (nrmArray != NULL);
+
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if ((!forceReInit) && (dID == deviceID)) {
@@ -167,7 +165,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         }
     }
 
-    if (nrmArray == nullptr) {
+    if (!didInit) {
 #ifdef __APPLE__
         posix_memalign(&nrmArray, ALIGN_SIZE, sizeof(real1) * nrmGroupCount);
 #else

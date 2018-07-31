@@ -47,7 +47,6 @@ protected:
     size_t nrmGroupSize;
     size_t maxWorkItems;
     unsigned int procElemCount;
-    bool didInit;
     bool useDeviceMem;
     bool syncWrite;
 
