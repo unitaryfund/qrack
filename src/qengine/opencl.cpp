@@ -429,7 +429,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     }
 
     useDeviceMem = false;
-    //useDeviceMem = (maxAllocMem > (sizeof(complex) * nMaxQPower)) && (maxDevMem > (sizeof(complex) * nMaxQPower * 3));
+    // useDeviceMem = (maxAllocMem > (sizeof(complex) * nMaxQPower)) && (maxDevMem > (sizeof(complex) * nMaxQPower *
+    // 3));
 
     complex* nStateVec = NULL;
     BufferPtr nStateBuffer = NULL;
@@ -588,7 +589,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     }
 
     useDeviceMem = false;
-    //useDeviceMem = (maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3));
+    // useDeviceMem = (maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3));
 
     complex* nStateVec = NULL;
     BufferPtr nStateBuffer = NULL;
