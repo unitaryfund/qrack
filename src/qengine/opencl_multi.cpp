@@ -497,7 +497,6 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
 
                         substateEngines[clearIndex]->NormalizeState(0.0);
                         substateEngines[keepIndex]->NormalizeState(nrmlzr);
-
                     });
             }
         }

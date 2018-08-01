@@ -1271,7 +1271,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     norm_ptr[ID] = partNrm;
 }
 
-void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant cmplx* cmplx_ptr) {
     bitCapInt ID, Nthreads, lcv;
     
     ID = get_global_id(0);
@@ -1281,13 +1281,13 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     bitCapInt qMask = qPower - 1;
     bitCapInt savePower = bitCapIntPtr[2];
     bitCapInt discardPower = qPower ^ savePower;
-    cmplx nrm = (cmplx)(args_ptr[0], args_ptr[1]);
+    cmplx nrm = cmplx_ptr[0];
     bitCapInt i, iLow, iHigh, j;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & qMask;
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
         stateVec[i | discardPower] = (cmplx)(ZERO_R1, ZERO_R1);
