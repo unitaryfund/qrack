@@ -359,11 +359,10 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
     bitCapInt powerTest = result ? qPower : 0;
 
-    complex cmplx[CMPLX_NORM_LEN] = { nrm, 0, 0, 0, 0 };
+    real1 r1_args[2] = { real(nrm), imag(nrm) };
+    cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
     queue.finish();
-    queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
-    queue.flush();
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     queue.flush();
 
@@ -384,7 +383,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
-    ocl.call.setArg(2, cmplxBuffer);
+    ocl.call.setArg(2, argsBuffer);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs)); // local number (per group)
@@ -414,9 +413,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     queue.flush();
 
-    long unsigned int maxAllocMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-    useDeviceMem = (maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3));
+    long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    useDeviceMem = (maxDevMem > (sizeof(complex) * nMaxQPower * 3));
 
     complex* nStateVec = NULL;
     BufferPtr nStateBuffer = NULL;
@@ -550,9 +548,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt), bciArgs);
     queue.flush();
 
-    long unsigned int maxAllocMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-    useDeviceMem = (maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3));
+    long unsigned int maxDevMem = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    useDeviceMem = (maxDevMem > (sizeof(complex) * maxQPower * 3));
 
     complex* nStateVec = NULL;
     BufferPtr nStateBuffer = NULL;
