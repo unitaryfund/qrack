@@ -206,7 +206,8 @@ void QEngineOCL::SetQubitCount(bitLenInt qb)
     maxQPower = 1 << qubitCount;
 }
 
-void QEngineOCL::Resize(bool doResizeBuffer) {
+void QEngineOCL::Resize(bool doResizeBuffer)
+{
     bool didInit = (nrmArray != NULL);
     bitLenInt qb = device_context->GetQubitCount();
     if (qb < qubitCount) {
@@ -214,13 +215,15 @@ void QEngineOCL::Resize(bool doResizeBuffer) {
     }
 
     if (qb == qubitCount) {
-        useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3)));
+        useDeviceMem =
+            ((maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3)));
     } else {
-        //size_t m = (sizeof(complex) * (1<<(qb - qubitCount)) * 3);
-        //if (m > maxDevMem) {
-            useDeviceMem = false;
+        // size_t m = (sizeof(complex) * (1<<(qb - qubitCount)) * 3);
+        // if (m > maxDevMem) {
+        useDeviceMem = false;
         //} else {
-        //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) * maxQPower * 3)));
+        //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) *
+        //    maxQPower * 3)));
         //}
     }
 
@@ -564,8 +567,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
         prob_call.call.setArg(4, probBuffer2);
         prob_call.call.setArg(5, angleBuffer2);
-    }
-    else {
+    } else {
         device_context->SubtractQubits(length);
     }
 
