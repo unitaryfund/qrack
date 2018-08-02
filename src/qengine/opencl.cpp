@@ -96,6 +96,7 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
     device_context->SubtractQubits(qubitCount);
     SetQubitCount(orig->GetQubitCount());
     device_context->AddQubits(qubitCount);
+    Resize(false);
 
     complex* nStateVec = NULL;
     BufferPtr nStateBuffer = NULL;
@@ -211,6 +212,7 @@ void QEngineOCL::Resize(bool doResizeBuffer)
     bool didInit = (nrmArray != NULL);
     bitLenInt qb = device_context->GetQubitCount();
     if (qb < qubitCount) {
+        device_context->AddQubits(qubitCount - qb);
         qb = qubitCount;
     }
 
@@ -224,6 +226,10 @@ void QEngineOCL::Resize(bool doResizeBuffer)
         //} else {
         //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) *
         //    maxQPower * 3)));
+        //}
+
+        // if (!useDeviceMem) {
+        //    device_context->SubtractQubits(qubitCount);
         //}
     }
 
@@ -574,13 +580,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs)); // local number (per group)
 
-    device_context->SubtractQubits(qubitCount);
-    if ((maxQPower - partPower) == 0) {
+    device_context->SubtractQubits(length);
+    if ((maxQPower - partPower) <= 0) {
         SetQubitCount(1);
+        device_context->AddQubits(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
-    device_context->AddQubits(qubitCount);
 
     // Wait as long as possible before joining the kernel.
     queue.finish();
