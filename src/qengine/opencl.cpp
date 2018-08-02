@@ -89,6 +89,30 @@ void QEngineOCL::Sync()
     UnlockSync();
 }
 
+size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
+{
+    if (wic > maxI) {
+        wic = maxI;
+    }
+    return wic;
+}
+
+size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
+{
+    if (gs > (wic / procElemCount)) {
+        gs = (wic / procElemCount);
+        if (gs == 0) {
+            gs = 1;
+        }
+        size_t frac = wic / gs;
+        while ((frac * gs) != wic) {
+            gs++;
+            frac = wic / gs;
+        }
+    }
+    return gs;
+}
+
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
     queue.finish();
@@ -307,22 +331,8 @@ void QEngineOCL::DispatchCall(
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxI) {
-        ngc = maxI;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     OCLDeviceCall ocl = device_context->Reserve(api_call);
     queue.finish();
@@ -358,22 +368,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.flush();
 
     bitCapInt maxI = maxQPower >> bitCount;
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxI) {
-        ngc = maxI;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
@@ -425,22 +422,8 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxI) {
-        ngc = maxI;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
     queue.finish();
@@ -476,22 +459,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     queue.flush();
 
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > nMaxQPower) {
-        ngc = nMaxQPower;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(nMaxQPower, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     device_context->AddQubits(toCopy->qubitCount);
     SetQubitCount(nQubitCount);
@@ -556,22 +525,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
     queue.flush();
 
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxQPower) {
-        ngc = maxQPower;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // The "remainder" bits will always be maintained.
     real1* remainderStateProb = new real1[remainderPower]();
@@ -647,22 +602,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt), bciArgs);
     queue.flush();
 
-    ngc = nrmGroupCount;
-    ngs = nrmGroupSize;
-    if (ngc > maxQPower) {
-        ngc = maxQPower;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    ngs = FixGroupSize(ngc, nrmGroupSize);
 
     Resize(false);
 
@@ -722,22 +663,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxI) {
-        ngc = maxI;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
     queue.finish();
@@ -1266,22 +1193,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxI) {
-        ngc = maxI;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     queue.finish();
     ocl.call.setArg(0, *stateBuffer);
@@ -1306,22 +1219,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = nrmGroupCount;
-    size_t ngs = nrmGroupSize;
-    if (ngc > maxI) {
-        ngc = maxI;
-    }
-    if (ngs > (ngc / procElemCount)) {
-        ngs = (ngc / procElemCount);
-        size_t frac = ngc / ngs;
-        while ((frac * ngs) != ngc) {
-            ngs++;
-            frac = ngc / ngs;
-        }
-        if (ngs == 0) {
-            ngs = 1;
-        }
-    }
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);

@@ -170,6 +170,9 @@ protected:
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount);
 
+    size_t FixWorkItemCount(size_t maxI, size_t wic);
+    size_t FixGroupSize(size_t wic, size_t gs);
+
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(
         OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
