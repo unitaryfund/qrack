@@ -145,14 +145,16 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         Sync();
     }
 
+    if (didInit) {
+        device_context->SubtractQubits(qubitCount);
+    }
+
     deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
     queue = device_context->queue;
 
-    if (!didInit) {
-        device_context->AddQubits(qubitCount);
-    }
+    device_context->AddQubits(qubitCount);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
     bitCapInt oldNrmGroupCount = nrmGroupCount;
