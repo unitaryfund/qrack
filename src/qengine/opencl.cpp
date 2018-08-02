@@ -164,6 +164,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
+        size_t frac = nrmGroupCount / nrmGroupSize;
+        while ((frac * nrmGroupSize) != nrmGroupCount) {
+            nrmGroupSize++;
+            frac = nrmGroupCount / nrmGroupSize;
+        }
         if (nrmGroupSize == 0) {
             nrmGroupSize = 1;
         }
@@ -309,6 +314,11 @@ void QEngineOCL::DispatchCall(
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -355,6 +365,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -417,6 +432,11 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -463,6 +483,11 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -538,6 +563,11 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -624,6 +654,11 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -694,6 +729,11 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -1233,6 +1273,11 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
@@ -1268,6 +1313,11 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     }
     if (ngs > (ngc / procElemCount)) {
         ngs = (ngc / procElemCount);
+        size_t frac = ngc / ngs;
+        while ((frac * ngs) != ngc) {
+            ngs++;
+            frac = ngc / ngs;
+        }
         if (ngs == 0) {
             ngs = 1;
         }
