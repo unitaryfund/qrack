@@ -567,8 +567,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
         prob_call.call.setArg(4, probBuffer2);
         prob_call.call.setArg(5, angleBuffer2);
-    } else {
-        device_context->SubtractQubits(length);
     }
 
     // Call the kernel that calculates bit probability and angle.
@@ -576,11 +574,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs)); // local number (per group)
 
+    device_context->SubtractQubits(qubitCount);
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
+    device_context->AddQubits(qubitCount);
 
     // Wait as long as possible before joining the kernel.
     queue.finish();
