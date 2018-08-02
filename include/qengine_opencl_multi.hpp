@@ -46,7 +46,7 @@ public:
         int deviceCount = -1);
 
     /**
-     * Initialize a Qrack::QEngineOCLMulit object. Specify the number of qubits and an initial permutation state.
+     * Initialize a Qrack::QEngineOCLMulti object. Specify the number of qubits and an initial permutation state.
      * Additionally, optionally specify a list of device IDs for sub-engines and a pointer to a random generator engine
      * object.
      *

@@ -109,6 +109,7 @@ public:
     cl::CommandQueue queue;
 
 protected:
+    unsigned char totalQubitCount;
     std::recursive_mutex mutex;
     std::map<OCLAPI, cl::Kernel> calls;
 
@@ -118,12 +119,31 @@ public:
         , device(d)
         , context(c)
         , context_id(cntxt_id)
+        , totalQubitCount(0)
         , mutex()
     {
         queue = cl::CommandQueue(context, d);
     }
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
     friend class OCLEngine;
+
+    void AddQubits(unsigned char toAdd) {
+        if (totalQubitCount > (255U - toAdd)) {
+            totalQubitCount = 255U;
+        } else {
+            totalQubitCount += toAdd;
+        }
+    }
+    void SubtractQubits(unsigned char toSub) {
+        if (toSub >= totalQubitCount) {
+            totalQubitCount = 0;
+        } else {
+            totalQubitCount -= toSub;
+        }
+    }
+    unsigned char GetQubitCount() {
+        return totalQubitCount;
+    }
 };
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
