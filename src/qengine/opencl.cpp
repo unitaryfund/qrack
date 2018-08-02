@@ -143,9 +143,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
         // Otherwise, we're about to switch to a new device, so finish the queue, first.
         Sync();
-    }
-
-    if (didInit) {
         device_context->SubtractQubits(qubitCount);
     }
 
