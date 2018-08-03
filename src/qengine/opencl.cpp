@@ -244,13 +244,14 @@ void QEngineOCL::Resize(bool doResizeBuffer)
         qb = qubitCount;
     }
 
+    bool nUseDeviceMem;
     if (qb == qubitCount) {
-        useDeviceMem =
+        nUseDeviceMem =
             ((maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3)));
     } else {
         // size_t m = (sizeof(complex) * (1<<(qb - qubitCount)) * 3);
         // if (m > maxDevMem) {
-        useDeviceMem = false;
+        nUseDeviceMem = false;
         //} else {
         //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) *
         //    maxQPower * 3)));
@@ -262,10 +263,14 @@ void QEngineOCL::Resize(bool doResizeBuffer)
     }
 
     if (!doResizeBuffer) {
+        if (didInit && (nUseDeviceMem != useDeviceMem)) {
+            Sync();
+        }
+        useDeviceMem = nUseDeviceMem;
         return;
     }
 
-    if (useDeviceMem) {
+    if (nUseDeviceMem) {
         if (didInit) {
             BufferPtr nStateBuffer =
                 std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
@@ -278,12 +283,10 @@ void QEngineOCL::Resize(bool doResizeBuffer)
                 context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
         }
     } else {
-        if (didInit) {
-            Sync();
-        }
         stateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     }
+    useDeviceMem = nUseDeviceMem;
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
