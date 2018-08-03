@@ -92,7 +92,7 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
     }
 
     // And print the probability, for interest.
-    os << ":" << totalProb;
+    os << ":" << maxProb;
 
     return os;
 }

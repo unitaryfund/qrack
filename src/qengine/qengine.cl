@@ -28,9 +28,8 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     bitCapInt offset2 = bitCapIntPtr[3];
     constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
-    cmplx Y0;
+    cmplx Y0, Y1;
     bitCapInt i, iLow, iHigh;
-    cmplx qubit[2];
     bitLenInt p;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -43,13 +42,10 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
         i |= iHigh;
 
         Y0 = stateVec[i | offset1];
-        qubit[1] = stateVec[i | offset2];
- 
-        qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
-        qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
+        Y1 = stateVec[i | offset2]; 
 
-        stateVec[i | offset1] = qubit[0];
-        stateVec[i | offset2] = qubit[1];
+        stateVec[i | offset1] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], Y1));
+        stateVec[i | offset2] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
     }
 }
 
@@ -69,10 +65,11 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     bitCapInt offset2 = bitCapIntPtr[3];
     constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
-    cmplx Y0;
+    cmplx Y0, Y1, YT;
     bitCapInt i, iLow, iHigh;
-    cmplx qubit[2];
     bitLenInt p;
+    real1 partNrm = ZERO_R1;
+
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         i = 0;
@@ -83,24 +80,25 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
         }
         i |= iHigh;
 
-        Y0 = stateVec[i | offset1];
-        qubit[1] = stateVec[i | offset2];
+        YT = stateVec[i | offset1];
+        Y1 = stateVec[i | offset2];
 
-        qubit[0] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], qubit[1]));
-        qubit[1] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], qubit[1]));
+        Y0 = nrm * (zmul(mtrx[0], YT) + zmul(mtrx[1], Y1));
+        Y1 = nrm * (zmul(mtrx[2], YT) + zmul(mtrx[3], Y1));
 
-        stateVec[i | offset1] = qubit[0];
-        stateVec[i | offset2] = qubit[1];
-        nrm1 = dot(qubit[0], qubit[0]);
-        nrm2 = dot(qubit[1], qubit[1]);
+        stateVec[i | offset1] = Y0;
+        stateVec[i | offset2] = Y1;
+        nrm1 = dot(Y0, Y0);
+        nrm2 = dot(Y1, Y1);
         if (nrm1 < min_norm) {
             nrm1 = ZERO_R1;
         }
         if (nrm2 >= min_norm) {
             nrm1 += nrm2;
         }
-        nrmParts[ID] += nrm1;
+        partNrm += nrm1;
     }
+    nrmParts[ID] = partNrm;
 }
 
 void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
@@ -130,27 +128,32 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
     bitCapInt len = bitCapIntPtr[3];
     bitCapInt j, k, l;
     cmplx amp;
+    real1 partProb;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv % (1 << start);
         j = j | ((lcv ^ j) << len);
+        partProb = ZERO_R1;
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
             amp = stateVec[l];
-            remainderStateProb[lcv] += dot(amp, amp);
+            partProb += dot(amp, amp);
         }
+        remainderStateProb[lcv] = partProb;
         remainderStateAngle[lcv] = arg(amp);
     }
 
     for (lcv = ID; lcv < partPower; lcv += Nthreads) {
         j = lcv << start;
+        partProb = ZERO_R1;
         for (k = 0; k < remainderPower; k++) {
             l = k % (1 << start);
             l = l | ((k ^ l) << len);
             l = j | l;
             amp = stateVec[l];
-            partStateProb[lcv] += dot(amp, amp);
+            partProb += dot(amp, amp);
         }
+        partStateProb[lcv] = partProb;
         partStateAngle[lcv] = arg(amp);
     }
 }
@@ -167,15 +170,18 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     bitCapInt len = bitCapIntPtr[3];
     bitCapInt j, k, l;
     cmplx amp;
+    real1 partProb;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv % (1 << start);
         j = j | ((lcv ^ j) << len);
+        partProb = ZERO_R1;
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
             amp = stateVec[l];
-            remainderStateProb[lcv] += dot(amp, amp);
+            partProb += dot(amp, amp);
         }
+        remainderStateProb[lcv] = partProb;
         remainderStateAngle[lcv] = arg(amp);
     }
 }
@@ -200,7 +206,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0] >> 1;
+    bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt qPower = bitCapIntPtr[1];
     bitCapInt qMask = qPower - 1;
     real1 oneChancePart = ZERO_R1;
@@ -357,7 +363,7 @@ void kernel incc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
         otherRes = (i & otherMask);
         inOutRes = (i & inOutMask);
         outInt = (inOutRes >> inOutStart) + toAdd;
@@ -388,7 +394,7 @@ void kernel decc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
         otherRes = (i & otherMask);
         inOutRes = (i & inOutMask);
         outInt = (lengthMask + 1 + (inOutRes >> inOutStart)) - toSub;
@@ -525,7 +531,7 @@ void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -579,7 +585,7 @@ void kernel decsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -632,7 +638,7 @@ void kernel incsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -685,7 +691,7 @@ void kernel decsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -851,7 +857,7 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         partToAdd = toAdd;
@@ -925,7 +931,7 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         partToSub = toSub;
@@ -1121,7 +1127,7 @@ void kernel indexedLda(
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
-        i = iLow + ((iHigh - iLow) << valueLength);
+        i = iLow | ((iHigh ^ iLow) << valueLength);
 
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
@@ -1156,7 +1162,7 @@ void kernel indexedAdc(
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inputRes = i & inputMask;
@@ -1201,7 +1207,7 @@ void kernel indexedSbc(
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inputRes = i & inputMask;
@@ -1251,18 +1257,21 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt maxI = bitCapIntPtr[0];
     cmplx amp;
     real1 nrm;
-    
+    real1 partNrm = ZERO_R1;
+
+
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
         if (nrm < min_norm) {
             nrm = ZERO_R1;
         }
-        norm_ptr[ID] += nrm;
+        partNrm += nrm;
     }
+    norm_ptr[ID] = partNrm;
 }
 
-void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant cmplx* cmplx_ptr) {
     bitCapInt ID, Nthreads, lcv;
     
     ID = get_global_id(0);
@@ -1272,13 +1281,13 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     bitCapInt qMask = qPower - 1;
     bitCapInt savePower = bitCapIntPtr[2];
     bitCapInt discardPower = qPower ^ savePower;
-    cmplx nrm = (cmplx)(args_ptr[0], args_ptr[1]);
+    cmplx nrm = cmplx_ptr[0];
     bitCapInt i, iLow, iHigh, j;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & qMask;
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
         stateVec[i | discardPower] = (cmplx)(ZERO_R1, ZERO_R1);
@@ -1310,7 +1319,7 @@ void kernel zerophaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntP
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
-        i = iLow + ((iHigh - iLow) << skipLength);
+        i = iLow | ((iHigh ^ iLow) << skipLength);
 
         stateVec[i] = -stateVec[i];
     }
@@ -1332,7 +1341,7 @@ void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapI
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (skipPower - 1);
-        i = (iLow + ((iHigh - iLow) << 1)) | skipPower;
+        i = (iLow | ((iHigh ^ iLow) << 1)) | skipPower;
 
         if (((i & regMask) >> start) < greaterPerm)
             stateVec[i] = -stateVec[i];

@@ -294,6 +294,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {
     complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->ApplySingleBit(pauliX, false, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
     qftReg->ApplySingleBit(pauliX, false, 19);
@@ -303,6 +304,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
     qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->X(19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
     qftReg->X(19);
@@ -1355,6 +1357,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
 {
+    qftReg->SetReg(0, 8, 0);
     REQUIRE(qftReg->MReg(0, 8) == 0);
     qftReg->SetReg(0, 8, 0x2b);
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
@@ -1373,6 +1376,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     }
     qftReg->IndexedLDA(0, 8, 8, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
@@ -1396,6 +1400,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
     qftReg->IndexedADC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0xff));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
@@ -1415,6 +1420,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 1 << 16));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
@@ -1431,6 +1437,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
     }
     qftReg->IndexedLDA(0, 9, 9, 9, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0x603));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
@@ -1455,6 +1462,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
     }
     qftReg->IndexedADC(9, 9, 0, 9, 18, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x1ff));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
@@ -1475,6 +1483,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
     qftReg->H(9, 9);
     REQUIRE_THAT(qftReg, HasProbability(0, 19, 1 << 18));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
@@ -1607,6 +1616,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     qftReg->MReg(0, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+    free(toLoad);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
@@ -1633,6 +1643,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
     qftReg->H(8, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
+    free(toSearch);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
