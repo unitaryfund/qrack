@@ -11,7 +11,6 @@
 // for details.
 
 #include <memory>
-#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl.hpp"
@@ -245,14 +244,13 @@ void QEngineOCL::Resize(bool doResizeBuffer)
         qb = qubitCount;
     }
 
-    bool nUseDeviceMem;
     if (qb == qubitCount) {
-        nUseDeviceMem =
+        useDeviceMem =
             ((maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3)));
     } else {
         // size_t m = (sizeof(complex) * (1<<(qb - qubitCount)) * 3);
         // if (m > maxDevMem) {
-        nUseDeviceMem = false;
+        useDeviceMem = false;
         //} else {
         //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) *
         //    maxQPower * 3)));
@@ -263,16 +261,12 @@ void QEngineOCL::Resize(bool doResizeBuffer)
         //}
     }
 
-    if ((!doResizeBuffer) && (nUseDeviceMem == useDeviceMem)) {
-        useDeviceMem = nUseDeviceMem;
+    if (!doResizeBuffer) {
         return;
     }
 
-    if (nUseDeviceMem) {
+    if (useDeviceMem) {
         if (didInit) {
-            if (nUseDeviceMem != useDeviceMem) {
-                Sync();
-            }
             BufferPtr nStateBuffer =
                 std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
             queue.finish();
@@ -284,13 +278,12 @@ void QEngineOCL::Resize(bool doResizeBuffer)
                 context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
         }
     } else {
-        if (didInit && (nUseDeviceMem != useDeviceMem)) {
+        if (didInit) {
             Sync();
         }
         stateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     }
-    useDeviceMem = nUseDeviceMem;
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
@@ -1084,10 +1077,6 @@ void QEngineOCL::CDIV(
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    if (runningNorm < min_norm) {
-        return 0;
-    }
-
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
@@ -1120,10 +1109,6 @@ bitCapInt QEngineOCL::IndexedLDA(
 bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    if (runningNorm < min_norm) {
-        return 0;
-    }
-
     bool carryRes = M(carryIndex);
     // The carry has to first to be measured for its input value.
     if (carryRes) {
