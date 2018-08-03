@@ -263,9 +263,6 @@ void QEngineOCL::Resize(bool doResizeBuffer)
     }
 
     if (!doResizeBuffer) {
-        if (didInit && (nUseDeviceMem != useDeviceMem)) {
-            Sync();
-        }
         useDeviceMem = nUseDeviceMem;
         return;
     }
@@ -283,6 +280,9 @@ void QEngineOCL::Resize(bool doResizeBuffer)
                 context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
         }
     } else {
+        if (didInit && (nUseDeviceMem != useDeviceMem)) {
+            Sync();
+        }
         stateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     }
