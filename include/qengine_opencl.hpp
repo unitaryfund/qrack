@@ -73,13 +73,11 @@ public:
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
-        device_context->SubtractQubits(qubitCount);
         delete[] stateVec;
         delete[] nrmArray;
     }
 
     virtual void SetQubitCount(bitLenInt qb);
-    virtual void Resize(bool doResizeBuffers);
 
     virtual void EnableNormalize(bool doN) { doNormalize = doN; }
     virtual real1 GetNorm(bool update = true)

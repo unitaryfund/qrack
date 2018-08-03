@@ -62,25 +62,13 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
 void QEngineOCL::LockSync(cl_int flags)
 {
     queue.finish();
-    if (useDeviceMem) {
-        queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
-        syncWrite = (flags & CL_MAP_WRITE);
-    } else {
-        queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower);
-    }
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower);
 }
 
 void QEngineOCL::UnlockSync()
 {
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
     queue.finish();
-    if (useDeviceMem) {
-        if (syncWrite) {
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, stateVec);
-        }
-    } else {
-        queue.enqueueUnmapMemObject(*stateBuffer, stateVec);
-        queue.finish();
-    }
 }
 
 void QEngineOCL::Sync()
@@ -117,21 +105,10 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
 {
     queue.finish();
     /* Set the size and reset the stateVec to the correct size. */
-    device_context->SubtractQubits(qubitCount);
     SetQubitCount(orig->GetQubitCount());
-    device_context->AddQubits(qubitCount);
-    Resize(false);
 
-    complex* nStateVec = NULL;
-    BufferPtr nStateBuffer = NULL;
-    if (useDeviceMem) {
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
-    } else {
-        /* Allocate a temporary nStateVec, or use the one supplied. */
-        nStateVec = AllocStateVec(maxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
-    }
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     ResetStateVec(nStateVec, nStateBuffer);
 
     QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
@@ -167,15 +144,12 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
         // Otherwise, we're about to switch to a new device, so finish the queue, first.
         Sync();
-        device_context->SubtractQubits(qubitCount);
     }
 
     deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
     queue = device_context->queue;
-
-    device_context->AddQubits(qubitCount);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
     bitCapInt oldNrmGroupCount = nrmGroupCount;
@@ -198,10 +172,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         frac = nrmGroupCount / nrmGroupSize;
     }
 
-    maxAllocMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    maxDevMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-    Resize(true);
-
     size_t nrmVecAlignSize =
         ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
 
@@ -221,6 +191,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // create buffers on device (allocate space on GPU)
+    stateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
     nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
@@ -233,60 +205,6 @@ void QEngineOCL::SetQubitCount(bitLenInt qb)
 {
     qubitCount = qb;
     maxQPower = 1 << qubitCount;
-}
-
-void QEngineOCL::Resize(bool doResizeBuffer)
-{
-    bool didInit = (nrmArray != NULL);
-    bitLenInt qb = device_context->GetQubitCount();
-    if (qb < qubitCount) {
-        device_context->AddQubits(qubitCount - qb);
-        qb = qubitCount;
-    }
-
-    bool nUseDeviceMem;
-    if (qb == qubitCount) {
-        nUseDeviceMem =
-            ((maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3)));
-    } else {
-        // size_t m = (sizeof(complex) * (1<<(qb - qubitCount)) * 3);
-        // if (m > maxDevMem) {
-        nUseDeviceMem = false;
-        //} else {
-        //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) *
-        //    maxQPower * 3)));
-        //}
-
-        // if (!useDeviceMem) {
-        //    device_context->SubtractQubits(qubitCount);
-        //}
-    }
-
-    if (!doResizeBuffer) {
-        useDeviceMem = nUseDeviceMem;
-        return;
-    }
-
-    if (nUseDeviceMem) {
-        if (didInit) {
-            BufferPtr nStateBuffer =
-                std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
-            queue.finish();
-            queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
-            queue.finish();
-            stateBuffer = nStateBuffer;
-        } else {
-            stateBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
-        }
-    } else {
-        if (didInit && (nUseDeviceMem != useDeviceMem)) {
-            Sync();
-        }
-        stateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
-    }
-    useDeviceMem = nUseDeviceMem;
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
@@ -323,16 +241,8 @@ void QEngineOCL::DispatchCall(
     queue.flush();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
-    complex* nStateVec = NULL;
-    BufferPtr nStateBuffer = NULL;
-    if (useDeviceMem) {
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
-    } else {
-        /* Allocate a temporary nStateVec, or use the one supplied. */
-        nStateVec = AllocStateVec(maxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
-    }
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     queue.enqueueFillBuffer(*nStateBuffer, complex(0.0, 0.0), 0, sizeof(complex) * maxQPower);
     queue.flush();
 
@@ -468,19 +378,10 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     size_t ngc = FixWorkItemCount(nMaxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    device_context->AddQubits(toCopy->qubitCount);
     SetQubitCount(nQubitCount);
-    Resize(false);
 
-    complex* nStateVec = NULL;
-    BufferPtr nStateBuffer = NULL;
-    if (useDeviceMem) {
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
-    } else {
-        nStateVec = AllocStateVec(maxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
-    }
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
     queue.finish();
@@ -570,10 +471,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs)); // local number (per group)
 
-    device_context->SubtractQubits(length);
     if ((maxQPower - partPower) <= 0) {
         SetQubitCount(1);
-        device_context->AddQubits(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
@@ -611,17 +510,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    Resize(false);
-
-    complex* nStateVec = NULL;
-    BufferPtr nStateBuffer = NULL;
-    if (useDeviceMem) {
-        nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
-    } else {
-        nStateVec = AllocStateVec(maxQPower);
-        nStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
-    }
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
 
     queue.finish();
     amp_call.call.setArg(0, probBuffer1);
