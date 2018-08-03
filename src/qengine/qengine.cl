@@ -363,7 +363,7 @@ void kernel incc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
         otherRes = (i & otherMask);
         inOutRes = (i & inOutMask);
         outInt = (inOutRes >> inOutStart) + toAdd;
@@ -394,7 +394,7 @@ void kernel decc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
         otherRes = (i & otherMask);
         inOutRes = (i & inOutMask);
         outInt = (lengthMask + 1 + (inOutRes >> inOutStart)) - toSub;
@@ -531,7 +531,7 @@ void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -585,7 +585,7 @@ void kernel decsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -638,7 +638,7 @@ void kernel incsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -691,7 +691,7 @@ void kernel decsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -857,7 +857,7 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         partToAdd = toAdd;
@@ -931,7 +931,7 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         partToSub = toSub;
@@ -1127,7 +1127,7 @@ void kernel indexedLda(
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
-        i = iLow + ((iHigh - iLow) << valueLength);
+        i = iLow | ((iHigh ^ iLow) << valueLength);
 
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
@@ -1162,7 +1162,7 @@ void kernel indexedAdc(
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inputRes = i & inputMask;
@@ -1207,7 +1207,7 @@ void kernel indexedSbc(
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - 1);
-        i = iLow + ((iHigh - iLow) << 1);
+        i = iLow | ((iHigh ^ iLow) << 1);
 
         otherRes = i & otherMask;
         inputRes = i & inputMask;
@@ -1319,7 +1319,7 @@ void kernel zerophaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntP
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
-        i = iLow + ((iHigh - iLow) << skipLength);
+        i = iLow | ((iHigh ^ iLow) << skipLength);
 
         stateVec[i] = -stateVec[i];
     }
@@ -1341,7 +1341,7 @@ void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapI
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (skipPower - 1);
-        i = (iLow + ((iHigh - iLow) << 1)) | skipPower;
+        i = (iLow | ((iHigh ^ iLow) << 1)) | skipPower;
 
         if (((i & regMask) >> start) < greaterPerm)
             stateVec[i] = -stateVec[i];

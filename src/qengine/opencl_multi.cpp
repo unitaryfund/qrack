@@ -1239,7 +1239,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
         complex* nsv = nullptr;
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr eng = substateEngines[j + (i * groupSize)];
-            if ((nEngines[i]->GetCLContextID()) == (eng->GetCLContextID())) {
+            if ((!isMapped) && ((nEngines[i]->GetCLContextID()) == (eng->GetCLContextID()))) {
                 cl::CommandQueue& queue = eng->GetCLQueue();
                 queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngines[i]->GetStateBuffer()), 0,
                     j * sizeof(complex) * sbSize, sizeof(complex) * sbSize);
@@ -1265,9 +1265,16 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
         nEngines[0]->EnableNormalize(true);
     }
 
+    std::vector<std::future<void>> futures(groupCount);
     substateEngines.resize(groupCount);
     for (i = 0; i < groupCount; i++) {
-        substateEngines[i] = nEngines[i];
+        QEngineOCLPtr nEngine = nEngines[i];
+        substateEngines[i] = nEngine;
+        futures[i] = std::async(std::launch::async, [nEngine]() { nEngine->GetNorm(true); });
+    }
+
+    for (i = 0; i< groupCount; i++) {
+        futures[i].get();
     }
     SetQubitCount(qubitCount);
 }
@@ -1302,7 +1309,7 @@ void QEngineOCLMulti::SeparateEngines()
             QEngineOCLPtr nEngine =
                 std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
             nEngine->EnableNormalize(false);
-            if ((nEngine->GetCLContextID()) == (eng->GetCLContextID())) {
+            if ((!isMapped) && ((nEngine->GetCLContextID()) == (eng->GetCLContextID()))) {
                 cl::CommandQueue& queue = eng->GetCLQueue();
                 queue.enqueueCopyBuffer(*(eng->GetStateBuffer()), *(nEngine->GetStateBuffer()),
                     j * sizeof(complex) * sbSize, 0, sizeof(complex) * sbSize);
@@ -1324,9 +1331,16 @@ void QEngineOCLMulti::SeparateEngines()
         }
     }
 
+    std::vector<std::future<void>> futures(engineCount);
     substateEngines.resize(engineCount);
     for (i = 0; i < engineCount; i++) {
-        substateEngines[i] = nEngines[i];
+        QEngineOCLPtr nEngine = nEngines[i];
+        substateEngines[i] = nEngine;
+        futures[i] = std::async(std::launch::async, [nEngine]() { nEngine->GetNorm(true); });
+    }
+
+    for (i = 0; i< engineCount; i++) {
+        futures[i].get();
     }
     SetQubitCount(qubitCount);
 }

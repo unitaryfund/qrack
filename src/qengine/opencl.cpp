@@ -11,6 +11,7 @@
 // for details.
 
 #include <memory>
+#include <iostream>
 
 #include "oclengine.hpp"
 #include "qengine_opencl.hpp"
@@ -104,11 +105,11 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
         if (gs == 0) {
             gs = 1;
         }
-        size_t frac = wic / gs;
-        while ((frac * gs) != wic) {
-            gs++;
-            frac = wic / gs;
-        }
+    }
+    size_t frac = wic / gs;
+    while ((frac * gs) != wic) {
+        gs++;
+        frac = wic / gs;
     }
     return gs;
 }
@@ -188,14 +189,14 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
-        size_t frac = nrmGroupCount / nrmGroupSize;
-        while ((frac * nrmGroupSize) != nrmGroupCount) {
-            nrmGroupSize++;
-            frac = nrmGroupCount / nrmGroupSize;
-        }
         if (nrmGroupSize == 0) {
             nrmGroupSize = 1;
         }
+    }
+    size_t frac = nrmGroupCount / nrmGroupSize;
+    while ((frac * nrmGroupSize) != nrmGroupCount) {
+        nrmGroupSize++;
+        frac = nrmGroupCount / nrmGroupSize;
     }
 
     maxAllocMem = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
@@ -244,13 +245,14 @@ void QEngineOCL::Resize(bool doResizeBuffer)
         qb = qubitCount;
     }
 
+    bool nUseDeviceMem;
     if (qb == qubitCount) {
-        useDeviceMem =
+        nUseDeviceMem =
             ((maxAllocMem > (sizeof(complex) * maxQPower)) && (maxDevMem > (sizeof(complex) * maxQPower * 3)));
     } else {
         // size_t m = (sizeof(complex) * (1<<(qb - qubitCount)) * 3);
         // if (m > maxDevMem) {
-        useDeviceMem = false;
+        nUseDeviceMem = false;
         //} else {
         //    useDeviceMem = ((maxAllocMem > (sizeof(complex) * maxQPower)) && ((maxDevMem - m) > (sizeof(complex) *
         //    maxQPower * 3)));
@@ -261,12 +263,16 @@ void QEngineOCL::Resize(bool doResizeBuffer)
         //}
     }
 
-    if (!doResizeBuffer) {
+    if ((!doResizeBuffer) && (nUseDeviceMem == useDeviceMem)) {
+        useDeviceMem = nUseDeviceMem;
         return;
     }
 
-    if (useDeviceMem) {
+    if (nUseDeviceMem) {
         if (didInit) {
+            if (nUseDeviceMem != useDeviceMem) {
+                Sync();
+            }
             BufferPtr nStateBuffer =
                 std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPower);
             queue.finish();
@@ -278,9 +284,13 @@ void QEngineOCL::Resize(bool doResizeBuffer)
                 context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
         }
     } else {
+        if (didInit && (nUseDeviceMem != useDeviceMem)) {
+            Sync();
+        }
         stateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     }
+    useDeviceMem = nUseDeviceMem;
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
@@ -1074,6 +1084,9 @@ void QEngineOCL::CDIV(
 bitCapInt QEngineOCL::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
+    if (runningNorm < min_norm) {
+        return 0;
+    }
 
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
@@ -1107,6 +1120,10 @@ bitCapInt QEngineOCL::IndexedLDA(
 bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
+    if (runningNorm < min_norm) {
+        return 0;
+    }
+
     bool carryRes = M(carryIndex);
     // The carry has to first to be measured for its input value.
     if (carryRes) {
