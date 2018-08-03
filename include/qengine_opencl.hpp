@@ -136,11 +136,26 @@ public:
         bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values);
+        bitLenInt valueLength, unsigned char* values, bool isParallel);
+    virtual bitCapInt IndexedLDA(
+        bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+    {
+        return IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, false);
+    }
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel);
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+    {
+        return IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values, false);
+    }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+    {
+        return IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values, false);
+    }
 
     virtual real1 Prob(bitLenInt qubit);
 
@@ -167,8 +182,8 @@ protected:
     size_t FixGroupSize(size_t wic, size_t gs);
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void DispatchCall(
-        OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
+    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
+        bitCapInt valuesLength = 0, bool isParallel = false);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
@@ -189,7 +204,7 @@ protected:
         const bitLenInt carryIndex);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
-        bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+        bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel);
 };
 
 } // namespace Qrack
