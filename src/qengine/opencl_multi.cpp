@@ -1273,7 +1273,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
         futures[i] = std::async(std::launch::async, [nEngine]() { nEngine->GetNorm(true); });
     }
 
-    for (i = 0; i< groupCount; i++) {
+    for (i = 0; i < groupCount; i++) {
         futures[i].get();
     }
     SetQubitCount(qubitCount);
@@ -1339,7 +1339,7 @@ void QEngineOCLMulti::SeparateEngines()
         futures[i] = std::async(std::launch::async, [nEngine]() { nEngine->GetNorm(true); });
     }
 
-    for (i = 0; i< engineCount; i++) {
+    for (i = 0; i < engineCount; i++) {
         futures[i].get();
     }
     SetQubitCount(qubitCount);
