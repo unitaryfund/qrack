@@ -47,11 +47,6 @@ protected:
     size_t nrmGroupSize;
     size_t maxWorkItems;
     unsigned int procElemCount;
-    long unsigned int maxAllocMem;
-    long unsigned int maxDevMem;
-    bool useDeviceMem;
-    bool syncWrite;
-    bitLenInt totalDeviceQubits;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
