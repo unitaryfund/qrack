@@ -331,7 +331,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
     bitCapInt powerTest = result ? qPower : 0;
 
-    complex cmplx[CMPLX_NORM_LEN] = { nrm, 0, 0, 0, 0 };
+    complex cmplx[CMPLX_NORM_LEN] = { nrm, complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0) };
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx);
     queue.flush();
