@@ -31,7 +31,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 28;
+const bitLenInt MaxQubits = 24;
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts)
 {
@@ -97,11 +97,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVariable(fn, MaxQubits); }
 
-TEST_CASE("test_cnot_all")
+TEST_CASE("test_cnot")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
 }
-#if 0
+
 TEST_CASE("test_anticnot")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->AntiCNOT(0, n / 2, n / 2); });
@@ -121,12 +121,12 @@ TEST_CASE("test_swap")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-#endif
-TEST_CASE("test_x_all")
+
+TEST_CASE("test_x")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
-#if 0
+
 TEST_CASE("test_y")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0, n); });
@@ -302,18 +302,6 @@ TEST_CASE("test_incc")
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCC(1, 0, n - 1, n - 1); });
 }
 
-/*
-TEST_CASE("test_incbcd")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->INCBCD(1, 0, n-1);});
-}
-
-TEST_CASE("test_incbcdc")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->INCBCDC(1, 0, n-1, n-1);});
-}
-*/
-
 TEST_CASE("test_incsc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
@@ -333,18 +321,6 @@ TEST_CASE("test_decc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECC(1, 0, n - 1, n - 1); });
 }
-
-/*
-TEST_CASE("test_decbcd")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->DECBCD(1, 0, n-1);});
-}
-
-TEST_CASE("test_decbcdc")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n){qftReg->DECBCDC(1, 0, n-1, n-1);});
-}
-*/
 
 TEST_CASE("test_decsc")
 {
@@ -437,7 +413,7 @@ TEST_CASE("test_swap_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-#endif
+
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
