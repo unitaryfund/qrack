@@ -1619,35 +1619,50 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     free(toLoad);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
-{
-    bitLenInt expLen = 2;
-    bitLenInt baseLen = 6;
-    bitCapInt base = 5;
+void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart, bitLenInt expLen, bitLenInt carryStart) {
     bitCapInt workingPower = base;
     bitLenInt regStart1, regStart2;
-    qftReg->SetPermutation(1);
-    // Last bits are exponent:
-    qftReg->SetReg(20 - expLen, expLen, 2);
     bitLenInt i;
     for (i = 0; i < expLen; i++) {
         if (i & 1) {
-            regStart1 = 2 * baseLen;
-            regStart2 = 0;
+            regStart1 = carryStart;
+            regStart2 = baseStart;
         } else {
-            regStart1 = 0;
-            regStart2 = 2 * baseLen;
+            regStart1 = baseStart;
+            regStart2 = carryStart;
         }
-        qftReg->CMUL(workingPower, regStart1, baseLen, 20 - expLen + i, baseLen, false);
+        qftReg->CMUL(workingPower, regStart1, baseLen, expStart + i, baseLen, false);
         qftReg->CNOT(regStart1, regStart2, baseLen);
-        qftReg->CDIV(workingPower, regStart1, baseLen, 20 - expLen + i, baseLen);
+        qftReg->CDIV(workingPower, regStart1, baseLen, expStart + i, baseLen);
         qftReg->SetReg(regStart1, baseLen, 0);
         workingPower *= base;
     }
     if (i & 1) {
-        qftReg->CNOT(2 * baseLen, 0, baseLen);
+        qftReg->CNOT(carryStart, baseStart, baseLen);
     }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
+{
+    bitLenInt baseLen = 6;
+    bitLenInt expLen = 2;
+    qftReg->SetPermutation(1);
+    // Last bits are exponent:
+    qftReg->SetReg(20 - expLen, expLen, 2);
+    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);  
     REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_discretelog")
+{
+    bitLenInt baseLen = 6;
+    bitLenInt expLen = 2;
+    qftReg->SetPermutation(1);
+    // Last bits are exponent:
+    qftReg->H(20 - expLen, expLen);
+    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);  
+    qftReg->QFT(0, baseLen);
+    REQUIRE_THAT(qftReg, HasProbability(20 - expLen, expLen, 4));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
