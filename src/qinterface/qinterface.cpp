@@ -208,6 +208,21 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
+/// Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register
+void QInterface::IQFT(bitLenInt start, bitLenInt length)
+{
+    if (length > 0) {
+        int end = start + length - 1;
+        int i, j;
+        for (i = end; i >= start; i--) {
+            for (j = (end - i); j > 0; j--) {
+                CRTDyad(-1, j, i + j, i);
+            }
+            H(i);
+        }
+    }
+}
+
 /// Set register bits to given permutation
 void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {

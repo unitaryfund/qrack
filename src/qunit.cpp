@@ -278,6 +278,12 @@ template <typename F, typename... B> void QUnit::EntangleAndCall(F fn, B... bits
     fn(qbits, bits...);
 }
 
+template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, real1 radians, B... bits)
+{
+    auto qbits = Entangle({ &bits... });
+    ((*qbits).*fn)(radians, bits...);
+}
+
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
     if (unit->GetQubitCount() == 1) {
@@ -452,6 +458,7 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
 #define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt)) & QInterface::OP
 #define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt)) & QInterface::OP
+#define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt)) & QInterface::OP
 
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
@@ -517,10 +524,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2
 
 void QUnit::CZ(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2(CZ), control, target); }
 
-void QUnit::RT(real1 radians, bitLenInt qubit)
-{
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt q) { unit->RT(radians, q); }, qubit);
-}
+void QUnit::RT(real1 radians, bitLenInt qubit) { shards[qubit].unit->RT(radians, shards[qubit].mapped); }
 
 void QUnit::RX(real1 radians, bitLenInt qubit) { shards[qubit].unit->RX(radians, shards[qubit].mapped); }
 
@@ -538,26 +542,22 @@ void QUnit::ExpZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpZ(radi
 
 void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(
-        [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRT(radians, b1, b2); }, control, target);
+    EntangleAndCallMemberRot(PTR2A(CRT), radians, control, target);
 }
 
 void QUnit::CRX(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(
-        [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRX(radians, b1, b2); }, control, target);
+    EntangleAndCallMemberRot(PTR2A(CRX), radians, control, target);
 }
 
 void QUnit::CRY(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(
-        [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRY(radians, b1, b2); }, control, target);
+    EntangleAndCallMemberRot(PTR2A(CRY), radians, control, target);
 }
 
 void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCall(
-        [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CRZ(radians, b1, b2); }, control, target);
+    EntangleAndCallMemberRot(PTR2A(CRZ), radians, control, target);
 }
 
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)

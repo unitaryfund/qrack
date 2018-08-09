@@ -1289,28 +1289,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
     int i, j;
 
-    // std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
-    //           << std::endl;
+    for (i = 0; i < 8; i += 2) {
+        qftReg->H(i);
+    }
+
+    qftReg->QFT(0, 8);
+
+    qftReg->IQFT(0, 8);
 
     for (i = 0; i < 8; i += 2) {
         qftReg->H(i);
     }
 
-    // std::cout << "Initial:" << std::endl;
-    // for (i = 0; i < 8; i++) {
-    //     std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
-    // }
-
-    qftReg->QFT(0, 8);
-
-    // std::cout << "Final:" << std::endl;
-    // for (i = 0; i < 8; i++) {
-    //    qftProbs[i] = qftReg->Prob(i);
-    //    std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
-    //}
-
-    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an
-    // exception.
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
@@ -1619,7 +1610,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     free(toLoad);
 }
 
-void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart, bitLenInt expLen, bitLenInt carryStart) {
+void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
+    bitLenInt expLen, bitLenInt carryStart)
+{
     bitCapInt workingPower = base;
     bitLenInt regStart1, regStart2;
     bitLenInt i;
@@ -1639,30 +1632,41 @@ void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt
     }
     if (i & 1) {
         qftReg->CNOT(carryStart, baseStart, baseLen);
+        qftReg->SetReg(carryStart, baseLen, 0);
     }
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
 {
-    bitLenInt baseLen = 6;
+    bitLenInt baseLen = 4;
     bitLenInt expLen = 2;
     qftReg->SetPermutation(1);
     // Last bits are exponent:
     qftReg->SetReg(20 - expLen, expLen, 2);
-    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);  
+    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);
     REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_discretelog")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_est")
 {
     bitLenInt baseLen = 6;
     bitLenInt expLen = 2;
+    bitCapInt res;
+    bool check;
+    
     qftReg->SetPermutation(1);
     // Last bits are exponent:
     qftReg->H(20 - expLen, expLen);
-    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);  
-    qftReg->QFT(0, baseLen);
-    REQUIRE_THAT(qftReg, HasProbability(20 - expLen, expLen, 4));
+    ExpMod(qftReg, 31, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);
+
+    qftReg->IQFT(20 - expLen, expLen);
+    qftReg->MReg(20 - expLen, expLen);
+    res = qftReg->MReg(0, baseLen);
+
+    //These are the two eigenvectors in the available set, with eigenvalue phase of "n," an integer.
+    check = (res == 31) || (res == 1);
+
+    REQUIRE(check);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
