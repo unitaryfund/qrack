@@ -1619,6 +1619,37 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     free(toLoad);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
+{
+    bitLenInt expLen = 2;
+    bitLenInt baseLen = 6;
+    bitCapInt base = 5;
+    bitCapInt workingPower = base;
+    bitLenInt regStart1, regStart2;
+    qftReg->SetPermutation(1);
+    // Last bits are exponent:
+    qftReg->SetReg(20 - expLen, expLen, 2);
+    bitLenInt i;
+    for (i = 0; i < expLen; i++) {
+        if (i & 1) {
+            regStart1 = 2 * baseLen;
+            regStart2 = 0;
+        } else {
+            regStart1 = 0;
+            regStart2 = 2 * baseLen;
+        }
+        qftReg->CMUL(workingPower, regStart1, baseLen, 20 - expLen + i, baseLen, false);
+        qftReg->CNOT(regStart1, regStart2, baseLen);
+        qftReg->CDIV(workingPower, regStart1, baseLen, 20 - expLen + i, baseLen);
+        qftReg->SetReg(regStart1, baseLen, 0);
+        workingPower *= base;
+    }
+    if (i & 1) {
+        qftReg->CNOT(2 * baseLen, 0, baseLen);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));

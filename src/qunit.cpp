@@ -211,7 +211,9 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
         ebits[i] = &bits[i];
     }
 
-    return EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    OrderContiguous(shards[start].unit);
+    return toRet;
 }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
@@ -229,7 +231,35 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
         ebits[i + length1] = &bits[i + length1];
     }
 
-    return EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    OrderContiguous(shards[start1].unit);
+    return toRet;
+}
+
+QInterfacePtr QUnit::EntangleRange(
+    bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3)
+{
+    std::vector<bitLenInt> bits(length1 + length2 + length3);
+    std::vector<bitLenInt*> ebits(length1 + length2 + length3);
+
+    for (auto i = 0; i < length1; i++) {
+        bits[i] = i + start1;
+        ebits[i] = &bits[i];
+    }
+
+    for (auto i = 0; i < length2; i++) {
+        bits[i + length1] = i + start2;
+        ebits[i + length1] = &bits[i + length1];
+    }
+
+    for (auto i = 0; i < length3; i++) {
+        bits[i + length1 + length2] = i + start3;
+        ebits[i + length1 + length2] = &bits[i + length1 + length2];
+    }
+
+    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    OrderContiguous(shards[start1].unit);
+    return toRet;
 }
 
 /*
@@ -397,7 +427,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     MReg(start, length);
 
     for (bitLenInt i = 0; i < length; i++) {
-        shards[i].unit->SetPermutation((value & (1 << i)) > 0 ? 1 : 0);
+        shards[i + start].unit->SetPermutation((value & (1 << i)) > 0 ? 1 : 0);
     }
 }
 
@@ -587,7 +617,6 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
     shards[start].unit->INC(toMod, shards[start].mapped, length);
 }
 
@@ -600,7 +629,6 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
     M(flagIndex);
 
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
 
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { ((*unit).*fn)(toMod, b1, length, b2); },
@@ -622,7 +650,6 @@ void QUnit::INCxx(
     M(flag2Index);
 
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
 
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleAndCall(
@@ -653,7 +680,6 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
     shards[start].unit->INCBCD(toMod, shards[start].mapped, length);
 }
 
@@ -665,7 +691,6 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
     shards[start].unit->DEC(toMod, shards[start].mapped, length);
 }
 
@@ -692,7 +717,6 @@ void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
     shards[start].unit->DECBCD(toMod, shards[start].mapped, length);
 }
 
@@ -703,43 +727,27 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 
 void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
 {
-    EntangleRange(inOutStart, length);
-    EntangleRange(carryStart, length);
-    bitLenInt bits[2] = { inOutStart, carryStart };
-    Entangle({ &(bits[0]), &(bits[1]) });
-    OrderContiguous(shards[inOutStart].unit);
+    EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length, clearCarry);
 }
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    EntangleRange(inOutStart, length);
-    EntangleRange(carryStart, length);
-    bitLenInt bits[2] = { inOutStart, carryStart };
-    Entangle({ &(bits[0]), &(bits[1]) });
-    OrderContiguous(shards[inOutStart].unit);
+    EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
 void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length,
     bool clearCarry)
 {
-    EntangleRange(inOutStart, length);
-    EntangleRange(carryStart, length);
-    bitLenInt bits[3] = { inOutStart, carryStart, controlBit };
-    Entangle({ &(bits[0]), &(bits[1]), &(bits[2]) });
-    OrderContiguous(shards[inOutStart].unit);
+    EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
     shards[inOutStart].unit->CMUL(
         toMul, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length, clearCarry);
 }
 
 void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
 {
-    EntangleRange(inOutStart, length);
-    EntangleRange(carryStart, length);
-    bitLenInt bits[3] = { inOutStart, carryStart, controlBit };
-    Entangle({ &(bits[0]), &(bits[1]), &(bits[2]) });
-    OrderContiguous(shards[inOutStart].unit);
+    EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
     shards[inOutStart].unit->CDIV(
         toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length);
 }
@@ -747,14 +755,12 @@ void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bi
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     EntangleRange(start, length);
-    OrderContiguous(shards[start].unit);
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2); },
         start, flagIndex);
@@ -771,7 +777,6 @@ bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
-    OrderContiguous(shards[indexStart].unit);
 
     return shards[indexStart].unit->IndexedLDA(
         shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
@@ -780,9 +785,7 @@ bitCapInt QUnit::IndexedLDA(
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
-    EntangleRange(indexStart, indexLength, valueStart, valueLength);
-    EntangleRange(indexStart, 1, carryIndex, 1);
-    OrderContiguous(shards[indexStart].unit);
+    EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
     return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
         valueLength, shards[carryIndex].mapped, values);
@@ -791,9 +794,7 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
-    EntangleRange(indexStart, indexLength, valueStart, valueLength);
-    EntangleRange(indexStart, 1, carryIndex, 1);
-    OrderContiguous(shards[indexStart].unit);
+    EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
     return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
         valueLength, shards[carryIndex].mapped, values);
