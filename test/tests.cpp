@@ -1647,28 +1647,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
     REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_est")
-{
-    bitLenInt baseLen = 6;
-    bitLenInt expLen = 2;
-    bitCapInt res;
-    bool check;
-    
-    qftReg->SetPermutation(1);
-    // Last bits are exponent:
-    qftReg->H(20 - expLen, expLen);
-    ExpMod(qftReg, 31, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);
-
-    qftReg->IQFT(20 - expLen, expLen);
-    qftReg->MReg(20 - expLen, expLen);
-    res = qftReg->MReg(0, baseLen);
-
-    //These are the two eigenvectors in the available set, with eigenvalue phase of "n," an integer.
-    check = (res == 31) || (res == 1);
-
-    REQUIRE(check);
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
