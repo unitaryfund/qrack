@@ -196,11 +196,14 @@ protected:
     QInterfacePtr Entangle(std::initializer_list<bitLenInt*> bits);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
+    QInterfacePtr EntangleRange(
+        bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
 
     template <class It> QInterfacePtr EntangleIterator(It first, It last);
 
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
+    template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
     void OrderContiguous(QInterfacePtr unit);
 
