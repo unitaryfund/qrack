@@ -489,7 +489,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt), bciArgs);
         queue.flush();
 
-        size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_DECOHEREAMP]);
+        size_t ngc2 =
+            FixWorkItemCount(partPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_DECOHEREAMP]);
         size_t ngs2 = FixGroupSize(ngc2, device_context->groupSize[OCL_API_DECOHEREAMP]);
 
         queue.finish();
@@ -1074,7 +1075,8 @@ void QEngineOCL::PhaseFlip()
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_PHASEFLIP]);
+    size_t ngc =
+        FixWorkItemCount(maxQPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_PHASEFLIP]);
     size_t ngs = FixGroupSize(ngc, device_context->groupSize[OCL_API_PHASEFLIP]);
 
     ocl.call.setArg(0, *stateBuffer);
@@ -1097,7 +1099,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_ZEROPHASEFLIP]);
+    size_t ngc =
+        FixWorkItemCount(maxI, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_ZEROPHASEFLIP]);
     size_t ngs = FixGroupSize(ngc, device_context->groupSize[OCL_API_ZEROPHASEFLIP]);
 
     queue.finish();
@@ -1122,7 +1125,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_CPHASEFLIPIFLESS]);
+    size_t ngc =
+        FixWorkItemCount(maxI, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_CPHASEFLIPIFLESS]);
     size_t ngs = FixGroupSize(ngc, device_context->groupSize[OCL_API_CPHASEFLIPIFLESS]);
 
     ocl.call.setArg(0, *stateBuffer);
@@ -1167,7 +1171,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_NORMALIZE);
-    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_NORMALIZE]);
+    size_t ngc =
+        FixWorkItemCount(maxQPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_NORMALIZE]);
     size_t ngs = FixGroupSize(ngc, device_context->groupSize[OCL_API_NORMALIZE]);
 
     ocl.call.setArg(0, *stateBuffer);
@@ -1189,7 +1194,8 @@ void QEngineOCL::UpdateRunningNorm()
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
-    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_UPDATENORM]);
+    size_t ngc =
+        FixWorkItemCount(maxQPower, nrmGroupCount / nrmGroupSize * device_context->groupSize[OCL_API_UPDATENORM]);
     size_t ngs = FixGroupSize(ngc, device_context->groupSize[OCL_API_UPDATENORM]);
 
     ocl.call.setArg(0, *stateBuffer);

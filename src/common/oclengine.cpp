@@ -144,81 +144,130 @@ void OCLEngine::InitOCL()
         all_device_contexts.push_back(devCntxt);
         odc = all_device_contexts[i];
         odc->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
-        odc->groupSize[OCL_API_APPLY2X2] = odc->calls[OCL_API_APPLY2X2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_APPLY2X2] =
+            odc->calls[OCL_API_APPLY2X2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
-        odc->groupSize[OCL_API_APPLY2X2_NORM] = odc->calls[OCL_API_APPLY2X2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_APPLY2X2_NORM] =
+            odc->calls[OCL_API_APPLY2X2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_X] = cl::Kernel(program, "x");
-        odc->groupSize[OCL_API_X] = odc->calls[OCL_API_X].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_X] =
+            odc->calls[OCL_API_X].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_COHERE] = cl::Kernel(program, "cohere");
-        odc->groupSize[OCL_API_COHERE] = odc->calls[OCL_API_COHERE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_COHERE] =
+            odc->calls[OCL_API_COHERE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECOHEREPROB] = cl::Kernel(program, "decohereprob");
-        odc->groupSize[OCL_API_DECOHEREPROB] = odc->calls[OCL_API_DECOHEREPROB].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECOHEREPROB] =
+            odc->calls[OCL_API_DECOHEREPROB].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_DECOHEREAMP] = cl::Kernel(program, "decohereamp");
-        odc->groupSize[OCL_API_DECOHEREAMP] = odc->calls[OCL_API_DECOHEREAMP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECOHEREAMP] =
+            odc->calls[OCL_API_DECOHEREAMP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_DISPOSEPROB] = cl::Kernel(program, "disposeprob");
-        odc->groupSize[OCL_API_DISPOSEPROB] = odc->calls[OCL_API_DISPOSEPROB].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DISPOSEPROB] =
+            odc->calls[OCL_API_DISPOSEPROB].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
-        odc->groupSize[OCL_API_PROB] = odc->calls[OCL_API_PROB].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_PROB] =
+            odc->calls[OCL_API_PROB].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
-        odc->groupSize[OCL_API_SWAP] = odc->calls[OCL_API_SWAP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_SWAP] =
+            odc->calls[OCL_API_SWAP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
-        odc->groupSize[OCL_API_ROL] = odc->calls[OCL_API_ROL].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_ROL] =
+            odc->calls[OCL_API_ROL].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_ROR] = cl::Kernel(program, "ror");
-        odc->groupSize[OCL_API_ROR] = odc->calls[OCL_API_ROR].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_ROR] =
+            odc->calls[OCL_API_ROR].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INC] = cl::Kernel(program, "inc");
-        odc->groupSize[OCL_API_INC] = odc->calls[OCL_API_INC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INC] =
+            odc->calls[OCL_API_INC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
-        odc->groupSize[OCL_API_DEC] = odc->calls[OCL_API_DEC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DEC] =
+            odc->calls[OCL_API_DEC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
-        odc->groupSize[OCL_API_INCC] = odc->calls[OCL_API_INCC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INCC] =
+            odc->calls[OCL_API_INCC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
-        odc->groupSize[OCL_API_DECC] = odc->calls[OCL_API_DECC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECC] =
+            odc->calls[OCL_API_DECC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
-        odc->groupSize[OCL_API_INCS] = odc->calls[OCL_API_INCS].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INCS] =
+            odc->calls[OCL_API_INCS].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
-        odc->groupSize[OCL_API_DECS] = odc->calls[OCL_API_DECS].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECS] =
+            odc->calls[OCL_API_DECS].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
-        odc->groupSize[OCL_API_INCSC_1] = odc->calls[OCL_API_INCSC_1].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INCSC_1] =
+            odc->calls[OCL_API_INCSC_1].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
-        odc->groupSize[OCL_API_DECSC_1] = odc->calls[OCL_API_DECSC_1].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECSC_1] =
+            odc->calls[OCL_API_DECSC_1].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
-        odc->groupSize[OCL_API_INCSC_2] = odc->calls[OCL_API_INCSC_2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INCSC_2] =
+            odc->calls[OCL_API_INCSC_2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
-        odc->groupSize[OCL_API_DECSC_2] = odc->calls[OCL_API_DECSC_2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECSC_2] =
+            odc->calls[OCL_API_DECSC_2].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
-        odc->groupSize[OCL_API_INCBCD] = odc->calls[OCL_API_INCBCD].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INCBCD] =
+            odc->calls[OCL_API_INCBCD].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
-        odc->groupSize[OCL_API_DECBCD] = odc->calls[OCL_API_DECBCD].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECBCD] =
+            odc->calls[OCL_API_DECBCD].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
-        odc->groupSize[OCL_API_INCBCDC] = odc->calls[OCL_API_INCBCDC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INCBCDC] =
+            odc->calls[OCL_API_INCBCDC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
-        odc->groupSize[OCL_API_DECBCDC] = odc->calls[OCL_API_DECBCDC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DECBCDC] =
+            odc->calls[OCL_API_DECBCDC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
-        odc->groupSize[OCL_API_INDEXEDLDA] = odc->calls[OCL_API_INDEXEDLDA].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INDEXEDLDA] =
+            odc->calls[OCL_API_INDEXEDLDA].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
-        odc->groupSize[OCL_API_INDEXEDADC] = odc->calls[OCL_API_INDEXEDADC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INDEXEDADC] =
+            odc->calls[OCL_API_INDEXEDADC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
-        odc->groupSize[OCL_API_INDEXEDSBC] = odc->calls[OCL_API_INDEXEDSBC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_INDEXEDSBC] =
+            odc->calls[OCL_API_INDEXEDSBC].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
-        odc->groupSize[OCL_API_NORMALIZE] = odc->calls[OCL_API_NORMALIZE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_NORMALIZE] =
+            odc->calls[OCL_API_NORMALIZE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
-        odc->groupSize[OCL_API_UPDATENORM] = odc->calls[OCL_API_UPDATENORM].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_UPDATENORM] =
+            odc->calls[OCL_API_UPDATENORM].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
-        odc->groupSize[OCL_API_APPLYM] = odc->calls[OCL_API_APPLYM].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_APPLYM] =
+            odc->calls[OCL_API_APPLYM].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
-        odc->groupSize[OCL_API_PHASEFLIP] = odc->calls[OCL_API_PHASEFLIP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_PHASEFLIP] =
+            odc->calls[OCL_API_PHASEFLIP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
-        odc->groupSize[OCL_API_ZEROPHASEFLIP] = odc->calls[OCL_API_ZEROPHASEFLIP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_ZEROPHASEFLIP] =
+            odc->calls[OCL_API_ZEROPHASEFLIP].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
-        odc->groupSize[OCL_API_CPHASEFLIPIFLESS] = odc->calls[OCL_API_CPHASEFLIPIFLESS].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_CPHASEFLIPIFLESS] =
+            odc->calls[OCL_API_CPHASEFLIPIFLESS].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                all_devices[i]);
         odc->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
-        odc->groupSize[OCL_API_MUL] = odc->calls[OCL_API_MUL].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_MUL] =
+            odc->calls[OCL_API_MUL].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_DIV] = cl::Kernel(program, "div");
-        odc->groupSize[OCL_API_DIV] = odc->calls[OCL_API_DIV].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_DIV] =
+            odc->calls[OCL_API_DIV].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_CMUL] = cl::Kernel(program, "cmul");
-        odc->groupSize[OCL_API_CMUL] = odc->calls[OCL_API_CMUL].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_CMUL] =
+            odc->calls[OCL_API_CMUL].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
         odc->calls[OCL_API_CDIV] = cl::Kernel(program, "cdiv");
-        odc->groupSize[OCL_API_CDIV] = odc->calls[OCL_API_CDIV].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
+        odc->groupSize[OCL_API_CDIV] =
+            odc->calls[OCL_API_CDIV].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(all_devices[i]);
 
         if (i == dev) {
             default_device_context = odc;
