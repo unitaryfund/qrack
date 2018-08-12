@@ -339,9 +339,13 @@ void QUnit::TrySeparate(std::vector<bitLenInt> bits)
         if (shards[bits[i]].unit->GetQubitCount() > 1) {
             real1 oneChance = Prob(bits[i]);
             if (oneChance <= REAL_CLAMP) {
-                ForceM(bits[i], false);
+                if (IsPhaseSeparable(bits[i])) {
+                    ForceM(bits[i], false);
+                }
             } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
-                ForceM(bits[i], true);
+                if (IsPhaseSeparable(bits[i])) {
+                    ForceM(bits[i], true);
+                }
             }
         }
     }
