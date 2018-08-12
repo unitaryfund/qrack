@@ -293,24 +293,25 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMember(F fn, B..
 {
     auto qbits = Entangle({ &bits... });
     ((*qbits).*fn)(bits...);
-    //TrySeparate({ bits... });
+    // TrySeparate({ bits... });
 }
 
 template <typename F, typename... B> void QUnit::EntangleAndCall(F fn, B... bits)
 {
     auto qbits = Entangle({ &bits... });
     fn(qbits, bits...);
-    //TrySeparate({ bits... });
+    // TrySeparate({ bits... });
 }
 
 template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, real1 radians, B... bits)
 {
     auto qbits = Entangle({ &bits... });
     ((*qbits).*fn)(radians, bits...);
-    //TrySeparate({ bits... });
+    // TrySeparate({ bits... });
 }
 
-template <typename CF, typename F> void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
+template <typename CF, typename F>
+void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
 {
     if ((shards[control].unit) != (shards[target].unit)) {
         real1 prob = Prob(control);
@@ -332,7 +333,8 @@ template <typename CF, typename F> void QUnit::ControlCallMember(CF cfn, F fn, b
     TrySeparate({ cCopy, tCopy });
 }
 
-template <typename CF, typename F> void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
+template <typename CF, typename F>
+void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
 {
     if ((shards[control].unit) != (shards[target].unit)) {
         real1 prob = Prob(control);
@@ -579,7 +581,10 @@ void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt output
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CNOT), PTR1(X), control, target); }
 
-void QUnit::AntiCNOT(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(AntiCNOT), PTR1(X), control, target, true); }
+void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
+{
+    ControlCallMember(PTR2(AntiCNOT), PTR1(X), control, target, true);
+}
 
 void QUnit::H(bitLenInt qubit) { shards[qubit].unit->H(shards[qubit].mapped); }
 
@@ -687,7 +692,7 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->INC(toMod, shards[start].mapped, length);
-    //TrySeparateRange(start, length);
+    // TrySeparateRange(start, length);
 }
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -751,7 +756,7 @@ void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->INCBCD(toMod, shards[start].mapped, length);
-    //TrySeparateRange(start, length);
+    // TrySeparateRange(start, length);
 }
 
 void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -763,7 +768,7 @@ void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->DEC(toMod, shards[start].mapped, length);
-    //TrySeparateRange(start, length);
+    // TrySeparateRange(start, length);
 }
 
 void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -790,7 +795,7 @@ void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->DECBCD(toMod, shards[start].mapped, length);
-    //TrySeparateRange(start, length);
+    // TrySeparateRange(start, length);
 }
 
 void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -802,16 +807,16 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
 {
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length, clearCarry);
-    //TrySeparateRange(inOutStart, length);
-    //TrySeparateRange(carryStart, length);
+    // TrySeparateRange(inOutStart, length);
+    // TrySeparateRange(carryStart, length);
 }
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
-    //TrySeparateRange(inOutStart, length);
-    //TrySeparateRange(carryStart, length);
+    // TrySeparateRange(inOutStart, length);
+    // TrySeparateRange(carryStart, length);
 }
 
 void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length,
@@ -820,9 +825,9 @@ void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bi
     EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
     shards[inOutStart].unit->CMUL(
         toMul, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length, clearCarry);
-    //TrySeparateRange(inOutStart, length);
-    //TrySeparateRange(carryStart, length);
-    //TrySeparate({ controlBit });
+    // TrySeparateRange(inOutStart, length);
+    // TrySeparateRange(carryStart, length);
+    // TrySeparate({ controlBit });
 }
 
 void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
@@ -830,16 +835,16 @@ void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bi
     EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
     shards[inOutStart].unit->CDIV(
         toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length);
-    //TrySeparateRange(inOutStart, length);
-    //TrySeparateRange(carryStart, length);
-    //TrySeparate({ controlBit });
+    // TrySeparateRange(inOutStart, length);
+    // TrySeparateRange(carryStart, length);
+    // TrySeparate({ controlBit });
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
-    //TrySeparateRange(start, length);
+    // TrySeparateRange(start, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -864,8 +869,8 @@ bitCapInt QUnit::IndexedLDA(
 
     bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
         shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
-    //TrySeparateRange(indexStart, indexLength);
-    //TrySeparateRange(valueStart, valueLength);
+    // TrySeparateRange(indexStart, indexLength);
+    // TrySeparateRange(valueStart, valueLength);
     return toRet;
 }
 
@@ -876,9 +881,9 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-    //TrySeparateRange(indexStart, indexLength);
-    //TrySeparateRange(valueStart, valueLength);
-    //TrySeparate({ carryIndex });
+    // TrySeparateRange(indexStart, indexLength);
+    // TrySeparateRange(valueStart, valueLength);
+    // TrySeparate({ carryIndex });
     return toRet;
 }
 
@@ -889,9 +894,9 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-    //TrySeparateRange(indexStart, indexLength);
-    //TrySeparateRange(valueStart, valueLength);
-    //TrySeparate({ carryIndex });
+    // TrySeparateRange(indexStart, indexLength);
+    // TrySeparateRange(valueStart, valueLength);
+    // TrySeparate({ carryIndex });
     return toRet;
 }
 
