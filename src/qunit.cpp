@@ -82,6 +82,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(complex* inputState)
 {
+    knowIsPhaseSeparable = false;
+
     auto unit = CreateQuantumInterface(engine, engine, qubitCount, 0, rand_generator);
     unit->SetQuantumState(inputState);
 
@@ -420,8 +422,14 @@ void QUnit::DumpShards()
     }
 }
 
-bool QUnit::IsPhaseSeparable()
+bool QUnit::IsPhaseSeparable(bool forceCheck)
 {
+    if ((!forceCheck) && knowIsPhaseSeparable) {
+        return isPhaseSeparable;
+    }
+
+    bool toRet = true;
+
     std::vector<QInterfacePtr> units;
     units.reserve((int)(qubitCount));
     std::map<QInterfacePtr, bool> found;
@@ -436,11 +444,14 @@ bool QUnit::IsPhaseSeparable()
 
     for (bitLenInt i = 0; i < (units.size()); i++) {
         if (!(units[i]->IsPhaseSeparable())) {
-            return false;
+            toRet = false;
         }
     }
 
-    return true;
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = toRet;
+
+    return toRet;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
@@ -1021,12 +1032,14 @@ void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bi
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    knowIsPhaseSeparable = false;
     EntangleRange(start, length);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    knowIsPhaseSeparable = false;
     EntangleRange(start, length);
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2); },

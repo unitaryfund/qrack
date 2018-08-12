@@ -72,6 +72,9 @@ complex* QEngineCPU::GetStateVector() { return stateVec; }
 
 void QEngineCPU::SetPermutation(bitCapInt perm)
 {
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = true;
+
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
     real1 angle = Rand() * 2.0 * M_PI;
     stateVec[perm] = complex(cos(angle), sin(angle));
@@ -80,6 +83,8 @@ void QEngineCPU::SetPermutation(bitCapInt perm)
 
 void QEngineCPU::CopyState(QInterfacePtr orig)
 {
+    knowIsPhaseSeparable = false;
+
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
     ResetStateVec(AllocStateVec(maxQPower));
@@ -402,8 +407,12 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
 
 /// PSEUDO-QUANTUM Check whether phase is constant across permutation basis
-bool QEngineCPU::IsPhaseSeparable()
+bool QEngineCPU::IsPhaseSeparable(bool forceCheck)
 {
+    if ((!forceCheck) && knowIsPhaseSeparable) {
+        return isPhaseSeparable;
+    }
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -465,6 +474,9 @@ bool QEngineCPU::IsPhaseSeparable()
 
     delete[] isAllSame;
     delete[] phases;
+
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = toRet;
 
     return toRet;
 }

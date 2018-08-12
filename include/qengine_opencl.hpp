@@ -96,7 +96,7 @@ public:
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual bool IsPhaseSeparable();
+    virtual bool IsPhaseSeparable(bool forceCheck = false);
 
     /* Operations that have an improved implementation. */
     using QInterface::X;

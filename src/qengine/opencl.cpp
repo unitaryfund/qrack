@@ -102,6 +102,9 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
     queue.finish();
+
+    knowIsPhaseSeparable = false;
+
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
 
@@ -219,6 +222,8 @@ void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 void QEngineOCL::SetPermutation(bitCapInt perm)
 {
     queue.finish();
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = true;
     queue.enqueueFillBuffer(*stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower);
     real1 angle = Rand() * 2.0 * M_PI;
     complex amp = complex(cos(angle), sin(angle));
@@ -552,8 +557,12 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
 
 /// PSEUDO-QUANTUM Check whether bit phase is separable in permutation basis
-bool QEngineOCL::IsPhaseSeparable()
+bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
 {
+    if ((!forceCheck) && knowIsPhaseSeparable) {
+        return isPhaseSeparable;
+    }
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -627,6 +636,9 @@ bool QEngineOCL::IsPhaseSeparable()
     }
 
     delete[] phases;
+
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = toRet;
 
     return toRet;
 }
@@ -1169,6 +1181,8 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    knowIsPhaseSeparable = false;
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
@@ -1192,6 +1206,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    knowIsPhaseSeparable = false;
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
@@ -1217,6 +1233,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(complex* inputState)
 {
+    knowIsPhaseSeparable = false;
+
     LockSync(CL_MAP_WRITE);
     std::copy(inputState, inputState + maxQPower, stateVec);
     runningNorm = ONE_R1;

@@ -1454,11 +1454,12 @@ void QEngineOCLMulti::NormalizeState(real1 nrm)
     runningNorm = ONE_R1;
 }
 
-bool QEngineOCLMulti::IsPhaseSeparable()
+bool QEngineOCLMulti::IsPhaseSeparable(bool forceCheck)
 {
     CombineEngines(qubitCount - 1);
-    bool toRet = substateEngines[0]->IsPhaseSeparable();
+    bool toRet = substateEngines[0]->IsPhaseSeparable(true);
     SeparateEngines();
+
     return toRet;
 }
 

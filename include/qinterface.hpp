@@ -106,6 +106,8 @@ protected:
     bitCapInt maxQPower;
     real1 runningNorm;
     bool doNormalize;
+    bool knowIsPhaseSeparable;
+    bool isPhaseSeparable;
 
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
@@ -135,6 +137,8 @@ protected:
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : doNormalize(doNorm)
+        , knowIsPhaseSeparable(true)
+        , isPhaseSeparable(true)
         , rand_distribution(0.0, 1.0)
     {
         SetQubitCount(n);
@@ -1194,7 +1198,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool IsPhaseSeparable() = 0;
+    virtual bool IsPhaseSeparable(bool forceCheck = false) = 0;
 
     /**
      * Direct measure of bit probability to be in |1> state

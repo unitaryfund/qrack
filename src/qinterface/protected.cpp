@@ -36,8 +36,38 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 
 template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
+bool does2x2PhaseShift(const complex* mtrx)
+{
+    bool doesShift = false;
+    real1 phase = -M_PI * 2;
+    for (int i = 0; i < 4; i++) {
+        if (norm(mtrx[i]) > ZERO_R1) {
+            if (phase < -M_PI) {
+                phase = arg(mtrx[i]);
+                continue;
+            }
+
+            real1 diff = arg(mtrx[i]) - phase;
+            if (diff < ZERO_R1) {
+                diff = -diff;
+            }
+            if (diff > M_PI) {
+                diff = (2 * M_PI) - diff;
+            }
+            if (diff > min_norm) {
+                doesShift = true;
+                break;
+            }
+        }
+    }
+    return doesShift;
+}
+
 void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
@@ -45,6 +75,9 @@ void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt 
 
 void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
     qPowers[0] = 1 << control;
@@ -56,6 +89,9 @@ void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const c
 
 void QInterface::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
     qPowers[0] = 1 << control;
@@ -68,6 +104,9 @@ void QInterface::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, con
 void QInterface::ApplyDoublyControlled2x2(
     bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[3];
     qPowers[0] = 1 << control1;
@@ -82,6 +121,9 @@ void QInterface::ApplyDoublyControlled2x2(
 void QInterface::ApplyDoublyAntiControlled2x2(
     bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[3];
     qPowers[0] = 1 << control1;

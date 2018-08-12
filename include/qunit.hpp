@@ -190,7 +190,7 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual bool IsPhaseSeparable();
+    virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual void SetBit(bitLenInt qubit1, bool value);
 
     /** @} */
