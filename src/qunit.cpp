@@ -293,14 +293,14 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMember(F fn, B..
 {
     auto qbits = Entangle({ &bits... });
     ((*qbits).*fn)(bits...);
-    // TrySeparate({ bits... });
+    TrySeparate({ bits... });
 }
 
 template <typename F, typename... B> void QUnit::EntangleAndCall(F fn, B... bits)
 {
     auto qbits = Entangle({ &bits... });
     fn(qbits, bits...);
-    // TrySeparate({ bits... });
+    TrySeparate({ bits... });
 }
 
 template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, real1 radians, B... bits)
@@ -533,33 +533,118 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
+    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
+        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
+        real1 prob = Prob(inputBit1) * Prob(inputBit2);
+        if (prob < min_norm) {
+            SetBit(outputBit, false);
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            SetBit(outputBit, true);
+            return;
+        }
+    }
+
     EntangleAndCallMember(PTR3(AND), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
+    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
+        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
+        real1 prob = (1.0 - Prob(inputBit1)) * (1.0 - Prob(inputBit2));
+        if (prob < min_norm) {
+            SetBit(outputBit, true);
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            SetBit(outputBit, false);
+            return;
+        }
+    }
+
     EntangleAndCallMember(PTR3(OR), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
+    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
+        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
+        real1 prob1 = Prob(inputBit1);
+        real1 prob2 = Prob(inputBit2);
+        real1 probT1 = prob1 * (1.0 - prob2);
+        real1 probT2 = (1.0 - prob1) * prob2;
+        if ((probT1 > (1.0 - min_norm)) || (probT2 > (1.0 - min_norm))) {
+            SetBit(outputBit, true);
+            return;
+        } else if ((probT1 < min_norm) && (probT2 < min_norm)) {
+            SetBit(outputBit, false);
+            return;
+        }
+    }
+
     EntangleAndCallMember(PTR3(XOR), inputBit1, inputBit2, outputBit);
 }
 
 void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
+    if (!inputClassicalBit) {
+        SetBit(outputBit, false);
+        return;
+    }
+
+    if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
+        real1 prob = Prob(inputBit);
+        if (prob < min_norm) {
+            SetBit(outputBit, false);
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            SetBit(outputBit, true);
+            return;
+        }
+    }
+
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLAND(b1, inputClassicalBit, b2); },
         inputBit, outputBit);
 }
 
 void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
+    if (inputClassicalBit) {
+        SetBit(outputBit, true);
+        return;
+    }
+
+    if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
+        real1 prob = Prob(inputBit);
+        if (prob < min_norm) {
+            SetBit(outputBit, false);
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            SetBit(outputBit, true);
+            return;
+        }
+    }
+
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLOR(b1, inputClassicalBit, b2); },
         inputBit, outputBit);
 }
 
 void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
+    if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
+        real1 prob = Prob(inputBit);
+        if (inputClassicalBit) {
+            prob = 1.0 - prob;
+        }
+        if (prob < min_norm) {
+            SetBit(outputBit, false);
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            SetBit(outputBit, true);
+            return;
+        }
+    }
+
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLXOR(b1, inputClassicalBit, b2); },
         inputBit, outputBit);
 }
