@@ -287,70 +287,71 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 template <typename CF, typename F>
 void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
 {
-    if ((shards[control].unit) != (shards[target].unit)) {
-        real1 prob = Prob(control);
-        if (anti) {
-            prob = ONE_R1 - prob;
+    real1 prob = Prob(control);
+    if (anti) {
+        prob = ONE_R1 - prob;
+    }
+    if (prob <= REAL_CLAMP) {
+        if (shards[control].unit->IsPhaseSeparable()) {
+            ForceM(control, anti);
         }
-        if (prob <= REAL_CLAMP) {
-            // ForceM(control, anti);
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(control, !anti);
-            ((*(shards[target].unit)).*fn)(shards[target].mapped);
-            // TrySeparate({ target });
-            return;
+        return;
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        if (shards[control].unit->IsPhaseSeparable()) {
+            ForceM(control, !anti);
         }
+        ((*(shards[target].unit)).*fn)(shards[target].mapped);
+        TrySeparate({ target });
+        return;
     }
 
-    // bitLenInt tCopy = target;
+    bitLenInt tCopy = target;
     auto qbits = Entangle({ &control, &target });
     ((*qbits).*cfn)(control, target);
-    // TrySeparate({ tCopy });
+    TrySeparate({ tCopy });
 }
 
 template <typename CF, typename F>
 void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
 {
-    if ((shards[control].unit) != (shards[target].unit)) {
-        real1 prob = Prob(control);
-        if (prob <= REAL_CLAMP) {
-            // ForceM(control, false);
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(control, true);
-            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-            // TrySeparate({ target });
-            return;
+    real1 prob = Prob(control);
+    if (prob <= REAL_CLAMP) {
+        if (shards[control].unit->IsPhaseSeparable()) {
+            ForceM(control, false);
         }
+        return;
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        if (shards[control].unit->IsPhaseSeparable()) {
+            ForceM(control, true);
+        }
+        ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
+        TrySeparate({ target });
+        return;
     }
 
-    // bitLenInt tCopy = target;
+    bitLenInt tCopy = target;
     auto qbits = Entangle({ &control, &target });
     ((*qbits).*cfn)(radians, control, target);
-    // TrySeparate({ tCopy });
+    TrySeparate({ tCopy });
 }
 
-#if 0
-// TODO: Must make sure that phase is also separable.
 void QUnit::TrySeparate(std::vector<bitLenInt> bits)
 {
     for (bitLenInt i = 0; i < (bits.size()); i++) {
         if (shards[bits[i]].unit->GetQubitCount() > 1) {
             real1 oneChance = Prob(bits[i]);
             if (oneChance <= REAL_CLAMP) {
-                if (IsPhaseSeparable(bits[i])) {
+                if (shards[bits[i]].unit->IsPhaseSeparable()) {
                     ForceM(bits[i], false);
                 }
             } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
-                if (IsPhaseSeparable(bits[i])) {
+                if (shards[bits[i]].unit->IsPhaseSeparable()) {
                     ForceM(bits[i], true);
                 }
             }
         }
     }
 }
-#endif
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
@@ -419,6 +420,29 @@ void QUnit::DumpShards()
     for (auto shard : shards) {
         printf("%2d.\t%p[%d]\n", i++, shard.unit.get(), shard.mapped);
     }
+}
+
+bool QUnit::IsPhaseSeparable()
+{
+    std::vector<QInterfacePtr> units;
+    units.reserve((int)(qubitCount));
+    std::map<QInterfacePtr, bool> found;
+
+    /* Walk through all of the supplied bits and create a unique list to check. */
+    for (bitLenInt bit = 0; bit < qubitCount; ++bit) {
+        if (found.find(shards[bit].unit) == found.end()) {
+            found[shards[bit].unit] = true;
+            units.push_back(shards[bit].unit);
+        }
+    }
+
+    for (bitLenInt i = 0; i < (units.size()); i++) {
+        if (!(units[i]->IsPhaseSeparable())) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
@@ -544,13 +568,19 @@ void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
         SetBit(outputBit, false);
         return;
     } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        // ForceM(inputBit1, true);
-        // ForceM(inputBit2, true);
+        if (shards[inputBit1].unit->IsPhaseSeparable()) {
+            ForceM(inputBit1, true);
+        }
+        if (shards[inputBit2].unit->IsPhaseSeparable()) {
+            ForceM(inputBit2, true);
+        }
         SetBit(outputBit, true);
         return;
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCallMember(PTR3(AND), inputBit1, inputBit2, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
@@ -560,13 +590,19 @@ void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
         SetBit(outputBit, true);
         return;
     } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        // ForceM(inputBit1, false);
-        // ForceM(inputBit2, false);
+        if (shards[inputBit1].unit->IsPhaseSeparable()) {
+            ForceM(inputBit1, false);
+        }
+        if (shards[inputBit2].unit->IsPhaseSeparable()) {
+            ForceM(inputBit2, false);
+        }
         SetBit(outputBit, false);
         return;
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCallMember(PTR3(OR), inputBit1, inputBit2, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
@@ -576,13 +612,21 @@ void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
     real1 probT1 = prob1 * (ONE_R1 - prob2);
     real1 probT2 = (ONE_R1 - prob1) * prob2;
     if (probT1 >= (ONE_R1 - REAL_CLAMP)) {
-        // ForceM(inputBit1, true);
-        // ForceM(inputBit2, false);
+        if (shards[inputBit1].unit->IsPhaseSeparable()) {
+            ForceM(inputBit1, true);
+        }
+        if (shards[inputBit2].unit->IsPhaseSeparable()) {
+            ForceM(inputBit2, false);
+        }
         SetBit(outputBit, true);
         return;
     } else if (probT2 >= (ONE_R1 - REAL_CLAMP)) {
-        // ForceM(inputBit1, false);
-        // ForceM(inputBit2, true);
+        if (shards[inputBit1].unit->IsPhaseSeparable()) {
+            ForceM(inputBit1, false);
+        }
+        if (shards[inputBit2].unit->IsPhaseSeparable()) {
+            ForceM(inputBit2, true);
+        }
         SetBit(outputBit, true);
         return;
     } else if ((probT1 <= REAL_CLAMP) && (probT2 <= REAL_CLAMP)) {
@@ -590,7 +634,9 @@ void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
         return;
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCallMember(PTR3(XOR), inputBit1, inputBit2, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
@@ -600,21 +646,25 @@ void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBi
         return;
     }
 
-    if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
-        real1 prob = Prob(inputBit);
-        if (prob <= REAL_CLAMP) {
-            // ForceM(inputBit, false);
-            SetBit(outputBit, false);
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(inputBit, true);
-            SetBit(outputBit, true);
-            return;
+    real1 prob = Prob(inputBit);
+    if (prob <= REAL_CLAMP) {
+        if (shards[inputBit].unit->IsPhaseSeparable()) {
+            ForceM(inputBit, false);
         }
+        SetBit(outputBit, false);
+        return;
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        if (shards[inputBit].unit->IsPhaseSeparable()) {
+            ForceM(inputBit, true);
+        }
+        SetBit(outputBit, true);
+        return;
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLAND(b1, inputClassicalBit, b2); },
         inputBit, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
@@ -624,43 +674,51 @@ void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit
         return;
     }
 
-    if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
-        real1 prob = Prob(inputBit);
-        if (prob <= REAL_CLAMP) {
-            // ForceM(inputBit, false);
-            SetBit(outputBit, false);
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(inputBit, true);
-            SetBit(outputBit, true);
-            return;
+    real1 prob = Prob(inputBit);
+    if (prob <= REAL_CLAMP) {
+        if (shards[inputBit].unit->IsPhaseSeparable()) {
+            ForceM(inputBit, false);
         }
+        SetBit(outputBit, false);
+        return;
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        if (shards[inputBit].unit->IsPhaseSeparable()) {
+            ForceM(inputBit, true);
+        }
+        SetBit(outputBit, true);
+        return;
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLOR(b1, inputClassicalBit, b2); },
         inputBit, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
-        real1 prob = Prob(inputBit);
-        if (inputClassicalBit) {
-            prob = ONE_R1 - prob;
+    real1 prob = Prob(inputBit);
+    if (inputClassicalBit) {
+        prob = ONE_R1 - prob;
+    }
+    if (prob <= REAL_CLAMP) {
+        if (shards[inputBit].unit->IsPhaseSeparable()) {
+            ForceM(inputBit, inputClassicalBit);
         }
-        if (prob <= REAL_CLAMP) {
-            // ForceM(inputBit, inputClassicalBit);
-            SetBit(outputBit, false);
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(inputBit, !inputClassicalBit);
-            SetBit(outputBit, true);
-            return;
+        SetBit(outputBit, false);
+        return;
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        if (shards[inputBit].unit->IsPhaseSeparable()) {
+            ForceM(inputBit, !inputClassicalBit);
         }
+        SetBit(outputBit, true);
+        return;
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLXOR(b1, inputClassicalBit, b2); },
         inputBit, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
@@ -676,14 +734,20 @@ void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
         if (prob <= REAL_CLAMP) {
             return;
         } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(inputBit1, true);
-            // ForceM(inputBit2, true);
+            if (shards[inputBit1].unit->IsPhaseSeparable()) {
+                ForceM(inputBit1, true);
+            }
+            if (shards[inputBit2].unit->IsPhaseSeparable()) {
+                ForceM(inputBit2, true);
+            }
             X(outputBit);
             return;
         }
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCallMember(PTR3(CCNOT), inputBit1, inputBit2, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
@@ -694,14 +758,20 @@ void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt output
         if (prob <= REAL_CLAMP) {
             return;
         } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            // ForceM(inputBit1, false);
-            // ForceM(inputBit2, false);
+            if (shards[inputBit1].unit->IsPhaseSeparable()) {
+                ForceM(inputBit1, false);
+            }
+            if (shards[inputBit2].unit->IsPhaseSeparable()) {
+                ForceM(inputBit2, false);
+            }
             X(outputBit);
             return;
         }
     }
 
+    bitLenInt oCopy = outputBit;
     EntangleAndCallMember(PTR3(AntiCCNOT), inputBit1, inputBit2, outputBit);
+    TrySeparate({ oCopy });
 }
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CNOT), PTR1(X), control, target); }

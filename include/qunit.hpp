@@ -190,6 +190,7 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual bool IsPhaseSeparable();
     virtual void SetBit(bitLenInt qubit1, bool value);
 
     /** @} */
@@ -218,7 +219,7 @@ protected:
     template <typename CF, typename F>
     void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
 
-    // void TrySeparate(std::vector<bitLenInt> bits);
+    void TrySeparate(std::vector<bitLenInt> bits);
 
     void OrderContiguous(QInterfacePtr unit);
 

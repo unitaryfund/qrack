@@ -158,6 +158,7 @@ public:
     virtual void CopyState(QEngineOCLMultiPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual bool IsPhaseSeparable();
 
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);

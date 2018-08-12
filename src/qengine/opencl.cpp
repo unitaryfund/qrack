@@ -551,6 +551,86 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
 
+/// PSEUDO-QUANTUM Check whether bit phase is separable in permutation basis
+bool QEngineOCL::IsPhaseSeparable()
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    bool* isAllSame = new bool[ngc];
+    std::fill(isAllSame, isAllSame + ngc, true);
+    real1* phases = new real1[ngc];
+    std::fill(phases, phases + ngc, -M_PI * 2);
+
+    cl::Buffer isAllSameBuffer =
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(bool) * ngc, isAllSame);
+    cl::Buffer phasesBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * ngc, phases);
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_ISPHASESEPARABLE);
+    queue.finish();
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, phasesBuffer);
+    ocl.call.setArg(3, isAllSameBuffer);
+
+    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
+    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
+
+    bool toRet = true;
+    queue.enqueueMapBuffer(isAllSameBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(bool) * ngc);
+    for (size_t i = 0; i < ngc; i++) {
+        toRet &= isAllSame[i];
+    }
+    queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
+    queue.finish();
+
+    delete[] isAllSame;
+
+    if (toRet) {
+        queue.enqueueMapBuffer(phasesBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc);
+        real1 phase = -M_PI * 2;
+        for (size_t i = 0; i < ngc; i++) {
+            if (phase < (-M_PI)) {
+                if (phases[i] >= (-M_PI)) {
+                    phase = phases[i];
+                }
+                continue;
+            }
+
+            real1 diff = phases[i] - phase;
+            if (diff < ZERO_R1) {
+                diff = -diff;
+            }
+            if (diff > M_PI) {
+                diff = (2 * M_PI) - diff;
+            }
+            if (diff > min_norm) {
+                toRet = false;
+                break;
+            }
+        }
+        queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
+        queue.finish();
+    }
+
+    delete[] phases;
+
+    return toRet;
+}
+
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {

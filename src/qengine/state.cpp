@@ -401,6 +401,74 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
 
+/// PSEUDO-QUANTUM Check whether phase is constant across permutation basis
+bool QEngineCPU::IsPhaseSeparable()
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    int numCores = GetConcurrencyLevel();
+    bool* isAllSame = new bool[numCores];
+    std::fill(isAllSame, isAllSame + numCores, true);
+    real1* phases = new real1[numCores];
+    std::fill(phases, phases + numCores, -M_PI * 2);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        real1 nrm = norm(stateVec[lcv]);
+        if (nrm > min_norm) {
+            real1 nPhase = arg(stateVec[lcv]);
+            if (phases[cpu] < (-M_PI)) {
+                phases[cpu] = nPhase;
+            } else {
+                real1 diff = phases[cpu] - nPhase;
+                if (diff < ZERO_R1) {
+                    diff = -diff;
+                }
+                if (diff > M_PI) {
+                    diff = (2 * M_PI) - diff;
+                }
+                if (diff > min_norm) {
+                    isAllSame[cpu] = false;
+                }
+            }
+        }
+    });
+
+    bool toRet = true;
+    real1 phase = -M_PI * 2;
+    for (int i = 0; i < numCores; i++) {
+        if ((!toRet) || (!isAllSame[i])) {
+            toRet = false;
+            break;
+        }
+
+        if (phase < (-M_PI)) {
+            if (phases[i] >= (-M_PI)) {
+                phase = phases[i];
+            }
+            continue;
+        }
+
+        real1 diff = phases[i] - phase;
+        if (diff < ZERO_R1) {
+            diff = -diff;
+        }
+        if (diff > M_PI) {
+            diff = (2 * M_PI) - diff;
+        }
+        if (diff > min_norm) {
+            toRet = false;
+            break;
+        }
+    }
+
+    delete[] isAllSame;
+    delete[] phases;
+
+    return toRet;
+}
+
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {
@@ -424,6 +492,8 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     for (int i = 0; i < numCores; i++) {
         oneChance += oneChanceBuff[i];
     }
+
+    delete[] oneChanceBuff;
 
     return oneChance;
 }

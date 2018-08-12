@@ -1454,4 +1454,12 @@ void QEngineOCLMulti::NormalizeState(real1 nrm)
     runningNorm = ONE_R1;
 }
 
+bool QEngineOCLMulti::IsPhaseSeparable()
+{
+    CombineEngines(qubitCount - 1);
+    bool toRet = substateEngines[0]->IsPhaseSeparable();
+    SeparateEngines();
+    return toRet;
+}
+
 } // namespace Qrack

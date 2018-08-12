@@ -1190,6 +1190,13 @@ public:
     virtual void CopyState(QInterfacePtr orig) = 0;
 
     /**
+     * Check whether phase is constant across permutation basis
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool IsPhaseSeparable() = 0;
+
+    /**
      * Direct measure of bit probability to be in |1> state
      *
      * \warning PSEUDO-QUANTUM
