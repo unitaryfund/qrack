@@ -310,6 +310,47 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
     //TrySeparate({ bits... });
 }
 
+template <typename CF, typename F> void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
+{
+    if ((shards[control].unit) != (shards[target].unit)) {
+        real1 prob = Prob(control);
+        if (anti) {
+            prob = 1.0 - prob;
+        }
+        if (prob < min_norm) {
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            ((*(shards[target].unit)).*fn)(shards[target].mapped);
+            return;
+        }
+    }
+
+    bitLenInt cCopy = control;
+    bitLenInt tCopy = target;
+    auto qbits = Entangle({ &control, &target });
+    ((*qbits).*cfn)(control, target);
+    TrySeparate({ cCopy, tCopy });
+}
+
+template <typename CF, typename F> void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
+{
+    if ((shards[control].unit) != (shards[target].unit)) {
+        real1 prob = Prob(control);
+        if (prob < min_norm) {
+            return;
+        } else if (prob > (1.0 - min_norm)) {
+            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
+            return;
+        }
+    }
+
+    bitLenInt cCopy = control;
+    bitLenInt tCopy = target;
+    auto qbits = Entangle({ &control, &target });
+    ((*qbits).*cfn)(radians, control, target);
+    TrySeparate({ cCopy, tCopy });
+}
+
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
     if (unit->GetQubitCount() == 1) {
@@ -482,9 +523,11 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 }
 
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
-#define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt)) & QInterface::OP
-#define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt)) & QInterface::OP
-#define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt)) & QInterface::OP
+#define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt))(&QInterface::OP)
+#define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt))(&QInterface::OP)
+#define PTR1(OP) (void (QInterface::*)(bitLenInt))(&QInterface::OP)
+#define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
+#define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
 
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
@@ -534,9 +577,9 @@ void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt output
     EntangleAndCallMember(PTR3(AntiCCNOT), inputBit1, inputBit2, outputBit);
 }
 
-void QUnit::CNOT(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2(CNOT), control, target); }
+void QUnit::CNOT(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CNOT), PTR1(X), control, target); }
 
-void QUnit::AntiCNOT(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2(AntiCNOT), control, target); }
+void QUnit::AntiCNOT(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(AntiCNOT), PTR1(X), control, target, true); }
 
 void QUnit::H(bitLenInt qubit) { shards[qubit].unit->H(shards[qubit].mapped); }
 
@@ -546,9 +589,9 @@ void QUnit::Y(bitLenInt qubit) { shards[qubit].unit->Y(shards[qubit].mapped); }
 
 void QUnit::Z(bitLenInt qubit) { shards[qubit].unit->Z(shards[qubit].mapped); }
 
-void QUnit::CY(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2(CY), control, target); }
+void QUnit::CY(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CY), PTR1(Y), control, target); }
 
-void QUnit::CZ(bitLenInt control, bitLenInt target) { EntangleAndCallMember(PTR2(CZ), control, target); }
+void QUnit::CZ(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CZ), PTR1(Z), control, target); }
 
 void QUnit::RT(real1 radians, bitLenInt qubit) { shards[qubit].unit->RT(radians, shards[qubit].mapped); }
 
@@ -568,22 +611,22 @@ void QUnit::ExpZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpZ(radi
 
 void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCallMemberRot(PTR2A(CRT), radians, control, target);
+    ControlRotCallMember(PTR2A(CRT), PTRA(RT), radians, control, target);
 }
 
 void QUnit::CRX(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCallMemberRot(PTR2A(CRX), radians, control, target);
+    ControlRotCallMember(PTR2A(CRX), PTRA(RX), radians, control, target);
 }
 
 void QUnit::CRY(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCallMemberRot(PTR2A(CRY), radians, control, target);
+    ControlRotCallMember(PTR2A(CRY), PTRA(RY), radians, control, target);
 }
 
 void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
 {
-    EntangleAndCallMemberRot(PTR2A(CRZ), radians, control, target);
+    ControlRotCallMember(PTR2A(CRZ), PTRA(RZ), radians, control, target);
 }
 
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)

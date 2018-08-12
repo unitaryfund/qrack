@@ -207,6 +207,9 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
+    template <typename CF, typename F> void ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti = false);
+    template <typename CF, typename F> void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
+
     void OrderContiguous(QInterfacePtr unit);
 
     void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
