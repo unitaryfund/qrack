@@ -107,7 +107,6 @@ public:
     cl::Context context;
     int context_id;
     cl::CommandQueue queue;
-    std::map<OCLAPI, size_t> groupSize;
 
 protected:
     std::recursive_mutex mutex;
