@@ -287,38 +287,58 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 template <typename CF, typename F>
 void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
 {
-    if ((shards[control].unit) != (shards[target].unit)) {
-        real1 prob = Prob(control);
-        if (anti) {
-            prob = 1.0 - prob;
-        }
-        if (prob < min_norm) {
-            return;
-        } else if (prob > (1.0 - min_norm)) {
-            ((*(shards[target].unit)).*fn)(shards[target].mapped);
-            return;
-        }
+    real1 prob = Prob(control);
+    if (anti) {
+        prob = 1.0 - prob;
+    }
+    if (prob < min_norm) {
+        ForceM(control, anti);
+        return;
+    } else if (prob > (1.0 - min_norm)) {
+        ForceM(control, !anti);
+        ((*(shards[target].unit)).*fn)(shards[target].mapped);
+        TrySeparate({ target });
+        return;
     }
 
+    bitLenInt tCopy = target;
     auto qbits = Entangle({ &control, &target });
     ((*qbits).*cfn)(control, target);
+    TrySeparate({ tCopy });
 }
 
 template <typename CF, typename F>
 void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
 {
-    if ((shards[control].unit) != (shards[target].unit)) {
-        real1 prob = Prob(control);
-        if (prob < min_norm) {
-            return;
-        } else if (prob > (1.0 - min_norm)) {
-            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-            return;
-        }
+    real1 prob = Prob(control);
+    if (prob < min_norm) {
+        ForceM(control, false);
+        return;
+    } else if (prob > (1.0 - min_norm)) {
+        ForceM(control, true);
+        ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
+        TrySeparate({ target });
+        return;
     }
 
+    bitLenInt tCopy = target;
     auto qbits = Entangle({ &control, &target });
     ((*qbits).*cfn)(radians, control, target);
+    TrySeparate({ tCopy });
+}
+
+void QUnit::TrySeparate(std::vector<bitLenInt> bits)
+{
+    for (bitLenInt i = 0; i < (bits.size()); i++) {
+        if (shards[bits[i]].unit->GetQubitCount() > 1) {
+            real1 oneChance = Prob(bits[i]);
+            if (oneChance < min_norm) {
+                ForceM(bits[i], false);
+            } else if (oneChance > (1.0 - min_norm)) {
+                ForceM(bits[i], true);
+            }
+        }
+    }
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
@@ -416,9 +436,16 @@ real1 QUnit::ProbAll(bitCapInt perm)
 }
 
 /// Measure a bit
-bool QUnit::M(bitLenInt qubit)
+bool QUnit::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
+
+bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
 {
-    bool result = shards[qubit].unit->M(shards[qubit].mapped);
+    bool result;
+    if (doForce) {
+        result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, true, nrmlzr);
+    } else {
+        result = shards[qubit].unit->M(shards[qubit].mapped);
+    }
 
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
@@ -501,16 +528,15 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
-        real1 prob = Prob(inputBit1) * Prob(inputBit2);
-        if (prob < min_norm) {
-            SetBit(outputBit, false);
-            return;
-        } else if (prob > (1.0 - min_norm)) {
-            SetBit(outputBit, true);
-            return;
-        }
+    real1 prob = Prob(inputBit1) * Prob(inputBit2);
+    if (prob < min_norm) {
+        SetBit(outputBit, false);
+        return;
+    } else if (prob > (1.0 - min_norm)) {
+        ForceM(inputBit1, true);
+        ForceM(inputBit2, true);
+        SetBit(outputBit, true);
+        return;
     }
 
     EntangleAndCallMember(PTR3(AND), inputBit1, inputBit2, outputBit);
@@ -518,16 +544,15 @@ void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 
 void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
-        real1 prob = (1.0 - Prob(inputBit1)) * (1.0 - Prob(inputBit2));
-        if (prob < min_norm) {
-            SetBit(outputBit, true);
-            return;
-        } else if (prob > (1.0 - min_norm)) {
-            SetBit(outputBit, false);
-            return;
-        }
+    real1 prob = (1.0 - Prob(inputBit1)) * (1.0 - Prob(inputBit2));
+    if (prob < min_norm) {
+        SetBit(outputBit, true);
+        return;
+    } else if (prob > (1.0 - min_norm)) {
+        ForceM(inputBit1, false);
+        ForceM(inputBit2, false);
+        SetBit(outputBit, false);
+        return;
     }
 
     EntangleAndCallMember(PTR3(OR), inputBit1, inputBit2, outputBit);
@@ -535,19 +560,23 @@ void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 
 void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
-        real1 prob1 = Prob(inputBit1);
-        real1 prob2 = Prob(inputBit2);
-        real1 probT1 = prob1 * (1.0 - prob2);
-        real1 probT2 = (1.0 - prob1) * prob2;
-        if ((probT1 > (1.0 - min_norm)) || (probT2 > (1.0 - min_norm))) {
-            SetBit(outputBit, true);
-            return;
-        } else if ((probT1 < min_norm) && (probT2 < min_norm)) {
-            SetBit(outputBit, false);
-            return;
-        }
+    real1 prob1 = Prob(inputBit1);
+    real1 prob2 = Prob(inputBit2);
+    real1 probT1 = prob1 * (1.0 - prob2);
+    real1 probT2 = (1.0 - prob1) * prob2;
+    if (probT1 > (1.0 - min_norm)) {
+        ForceM(inputBit1, true);
+        ForceM(inputBit2, false);
+        SetBit(outputBit, true);
+        return;
+    } else if (probT2 > (1.0 - min_norm)) {
+        ForceM(inputBit1, false);
+        ForceM(inputBit2, true);
+        SetBit(outputBit, true);
+        return;
+    } else if ((probT1 < min_norm) && (probT2 < min_norm)) {
+        SetBit(outputBit, false);
+        return;
     }
 
     EntangleAndCallMember(PTR3(XOR), inputBit1, inputBit2, outputBit);

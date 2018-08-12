@@ -40,6 +40,8 @@ protected:
         QInterface::SetQubitCount(qb);
     }
 
+    const real1 min_norm_sqr = min_norm * min_norm;
+
 public:
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
@@ -63,6 +65,7 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
     virtual void H(bitLenInt qubit);
     virtual bool M(bitLenInt qubit);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual void X(bitLenInt qubit);
     virtual void Y(bitLenInt qubit);
     virtual void Z(bitLenInt qubit);
@@ -209,6 +212,8 @@ protected:
     void ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti = false);
     template <typename CF, typename F>
     void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
+
+    void TrySeparate(std::vector<bitLenInt> bits);
 
     void OrderContiguous(QInterfacePtr unit);
 
