@@ -71,7 +71,7 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
     // deviceIDs[2] = 1;
     // deviceIDs[3] = 0;
 
-    runningNorm = 1.0;
+    runningNorm = ONE_R1;
 
     int deviceCount = deviceIDs.size();
 
@@ -151,15 +151,15 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
 
     bitLenInt i, j;
 
-    if (runningNorm != 1.0) {
+    if (runningNorm != ONE_R1) {
         for (i = 0; i < subEngineCount; i++) {
             substateEngines[i]->SetNorm(runningNorm);
             substateEngines[i]->EnableNormalize(true);
         }
-        runningNorm = 1.0;
+        runningNorm = ONE_R1;
     } else if (doNormalize) {
         for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(1.0);
+            substateEngines[i]->SetNorm(ONE_R1);
             substateEngines[i]->EnableNormalize(true);
         }
     }

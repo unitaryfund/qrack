@@ -51,7 +51,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
     if (!partialInit) {
         if (phaseFac == complex(-999.0, -999.0)) {
-            real1 angle = Rand() * 2.0 * M_PI;
+            real1 angle = Rand() * 2.0 * PI_R1;
             stateVec[initState] = complex(cos(angle), sin(angle));
         } else {
             stateVec[initState] = phaseFac;
@@ -76,7 +76,7 @@ void QEngineCPU::SetPermutation(bitCapInt perm)
     isPhaseSeparable = true;
 
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-    real1 angle = Rand() * 2.0 * M_PI;
+    real1 angle = Rand() * 2.0 * PI_R1;
     stateVec[perm] = complex(cos(angle), sin(angle));
     runningNorm = ONE_R1;
 }
@@ -421,21 +421,21 @@ bool QEngineCPU::IsPhaseSeparable(bool forceCheck)
     bool* isAllSame = new bool[numCores];
     std::fill(isAllSame, isAllSame + numCores, true);
     real1* phases = new real1[numCores];
-    std::fill(phases, phases + numCores, -M_PI * 2);
+    std::fill(phases, phases + numCores, -PI_R1 * 2);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         real1 nrm = norm(stateVec[lcv]);
         if (nrm > min_norm) {
             real1 nPhase = arg(stateVec[lcv]);
-            if (phases[cpu] < (-M_PI)) {
+            if (phases[cpu] < (-PI_R1)) {
                 phases[cpu] = nPhase;
             } else {
                 real1 diff = phases[cpu] - nPhase;
                 if (diff < ZERO_R1) {
                     diff = -diff;
                 }
-                if (diff > M_PI) {
-                    diff = (2 * M_PI) - diff;
+                if (diff > PI_R1) {
+                    diff = (2 * PI_R1) - diff;
                 }
                 if (diff > min_norm) {
                     isAllSame[cpu] = false;
@@ -445,15 +445,15 @@ bool QEngineCPU::IsPhaseSeparable(bool forceCheck)
     });
 
     bool toRet = true;
-    real1 phase = -M_PI * 2;
+    real1 phase = -PI_R1 * 2;
     for (int i = 0; i < numCores; i++) {
         if ((!toRet) || (!isAllSame[i])) {
             toRet = false;
             break;
         }
 
-        if (phase < (-M_PI)) {
-            if (phases[i] >= (-M_PI)) {
+        if (phase < (-PI_R1)) {
+            if (phases[i] >= (-PI_R1)) {
                 phase = phases[i];
             }
             continue;
@@ -463,8 +463,8 @@ bool QEngineCPU::IsPhaseSeparable(bool forceCheck)
         if (diff < ZERO_R1) {
             diff = -diff;
         }
-        if (diff > M_PI) {
-            diff = (2 * M_PI) - diff;
+        if (diff > PI_R1) {
+            diff = (2 * PI_R1) - diff;
         }
         if (diff > min_norm) {
             toRet = false;

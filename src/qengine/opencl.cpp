@@ -38,7 +38,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
     if (!partialInit) {
         if (phaseFac == complex(-999.0, -999.0)) {
-            real1 angle = Rand() * 2.0 * M_PI;
+            real1 angle = Rand() * 2.0 * PI_R1;
             stateVec[initState] = complex(cos(angle), sin(angle));
         } else {
             stateVec[initState] = phaseFac;
@@ -225,7 +225,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
     knowIsPhaseSeparable = true;
     isPhaseSeparable = true;
     queue.enqueueFillBuffer(*stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower);
-    real1 angle = Rand() * 2.0 * M_PI;
+    real1 angle = Rand() * 2.0 * PI_R1;
     complex amp = complex(cos(angle), sin(angle));
     queue.finish();
     queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex));
@@ -576,13 +576,13 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    bool* isAllSame = new bool[ngc];
-    std::fill(isAllSame, isAllSame + ngc, true);
+    bitLenInt* isAllSame = new bitLenInt[ngc];
+    std::fill(isAllSame, isAllSame + ngc, 1);
     real1* phases = new real1[ngc];
-    std::fill(phases, phases + ngc, -M_PI * 2);
+    std::fill(phases, phases + ngc, -PI_R1 * 2);
 
     cl::Buffer isAllSameBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(bool) * ngc, isAllSame);
+        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(bitLenInt) * ngc, isAllSame);
     cl::Buffer phasesBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * ngc, phases);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ISPHASESEPARABLE);
@@ -599,21 +599,21 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
         cl::NDRange(ngs)); // local number (per group)
 
     bool toRet = true;
-    queue.enqueueMapBuffer(isAllSameBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(bool) * ngc);
+    queue.enqueueMapBuffer(isAllSameBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(bitLenInt) * ngc);
     for (size_t i = 0; i < ngc; i++) {
-        toRet &= isAllSame[i];
+        toRet &= (isAllSame[i] == 1);
     }
-    queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
+    queue.enqueueUnmapMemObject(isAllSameBuffer, isAllSame);
     queue.finish();
 
     delete[] isAllSame;
 
     if (toRet) {
         queue.enqueueMapBuffer(phasesBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc);
-        real1 phase = -M_PI * 2;
+        real1 phase = -PI_R1 * 2;
         for (size_t i = 0; i < ngc; i++) {
-            if (phase < (-M_PI)) {
-                if (phases[i] >= (-M_PI)) {
+            if (phase < (-PI_R1)) {
+                if (phases[i] >= (-PI_R1)) {
                     phase = phases[i];
                 }
                 continue;
@@ -623,15 +623,15 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
             if (diff < ZERO_R1) {
                 diff = -diff;
             }
-            if (diff > M_PI) {
-                diff = (2 * M_PI) - diff;
+            if (diff > PI_R1) {
+                diff = (2 * PI_R1) - diff;
             }
             if (diff > min_norm) {
                 toRet = false;
                 break;
             }
         }
-        queue.enqueueUnmapMemObject(nrmBuffer, nrmArray);
+        queue.enqueueUnmapMemObject(phasesBuffer, phases);
         queue.finish();
     }
 
