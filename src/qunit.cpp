@@ -301,7 +301,6 @@ void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target,
             ForceM(control, !anti);
         }
         ((*(shards[target].unit)).*fn)(shards[target].mapped);
-        TrySeparate({ target });
         return;
     }
 
@@ -325,7 +324,6 @@ void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control,
             ForceM(control, true);
         }
         ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-        TrySeparate({ target });
         return;
     }
 
