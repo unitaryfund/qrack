@@ -21,7 +21,7 @@ void QEngineCPU::ApplyM(bitCapInt qPower, bool result, complex nrm)
         if ((lcv & qPower) == powerTest) {
             stateVec[lcv] = nrm * stateVec[lcv];
         } else {
-            stateVec[lcv] = complex(0.0, 0.0);
+            stateVec[lcv] = complex(ZERO_R1, ZERO_R1);
         }
     });
 }

@@ -28,12 +28,16 @@
 #include <complex>
 #define complex std::complex<float>
 #define real1 float
+#define ZERO_R1 0.0f
+#define ONE_R1 1.0f
 #define min_norm 1e-9
 #define polar(A, B) std::polar(A, B)
 #else
 #include "common/complex16simd.hpp"
 #define complex Complex16Simd
 #define real1 double
+#define ZERO_R1 0.0
+#define ONE_R1 1.0
 #define min_norm 1e-15
 #endif
 

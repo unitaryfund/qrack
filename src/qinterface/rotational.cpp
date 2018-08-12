@@ -19,7 +19,8 @@ void QInterface::RT(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    const complex mtrx[4] = { complex(1.0, 0), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
+    const complex mtrx[4] = { complex(ONE_R1, 0), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(cosine, sine) };
     ApplySingleBit(mtrx, true, qubit);
 }
 
@@ -28,7 +29,8 @@ void QInterface::RX(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine), complex(cosine, 0.0) };
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
     ApplySingleBit(pauliRX, true, qubit);
 }
 
@@ -37,7 +39,8 @@ void QInterface::RY(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0), complex(cosine, 0.0) };
+    complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
+        complex(cosine, ZERO_R1) };
     ApplySingleBit(pauliRY, true, qubit);
 }
 
@@ -46,7 +49,8 @@ void QInterface::RZ(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
+    const complex pauliRZ[4] = { complex(cosine, -sine), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(cosine, sine) };
     ApplySingleBit(pauliRZ, true, qubit);
 }
 
@@ -54,7 +58,7 @@ void QInterface::RZ(real1 radians, bitLenInt qubit)
 void QInterface::Exp(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    complex expIdentity[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), phaseFac };
+    complex expIdentity[4] = { phaseFac, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), phaseFac };
     ApplySingleBit(expIdentity, true, qubit);
 }
 
@@ -62,7 +66,7 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
 void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    complex expPauliX[4] = { complex(0.0, 0.0), phaseFac, phaseFac, complex(0.0, 0.0) };
+    complex expPauliX[4] = { complex(ZERO_R1, ZERO_R1), phaseFac, phaseFac, complex(ZERO_R1, ZERO_R1) };
     ApplySingleBit(expPauliX, true, qubit);
 }
 
@@ -70,8 +74,8 @@ void QInterface::ExpX(real1 radians, bitLenInt qubit)
 void QInterface::ExpY(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    complex expPauliY[4] = { complex(0.0, 0.0), phaseFac * complex(0.0, -1.0), phaseFac * complex(0.0, 1.0),
-        complex(0.0, 0.0) };
+    complex expPauliY[4] = { complex(ZERO_R1, ZERO_R1), phaseFac * complex(ZERO_R1, -ONE_R1),
+        phaseFac * complex(ZERO_R1, ONE_R1), complex(ZERO_R1, ZERO_R1) };
     ApplySingleBit(expPauliY, true, qubit);
 }
 
@@ -79,7 +83,7 @@ void QInterface::ExpY(real1 radians, bitLenInt qubit)
 void QInterface::ExpZ(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    complex expPauliZ[4] = { phaseFac, complex(0.0, 0.0), complex(0.0, 0.0), -phaseFac };
+    complex expPauliZ[4] = { phaseFac, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), -phaseFac };
     ApplySingleBit(expPauliZ, true, qubit);
 }
 
@@ -92,7 +96,8 @@ void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
 
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    const complex mtrx[4] = { complex(1.0, 0), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
+    const complex mtrx[4] = { complex(ONE_R1, 0), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(cosine, sine) };
     ApplyControlled2x2(control, target, mtrx, false);
 }
 
@@ -103,7 +108,8 @@ void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRX control bit cannot also be target.");
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    complex pauliRX[4] = { complex(cosine, 0.0), complex(0.0, -sine), complex(0.0, -sine), complex(cosine, 0.0) };
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
     ApplyControlled2x2(control, target, pauliRX, false);
 }
 
@@ -114,7 +120,8 @@ void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRY control bit cannot also be target.");
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    complex pauliRY[4] = { complex(cosine, 0.0), complex(-sine, 0.0), complex(sine, 0.0), complex(cosine, 0.0) };
+    complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
+        complex(cosine, ZERO_R1) };
     ApplyControlled2x2(control, target, pauliRY, false);
 }
 
@@ -125,7 +132,8 @@ void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CRZ control bit cannot also be target.");
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    const complex pauliRZ[4] = { complex(cosine, -sine), complex(0.0, 0.0), complex(0.0, 0.0), complex(cosine, sine) };
+    const complex pauliRZ[4] = { complex(cosine, -sine), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(cosine, sine) };
     ApplyControlled2x2(control, target, pauliRZ, false);
 }
 

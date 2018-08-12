@@ -12,7 +12,14 @@
 
 #pragma once
 
+#include <cfloat>
 #include <random>
+
+#if ENABLE_COMPLEX8
+#define REAL_CLAMP 1e-9f
+#else
+#define REAL_CLAMP 1e-15
+#endif
 
 #include "qinterface.hpp"
 
@@ -39,8 +46,6 @@ protected:
         shards.resize(qb);
         QInterface::SetQubitCount(qb);
     }
-
-    const real1 min_norm_sqr = min_norm * min_norm;
 
 public:
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -213,7 +218,7 @@ protected:
     template <typename CF, typename F>
     void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
 
-    void TrySeparate(std::vector<bitLenInt> bits);
+    // void TrySeparate(std::vector<bitLenInt> bits);
 
     void OrderContiguous(QInterfacePtr unit);
 

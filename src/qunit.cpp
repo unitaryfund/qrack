@@ -287,59 +287,66 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 template <typename CF, typename F>
 void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
 {
-    real1 prob = Prob(control);
-    if (anti) {
-        prob = 1.0 - prob;
-    }
-    if (prob < min_norm) {
-        ForceM(control, anti);
-        return;
-    } else if (prob > (1.0 - min_norm)) {
-        ForceM(control, !anti);
-        ((*(shards[target].unit)).*fn)(shards[target].mapped);
-        TrySeparate({ target });
-        return;
+    if ((shards[control].unit) != (shards[target].unit)) {
+        real1 prob = Prob(control);
+        if (anti) {
+            prob = ONE_R1 - prob;
+        }
+        if (prob <= REAL_CLAMP) {
+            // ForceM(control, anti);
+            return;
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(control, !anti);
+            ((*(shards[target].unit)).*fn)(shards[target].mapped);
+            // TrySeparate({ target });
+            return;
+        }
     }
 
-    bitLenInt tCopy = target;
+    // bitLenInt tCopy = target;
     auto qbits = Entangle({ &control, &target });
     ((*qbits).*cfn)(control, target);
-    TrySeparate({ tCopy });
+    // TrySeparate({ tCopy });
 }
 
 template <typename CF, typename F>
 void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
 {
-    real1 prob = Prob(control);
-    if (prob < min_norm) {
-        ForceM(control, false);
-        return;
-    } else if (prob > (1.0 - min_norm)) {
-        ForceM(control, true);
-        ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-        TrySeparate({ target });
-        return;
+    if ((shards[control].unit) != (shards[target].unit)) {
+        real1 prob = Prob(control);
+        if (prob <= REAL_CLAMP) {
+            // ForceM(control, false);
+            return;
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(control, true);
+            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
+            // TrySeparate({ target });
+            return;
+        }
     }
 
-    bitLenInt tCopy = target;
+    // bitLenInt tCopy = target;
     auto qbits = Entangle({ &control, &target });
     ((*qbits).*cfn)(radians, control, target);
-    TrySeparate({ tCopy });
+    // TrySeparate({ tCopy });
 }
 
+#if 0
+// TODO: Must make sure that phase is also separable.
 void QUnit::TrySeparate(std::vector<bitLenInt> bits)
 {
     for (bitLenInt i = 0; i < (bits.size()); i++) {
         if (shards[bits[i]].unit->GetQubitCount() > 1) {
             real1 oneChance = Prob(bits[i]);
-            if (oneChance < min_norm) {
+            if (oneChance <= REAL_CLAMP) {
                 ForceM(bits[i], false);
-            } else if (oneChance > (1.0 - min_norm)) {
+            } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
                 ForceM(bits[i], true);
             }
         }
     }
 }
+#endif
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
@@ -418,7 +425,7 @@ real1 QUnit::Prob(bitLenInt qubit)
 
 real1 QUnit::ProbAll(bitCapInt perm)
 {
-    real1 result = 1.0;
+    real1 result = ONE_R1;
 
     std::map<QInterfacePtr, bitCapInt> perms;
 
@@ -529,12 +536,12 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     real1 prob = Prob(inputBit1) * Prob(inputBit2);
-    if (prob < min_norm) {
+    if (prob <= REAL_CLAMP) {
         SetBit(outputBit, false);
         return;
-    } else if (prob > (1.0 - min_norm)) {
-        ForceM(inputBit1, true);
-        ForceM(inputBit2, true);
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        // ForceM(inputBit1, true);
+        // ForceM(inputBit2, true);
         SetBit(outputBit, true);
         return;
     }
@@ -544,13 +551,13 @@ void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 
 void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    real1 prob = (1.0 - Prob(inputBit1)) * (1.0 - Prob(inputBit2));
-    if (prob < min_norm) {
+    real1 prob = (ONE_R1 - Prob(inputBit1)) * (ONE_R1 - Prob(inputBit2));
+    if (prob <= REAL_CLAMP) {
         SetBit(outputBit, true);
         return;
-    } else if (prob > (1.0 - min_norm)) {
-        ForceM(inputBit1, false);
-        ForceM(inputBit2, false);
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        // ForceM(inputBit1, false);
+        // ForceM(inputBit2, false);
         SetBit(outputBit, false);
         return;
     }
@@ -562,19 +569,19 @@ void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     real1 prob1 = Prob(inputBit1);
     real1 prob2 = Prob(inputBit2);
-    real1 probT1 = prob1 * (1.0 - prob2);
-    real1 probT2 = (1.0 - prob1) * prob2;
-    if (probT1 > (1.0 - min_norm)) {
-        ForceM(inputBit1, true);
-        ForceM(inputBit2, false);
+    real1 probT1 = prob1 * (ONE_R1 - prob2);
+    real1 probT2 = (ONE_R1 - prob1) * prob2;
+    if (probT1 >= (ONE_R1 - REAL_CLAMP)) {
+        // ForceM(inputBit1, true);
+        // ForceM(inputBit2, false);
         SetBit(outputBit, true);
         return;
-    } else if (probT2 > (1.0 - min_norm)) {
-        ForceM(inputBit1, false);
-        ForceM(inputBit2, true);
+    } else if (probT2 >= (ONE_R1 - REAL_CLAMP)) {
+        // ForceM(inputBit1, false);
+        // ForceM(inputBit2, true);
         SetBit(outputBit, true);
         return;
-    } else if ((probT1 < min_norm) && (probT2 < min_norm)) {
+    } else if ((probT1 <= REAL_CLAMP) && (probT2 <= REAL_CLAMP)) {
         SetBit(outputBit, false);
         return;
     }
@@ -591,10 +598,12 @@ void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBi
 
     if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
         real1 prob = Prob(inputBit);
-        if (prob < min_norm) {
+        if (prob <= REAL_CLAMP) {
+            // ForceM(inputBit, false);
             SetBit(outputBit, false);
             return;
-        } else if (prob > (1.0 - min_norm)) {
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(inputBit, true);
             SetBit(outputBit, true);
             return;
         }
@@ -613,10 +622,12 @@ void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit
 
     if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
         real1 prob = Prob(inputBit);
-        if (prob < min_norm) {
+        if (prob <= REAL_CLAMP) {
+            // ForceM(inputBit, false);
             SetBit(outputBit, false);
             return;
-        } else if (prob > (1.0 - min_norm)) {
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(inputBit, true);
             SetBit(outputBit, true);
             return;
         }
@@ -631,12 +642,14 @@ void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBi
     if ((shards[inputBit].unit) != (shards[outputBit].unit)) {
         real1 prob = Prob(inputBit);
         if (inputClassicalBit) {
-            prob = 1.0 - prob;
+            prob = ONE_R1 - prob;
         }
-        if (prob < min_norm) {
+        if (prob <= REAL_CLAMP) {
+            // ForceM(inputBit, inputClassicalBit);
             SetBit(outputBit, false);
             return;
-        } else if (prob > (1.0 - min_norm)) {
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(inputBit, !inputClassicalBit);
             SetBit(outputBit, true);
             return;
         }
@@ -653,12 +666,14 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
 
 void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
+    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) ||
+        ((shards[inputBit1].unit) != (shards[outputBit].unit))) {
         real1 prob = Prob(inputBit1) * Prob(inputBit2);
-        if (prob < min_norm) {
+        if (prob <= REAL_CLAMP) {
             return;
-        } else if (prob > (1.0 - min_norm)) {
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(inputBit1, true);
+            // ForceM(inputBit2, true);
             X(outputBit);
             return;
         }
@@ -669,12 +684,14 @@ void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 
 void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) &&
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
-        real1 prob = (1.0 - Prob(inputBit1)) * (1.0 - Prob(inputBit2));
-        if (prob < min_norm) {
+    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) ||
+        ((shards[inputBit1].unit) != (shards[outputBit].unit))) {
+        real1 prob = (ONE_R1 - Prob(inputBit1)) * (ONE_R1 - Prob(inputBit2));
+        if (prob <= REAL_CLAMP) {
             return;
-        } else if (prob > (1.0 - min_norm)) {
+        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            // ForceM(inputBit1, false);
+            // ForceM(inputBit2, false);
             X(outputBit);
             return;
         }
