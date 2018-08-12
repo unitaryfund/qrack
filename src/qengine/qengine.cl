@@ -200,7 +200,7 @@ void kernel decohereamp(global real1* stateProb, global real1* stateAngle, const
     }
 }
 
-void kernel isphaseseparable(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* phases, global bool* isAllSame)
+void kernel isphaseseparable(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* phases, global bitLenInt* isAllSame)
 {
     bitCapInt ID, Nthreads, lcv;
 
@@ -215,18 +215,18 @@ void kernel isphaseseparable(global cmplx* stateVec, constant bitCapInt* bitCapI
         nrm = dot(amp, amp);
         if (nrm > min_norm) {
             real1 nPhase = arg(stateVec[lcv]);
-            if (phases[ID] < (-M_PI)) {
+            if (phases[ID] < (-PI_R1)) {
                 phases[ID] = nPhase;
             } else {
                 real1 diff = phases[ID] - nPhase;
                 if (diff < ZERO_R1) {
                     diff = -diff;
                 }
-                if (diff > M_PI) {
-                    diff = (2 * M_PI) - diff;
+                if (diff > PI_R1) {
+                    diff = (2 * PI_R1) - diff;
                 }
                 if (diff > min_norm) {
-                    isAllSame[ID] = false;
+                    isAllSame[ID] = 0;
                 }
             }
         }
