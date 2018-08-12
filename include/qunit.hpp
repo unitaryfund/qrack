@@ -198,8 +198,6 @@ protected:
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
     QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
-    void TrySeparateRange(bitLenInt start, bitLenInt length);
-    void TrySeparate(std::vector<bitLenInt> bits);
 
     template <class It> QInterfacePtr EntangleIterator(It first, It last);
 

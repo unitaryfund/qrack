@@ -444,7 +444,7 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QEngineOCLMulti::H(bitLenInt qubitIndex) { SingleBitGate(true, qubitIndex, (GFn)(&QEngineOCL::H)); }
 
-bool QEngineOCLMulti::M(bitLenInt qubit)
+bool QEngineOCLMulti::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrm)
 {
 
     if (subEngineCount == 1) {
@@ -458,8 +458,15 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
     real1 prob = Rand();
     real1 oneChance = Prob(qubit);
 
-    bool result = ((prob < oneChance) && (oneChance > 0.0));
-    real1 nrmlzr = 1.0;
+    bool result;
+    real1 nrmlzr;
+    if (doForce) {
+        result = res;
+        nrmlzr = nrm;
+    } else {
+        result = ((prob < oneChance) && (oneChance > 0.0));
+        nrmlzr = 1.0;
+    }
     if (result) {
         nrmlzr = oneChance;
     } else {
@@ -509,6 +516,8 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
 
     return result;
 }
+
+bool QEngineOCLMulti::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
 
 // See QEngineCPU::X(start, length) in src/qengine/state/gates.cpp
 void QEngineOCLMulti::MetaX(bitLenInt start, bitLenInt length)
