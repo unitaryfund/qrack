@@ -96,6 +96,7 @@ public:
 
     virtual void H(bitLenInt qubitIndex);
     virtual bool M(bitLenInt qubitIndex);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual void X(bitLenInt qubitIndex);
     virtual void Y(bitLenInt qubitIndex);
     virtual void Z(bitLenInt qubitIndex);
@@ -157,6 +158,7 @@ public:
     virtual void CopyState(QEngineOCLMultiPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual bool IsPhaseSeparable(bool forceCheck = false);
 
     virtual void X(bitLenInt start, bitLenInt length);
     virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);

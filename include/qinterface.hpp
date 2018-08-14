@@ -28,12 +28,18 @@
 #include <complex>
 #define complex std::complex<float>
 #define real1 float
-#define min_norm 1e-9
+#define ZERO_R1 0.0f
+#define ONE_R1 1.0f
+#define PI_R1 (real1) M_PI
+#define min_norm 1e-9f
 #define polar(A, B) std::polar(A, B)
 #else
 #include "common/complex16simd.hpp"
 #define complex Complex16Simd
 #define real1 double
+#define ZERO_R1 0.0
+#define ONE_R1 1.0
+#define PI_R1 M_PI
 #define min_norm 1e-15
 #endif
 
@@ -102,6 +108,8 @@ protected:
     bitCapInt maxQPower;
     real1 runningNorm;
     bool doNormalize;
+    bool knowIsPhaseSeparable;
+    bool isPhaseSeparable;
 
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
@@ -131,6 +139,8 @@ protected:
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : doNormalize(doNorm)
+        , knowIsPhaseSeparable(true)
+        , isPhaseSeparable(true)
         , rand_distribution(0.0, 1.0)
     {
         SetQubitCount(n);
@@ -468,6 +478,11 @@ public:
      * result.
      */
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    /**
+     *  Full Adder Gate that takes one classical input bit, one input qubit, and one carry qubit
+     */
+    virtual void CLFullAdder(bool toAdd, bitLenInt input, bitLenInt carry);
 
     /** @} */
 
@@ -1184,6 +1199,13 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void CopyState(QInterfacePtr orig) = 0;
+
+    /**
+     * Check whether phase is constant across permutation basis
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool IsPhaseSeparable(bool forceCheck = false) = 0;
 
     /**
      * Direct measure of bit probability to be in |1> state

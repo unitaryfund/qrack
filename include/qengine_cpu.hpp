@@ -144,6 +144,7 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 GetNorm(bool update = true)
     {
         if (update) {

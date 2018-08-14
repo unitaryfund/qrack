@@ -71,7 +71,7 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
     // deviceIDs[2] = 1;
     // deviceIDs[3] = 0;
 
-    runningNorm = 1.0;
+    runningNorm = ONE_R1;
 
     int deviceCount = deviceIDs.size();
 
@@ -151,15 +151,15 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
 
     bitLenInt i, j;
 
-    if (runningNorm != 1.0) {
+    if (runningNorm != ONE_R1) {
         for (i = 0; i < subEngineCount; i++) {
             substateEngines[i]->SetNorm(runningNorm);
             substateEngines[i]->EnableNormalize(true);
         }
-        runningNorm = 1.0;
+        runningNorm = ONE_R1;
     } else if (doNormalize) {
         for (i = 0; i < subEngineCount; i++) {
-            substateEngines[i]->SetNorm(1.0);
+            substateEngines[i]->SetNorm(ONE_R1);
             substateEngines[i]->EnableNormalize(true);
         }
     }
@@ -212,7 +212,7 @@ void QEngineOCLMulti::SingleBitGate(bool doNormalize, bitLenInt bit, F fn, Args.
     }
 
     if (doNormalize) {
-        runningNorm = 0.0;
+        runningNorm = ZERO_R1;
         for (i = 0; i < subEngineCount; i++) {
             runningNorm += substateEngines[i]->GetNorm(false);
         }
@@ -325,7 +325,7 @@ void QEngineOCLMulti::SetPermutation(bitCapInt perm)
             bitCapInt p = perm - i;
             futures[j] = std::async(std::launch::async, [engine, p]() { engine->SetPermutation(p); });
         } else {
-            futures[j] = std::async(std::launch::async, [this, j]() { substateEngines[j]->NormalizeState(0.0); });
+            futures[j] = std::async(std::launch::async, [this, j]() { substateEngines[j]->NormalizeState(ZERO_R1); });
         }
         j++;
     }
@@ -444,7 +444,7 @@ void QEngineOCLMulti::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QEngineOCLMulti::H(bitLenInt qubitIndex) { SingleBitGate(true, qubitIndex, (GFn)(&QEngineOCL::H)); }
 
-bool QEngineOCLMulti::M(bitLenInt qubit)
+bool QEngineOCLMulti::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrm)
 {
 
     if (subEngineCount == 1) {
@@ -458,12 +458,19 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
     real1 prob = Rand();
     real1 oneChance = Prob(qubit);
 
-    bool result = ((prob < oneChance) && (oneChance > 0.0));
-    real1 nrmlzr = 1.0;
+    bool result;
+    real1 nrmlzr;
+    if (doForce) {
+        result = res;
+        nrmlzr = nrm;
+    } else {
+        result = ((prob < oneChance) && (oneChance > ZERO_R1));
+        nrmlzr = ONE_R1;
+    }
     if (result) {
         nrmlzr = oneChance;
     } else {
-        nrmlzr = 1.0 - oneChance;
+        nrmlzr = ONE_R1 - oneChance;
     }
 
     if (qubit < subQubitCount) {
@@ -495,7 +502,7 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
                         bitLenInt clearIndex = j + (i * groupSize) + (clearOffset * groupSize / 2);
                         bitLenInt keepIndex = j + (i * groupSize) + (keepOffset * groupSize / 2);
 
-                        substateEngines[clearIndex]->NormalizeState(0.0);
+                        substateEngines[clearIndex]->NormalizeState(ZERO_R1);
                         substateEngines[keepIndex]->NormalizeState(nrmlzr);
 
                     });
@@ -509,6 +516,8 @@ bool QEngineOCLMulti::M(bitLenInt qubit)
 
     return result;
 }
+
+bool QEngineOCLMulti::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
 
 // See QEngineCPU::X(start, length) in src/qengine/state/gates.cpp
 void QEngineOCLMulti::MetaX(bitLenInt start, bitLenInt length)
@@ -1175,7 +1184,7 @@ real1 QEngineOCLMulti::Prob(bitLenInt qubitIndex)
 
     NormalizeState();
 
-    real1 oneChance = 0.0;
+    real1 oneChance = ZERO_R1;
     bitLenInt i, j, k;
 
     if (qubitIndex < subQubitCount) {
@@ -1425,15 +1434,15 @@ void QEngineOCLMulti::RegOp(F fn, OF ofn, bitLenInt length, std::vector<bitLenIn
 
 void QEngineOCLMulti::NormalizeState(real1 nrm)
 {
-    if (nrm < 0.0) {
+    if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
-    if ((nrm <= 0.0) || (nrm == 1.0)) {
+    if ((nrm <= ZERO_R1) || (nrm == ONE_R1)) {
         return;
     }
 
     bitLenInt i;
-    if (runningNorm != 1.0) {
+    if (runningNorm != ONE_R1) {
         std::vector<std::future<void>> nf(subEngineCount);
         for (i = 0; i < subEngineCount; i++) {
             nf[i] = std::async(std::launch::async, [this, i]() { substateEngines[i]->NormalizeState(runningNorm); });
@@ -1442,7 +1451,16 @@ void QEngineOCLMulti::NormalizeState(real1 nrm)
             nf[i].get();
         }
     }
-    runningNorm = 1.0;
+    runningNorm = ONE_R1;
+}
+
+bool QEngineOCLMulti::IsPhaseSeparable(bool forceCheck)
+{
+    CombineEngines(qubitCount - 1);
+    bool toRet = substateEngines[0]->IsPhaseSeparable(true);
+    SeparateEngines();
+
+    return toRet;
 }
 
 } // namespace Qrack

@@ -12,7 +12,14 @@
 
 #pragma once
 
+#include <cfloat>
 #include <random>
+
+#if ENABLE_COMPLEX8
+#define REAL_CLAMP 1e-9f
+#else
+#define REAL_CLAMP 1e-15
+#endif
 
 #include "qinterface.hpp"
 
@@ -63,6 +70,7 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
     virtual void H(bitLenInt qubit);
     virtual bool M(bitLenInt qubit);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual void X(bitLenInt qubit);
     virtual void Y(bitLenInt qubit);
     virtual void Z(bitLenInt qubit);
@@ -80,17 +88,17 @@ public:
      * @{
      */
 
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    using QInterface::AND;
     virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    using QInterface::OR;
     virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    using QInterface::XOR;
     virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    using QInterface::CLAND;
     virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    using QInterface::CLOR;
     virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    using QInterface::CLXOR;
     virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** @} */
@@ -182,6 +190,7 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual void SetBit(bitLenInt qubit1, bool value);
 
     /** @} */
@@ -204,6 +213,14 @@ protected:
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
+
+    template <typename CF, typename F>
+    void ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti = false);
+    template <typename CF, typename F>
+    void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
+
+    void TrySeparate(std::vector<bitLenInt> bits);
+    void TrySeparate(bitLenInt start, bitLenInt length);
 
     void OrderContiguous(QInterfacePtr unit);
 
