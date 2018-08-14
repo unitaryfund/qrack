@@ -907,8 +907,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+        valueLength, shards[carryIndex].mapped, values);
 }
 
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -916,8 +916,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+        valueLength, shards[carryIndex].mapped, values);
 }
 
 } // namespace Qrack

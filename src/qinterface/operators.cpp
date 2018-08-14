@@ -159,10 +159,11 @@ void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
     }
 }
 
-void QInterface::CLFullAdder(bool toAdd, bitLenInt input, bitLenInt carry) {
+void QInterface::CLFullAdder(bool toAdd, bitLenInt input, bitLenInt carry)
+{
     if (toAdd) {
         AntiCNOT(carry, input);
-        //TODO
+        // TODO
     } else {
         CNOT(carry, input);
         XOR(carry, input, carry);
