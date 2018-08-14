@@ -479,6 +479,11 @@ public:
      */
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
+    /**
+     *  Full Adder Gate that takes one classical input bit, one input qubit, and one carry qubit
+     */
+    virtual void CLFullAdder(bool toAdd, bitLenInt input, bitLenInt carry);
+
     /** @} */
 
     /**

@@ -88,17 +88,17 @@ public:
      * @{
      */
 
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    using QInterface::AND;
     virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    using QInterface::OR;
     virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+    using QInterface::XOR;
     virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    using QInterface::CLAND;
     virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    using QInterface::CLOR;
     virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+    using QInterface::CLXOR;
     virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** @} */

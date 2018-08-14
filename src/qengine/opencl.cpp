@@ -606,8 +606,6 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
     queue.enqueueUnmapMemObject(isAllSameBuffer, isAllSame);
     queue.finish();
 
-    delete[] isAllSame;
-
     if (toRet) {
         queue.enqueueMapBuffer(phasesBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc);
         real1 phase = -PI_R1 * 2;
@@ -635,6 +633,7 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
         queue.finish();
     }
 
+    delete[] isAllSame;
     delete[] phases;
 
     knowIsPhaseSeparable = true;

@@ -353,24 +353,6 @@ void QUnit::TrySeparate(std::vector<bitLenInt> bits)
     }
 }
 
-void QUnit::TrySeparate(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt i = start; i < (start + length); i++) {
-        if (shards[i].unit->GetQubitCount() > 1) {
-            real1 oneChance = Prob(i);
-            if (oneChance <= REAL_CLAMP) {
-                if (shards[i].unit->IsPhaseSeparable()) {
-                    ForceM(i, false);
-                }
-            } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
-                if (shards[i].unit->IsPhaseSeparable()) {
-                    ForceM(i, true);
-                }
-            }
-        }
-    }
-}
-
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
     if (unit->GetQubitCount() == 1) {
@@ -588,166 +570,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 #define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
 #define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
 
-void QUnit::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
-{
-    real1 prob = Prob(inputBit1) * Prob(inputBit2);
-    if (prob <= REAL_CLAMP) {
-        SetBit(outputBit, false);
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[inputBit1].unit->IsPhaseSeparable()) {
-            ForceM(inputBit1, true);
-        }
-        if (shards[inputBit2].unit->IsPhaseSeparable()) {
-            ForceM(inputBit2, true);
-        }
-        SetBit(outputBit, true);
-        return;
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCallMember(PTR3(AND), inputBit1, inputBit2, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
-{
-    real1 prob = (ONE_R1 - Prob(inputBit1)) * (ONE_R1 - Prob(inputBit2));
-    if (prob <= REAL_CLAMP) {
-        SetBit(outputBit, true);
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[inputBit1].unit->IsPhaseSeparable()) {
-            ForceM(inputBit1, false);
-        }
-        if (shards[inputBit2].unit->IsPhaseSeparable()) {
-            ForceM(inputBit2, false);
-        }
-        SetBit(outputBit, false);
-        return;
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCallMember(PTR3(OR), inputBit1, inputBit2, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
-{
-    real1 prob1 = Prob(inputBit1);
-    real1 prob2 = Prob(inputBit2);
-    real1 probT1 = prob1 * (ONE_R1 - prob2);
-    real1 probT2 = (ONE_R1 - prob1) * prob2;
-    if (probT1 >= (ONE_R1 - REAL_CLAMP)) {
-        if (shards[inputBit1].unit->IsPhaseSeparable()) {
-            ForceM(inputBit1, true);
-        }
-        if (shards[inputBit2].unit->IsPhaseSeparable()) {
-            ForceM(inputBit2, false);
-        }
-        SetBit(outputBit, true);
-        return;
-    } else if (probT2 >= (ONE_R1 - REAL_CLAMP)) {
-        if (shards[inputBit1].unit->IsPhaseSeparable()) {
-            ForceM(inputBit1, false);
-        }
-        if (shards[inputBit2].unit->IsPhaseSeparable()) {
-            ForceM(inputBit2, true);
-        }
-        SetBit(outputBit, true);
-        return;
-    } else if ((probT1 <= REAL_CLAMP) && (probT2 <= REAL_CLAMP)) {
-        SetBit(outputBit, false);
-        return;
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCallMember(PTR3(XOR), inputBit1, inputBit2, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::CLAND(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
-{
-    if (!inputClassicalBit) {
-        SetBit(outputBit, false);
-        return;
-    }
-
-    real1 prob = Prob(inputBit);
-    if (prob <= REAL_CLAMP) {
-        if (shards[inputBit].unit->IsPhaseSeparable()) {
-            ForceM(inputBit, false);
-        }
-        SetBit(outputBit, false);
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[inputBit].unit->IsPhaseSeparable()) {
-            ForceM(inputBit, true);
-        }
-        SetBit(outputBit, true);
-        return;
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLAND(b1, inputClassicalBit, b2); },
-        inputBit, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::CLOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
-{
-    if (inputClassicalBit) {
-        SetBit(outputBit, true);
-        return;
-    }
-
-    real1 prob = Prob(inputBit);
-    if (prob <= REAL_CLAMP) {
-        if (shards[inputBit].unit->IsPhaseSeparable()) {
-            ForceM(inputBit, false);
-        }
-        SetBit(outputBit, false);
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[inputBit].unit->IsPhaseSeparable()) {
-            ForceM(inputBit, true);
-        }
-        SetBit(outputBit, true);
-        return;
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLOR(b1, inputClassicalBit, b2); },
-        inputBit, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::CLXOR(bitLenInt inputBit, bool inputClassicalBit, bitLenInt outputBit)
-{
-    real1 prob = Prob(inputBit);
-    if (inputClassicalBit) {
-        prob = ONE_R1 - prob;
-    }
-    if (prob <= REAL_CLAMP) {
-        if (shards[inputBit].unit->IsPhaseSeparable()) {
-            ForceM(inputBit, inputClassicalBit);
-        }
-        SetBit(outputBit, false);
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[inputBit].unit->IsPhaseSeparable()) {
-            ForceM(inputBit, !inputClassicalBit);
-        }
-        SetBit(outputBit, true);
-        return;
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CLXOR(b1, inputClassicalBit, b2); },
-        inputBit, outputBit);
-    TrySeparate({ oCopy });
-}
-
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
@@ -914,7 +736,6 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->INC(toMod, shards[start].mapped, length);
-    TrySeparate(start, length);
 }
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -927,13 +748,9 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 
     EntangleRange(start, length);
 
-    bitLenInt fCopy = flagIndex;
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleAndCall([&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { ((*unit).*fn)(toMod, b1, length, b2); },
         start, flagIndex);
-
-    TrySeparate(start, length);
-    TrySeparate({ fCopy });
 }
 
 void QUnit::INCxx(
@@ -952,16 +769,10 @@ void QUnit::INCxx(
 
     EntangleRange(start, length);
 
-    bitLenInt f1Copy = flag1Index;
-    bitLenInt f2Copy = flag2Index;
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) { ((*unit).*fn)(toMod, b1, length, b2, b3); },
         start, flag1Index, flag2Index);
-
-    TrySeparate(start, length);
-    TrySeparate({ f1Copy });
-    TrySeparate({ f2Copy });
 }
 
 void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -988,7 +799,6 @@ void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->INCBCD(toMod, shards[start].mapped, length);
-    TrySeparate(start, length);
 }
 
 void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -1000,7 +810,6 @@ void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->DEC(toMod, shards[start].mapped, length);
-    TrySeparate(start, length);
 }
 
 void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -1027,7 +836,6 @@ void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     EntangleRange(start, length);
     shards[start].unit->DECBCD(toMod, shards[start].mapped, length);
-    TrySeparate(start, length);
 }
 
 void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -1039,16 +847,12 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
 {
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length, clearCarry);
-    TrySeparate(inOutStart, length);
-    TrySeparate(carryStart, length);
 }
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
-    TrySeparate(inOutStart, length);
-    TrySeparate(carryStart, length);
 }
 
 void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length,
@@ -1057,9 +861,6 @@ void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bi
     EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
     shards[inOutStart].unit->CMUL(
         toMul, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length, clearCarry);
-    TrySeparate(inOutStart, length);
-    TrySeparate(carryStart, length);
-    TrySeparate({ controlBit });
 }
 
 void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
@@ -1067,9 +868,6 @@ void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bi
     EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
     shards[inOutStart].unit->CDIV(
         toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length);
-    TrySeparate(inOutStart, length);
-    TrySeparate(carryStart, length);
-    TrySeparate({ controlBit });
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
@@ -1077,9 +875,6 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     knowIsPhaseSeparable = false;
     EntangleRange(start, length);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
-    if (shards[start].unit->IsPhaseSeparable()) {
-        TrySeparate(start, length);
-    }
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -1089,9 +884,6 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     EntangleAndCall(
         [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2) { unit->CPhaseFlipIfLess(greaterPerm, b1, length, b2); },
         start, flagIndex);
-    if (shards[start].unit->IsPhaseSeparable()) {
-        TrySeparate(start, length);
-    }
 }
 
 void QUnit::PhaseFlip()
@@ -1106,11 +898,8 @@ bitCapInt QUnit::IndexedLDA(
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
+    return shards[indexStart].unit->IndexedLDA(
         shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
-    TrySeparate(indexStart, indexLength);
-    TrySeparate(valueStart, valueStart);
-    return toRet;
 }
 
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -1118,12 +907,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
+    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-    TrySeparate(indexStart, indexLength);
-    TrySeparate(valueStart, valueStart);
-    TrySeparate({ carryIndex });
-    return toRet;
 }
 
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -1131,12 +916,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
+    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-    TrySeparate(indexStart, indexLength);
-    TrySeparate(valueStart, valueStart);
-    TrySeparate({ carryIndex });
-    return toRet;
 }
 
 } // namespace Qrack
