@@ -917,7 +917,14 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// Measure permutation state of a register
 bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 {
-    // First, single bit operations are better optimized for this special case:
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
+    // Single bit operations are better optimized for this special case:
     if (length == 1) {
         if (M(start)) {
             return 1;

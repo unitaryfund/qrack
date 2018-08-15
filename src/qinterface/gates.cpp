@@ -47,7 +47,16 @@ bool QInterface::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr
     return result;
 }
 
-bool QInterface::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
+bool QInterface::M(bitLenInt qubit)
+{
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+    return ForceM(qubit, false, false);
+}
 
 /// Set individual bit to pure |0> (false) or |1> (true) state
 void QInterface::SetBit(bitLenInt qubit1, bool value)

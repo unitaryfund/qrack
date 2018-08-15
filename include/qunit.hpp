@@ -69,7 +69,6 @@ public:
     virtual void CNOT(bitLenInt control, bitLenInt target);
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
     virtual void H(bitLenInt qubit);
-    virtual bool M(bitLenInt qubit);
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual void X(bitLenInt qubit);
     virtual void Y(bitLenInt qubit);
@@ -169,7 +168,6 @@ public:
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlip();
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -191,7 +189,6 @@ public:
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
-    virtual void SetBit(bitLenInt qubit1, bool value);
 
     /** @} */
 

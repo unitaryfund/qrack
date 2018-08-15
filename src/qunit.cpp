@@ -479,9 +479,6 @@ real1 QUnit::ProbAll(bitCapInt perm)
     return result;
 }
 
-/// Measure a bit
-bool QUnit::M(bitLenInt qubit) { return ForceM(qubit, false, false); }
-
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
 {
     bool result;
@@ -512,27 +509,6 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
     }
 
     return result;
-}
-
-/// Measure permutation state of a register
-bitCapInt QUnit::MReg(bitLenInt start, bitLenInt length)
-{
-    bitCapInt result = 0;
-
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        if (M(bit + start)) {
-            result |= 1 << bit;
-        }
-    }
-
-    return result;
-}
-
-void QUnit::SetBit(bitLenInt qubit, bool value)
-{
-    if (M(qubit) != value) {
-        shards[qubit].unit->X(shards[qubit].mapped);
-    }
 }
 
 /// Set register bits to given permutation
