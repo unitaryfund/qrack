@@ -896,6 +896,7 @@ void QEngineCPU::CDIV(
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    knowIsPhaseSeparable = false;
     par_for_skip(
         0, maxQPower, 1 << start, length, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
@@ -903,6 +904,7 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
 void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    knowIsPhaseSeparable = false;
     bitCapInt regMask = ((1 << length) - 1) << start;
     bitCapInt flagMask = 1 << flagIndex;
 
