@@ -1645,20 +1645,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     free(toLoad);
 }
 
-void AnnealingSubroutine(QInterfacePtr qftReg)
-{
-    // We're looking for the minimum of an 8-bit NOT.
-    qftReg->X(0, 8);
-}
-
-void InverseAnnealingSubroutine(QInterfacePtr qftReg)
-{
-    // The inverse of X() happens to be X().
-    qftReg->X(0, 8);
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
 {
+    const bitLenInt length = 8;
     int i, j, optIter;
     real1 iterCount;
 
@@ -1668,57 +1657,52 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
-    qftReg->H(0, 8);
+    qftReg->H(0, length);
     // We get an initial estimate for the output threshold, at random.
-    AnnealingSubroutine(qftReg);
-    threshold = qftReg->MReg(0, 8);
-
-    for (i = 0; i < 2; i++) {
-        qftReg->SetPermutation(0);
-        qftReg->H(0, 8);
-        AnnealingSubroutine(qftReg);
-        temp = qftReg->MReg(0, 8);
-        if (temp < threshold) {
-            threshold = temp;
-        }
-    }
+    // (We're looking for the minimum of NOT on all bits.)
+    qftReg->X(0, length);
+    threshold = qftReg->MReg(0, length);
 
     // Assume the function to minimize is one-to-one. Selecting a random output as an initial threshold, on average 50%
     // of outputs will be higher, and 50% will be lower. Using "PhaseFlipIfLess" in the search oracle, 1/2 of all inputs
-    // satisfy the Grover's search. For each successful search, we reduce the number of search matches by 1/2. We can
+    // satisfy the Grover's search. For each successful search, we reduce the number of search matches by 1/2 on average. We can
     // use this to pick the optimal number of iterations for the search at each step.
-    i = 0;
-    do {
+    for (i = 0; i < length; i++) {
         optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << i)));
         i++;
 
         qftReg->SetPermutation(0);
-        qftReg->H(0, 8);
+        qftReg->H(0, length);
         // Our "oracle" is true for an input of "100" and false for all other inputs.
         for (j = 0; j < optIter; j++) {
             // We have a black box oracle that we're trying to find the minimal output from.
-            AnnealingSubroutine(qftReg);
-            qftReg->PhaseFlipIfLess(threshold, 0, 8);
-            InverseAnnealingSubroutine(qftReg);
+            // We're looking for the minimum of NOT on all bits.
+            qftReg->X(0, length);
+            qftReg->PhaseFlipIfLess(threshold, 0, length);
+            // The inverse of X() happens to be X().
+            qftReg->X(0, length);
             // This ends the "oracle."
-            qftReg->H(0, 8);
-            qftReg->ZeroPhaseFlip(0, 8);
-            qftReg->H(0, 8);
+            qftReg->H(0, length);
+            qftReg->ZeroPhaseFlip(0, length);
+            qftReg->H(0, length);
             qftReg->PhaseFlip();
         }
 
-        temp = qftReg->MReg(0, 8);
+        temp = qftReg->MReg(0, length);
         if (temp < threshold) {
             threshold = temp;
         }
-    } while (optIter < 12);
+    };
 
     // The threshold should (usually) be global minimum output, now, or close.
     // We run the inverse annealing subroutine to get the corresponding input.
     qftReg->SetPermutation(threshold);
-    InverseAnnealingSubroutine(qftReg);
-    bitCapInt result = qftReg->MReg(0, 8);
-    REQUIRE(result > 192);
+    qftReg->X(0, length);
+    bitCapInt result = qftReg->MReg(0, length);
+
+    std::cout << "Result: " << (int)result << std::endl;
+
+    REQUIRE(result >= ((1 << length) / 2));
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
