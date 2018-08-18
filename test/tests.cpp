@@ -1266,6 +1266,41 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
     }
 }
 
+/*
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_period_finding")
+{
+    int i;
+    bitLenInt baseLen = 3;
+    bitLenInt powLen = 3;
+    bitCapInt basePerm = 5;
+
+    bitLenInt inStart, outStart;
+
+    qftReg->SetPermutation(1);
+    qftReg->H(3 * baseLen, powLen);
+    for (i = 0; i < powLen; i++) {
+        if ((i % 2) == 0) {
+            inStart = 0;
+            outStart = baseLen;
+        } else {
+            inStart = baseLen;
+            outStart = 0;
+        }
+        qftReg->CMUL(basePerm, inStart, 2 * baseLen, 2 * baseLen + i, baseLen, false);
+        qftReg->CNOT(inStart, outStart, baseLen);
+        qftReg->CDIV(basePerm, inStart, 2 * baseLen, 2 * baseLen + i, baseLen);
+        qftReg->SetReg(inStart, baseLen, 0);
+    }
+    if ((i % 2) == 0) {
+        qftReg->CNOT(baseLen, 0, baseLen);
+        qftReg->SetReg(inStart, baseLen, 0);
+    }
+    qftReg->IQFT(2 * baseLen, powLen);
+    bitCapInt res = qftReg->MReg(2 * baseLen, powLen);
+    REQUIRE((res % 2) == 0);
+}
+*/
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 {
     int i;
@@ -1608,6 +1643,82 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
     free(toLoad);
+}
+
+void AnnealingSubroutine(QInterfacePtr qftReg)
+{
+    // We're looking for the minimum of an 8-bit NOT.
+    qftReg->X(0, 8);
+}
+
+void InverseAnnealingSubroutine(QInterfacePtr qftReg)
+{
+    // The inverse of X() happens to be X().
+    qftReg->X(0, 8);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
+{
+    int i, j, optIter;
+    real1 iterCount;
+
+    // An adaptive Grover's search can be used to find the global minimum of a black box function.
+    // We maintain an adaptive threshold.
+    bitCapInt threshold, temp;
+
+    // Our input to the subroutine "oracle" is 8 bits.
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+    // We get an initial estimate for the output threshold, at random.
+    AnnealingSubroutine(qftReg);
+    threshold = qftReg->MReg(0, 8);
+
+    for (i = 0; i < 2; i++) {
+        qftReg->SetPermutation(0);
+        qftReg->H(0, 8);
+        AnnealingSubroutine(qftReg);
+        temp = qftReg->MReg(0, 8);
+        if (temp < threshold) {
+            threshold = temp;
+        }
+    }
+
+    // Assume the function to minimize is one-to-one. Selecting a random output as an initial threshold, on average 50%
+    // of outputs will be higher, and 50% will be lower. Using "PhaseFlipIfLess" in the search oracle, 1/2 of all inputs
+    // satisfy the Grover's search. For each successful search, we reduce the number of search matches by 1/2. We can
+    // use this to pick the optimal number of iterations for the search at each step.
+    i = 0;
+    do {
+        optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << i)));
+        i++;
+
+        qftReg->SetPermutation(0);
+        qftReg->H(0, 8);
+        // Our "oracle" is true for an input of "100" and false for all other inputs.
+        for (j = 0; j < optIter; j++) {
+            // We have a black box oracle that we're trying to find the minimal output from.
+            AnnealingSubroutine(qftReg);
+            qftReg->PhaseFlipIfLess(threshold, 0, 8);
+            InverseAnnealingSubroutine(qftReg);
+            // This ends the "oracle."
+            qftReg->H(0, 8);
+            qftReg->ZeroPhaseFlip(0, 8);
+            qftReg->H(0, 8);
+            qftReg->PhaseFlip();
+        }
+
+        temp = qftReg->MReg(0, 8);
+        if (temp < threshold) {
+            threshold = temp;
+        }
+    } while (optIter < 12);
+
+    // The threshold should (usually) be global minimum output, now, or close.
+    // We run the inverse annealing subroutine to get the corresponding input.
+    qftReg->SetPermutation(threshold);
+    InverseAnnealingSubroutine(qftReg);
+    bitCapInt result = qftReg->MReg(0, 8);
+    REQUIRE(result > 192);
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,

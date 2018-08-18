@@ -1229,6 +1229,32 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     queue.finish();
 }
 
+void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    knowIsPhaseSeparable = false;
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIPIFLESS);
+
+    bitCapInt regMask = ((1 << length) - 1) << start;
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, regMask, greaterPerm, start, 0, 0, 0, 0, 0, 0 };
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs)); // local number (per group)
+
+    queue.finish();
+}
+
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(complex* inputState)
 {

@@ -120,6 +120,7 @@ public:
 
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
     virtual void PhaseFlip();
     virtual void SetPermutation(bitCapInt perm);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);

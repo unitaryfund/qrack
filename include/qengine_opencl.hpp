@@ -163,6 +163,7 @@ public:
     virtual void PhaseFlip();
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
     virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);

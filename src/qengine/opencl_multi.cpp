@@ -895,6 +895,11 @@ void QEngineOCLMulti::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, b
     CombineAndOp([&](QEngineOCLPtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
         { static_cast<bitLenInt>(start + length - 1), flagIndex });
 }
+void QEngineOCLMulti::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
+        { static_cast<bitLenInt>(start + length - 1) });
+}
 void QEngineOCLMulti::PhaseFlip()
 {
     for (bitLenInt i = 0; i < subEngineCount; i++) {

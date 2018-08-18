@@ -853,6 +853,13 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
 }
 
+void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    knowIsPhaseSeparable = false;
+    EntangleRange(start, length);
+    shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
+}
+
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     knowIsPhaseSeparable = false;
