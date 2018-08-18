@@ -1665,8 +1665,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
 
     // Assume the function to minimize is one-to-one. Selecting a random output as an initial threshold, on average 50%
     // of outputs will be higher, and 50% will be lower. Using "PhaseFlipIfLess" in the search oracle, 1/2 of all inputs
-    // satisfy the Grover's search. For each successful search, we reduce the number of search matches by 1/2 on average. We can
-    // use this to pick the optimal number of iterations for the search at each step.
+    // satisfy the Grover's search. For each successful search, we reduce the number of search matches by 1/2 on
+    // average. We can use this to pick the optimal number of iterations for the search at each step.
     for (i = 0; i < length; i++) {
         optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << i)));
         i++;
