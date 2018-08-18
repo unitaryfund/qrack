@@ -1648,39 +1648,48 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
 {
     const bitLenInt length = 8;
-    bitCapInt threshold = 1 << length;
+    bitCapInt threshold = 1 << (length - 2);
     int i, j;
 
     qftReg->SetPermutation(0);
     qftReg->H(0, length);
 
-    // Assume the function to minimize is (close to) one-to-one. Selecting the mid-point of permutations as the initial
-    // threshold, on average 50% of outputs will be higher, and 50% will be lower. Using "PhaseFlipIfLess" in the search
-    // oracle, 1/2 of all inputs would satisfy the Grover's search. The optimal number of iterations for 50% initial
-    // probability would be one Grover's iteration, since Floor[Pi/(4 * Asin[1/Sqrt[2]])] = 1. Then, we divide the
-    // threshold by 2 and repeat. Each time, we'd guess that we start with a 50% probability in the desired subspace of
-    // states, and the optimal number of iterations would be 1.
-    for (i = 0; i < length; i++) {
-        threshold >>= 1;
-        // We have a black box oracle that we're trying to find the minimal output from.
-        // We're looking for the minimum of NOT on all bits.
-        qftReg->X(0, length);
+    // Assume the function to minimize is (close to) one-to-one. For 4 possible inputs, with 1 desired output, one
+    // Grover's search iteration will return the exact desired output. Selecting the bottom quarter of outputs as the
+    // (degenerate) desired result, one iteration of Grover's search can return them in equal superposition exactly,
+    // using "PhaseFlipIfLess()." We repeat a degenerate version of Grover's search with four equiprobable inputs, one
+    // desired output, found with one Grover's iteration, until all degeneracy is removed, and then we have the single
+    // optimal state.
+
+    // Move from inputs to outputs. (We're looking for the minimum of NOT on all bits.)
+    qftReg->X(0, length);
+
+    for (i = 0; i < (length / 2); i++) {
+        // Phase flip the desired outputs:
         qftReg->PhaseFlipIfLess(threshold, 0, length);
-        // The inverse of X() happens to be X().
-        qftReg->X(0, length);
-        // This ends the "oracle."
-        qftReg->H(0, length);
+
+        // Next, we want to phase flip the original input.
+        // If the function is one-to-one, H() takes the superposition of outputs back to zero, (except for the phase
+        // effects we're leveraging). At each iteration, we expect an equal superposition of the 1/(1<<i) low fraction
+        // of outputs and 0 probability in all other states. This is the one and only pure state that we want to flip
+        // the phase of, at each iteration.
+        qftReg->H(0, length - (i * 2));
         qftReg->ZeroPhaseFlip(0, length);
-        qftReg->H(0, length);
-        qftReg->PhaseFlip();
+        qftReg->H(0, length - (i * 2));
+
+        // Phase flip the entire state, to conclude the Grover's iteration:
+        // qftReg->PhaseFlip();
+
+        // Now we have half as many states to look for, in the ideal, and we've returned the state to totally in-phase.
+        threshold >>= 2;
     };
 
+    // Move back from outputs to inputs. (We're looking for the minimum of NOT on all bits.)
+    qftReg->X(0, length);
+
     // The state should usually be close to the global minimum output, now.
-    bitCapInt result = qftReg->MReg(0, length);
-
-    std::cout << "Result: " << (int)result;
-
-    REQUIRE(result >= ((1 << length) / 2));
+    // If the function is one-to-one, it should return the exact minimum.
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, (1 << length) - 1));
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
