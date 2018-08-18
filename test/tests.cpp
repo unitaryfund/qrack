@@ -1670,7 +1670,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
 
         // Next, we want to phase flip the original input.
         // If the function is one-to-one, H() takes the superposition of outputs back to zero, (except for the phase
-        // effects we're leveraging). At each iteration, we expect an equal superposition of the 1/(1<<i) low fraction
+        // effects we're leveraging). At each iteration, we expect an equal superposition of the 1/(1<<(2 *i)) low fraction
         // of outputs and 0 probability in all other states. This is the one and only pure state that we want to flip
         // the phase of, at each iteration.
         qftReg->H(0, length - (i * 2));
@@ -1680,7 +1680,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
         // Phase flip the entire state, to conclude the Grover's iteration:
         // qftReg->PhaseFlip();
 
-        // Now we have half as many states to look for, in the ideal, and we've returned the state to totally in-phase.
+        // Now we have one quarter as many states to look for, in the ideal, and we've returned the state to totally in-phase.
         threshold >>= 2;
     };
 
