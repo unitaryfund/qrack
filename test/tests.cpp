@@ -1671,8 +1671,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
     qftReg->SetPermutation(0);
     qftReg->H(0, length);
 
-    // Our black box "oracle" secretly returns true for TARGET_PROB and false for all other inputs. This is the function
-    // we are trying to invert.
+    // For Grover's search, our black box "oracle" would secretly return true for TARGET_PROB and false for all other
+    // inputs. This is the function we are trying to invert. For an improvement in search speed, we require n/2 oracles
+    // for an n bit search target. The oracles mark (2 * m) bits of the n total, for "m" being all integers between 1
+    // and n/2.
     for (i = 0; i < (length / 2); i++) {
         // This is the number of bits not yet fixed.
         partLength = length - (i * 2);
