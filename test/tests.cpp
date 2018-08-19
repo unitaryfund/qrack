@@ -1714,11 +1714,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
         partLength = length - (i * 2);
 
         // We map from input to output.
-        qftReg->DEC(TARGET_PROB & ((1 << partLength) - 1), length, partLength);
+        qftReg->DEC(TARGET_PROB, length, length);
         // Phase flip the target state.
         qftReg->PhaseFlipIfLess(threshold, 0, length + partLength);
         // We map back from outputs to inputs.
-        qftReg->INC(TARGET_PROB & ((1 << partLength) - 1), length, partLength);
+        qftReg->INC(TARGET_PROB, length, length);
 
         // Phase flip the input state from the previous iteration.
         qftReg->H(0, length + partLength);
