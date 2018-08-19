@@ -1693,52 +1693,43 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, (1 << length) - 1));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmod_minimization")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
 {
-    const bitLenInt length = 8;
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
+    const bitLenInt length = 10;
     bitCapInt threshold = 1 << (length - 2);
+    const int TARGET_PROB = 100;
     int i;
+    bitLenInt partLength;
 
+    // Start in a superposition of all inputs.
     qftReg->SetPermutation(0);
-    qftReg->H(0, length);
+    qftReg->H(0, length * 2);
 
-    // Assume the function to minimize is (close to) one-to-one. For 4 possible inputs, with 1 desired output, one
-    // Grover's search iteration will return the exact desired output. Selecting the bottom quarter of outputs as the
-    // (degenerate) desired result, one iteration of Grover's search can return them in equal superposition exactly,
-    // using "PhaseFlipIfLess()." We repeat a degenerate version of Grover's search with four equiprobable inputs, one
-    // desired output, found with one Grover's iteration, until all degeneracy is removed, and then we have the single
-    // optimal state.
-
-    // Move from inputs to outputs. (We're looking for the minimum of a modulo multiply.)
-    qftReg->MUL(10, 0, length, length, false);
-
+    // Our black box "oracle" secretly returns true for TARGET_PROB and false for all other inputs. This is the function
+    // we are trying to invert.
     for (i = 0; i < (length / 2); i++) {
-        // Phase flip the desired outputs:
-        qftReg->PhaseFlipIfLess(threshold, 0, length);
+        // This is the number of bits not yet fixed.
+        partLength = length - (i * 2);
 
-        // Next, we want to phase flip the original input.
-        // If the function is one-to-one, H() takes the superposition of outputs back to zero, (except for the phase
-        // effects we're leveraging). At each iteration, we expect an equal superposition of the 1/(1<<(2 *i)) low
-        // fraction of outputs and 0 probability in all other states. This is the one and only pure state that we want
-        // to flip the phase of, at each iteration.
-        qftReg->H(0, length - (i * 2));
-        qftReg->ZeroPhaseFlip(0, length);
-        qftReg->H(0, length - (i * 2));
+        // We map from input to output.
+        qftReg->DEC(TARGET_PROB & ((1 << partLength) - 1), length, partLength);
+        // Phase flip the target state.
+        qftReg->PhaseFlipIfLess(threshold, 0, length + partLength);
+        // We map back from outputs to inputs.
+        qftReg->INC(TARGET_PROB & ((1 << partLength) - 1), length, partLength);
 
-        // Phase flip the entire state, to conclude the Grover's iteration:
-        // qftReg->PhaseFlip();
+        // Phase flip the input state from the previous iteration.
+        qftReg->H(0, length + partLength);
+        qftReg->ZeroPhaseFlip(0, length + partLength);
+        qftReg->H(0, length + partLength);
 
-        // Now we have one quarter as many states to look for, in the ideal, and we've returned the state to totally
-        // in-phase.
+        // Now, we have one quarter as many states to look for.
         threshold >>= 2;
     }
 
-    // Move back from outputs to inputs. (We're looking for the minimum of a modulo multiply.)
-    qftReg->DIV(10, 0, length, length);
-
-    // The state should usually be close to the global minimum output, now.
-    // If the function is one-to-one, it should return the exact minimum.
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+    REQUIRE_THAT(qftReg, HasProbability(length, length, TARGET_PROB));
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
