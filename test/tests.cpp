@@ -1610,54 +1610,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     free(toLoad);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_minimization")
-{
-    const bitLenInt length = 8;
-    bitCapInt threshold = 1 << (length - 2);
-    int i;
-
-    qftReg->SetPermutation(0);
-    qftReg->H(0, length);
-
-    // Assume the function to minimize is (close to) one-to-one. For 4 possible inputs, with 1 desired output, one
-    // Grover's search iteration will return the exact desired output. Selecting the bottom quarter of outputs as the
-    // (degenerate) desired result, one iteration of Grover's search can return them in equal superposition exactly,
-    // using "PhaseFlipIfLess()." We repeat a degenerate version of Grover's search with four equiprobable inputs, one
-    // desired output, found with one Grover's iteration, until all degeneracy is removed, and then we have the single
-    // optimal state.
-
-    // Move from inputs to outputs. (We're looking for the minimum of NOT on all bits.)
-    qftReg->X(0, length);
-
-    for (i = 0; i < (length / 2); i++) {
-        // Phase flip the desired outputs:
-        qftReg->PhaseFlipIfLess(threshold, 0, length);
-
-        // Next, we want to phase flip the original input.
-        // If the function is one-to-one, H() takes the superposition of outputs back to zero, (except for the phase
-        // effects we're leveraging). At each iteration, we expect an equal superposition of the 1/(1<<(2 *i)) low
-        // fraction of outputs and 0 probability in all other states. This is the one and only pure state that we want
-        // to flip the phase of, at each iteration.
-        qftReg->H(0, length - (i * 2));
-        qftReg->ZeroPhaseFlip(0, length);
-        qftReg->H(0, length - (i * 2));
-
-        // Phase flip the entire state, to conclude the Grover's iteration:
-        // qftReg->PhaseFlip();
-
-        // Now we have one quarter as many states to look for, in the ideal, and we've returned the state to totally
-        // in-phase.
-        threshold >>= 2;
-    }
-
-    // Move back from outputs to inputs. (We're looking for the minimum of NOT on all bits.)
-    qftReg->X(0, length);
-
-    // The state should usually be close to the global minimum output, now.
-    // If the function is one-to-one, it should return the exact minimum.
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, (1 << length) - 1));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
 {
     // Grover's search inverts the function of a black box subroutine.
