@@ -1266,41 +1266,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
     }
 }
 
-/*
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_period_finding")
-{
-    int i;
-    bitLenInt baseLen = 3;
-    bitLenInt powLen = 3;
-    bitCapInt basePerm = 5;
-
-    bitLenInt inStart, outStart;
-
-    qftReg->SetPermutation(1);
-    qftReg->H(3 * baseLen, powLen);
-    for (i = 0; i < powLen; i++) {
-        if ((i % 2) == 0) {
-            inStart = 0;
-            outStart = baseLen;
-        } else {
-            inStart = baseLen;
-            outStart = 0;
-        }
-        qftReg->CMUL(basePerm, inStart, 2 * baseLen, 2 * baseLen + i, baseLen, false);
-        qftReg->CNOT(inStart, outStart, baseLen);
-        qftReg->CDIV(basePerm, inStart, 2 * baseLen, 2 * baseLen + i, baseLen);
-        qftReg->SetReg(inStart, baseLen, 0);
-    }
-    if ((i % 2) == 0) {
-        qftReg->CNOT(baseLen, 0, baseLen);
-        qftReg->SetReg(inStart, baseLen, 0);
-    }
-    qftReg->IQFT(2 * baseLen, powLen);
-    bitCapInt res = qftReg->MReg(2 * baseLen, powLen);
-    REQUIRE((res % 2) == 0);
-}
-*/
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 {
     int i;
