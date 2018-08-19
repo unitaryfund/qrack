@@ -1663,14 +1663,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
     const bitLenInt length = 10;
-    bitCapInt threshold = 1 << (length - 2);
     const int TARGET_PROB = 100;
     int i;
     bitLenInt partLength;
 
     // Start in a superposition of all inputs.
     qftReg->SetPermutation(0);
-    qftReg->H(0, length * 2);
+    qftReg->H(0, length);
 
     // Our black box "oracle" secretly returns true for TARGET_PROB and false for all other inputs. This is the function
     // we are trying to invert.
@@ -1679,22 +1678,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
         partLength = length - (i * 2);
 
         // We map from input to output.
-        qftReg->DEC(TARGET_PROB, length, length);
+        qftReg->DEC(TARGET_PROB, 0, length);
         // Phase flip the target state.
-        qftReg->PhaseFlipIfLess(threshold, 0, length + partLength);
+        qftReg->ZeroPhaseFlip(0, partLength);
         // We map back from outputs to inputs.
-        qftReg->INC(TARGET_PROB, length, length);
+        qftReg->INC(TARGET_PROB, 0, length);
 
         // Phase flip the input state from the previous iteration.
-        qftReg->H(0, length + partLength);
-        qftReg->ZeroPhaseFlip(0, length + partLength);
-        qftReg->H(0, length + partLength);
+        qftReg->H(0, partLength);
+        qftReg->ZeroPhaseFlip(0, partLength);
+        qftReg->H(0, partLength);
 
         // Now, we have one quarter as many states to look for.
-        threshold >>= 2;
     }
 
-    REQUIRE_THAT(qftReg, HasProbability(length, length, TARGET_PROB));
+    REQUIRE_THAT(qftReg, HasProbability(0, length, TARGET_PROB));
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
