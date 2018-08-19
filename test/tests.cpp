@@ -1616,29 +1616,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
     const bitLenInt length = 10;
     const int TARGET_PROB = 100;
     int i;
-    bitLenInt partLength;
+    bitLenInt partStart;
     // Start in a superposition of all inputs.
     qftReg->SetPermutation(0);
-    qftReg->H(0, length);
     // For Grover's search, our black box "oracle" would secretly return true for TARGET_PROB and false for all other
     // inputs. This is the function we are trying to invert. For an improvement in search speed, we require n/2 oracles
-    // for an n bit search target. The oracles mark (2 * m) bits of the n total, for "m" being all integers between 1
-    // and n/2.
+    // for an n bit search target. Each oracle marks 2 bits of the n total. This method might be applied to an ORDERED
+    // lookup table search, in which a series of quaternary decisions can ultimately select any result in the list.
     for (i = 0; i < (length / 2); i++) {
         // This is the number of bits not yet fixed.
-        partLength = length - (i * 2);
+        partStart = length - ((i + 1) * 2);
+        qftReg->H(partStart, 2);
         // We map from input to output.
-        qftReg->DEC(TARGET_PROB, 0, length);
+        qftReg->DEC(TARGET_PROB & (3 << partStart), 0, length);
         // Phase flip the target state.
-        qftReg->ZeroPhaseFlip(0, partLength);
+        qftReg->ZeroPhaseFlip(partStart, 2);
         // We map back from outputs to inputs.
-        qftReg->INC(TARGET_PROB, 0, length);
+        qftReg->INC(TARGET_PROB & (3 << partStart), 0, length);
         // Phase flip the input state from the previous iteration.
-        qftReg->H(0, partLength);
-        qftReg->ZeroPhaseFlip(0, partLength);
-        qftReg->H(0, partLength);
+        qftReg->H(partStart, 2);
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
         // Now, we have one quarter as many states to look for.
     }
+
+    std::cout << (qftReg->ProbAll(TARGET_PROB));
     REQUIRE_THAT(qftReg, HasProbability(0, length, TARGET_PROB));
 }
 
