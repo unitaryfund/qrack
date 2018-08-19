@@ -1568,85 +1568,45 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     // Grover's search to find a value in a lookup table.
     // We search for 100. All values in lookup table are 1 except a single match.
 
-    const int TARGET_PROB = 100 + (230 << 8);
+    const bitLenInt indexLength = 8;
+    const bitLenInt valueLength = 8;
+    const bitLenInt carryIndex = indexLength + valueLength;
+    const int TARGET_VALUE = 100;
+    const int TARGET_KEY = 230;
 
-    unsigned char* toLoad = cl_alloc(256);
-    for (i = 0; i < 256; i++) {
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < (1 << indexLength); i++) {
         toLoad[i] = 1;
     }
-    toLoad[230] = 100;
+    toLoad[TARGET_KEY] = TARGET_VALUE;
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
-    qftReg->H(8, 8);
-    qftReg->IndexedLDA(8, 8, 0, 8, toLoad);
+    qftReg->H(valueLength, indexLength);
+    qftReg->IndexedLDA(valueLength, indexLength, 0, valueLength, toLoad);
 
-    // std::cout << "Iterations:" << std::endl;
-    // Twelve iterations maximizes the probablity for 256 searched elements.
-    for (i = 0; i < 12; i++) {
+    // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+    // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
+    int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << indexLength)));
+
+    for (i = 0; i < optIter; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
-        qftReg->DEC(100, 0, 8);
-        qftReg->ZeroPhaseFlip(0, 8);
-        qftReg->INC(100, 0, 8);
+        qftReg->DEC(TARGET_VALUE, 0, valueLength);
+        qftReg->ZeroPhaseFlip(0, valueLength);
+        qftReg->INC(TARGET_VALUE, 0, valueLength);
         // This ends the "oracle."
-        qftReg->X(16);
-        qftReg->IndexedSBC(8, 8, 0, 8, 16, toLoad);
-        qftReg->X(16);
-        qftReg->H(8, 8);
-        qftReg->ZeroPhaseFlip(8, 8);
-        qftReg->H(8, 8);
-        qftReg->PhaseFlip();
-        qftReg->IndexedADC(8, 8, 0, 8, 16, toLoad);
-        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        qftReg->X(carryIndex);
+        qftReg->IndexedSBC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(valueLength, indexLength);
+        qftReg->ZeroPhaseFlip(valueLength, indexLength);
+        qftReg->H(valueLength, indexLength);
+        // qftReg->PhaseFlip();
+        qftReg->IndexedADC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
     }
 
-    // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    // std::cout << "Full Result:    " << qftReg << std::endl;
-    // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
-
-    qftReg->MReg(0, 8);
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+    REQUIRE_THAT(qftReg, HasProbability(0, indexLength + valueLength, TARGET_VALUE | (TARGET_KEY << valueLength)));
     free(toLoad);
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
-{
-    // Grover's search inverts the function of a black box subroutine.
-    // Our subroutine returns true only for an input of 100.
-    const bitLenInt length = 10;
-    const int TARGET_PROB = 100;
-    int i;
-    bitLenInt partLength;
-
-    // Start in a superposition of all inputs.
-    qftReg->SetPermutation(0);
-    qftReg->H(0, length);
-
-    // For Grover's search, our black box "oracle" would secretly return true for TARGET_PROB and false for all other
-    // inputs. This is the function we are trying to invert. For an improvement in search speed, we require n/2 oracles
-    // for an n bit search target. The oracles mark (2 * m) bits of the n total, for "m" being all integers between 1
-    // and n/2.
-    for (i = 0; i < (length / 2); i++) {
-        // This is the number of bits not yet fixed.
-        partLength = length - (i * 2);
-
-        // We map from input to output.
-        qftReg->DEC(TARGET_PROB, 0, length);
-        // Phase flip the target state.
-        qftReg->ZeroPhaseFlip(0, partLength);
-        // We map back from outputs to inputs.
-        qftReg->INC(TARGET_PROB, 0, length);
-
-        // Phase flip the input state from the previous iteration.
-        qftReg->H(0, partLength);
-        qftReg->ZeroPhaseFlip(0, partLength);
-        qftReg->H(0, partLength);
-
-        // Now, we have one quarter as many states to look for.
-    }
-
-    REQUIRE_THAT(qftReg, HasProbability(0, length, TARGET_PROB));
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
