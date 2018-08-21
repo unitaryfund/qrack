@@ -1652,61 +1652,77 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     // Grover's search to find a value in a lookup table.
     // We search for 100. All values in lookup table are 1 except a single match.
 
-    const bitLenInt indexLength = 4;
+    const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
-    const bitLenInt carryIndex = indexLength + (2 * valueLength);
-    const int TARGET_VALUE = 10;
-    const int TARGET_KEY = 1;
+    const bitLenInt carryIndex = 19;
+    const int TARGET_VALUE = 6;
+    const int TARGET_KEY = 5;
 
     unsigned char* toLoad = cl_alloc(1 << indexLength);
     for (i = 0; i < TARGET_KEY; i++) {
-        toLoad[i] = 1;
+        toLoad[i] = 2;
     }
     toLoad[TARGET_KEY] = TARGET_VALUE;
     for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
-        toLoad[i] = 20;
+        toLoad[i] = 7;
     }
 
     qftReg->SetPermutation(0);
 
     for (i = 0; i < (indexLength / 2); i++) {
         // Prepare partial index superposition:
-        partLength = (indexLength - 2) - (i * 2);
+        partLength = indexLength - ((i + 1) * 2);
         partStart = (2 * valueLength) + partLength;
         qftReg->H(partStart, 2);
         // Load lower bound of quadrants:
-        qftReg->IndexedLDA(2 * valueLength, indexLength, 0, valueLength, toLoad);
-        // Load upper bound of quadrants:
-        if (partLength > 0) {
-            qftReg->X(2 * valueLength, partLength);
-        }
-        qftReg->IndexedLDA(2 * valueLength, indexLength, valueLength, valueLength, toLoad);
-        if (partLength > 0) {
-            qftReg->X(2 * valueLength, partLength);
-        }
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
 
-        // Our "oracle" is true if the target is in this quadrant, and false otherwise:
-        // Flip phase if lower bound <= the target value.
-        qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, 0, valueLength);
-        // Flip phase if upper bound <= the target value.
-        qftReg->PhaseFlipIfLess(TARGET_VALUE, valueLength, valueLength);
-        // If both are higher, this is not the quadrant, and neither flips the permutation phase.
-        // If both are lower, this is not the quadrant, and the 2 phase flips of the permutation cancel.
-        // If the higher bound is >= and the lower bound is <=, we are in the quadrant, and we only phase flip once.
-        // This ends the "oracle."
+        if (partLength > 0) {
+            // In this branch, our quadrant is degenerate, (meaning, having more than one key/value pair).
+
+            // Load upper bound of quadrants:
+            qftReg->X(2 * valueLength, partLength);
+            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+
+            // Our "oracle" is true if the target is in this quadrant, and false otherwise:
+            // Flip phase if lower bound <= the target value.
+            qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, 0, valueLength);
+            // Flip phase if upper bound <= the target value.
+            qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, valueLength, valueLength);
+            // If both are higher, this is not the quadrant, and neither flips the permutation phase.
+            // If both are lower, this is not the quadrant, and the 2 phase flips of the permutation cancel.
+            // If the higher bound is >= and the lower bound is <, we are in the quadrant, and we only phase flip once.
+            // This ends the "oracle."
+        } else {
+            // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
+
+            // We map from input to output.
+            qftReg->DEC(TARGET_VALUE, 0, valueLength);
+            // Phase flip the target state.
+            qftReg->ZeroPhaseFlip(0, valueLength);
+            // We map back from outputs to inputs.
+            qftReg->INC(TARGET_VALUE, 0, valueLength);
+        }         
 
         // Now, we flip the phase of the input state:
+        
+        // Reverse the operations we used to construct the state:
         qftReg->X(carryIndex);
+        if (partLength > 0) {
+            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+            qftReg->X(2 * valueLength, partLength);
+        }
         qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
-        qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
         qftReg->X(carryIndex);
         qftReg->H(partStart, 2);
+ 
+        // Flip the phase of the input state at the beginning of the iteration. (Only in a quaternary Grover's search, we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the next iteration.)
         qftReg->ZeroPhaseFlip(partStart, 2);
         qftReg->H(partStart, 2);
         // qftReg->PhaseFlip();
     }
 
-    qftReg->IndexedLDA(2 * valueLength, indexLength, 0, valueLength, toLoad);
+    qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
 
     REQUIRE_THAT(
         qftReg, HasProbability(0, indexLength + (2 * valueLength), TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
