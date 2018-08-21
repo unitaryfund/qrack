@@ -1649,8 +1649,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     bitLenInt partStart;
     bitLenInt partLength;
 
-    // Grover's search to find a value in a lookup table.
-    // We search for 100. All values in lookup table are 1 except a single match.
+    // Grover's search to find a value in an ordered list.
 
     const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
@@ -1674,6 +1673,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         partLength = indexLength - ((i + 1) * 2);
         partStart = (2 * valueLength) + partLength;
         qftReg->H(partStart, 2);
+
         // Load lower bound of quadrants:
         qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
 
@@ -1688,11 +1688,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
             // Flip phase if lower bound <= the target value.
             qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, 0, valueLength);
             // Flip phase if upper bound <= the target value.
-            qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, valueLength, valueLength);
+            qftReg->PhaseFlipIfLess(TARGET_VALUE, valueLength, valueLength);
             // If both are higher, this is not the quadrant, and neither flips the permutation phase.
             // If both are lower, this is not the quadrant, and the 2 phase flips of the permutation cancel.
-            // If the higher bound is >= and the lower bound is <, we are in the quadrant, and we only phase flip once.
-            // This ends the "oracle."
+            // Assume only one match in the entire list and at least two possibilities in each quadrant. If the higher
+            // bound is >= and the lower bound is <=, we are in the quadrant, and we only phase flip once. This ends the
+            // "oracle."
         } else {
             // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
 
@@ -1702,10 +1703,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
             qftReg->ZeroPhaseFlip(0, valueLength);
             // We map back from outputs to inputs.
             qftReg->INC(TARGET_VALUE, 0, valueLength);
-        }         
+        }
 
         // Now, we flip the phase of the input state:
-        
+
         // Reverse the operations we used to construct the state:
         qftReg->X(carryIndex);
         if (partLength > 0) {
@@ -1715,8 +1716,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
         qftReg->X(carryIndex);
         qftReg->H(partStart, 2);
- 
-        // Flip the phase of the input state at the beginning of the iteration. (Only in a quaternary Grover's search, we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the next iteration.)
+
+        // Flip the phase of the input state at the beginning of the iteration. (Only in a quaternary Grover's search,
+        // we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the
+        // next iteration.)
         qftReg->ZeroPhaseFlip(partStart, 2);
         qftReg->H(partStart, 2);
         // qftReg->PhaseFlip();
