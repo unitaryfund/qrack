@@ -1657,6 +1657,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     const int TARGET_VALUE = 6;
     const int TARGET_KEY = 5;
 
+    bool collapsed = false;
+
     unsigned char* toLoad = cl_alloc(1 << indexLength);
     for (i = 0; i < TARGET_KEY; i++) {
         toLoad[i] = 2;
@@ -1723,12 +1725,62 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         qftReg->ZeroPhaseFlip(partStart, 2);
         qftReg->H(partStart, 2);
         // qftReg->PhaseFlip();
+
+        // We're in an exact permutation basis state, at this point, (unless more than one quadrant contains a match for
+        // our search target.) We can check the quadrant boundaries, without disturbing the state.
+
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitLenInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitLenInt unfixedMask = (1 << unfixedLength) - 1;
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+
+        bitCapInt lowBound = toLoad[key];
+        bitCapInt highBound = toLoad[key | unfixedMask];
+
+        if (lowBound == TARGET_VALUE) {
+            // We've found our match, and the key register already contains the correct value.
+            break;
+        } else if (highBound == TARGET_VALUE) {
+            // We've found our match, but our key register points to the opposite bound.
+            qftReg->X(2 * valueLength, partLength);
+            break;
+        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
+            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
+            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
+            // quadrant with bounds that match our target value, or there is no match to our target in the list.
+            collapsed = true;
+            break;
+        }
     }
 
+    bool foundPerm = true;
+    if (collapsed) {
+        foundPerm = false;
+        // Here, we collapsed the state, and we can just directly check the boundary values from the last iteration.
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitLenInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitLenInt checkIncrement = (1 << (unfixedLength - 2));
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        for (i = 0; i < 4; i++) {
+            // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
+            // computing components, as need and efficiency dictate).
+            if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
+                foundPerm = true;
+                qftReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
+                break;
+            }
+        }
+    }
     qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
 
-    REQUIRE_THAT(
-        qftReg, HasProbability(0, indexLength + (2 * valueLength), TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+    if (!foundPerm) {
+        std::cout << "Value is not in array.";
+    } else {
+        REQUIRE_THAT(qftReg,
+            HasProbability(0, indexLength + (2 * valueLength), TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+    }
     free(toLoad);
 }
 
