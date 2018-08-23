@@ -1765,12 +1765,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         if (toLoad[key] == TARGET_VALUE) {
             foundPerm = true;
         }
-    } else if (!foundPerm) {
+    }
+    if (!foundPerm) {
         // Here, we collapsed the state, and we can just directly check the boundary values from the last iteration.
         bitLenInt fixedLength = i * 2;
+        if (i > 0) {
+            fixedLength -= 2;
+        }
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitLenInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitLenInt checkIncrement = (1 << (unfixedLength - 2));
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
         bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
