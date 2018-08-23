@@ -1664,13 +1664,44 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         toLoad[i] = 2;
     }
     toLoad[TARGET_KEY] = TARGET_VALUE;
-    for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
+    toLoad[TARGET_KEY + 1] = TARGET_VALUE;
+    for (i = (TARGET_KEY + 2); i < (1 << indexLength); i++) {
         toLoad[i] = 7;
     }
 
     qftReg->SetPermutation(0);
+    partLength = indexLength;
 
     for (i = 0; i < (indexLength / 2); i++) {
+        // We're in an exact permutation basis state, at this point, (unless more than one quadrant contains a match for
+        // our search target.) We can check the quadrant boundaries, without disturbing the state.
+
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitLenInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitLenInt unfixedMask = (1 << unfixedLength) - 1;
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+
+        bitCapInt lowBound = toLoad[key];
+        bitCapInt highBound = toLoad[key | unfixedMask];
+
+        if (lowBound == TARGET_VALUE) {
+            // We've found our match, and the key register already contains the correct value.
+            std::cout << "Is low bound";
+            break;
+        } else if (highBound == TARGET_VALUE) {
+            // We've found our match, but our key register points to the opposite bound.
+            std::cout << "Is high bound";
+            qftReg->X(2 * valueLength, partLength);
+            break;
+        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
+            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
+            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
+            // quadrant with bounds that match our target value, or there is no match to our target in the list.
+            collapsed = true;
+            break;
+        }
+
         // Prepare partial index superposition:
         partLength = indexLength - ((i + 1) * 2);
         partStart = (2 * valueLength) + partLength;
@@ -1690,7 +1721,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
             // Flip phase if lower bound <= the target value.
             qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, 0, valueLength);
             // Flip phase if upper bound <= the target value.
-            qftReg->PhaseFlipIfLess(TARGET_VALUE, valueLength, valueLength);
+            qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, valueLength, valueLength);
             // If both are higher, this is not the quadrant, and neither flips the permutation phase.
             // If both are lower, this is not the quadrant, and the 2 phase flips of the permutation cancel.
             // Assume only one match in the entire list and at least two possibilities in each quadrant. If the higher
@@ -1725,33 +1756,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         qftReg->ZeroPhaseFlip(partStart, 2);
         qftReg->H(partStart, 2);
         // qftReg->PhaseFlip();
-
-        // We're in an exact permutation basis state, at this point, (unless more than one quadrant contains a match for
-        // our search target.) We can check the quadrant boundaries, without disturbing the state.
-
-        bitLenInt fixedLength = i * 2;
-        bitLenInt unfixedLength = indexLength - fixedLength;
-        bitLenInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitLenInt unfixedMask = (1 << unfixedLength) - 1;
-        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
-
-        bitCapInt lowBound = toLoad[key];
-        bitCapInt highBound = toLoad[key | unfixedMask];
-
-        if (lowBound == TARGET_VALUE) {
-            // We've found our match, and the key register already contains the correct value.
-            break;
-        } else if (highBound == TARGET_VALUE) {
-            // We've found our match, but our key register points to the opposite bound.
-            qftReg->X(2 * valueLength, partLength);
-            break;
-        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
-            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
-            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
-            // quadrant with bounds that match our target value, or there is no match to our target in the list.
-            collapsed = true;
-            break;
-        }
     }
 
     bool foundPerm = true;
@@ -1778,8 +1782,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     if (!foundPerm) {
         std::cout << "Value is not in array.";
     } else {
-        REQUIRE_THAT(qftReg,
-            HasProbability(0, indexLength + (2 * valueLength), TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+        REQUIRE_THAT(qftReg, HasProbability(0, (2 * valueLength), TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
     }
     free(toLoad);
 }
