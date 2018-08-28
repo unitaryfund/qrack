@@ -1879,14 +1879,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
         qftReg->H(partStart, 2);
 
         // Load lower bound of quadrants:
-        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
 
         if (partLength > 0) {
             // In this branch, our quadrant is "degenerate," (we mean, having more than one key/value pair).
 
             // Load upper bound of quadrants:
             qftReg->X(2 * valueLength, partLength);
-            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
 
             // This begins the "oracle." Our "oracle" is true if the target is in this quadrant, and false otherwise:
             // Set value bits to borrow from:
@@ -1927,10 +1927,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
         // Reverse the operations we used to construct the state:
         qftReg->X(carryIndex);
         if (partLength > 0) {
-            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
             qftReg->X(2 * valueLength, partLength);
         }
-        qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
         qftReg->X(carryIndex);
         qftReg->H(partStart, 2);
 

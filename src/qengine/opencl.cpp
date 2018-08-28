@@ -1076,7 +1076,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0, 0, 0, 0 };
 
-    DispatchCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << valueLength) * valueBytes, isParallel);
+    DispatchCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
 
     real1 prob;
     real1 average = ZERO_R1;
@@ -1121,7 +1121,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, indexStart, inputMask, valueStart, outputMask, otherMask,
         carryIn, carryMask, lengthPower, valueBytes };
 
-    DispatchCall(api_call, bciArgs, values, (1 << valueLength) * valueBytes, isParallel);
+    DispatchCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;
