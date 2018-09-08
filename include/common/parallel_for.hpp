@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -19,14 +19,16 @@
 
 namespace Qrack {
 
-class ParallelFor 
-{
+class ParallelFor {
 private:
     int32_t numCores;
 
 public:
-    ParallelFor() : numCores(1) { }
-    virtual ~ParallelFor() { }
+    ParallelFor()
+        : numCores(1)
+    {
+    }
+    virtual ~ParallelFor() {}
 
     void SetConcurrencyLevel(int32_t num) { numCores = num; }
     int32_t GetConcurrencyLevel() { return numCores; }
@@ -42,7 +44,7 @@ public:
      * Iterate through the permutations a maximum of end-begin times, allowing
      * the caller to control the incrementation offset through 'inc'.
      */
-    void par_for_inc(const bitCapInt begin, const bitCapInt end, IncrementFunc, ParallelFunc fn);
+    void par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc, ParallelFunc fn);
 
     /** Call fn once for every numerical value between begin and end. */
     void par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn);
@@ -63,7 +65,7 @@ public:
         const bitCapInt, const bitCapInt, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
-    double par_norm(const bitCapInt maxQPower, const Complex16* stateArray);
+    real1 par_norm(const bitCapInt maxQPower, const complex* stateArray);
 };
 
-}
+} // namespace Qrack

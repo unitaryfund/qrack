@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -15,7 +15,7 @@
 #include "qengine_cpu.hpp"
 
 #if ENABLE_OPENCL
-#include "qengine_opencl.hpp"
+#include "qengine_opencl_multi.hpp"
 #endif
 
 #include "qunit.hpp"
@@ -24,7 +24,7 @@ namespace Qrack {
 
 /** Factory method to create specific engine implementations. */
 template <typename... Ts>
-QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts ... args)
+QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts... args)
 {
     switch (engine) {
     case QINTERFACE_CPU:
@@ -32,6 +32,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
+    case QINTERFACE_OPENCL_MULTI:
+        return std::make_shared<QEngineOCLMulti>(args...);
 #endif
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);
@@ -40,4 +42,4 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     }
 }
 
-}
+} // namespace Qrack

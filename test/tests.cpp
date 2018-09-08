@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -16,23 +16,23 @@
 #include <stdlib.h>
 
 #include "catch.hpp"
-#include "qinterface.hpp"
 #include "qfactory.hpp"
 
 #include "tests.hpp"
 
 using namespace Qrack;
 
+#define ALIGN_SIZE 64
 #define EPSILON 0.001
-#define REQUIRE_FLOAT(A, B) do {                                            \
-        double __tmp_a = A;                                                 \
-        double __tmp_b = B;                                                 \
-        REQUIRE(__tmp_a < (__tmp_b + EPSILON));                             \
-        REQUIRE(__tmp_b > (__tmp_b - EPSILON));                             \
+#define REQUIRE_FLOAT(A, B)                                                                                            \
+    do {                                                                                                               \
+        real1 __tmp_a = A;                                                                                             \
+        real1 __tmp_b = B;                                                                                             \
+        REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
+        REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
 void print_bin(int bits, int d);
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b);
 void log(QInterfacePtr p);
 
 void print_bin(int bits, int d)
@@ -44,101 +44,84 @@ void print_bin(int bits, int d)
     }
 }
 
-void validate_equal(QEngineCPUPtr a, QEngineCPUPtr b)
+void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
+
+unsigned char* cl_alloc(size_t ucharCount)
 {
-    /* Validate that 'a' and 'b' are the same. */
-    REQUIRE(b->GetQubitCount() == a->GetQubitCount());
-    REQUIRE(b->GetMaxQPower() == a->GetMaxQPower());
-
-    /* Test probabilities */
-    for (int i = 0; i < a->GetQubitCount(); i++) {
-        REQUIRE(a->Prob(i) == b->Prob(i));
-    }
-
-    /* Test the raw state vector, only valid under narrow conditions. */
-    for (int i = 0; i < a->GetMaxQPower(); i++) {
-        // if (a->GetState()[i]._val[0] != b->GetState()[i]._val[0] ||
-        //         a->GetState()[i]._val[1] != b->GetState()[i]._val[1]) {
-        //     print_bin(16, i); printf(". %f/%f != %f/%f\n", a->GetState()[i]._val[0], a->GetState()[i]._val[1],
-        //         b->GetState()[i]._val[0], b->GetState()[i]._val[1]);
-        // }
-
-        REQUIRE(a->GetState()[i]._val[0] == b->GetState()[i]._val[0]);
-        REQUIRE(a->GetState()[i]._val[1] == b->GetState()[i]._val[1]);
-    }
-
-}
-
-void log(QInterfacePtr p)
-{
-    std::cout << std::endl << std::showpoint << p << std::endl;
+#ifdef __APPLE__
+    void* toRet;
+    posix_memalign(&toRet, ALIGN_SIZE,
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+    return (unsigned char*)toRet;
+#else
+    return (unsigned char*)aligned_alloc(ALIGN_SIZE,
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+#endif
 }
 
 TEST_CASE("test_complex")
 {
     bool test;
-    Complex16 cmplx1(1.0, -1.0);
-    Complex16 cmplx2(-0.5, 0.5);
-    Complex16 cmplx3(0.0, 0.0);
+    complex cmplx1(1.0, -1.0);
+    complex cmplx2(-0.5, 0.5);
+    complex cmplx3(0.0, 0.0);
 
     REQUIRE(cmplx1 != cmplx2);
 
-    REQUIRE(conj(cmplx1) == Complex16(1.0, 1.0));
+    REQUIRE(conj(cmplx1) == complex(1.0, 1.0));
 
-    test = (abs(cmplx1) > (sqrt(2.0) - EPSILON)) && (abs(cmplx1) < (sqrt(2.0) + EPSILON));
+    test = ((real1)abs(cmplx1) > (real1)(sqrt(2.0) - EPSILON)) && ((real1)abs(cmplx1) < (real1)(sqrt(2.0) + EPSILON));
     REQUIRE(test);
 
     cmplx3 = polar(1.0, M_PI / 2.0);
-    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 + cmplx2;
-    test = (real(cmplx3) > (0.5 - EPSILON)) && (real(cmplx3) < (0.5 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.5 - EPSILON)) && (real(cmplx3) < (real1)(0.5 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (-0.5 - EPSILON)) && (imag(cmplx3) < (-0.5 + EPSILON));
+    test = (imag(cmplx3) > (real1)(-0.5 - EPSILON)) && (imag(cmplx3) < (real1)(-0.5 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 - cmplx2;
-    test = (real(cmplx3) > (1.5 - EPSILON)) && (real(cmplx3) < (1.5 + EPSILON));
+    test = (real(cmplx3) > (real1)(1.5 - EPSILON)) && (real(cmplx3) < (real1)(1.5 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (-1.5 - EPSILON)) && (imag(cmplx3) < (-1.5 + EPSILON));
+    test = (imag(cmplx3) > (real1)(-1.5 - EPSILON)) && (imag(cmplx3) < (real1)(-1.5 + EPSILON));
     REQUIRE(test);
-
 
     cmplx3 = cmplx1 * cmplx2;
-    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1;
     cmplx3 *= cmplx2;
-    test = (real(cmplx3) > (0.0 - EPSILON)) && (real(cmplx3) < (0.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (1.0 - EPSILON)) && (imag(cmplx3) < (1.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx1 / cmplx2;
-    test = (real(cmplx3) > (-2.0 - EPSILON)) && (real(cmplx3) < (-2.0 + EPSILON));
+    test = (real(cmplx3) > (real1)(-2.0 - EPSILON)) && (real(cmplx3) < (real1)(-2.0 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(0.0 - EPSILON)) && (imag(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
 
     cmplx3 = cmplx2;
     cmplx3 /= cmplx1;
-    test = (real(cmplx3) > (-0.5 - EPSILON)) && (real(cmplx3) < (-0.5 + EPSILON));
+    test = (real(cmplx3) > (real1)(-0.5 - EPSILON)) && (real(cmplx3) < (real1)(-0.5 + EPSILON));
     REQUIRE(test);
-    test = (imag(cmplx3) > (0.0 - EPSILON)) && (imag(cmplx3) < (0.0 + EPSILON));
-    REQUIRE(test);
-
-    cmplx3 = 2.0 * cmplx1;
-    test = (real(cmplx3) > (2.0 - EPSILON)) && (real(cmplx3) < (2.0 + EPSILON));
-    REQUIRE(test);
-    test = (imag(cmplx3) > (-2.0 - EPSILON)) && (imag(cmplx3) < (-2.0 + EPSILON));
+    test = (imag(cmplx3) > (real1)(0.0 - EPSILON)) && (imag(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
 
+    cmplx3 = ((real1)2.0) * cmplx1;
+    test = (real(cmplx3) > (real1)(2.0 - EPSILON)) && (real(cmplx3) < (real1)(2.0 + EPSILON));
+    REQUIRE(test);
+    test = (imag(cmplx3) > (real1)(-2.0 - EPSILON)) && (imag(cmplx3) < (real1)(-2.0 + EPSILON));
+    REQUIRE(test);
 }
 
 TEST_CASE("test_qengine_cpu_par_for")
@@ -262,62 +245,75 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
-    qftReg->SetPermutation(0x55F0);
-    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
-    qftReg->CNOT(8, 0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0x55A5));
+    qftReg->SetPermutation(0x55F00);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    qftReg->CNOT(12, 4, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x55A50));
+    qftReg->SetPermutation(0x40001);
+    REQUIRE_THAT(qftReg, HasProbability(0x40001));
+    qftReg->CNOT(18, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0xC0001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
 {
-    qftReg->SetPermutation(0x55F0);
-    REQUIRE_THAT(qftReg, HasProbability(0x55F0));
-    qftReg->AntiCNOT(8, 0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0x555A));
+    qftReg->SetPermutation(0x55F00);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    qftReg->AntiCNOT(12, 4, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x555A0));
+    qftReg->SetPermutation(0x00001);
+    REQUIRE_THAT(qftReg, HasProbability(0x00001));
+    qftReg->AntiCNOT(18, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0x80001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
 {
-    qftReg->SetPermutation(0xCAC);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
-    qftReg->CCNOT(8, 4, 0, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0xCA4));
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->CCNOT(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCA400));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
 {
-    qftReg->SetPermutation(0xCAC);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAC));
-    qftReg->AntiCCNOT(8, 4, 0, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAD));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_not")
-{
-    qftReg->SetPermutation(0x1f);
-    qftReg->X(0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xe0));
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->AntiCCNOT(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAD00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
 {
-    qftReg->SetPermutation(0xb2);
-    qftReg->Swap(0, 4, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
+    qftReg->SetPermutation(0xb2000);
+    qftReg->Swap(12, 16, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b000));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
+{
+    complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->ApplySingleBit(pauliX, false, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    qftReg->ApplySingleBit(pauliX, false, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
-    qftReg->SetReg(0, 8, 0x03);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
-    qftReg->X(1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->X(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    qftReg->X(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
 {
-    qftReg->SetReg(0, 8, 0x13);
+    qftReg->SetPermutation(0x13);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
     qftReg->X(1, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
@@ -796,6 +792,176 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crzdyad_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp")
+{
+    qftReg->SetPermutation(0x80001);
+    qftReg->Exp(2.0 * M_PI, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->Exp(2.0 * M_PI, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expdyad")
+{
+    qftReg->SetPermutation(0x80001);
+    qftReg->ExpDyad(4, 1, 19);
+    qftReg->SetPermutation(0x80001);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expdyad_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ExpDyad(4, 1, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expx")
+{
+    qftReg->SetPermutation(0x80001);
+    qftReg->ExpX(2.0 * M_PI, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    qftReg->ExpX(2.0 * M_PI, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expx_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ExpX(2.0 * M_PI, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expxdyad")
+{
+    qftReg->SetPermutation(0x80001);
+    qftReg->ExpXDyad(4, 1, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    qftReg->ExpXDyad(4, 1, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expxdyad_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ExpXDyad(4, 1, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expy")
+{
+    qftReg->SetReg(0, 8, 0x03);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+    qftReg->ExpY(2.0 * M_PI, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->H(1);
+    qftReg->ExpY(2.0 * M_PI, 1);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expy_reg")
+{
+    qftReg->SetReg(0, 8, 0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ExpY(2.0 * M_PI, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(1, 2);
+    qftReg->ExpY(2.0 * M_PI, 1, 2);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expydyad")
+{
+    qftReg->SetReg(0, 8, 0x03);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+    qftReg->ExpYDyad(4, 1, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->H(1);
+    qftReg->ExpYDyad(4, 1, 1);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expydyad_reg")
+{
+    qftReg->SetReg(0, 8, 0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ExpYDyad(4, 1, 1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(1, 2);
+    qftReg->ExpYDyad(4, 1, 1, 2);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expz")
+{
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(0);
+    qftReg->ExpZ(2.0 * M_PI, 0);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->ExpZ(2.0 * M_PI, 1);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expz_reg")
+{
+    qftReg->SetReg(0, 8, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(1, 2);
+    qftReg->ExpZ(2.0 * M_PI, 1, 2);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expzdyad")
+{
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(0);
+    qftReg->ExpZDyad(4, 1, 0);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->ExpZDyad(4, 1, 1);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expzdyad_reg")
+{
+    qftReg->SetReg(0, 8, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(1, 2);
+    qftReg->ExpZDyad(4, 1, 1, 2);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rol")
 {
     qftReg->SetPermutation(129);
@@ -915,8 +1081,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
         qftReg->INCBCDC(1, 0, 8, 8);
         if (i < 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x096 + i));
-        }
-        else if (i == 4) {
+        } else if (i == 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
         } else {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02 + i - 5));
@@ -996,6 +1161,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
+{
+    int i;
+
+    qftReg->SetPermutation(0x94);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCD(1, 0, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x93 - i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x89 - i + 4));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
+{
+    int i;
+
+    qftReg->SetPermutation(0x005);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCDC(1, 0, 8, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x103 - i));
+        } else if (i == 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x099));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x197 - i + 5));
+        }
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
     int i;
@@ -1025,34 +1222,86 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
+{
+    int i;
+
+    qftReg->SetPermutation(3);
+    bitCapInt res = 3;
+    for (i = 0; i < 8; i++) {
+        qftReg->MUL(2, 0, 8, 8, true);
+        res *= 2;
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+        res &= 255;
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
+{
+    int i;
+
+    qftReg->SetPermutation(256);
+    bitCapInt res = 256;
+    for (i = 0; i < 8; i++) {
+        qftReg->DIV(2, 0, 8, 8);
+        res /= 2;
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
+{
+    int i;
+
+    qftReg->SetPermutation(3 | (1 << 16));
+    bitCapInt res = 3;
+    for (i = 0; i < 8; i++) {
+        qftReg->CMUL(2, 0, 8, 16, 8, true);
+        if ((i % 2) == 0) {
+            res *= 2;
+        }
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+        res &= 255;
+        qftReg->X(16);
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
+{
+    int i;
+
+    qftReg->SetPermutation(256 | (1 << 16));
+    bitCapInt res = 256;
+    for (i = 0; i < 8; i++) {
+        qftReg->CDIV(2, 0, 8, 16, 8);
+        if ((i % 2) == 0) {
+            res /= 2;
+        }
+        REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
+        qftReg->X(16);
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    double qftProbs[20];
+    real1 qftProbs[20];
     qftReg->SetPermutation(85);
 
     int i, j;
-
-    // std::cout << "Quantum Fourier transform of 85 (1+4+16+64), with 1 bits first passed through Hadamard gates:"
-    //           << std::endl;
 
     for (i = 0; i < 8; i += 2) {
         qftReg->H(i);
     }
 
-    // std::cout << "Initial:" << std::endl;
-    // for (i = 0; i < 8; i++) {
-    //     std::cout << "Bit " << i << ", Chance of 1:" << qftReg->Prob(i) << std::endl;
-    // }
-
     qftReg->QFT(0, 8);
 
-    // std::cout << "Final:" << std::endl;
-    // for (i = 0; i < 8; i++) {
-    //    qftProbs[i] = qftReg->Prob(i);
-    //    std::cout << "Bit " << i << ", Chance of 1:" << qftProbs[i] << std::endl;
-    //}
+    qftReg->IQFT(0, 8);
 
-    // TODO: Without the cout statements, this provides no verification, except that the method doesn't throw an exception. 
+    for (i = 0; i < 8; i += 2) {
+        qftReg->H(i);
+    }
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
@@ -1065,22 +1314,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
 
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
 {
-    qftReg->SetReg(0, 8, 0x01);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
-    qftReg->H(1);
-    qftReg->CPhaseFlipIfLess(1, 1, 1, 0);
-    qftReg->H(1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+    qftReg->SetReg(0, 20, 0x40000);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40000));
+    qftReg->H(19);
+    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    qftReg->H(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC0000));
 
-    qftReg->SetReg(0, 8, 0x00);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
-    qftReg->H(1);
-    qftReg->CPhaseFlipIfLess(1, 1, 1, 0);
-    qftReg->H(1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->SetReg(0, 20, 0x00);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
+    qftReg->H(19);
+    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    qftReg->H(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")
@@ -1100,11 +1348,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_m")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
 {
+    qftReg->SetReg(0, 8, 0);
     REQUIRE(qftReg->MReg(0, 8) == 0);
     qftReg->SetReg(0, 8, 0x2b);
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
-
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
@@ -1113,12 +1361,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     qftReg->SetReg(0, 8, 0x03);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x03));
 
-    unsigned char testPage[256];
+    unsigned char* testPage = cl_alloc(256);
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    bitCapInt expectation = qftReg->IndexedLDA(0, 8, 8, 8, testPage);
+    qftReg->IndexedLDA(0, 8, 8, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
@@ -1129,7 +1378,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
 
     qftReg->H(8, 8);
-    unsigned char testPage[256];
+    unsigned char* testPage = cl_alloc(256);
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
@@ -1139,9 +1388,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = 255 - j;
     }
-    bitCapInt expectation = qftReg->IndexedADC(8, 8, 0, 8, 16, testPage);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff));
-    REQUIRE(expectation == 0xff);
+    qftReg->IndexedADC(8, 8, 0, 8, 16, testPage);
+    qftReg->H(8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 17, 0xff));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
@@ -1152,16 +1402,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 << 16));
 
     qftReg->H(8, 8);
-    unsigned char testPage[256];
+    unsigned char* testPage = cl_alloc(256);
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
     qftReg->IndexedLDA(8, 8, 0, 8, testPage);
 
-    bitCapInt expectation = qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
+    qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 << 16));
-    REQUIRE(expectation == 0x00);
+    REQUIRE_THAT(qftReg, HasProbability(0, 17, 1 << 16));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
@@ -1171,13 +1421,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
     qftReg->SetReg(0, 9, 0x03);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x03));
 
-    unsigned char testPage[1024];
+    unsigned char* testPage = cl_alloc(1024);
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
     }
-    unsigned char expectation = qftReg->IndexedLDA(0, 9, 9, 9, testPage);
+    qftReg->IndexedLDA(0, 9, 9, 9, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0x603));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
@@ -1188,7 +1439,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 0));
 
     qftReg->H(9, 9);
-    unsigned char testPage[1024];
+    unsigned char* testPage = cl_alloc(1024);
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
@@ -1200,9 +1451,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
         testPage[j * 2] = (511 - j) & 0xff;
         testPage[j * 2 + 1] = ((511 - j) & 0x100) >> 8;
     }
-    bitCapInt expectation = qftReg->IndexedADC(9, 9, 0, 9, 18, testPage);
+    qftReg->IndexedADC(9, 9, 0, 9, 18, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x1ff));
-    REQUIRE(expectation == 0x1ff);
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
@@ -1213,24 +1464,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
 
     qftReg->H(9, 9);
-    unsigned char testPage[1024];
+    unsigned char* testPage = cl_alloc(1024);
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
     }
     qftReg->IndexedLDA(9, 9, 0, 9, testPage);
 
-    bitCapInt expectation = qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
+    qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
     qftReg->H(9, 9);
-    REQUIRE_THAT(qftReg, HasProbability(0, 18, 1 << 18));
-    REQUIRE(expectation == 0x00);
+    REQUIRE_THAT(qftReg, HasProbability(0, 19, 1 << 18));
+    free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
-    int j;
-
-    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decohere(0, 4, qftReg2);
@@ -1241,24 +1490,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
 {
-    int j;
-
     qftReg->SetPermutation(0x2b);
     qftReg->Dispose(0, 4);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
+
+    qftReg->SetPermutation(0x2b);
+    qftReg->Dispose(4, 4);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0xb));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
 {
-    int j;
-
-    qftReg->Dispose(0, qftReg->GetQubitCount() - 4);
-    qftReg->SetPermutation(0x0b);
-    QEngineCPUPtr qftReg2 = std::make_shared<QEngineCPU>(4, 0x02);
-
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0x02, rng);
     qftReg->Cohere(qftReg2);
-
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
@@ -1321,45 +1568,460 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     // Grover's search to find a value in a lookup table.
     // We search for 100. All values in lookup table are 1 except a single match.
 
-    const int TARGET_PROB = 100 + (230 << 8);
+    const bitLenInt indexLength = 8;
+    const bitLenInt valueLength = 8;
+    const bitLenInt carryIndex = indexLength + valueLength;
+    const int TARGET_VALUE = 100;
+    const int TARGET_KEY = 230;
 
-    unsigned char toLoad[256];
-    for (i = 0; i < 256; i++) {
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < (1 << indexLength); i++) {
         toLoad[i] = 1;
     }
-    toLoad[230] = 100;
+    toLoad[TARGET_KEY] = TARGET_VALUE;
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
-    qftReg->H(8, 8);
-    qftReg->IndexedLDA(8, 8, 0, 8, toLoad);
+    qftReg->H(valueLength, indexLength);
+    qftReg->IndexedLDA(valueLength, indexLength, 0, valueLength, toLoad);
 
-    // std::cout << "Iterations:" << std::endl;
-    // Twelve iterations maximizes the probablity for 256 searched elements.
-    for (i = 0; i < 12; i++) {
+    // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+    // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
+    int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << indexLength)));
+
+    for (i = 0; i < optIter; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
-        qftReg->DEC(100, 0, 8);
-        qftReg->ZeroPhaseFlip(0, 8);
-        qftReg->INC(100, 0, 8);
+        qftReg->DEC(TARGET_VALUE, 0, valueLength);
+        qftReg->ZeroPhaseFlip(0, valueLength);
+        qftReg->INC(TARGET_VALUE, 0, valueLength);
         // This ends the "oracle."
-        qftReg->X(16);
-        qftReg->IndexedSBC(8, 8, 0, 8, 16, toLoad);
-        qftReg->X(16);
-        qftReg->H(8, 8);
-        qftReg->ZeroPhaseFlip(8, 8);
-        qftReg->H(8, 8);
-        qftReg->PhaseFlip();
-        qftReg->IndexedADC(8, 8, 0, 8, 16, toLoad);
-        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        qftReg->X(carryIndex);
+        qftReg->IndexedSBC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(valueLength, indexLength);
+        qftReg->ZeroPhaseFlip(valueLength, indexLength);
+        qftReg->H(valueLength, indexLength);
+        // qftReg->PhaseFlip();
+        qftReg->IndexedADC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
     }
 
-    // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    // std::cout << "Full Result:    " << qftReg << std::endl;
-    // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+    REQUIRE_THAT(qftReg, HasProbability(0, indexLength + valueLength, TARGET_VALUE | (TARGET_KEY << valueLength)));
+    free(toLoad);
+}
 
-    qftReg->MReg(0, 8);
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
+{
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
+    const bitLenInt length = 10;
+    const int TARGET_PROB = 100;
+    int i;
+    bitLenInt partStart;
+    // Start in a superposition of all inputs.
+    qftReg->SetPermutation(0);
+    // For Grover's search, our black box "oracle" would secretly return true for TARGET_PROB and false for all other
+    // inputs. This is the function we are trying to invert. For an improvement in search speed, we require n/2 oracles
+    // for an n bit search target. Each oracle marks 2 bits of the n total. This method might be applied to an ORDERED
+    // lookup table search, in which a series of quaternary decisions can ultimately select any result in the list.
+    for (i = 0; i < (length / 2); i++) {
+        // This is the number of bits not yet fixed.
+        partStart = length - ((i + 1) * 2);
+        qftReg->H(partStart, 2);
+        // We map from input to output.
+        qftReg->DEC(TARGET_PROB & (3 << partStart), 0, length);
+        // Phase flip the target state.
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        // We map back from outputs to inputs.
+        qftReg->INC(TARGET_PROB & (3 << partStart), 0, length);
+        // Phase flip the input state from the previous iteration.
+        qftReg->H(partStart, 2);
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
+        // Now, we have one quarter as many states to look for.
+    }
 
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+    REQUIRE_THAT(qftReg, HasProbability(0, length, TARGET_PROB));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
+{
+    bitLenInt i;
+    bitLenInt partStart;
+    bitLenInt partLength;
+
+    // Grover's search to find a value in an ordered list.
+
+    const bitLenInt indexLength = 6;
+    const bitLenInt valueLength = 6;
+    const bitLenInt carryIndex = 19;
+    const int TARGET_VALUE = 6;
+    const int TARGET_KEY = 5;
+
+    bool foundPerm = false;
+
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < TARGET_KEY; i++) {
+        toLoad[i] = 2;
+    }
+    toLoad[TARGET_KEY] = TARGET_VALUE;
+    for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
+        toLoad[i] = 7;
+    }
+
+    qftReg->SetPermutation(0);
+    partLength = indexLength;
+
+    for (i = 0; i < (indexLength / 2); i++) {
+        // We're in an exact permutation basis state, at this point, unless more than one quadrant contained a match for
+        // our search target on the previous iteration. We can check the quadrant boundaries, without disturbing the
+        // state. If there was more than one match, we either collapse into a valid state, so that we can continue as
+        // expected for one matching quadrant, or we collapse into an identifiably invalid set of bounds that cannot
+        // contain our match, which can be identified by checking two values and proceeding with special case logic.
+
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+
+        // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical computing
+        // components, as need and efficiency dictate).
+        bitCapInt lowBound = toLoad[key];
+        bitCapInt highBound = toLoad[key | unfixedMask];
+
+        if (lowBound == TARGET_VALUE) {
+            // We've found our match, and the key register already contains the correct value.
+            std::cout << "Is low bound";
+            foundPerm = true;
+            break;
+        } else if (highBound == TARGET_VALUE) {
+            // We've found our match, but our key register points to the opposite bound.
+            std::cout << "Is high bound";
+            qftReg->X(2 * valueLength, partLength);
+            foundPerm = true;
+            break;
+        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
+            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
+            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
+            // quadrant with bounds that match our target value, or there is no match to our target in the list.
+            foundPerm = false;
+            break;
+        }
+
+        // Prepare partial index superposition, of two most significant qubits that have not yet been fixed:
+        partLength = indexLength - ((i + 1) * 2);
+        partStart = (2 * valueLength) + partLength;
+        qftReg->H(partStart, 2);
+
+        // Load lower bound of quadrants:
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+
+        if (partLength > 0) {
+            // In this branch, our quadrant is "degenerate," (we mean, having more than one key/value pair).
+
+            // Load upper bound of quadrants:
+            qftReg->X(2 * valueLength, partLength);
+            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+
+            // Our "oracle" is true if the target is in this quadrant, and false otherwise:
+            // Flip phase if lower bound <= the target value.
+            qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, 0, valueLength);
+            // Flip phase if upper bound < the target value.
+            qftReg->PhaseFlipIfLess(TARGET_VALUE, valueLength, valueLength);
+            // If both are higher, this is not the quadrant, and neither flips the permutation phase.
+            // If both are lower, this is not the quadrant, and the 2 phase flips of the permutation cancel.
+            // If both match the target, the above still tags the quadrant.
+        } else {
+            // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
+
+            // We map from input to output.
+            qftReg->DEC(TARGET_VALUE, 0, valueLength);
+            // Phase flip the target state.
+            qftReg->ZeroPhaseFlip(0, valueLength);
+            // We map back from outputs to inputs.
+            qftReg->INC(TARGET_VALUE, 0, valueLength);
+        }
+
+        // Now, we flip the phase of the input state:
+
+        // Reverse the operations we used to construct the state:
+        qftReg->X(carryIndex);
+        if (partLength > 0) {
+            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+            qftReg->X(2 * valueLength, partLength);
+        }
+        qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(partStart, 2);
+
+        // Flip the phase of the input state at the beginning of the iteration. Only in a quaternary Grover's search,
+        // we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the
+        // next iteration. (See the beginning of the loop, for what happens if we have more than one matching quadrant.
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
+        // qftReg->PhaseFlip();
+    }
+
+    if (!foundPerm && (i == (indexLength / 2))) {
+        // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
+        // one match.
+        bitCapInt key = qftReg->MReg(2 * valueLength, indexLength);
+        if (toLoad[key] == TARGET_VALUE) {
+            foundPerm = true;
+        }
+    }
+    if (!foundPerm && (i > 0)) {
+        // If we measured an invalid value in fewer than the full iterations, or if we returned an invalid value on the
+        // last iteration, we back the index up one iteration, 2 index qubits. We check the 8 boundary values. If we
+        // have more than one match in the ordered list, one of our 8 boundary values is necessarily a match, since the
+        // match repetitions must cross the boundary between two quadrants. If none of the 8 match, a match necessarily
+        // does not exist in the ordered list.
+        // This can only happen on the first iteration if the single highest and lowest values in the list cannot bound
+        // the match, in which case we know a match does not exist in the list.
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        for (i = 0; i < 4; i++) {
+            // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
+            // computing components, as need and efficiency dictate).
+            if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
+                foundPerm = true;
+                qftReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
+                break;
+            }
+        }
+    }
+
+    if (!foundPerm) {
+        std::cout << "Value is not in array.";
+    } else {
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        // (If we have more than one match, this REQUIRE_THAT needs to instead check that any of the matches are
+        // returned. This could be done by only requiring a match to the value register, but we want to show here that
+        // the index is correct.)
+        REQUIRE_THAT(qftReg,
+            HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+    }
+    free(toLoad);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
+{
+    bitLenInt i;
+    bitLenInt partStart;
+    bitLenInt partLength;
+
+    // Grover's search to find a value in an ordered list. The oracle is made with integer subtraction/addition and a
+    // doubly controlled phase flip.
+
+    const bitLenInt indexLength = 6;
+    const bitLenInt valueLength = 6;
+    const bitLenInt carryIndex = 19;
+    const int TARGET_VALUE = 6;
+    const int TARGET_KEY = 5;
+
+    bool foundPerm = false;
+
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < TARGET_KEY; i++) {
+        toLoad[i] = 2;
+    }
+    toLoad[TARGET_KEY] = TARGET_VALUE;
+    for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
+        toLoad[i] = 7;
+    }
+
+    qftReg->SetPermutation(0);
+    partLength = indexLength;
+
+    for (i = 0; i < (indexLength / 2); i++) {
+        // We're in an exact permutation basis state, at this point, unless more than one quadrant contained a match for
+        // our search target on the previous iteration. We can check the quadrant boundaries, without disturbing the
+        // state. If there was more than one match, we either collapse into a valid state, so that we can continue as
+        // expected for one matching quadrant, or we collapse into an identifiably invalid set of bounds that cannot
+        // contain our match, which can be identified by checking two values and proceeding with special case logic.
+
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+
+        // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical computing
+        // components, as need and efficiency dictate).
+        bitCapInt lowBound = toLoad[key];
+        bitCapInt highBound = toLoad[key | unfixedMask];
+
+        if (lowBound == TARGET_VALUE) {
+            // We've found our match, and the key register already contains the correct value.
+            std::cout << "Is low bound";
+            foundPerm = true;
+            break;
+        } else if (highBound == TARGET_VALUE) {
+            // We've found our match, but our key register points to the opposite bound.
+            std::cout << "Is high bound";
+            qftReg->X(2 * valueLength, partLength);
+            foundPerm = true;
+            break;
+        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
+            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
+            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
+            // quadrant with bounds that match our target value, or there is no match to our target in the list.
+            foundPerm = false;
+            break;
+        }
+
+        // Prepare partial index superposition, of two most significant qubits that have not yet been fixed:
+        partLength = indexLength - ((i + 1) * 2);
+        partStart = (2 * valueLength) + partLength;
+        qftReg->H(partStart, 2);
+
+        // Load lower bound of quadrants:
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+
+        if (partLength > 0) {
+            // In this branch, our quadrant is "degenerate," (we mean, having more than one key/value pair).
+
+            // Load upper bound of quadrants:
+            qftReg->X(2 * valueLength, partLength);
+            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
+
+            // This begins the "oracle." Our "oracle" is true if the target is in this quadrant, and false otherwise:
+            // Set value bits to borrow from:
+            qftReg->X(valueLength - 1);
+            qftReg->X(2 * valueLength - 1);
+            // Subtract from the value registers with the bits to borrow from:
+            qftReg->DEC(TARGET_VALUE, 0, valueLength);
+            qftReg->DEC(TARGET_VALUE, valueLength, valueLength);
+            // If both are higher, this is not the quadrant, and neither flips the borrow.
+            // If both are lower, this is not the quadrant, and both flip the borrow.
+            // If one is higher and one is lower, the low register borrow bit is flipped, and high register borrow is
+            // not.
+            qftReg->X(valueLength - 1);
+            qftReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
+            // Flip the phase is the test bit is set:
+            qftReg->Z(carryIndex);
+            // Reverse everything but the phase flip:
+            qftReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
+            qftReg->X(valueLength - 1);
+            qftReg->INC(TARGET_VALUE, valueLength, valueLength);
+            qftReg->INC(TARGET_VALUE, 0, valueLength);
+            qftReg->X(2 * valueLength - 1);
+            qftReg->X(valueLength - 1);
+            // This ends the "oracle."
+        } else {
+            // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
+
+            // We map from input to output.
+            qftReg->DEC(TARGET_VALUE, 0, valueLength - 1);
+            // Phase flip the target state.
+            qftReg->ZeroPhaseFlip(0, valueLength - 1);
+            // We map back from outputs to inputs.
+            qftReg->INC(TARGET_VALUE, 0, valueLength - 1);
+        }
+
+        // Now, we flip the phase of the input state:
+
+        // Reverse the operations we used to construct the state:
+        qftReg->X(carryIndex);
+        if (partLength > 0) {
+            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
+            qftReg->X(2 * valueLength, partLength);
+        }
+        qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(partStart, 2);
+
+        // Flip the phase of the input state at the beginning of the iteration. Only in a quaternary Grover's search,
+        // we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the
+        // next iteration. (See the beginning of the loop, for what happens if we have more than one matching quadrant.
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
+        // qftReg->PhaseFlip();
+    }
+
+    if (!foundPerm && (i == (indexLength / 2))) {
+        // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
+        // one match.
+        bitCapInt key = qftReg->MReg(2 * valueLength, indexLength);
+        if (toLoad[key] == TARGET_VALUE) {
+            foundPerm = true;
+        }
+    }
+    if (!foundPerm && (i > 0)) {
+        // If we measured an invalid value in fewer than the full iterations, or if we returned an invalid value on the
+        // last iteration, we back the index up one iteration, 2 index qubits. We check the 8 boundary values. If we
+        // have more than one match in the ordered list, one of our 8 boundary values is necessarily a match, since the
+        // match repetitions must cross the boundary between two quadrants. If none of the 8 match, a match necessarily
+        // does not exist in the ordered list.
+        // This can only happen on the first iteration if the single highest and lowest values in the list cannot bound
+        // the match, in which case we know a match does not exist in the list.
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        for (i = 0; i < 4; i++) {
+            // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
+            // computing components, as need and efficiency dictate).
+            if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
+                foundPerm = true;
+                qftReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
+                break;
+            }
+        }
+    }
+
+    if (!foundPerm) {
+        std::cout << "Value is not in array.";
+    } else {
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        // (If we have more than one match, this REQUIRE_THAT needs to instead check that any of the matches are
+        // returned. This could be done by only requiring a match to the value register, but we want to show here that
+        // the index is correct.)
+        REQUIRE_THAT(qftReg,
+            HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+    }
+    free(toLoad);
+}
+
+void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
+    bitLenInt expLen, bitLenInt carryStart, bitLenInt recordStart)
+{
+    bitCapInt workingPower = base;
+    bitLenInt regStart1, regStart2;
+    bitLenInt i;
+    for (i = 0; i < expLen; i++) {
+        if (i & 1) {
+            regStart1 = carryStart;
+            regStart2 = baseStart;
+        } else {
+            regStart1 = baseStart;
+            regStart2 = carryStart;
+        }
+        qftReg->CMUL(workingPower, regStart1, recordStart, expStart + i, baseLen, false);
+        qftReg->CNOT(regStart1, regStart2, baseLen);
+        qftReg->CDIV(workingPower, regStart1, recordStart, expStart + i, baseLen);
+        qftReg->SetReg(regStart1, baseLen, 0);
+        workingPower *= base;
+    }
+    if (i & 1) {
+        qftReg->CNOT(carryStart, baseStart, baseLen);
+        qftReg->SetReg(carryStart, baseLen, 0);
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
+{
+    bitLenInt baseLen = 4;
+    bitLenInt expLen = 2;
+    qftReg->SetPermutation(1);
+    // Last bits are exponent:
+    qftReg->SetReg(20 - expLen, expLen, 2);
+    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen, baseLen);
+    REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
@@ -1372,7 +2034,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 {
     int i;
-    unsigned char toSearch[256];
+    unsigned char* toSearch = cl_alloc(256);
 
     // Create the lookup table
     for (i = 0; i < 256; i++) {
@@ -1386,6 +2048,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
     qftReg->H(8, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
+    free(toSearch);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
@@ -1403,73 +2066,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
         qftReg->CNOT(i - 1, i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xAAAAB));
-
     for (int i = 1; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));
 }
-
-/*
-TEST_CASE("test_qengine_cpu_coherence_swap")
-{
-    // Set up four engines, identical.
-    std::shared_ptr<std::default_random_engine> rng_a = std::make_shared<std::default_random_engine>();
-    std::shared_ptr<std::default_random_engine> rng_b = std::make_shared<std::default_random_engine>();
-    std::shared_ptr<std::default_random_engine> rng_c = std::make_shared<std::default_random_engine>();
-    rng_a->seed(10);
-    rng_b->seed(10);
-    rng_c->seed(10);
-
-    // 'a' is the guide.  'b' gets a reversed Cohere, and 'c' gets a normal Cohere for cross-check.
-    QEngineCPUPtr a_1 = std::make_shared<QEngineCPU>(8, 0, rng_a);
-    QEngineCPUPtr a_2 = std::make_shared<QEngineCPU>(8, 0, rng_a);
-    QEngineCPUPtr b_1 = std::make_shared<QEngineCPU>(8, 0, rng_b);
-    QEngineCPUPtr b_2 = std::make_shared<QEngineCPU>(8, 0, rng_b);
-    QEngineCPUPtr c_1 = std::make_shared<QEngineCPU>(8, 0, rng_c);
-    QEngineCPUPtr c_2 = std::make_shared<QEngineCPU>(8, 0, rng_c);
-
-    // Copy the state from 'a' to 'b' and 'c'
-    b_1->SetQuantumState(a_1->GetState());
-    b_2->SetQuantumState(a_2->GetState());
-    c_1->SetQuantumState(a_1->GetState());
-    c_2->SetQuantumState(a_2->GetState());
-
-    validate_equal(a_1, b_1);
-    validate_equal(a_2, b_2);
-    validate_equal(a_1, c_1);
-    validate_equal(a_2, c_2);
-
-    // Perform the same operation on 'a', 'b', and 'c'.
-    a_2->H(0, 8);
-    b_2->H(0, 8);
-    c_2->H(0, 8);
-
-    validate_equal(a_2, b_2);
-    validate_equal(a_2, c_2);
-
-    a_1->Cohere(a_2);       // Cohere [ reg_1, reg_2 ]
-    b_2->Cohere(b_1);       // Cohere [ reg_2, reg_1 ] - backwards
-    c_1->Cohere(c_2);       // Cohere [ reg_1, reg_2 ]
-
-    QEngineCPUPtr a = a_1;
-    QEngineCPUPtr b = b_2;
-    QEngineCPUPtr c = c_1;
-
-    REQUIRE(a->GetQubitCount() == 16);
-    REQUIRE(b->GetQubitCount() == 16);
-    REQUIRE(c->GetQubitCount() == 16);
-
-    // Validate 'a' == 'c'.
-    validate_equal(a, c);
-
-    // 'b' is backwards, swap the first 8 bits with the second 8 bits.
-    b->Swap(0, 8, 8);
-
-    // Validate that 'a' and 'b' are the same.
-    validate_equal(a, b);
-}
-*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
 {
@@ -1478,7 +2079,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-	qftReg->Swap(0, 1);
+    qftReg->Swap(0, 1);
 
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
@@ -1496,7 +2097,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
     REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
-	qftReg->Swap(0, 1, 1);
+    qftReg->Swap(0, 1, 1);
 
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0.5);

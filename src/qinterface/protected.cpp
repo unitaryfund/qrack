@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -10,7 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include "qengine_cpu.hpp"
+#include <algorithm>
+
+#include "qinterface.hpp"
 
 namespace Qrack {
 
@@ -32,28 +34,64 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
     reverse(first, last, stride);
 }
 
-template void rotate<Complex16 *>(Complex16 *first, Complex16 *middle, Complex16 *last, bitCapInt stride);
+template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
-void QEngineCPU::ApplySingleBit(bitLenInt qubit, const Complex16* mtrx, bool doCalcNorm)
+bool does2x2PhaseShift(const complex* mtrx)
 {
+    bool doesShift = false;
+    real1 phase = -M_PI * 2;
+    for (int i = 0; i < 4; i++) {
+        if (norm(mtrx[i]) > ZERO_R1) {
+            if (phase < -M_PI) {
+                phase = arg(mtrx[i]);
+                continue;
+            }
+
+            real1 diff = arg(mtrx[i]) - phase;
+            if (diff < ZERO_R1) {
+                diff = -diff;
+            }
+            if (diff > M_PI) {
+                diff = (2 * M_PI) - diff;
+            }
+            if (diff > min_norm) {
+                doesShift = true;
+                break;
+            }
+        }
+    }
+    return doesShift;
+}
+
+void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
 }
 
-void QEngineCPU::ApplyControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
     qPowers[0] = 1 << control;
     qPowers[1] = 1 << target;
     std::copy(qPowers, qPowers + 2, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(qPowers[0], qPowers[0] + qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
+    Apply2x2(qPowers[0], (qPowers[0]) | (qPowers[1]), mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void QInterface::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[2];
     bitCapInt qPowersSorted[2];
     qPowers[0] = 1 << control;
@@ -63,8 +101,12 @@ void QEngineCPU::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, con
     Apply2x2(0, qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void QInterface::ApplyDoublyControlled2x2(
+    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[3];
     qPowers[0] = 1 << control1;
@@ -72,11 +114,16 @@ void QEngineCPU::ApplyDoublyControlled2x2(bitLenInt control1, bitLenInt control2
     qPowers[2] = 1 << target;
     std::copy(qPowers, qPowers + 3, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(qPowers[0] + qPowers[1], qPowers[0] + qPowers[1] + qPowers[2], mtrx, 3, qPowersSorted, doCalcNorm);
+    Apply2x2(
+        (qPowers[0]) | (qPowers[1]), (qPowers[0]) | (qPowers[1]) | (qPowers[2]), mtrx, 3, qPowersSorted, doCalcNorm);
 }
 
-void QEngineCPU::ApplyDoublyAntiControlled2x2(bitLenInt control1, bitLenInt control2, bitLenInt target, const Complex16* mtrx, bool doCalcNorm)
+void QInterface::ApplyDoublyAntiControlled2x2(
+    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
     bitCapInt qPowers[3];
     bitCapInt qPowersSorted[3];
     qPowers[0] = 1 << control1;

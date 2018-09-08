@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -10,154 +10,214 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include <algorithm>
-
 #include "qengine_cpu.hpp"
 
 namespace Qrack {
 
-/// Set individual bit to pure |0> (false) or |1> (true) state
-void QEngineCPU::SetBit(bitLenInt qubit1, bool value)
+void QEngineCPU::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
-    if (value != M(qubit1)) {
-        X(qubit1);
-    }
+    bitCapInt powerTest = result ? qPower : 0;
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if ((lcv & qPower) == powerTest) {
+            stateVec[lcv] = nrm * stateVec[lcv];
+        } else {
+            stateVec[lcv] = complex(ZERO_R1, ZERO_R1);
+        }
+    });
 }
 
-/// Swap values of two bits in register
-void QEngineCPU::Swap(bitLenInt qubit1, bitLenInt qubit2)
+// Apply X ("not") gate to each bit in "length," starting from bit index
+// "start"
+void QEngineCPU::X(bitLenInt start, bitLenInt length)
 {
-    if (qubit1 == qubit2) {
+    // First, single bit operations are better optimized for this special case:
+    if (length == 1) {
+        X(start);
         return;
     }
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    bitCapInt qPowers[2];
-    bitCapInt qPowersSorted[2];
-    qPowers[0] = 1 << qubit1;
-    qPowers[1] = 1 << qubit2;
-    std::copy(qPowers, qPowers + 2, qPowersSorted);
-    std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
+    // As a fundamental gate, the register-wise X could proceed like so:
+    // for (bitLenInt lcv = 0; lcv < length; lcv++) {
+    //    X(start + lcv);
+    //}
+
+    // Basically ALL register-wise gates proceed by essentially the same
+    // algorithm as this simple X gate.
+
+    // We first form bit masks for those qubits involved in the operation, and
+    // those not involved in the operation. We might have more than one
+    // register involved in the operation in general, but we only have one, in
+    // this case.
+    bitCapInt inOutMask = ((1 << length) - 1) << start;
+    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
+
+    // Sometimes we transform the state in place. Alternatively, we often
+    // allocate a new permutation state vector to transfer old probabilities
+    // and phases into.
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    // This function call is a parallel "for" loop. We have several variants of
+    // the parallel for loop. Some skip certain permutations in order to
+    // optimize. Some take a new permutation state vector for output, and some
+    // just transform the permutation state vector in place.
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        // Set nStateVec, indexed by the loop control variable (lcv) with
+        // the X'ed bits inverted, with the value of stateVec indexed by
+        // lcv.
+
+        // This is the body of the parallel "for" loop. We iterate over
+        // permutations of bits.  We're going to transform from input
+        // permutation state to output permutation state, and transfer the
+        // probability and phase of the input permutation to the output
+        // permutation.  These are the bits that aren't involved in the
+        // operation.
+
+        // bitCapInt otherRes = (lcv & otherMask);
+
+        // These are the bits in the register that is being operated on. In
+        // all permutation states, the bits acted on by the gate should be
+        // transformed in the logically appropriate way from input
+        // permutation to output permutation. Since this is an X gate, we
+        // take the involved bits and bitwise NOT them.
+
+        // bitCapInt inOutRes = ((~lcv) & inOutMask);
+
+        // Now, we just transfer the untransformed input state's phase and
+        // probability to the transformed output state.
+
+        // nStateVec[inOutRes | otherRes] = stateVec[lcv];
+
+        // (We can do this all in one line:)
+        nStateVec[(lcv & otherMask) | ((~lcv) & inOutMask)] = stateVec[lcv];
+
+        // For other operations, like the quantum equivalent of a logical
+        // "AND," we might have two input registers and one output
+        // register. The transformation would be that we use bit masks to
+        // bitwise "AND" the input values in every permutation and place
+        // this logical result into the output register with another bit
+        // mask, for every possible permutation state. Basically all the
+        // register-wise operations in Qrack proceed this same way.
+    });
+    // We replace our old permutation state vector with the new one we just
+    // filled, at the end.
+    ResetStateVec(nStateVec);
 }
 
-/// Doubly-controlled not
-void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+/// Bitwise CNOT
+void QEngineCPU::CNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
-    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
-    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-    if (control1 == control2) {
-        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = ((reg1Res >> start1) ^ ((lcv & reg2Mask) >> start2)) << start2;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise "Anti-"CNOT - NOT operation if control is 0
+void QEngineCPU::AntiCNOT(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = ((((~reg1Res) & reg1Mask) >> start1) ^ ((lcv & reg2Mask) >> start2)) << start2;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise CCNOT
+void QEngineCPU::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << control1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << control2;
+    bitCapInt reg3Mask = ((1 << length) - 1) << target;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask | reg3Mask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = lcv & reg2Mask;
+        bitCapInt reg3Res = (((reg1Res >> control1) & (reg2Res >> control2)) ^ ((lcv & reg3Mask) >> target)) << target;
+        nStateVec[reg1Res | reg2Res | reg3Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise "Anti-"CCNOT - NOT operation if both control bits are 0
+void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
+{
+    bitCapInt reg1Mask = ((1 << length) - 1) << control1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << control2;
+    bitCapInt reg3Mask = ((1 << length) - 1) << target;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask | reg3Mask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = lcv & reg1Mask;
+        bitCapInt reg2Res = lcv & reg2Mask;
+        bitCapInt reg3Res = (((((~reg1Res) & reg1Mask) >> control1) & (((~reg2Res) & reg2Mask) >> control2)) ^
+                                ((lcv & reg3Mask) >> target))
+            << target;
+        nStateVec[reg1Res | reg2Res | reg3Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
+}
+
+/// Bitwise swap
+void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    int distance = start1 - start2;
+    if (distance == 0) {
+        return;
     }
 
-    if (control1 == target || control2 == target) {
-        throw std::invalid_argument("CCNOT control bits cannot also be target.");
-    }
+    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
+    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
+    bitCapInt otherMask = maxQPower - 1;
+    otherMask ^= reg1Mask | reg2Mask;
 
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyDoublyControlled2x2(control1, control2, target, pauliX, false);
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & otherMask);
+        bitCapInt reg1Res = ((lcv & reg1Mask) >> start1) << start2;
+        bitCapInt reg2Res = ((lcv & reg2Mask) >> start2) << start1;
+        nStateVec[reg1Res | reg2Res | otherRes] = stateVec[lcv];
+    });
+    // We replace our old permutation state vector with the new one we just filled, at the end.
+    ResetStateVec(nStateVec);
 }
 
-/// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
-void QEngineCPU::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+/// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
+void QEngineCPU::PhaseFlip()
 {
-    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
-    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-    if (control1 == control2) {
-        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
-    }
-    if (control1 == target || control2 == target) {
-        throw std::invalid_argument("CCNOT control bits cannot also be target.");
-    }
-
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyDoublyAntiControlled2x2(control1, control2, target, pauliX, false);
-}
-
-/// Controlled not
-void QEngineCPU::CNOT(bitLenInt control, bitLenInt target)
-{
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-    if (control == target) {
-        throw std::invalid_argument("CNOT control bit cannot also be target.");
-    }
-
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliX, false);
-}
-
-/// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
-void QEngineCPU::AntiCNOT(bitLenInt control, bitLenInt target)
-{
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-    if (control == target) {
-        throw std::invalid_argument("CNOT control bit cannot also be target.");
-    }
-
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplyAntiControlled2x2(control, target, pauliX, false);
-}
-
-
-/// Hadamard gate
-void QEngineCPU::H(bitLenInt qubit)
-{
-    // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
-    // bits.");
-    const Complex16 had[4] = { Complex16(1.0 / M_SQRT2, 0.0), Complex16(1.0 / M_SQRT2, 0.0),
-        Complex16(1.0 / M_SQRT2, 0.0), Complex16(-1.0 / M_SQRT2, 0.0) };
-    ApplySingleBit(qubit, had, true);
-}
-
-/// NOT gate, which is also Pauli x matrix
-void QEngineCPU::X(bitLenInt qubit)
-{
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const Complex16 pauliX[4] = { Complex16(0.0, 0.0), Complex16(1.0, 0.0), Complex16(1.0, 0.0), Complex16(0.0, 0.0) };
-    ApplySingleBit(qubit, pauliX, false);
-}
-
-/// Apply Pauli Y matrix to bit
-void QEngineCPU::Y(bitLenInt qubit)
-{
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const Complex16 pauliY[4] = { Complex16(0.0, 0.0), Complex16(0.0, -1.0), Complex16(0.0, 1.0), Complex16(0.0, 0.0) };
-    ApplySingleBit(qubit, pauliY, false);
-}
-
-/// Apply Pauli Z matrix to bit
-void QEngineCPU::Z(bitLenInt qubit)
-{
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const Complex16 pauliZ[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(-1.0, 0.0) };
-    ApplySingleBit(qubit, pauliZ, false);
-}
-
-/// Apply controlled Pauli Y matrix to bit
-void QEngineCPU::CY(bitLenInt control, bitLenInt target)
-{
-    // if (qubit >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total
-    // bits.");
-    if (control == target)
-        throw std::invalid_argument("CY control bit cannot also be target.");
-    const Complex16 pauliY[4] = { Complex16(0.0, 0.0), Complex16(0.0, -1.0), Complex16(0.0, 1.0), Complex16(0.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliY, false);
-}
-
-/// Apply controlled Pauli Z matrix to bit
-void QEngineCPU::CZ(bitLenInt control, bitLenInt target)
-{
-    // if (qubit >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total
-    // bits.");
-    if (control == target)
-        throw std::invalid_argument("CZ control bit cannot also be target.");
-    const Complex16 pauliZ[4] = { Complex16(1.0, 0.0), Complex16(0.0, 0.0), Complex16(0.0, 0.0), Complex16(-1.0, 0.0) };
-    ApplyControlled2x2(control, target, pauliZ, false);
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
 } // namespace Qrack

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -15,13 +15,22 @@
 #include <iomanip>
 #include <sstream>
 
-#include "qinterface.hpp"
+#include "qfactory.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.5
 
+/*
+ * Default engine type to run the tests with. Global because catch doesn't
+ * support parameterization.
+ */
+extern enum Qrack::QInterfaceEngine testEngineType;
+extern enum Qrack::QInterfaceEngine testSubEngineType;
+extern std::shared_ptr<std::default_random_engine> rng;
+
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
+
 inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::QInterfacePtr qftReg);
 inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr qftReg);
 inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePtr qftReg);
@@ -55,15 +64,20 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
 
     double maxProb = 0;
     int maxProbIdx = 0;
+    double totalProb = 0;
 
     // Iterate through all possible values of the bit array, starting at the
     // max.
     for (i = qftReg->GetMaxQPower() - 1; i >= 0; i--) {
         double prob = qftReg->ProbAll(i);
+        totalProb += prob;
         if (prob > maxProb) {
             maxProb = prob;
             maxProbIdx = i;
         }
+        // if (prob > 0.0) {
+        //    std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
+        //}
     }
 
     os << qftReg->GetQubitCount() << "/";
@@ -105,6 +119,7 @@ inline std::ostream& outputIndependentBits(std::ostream& os, Qrack::QInterfacePt
 class QInterfaceTestFixture {
 protected:
     Qrack::QInterfacePtr qftReg;
+
 public:
     QInterfaceTestFixture();
 };
@@ -147,7 +162,7 @@ public:
     {
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
-        for (int j = length; j >= 0; j--) {
+        for (int j = (length - 1); j >= 0; j--) {
             ss << !!((int)(mask & (1 << j)));
         }
         return ss.str();

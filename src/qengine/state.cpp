@@ -1,0 +1,560 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+//
+// This is a multithreaded, universal quantum register simulation, allowing
+// (nonphysical) register cloning and direct measurement of probability and
+// phase, to leverage what advantages classical emulation of qubits can have.
+//
+// Licensed under the GNU General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// for details.
+
+#include <thread>
+
+#include "qengine_cpu.hpp"
+
+#if ENABLE_COMPLEX_X2
+#if ENABLE_COMPLEX8
+#include "common/complex8x2simd.hpp"
+#define complex2 Complex8x2Simd
+#else
+#include "common/complex16x2simd.hpp"
+#define complex2 Complex16x2Simd
+#endif
+#endif
+
+namespace Qrack {
+
+/**
+ * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
+ * a shared random number generator, with a specific phase.
+ *
+ * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
+ * phase usually makes sense only if they are initialized at the same time.
+ */
+QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
+    complex phaseFac, bool partialInit)
+    : QInterface(qBitCount, rgp)
+    , stateVec(NULL)
+{
+    doNormalize = true;
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
+    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
+        throw std::invalid_argument(
+            "Cannot instantiate a register with greater capacity than native types on emulating system.");
+
+    runningNorm = partialInit ? ZERO_R1 : ONE_R1;
+    SetQubitCount(qBitCount);
+
+    stateVec = AllocStateVec(maxQPower);
+    std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+    if (!partialInit) {
+        if (phaseFac == complex(-999.0, -999.0)) {
+            real1 angle = Rand() * 2.0 * PI_R1;
+            stateVec[initState] = complex(cos(angle), sin(angle));
+        } else {
+            stateVec[initState] = phaseFac;
+        }
+    }
+}
+
+QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
+    : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    , stateVec(NULL)
+{
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
+    stateVec = AllocStateVec(maxQPower);
+    CopyState(toCopy);
+}
+
+complex* QEngineCPU::GetStateVector() { return stateVec; }
+
+void QEngineCPU::SetPermutation(bitCapInt perm)
+{
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = true;
+
+    std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+    real1 angle = Rand() * 2.0 * PI_R1;
+    stateVec[perm] = complex(cos(angle), sin(angle));
+    runningNorm = ONE_R1;
+}
+
+void QEngineCPU::CopyState(QInterfacePtr orig)
+{
+    knowIsPhaseSeparable = false;
+
+    /* Set the size and reset the stateVec to the correct size. */
+    SetQubitCount(orig->GetQubitCount());
+    ResetStateVec(AllocStateVec(maxQPower));
+
+    QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
+    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
+}
+
+void QEngineCPU::ResetStateVec(complex* nStateVec)
+{
+    free(stateVec);
+    stateVec = nStateVec;
+}
+
+/// Set arbitrary pure quantum state, in unsigned int permutation basis
+void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
+
+    /**
+     * Apply a 2x2 matrix to the state vector
+     *
+     * A fundamental operation used by almost all gates.
+     */
+
+#if ENABLE_COMPLEX_X2
+
+#if ENABLE_COMPLEX8
+union ComplexUnion {
+    complex2 cmplx2;
+    float comp[4];
+
+    inline ComplexUnion(){};
+    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
+    {
+        cmplx2 = complex2(real(cmplx0), imag(cmplx0), real(cmplx1), imag(cmplx1));
+    }
+};
+#else
+union ComplexUnion {
+    complex2 cmplx2;
+    complex cmplx[2];
+
+    inline ComplexUnion(){};
+    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
+    {
+        cmplx[0] = cmplx0;
+        cmplx[1] = cmplx1;
+    }
+};
+#endif
+
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+    const bitCapInt* qPowersSorted, bool doCalcNorm)
+{
+    int numCores = GetConcurrencyLevel();
+    real1 nrm = doNormalize ? (ONE_R1 / sqrt(runningNorm)) : ONE_R1;
+    ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
+    ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
+
+    if (doCalcNorm && (bitCount == 1)) {
+        real1* rngNrm = new real1[numCores];
+        std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
+
+            qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+#if ENABLE_COMPLEX8
+            stateVec[lcv + offset1] = complex(qubit.comp[0], qubit.comp[1]);
+            stateVec[lcv + offset2] = complex(qubit.comp[2], qubit.comp[3]);
+            rngNrm[cpu] += norm(qubit.cmplx2);
+#else
+            stateVec[lcv + offset1] = qubit.cmplx[0];
+            stateVec[lcv + offset2] = qubit.cmplx[1];
+            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+#endif
+        });
+        runningNorm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
+    } else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            ComplexUnion qubit(stateVec[lcv + offset1], stateVec[lcv + offset2]);
+
+            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+#if ENABLE_COMPLEX8
+            stateVec[lcv + offset1] = complex(qubit.comp[0], qubit.comp[1]);
+            stateVec[lcv + offset2] = complex(qubit.comp[2], qubit.comp[3]);
+#else
+            stateVec[lcv + offset1] = qubit.cmplx[0];
+            stateVec[lcv + offset2] = qubit.cmplx[1];
+#endif
+        });
+        if (doNormalize && doCalcNorm) {
+            UpdateRunningNorm();
+        }
+    }
+}
+#else
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+    const bitCapInt* qPowersSorted, bool doCalcNorm)
+{
+    int numCores = GetConcurrencyLevel();
+    real1 nrm = doNormalize ? (ONE_R1 / sqrt(runningNorm)) : ONE_R1;
+
+    if (doCalcNorm && (bitCount == 1)) {
+        real1* rngNrm = new real1[numCores];
+        std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            complex qubit[2];
+
+            complex Y0 = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+            qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+            rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        runningNorm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
+    } else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+            complex qubit[2];
+
+            complex Y0 = stateVec[lcv + offset1];
+            qubit[1] = stateVec[lcv + offset2];
+
+            qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+            qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
+
+            stateVec[lcv + offset1] = qubit[0];
+            stateVec[lcv + offset2] = qubit[1];
+        });
+        if (doNormalize && doCalcNorm) {
+            UpdateRunningNorm();
+        }
+    }
+}
+#endif
+
+/**
+ * Combine (a copy of) another QEngineCPU with this one, after the last bit
+ * index of this one. (If the programmer doesn't want to "cheat," it is left up
+ * to them to delete the old coherent unit that was added.
+ */
+bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
+{
+    bitLenInt result = qubitCount;
+
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+        toCopy->NormalizeState();
+    }
+
+    bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
+    bitCapInt nMaxQPower = 1 << nQubitCount;
+    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
+
+    complex* nStateVec = AllocStateVec(nMaxQPower);
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
+        nStateVec[lcv] = stateVec[lcv & startMask] * toCopy->stateVec[(lcv & endMask) >> qubitCount];
+    });
+
+    SetQubitCount(nQubitCount);
+
+    ResetStateVec(nStateVec);
+
+    return result;
+}
+
+/**
+ * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
+ * index of this one. (If the programmer doesn't want to "cheat," it is left up
+ * to them to delete the old coherent unit that was added.
+ *
+ * Returns a mapping of the index into the new QEngine that each old one was mapped to.
+ */
+std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr> toCopy)
+{
+    std::map<QInterfacePtr, bitLenInt> ret;
+
+    bitLenInt i;
+    bitLenInt toCohereCount = toCopy.size();
+
+    std::vector<bitLenInt> offset(toCohereCount);
+    std::vector<bitCapInt> mask(toCohereCount);
+
+    bitCapInt startMask = maxQPower - 1;
+    bitCapInt nQubitCount = qubitCount;
+    bitCapInt nMaxQPower;
+
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    for (i = 0; i < toCohereCount; i++) {
+        QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
+        if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
+            src->NormalizeState();
+        }
+        mask[i] = ((1 << src->GetQubitCount()) - 1) << nQubitCount;
+        offset[i] = nQubitCount;
+        ret[toCopy[i]] = nQubitCount;
+        nQubitCount += src->GetQubitCount();
+    }
+
+    nMaxQPower = 1 << nQubitCount;
+
+    complex* nStateVec = AllocStateVec(nMaxQPower);
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
+        nStateVec[lcv] = stateVec[lcv & startMask];
+
+        for (bitLenInt j = 0; j < toCohereCount; j++) {
+            QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[j]);
+            nStateVec[lcv] *= src->stateVec[(lcv & mask[j]) >> offset[j]];
+        }
+    });
+
+    qubitCount = nQubitCount;
+    maxQPower = nMaxQPower;
+
+    ResetStateVec(nStateVec);
+
+    return ret;
+}
+
+/**
+ * Minimally decohere a set of contigious bits from the full coherent unit. The
+ * length of this coherent unit is reduced by the length of bits decohered, and
+ * the bits removed are output in the destination QEngineCPU pointer. The
+ * destination object must be initialized to the correct number of bits, in 0
+ * permutation state.
+ */
+void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+{
+    if (length == 0) {
+        return;
+    }
+
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt partPower = 1 << length;
+    bitCapInt remainderPower = 1 << (qubitCount - length);
+
+    real1* remainderStateProb = new real1[remainderPower]();
+    real1* remainderStateAngle = new real1[remainderPower];
+
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt j, k, l;
+        j = lcv % (1 << start);
+        j = j | ((lcv ^ j) << length);
+        for (k = 0; k < partPower; k++) {
+            l = j | (k << start);
+            remainderStateProb[lcv] += norm(stateVec[l]);
+        }
+        remainderStateAngle[lcv] = arg(stateVec[j]);
+    });
+
+    if ((maxQPower - partPower) == 0) {
+        SetQubitCount(1);
+    } else {
+        SetQubitCount(qubitCount - length);
+    }
+
+    if (destination != nullptr) {
+        real1* partStateProb = new real1[partPower]();
+        real1* partStateAngle = new real1[partPower];
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, k, l;
+            j = lcv << start;
+            for (k = 0; k < remainderPower; k++) {
+                l = k % (1 << start);
+                l = l | ((k ^ l) << length);
+                l = j | l;
+                partStateProb[lcv] += norm(stateVec[l]);
+            }
+            partStateAngle[lcv] = arg(stateVec[j]);
+        });
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            destination->stateVec[lcv] =
+                (real1)(sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+        });
+
+        delete[] partStateProb;
+        delete[] partStateAngle;
+    }
+
+    ResetStateVec(AllocStateVec(maxQPower));
+
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] = (real1)(sqrt(remainderStateProb[lcv])) *
+            complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
+    });
+
+    delete[] remainderStateProb;
+    delete[] remainderStateAngle;
+}
+
+void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+{
+    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
+}
+
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
+
+/// PSEUDO-QUANTUM Check whether phase is constant across permutation basis
+bool QEngineCPU::IsPhaseSeparable(bool forceCheck)
+{
+    if ((!forceCheck) && knowIsPhaseSeparable) {
+        return isPhaseSeparable;
+    }
+
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    int numCores = GetConcurrencyLevel();
+    bool* isAllSame = new bool[numCores];
+    std::fill(isAllSame, isAllSame + numCores, true);
+    real1* phases = new real1[numCores];
+    std::fill(phases, phases + numCores, -PI_R1 * 2);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        real1 nrm = norm(stateVec[lcv]);
+        if (nrm > min_norm) {
+            real1 nPhase = arg(stateVec[lcv]);
+            if (phases[cpu] < (-PI_R1)) {
+                phases[cpu] = nPhase;
+            } else {
+                real1 diff = phases[cpu] - nPhase;
+                if (diff < ZERO_R1) {
+                    diff = -diff;
+                }
+                if (diff > PI_R1) {
+                    diff = (2 * PI_R1) - diff;
+                }
+                if (diff > min_norm) {
+                    isAllSame[cpu] = false;
+                }
+            }
+        }
+    });
+
+    bool toRet = true;
+    real1 phase = -PI_R1 * 2;
+    for (int i = 0; i < numCores; i++) {
+        if ((!toRet) || (!isAllSame[i])) {
+            toRet = false;
+            break;
+        }
+
+        if (phase < (-PI_R1)) {
+            if (phases[i] >= (-PI_R1)) {
+                phase = phases[i];
+            }
+            continue;
+        }
+
+        real1 diff = phases[i] - phase;
+        if (diff < ZERO_R1) {
+            diff = -diff;
+        }
+        if (diff > PI_R1) {
+            diff = (2 * PI_R1) - diff;
+        }
+        if (diff > min_norm) {
+            toRet = false;
+            break;
+        }
+    }
+
+    delete[] isAllSame;
+    delete[] phases;
+
+    knowIsPhaseSeparable = true;
+    isPhaseSeparable = toRet;
+
+    return toRet;
+}
+
+/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+real1 QEngineCPU::Prob(bitLenInt qubit)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt qPower = (1 << qubit);
+    bitCapInt qMask = qPower - 1;
+    real1 oneChance = 0;
+
+    int numCores = GetConcurrencyLevel();
+    real1* oneChanceBuff = new real1[numCores]();
+
+    par_for(0, maxQPower >> 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt i = lcv & qMask;
+        i |= ((lcv ^ i) << 1) | qPower;
+        oneChanceBuff[cpu] += norm(stateVec[i]);
+    });
+
+    for (int i = 0; i < numCores; i++) {
+        oneChance += oneChanceBuff[i];
+    }
+
+    delete[] oneChanceBuff;
+
+    return oneChance;
+}
+
+/// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
+real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    return norm(stateVec[fullRegister]);
+}
+
+void QEngineCPU::NormalizeState(real1 nrm)
+{
+    if (nrm < ZERO_R1) {
+        nrm = runningNorm;
+    }
+    if ((nrm <= ZERO_R1) || (nrm == ONE_R1)) {
+        return;
+    }
+
+    nrm = sqrt(nrm);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        stateVec[lcv] /= nrm;
+        //"min_norm" is defined in qinterface.hpp
+        if (norm(stateVec[lcv]) < min_norm) {
+            stateVec[lcv] = complex(ZERO_R1, ZERO_R1);
+        }
+    });
+
+    runningNorm = ONE_R1;
+}
+
+void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
+
+complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
+{
+// elemCount is always a power of two, but might be smaller than ALIGN_SIZE
+#ifdef __APPLE__
+    void* toRet;
+    posix_memalign(
+        &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+    return (complex*)toRet;
+#else
+    return (complex*)aligned_alloc(
+        ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+#endif
+}
+} // namespace Qrack
