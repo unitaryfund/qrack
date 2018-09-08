@@ -1568,50 +1568,427 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     // Grover's search to find a value in a lookup table.
     // We search for 100. All values in lookup table are 1 except a single match.
 
-    const int TARGET_PROB = 100 + (230 << 8);
+    const bitLenInt indexLength = 8;
+    const bitLenInt valueLength = 8;
+    const bitLenInt carryIndex = indexLength + valueLength;
+    const int TARGET_VALUE = 100;
+    const int TARGET_KEY = 230;
 
-    unsigned char* toLoad = cl_alloc(256);
-    for (i = 0; i < 256; i++) {
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < (1 << indexLength); i++) {
         toLoad[i] = 1;
     }
-    toLoad[230] = 100;
+    toLoad[TARGET_KEY] = TARGET_VALUE;
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
-    qftReg->H(8, 8);
-    qftReg->IndexedLDA(8, 8, 0, 8, toLoad);
+    qftReg->H(valueLength, indexLength);
+    qftReg->IndexedLDA(valueLength, indexLength, 0, valueLength, toLoad);
 
-    // std::cout << "Iterations:" << std::endl;
-    // Twelve iterations maximizes the probablity for 256 searched elements.
-    for (i = 0; i < 12; i++) {
+    // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+    // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
+    int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << indexLength)));
+
+    for (i = 0; i < optIter; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
-        qftReg->DEC(100, 0, 8);
-        qftReg->ZeroPhaseFlip(0, 8);
-        qftReg->INC(100, 0, 8);
+        qftReg->DEC(TARGET_VALUE, 0, valueLength);
+        qftReg->ZeroPhaseFlip(0, valueLength);
+        qftReg->INC(TARGET_VALUE, 0, valueLength);
         // This ends the "oracle."
-        qftReg->X(16);
-        qftReg->IndexedSBC(8, 8, 0, 8, 16, toLoad);
-        qftReg->X(16);
-        qftReg->H(8, 8);
-        qftReg->ZeroPhaseFlip(8, 8);
-        qftReg->H(8, 8);
-        qftReg->PhaseFlip();
-        qftReg->IndexedADC(8, 8, 0, 8, 16, toLoad);
-        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        qftReg->X(carryIndex);
+        qftReg->IndexedSBC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(valueLength, indexLength);
+        qftReg->ZeroPhaseFlip(valueLength, indexLength);
+        qftReg->H(valueLength, indexLength);
+        // qftReg->PhaseFlip();
+        qftReg->IndexedADC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
     }
 
-    // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;
-    // std::cout << "Full Result:    " << qftReg << std::endl;
-    // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
+    REQUIRE_THAT(qftReg, HasProbability(0, indexLength + valueLength, TARGET_VALUE | (TARGET_KEY << valueLength)));
+    free(toLoad);
+}
 
-    qftReg->MReg(0, 8);
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
+{
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true only for an input of 100.
+    const bitLenInt length = 10;
+    const int TARGET_PROB = 100;
+    int i;
+    bitLenInt partStart;
+    // Start in a superposition of all inputs.
+    qftReg->SetPermutation(0);
+    // For Grover's search, our black box "oracle" would secretly return true for TARGET_PROB and false for all other
+    // inputs. This is the function we are trying to invert. For an improvement in search speed, we require n/2 oracles
+    // for an n bit search target. Each oracle marks 2 bits of the n total. This method might be applied to an ORDERED
+    // lookup table search, in which a series of quaternary decisions can ultimately select any result in the list.
+    for (i = 0; i < (length / 2); i++) {
+        // This is the number of bits not yet fixed.
+        partStart = length - ((i + 1) * 2);
+        qftReg->H(partStart, 2);
+        // We map from input to output.
+        qftReg->DEC(TARGET_PROB & (3 << partStart), 0, length);
+        // Phase flip the target state.
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        // We map back from outputs to inputs.
+        qftReg->INC(TARGET_PROB & (3 << partStart), 0, length);
+        // Phase flip the input state from the previous iteration.
+        qftReg->H(partStart, 2);
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
+        // Now, we have one quarter as many states to look for.
+    }
 
-    REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
+    REQUIRE_THAT(qftReg, HasProbability(0, length, TARGET_PROB));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
+{
+    bitLenInt i;
+    bitLenInt partStart;
+    bitLenInt partLength;
+
+    // Grover's search to find a value in an ordered list.
+
+    const bitLenInt indexLength = 6;
+    const bitLenInt valueLength = 6;
+    const bitLenInt carryIndex = 19;
+    const int TARGET_VALUE = 6;
+    const int TARGET_KEY = 5;
+
+    bool foundPerm = false;
+
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < TARGET_KEY; i++) {
+        toLoad[i] = 2;
+    }
+    toLoad[TARGET_KEY] = TARGET_VALUE;
+    for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
+        toLoad[i] = 7;
+    }
+
+    qftReg->SetPermutation(0);
+    partLength = indexLength;
+
+    for (i = 0; i < (indexLength / 2); i++) {
+        // We're in an exact permutation basis state, at this point, unless more than one quadrant contained a match for
+        // our search target on the previous iteration. We can check the quadrant boundaries, without disturbing the
+        // state. If there was more than one match, we either collapse into a valid state, so that we can continue as
+        // expected for one matching quadrant, or we collapse into an identifiably invalid set of bounds that cannot
+        // contain our match, which can be identified by checking two values and proceeding with special case logic.
+
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+
+        // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical computing
+        // components, as need and efficiency dictate).
+        bitCapInt lowBound = toLoad[key];
+        bitCapInt highBound = toLoad[key | unfixedMask];
+
+        if (lowBound == TARGET_VALUE) {
+            // We've found our match, and the key register already contains the correct value.
+            std::cout << "Is low bound";
+            foundPerm = true;
+            break;
+        } else if (highBound == TARGET_VALUE) {
+            // We've found our match, but our key register points to the opposite bound.
+            std::cout << "Is high bound";
+            qftReg->X(2 * valueLength, partLength);
+            foundPerm = true;
+            break;
+        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
+            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
+            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
+            // quadrant with bounds that match our target value, or there is no match to our target in the list.
+            foundPerm = false;
+            break;
+        }
+
+        // Prepare partial index superposition, of two most significant qubits that have not yet been fixed:
+        partLength = indexLength - ((i + 1) * 2);
+        partStart = (2 * valueLength) + partLength;
+        qftReg->H(partStart, 2);
+
+        // Load lower bound of quadrants:
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+
+        if (partLength > 0) {
+            // In this branch, our quadrant is "degenerate," (we mean, having more than one key/value pair).
+
+            // Load upper bound of quadrants:
+            qftReg->X(2 * valueLength, partLength);
+            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+
+            // Our "oracle" is true if the target is in this quadrant, and false otherwise:
+            // Flip phase if lower bound <= the target value.
+            qftReg->PhaseFlipIfLess(TARGET_VALUE + 1, 0, valueLength);
+            // Flip phase if upper bound < the target value.
+            qftReg->PhaseFlipIfLess(TARGET_VALUE, valueLength, valueLength);
+            // If both are higher, this is not the quadrant, and neither flips the permutation phase.
+            // If both are lower, this is not the quadrant, and the 2 phase flips of the permutation cancel.
+            // If both match the target, the above still tags the quadrant.
+        } else {
+            // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
+
+            // We map from input to output.
+            qftReg->DEC(TARGET_VALUE, 0, valueLength);
+            // Phase flip the target state.
+            qftReg->ZeroPhaseFlip(0, valueLength);
+            // We map back from outputs to inputs.
+            qftReg->INC(TARGET_VALUE, 0, valueLength);
+        }
+
+        // Now, we flip the phase of the input state:
+
+        // Reverse the operations we used to construct the state:
+        qftReg->X(carryIndex);
+        if (partLength > 0) {
+            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength, carryIndex, toLoad);
+            qftReg->X(2 * valueLength, partLength);
+        }
+        qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(partStart, 2);
+
+        // Flip the phase of the input state at the beginning of the iteration. Only in a quaternary Grover's search,
+        // we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the
+        // next iteration. (See the beginning of the loop, for what happens if we have more than one matching quadrant.
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
+        // qftReg->PhaseFlip();
+    }
+
+    if (!foundPerm && (i == (indexLength / 2))) {
+        // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
+        // one match.
+        bitCapInt key = qftReg->MReg(2 * valueLength, indexLength);
+        if (toLoad[key] == TARGET_VALUE) {
+            foundPerm = true;
+        }
+    }
+    if (!foundPerm && (i > 0)) {
+        // If we measured an invalid value in fewer than the full iterations, or if we returned an invalid value on the
+        // last iteration, we back the index up one iteration, 2 index qubits. We check the 8 boundary values. If we
+        // have more than one match in the ordered list, one of our 8 boundary values is necessarily a match, since the
+        // match repetitions must cross the boundary between two quadrants. If none of the 8 match, a match necessarily
+        // does not exist in the ordered list.
+        // This can only happen on the first iteration if the single highest and lowest values in the list cannot bound
+        // the match, in which case we know a match does not exist in the list.
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        for (i = 0; i < 4; i++) {
+            // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
+            // computing components, as need and efficiency dictate).
+            if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
+                foundPerm = true;
+                qftReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
+                break;
+            }
+        }
+    }
+
+    if (!foundPerm) {
+        std::cout << "Value is not in array.";
+    } else {
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        // (If we have more than one match, this REQUIRE_THAT needs to instead check that any of the matches are
+        // returned. This could be done by only requiring a match to the value register, but we want to show here that
+        // the index is correct.)
+        REQUIRE_THAT(qftReg,
+            HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+    }
+    free(toLoad);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
+{
+    bitLenInt i;
+    bitLenInt partStart;
+    bitLenInt partLength;
+
+    // Grover's search to find a value in an ordered list. The oracle is made with integer subtraction/addition and a
+    // doubly controlled phase flip.
+
+    const bitLenInt indexLength = 6;
+    const bitLenInt valueLength = 6;
+    const bitLenInt carryIndex = 19;
+    const int TARGET_VALUE = 6;
+    const int TARGET_KEY = 5;
+
+    bool foundPerm = false;
+
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    for (i = 0; i < TARGET_KEY; i++) {
+        toLoad[i] = 2;
+    }
+    toLoad[TARGET_KEY] = TARGET_VALUE;
+    for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
+        toLoad[i] = 7;
+    }
+
+    qftReg->SetPermutation(0);
+    partLength = indexLength;
+
+    for (i = 0; i < (indexLength / 2); i++) {
+        // We're in an exact permutation basis state, at this point, unless more than one quadrant contained a match for
+        // our search target on the previous iteration. We can check the quadrant boundaries, without disturbing the
+        // state. If there was more than one match, we either collapse into a valid state, so that we can continue as
+        // expected for one matching quadrant, or we collapse into an identifiably invalid set of bounds that cannot
+        // contain our match, which can be identified by checking two values and proceeding with special case logic.
+
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+
+        // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical computing
+        // components, as need and efficiency dictate).
+        bitCapInt lowBound = toLoad[key];
+        bitCapInt highBound = toLoad[key | unfixedMask];
+
+        if (lowBound == TARGET_VALUE) {
+            // We've found our match, and the key register already contains the correct value.
+            std::cout << "Is low bound";
+            foundPerm = true;
+            break;
+        } else if (highBound == TARGET_VALUE) {
+            // We've found our match, but our key register points to the opposite bound.
+            std::cout << "Is high bound";
+            qftReg->X(2 * valueLength, partLength);
+            foundPerm = true;
+            break;
+        } else if (((lowBound < TARGET_VALUE) && (highBound < TARGET_VALUE)) ||
+            ((lowBound > TARGET_VALUE) && (highBound > TARGET_VALUE))) {
+            // If we measure the key as a quadrant that doesn't contain our value, then either there is more than one
+            // quadrant with bounds that match our target value, or there is no match to our target in the list.
+            foundPerm = false;
+            break;
+        }
+
+        // Prepare partial index superposition, of two most significant qubits that have not yet been fixed:
+        partLength = indexLength - ((i + 1) * 2);
+        partStart = (2 * valueLength) + partLength;
+        qftReg->H(partStart, 2);
+
+        // Load lower bound of quadrants:
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+
+        if (partLength > 0) {
+            // In this branch, our quadrant is "degenerate," (we mean, having more than one key/value pair).
+
+            // Load upper bound of quadrants:
+            qftReg->X(2 * valueLength, partLength);
+            qftReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
+
+            // This begins the "oracle." Our "oracle" is true if the target is in this quadrant, and false otherwise:
+            // Set value bits to borrow from:
+            qftReg->X(valueLength - 1);
+            qftReg->X(2 * valueLength - 1);
+            // Subtract from the value registers with the bits to borrow from:
+            qftReg->DEC(TARGET_VALUE, 0, valueLength);
+            qftReg->DEC(TARGET_VALUE, valueLength, valueLength);
+            // If both are higher, this is not the quadrant, and neither flips the borrow.
+            // If both are lower, this is not the quadrant, and both flip the borrow.
+            // If one is higher and one is lower, the low register borrow bit is flipped, and high register borrow is
+            // not.
+            qftReg->X(valueLength - 1);
+            qftReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
+            // Flip the phase is the test bit is set:
+            qftReg->Z(carryIndex);
+            // Reverse everything but the phase flip:
+            qftReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
+            qftReg->X(valueLength - 1);
+            qftReg->INC(TARGET_VALUE, valueLength, valueLength);
+            qftReg->INC(TARGET_VALUE, 0, valueLength);
+            qftReg->X(2 * valueLength - 1);
+            qftReg->X(valueLength - 1);
+            // This ends the "oracle."
+        } else {
+            // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
+
+            // We map from input to output.
+            qftReg->DEC(TARGET_VALUE, 0, valueLength - 1);
+            // Phase flip the target state.
+            qftReg->ZeroPhaseFlip(0, valueLength - 1);
+            // We map back from outputs to inputs.
+            qftReg->INC(TARGET_VALUE, 0, valueLength - 1);
+        }
+
+        // Now, we flip the phase of the input state:
+
+        // Reverse the operations we used to construct the state:
+        qftReg->X(carryIndex);
+        if (partLength > 0) {
+            qftReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
+            qftReg->X(2 * valueLength, partLength);
+        }
+        qftReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        qftReg->X(carryIndex);
+        qftReg->H(partStart, 2);
+
+        // Flip the phase of the input state at the beginning of the iteration. Only in a quaternary Grover's search,
+        // we have an exact result at the end of each Grover's iteration, so we consider this an exact input for the
+        // next iteration. (See the beginning of the loop, for what happens if we have more than one matching quadrant.
+        qftReg->ZeroPhaseFlip(partStart, 2);
+        qftReg->H(partStart, 2);
+        // qftReg->PhaseFlip();
+    }
+
+    if (!foundPerm && (i == (indexLength / 2))) {
+        // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
+        // one match.
+        bitCapInt key = qftReg->MReg(2 * valueLength, indexLength);
+        if (toLoad[key] == TARGET_VALUE) {
+            foundPerm = true;
+        }
+    }
+    if (!foundPerm && (i > 0)) {
+        // If we measured an invalid value in fewer than the full iterations, or if we returned an invalid value on the
+        // last iteration, we back the index up one iteration, 2 index qubits. We check the 8 boundary values. If we
+        // have more than one match in the ordered list, one of our 8 boundary values is necessarily a match, since the
+        // match repetitions must cross the boundary between two quadrants. If none of the 8 match, a match necessarily
+        // does not exist in the ordered list.
+        // This can only happen on the first iteration if the single highest and lowest values in the list cannot bound
+        // the match, in which case we know a match does not exist in the list.
+        bitLenInt fixedLength = i * 2;
+        bitLenInt unfixedLength = indexLength - fixedLength;
+        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
+        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        for (i = 0; i < 4; i++) {
+            // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
+            // computing components, as need and efficiency dictate).
+            if (toLoad[key | (i * checkIncrement)] == TARGET_VALUE) {
+                foundPerm = true;
+                qftReg->SetReg(2 * valueLength, indexLength, key | (i * checkIncrement));
+                break;
+            }
+        }
+    }
+
+    if (!foundPerm) {
+        std::cout << "Value is not in array.";
+    } else {
+        qftReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        // (If we have more than one match, this REQUIRE_THAT needs to instead check that any of the matches are
+        // returned. This could be done by only requiring a match to the value register, but we want to show here that
+        // the index is correct.)
+        REQUIRE_THAT(qftReg,
+            HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
+    }
     free(toLoad);
 }
 
 void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
-    bitLenInt expLen, bitLenInt carryStart)
+    bitLenInt expLen, bitLenInt carryStart, bitLenInt recordStart)
 {
     bitCapInt workingPower = base;
     bitLenInt regStart1, regStart2;
@@ -1624,9 +2001,9 @@ void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt
             regStart1 = baseStart;
             regStart2 = carryStart;
         }
-        qftReg->CMUL(workingPower, regStart1, baseLen, expStart + i, baseLen, false);
+        qftReg->CMUL(workingPower, regStart1, recordStart, expStart + i, baseLen, false);
         qftReg->CNOT(regStart1, regStart2, baseLen);
-        qftReg->CDIV(workingPower, regStart1, baseLen, expStart + i, baseLen);
+        qftReg->CDIV(workingPower, regStart1, recordStart, expStart + i, baseLen);
         qftReg->SetReg(regStart1, baseLen, 0);
         workingPower *= base;
     }
@@ -1643,7 +2020,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
     qftReg->SetPermutation(1);
     // Last bits are exponent:
     qftReg->SetReg(20 - expLen, expLen, 2);
-    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen);
+    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen, baseLen);
     REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
 }
 

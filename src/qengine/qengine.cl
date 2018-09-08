@@ -1380,3 +1380,20 @@ void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapI
             stateVec[i] = -stateVec[i];
     }
 }
+
+void kernel phaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt greaterPerm = bitCapIntPtr[2];
+    bitCapInt start = bitCapIntPtr[3];
+    cmplx amp;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        if (((lcv & regMask) >> start) < greaterPerm)
+            stateVec[lcv] = -stateVec[lcv];
+    }
+}

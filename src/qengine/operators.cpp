@@ -914,6 +914,18 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     });
 }
 
+/// This is an expedient for an adaptive Grover's search for a function's global minimum.
+void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    knowIsPhaseSeparable = false;
+    bitCapInt regMask = ((1 << length) - 1) << start;
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if (((lcv & regMask) >> start) < greaterPerm)
+            stateVec[lcv] = -stateVec[lcv];
+    });
+}
+
 /// Measure permutation state of a register
 bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
 {
