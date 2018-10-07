@@ -125,7 +125,15 @@ public:
     {
         queue = cl::CommandQueue(context, d);
     }
+
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
+
+    std::vector<cl::Event> ResetWaitEvents() {
+        std::vector<cl::Event> waitVec = wait_events;
+        wait_events.clear();
+        return waitVec;
+    }
+
     friend class OCLEngine;
 };
 

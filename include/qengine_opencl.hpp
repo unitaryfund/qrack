@@ -47,7 +47,6 @@ protected:
     size_t nrmGroupSize;
     size_t maxWorkItems;
     unsigned int procElemCount;
-    bool doSync;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
@@ -65,7 +64,7 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int devID = -1, bool synchronous = false, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
+        int devID = -1, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {

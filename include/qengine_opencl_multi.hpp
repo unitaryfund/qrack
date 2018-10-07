@@ -62,10 +62,6 @@ public:
     QEngineOCLMulti(bitLenInt qBitCount, bitCapInt initState, std::vector<int> devIDs,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
-    ~QEngineOCLMulti() {
-        clFinish(true);
-    }
-
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
@@ -189,8 +185,6 @@ protected:
         CF cfn, F fn, Args... gfnArgs);
 
     template <typename F, typename OF> void RegOp(F fn, OF ofn, bitLenInt length, std::vector<bitLenInt> bits);
-
-    void clFinish(bool doHard = false);
 
     // For scalable cluster distribution, these methods should ultimately be entirely removed:
     void CombineEngines(bitLenInt bit);
