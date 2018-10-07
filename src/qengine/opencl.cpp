@@ -67,8 +67,9 @@ void QEngineOCL::LockSync(cl_int flags)
 void QEngineOCL::UnlockSync()
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    queue.enqueueUnmapMemObject(*stateBuffer, stateVec, &waitVec);
-    queue.finish();
+    cl::Event unmapEvent;
+    queue.enqueueUnmapMemObject(*stateBuffer, stateVec, &waitVec, &unmapEvent);
+    device_context->wait_events.push_back(unmapEvent);
 }
 
 void QEngineOCL::Sync()
@@ -242,10 +243,12 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
-    queue.enqueueFillBuffer(*stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec);
+    cl::Event fillEvent1;
+    queue.enqueueFillBuffer(*stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec, &fillEvent1);
+    queue.flush();
     real1 angle = Rand() * 2.0 * PI_R1;
     complex amp = complex(cos(angle), sin(angle));
-    queue.finish();
+    fillEvent1.wait();
 
     cl::Event fillEvent2;
     queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex), NULL, &fillEvent2);
@@ -291,11 +294,15 @@ void QEngineOCL::DispatchCall(
         ocl.call.setArg(3, loadBuffer);
     }
 
+    cl::Event kernelEvent;
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs)); // local number (per group)
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
 
-    queue.finish();
+    kernelEvent.wait();
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
@@ -438,14 +445,18 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     ocl.call.setArg(2, ulongBuffer);
     ocl.call.setArg(3, *nStateBuffer);
 
+    cl::Event kernelEvent;
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs)); // local number (per group)
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
 
-    queue.finish();
-
-    ResetStateVec(nStateVec, nStateBuffer);
     runningNorm = ONE_R1;
+
+    kernelEvent.wait();
+    ResetStateVec(nStateVec, nStateBuffer);
 
     return result;
 }
@@ -576,17 +587,21 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     amp_call.call.setArg(2, ulongBuffer);
     amp_call.call.setArg(3, *nStateBuffer);
 
+    cl::Event kernelEvent;
     queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
         cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs)); // local number (per group)
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
 
-    queue.finish();
-
-    ResetStateVec(nStateVec, nStateBuffer);
     runningNorm = ONE_R1;
     if (destination != nullptr) {
         destination->runningNorm = ONE_R1;
     }
+
+    kernelEvent.wait();
+    ResetStateVec(nStateVec, nStateBuffer);
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
