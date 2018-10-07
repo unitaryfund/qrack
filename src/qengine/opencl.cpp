@@ -78,13 +78,14 @@ void QEngineOCL::Sync()
     UnlockSync();
 }
 
-void QEngineOCL::clFinish(bool doHard) {
+void QEngineOCL::clFinish(bool doHard)
+{
     if (device_context == NULL) {
         return;
     }
 
     if (doHard) {
-        queue.finish();   
+        queue.finish();
     } else {
         for (unsigned int i = 0; i < (device_context->wait_events.size()); i++) {
             device_context->wait_events[i].wait();
@@ -244,7 +245,8 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     cl::Event fillEvent1;
-    queue.enqueueFillBuffer(*stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec, &fillEvent1);
+    queue.enqueueFillBuffer(
+        *stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec, &fillEvent1);
     queue.flush();
     real1 angle = Rand() * 2.0 * PI_R1;
     complex amp = complex(cos(angle), sin(angle));
@@ -255,7 +257,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
     queue.flush();
     device_context->wait_events.push_back(fillEvent2);
 
-    runningNorm = ONE_R1;    
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::DispatchCall(
@@ -264,14 +266,16 @@ void QEngineOCL::DispatchCall(
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(2);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
-    queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec, &(device_context->wait_events[1]));
+    queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
+        &(device_context->wait_events[1]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -320,7 +324,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(2);
 
-    queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(
+        cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = maxQPower >> bitCount;
@@ -331,7 +336,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     for (int i = 0; i < bitCount; i++) {
         bciArgs[4 + i] = qPowersSorted[i];
     }
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[1]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[1]));
     queue.flush();
 
     doCalcNorm &= (bitCount == 1);
@@ -356,7 +362,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 
@@ -384,9 +390,11 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(2);
 
-    queue.enqueueWriteBuffer(cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(
+        cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[1]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[1]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -404,7 +412,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 }
@@ -430,7 +438,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     SetQubitCount(nQubitCount);
@@ -494,7 +503,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
@@ -641,7 +651,8 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -709,7 +720,6 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
             }
         }
         queue.enqueueUnmapMemObject(phasesBuffer, phases, NULL, &unmapEvent);
-        
     }
     knowIsPhaseSeparable = true;
     isPhaseSeparable = toRet;
@@ -737,7 +747,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -762,7 +773,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 
     waitVec.clear();
     waitVec.push_back(kernelEvent);
-    
+
     queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc, &waitVec);
     for (size_t i = 0; i < ngc; i++) {
         oneChance += nrmArray[i];
@@ -1269,7 +1280,7 @@ void QEngineOCL::PhaseFlip()
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 }
@@ -1286,7 +1297,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -1302,7 +1314,7 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 }
@@ -1320,7 +1332,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -1336,7 +1349,7 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 }
@@ -1354,7 +1367,8 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
@@ -1370,7 +1384,7 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
         cl::NDRange(ngc), // global number of work items
         cl::NDRange(ngs), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 }
@@ -1399,7 +1413,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
     if (nrm < min_norm) {
         cl::Event fillEvent;
-        queue.enqueueFillBuffer(*stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec, &fillEvent);
+        queue.enqueueFillBuffer(
+            *stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec, &fillEvent);
         queue.flush();
         device_context->wait_events.push_back(fillEvent);
         runningNorm = ZERO_R1;
@@ -1424,7 +1439,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
 
@@ -1450,7 +1465,7 @@ void QEngineOCL::UpdateRunningNorm()
         cl::NDRange(nrmGroupCount), // global number of work items
         cl::NDRange(nrmGroupSize), // local number (per group)
         NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel 
+        &kernelEvent); // handle to wait for the kernel
     queue.flush();
     waitVec.clear();
     waitVec.push_back(kernelEvent);
