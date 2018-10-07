@@ -68,6 +68,7 @@ public:
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
+        clFinish();
         delete[] stateVec;
         delete[] nrmArray;
     }
@@ -177,6 +178,7 @@ protected:
     static const int BCI_ARG_LEN = 10;
 
     void InitOCL(int devID);
+    void clFinish();
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount);
 

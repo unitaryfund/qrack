@@ -109,6 +109,7 @@ public:
     cl::Context context;
     int context_id;
     cl::CommandQueue queue;
+    std::vector<cl::Event> wait_events;
 
 protected:
     std::recursive_mutex mutex;
