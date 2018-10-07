@@ -89,7 +89,6 @@ Copyright (c) Daniel Strano and the Qrack contributors 2017-2018. All rights res
 
 Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept.
 
-
 Licensed under the GNU General Public License V3.
 
 See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
