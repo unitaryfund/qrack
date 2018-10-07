@@ -20,12 +20,13 @@ namespace Qrack {
 #define CMPLX_NORM_LEN 5
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    int devID, bool partialInit, complex phaseFac)
+    int devID, bool synchronous, bool partialInit, complex phaseFac)
     : QInterface(qBitCount, rgp)
     , stateVec(NULL)
     , deviceID(-1)
     , nrmArray(NULL)
 {
+    doSync = synchronous;
     doNormalize = true;
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
@@ -54,14 +55,14 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , deviceID(-1)
     , nrmArray(NULL)
 {
+    doSync = toCopy->doSync;
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
 }
 
 void QEngineOCL::LockSync(cl_int flags)
 {
-    cl::Event mapEvent;
-    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower, &(device_context->wait_events), &mapEvent);
+    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower, &(device_context->wait_events));
     device_context->wait_events.clear();
 }
 
@@ -73,6 +74,10 @@ void QEngineOCL::UnlockSync()
     queue.flush();
     device_context->wait_events.resize(1);
     device_context->wait_events[0] = unmapEvent;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 void QEngineOCL::Sync()
@@ -81,13 +86,17 @@ void QEngineOCL::Sync()
     UnlockSync();
 }
 
-void QEngineOCL::clFinish() {
+void QEngineOCL::clFinish(bool doHard) {
     if (device_context == NULL) {
         return;
     }
 
-    for (unsigned int i = 0; i < (device_context->wait_events.size()); i++) {
-        device_context->wait_events[i].wait();
+    if (doHard) {
+        queue.finish();   
+    } else {
+        for (unsigned int i = 0; i < (device_context->wait_events.size()); i++) {
+            device_context->wait_events[i].wait();
+        }
     }
     device_context->wait_events.clear();
 }
@@ -219,6 +228,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     device_context->wait_events.resize(1);
     queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &(device_context->wait_events[0]));
     queue.flush();
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 void QEngineOCL::SetQubitCount(bitLenInt qb)
@@ -256,6 +269,10 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
     device_context->wait_events.resize(1);
     device_context->wait_events[0] = writeEvent2;
     runningNorm = ONE_R1;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 void QEngineOCL::DispatchCall(
@@ -306,7 +323,7 @@ void QEngineOCL::DispatchCall(
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
     ResetStateVec(nStateVec, nStateBuffer);
 }
@@ -364,7 +381,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
 
     if (doCalcNorm) {
@@ -379,6 +396,10 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         queue.flush();
         device_context->wait_events.resize(1);
         device_context->wait_events[0] = unmapEvent;
+    }
+
+    if (doSync){
+        clFinish();
     }
 }
 
@@ -416,8 +437,12 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
@@ -467,7 +492,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
     ResetStateVec(nStateVec, nStateBuffer);
     runningNorm = ONE_R1;
@@ -550,7 +575,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
     queue.flush();
     device_context->wait_events[0] = kernelEvent;
 
@@ -621,7 +645,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent2); // wait event created by this call
-
     queue.flush();
     device_context->wait_events[0] = kernelEvent2;
     ResetStateVec(nStateVec, nStateBuffer);
@@ -776,20 +799,26 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
-
-    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc, &(device_context->wait_events));
+    waitEvents = device_context->wait_events;
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc, &waitEvents);
+    device_context->wait_events.clear();
+    
     for (size_t i = 0; i < ngc; i++) {
         oneChance += nrmArray[i];
     }
     cl::Event unmapEvent;
+    device_context->wait_events.resize(1);
     queue.enqueueUnmapMemObject(nrmBuffer, nrmArray, NULL, &unmapEvent);
-    unmapEvent.wait();
-    device_context->wait_events.clear();
+    device_context->wait_events[0] = unmapEvent;
 
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
+
+    if (doSync){
+        clFinish();
+    }
 
     return oneChance;
 }
@@ -1290,8 +1319,12 @@ void QEngineOCL::PhaseFlip()
         cl::NDRange(nrmGroupSize),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
@@ -1323,8 +1356,12 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -1358,8 +1395,12 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
@@ -1392,8 +1433,12 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
         cl::NDRange(ngs),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
@@ -1448,10 +1493,14 @@ void QEngineOCL::NormalizeState(real1 nrm)
         cl::NDRange(nrmGroupSize),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
 
     runningNorm = ONE_R1;
+
+    if (doSync){
+        clFinish();
+    }
 }
 
 void QEngineOCL::UpdateRunningNorm()
@@ -1477,7 +1526,7 @@ void QEngineOCL::UpdateRunningNorm()
         cl::NDRange(nrmGroupSize),  // local number (per group)
         &waitEvents, // list of events to wait for
         &kernelEvent); // wait event created by this call
-
+    queue.flush();
     device_context->wait_events[0] = kernelEvent;
     waitEvents = device_context->wait_events;
 
@@ -1489,11 +1538,14 @@ void QEngineOCL::UpdateRunningNorm()
     }
     cl::Event unmapEvent;
     queue.enqueueUnmapMemObject(nrmBuffer, nrmArray, NULL, &unmapEvent);
-    unmapEvent.wait();
-    device_context->wait_events.clear();
+    device_context->wait_events[0] = unmapEvent;
 
     if (runningNorm < min_norm) {
         NormalizeState(ZERO_R1);
+    }
+
+    if (doSync){
+        clFinish();
     }
 }
 

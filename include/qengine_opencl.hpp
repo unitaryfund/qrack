@@ -47,6 +47,7 @@ protected:
     size_t nrmGroupSize;
     size_t maxWorkItems;
     unsigned int procElemCount;
+    bool doSync;
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
@@ -64,11 +65,11 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int devID = -1, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
+        int devID = -1, bool synchronous = false, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
-        clFinish();
+        queue.finish();
         delete[] stateVec;
         delete[] nrmArray;
     }
@@ -89,6 +90,7 @@ public:
     virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
     virtual void Sync();
+    virtual void clFinish(bool doHard = false);
     virtual complex* GetStateVector() { return stateVec; }
     virtual cl::Context& GetCLContext() { return context; }
     virtual int GetCLContextID() { return device_context->context_id; }
@@ -178,7 +180,6 @@ protected:
     static const int BCI_ARG_LEN = 10;
 
     void InitOCL(int devID);
-    void clFinish();
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount);
 
