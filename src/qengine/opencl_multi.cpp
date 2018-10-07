@@ -90,7 +90,7 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
     subMaxQPower = 1 << subQubitCount;
 
     if (deviceCount == 1) {
-        substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rand_generator, deviceIDs[0]));
+        substateEngines.push_back(std::make_shared<QEngineOCL>(qubitCount, initState, rand_generator, deviceIDs[0], true));
         substateEngines[0]->EnableNormalize(true);
         return;
     }
@@ -107,7 +107,7 @@ void QEngineOCLMulti::Init(bitLenInt qBitCount, bitCapInt initState)
         }
         // All sub-engines should have zero norm except for the one containing the initialization permutation:
         substateEngines.push_back(
-            std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rand_generator, deviceIDs[i], partialInit));
+            std::make_shared<QEngineOCL>(subQubitCount, subInitVal, rand_generator, deviceIDs[i], true, partialInit));
         substateEngines[i]->EnableNormalize(false);
         subInitVal = 0;
         partialInit = true;
@@ -1230,6 +1230,12 @@ real1 QEngineOCLMulti::ProbAll(bitCapInt fullRegister)
     return substateEngines[subIndex]->ProbAll(fullRegister);
 }
 
+void QEngineOCLMulti::clFinish(bool doHard) {
+    par_for(0, subEngineCount, [&](const bitCapInt lcv, const int cpu) {
+        substateEngines[lcv]->clFinish(doHard);
+    });
+}
+
 // For scalable cluster distribution, these methods should ultimately be entirely removed:
 void QEngineOCLMulti::CombineEngines(bitLenInt bit)
 {
@@ -1249,7 +1255,7 @@ void QEngineOCLMulti::CombineEngines(bitLenInt bit)
     bool isMapped;
 
     for (i = 0; i < groupCount; i++) {
-        nEngines[i] = std::make_shared<QEngineOCL>((bit + 1), 0, rand_generator, deviceIDs[i]);
+        nEngines[i] = std::make_shared<QEngineOCL>((bit + 1), 0, rand_generator, deviceIDs[i], true);
         nEngines[i]->EnableNormalize(false);
         isMapped = false;
         complex* nsv = nullptr;
@@ -1323,7 +1329,7 @@ void QEngineOCLMulti::SeparateEngines()
         complex* sv = nullptr;
         for (j = 0; j < groupSize; j++) {
             QEngineOCLPtr nEngine =
-                std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true);
+                std::make_shared<QEngineOCL>(qubitCount - log2(engineCount), 0, rand_generator, deviceIDs[j], true, true);
             nEngine->EnableNormalize(false);
             if ((!isMapped) && ((nEngine->GetCLContextID()) == (eng->GetCLContextID()))) {
                 cl::CommandQueue& queue = eng->GetCLQueue();

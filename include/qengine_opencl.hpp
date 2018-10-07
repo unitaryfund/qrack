@@ -69,7 +69,7 @@ public:
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
-        queue.finish();
+        clFinish(true);
         delete[] stateVec;
         delete[] nrmArray;
     }

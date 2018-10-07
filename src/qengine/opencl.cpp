@@ -55,6 +55,8 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , deviceID(-1)
     , nrmArray(NULL)
 {
+    clFinish(true);
+    toCopy->clFinish(true);
     doSync = toCopy->doSync;
     CopyState(toCopy);
     InitOCL(toCopy->deviceID);
@@ -171,13 +173,14 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         }
 
         // Otherwise, we're about to switch to a new device, so finish the queue, first.
-        clFinish();
+        clFinish(true);
     }
 
     deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
     queue = device_context->queue;
+    clFinish(true);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
     bitCapInt oldNrmGroupCount = nrmGroupCount;
