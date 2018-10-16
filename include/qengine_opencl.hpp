@@ -68,6 +68,7 @@ public:
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
+        clFinish(true);
         delete[] stateVec;
         delete[] nrmArray;
     }
@@ -88,6 +89,7 @@ public:
     virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
     virtual void Sync();
+    virtual void clFinish(bool doHard = false);
     virtual complex* GetStateVector() { return stateVec; }
     virtual cl::Context& GetCLContext() { return context; }
     virtual int GetCLContextID() { return device_context->context_id; }
@@ -163,6 +165,7 @@ public:
     virtual void PhaseFlip();
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
     virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);

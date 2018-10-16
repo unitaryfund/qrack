@@ -1039,6 +1039,9 @@ public:
     /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
 
+    /** This is an expedient for an adaptive Grover's search for a function's global minimum. */
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length) = 0;
+
     /** Phase flip always - equivalent to Z X Z X on any bit in the QInterface */
     virtual void PhaseFlip() = 0;
 

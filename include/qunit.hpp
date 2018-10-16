@@ -166,6 +166,7 @@ public:
 
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
     virtual void PhaseFlip();
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -217,7 +218,6 @@ protected:
     void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
 
     void TrySeparate(std::vector<bitLenInt> bits);
-    void TrySeparate(bitLenInt start, bitLenInt length);
 
     void OrderContiguous(QInterfacePtr unit);
 
