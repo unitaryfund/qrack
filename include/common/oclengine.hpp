@@ -19,6 +19,7 @@
 #endif
 
 #include <map>
+#include <memory>
 #include <mutex>
 
 #ifdef __APPLE__
