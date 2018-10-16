@@ -154,6 +154,8 @@ public:
     void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
     /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }
+    /// Get default device ID.
+    int GetDefaultDeviceID() { return default_device_context->context_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
 

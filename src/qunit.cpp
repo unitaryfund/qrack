@@ -335,22 +335,26 @@ void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control,
     TrySeparate({ tCopy });
 }
 
-void QUnit::TrySeparate(std::vector<bitLenInt> bits)
+bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
 {
+    bool didSeparate = false;
     for (bitLenInt i = 0; i < (bits.size()); i++) {
         if (shards[bits[i]].unit->GetQubitCount() > 1) {
             real1 oneChance = Prob(bits[i]);
             if (oneChance <= REAL_CLAMP) {
                 if (shards[bits[i]].unit->IsPhaseSeparable()) {
+                    didSeparate = true;
                     ForceM(bits[i], false);
                 }
             } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
                 if (shards[bits[i]].unit->IsPhaseSeparable()) {
+                    didSeparate = true;
                     ForceM(bits[i], true);
                 }
             }
         }
     }
+    return didSeparate;
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
