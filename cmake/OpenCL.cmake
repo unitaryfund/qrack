@@ -64,6 +64,7 @@ if (ENABLE_OPENCL)
         src/common/oclengine.cpp
         src/qengine/opencl.cpp
         src/qengine/opencl_multi.cpp
+        src/qunitmulti.cpp
         )
 
 else (ENABLE_OPENCL)

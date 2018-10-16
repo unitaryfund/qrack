@@ -118,6 +118,13 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL Multi ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL_MULTI;
             num_failed = session.run();
+
+            if (num_failed == 0) {
+                session.config().stream() << "############ QUnitMulti ############" << std::endl;
+                testEngineType = QINTERFACE_QUNITMULTI;
+                testSubEngineType = QINTERFACE_OPENCL;
+                num_failed = session.run();
+            }
         }
 #endif
     }
