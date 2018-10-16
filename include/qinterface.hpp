@@ -1120,16 +1120,16 @@ public:
      * Add to entangled 8 bit register state with a superposed
      * index-offset-based read from classical memory
      *
-     * inputStart" is the start index of 8 qubits that act as an index into the
-     * 256 byte "values" array. The "outputStart" bits would usually already be
-     * entangled with the "inputStart" bits via a IndexedLDA() operation.
-     * With the "inputStart" bits being a "key" and the "outputStart" bits
-     * being a value, the permutation state |key, value> is mapped to |key,
-     * value + values[key]>. This is similar to classical parallel addition of
-     * two arrays.  However, when either of the registers are measured, both
-     * registers will collapse into one random VALID key-value pair, with any
-     * addition or subtraction done to the "value." See IndexedLDA() for
-     * context.
+     * "inputStart" is the start index of 8 qubits that act as an index into
+     * the 256 byte "values" array. The "outputStart" bits would usually
+     * already be entangled with the "inputStart" bits via a IndexedLDA()
+     * operation. With the "inputStart" bits being a "key" and the
+     * "outputStart" bits being a value, the permutation state |key, value> is
+     * mapped to |key, value + values[key]>. This is similar to classical
+     * parallel addition of two arrays.  However, when either of the registers
+     * are measured, both registers will collapse into one random VALID
+     * key-value pair, with any addition or subtraction done to the "value."
+     * See IndexedLDA() for context.
      *
      * FOR BEST EFFICIENCY, the "values" array should be allocated aligned to a 64-byte boundary. (See the unit tests
      * suite code for an example of how to align the allocation.)
