@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-#include "oclengine.hpp"
+#include "common/oclengine.hpp"
 #include "qengine_opencl.hpp"
 #include "qinterface.hpp"
 #include "qunit.hpp"
