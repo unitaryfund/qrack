@@ -73,6 +73,32 @@ void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt 
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
 }
 
+void QInterface::ApplyControlledSingleBit(bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt qubit)
+{
+    ApplyControlled2x2(controls, controlLen, qubit, mtrx, false);
+}
+
+void QInterface::ApplyControlled2x2(bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt* qPowers = new bitCapInt[controlLen + 1];
+    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1];
+    bitCapInt fullMask = 0;
+    for (int i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+	fullMask |= qPowers[i];
+    }
+    qPowers[controlLen] = 1 << target;
+    fullMask |= qPowers[controlLen];
+    std::copy(qPowers, qPowers + controlLen + 1, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + controlLen + 1);
+    Apply2x2(qPowers[0], fullMask, mtrx, controlLen, qPowersSorted, doCalcNorm);
+    delete[] qPowers;
+    delete[] qPowersSorted;
+}
+
 void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
 {
     if (does2x2PhaseShift(mtrx)) {
@@ -85,6 +111,29 @@ void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const c
     std::copy(qPowers, qPowers + 2, qPowersSorted);
     std::sort(qPowersSorted, qPowersSorted + 2);
     Apply2x2(qPowers[0], (qPowers[0]) | (qPowers[1]), mtrx, 2, qPowersSorted, doCalcNorm);
+}
+
+void QInterface::ApplyAntiControlled2x2(bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt* qPowers = new bitCapInt[controlLen + 1];
+    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1];
+    bitCapInt fullMask = 0;
+    bitCapInt controlMask;
+    for (int i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+	fullMask |= qPowers[i];
+    }
+    controlMask = fullMask;
+    qPowers[controlLen] = 1 << target;
+    fullMask |= qPowers[controlLen];
+    std::copy(qPowers, qPowers + controlLen + 1, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + controlLen + 1);
+    Apply2x2(controlMask, fullMask, mtrx, controlLen, qPowersSorted, doCalcNorm);
+    delete[] qPowers;
+    delete[] qPowersSorted;
 }
 
 void QInterface::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
