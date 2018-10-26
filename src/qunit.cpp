@@ -551,10 +551,48 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
 }
 
+void QUnit::ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, const complex* mtrx, bitLenInt qubit)
+{
+    int i;
+    real1 prob = ONE_R1;
+    for (i = 0; i < controlLen; i++) {
+        prob *= Prob(controls[i]);
+    }
+    if (prob <= REAL_CLAMP) {
+        return;
+    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        for (i = 0; i < controlLen; i++) {
+            if (shards[controls[i]].unit->IsPhaseSeparable()) {
+                ForceM(controls[i], true);
+            }
+        }
+        X(qubit);
+        return;
+    }
+
+    std::vector<bitLenInt> allBits(controlLen + 1);
+    std::vector<bitLenInt*> ebits(controlLen + 1);
+    for (i = 0; i < controlLen; i++) {
+        allBits[i] = controls[i];
+        ebits[i] = &allBits[i];
+    }
+    allBits[controlLen] = qubit;
+    ebits[controlLen] = &allBits[i];
+    EntangleIterator(ebits.begin(), ebits.end());
+
+    bitLenInt* controlsMapped = new bitLenInt[controlLen];
+    for (int i = 0; i < controlLen; i++) {
+        controlsMapped[i] = shards[controls[i]].mapped;
+    }
+    shards[qubit].unit->ApplyControlledSingleBit(controlsMapped, controlLen, mtrx, shards[qubit].mapped);
+    TrySeparate({ qubit });
+    delete[] controlsMapped;
+}
+
 void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     if (((shards[inputBit1].unit) != (shards[outputBit].unit)) ||
-        ((shards[inputBit1].unit) != (shards[outputBit].unit))) {
+        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
         real1 prob = Prob(inputBit1) * Prob(inputBit2);
         if (prob <= REAL_CLAMP) {
             return;
@@ -578,7 +616,7 @@ void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     if (((shards[inputBit1].unit) != (shards[outputBit].unit)) ||
-        ((shards[inputBit1].unit) != (shards[outputBit].unit))) {
+        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
         real1 prob = (ONE_R1 - Prob(inputBit1)) * (ONE_R1 - Prob(inputBit2));
         if (prob <= REAL_CLAMP) {
             return;

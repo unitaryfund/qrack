@@ -73,12 +73,12 @@ void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt 
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
 }
 
-void QInterface::ApplyControlledSingleBit(bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt qubit)
+void QInterface::ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, const complex* mtrx, bitLenInt qubit)
 {
     ApplyControlled2x2(controls, controlLen, qubit, mtrx, false);
 }
 
-void QInterface::ApplyControlled2x2(bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm)
+void QInterface::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm)
 {
     if (does2x2PhaseShift(mtrx)) {
         knowIsPhaseSeparable = false;
@@ -113,7 +113,7 @@ void QInterface::ApplyControlled2x2(bitLenInt control, bitLenInt target, const c
     Apply2x2(qPowers[0], (qPowers[0]) | (qPowers[1]), mtrx, 2, qPowersSorted, doCalcNorm);
 }
 
-void QInterface::ApplyAntiControlled2x2(bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm)
+void QInterface::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm)
 {
     if (does2x2PhaseShift(mtrx)) {
         knowIsPhaseSeparable = false;
