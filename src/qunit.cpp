@@ -557,6 +557,9 @@ void QUnit::ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt&
     real1 prob = ONE_R1;
     for (i = 0; i < controlLen; i++) {
         prob *= Prob(controls[i]);
+        if (prob <= REAL_CLAMP) {
+            break;
+        }
     }
     if (prob <= REAL_CLAMP) {
         return;
@@ -581,9 +584,7 @@ void QUnit::ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt&
     EntangleIterator(ebits.begin(), ebits.end());
 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
-    for (int i = 0; i < controlLen; i++) {
-        controlsMapped[i] = shards[controls[i]].mapped;
-    }
+    std::copy(allBits.begin(), allBits.end(), controlsMapped);
     shards[qubit].unit->ApplyControlledSingleBit(controlsMapped, controlLen, mtrx, shards[qubit].mapped);
     TrySeparate({ qubit });
     delete[] controlsMapped;
