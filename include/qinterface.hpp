@@ -313,7 +313,7 @@ public:
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      */
-    virtual void ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, const complex* mtrx, bitLenInt qubitIndex);
+    virtual void ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
 
     /**
      * Doubly-controlled NOT gate

@@ -301,6 +301,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_bit")
+{
+    complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
+    bitLenInt controls[3] = {0, 1, 3};
+    qftReg->SetPermutation(0x8000F);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x8000F));
+    qftReg->ApplyControlledSingleBit(controls, 3, pauliX, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0F));
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->ApplyControlledSingleBit(controls, 3, pauliX, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
     qftReg->SetPermutation(0x80001);
