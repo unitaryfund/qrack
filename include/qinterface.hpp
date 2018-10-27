@@ -1065,6 +1065,9 @@ public:
     /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
+    /** Measure bits with indices in array, and return a mask of the results */
+    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
+
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from
      * classical memory

@@ -1050,7 +1050,7 @@ bitCapInt QEngineCPU::M(const bitLenInt* bits, const bitLenInt& length)
     real1 nrmlzr = ONE_R1;
     bitCapInt lcv, result;
 
-    bitCapInt p;
+    bitLenInt p;
     for (lcv = 0; lcv < maxQPower; lcv++) {
         i = 0;
         for (p = 0; p < length; p++) {

@@ -677,6 +677,23 @@ bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
     return result;
 }
 
+// Bit-wise apply measurement gate to a register
+bitCapInt QInterface::M(const bitLenInt* bits, const bitLenInt& length)
+{
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
+    bitCapInt result = 0;
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        result |= M(bits[bit]) ? (1 << (bits[bit])) : 0;
+    }
+    return result;
+}
+
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {

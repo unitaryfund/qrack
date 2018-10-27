@@ -1368,16 +1368,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mreg")
     REQUIRE(qftReg->MReg(0, 8) == 0x2b);
 }
 
-#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_m_array")
 {
-    QEngineCPU qftReg2(8, 0);
     bitLenInt bits[3] = {0, 2, 3};
-    REQUIRE(qftReg2.M(0) == 0);
-    qftReg2.SetReg(0, 8, 0x07);
-    REQUIRE(qftReg2.M(bits, 3) == 5);
+    REQUIRE(qftReg->M(0) == 0);
+    qftReg->SetReg(0, 8, 0x07);
+    REQUIRE(qftReg->M(bits, 3) == 5);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x07));
 }
-#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
 {
