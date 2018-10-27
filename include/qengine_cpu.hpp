@@ -124,6 +124,8 @@ public:
     virtual void PhaseFlip();
     virtual void SetPermutation(bitCapInt perm);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    using QInterface::M;
+    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
