@@ -1091,10 +1091,10 @@ bitCapInt QEngineCPU::M(const bitLenInt* bits, const bitLenInt& length)
     for (p = 0; p < length; p++) {
         if ((1 << p) & result) {
             i |= qPowers[p];
-        }  
+        }
     }
     result = i;
-    
+
     delete[] qPowers;
 
     complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
@@ -1109,7 +1109,6 @@ bitCapInt QEngineCPU::M(const bitLenInt* bits, const bitLenInt& length)
 
     return result;
 }
-
 
 /// Set 8 bit register bits based on read from classical memory
 bitCapInt QEngineCPU::IndexedLDA(

@@ -88,7 +88,8 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
-    virtual void ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
+    virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
 
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);

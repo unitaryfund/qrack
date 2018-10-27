@@ -714,10 +714,12 @@ void QEngineOCLMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLe
     SingleBitGate(doCalcNorm, qubitIndex, (ASBFn)(&QEngineOCL::ApplySingleBit), mtrx, doCalcNorm);
 }
 
-void QEngineOCLMulti::ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex) {
+void QEngineOCLMulti::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex)
+{
     CombineEngines(qubitCount - 1);
     substateEngines[0]->ApplyControlledSingleBit(controls, target, mtrx, qubitIndex);
-    SeparateEngines(); 
+    SeparateEngines();
 }
 
 void QEngineOCLMulti::X(bitLenInt qubitIndex)

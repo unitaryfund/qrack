@@ -551,7 +551,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
 }
 
-void QUnit::ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, const complex* mtrx, bitLenInt qubit)
+void QUnit::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const complex* mtrx, bitLenInt qubit)
 {
     int i;
     real1 prob = ONE_R1;

@@ -131,9 +131,11 @@ protected:
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
-    virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+        const complex* mtrx, bool doCalcNorm);
     virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt &controlLen, const bitLenInt &target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+        const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
@@ -313,7 +315,8 @@ public:
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      */
-    virtual void ApplyControlledSingleBit(const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
+    virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
 
     /**
      * Doubly-controlled NOT gate
