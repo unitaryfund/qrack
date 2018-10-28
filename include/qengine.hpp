@@ -38,8 +38,7 @@ public:
     virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
     // virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
-    // protected:
-    //    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
-    //    virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm) = 0;
+    virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 };
 } // namespace Qrack

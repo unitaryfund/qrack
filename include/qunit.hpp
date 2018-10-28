@@ -238,7 +238,6 @@ protected:
     {
         throw "Apply2x2 not implemented in interface";
     }
-    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm) { throw "ApplyM not implemented in interface"; }
     void NormalizeState(real1 nrm = -999.0) { throw "NormalizeState not implemented in interface"; }
 
     /* Debugging and diagnostic routines. */

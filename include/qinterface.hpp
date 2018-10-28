@@ -129,8 +129,6 @@ protected:
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
-    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,

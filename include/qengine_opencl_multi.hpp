@@ -209,7 +209,6 @@ protected:
     {
         throw "Apply2x2 not implemented in interface";
     }
-    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm) { throw "ApplyM not implemented in interface"; }
 
 private:
     void Init(bitLenInt qBitCount, bitCapInt initState);

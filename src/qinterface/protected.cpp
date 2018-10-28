@@ -63,12 +63,6 @@ bool does2x2PhaseShift(const complex* mtrx)
     return doesShift;
 }
 
-void QInterface::ApplyM(bitCapInt qPower, bool result, complex nrm)
-{
-    bitCapInt powerTest = result ? qPower : 0;
-    ApplyM(qPower, powerTest, nrm);
-}
-
 void QInterface::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     if (does2x2PhaseShift(mtrx)) {

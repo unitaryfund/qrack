@@ -14,6 +14,12 @@
 
 namespace Qrack {
 
+void QEngine::ApplyM(bitCapInt qPower, bool result, complex nrm)
+{
+    bitCapInt powerTest = result ? qPower : 0;
+    ApplyM(qPower, powerTest, nrm);
+}
+
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
