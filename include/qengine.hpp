@@ -36,7 +36,7 @@ public:
     using QInterface::M;
     virtual bool M(bitLenInt qubit);
     virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
-    // virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
@@ -49,6 +49,10 @@ public:
 
     /// Swap values of two bits in register
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
+
+    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
+    virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
+    // virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
 
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

@@ -901,6 +901,51 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     return oneChance;
 }
 
+void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt maxI = maxQPower >> length;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (maxQPower - maxI), start, length, 0, 0, 0, 0, 0, 0 };
+
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+    device_context->wait_events.resize(1);
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
+    queue.flush();
+
+    cl::Buffer probsBuffer =
+        cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBREGALL);
+    clFinish();
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, probsBuffer);
+
+    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
+    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+    cl::Event kernelEvent;
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+
+    waitVec.clear();
+    waitVec.push_back(kernelEvent);
+
+    queue.enqueueReadBuffer(probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec);
+}
+
 bitCapInt QEngineOCL::MReg(bitLenInt start, bitLenInt length) { return QInterface::MReg(start, length); }
 
 /*

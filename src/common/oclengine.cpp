@@ -151,6 +151,7 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_DISPOSEPROB] = cl::Kernel(program, "disposeprob");
         all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
         all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
+        all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");
         all_device_contexts[i]->calls[OCL_API_ISPHASESEPARABLE] = cl::Kernel(program, "isphaseseparable");
         all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
         all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");

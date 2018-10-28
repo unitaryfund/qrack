@@ -307,6 +307,34 @@ void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     }
 }
 
+void kernel probregall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
+{
+    bitCapInt ID, Nthreads, lcv1, lcv2;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt maxJ = bitCapIntPtr[1];
+    bitCapInt start = bitCapIntPtr[2];
+    bitCapInt qMask = (1 << start) - 1;
+    bitCapInt len = bitCapIntPtr[3];
+    real1 oneChancePart = ZERO_R1;
+    cmplx amp;
+    bitCapInt perm;
+    bitCapInt i;
+
+    for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
+        perm = lcv1 << start;
+        for (lcv2 = 0; lcv2 < maxJ; lcv2++) {
+            i = lcv2 & qMask;
+            i |= ((lcv2 ^ i) << len);
+            amp = stateVec[i | perm];
+            oneChancePart += dot(amp, amp);
+        }
+        oneChanceBuffer[lcv1] = oneChancePart;
+    }
+}
+
 /*
 void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
 {

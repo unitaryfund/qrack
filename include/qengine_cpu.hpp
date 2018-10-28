@@ -75,7 +75,6 @@ public:
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
     using QEngine::AntiCCNOT;
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /** @} */
 
