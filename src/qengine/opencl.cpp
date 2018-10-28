@@ -97,7 +97,18 @@ void QEngineOCL::clFinish(bool doHard)
 size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
 {
     if (wic > maxI) {
+        // Guaranteed to be a power of two
         wic = maxI;
+    } else {
+        // Otherwise, clamp to a power of two
+        size_t power = 2;
+        while (power < wic) {
+            power <<= 1U;
+        }
+        if (power > wic) {
+            power >>= 1U;
+        }
+        wic = power;
     }
     return wic;
 }
@@ -175,11 +186,18 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    // constrain to a power of two
+    size_t procElemPow = 2;
+    while (procElemPow < procElemCount) {
+        procElemPow <<= 1U;
+    }
+    procElemCount = procElemPow;
     nrmGroupCount = procElemCount * 64 * nrmGroupSize;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > maxWorkItems) {
         nrmGroupCount = maxWorkItems;
     }
+    nrmGroupCount = FixWorkItemCount(nrmGroupCount, nrmGroupCount);
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
@@ -797,6 +815,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, nrmBuffer);
+    ocl.call.setArg(3, cl::Local(sizeof(real1) * ngs));
 
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
@@ -811,8 +830,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     waitVec.clear();
     waitVec.push_back(kernelEvent);
 
-    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc, &waitVec);
-    for (size_t i = 0; i < ngc; i++) {
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec);
+    for (size_t i = 0; i < (ngc / ngs); i++) {
         oneChance += nrmArray[i];
     }
     cl::Event unmapEvent;
@@ -853,6 +872,7 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, nrmBuffer);
+    ocl.call.setArg(3, cl::Local(sizeof(real1) * ngs));
 
     // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
     // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
@@ -867,8 +887,8 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     waitVec.clear();
     waitVec.push_back(kernelEvent);
 
-    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc, &waitVec);
-    for (size_t i = 0; i < ngc; i++) {
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec);
+    for (size_t i = 0; i < (ngc / ngs); i++) {
         oneChance += nrmArray[i];
     }
     cl::Event unmapEvent;

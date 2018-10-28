@@ -233,9 +233,9 @@ void kernel isphaseseparable(global cmplx* stateVec, constant bitCapInt* bitCapI
     }
 }
 
-void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
+void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
 {
-    bitCapInt ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv, locID, locNthreads;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
@@ -253,12 +253,25 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
         oneChancePart += dot(amp, amp);
     }
 
-    oneChanceBuffer[ID] = oneChancePart;
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = oneChancePart;
+    
+    for (lcv = (locNthreads >> 1); lcv > 0; lcv >>= 1) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0) {
+        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
+    }
 }
 
-void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
+void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
 {
-    bitCapInt ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv, locID, locNthreads;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
@@ -278,7 +291,20 @@ void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
         oneChancePart += dot(amp, amp);
     }
 
-    oneChanceBuffer[ID] = oneChancePart;
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = oneChancePart;
+    
+    for (lcv = (locNthreads >> 1); lcv > 0; lcv >>= 1) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0) {
+        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
+    }
 }
 
 /*
