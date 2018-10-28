@@ -65,7 +65,9 @@ public:
 
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubit);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
@@ -233,12 +235,10 @@ protected:
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
 
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm)
-    {
-        throw "Apply2x2 not implemented in interface";
-    }
-    void NormalizeState(real1 nrm = -999.0) { throw "NormalizeState not implemented in interface"; }
+    virtual void ApplyEitherControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex* mtrx, const bool& anti);
+
+    void NormalizeState(real1 nrm = -999.0) { /*intentionally left blank*/}
 
     /* Debugging and diagnostic routines. */
     void DumpShards();

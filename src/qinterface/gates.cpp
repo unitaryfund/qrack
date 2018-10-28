@@ -24,87 +24,6 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
     }
 }
 
-/// Swap values of two bits in register
-void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    bitCapInt qPowers[2];
-    bitCapInt qPowersSorted[2];
-    qPowers[0] = 1 << qubit1;
-    qPowers[1] = 1 << qubit2;
-    std::copy(qPowers, qPowers + 2, qPowersSorted);
-    std::sort(qPowersSorted, qPowersSorted + 2);
-    Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
-}
-
-/// Doubly-controlled not
-void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
-    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-    if (control1 == control2) {
-        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
-    }
-
-    if (control1 == target || control2 == target) {
-        throw std::invalid_argument("CCNOT control bits cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    ApplyDoublyControlled2x2(control1, control2, target, pauliX, false);
-}
-
-/// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
-void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
-    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-    if (control1 == control2) {
-        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
-    }
-    if (control1 == target || control2 == target) {
-        throw std::invalid_argument("CCNOT control bits cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    ApplyDoublyAntiControlled2x2(control1, control2, target, pauliX, false);
-}
-
-/// Controlled not
-void QInterface::CNOT(bitLenInt control, bitLenInt target)
-{
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-    if (control == target) {
-        throw std::invalid_argument("CNOT control bit cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    ApplyControlled2x2(control, target, pauliX, false);
-}
-
-/// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
-void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
-{
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-    if (control == target) {
-        throw std::invalid_argument("CNOT control bit cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    ApplyAntiControlled2x2(control, target, pauliX, false);
-}
-
 /// Hadamard gate
 void QInterface::H(bitLenInt qubit)
 {
@@ -145,6 +64,73 @@ void QInterface::Z(bitLenInt qubit)
     ApplySingleBit(pauliZ, false, qubit);
 }
 
+/// Doubly-controlled not
+void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
+    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
+    if (control1 == control2) {
+        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
+    }
+
+    if (control1 == target || control2 == target) {
+        throw std::invalid_argument("CCNOT control bits cannot also be target.");
+    }
+
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyControlledSingleBit(controls, 2, target, pauliX);
+}
+
+/// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
+void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
+    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
+    if (control1 == control2) {
+        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
+    }
+    if (control1 == target || control2 == target) {
+        throw std::invalid_argument("CCNOT control bits cannot also be target.");
+    }
+
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyAntiControlledSingleBit(controls, 2, target, pauliX);
+}
+
+/// Controlled not
+void QInterface::CNOT(bitLenInt control, bitLenInt target)
+{
+    // if ((control >= qubitCount) || (target >= qubitCount))
+    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+    if (control == target) {
+        throw std::invalid_argument("CNOT control bit cannot also be target.");
+    }
+
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, pauliX);
+}
+
+/// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
+void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
+{
+    // if ((control >= qubitCount) || (target >= qubitCount))
+    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
+    if (control == target) {
+        throw std::invalid_argument("CNOT control bit cannot also be target.");
+    }
+
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitLenInt controls[1] = { control };
+    ApplyAntiControlledSingleBit(controls, 1, target, pauliX);
+}
+
 /// Apply controlled Pauli Y matrix to bit
 void QInterface::CY(bitLenInt control, bitLenInt target)
 {
@@ -154,7 +140,8 @@ void QInterface::CY(bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CY control bit cannot also be target.");
     const complex pauliY[4] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1),
         complex(ZERO_R1, ZERO_R1) };
-    ApplyControlled2x2(control, target, pauliY, false);
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, pauliY);
 }
 
 /// Apply controlled Pauli Z matrix to bit
@@ -166,7 +153,8 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
         throw std::invalid_argument("CZ control bit cannot also be target.");
     const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
-    ApplyControlled2x2(control, target, pauliZ, false);
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, pauliZ);
 }
 
 } // namespace Qrack

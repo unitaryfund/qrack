@@ -129,18 +129,6 @@ protected:
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
-    virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:
@@ -306,7 +294,7 @@ public:
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
@@ -315,7 +303,16 @@ public:
      * set to true.
      */
     virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+
+    /**
+     * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
+     *
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
+     * set to true.
+     */
+    virtual void ApplyAntiControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
      * Doubly-controlled NOT gate
@@ -1199,7 +1196,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);

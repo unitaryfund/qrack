@@ -89,7 +89,9 @@ public:
 
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& target, const complex* mtrx, bitLenInt qubitIndex);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
@@ -203,12 +205,6 @@ protected:
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs);
     template <typename F, typename... Args>
     void ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt targetBit, F fn, Args... gfnArgs);
-
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm)
-    {
-        throw "Apply2x2 not implemented in interface";
-    }
 
 private:
     void Init(bitLenInt qBitCount, bitCapInt initState);

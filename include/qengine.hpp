@@ -40,5 +40,28 @@ public:
 
     virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
+
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
+    virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+
+    /// Swap values of two bits in register
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
+
+protected:
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
+    virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+        const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+        const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyControlled2x2(
+        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyDoublyAntiControlled2x2(
+        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
 };
 } // namespace Qrack

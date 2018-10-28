@@ -14,6 +14,33 @@
 
 namespace Qrack {
 
+bool does2x2PhaseShift(const complex* mtrx)
+{
+    bool doesShift = false;
+    real1 phase = -M_PI * 2;
+    for (int i = 0; i < 4; i++) {
+        if (norm(mtrx[i]) > ZERO_R1) {
+            if (phase < -M_PI) {
+                phase = arg(mtrx[i]);
+                continue;
+            }
+
+            real1 diff = arg(mtrx[i]) - phase;
+            if (diff < ZERO_R1) {
+                diff = -diff;
+            }
+            if (diff > M_PI) {
+                diff = (2 * M_PI) - diff;
+            }
+            if (diff > min_norm) {
+                doesShift = true;
+                break;
+            }
+        }
+    }
+    return doesShift;
+}
+
 void QEngine::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
     bitCapInt powerTest = result ? qPower : 0;
@@ -176,4 +203,149 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
 
     return result;
 }
+
+void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt qPowers[1];
+    qPowers[0] = 1 << qubit;
+    Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
+}
+
+void QEngine::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    ApplyControlled2x2(controls, controlLen, target, mtrx, false);
+}
+
+void QEngine::ApplyAntiControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    ApplyAntiControlled2x2(controls, controlLen, target, mtrx, false);
+}
+
+void QEngine::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt* qPowers = new bitCapInt[controlLen + 1];
+    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1];
+    bitCapInt fullMask = 0;
+    bitCapInt controlMask;
+    for (int i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+        fullMask |= qPowers[i];
+    }
+    controlMask = fullMask;
+    qPowers[controlLen] = 1 << target;
+    fullMask |= qPowers[controlLen];
+    std::copy(qPowers, qPowers + controlLen + 1, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + controlLen + 1);
+    Apply2x2(controlMask, fullMask, mtrx, controlLen + 1, qPowersSorted, doCalcNorm);
+    delete[] qPowers;
+    delete[] qPowersSorted;
+}
+
+void QEngine::ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt qPowers[2];
+    bitCapInt qPowersSorted[2];
+    qPowers[0] = 1 << control;
+    qPowers[1] = 1 << target;
+    std::copy(qPowers, qPowers + 2, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + 2);
+    Apply2x2(qPowers[0], (qPowers[0]) | (qPowers[1]), mtrx, 2, qPowersSorted, doCalcNorm);
+}
+
+void QEngine::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt* qPowers = new bitCapInt[controlLen + 1];
+    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1];
+    for (int i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+    }
+    qPowers[controlLen] = 1 << target;
+    std::copy(qPowers, qPowers + controlLen + 1, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + controlLen + 1);
+    Apply2x2(0, qPowers[controlLen], mtrx, controlLen + 1, qPowersSorted, doCalcNorm);
+    delete[] qPowers;
+    delete[] qPowersSorted;
+}
+
+void QEngine::ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt qPowers[2];
+    bitCapInt qPowersSorted[2];
+    qPowers[0] = 1 << control;
+    qPowers[1] = 1 << target;
+    std::copy(qPowers, qPowers + 2, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + 2);
+    Apply2x2(0, qPowers[1], mtrx, 2, qPowersSorted, doCalcNorm);
+}
+
+void QEngine::ApplyDoublyControlled2x2(
+    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt qPowers[3];
+    bitCapInt qPowersSorted[3];
+    qPowers[0] = 1 << control1;
+    qPowers[1] = 1 << control2;
+    qPowers[2] = 1 << target;
+    std::copy(qPowers, qPowers + 3, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + 3);
+    Apply2x2(
+        (qPowers[0]) | (qPowers[1]), (qPowers[0]) | (qPowers[1]) | (qPowers[2]), mtrx, 3, qPowersSorted, doCalcNorm);
+}
+
+void QEngine::ApplyDoublyAntiControlled2x2(
+    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
+{
+    if (does2x2PhaseShift(mtrx)) {
+        knowIsPhaseSeparable = false;
+    }
+    bitCapInt qPowers[3];
+    bitCapInt qPowersSorted[3];
+    qPowers[0] = 1 << control1;
+    qPowers[1] = 1 << control2;
+    qPowers[2] = 1 << target;
+    std::copy(qPowers, qPowers + 3, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + 3);
+    Apply2x2(0, qPowers[2], mtrx, 3, qPowersSorted, doCalcNorm);
+}
+
+/// Swap values of two bits in register
+void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitCapInt qPowers[2];
+    bitCapInt qPowersSorted[2];
+    qPowers[0] = 1 << qubit1;
+    qPowers[1] = 1 << qubit2;
+    std::copy(qPowers, qPowers + 2, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + 2);
+    Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
+}
+
 } // namespace Qrack
