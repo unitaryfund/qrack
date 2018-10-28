@@ -520,6 +520,135 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
     return norm(stateVec[fullRegister]);
 }
 
+// Returns probability of permutation of the register
+real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
+    int num_threads = GetConcurrencyLevel();
+    real1* probs = new real1[num_threads]();
+
+    bitCapInt perm = permutation << start;
+
+    par_for_skip(0, maxQPower, (1 << start), length,
+        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | perm]); });
+
+    real1 prob = ZERO_R1;
+    for (int thrd = 0; thrd < num_threads; thrd++) {
+        prob += probs[thrd];
+    }
+
+    delete[] probs;
+
+    return prob;
+}
+
+// Returns probability of permutation of the mask
+real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
+    std::vector<bitCapInt> skipPowersVec;
+    bitLenInt bit;
+    bitCapInt pwr = 1U;
+    for (bit = 0; bit < (sizeof(bitCapInt) * 8); bit++) {
+        if (pwr & mask) {
+            skipPowersVec.push_back(pwr);
+        }
+        pwr <<= 1U;
+    }
+
+    bitCapInt* skipPowers = new bitCapInt[skipPowersVec.size()];
+    std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
+
+    int num_threads = GetConcurrencyLevel();
+    real1* probs = new real1[num_threads]();
+
+    par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
+        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | permutation]); });
+
+    delete[] skipPowers;
+
+    real1 prob = ZERO_R1;
+    for (int thrd = 0; thrd < num_threads; thrd++) {
+        prob += probs[thrd];
+    }
+
+    delete[] probs;
+
+    return prob;
+}
+
+/// Measure permutation state of a register
+bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
+{
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
+    // Single bit operations are better optimized for this special case:
+    if (length == 1) {
+        if (M(start)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    if (runningNorm != ONE_R1) {
+        NormalizeState();
+    }
+
+    real1 prob = Rand();
+    real1 angle = Rand() * 2.0 * M_PI;
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    real1* probArray = new real1[lengthPower]();
+    real1 lowerProb, largestProb;
+    real1 nrmlzr = ONE_R1;
+    bitCapInt lcv, result;
+
+    for (lcv = 0; lcv < lengthPower; lcv++) {
+        probArray[lcv] = ProbReg(start, length, lcv);
+    }
+
+    lcv = 0;
+    lowerProb = ZERO_R1;
+    largestProb = ZERO_R1;
+    result = lengthPower - 1;
+
+    /*
+     * The value of 'lcv' should not exceed lengthPower unless the stateVec is
+     * in a bug-induced topology - some value in stateVec must always be a
+     * vector.
+     */
+    while (lcv < lengthPower) {
+        if ((probArray[lcv] + lowerProb) > prob) {
+            result = lcv;
+            nrmlzr = probArray[lcv];
+            lcv = lengthPower;
+        } else {
+            if (largestProb <= probArray[lcv]) {
+                largestProb = probArray[lcv];
+                result = lcv;
+                nrmlzr = largestProb;
+            }
+            lowerProb += probArray[lcv];
+            lcv++;
+        }
+    }
+
+    delete[] probArray;
+
+    bitCapInt resultPtr = result << start;
+    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+
+    ApplyM(regMask, resultPtr, nrm);
+
+    return result;
+}
+
 void QEngineCPU::NormalizeState(real1 nrm)
 {
     if (nrm < ZERO_R1) {

@@ -256,6 +256,69 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     oneChanceBuffer[ID] = oneChancePart;
 }
 
+void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt perm = bitCapIntPtr[1];
+    bitCapInt start = bitCapIntPtr[2];
+    bitCapInt qMask = (1 << start) - 1;
+    bitCapInt len = bitCapIntPtr[3];
+    real1 oneChancePart = ZERO_R1;
+    cmplx amp;
+    bitCapInt i;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        i = lcv & qMask;
+        i |= ((lcv ^ i) << len);
+        amp = stateVec[i | perm];
+        oneChancePart += dot(amp, amp);
+    }
+
+    oneChanceBuffer[ID] = oneChancePart;
+}
+
+/*
+void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
+{
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    constant cmplx* mtrx = cmplxPtr;
+
+    real1 nrm = cmplxPtr[4].x;
+    bitCapInt bitCount = bitCapIntPtr[0];
+    bitCapInt maxI = bitCapIntPtr[1];
+    bitCapInt offset1 = bitCapIntPtr[2];
+    bitCapInt offset2 = bitCapIntPtr[3];
+    constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
+
+    cmplx Y0, Y1;
+    bitCapInt i, iLow, iHigh;
+    bitLenInt p;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < bitCount; p++) {
+            iLow = iHigh & (qPowersSorted[p] - 1);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1;
+        }
+        i |= iHigh;
+
+        Y0 = stateVec[i | offset1];
+        Y1 = stateVec[i | offset2]; 
+
+        stateVec[i | offset1] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], Y1));
+        stateVec[i | offset2] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
+    }
+}
+*/
+
 void kernel x(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, lcv;

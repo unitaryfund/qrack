@@ -75,6 +75,7 @@ public:
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
     using QEngine::AntiCCNOT;
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
 
     /** @} */
 
@@ -118,7 +119,6 @@ public:
      * @{
      */
 
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);

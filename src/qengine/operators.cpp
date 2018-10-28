@@ -926,61 +926,6 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
     });
 }
 
-// Returns probability of permutation of the register
-real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
-{
-    int num_threads = GetConcurrencyLevel();
-    real1* probs = new real1[num_threads]();
-
-    bitCapInt perm = permutation << start;
-
-    par_for_skip(0, maxQPower, (1 << start), length,
-        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | perm]); });
-
-    real1 prob = ZERO_R1;
-    for (int thrd = 0; thrd < num_threads; thrd++) {
-        prob += probs[thrd];
-    }
-
-    delete[] probs;
-
-    return prob;
-}
-
-// Returns probability of permutation of the mask
-real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
-{
-    std::vector<bitCapInt> skipPowersVec;
-    bitLenInt bit;
-    bitCapInt pwr = 1U;
-    for (bit = 0; bit < (sizeof(bitCapInt) * 8); bit++) {
-        if (pwr & mask) {
-            skipPowersVec.push_back(pwr);
-        }
-        pwr <<= 1U;
-    }
-
-    bitCapInt* skipPowers = new bitCapInt[skipPowersVec.size()];
-    std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
-
-    int num_threads = GetConcurrencyLevel();
-    real1* probs = new real1[num_threads]();
-
-    par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
-        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | permutation]); });
-
-    delete[] skipPowers;
-
-    real1 prob = ZERO_R1;
-    for (int thrd = 0; thrd < num_threads; thrd++) {
-        prob += probs[thrd];
-    }
-
-    delete[] probs;
-
-    return prob;
-}
-
 /// Set 8 bit register bits based on read from classical memory
 bitCapInt QEngineCPU::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)

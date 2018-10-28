@@ -825,6 +825,100 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
     return oneChance;
 }
 
+// Returns probability of permutation of the register
+real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt perm = permutation << start;
+    real1 oneChance = ZERO_R1;
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, perm, start, length, 0, 0, 0, 0, 0, 0 };
+
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+    device_context->wait_events.resize(1);
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBREG);
+    clFinish();
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, nrmBuffer);
+
+    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
+    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+    cl::Event kernelEvent;
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+
+    waitVec.clear();
+    waitVec.push_back(kernelEvent);
+
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc, &waitVec);
+    for (size_t i = 0; i < ngc; i++) {
+        oneChance += nrmArray[i];
+    }
+    cl::Event unmapEvent;
+    queue.enqueueUnmapMemObject(nrmBuffer, nrmArray, NULL, &unmapEvent);
+    device_context->wait_events.push_back(unmapEvent);
+
+    if (oneChance > ONE_R1)
+        oneChance = ONE_R1;
+
+    return oneChance;
+}
+
+bitCapInt QEngineOCL::MReg(bitLenInt start, bitLenInt length) { return QInterface::MReg(start, length); }
+
+/*
+// Returns probability of permutation of the mask
+real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
+    std::vector<bitCapInt> skipPowersVec;
+    bitLenInt bit;
+    bitCapInt pwr = 1U;
+    for (bit = 0; bit < (sizeof(bitCapInt) * 8); bit++) {
+        if (pwr & mask) {
+            skipPowersVec.push_back(pwr);
+        }
+        pwr <<= 1U;
+    }
+
+    bitCapInt* skipPowers = new bitCapInt[skipPowersVec.size()];
+    std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
+
+    int num_threads = GetConcurrencyLevel();
+    real1* probs = new real1[num_threads]();
+
+    par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
+        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | permutation]); });
+
+    delete[] skipPowers;
+
+    real1 prob = ZERO_R1;
+    for (int thrd = 0; thrd < num_threads; thrd++) {
+        prob += probs[thrd];
+    }
+
+    delete[] probs;
+
+    return prob;
+}
+*/
+
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
