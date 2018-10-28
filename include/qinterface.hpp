@@ -129,6 +129,8 @@ protected:
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
+    virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -141,7 +143,6 @@ protected:
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm) = 0;
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:
@@ -400,7 +401,14 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex);
+    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false, ONE_R1); };
+
+    /**
+     * Act as if is a measurement was applied, except force the (usually random) result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1) = 0;
 
     /**
      * X gate
@@ -1238,11 +1246,29 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex) = 0;
 
     /**
-     * Direct measure of full register probability to be in permutation state
+     * Direct measure of full permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
     virtual real1 ProbAll(bitCapInt fullRegister) = 0;
+
+    /**
+     * Direct measure of register permutation probability
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+
+    /**
+     * Direct measure of masked permutation probability
+     *
+     * "mask" masks the bits to check the probability of. "permutation" sets the 0 or 1 value for each bit in the mask.
+     * Bits which are set in the mask can be set to 0 or 1 in the permutation, while reset bits in the mask should be 0
+     * in the permutation.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state
@@ -1254,17 +1280,6 @@ public:
      * factor.
      */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
-
-    /**
-     * Act as though a measurement was applied, except force the result of the measurement.
-     *
-     * That is, genuine measurement of a qubit in superposition has a probabilistic result. This method allows the
-     * programmer to choose the outcome of the measurement, and proceed as if the measurement randomly resulted in the
-     * chosen bit value.
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 };

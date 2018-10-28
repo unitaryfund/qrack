@@ -16,48 +16,6 @@
 
 namespace Qrack {
 
-/// Measurement gate
-
-/// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
-bool QInterface::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
-{
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
-    }
-
-    if (!doForce) {
-        real1 prob = Rand();
-        real1 oneChance = Prob(qubit);
-        result = ((prob < oneChance) && (oneChance > ZERO_R1));
-        nrmlzr = ONE_R1;
-        if (result) {
-            nrmlzr = oneChance;
-        } else {
-            nrmlzr = ONE_R1 - oneChance;
-        }
-    }
-    if (nrmlzr > min_norm) {
-        bitCapInt qPower = 1 << qubit;
-        real1 angle = Rand() * 2 * M_PI;
-        ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(sqrt(nrmlzr)));
-    } else {
-        NormalizeState(ZERO_R1);
-    }
-
-    return result;
-}
-
-bool QInterface::M(bitLenInt qubit)
-{
-    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
-    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
-    // meaning the relative amplitude phases might only become separable in the process if they are not already.
-    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
-        knowIsPhaseSeparable = false;
-    }
-    return ForceM(qubit, false, false);
-}
-
 /// Set individual bit to pure |0> (false) or |1> (true) state
 void QInterface::SetBit(bitLenInt qubit1, bool value)
 {

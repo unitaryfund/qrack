@@ -16,7 +16,7 @@
 #error OpenCL has not been enabled
 #endif
 
-#include "qinterface.hpp"
+#include "qengine.hpp"
 
 namespace Qrack {
 
@@ -29,7 +29,7 @@ class QEngineOCL;
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
 /** OpenCL enhanced QEngineCPU implementation. */
-class QEngineOCL : public QInterface {
+class QEngineOCL : public QEngine {
 protected:
     complex* stateVec;
     int deviceID;
@@ -47,8 +47,6 @@ protected:
     size_t nrmGroupSize;
     size_t maxWorkItems;
     unsigned int procElemCount;
-
-    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
 
 public:
     /**
@@ -101,9 +99,9 @@ public:
     virtual bool IsPhaseSeparable(bool forceCheck = false);
 
     /* Operations that have an improved implementation. */
-    using QInterface::X;
+    using QEngine::X;
     virtual void X(bitLenInt start, bitLenInt length);
-    using QInterface::Swap;
+    using QEngine::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
@@ -191,6 +189,9 @@ protected:
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
+
+    void ApplyM(bitCapInt mask, bool result, complex nrm);
+    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /* Utility functions used by the operations above. */
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);

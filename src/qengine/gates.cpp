@@ -14,16 +14,89 @@
 
 namespace Qrack {
 
-void QEngineCPU::ApplyM(bitCapInt qPower, bool result, complex nrm)
+void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
-    bitCapInt powerTest = result ? qPower : 0;
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((lcv & qPower) == powerTest) {
-            stateVec[lcv] = nrm * stateVec[lcv];
+    par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
+        if ((i & regMask) == result) {
+            stateVec[i] = nrm * stateVec[i];
         } else {
-            stateVec[lcv] = complex(ZERO_R1, ZERO_R1);
+            stateVec[i] = complex(ZERO_R1, ZERO_R1);
         }
     });
+}
+
+/// Measure permutation state of a register
+bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
+{
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
+    // Single bit operations are better optimized for this special case:
+    if (length == 1) {
+        if (M(start)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    if (runningNorm != ONE_R1) {
+        NormalizeState();
+    }
+
+    real1 prob = Rand();
+    real1 angle = Rand() * 2.0 * M_PI;
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+    real1* probArray = new real1[lengthPower]();
+    real1 lowerProb, largestProb;
+    real1 nrmlzr = ONE_R1;
+    bitCapInt lcv, result;
+
+    for (lcv = 0; lcv < lengthPower; lcv++) {
+        probArray[lcv] = ProbReg(start, length, lcv);
+    }
+
+    lcv = 0;
+    lowerProb = ZERO_R1;
+    largestProb = ZERO_R1;
+    result = lengthPower - 1;
+
+    /*
+     * The value of 'lcv' should not exceed lengthPower unless the stateVec is
+     * in a bug-induced topology - some value in stateVec must always be a
+     * vector.
+     */
+    while (lcv < lengthPower) {
+        if ((probArray[lcv] + lowerProb) > prob) {
+            result = lcv;
+            nrmlzr = probArray[lcv];
+            lcv = lengthPower;
+        } else {
+            if (largestProb <= probArray[lcv]) {
+                largestProb = probArray[lcv];
+                result = lcv;
+                nrmlzr = largestProb;
+            }
+            lowerProb += probArray[lcv];
+            lcv++;
+        }
+    }
+
+    delete[] probArray;
+
+    bitCapInt resultPtr = result << start;
+    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+
+    ApplyM(regMask, resultPtr, nrm);
+
+    return result;
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index

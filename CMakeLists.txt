@@ -19,6 +19,7 @@ add_library (qrack STATIC
     src/qinterface/operators.cpp
     src/qinterface/gates.cpp
     src/qinterface/rotational.cpp
+    src/qengine/qengine.cpp
     src/qengine/operators.cpp
     src/qengine/gates.cpp
     src/qengine/state.cpp
@@ -100,6 +101,7 @@ install (FILES
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/config.h
     include/qfactory.hpp
+    include/qengine.hpp
     include/qengine_cpu.hpp
     include/qunit.hpp
     include/qengine_opencl.hpp

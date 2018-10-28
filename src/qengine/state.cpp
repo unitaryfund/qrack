@@ -35,7 +35,7 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
     complex phaseFac, bool partialInit)
-    : QInterface(qBitCount, rgp)
+    : QEngine(qBitCount, rgp)
     , stateVec(NULL)
 {
     doNormalize = true;
@@ -60,7 +60,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());

@@ -694,6 +694,39 @@ bitCapInt QInterface::M(const bitLenInt* bits, const bitLenInt& length)
     return result;
 }
 
+// Returns probability of permutation of the register
+real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
+    bitCapInt mask = ((1U << length) - 1) << start;
+    bitCapInt perm = permutation << start;
+    return ProbMask(mask, perm);
+}
+
+// Returns probability of permutation of the mask
+real1 QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
+    real1 prob = ONE_R1;
+    std::vector<bitLenInt> bits;
+    std::vector<bool> bitsSet;
+    bitLenInt bit;
+    bitCapInt pwr;
+    for (bit = 0; bit < (sizeof(bitCapInt) * 8); bit++) {
+        pwr = (1 << bit);
+        if (pwr & mask) {
+            bits.push_back(bit);
+            bitsSet.push_back(!(!(permutation & pwr)));
+        }
+    }
+    for (bit = 0; bit < (bits.size()); bit++) {
+        if (bitsSet[bit]) {
+            prob *= Prob(bits[bit]);
+        } else {
+            prob *= (ONE_R1 - Prob(bits[bit]));
+        }
+    }
+    return prob;
+}
+
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {

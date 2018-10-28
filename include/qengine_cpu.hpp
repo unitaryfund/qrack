@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "qinterface.hpp"
+#include "qengine.hpp"
 
 #include "common/parallel_for.hpp"
 
@@ -32,7 +32,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : public QInterface, public ParallelFor {
+class QEngineCPU : public QEngine, public ParallelFor {
 protected:
     complex* stateVec;
 
@@ -65,15 +65,15 @@ public:
      * @{
      */
 
-    using QInterface::X;
+    using QEngine::X;
     virtual void X(bitLenInt start, bitLenInt length);
-    using QInterface::CNOT;
+    using QEngine::CNOT;
     virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);
-    using QInterface::AntiCNOT;
+    using QEngine::AntiCNOT;
     virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
-    using QInterface::CCNOT;
+    using QEngine::CCNOT;
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    using QInterface::AntiCCNOT;
+    using QEngine::AntiCCNOT;
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
 
     /** @} */
@@ -118,21 +118,19 @@ public:
      * @{
      */
 
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
     virtual void PhaseFlip();
     virtual void SetPermutation(bitCapInt perm);
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-    using QInterface::M;
-    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    using QInterface::Swap;
+    using QEngine::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** @} */
@@ -147,6 +145,8 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 GetNorm(bool update = true)
     {
@@ -167,6 +167,6 @@ protected:
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();
     virtual complex* AllocStateVec(bitCapInt elemCount);
-    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm);
+    virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 };
 } // namespace Qrack

@@ -1327,6 +1327,21 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     }
 }
 
+void kernel applymreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant cmplx* cmplx_ptr) {
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt mask = bitCapIntPtr[1];
+    bitCapInt result = bitCapIntPtr[2];
+    cmplx nrm = cmplx_ptr[0];
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        stateVec[lcv] = ((lcv & mask) == result) ? zmul(nrm, stateVec[lcv]) : (cmplx)(ZERO_R1, ZERO_R1);
+    }
+}
+
 void kernel phaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
     bitCapInt ID, Nthreads, lcv;
