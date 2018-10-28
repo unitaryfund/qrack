@@ -605,7 +605,6 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     real1* probArray = new real1[lengthPower]();
-    real1 lowerProb, largestProb;
     real1 nrmlzr = ONE_R1;
     bitCapInt lcv, result;
 
@@ -614,8 +613,8 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
     }
 
     lcv = 0;
-    lowerProb = ZERO_R1;
-    largestProb = ZERO_R1;
+    real1 lowerProb = ZERO_R1;
+    real1 largestProb = ZERO_R1;
     result = lengthPower - 1;
 
     /*
@@ -623,20 +622,19 @@ bitCapInt QEngineCPU::MReg(bitLenInt start, bitLenInt length)
      * in a bug-induced topology - some value in stateVec must always be a
      * vector.
      */
-    while (lcv < lengthPower) {
-        if ((probArray[lcv] + lowerProb) > prob) {
+    while ((lowerProb < prob) && (lcv < lengthPower)) {
+        lowerProb += probArray[lcv];
+        if (largestProb <= probArray[lcv]) {
+            largestProb = probArray[lcv];
+            nrmlzr = largestProb;
             result = lcv;
-            nrmlzr = probArray[lcv];
-            lcv = lengthPower;
-        } else {
-            if (largestProb <= probArray[lcv]) {
-                largestProb = probArray[lcv];
-                result = lcv;
-                nrmlzr = largestProb;
-            }
-            lowerProb += probArray[lcv];
-            lcv++;
         }
+        lcv++;
+    }
+    if (lcv < lengthPower) {
+        lcv--;
+        result = lcv;
+        nrmlzr = probArray[lcv];
     }
 
     delete[] probArray;
