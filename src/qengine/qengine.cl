@@ -318,13 +318,14 @@ void kernel probregall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt start = bitCapIntPtr[2];
     bitCapInt qMask = (1 << start) - 1;
     bitCapInt len = bitCapIntPtr[3];
-    real1 oneChancePart = ZERO_R1;
+    real1 oneChancePart;
     cmplx amp;
     bitCapInt perm;
     bitCapInt i;
 
     for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
         perm = lcv1 << start;
+        oneChancePart = ZERO_R1;
         for (lcv2 = 0; lcv2 < maxJ; lcv2++) {
             i = lcv2 & qMask;
             i |= ((lcv2 ^ i) << len);

@@ -175,8 +175,6 @@ public:
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
 
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
-
 protected:
     static const int BCI_ARG_LEN = 10;
 

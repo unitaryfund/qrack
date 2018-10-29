@@ -907,9 +907,9 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         NormalizeState();
     }
 
-    bitCapInt maxI = maxQPower >> length;
     bitCapInt lengthPower = 1U << length;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (maxQPower - maxI), start, length, 0, 0, 0, 0, 0, 0 };
+    bitCapInt maxJ = maxQPower >> length;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, start, length, 0, 0, 0, 0, 0, 0 };
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
@@ -921,7 +921,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     cl::Buffer probsBuffer =
         cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBREGALL);
@@ -945,8 +945,6 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 
     queue.enqueueReadBuffer(probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec);
 }
-
-bitCapInt QEngineOCL::MReg(bitLenInt start, bitLenInt length) { return QInterface::MReg(start, length); }
 
 /*
 // Returns probability of permutation of the mask
