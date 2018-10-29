@@ -903,12 +903,20 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
 void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt maxJ = maxQPower >> length;
+
+    if ((lengthPower * lengthPower) < nrmGroupCount) {
+        // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
+        // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
+        QEngine::ProbRegAll(start, length, probsArray);
+        return;
+    }
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt maxJ = maxQPower >> length;
     bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, start, length, 0, 0, 0, 0, 0, 0 };
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
