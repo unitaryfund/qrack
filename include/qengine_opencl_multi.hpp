@@ -99,6 +99,7 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     virtual void H(bitLenInt qubitIndex);
+    using QInterface::M;
     virtual bool M(bitLenInt qubitIndex);
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual void X(bitLenInt qubitIndex);

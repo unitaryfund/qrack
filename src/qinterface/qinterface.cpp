@@ -672,7 +672,7 @@ bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
 
     bitCapInt result = 0;
     for (bitLenInt bit = 0; bit < length; bit++) {
-        result |= M(start + bit) ? (1 << bit) : 0;
+        result |= M(start + bit) ? (1U << bit) : 0;
     }
     return result;
 }
@@ -689,7 +689,7 @@ bitCapInt QInterface::M(const bitLenInt* bits, const bitLenInt& length)
 
     bitCapInt result = 0;
     for (bitLenInt bit = 0; bit < length; bit++) {
-        result |= M(bits[bit]) ? (1 << (bits[bit])) : 0;
+        result |= M(bits[bit]) ? (1U << (bits[bit])) : 0;
     }
     return result;
 }
