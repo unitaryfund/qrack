@@ -528,7 +528,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
     bitCapInt perm = permutation << start;
 
-    par_for_skip(0, maxQPower, (1 << start), length,
+    par_for_skip(0, maxQPower, (1U << start), length,
         [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | perm]); });
 
     real1 prob = ZERO_R1;
@@ -544,14 +544,14 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 // Returns probability of permutation of the mask
 real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
-    bitLenInt bit;
-    bitCapInt pwr = 1U;
-    for (bit = 0; bit < (sizeof(bitCapInt) * 8); bit++) {
-        if (pwr & mask) {
-            skipPowersVec.push_back(pwr);
-        }
-        pwr <<= 1U;
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
     bitCapInt* skipPowers = new bitCapInt[skipPowersVec.size()];

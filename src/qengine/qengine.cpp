@@ -126,14 +126,17 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
     }
     std::sort(qPowers, qPowers + length);
 
-    bitCapInt skipMask = ~regMask;
+    bitCapInt v = ~regMask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt len; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
-    bitCapInt pwr = 1U;
-    for (i = 0; i < (sizeof(bitCapInt) * 8); i++) {
-        if (pwr & skipMask) {
-            skipPowersVec.push_back(pwr);
+    for (len = 0; v; len++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        if (((v ^ oldV) & oldV) <= 0) {
+            break;
         }
-        pwr <<= 1U;
+        skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
     bitCapInt lengthPower = 1 << length;
