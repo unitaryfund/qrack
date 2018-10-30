@@ -47,6 +47,9 @@ public:
 
     QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+
     using QUnit::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length);
     using QUnit::AntiCCNOT;

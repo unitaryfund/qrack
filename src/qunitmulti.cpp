@@ -102,6 +102,40 @@ bool QUnitMulti::TrySeparate(std::vector<bitLenInt> bits)
     return didSeparate;
 }
 
+/// Set register bits to given permutation
+void QUnitMulti::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+{
+    MReg(start, length);
+
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) {
+        shards[bit + start].unit->SetPermutation((value & (1 << bit)) > 0 ? 1 : 0);
+    });
+}
+
+// Bit-wise apply measurement gate to a register
+bitCapInt QUnitMulti::MReg(bitLenInt start, bitLenInt length)
+{
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
+    int numCores = GetConcurrencyLevel();
+
+    bitCapInt* partResults = new bitCapInt[numCores]();
+
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { partResults[cpu] |= M(start + bit) ? (1 << bit) : 0; });
+
+    bitCapInt result = 0;
+    for (int i = 0; i < numCores; i++) {
+        result |= partResults[i];
+    }
+
+    return result;
+}
+
 // Bit-wise apply "anti-"controlled-not to three registers
 void QUnitMulti::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
