@@ -49,9 +49,11 @@ void QUnitMulti::RedistributeQEngines()
     for (bitLenInt i = 0; i < qips.size(); i++) {
         partSize += 1U << (qips[i]->GetQubitCount());
         if (partSize >= (totSize / devicesLeft)) {
-            //(dynamic_cast<QEngineOCL*>(qips[i].get()))->SetDevice(deviceIDs[deviceCount - devicesLeft]);
+            (dynamic_cast<QEngineOCL*>(qips[i].get()))->SetDevice(deviceIDs[deviceCount - devicesLeft]);
             partSize = 0;
-            devicesLeft--;
+            if (devicesLeft > 1) {
+                devicesLeft--;
+            }
         }
     }
 }
@@ -98,13 +100,6 @@ bool QUnitMulti::TrySeparate(std::vector<bitLenInt> bits)
         RedistributeQEngines();
     }
     return didSeparate;
-}
-
-bool QUnitMulti::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
-{
-    bool toRet = QUnit::ForceM(qubit, res, doForce, nrmlzr);
-    RedistributeQEngines();
-    return toRet;
 }
 
 // Bit-wise apply "anti-"controlled-not to three registers

@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-#include "oclengine.hpp"
+#include "common/oclengine.hpp"
 #include "qengine_opencl.hpp"
 #include "qinterface.hpp"
 #include "qunit.hpp"
@@ -46,8 +46,6 @@ public:
     }
 
     QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr);
-
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     using QUnit::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length);
