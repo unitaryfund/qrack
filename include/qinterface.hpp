@@ -64,26 +64,30 @@ enum QInterfaceEngine {
      */
     QINTERFACE_CPU = 0,
     /**
-     * Create a QEngineOCL, derived from QEngineCPU, leveraging OpenCL hardware
-     * to increase the speed of certain calculations.
+     * Create a QEngineOCL, derived from QEngineCPU, leveraging OpenCL hardware to increase the speed of certain
+     * calculations.
      */
     QINTERFACE_OPENCL,
 
     /**
-     * Create a QEngineOCLMUlti, composed from multiple QEngineOCLs, using OpenCL
-     * in parallel across 2^N devices, for N an integer >= 0.
+     * Create a QEngineOCLMUlti, composed from multiple QEngineOCLs, using OpenCL in parallel across 2^N devices, for N
+     * an integer >= 0.
      */
     QINTERFACE_OPENCL_MULTI,
 
     /**
-     * Create a QUnit, which utilizes other QInterface classes to minimize the
-     * amount of work that's needed for any given operation based on the
-     * entanglement of the bits involved.
+     * Create a QUnit, which utilizes other QInterface classes to minimize the amount of work that's needed for any
+     * given operation based on the entanglement of the bits involved.
      *
-     * This, combined with QINTERFACE_OPTIMAL, is the recommended object to use
-     * as a library consumer.
+     * This, combined with QINTERFACE_OPTIMAL, is the recommended object to use as a library consumer.
      */
     QINTERFACE_QUNIT,
+
+    /**
+     * Create a QUnitMulti, which is an OpenCL multiprocessor variant of QUnit. Separable subsystems of a QUnitMulti are
+     * load-balanced between available devices.
+     */
+    QINTERFACE_QUNITMULTI,
 
     QINTERFACE_FIRST = QINTERFACE_CPU,
 #if ENABLE_OPENCL
