@@ -62,6 +62,8 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
     using QUnit::CNOT;
     virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);
+    using QUnit::S;
+    virtual void S(bitLenInt start, bitLenInt length);
     using QUnit::T;
     virtual void T(bitLenInt start, bitLenInt length);
     using QUnit::X;

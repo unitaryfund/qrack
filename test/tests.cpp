@@ -323,6 +323,32 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_bit")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
+{
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(0);
+    qftReg->S(0);
+    qftReg->S(0);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->S(1);
+    qftReg->S(1);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_s_reg")
+{
+    qftReg->SetReg(0, 8, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(1, 2);
+    qftReg->S(1, 2);
+    qftReg->S(1, 2);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_t")
 {
     qftReg->SetReg(0, 8, 0x02);

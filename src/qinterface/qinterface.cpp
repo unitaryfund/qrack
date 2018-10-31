@@ -59,7 +59,15 @@ void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
     }
 }
 
-// Apply T (1/8 phase rotation) gate to each bit in "length," starting from bit index "start"
+// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
+void QInterface::S(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        S(start + bit);
+    }
+}
+
+// Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
 void QInterface::T(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {

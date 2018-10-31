@@ -34,6 +34,16 @@ void QInterface::H(bitLenInt qubit)
     ApplySingleBit(had, true, qubit);
 }
 
+/// Apply 1/4 phase rotation
+void QInterface::S(bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    const complex sOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(ZERO_R1, ONE_R1) };
+    ApplySingleBit(sOp, false, qubit);
+}
+
 /// Apply 1/8 phase rotation
 void QInterface::T(bitLenInt qubit)
 {
