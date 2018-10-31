@@ -16,9 +16,8 @@
 
 #if ENABLE_OPENCL
 #include "qengine_opencl_multi.hpp"
+#include "qunitmulti.hpp"
 #endif
-
-#include "qunit.hpp"
 
 namespace Qrack {
 
@@ -34,6 +33,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
         return std::make_shared<QEngineOCL>(args...);
     case QINTERFACE_OPENCL_MULTI:
         return std::make_shared<QEngineOCLMulti>(args...);
+    case QINTERFACE_QUNITMULTI:
+        return std::make_shared<QUnitMulti>(args...);
 #endif
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);

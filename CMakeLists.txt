@@ -104,6 +104,7 @@ install (FILES
     include/qengine.hpp
     include/qengine_cpu.hpp
     include/qunit.hpp
+    include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qengine_opencl_multi.hpp
     include/qinterface.hpp
@@ -119,4 +120,3 @@ install (TARGETS qrack
 # Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-
