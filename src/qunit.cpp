@@ -562,17 +562,29 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyEitherControlledSingleBit(controls, controlLen, target, mtrx, false);
+    ApplyEitherControlled(controls, controlLen, target, target, mtrx, false, false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyEitherControlledSingleBit(controls, controlLen, target, mtrx, true);
+    ApplyEitherControlled(controls, controlLen, target, target, mtrx, true, false);
 }
 
-void QUnit::ApplyEitherControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-    const bitLenInt& target, const complex* mtrx, const bool& anti)
+void QUnit::ApplyControlledSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true);
+}
+
+void QUnit::ApplyAntiControlledSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true);
+}
+
+void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target1,
+    const bitLenInt& target2, const complex* mtrx, const bool& anti, const bool& swap)
 {
     int i;
     real1 prob = ONE_R1;
@@ -582,15 +594,22 @@ void QUnit::ApplyEitherControlledSingleBit(const bitLenInt* controls, const bitL
             break;
         }
     }
+    if (anti) {
+        prob = ONE_R1 - prob;
+    }
     if (prob <= REAL_CLAMP) {
         return;
     } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
         for (i = 0; i < controlLen; i++) {
             if (shards[controls[i]].unit->IsPhaseSeparable()) {
-                ForceM(controls[i], true);
+                ForceM(controls[i], !anti);
             }
         }
-        X(target);
+        if (swap) {
+            Swap(target1, target2);
+        } else {
+            ApplySingleBit(mtrx, true, target1);
+        }
         return;
     }
 
@@ -600,18 +619,37 @@ void QUnit::ApplyEitherControlledSingleBit(const bitLenInt* controls, const bitL
         allBits[i] = controls[i];
         ebits[i] = &allBits[i];
     }
-    allBits[controlLen] = target;
-    ebits[controlLen] = &allBits[i];
+    allBits[controlLen] = target1;
+    ebits[controlLen] = &allBits[controlLen];
+    if (swap) {
+        allBits.push_back(target2);
+        ebits.push_back(&allBits[controlLen + 1]);
+    }
     EntangleIterator(ebits.begin(), ebits.end());
 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
     std::copy(allBits.begin(), allBits.end(), controlsMapped);
     if (anti) {
-        shards[target].unit->ApplyAntiControlledSingleBit(controlsMapped, controlLen, shards[target].mapped, mtrx);
+        if (swap) {
+            shards[target1].unit->ApplyAntiControlledSwap(
+                controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
+        } else {
+            shards[target1].unit->ApplyAntiControlledSingleBit(
+                controlsMapped, controlLen, shards[target1].mapped, mtrx);
+        }
     } else {
-        shards[target].unit->ApplyControlledSingleBit(controlsMapped, controlLen, shards[target].mapped, mtrx);
+        if (swap) {
+            shards[target1].unit->ApplyControlledSwap(
+                controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
+        } else {
+            shards[target1].unit->ApplyControlledSingleBit(controlsMapped, controlLen, shards[target1].mapped, mtrx);
+        }
     }
-    TrySeparate({ target });
+    if (swap) {
+        TrySeparate({ target1, target2 });
+    } else {
+        TrySeparate({ target1 });
+    }
     delete[] controlsMapped;
 }
 

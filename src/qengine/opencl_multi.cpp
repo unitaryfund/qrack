@@ -738,6 +738,32 @@ void QEngineOCLMulti::ApplyAntiControlledSingleBit(
         [&](QEngineOCLPtr engine) { engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx); }, bits);
 }
 
+void QEngineOCLMulti::ApplyControlledSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::vector<bitLenInt> bits(controlLen + 2);
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        bits[i] = controls[i];
+    }
+    bits[controlLen] = qubit1;
+    bits[controlLen + 1] = qubit2;
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->ApplyControlledSwap(controls, controlLen, qubit1, qubit2); }, bits);
+}
+
+void QEngineOCLMulti::ApplyAntiControlledSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::vector<bitLenInt> bits(controlLen + 2);
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        bits[i] = controls[i];
+    }
+    bits[controlLen] = qubit1;
+    bits[controlLen + 1] = qubit2;
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->ApplyAntiControlledSwap(controls, controlLen, qubit1, qubit2); }, bits);
+}
+
 void QEngineOCLMulti::X(bitLenInt qubitIndex)
 {
     if (qubitIndex >= subQubitCount) {
