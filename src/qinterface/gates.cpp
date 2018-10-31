@@ -34,6 +34,16 @@ void QInterface::H(bitLenInt qubit)
     ApplySingleBit(had, true, qubit);
 }
 
+/// Apply 1/8 phase rotation
+void QInterface::T(bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    const complex tOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(M_SQRT2, M_SQRT2) };
+    ApplySingleBit(tOp, false, qubit);
+}
+
 /// NOT gate, which is also Pauli x matrix
 void QInterface::X(bitLenInt qubit)
 {

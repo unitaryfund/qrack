@@ -406,6 +406,13 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1) = 0;
 
     /**
+     * T gate
+     *
+     * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void T(bitLenInt qubitIndex);
+
+    /**
      * X gate
      *
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
@@ -707,6 +714,9 @@ public:
 
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
+
+    /** Bitwise T operator (1/8 phase rotation) */
+    virtual void T(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli X (or logical "NOT") operator */
     virtual void X(bitLenInt start, bitLenInt length);

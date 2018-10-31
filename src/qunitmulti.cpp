@@ -169,6 +169,12 @@ void QUnitMulti::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
     par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { CNOT(control + bit, target + bit); });
 }
 
+// Apply T (1/8 phase rotation) gate to each bit in "length," starting from bit index "start"
+void QUnitMulti::T(bitLenInt start, bitLenInt length)
+{
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { T(start + bit); });
+}
+
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QUnitMulti::X(bitLenInt start, bitLenInt length)
