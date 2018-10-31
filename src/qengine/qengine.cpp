@@ -126,40 +126,12 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
     }
     std::sort(qPowers, qPowers + length);
 
-    bitCapInt v = ~regMask; // count the number of bits set in v
-    bitCapInt oldV;
-    bitLenInt len; // c accumulates the total bits set in v
-    std::vector<bitCapInt> skipPowersVec;
-    for (len = 0; v; len++) {
-        oldV = v;
-        v &= v - 1; // clear the least significant bit set
-        if (((v ^ oldV) & oldV) <= 0) {
-            break;
-        }
-        skipPowersVec.push_back((v ^ oldV) & oldV);
-    }
-
     bitCapInt lengthPower = 1 << length;
     real1* probArray = new real1[lengthPower]();
     real1 nrmlzr = ONE_R1;
     bitCapInt lcv, result;
 
-    bitLenInt p;
-    bitCapInt iHigh, iLow;
-    for (lcv = 0; lcv < lengthPower; lcv++) {
-        iHigh = lcv;
-        i = 0;
-        for (p = 0; p < (skipPowersVec.size()); p++) {
-            iLow = iHigh & (skipPowersVec[p] - 1);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1;
-            if (iHigh == 0) {
-                break;
-            }
-        }
-        i |= iHigh;
-        probArray[lcv] = ProbMask(regMask, i);
-    }
+    ProbMaskAll(regMask, probArray);
 
     lcv = 0;
     real1 lowerProb = ZERO_R1;
@@ -189,7 +161,7 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
     delete[] probArray;
 
     i = 0;
-    for (p = 0; p < length; p++) {
+    for (bitLenInt p = 0; p < length; p++) {
         if ((1 << p) & result) {
             i |= qPowers[p];
         }
@@ -354,6 +326,53 @@ void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1*
     bitCapInt lengthPower = 1U << length;
     for (bitCapInt lcv = 0; lcv < lengthPower; lcv++) {
         probsArray[lcv] = ProbReg(start, length, lcv);
+    }
+}
+
+void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
+{
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length;
+    std::vector<bitCapInt> powersVec;
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+    }
+
+    v = ~mask; // count the number of bits set in v
+    bitCapInt power;
+    bitLenInt len; // c accumulates the total bits set in v
+    std::vector<bitCapInt> skipPowersVec;
+    for (len = 0; v; len++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        power = (v ^ oldV) & oldV;
+        if (power < mask) {
+            skipPowersVec.push_back(power);
+        } else {
+            v = 0;
+        }
+    }
+
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt lcv;
+
+    bitLenInt p;
+    bitCapInt i, iHigh, iLow;
+    for (lcv = 0; lcv < lengthPower; lcv++) {
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < (skipPowersVec.size()); p++) {
+            iLow = iHigh & (skipPowersVec[p] - 1);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1;
+            if (iHigh == 0) {
+                break;
+            }
+        }
+        i |= iHigh;
+        probsArray[lcv] = ProbMask(mask, i);
     }
 }
 

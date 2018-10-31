@@ -52,7 +52,8 @@ public:
 
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
-    // virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
+    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
+    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

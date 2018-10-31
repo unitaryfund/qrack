@@ -1027,6 +1027,103 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return oneChance;
 }
 
+void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
+{
+
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length;
+    std::vector<bitCapInt> powersVec;
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        powersVec.push_back((v ^ oldV) & oldV);
+    }
+
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt maxJ = maxQPower >> length;
+
+    if ((lengthPower * lengthPower) < nrmGroupCount) {
+        // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
+        // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
+        QEngine::ProbMaskAll(mask, probsArray);
+        return;
+    }
+
+    v = ~mask; // count the number of bits set in v
+    bitCapInt skipPower;
+    bitCapInt maxPower = powersVec[powersVec.size() - 1];
+    bitLenInt skipLength = 0; // c accumulates the total bits set in v
+    std::vector<bitCapInt> skipPowersVec;
+    for (skipLength = 0; v; skipLength++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        skipPower = (v ^ oldV) & oldV;
+        if (skipPower < maxPower) {
+            skipPowersVec.push_back(skipPower);
+        } else {
+            v = 0;
+        }
+    }
+
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, length, skipLength, 0, 0, 0, 0, 0, 0 };
+
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+    device_context->wait_events.resize(1);
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
+    queue.flush();
+
+    cl::Buffer probsBuffer =
+        cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+
+    bitCapInt* powers = new bitCapInt[length];
+    std::copy(powersVec.begin(), powersVec.end(), powers);
+
+    cl::Buffer qPowersBuffer =
+        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * length, powers);
+
+    bitCapInt* skipPowers = new bitCapInt[skipLength];
+    std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
+
+    cl::Buffer qSkipPowersBuffer =
+        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * skipLength, skipPowers);
+
+    size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBMASKALL);
+    clFinish();
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, probsBuffer);
+    ocl.call.setArg(3, qPowersBuffer);
+    ocl.call.setArg(4, qSkipPowersBuffer);
+
+    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
+    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
+    cl::Event kernelEvent;
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+
+    waitVec.clear();
+    waitVec.push_back(kernelEvent);
+
+    queue.enqueueReadBuffer(probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec);
+
+    delete[] powers;
+    delete[] skipPowers;
+}
+
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
