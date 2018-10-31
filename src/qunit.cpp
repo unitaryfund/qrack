@@ -552,6 +552,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2) { EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2); }
 
+void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2) { EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2); }
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);

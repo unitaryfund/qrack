@@ -22,11 +22,19 @@ void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
     }
 }
 
-// Bit-wise apply swap to two registers
+// Bit-wise apply square root of swap to two registers
 void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         SqrtSwap(qubit1 + bit, qubit2 + bit);
+    }
+}
+
+// Bit-wise apply inverse square root of swap to two registers
+void QInterface::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ISqrtSwap(qubit1 + bit, qubit2 + bit);
     }
 }
 
@@ -67,11 +75,27 @@ void QInterface::S(bitLenInt start, bitLenInt length)
     }
 }
 
+// Apply inverse S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
+void QInterface::IS(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        IS(start + bit);
+    }
+}
+
 // Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
 void QInterface::T(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         T(start + bit);
+    }
+}
+
+// Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
+void QInterface::IT(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        IT(start + bit);
     }
 }
 

@@ -413,11 +413,25 @@ public:
     virtual void S(bitLenInt qubitIndex);
 
     /**
+     * Inverse S gate
+     *
+     * Applies an inverse 1/4 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void IS(bitLenInt qubitIndex);
+
+    /**
      * T gate
      *
      * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
      */
     virtual void T(bitLenInt qubitIndex);
+
+    /**
+     * Inverse T gate
+     *
+     * Applies an inverse 1/8 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void IT(bitLenInt qubitIndex);
 
     /**
      * X gate
@@ -725,8 +739,14 @@ public:
     /** Bitwise S operator (1/4 phase rotation) */
     virtual void S(bitLenInt start, bitLenInt length);
 
+    /** Bitwise inverse S operator (1/4 phase rotation) */
+    virtual void IS(bitLenInt start, bitLenInt length);
+
     /** Bitwise T operator (1/8 phase rotation) */
     virtual void T(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse T operator (1/8 phase rotation) */
+    virtual void IT(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli X (or logical "NOT") operator */
     virtual void X(bitLenInt start, bitLenInt length);
@@ -1233,6 +1253,12 @@ public:
 
     /** Bitwise square root of swap */
     virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Inverse square root of Swap gate */
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+
+    /** Bitwise inverse square root of swap */
+    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)

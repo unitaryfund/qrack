@@ -162,6 +162,8 @@ public:
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
     virtual void CopyState(QInterfacePtr orig) { CopyState(std::dynamic_pointer_cast<QEngineOCLMulti>(orig)); }
     virtual void CopyState(QEngineOCLMultiPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);

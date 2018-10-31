@@ -298,6 +298,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b000));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isqrtswap")
+{
+    qftReg->SetPermutation(0xb2000);
+    qftReg->SqrtSwap(12, 16, 4);
+    qftReg->ISqrtSwap(12, 16, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xb2000));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {
     complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
@@ -349,6 +357,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_is")
+{
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->S(0);
+    qftReg->IS(0);
+    qftReg->IS(1);
+    qftReg->S(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_is_reg")
+{
+    qftReg->SetReg(0, 8, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->S(1, 2);
+    qftReg->IS(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_t")
 {
     qftReg->SetReg(0, 8, 0x02);
@@ -379,6 +407,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_t_reg")
     qftReg->T(1, 2);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_it")
+{
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->T(0);
+    qftReg->IT(0);
+    qftReg->IT(1);
+    qftReg->T(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_it_reg")
+{
+    qftReg->SetReg(0, 8, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->T(1, 2);
+    qftReg->IT(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")

@@ -148,6 +148,12 @@ void QUnitMulti::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
     par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { SqrtSwap(qubit1 + bit, qubit2 + bit); });
 }
 
+// Bit-wise apply inverse of square root of swap to two registers
+void QUnitMulti::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { ISqrtSwap(qubit1 + bit, qubit2 + bit); });
+}
+
 // Bit-wise apply "anti-"controlled-not to three registers
 void QUnitMulti::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
@@ -175,10 +181,22 @@ void QUnitMulti::S(bitLenInt start, bitLenInt length)
     par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { S(start + bit); });
 }
 
+// Apply inverse S gate (1/8 phase rotation) to each bit in "length," starting from bit index "start"
+void QUnitMulti::IS(bitLenInt start, bitLenInt length)
+{
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { IS(start + bit); });
+}
+
 // Apply T gate (1/8 phase rotation) to each bit in "length," starting from bit index "start"
 void QUnitMulti::T(bitLenInt start, bitLenInt length)
 {
     par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { T(start + bit); });
+}
+
+// Apply T gate (1/8 phase rotation) to each bit in "length," starting from bit index "start"
+void QUnitMulti::IT(bitLenInt start, bitLenInt length)
+{
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { IT(start + bit); });
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index

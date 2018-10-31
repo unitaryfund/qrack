@@ -1212,6 +1212,19 @@ void QEngineOCLMulti::SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt len
         { static_cast<bitLenInt>(start1 + length - 1), static_cast<bitLenInt>(start2 + length - 1) });
 }
 
+void QEngineOCLMulti::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->ISqrtSwap(qubitIndex1, qubitIndex2); }, { qubitIndex1, qubitIndex2 });
+}
+
+void QEngineOCLMulti::ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->ISqrtSwap(start1, start2, len); },
+        [&](bitLenInt offset) { ISqrtSwap(start1 + offset, start2 + offset); }, length,
+        { static_cast<bitLenInt>(start1 + length - 1), static_cast<bitLenInt>(start2 + length - 1) });
+}
+
 void QEngineOCLMulti::CopyState(QEngineOCLMultiPtr orig)
 {
     CombineEngines(qubitCount - 1);
