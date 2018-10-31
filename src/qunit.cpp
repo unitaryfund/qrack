@@ -550,6 +550,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 #define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
 #define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
 
+void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2) { EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2); }
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);

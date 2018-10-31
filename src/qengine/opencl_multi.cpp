@@ -717,17 +717,25 @@ void QEngineOCLMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLe
 void QEngineOCLMulti::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CombineEngines(qubitCount - 1);
-    substateEngines[0]->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
-    SeparateEngines();
+    std::vector<bitLenInt> bits(controlLen + 1);
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        bits[i] = controls[i];
+    }
+    bits[controlLen] = target;
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx); }, bits);
 }
 
 void QEngineOCLMulti::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CombineEngines(qubitCount - 1);
-    substateEngines[0]->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-    SeparateEngines();
+    std::vector<bitLenInt> bits(controlLen + 1);
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        bits[i] = controls[i];
+    }
+    bits[controlLen] = target;
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx); }, bits);
 }
 
 void QEngineOCLMulti::X(bitLenInt qubitIndex)
@@ -1188,6 +1196,19 @@ void QEngineOCLMulti::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 {
     RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->Swap(start1, start2, len); },
         [&](bitLenInt offset) { Swap(start1 + offset, start2 + offset); }, length,
+        { static_cast<bitLenInt>(start1 + length - 1), static_cast<bitLenInt>(start2 + length - 1) });
+}
+
+void QEngineOCLMulti::SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    CombineAndOp(
+        [&](QEngineOCLPtr engine) { engine->SqrtSwap(qubitIndex1, qubitIndex2); }, { qubitIndex1, qubitIndex2 });
+}
+
+void QEngineOCLMulti::SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length)
+{
+    RegOp([&](QEngineOCLPtr engine, bitLenInt len) { engine->SqrtSwap(start1, start2, len); },
+        [&](bitLenInt offset) { SqrtSwap(start1 + offset, start2 + offset); }, length,
         { static_cast<bitLenInt>(start1 + length - 1), static_cast<bitLenInt>(start2 + length - 1) });
 }
 

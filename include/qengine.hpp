@@ -47,8 +47,10 @@ public:
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
-    /// Swap values of two bits in register
+    using QInterface::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
+    using QInterface::SqrtSwap;
+    virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);

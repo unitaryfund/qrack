@@ -136,10 +136,16 @@ bitCapInt QUnitMulti::MReg(bitLenInt start, bitLenInt length)
     return result;
 }
 
-// Bit-wise apply "anti-"controlled-not to three registers
+// Bit-wise apply swap to two registers
 void QUnitMulti::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
     par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { Swap(qubit1 + bit, qubit2 + bit); });
+}
+
+// Bit-wise apply square root of swap to two registers
+void QUnitMulti::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { SqrtSwap(qubit1 + bit, qubit2 + bit); });
 }
 
 // Bit-wise apply "anti-"controlled-not to three registers

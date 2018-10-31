@@ -14,11 +14,19 @@
 
 namespace Qrack {
 
-// Bit-wise apply "anti-"controlled-not to three registers
+// Bit-wise apply swap to two registers
 void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         Swap(qubit1 + bit, qubit2 + bit);
+    }
+}
+
+// Bit-wise apply swap to two registers
+void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        SqrtSwap(qubit1 + bit, qubit2 + bit);
     }
 }
 

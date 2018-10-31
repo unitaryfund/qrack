@@ -52,6 +52,8 @@ public:
 
     using QUnit::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length);
+    using QUnit::SqrtSwap;
+    virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length);
     using QUnit::AntiCCNOT;
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
     using QUnit::CCNOT;

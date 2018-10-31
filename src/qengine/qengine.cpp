@@ -321,6 +321,24 @@ void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
     Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
 }
 
+/// Swap values of two bits in register
+void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    const complex pauliSqrtX[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    bitCapInt qPowers[2];
+    bitCapInt qPowersSorted[2];
+    qPowers[0] = 1 << qubit1;
+    qPowers[1] = 1 << qubit2;
+    std::copy(qPowers, qPowers + 2, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + 2);
+    Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliSqrtX, 2, qPowersSorted, false);
+}
+
 void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
     bitCapInt lengthPower = 1U << length;

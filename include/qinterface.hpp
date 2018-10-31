@@ -1208,6 +1208,12 @@ public:
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
+    /** Square root of Swap gate */
+    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+
+    /** Bitwise square root of swap */
+    virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
     {

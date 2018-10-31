@@ -290,6 +290,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b000));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap")
+{
+    qftReg->SetPermutation(0xb2000);
+    qftReg->SqrtSwap(12, 16, 4);
+    qftReg->SqrtSwap(12, 16, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b000));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {
     complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
@@ -2121,6 +2129,44 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_reg")
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 
     qftReg->Swap(0, 1, 1);
+
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
+
+    qftReg->H(1);
+
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap_bit")
+{
+    qftReg->H(0);
+
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->SqrtSwap(0, 1);
+    qftReg->SqrtSwap(0, 1);
+
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
+
+    qftReg->H(1);
+
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap_reg")
+{
+    qftReg->H(0);
+
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->SqrtSwap(0, 1, 1);
+    qftReg->SqrtSwap(0, 1, 1);
 
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
