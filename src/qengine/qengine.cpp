@@ -377,7 +377,7 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::MReg(bitLenInt start, bitLenInt length)
+bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
     // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
     // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
@@ -406,34 +406,36 @@ bitCapInt QEngine::MReg(bitLenInt start, bitLenInt length)
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     real1* probArray = new real1[lengthPower]();
+    bitCapInt lcv;
     real1 nrmlzr = ONE_R1;
-    bitCapInt lcv, result;
 
     ProbRegAll(start, length, probArray);
 
-    lcv = 0;
-    real1 lowerProb = ZERO_R1;
-    real1 largestProb = ZERO_R1;
-    result = lengthPower - 1;
+    if (!doForce) {
+        lcv = 0;
+        real1 lowerProb = ZERO_R1;
+        real1 largestProb = ZERO_R1;
+        result = lengthPower - 1;
 
-    /*
-     * The value of 'lcv' should not exceed lengthPower unless the stateVec is
-     * in a bug-induced topology - some value in stateVec must always be a
-     * vector.
-     */
-    while ((lowerProb < prob) && (lcv < lengthPower)) {
-        lowerProb += probArray[lcv];
-        if (largestProb <= probArray[lcv]) {
-            largestProb = probArray[lcv];
-            nrmlzr = largestProb;
-            result = lcv;
+        /*
+         * The value of 'lcv' should not exceed lengthPower unless the stateVec is
+         * in a bug-induced topology - some value in stateVec must always be a
+         * vector.
+         */
+        while ((lowerProb < prob) && (lcv < lengthPower)) {
+            lowerProb += probArray[lcv];
+            if (largestProb <= probArray[lcv]) {
+                largestProb = probArray[lcv];
+                nrmlzr = largestProb;
+                result = lcv;
+            }
+            lcv++;
         }
-        lcv++;
-    }
-    if (lcv < lengthPower) {
-        lcv--;
-        result = lcv;
-        nrmlzr = probArray[lcv];
+        if (lcv < lengthPower) {
+            lcv--;
+            result = lcv;
+            nrmlzr = probArray[lcv];
+        }
     }
 
     delete[] probArray;

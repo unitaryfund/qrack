@@ -36,7 +36,7 @@ public:
     using QInterface::M;
     virtual bool M(bitLenInt qubit);
     virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;

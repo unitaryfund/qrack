@@ -661,7 +661,7 @@ void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitL
 }
 
 // Bit-wise apply measurement gate to a register
-bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
+bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
     // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
     // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
@@ -670,11 +670,13 @@ bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
         knowIsPhaseSeparable = false;
     }
 
-    bitCapInt result = 0;
+    bitCapInt res = 0;
+    bitCapInt power;
     for (bitLenInt bit = 0; bit < length; bit++) {
-        result |= M(start + bit) ? (1U << bit) : 0;
+        power = 1U << bit;
+        res |= ForceM(start + bit, !(!(power & result)), doForce, ONE_R1) ? power : 0;
     }
-    return result;
+    return res;
 }
 
 // Bit-wise apply measurement gate to a register

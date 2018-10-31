@@ -1069,7 +1069,14 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
+
+    /**
+     * Act as if is a measurement was applied, except force the (usually random) result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
     virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
