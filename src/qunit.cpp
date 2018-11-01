@@ -562,29 +562,50 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyEitherControlled(controls, controlLen, target, target, mtrx, false, false);
+    ApplyEitherControlled(controls, controlLen, target, target, mtrx, false, false, false, false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyEitherControlled(controls, controlLen, target, target, mtrx, true, false);
+    ApplyEitherControlled(controls, controlLen, target, target, mtrx, true, false, false, false);
 }
 
-void QUnit::ApplyControlledSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+#if 0
+void QUnit::CSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true);
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, false, false);
 }
 
-void QUnit::ApplyAntiControlledSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::AntiCSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true);
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, false, false);
 }
+
+void QUnit::CSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, true, false);
+}
+
+void QUnit::AntiCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, true, false);
+}
+
+void QUnit::CISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, true, true);
+}
+
+void QUnit::AntiCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, true, true);
+}
+#endif
 
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target1,
-    const bitLenInt& target2, const complex* mtrx, const bool& anti, const bool& swap)
+    const bitLenInt& target2, const complex* mtrx, const bool& anti, const bool& swap, const bool& squareroot,
+    const bool& inverse)
 {
     int i;
     real1 prob = ONE_R1;
@@ -606,7 +627,11 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             }
         }
         if (swap) {
-            Swap(target1, target2);
+            if (squareroot) {
+                SqrtSwap(target1, target2);
+            } else {
+                Swap(target1, target2);
+            }
         } else {
             ApplySingleBit(mtrx, true, target1);
         }
@@ -631,16 +656,36 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::copy(allBits.begin(), allBits.end(), controlsMapped);
     if (anti) {
         if (swap) {
-            shards[target1].unit->ApplyAntiControlledSwap(
-                controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
+            if (squareroot) {
+                if (inverse) {
+                    // shards[target1].unit->AntiCISqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
+                    // shards[target2].mapped);
+                } else {
+                    // shards[target1].unit->AntiCSqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
+                    // shards[target2].mapped);
+                }
+            } else {
+                // shards[target1].unit->AntiCSwap(controlsMapped, controlLen, shards[target1].mapped,
+                // shards[target2].mapped);
+            }
         } else {
             shards[target1].unit->ApplyAntiControlledSingleBit(
                 controlsMapped, controlLen, shards[target1].mapped, mtrx);
         }
     } else {
         if (swap) {
-            shards[target1].unit->ApplyControlledSwap(
-                controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
+            if (squareroot) {
+                if (inverse) {
+                    // shards[target1].unit->CISqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
+                    // shards[target2].mapped);
+                } else {
+                    // shards[target1].unit->CSqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
+                    // shards[target2].mapped);
+                }
+            } else {
+                // shards[target1].unit->CSwap(controlsMapped, controlLen, shards[target1].mapped,
+                // shards[target2].mapped);
+            }
         } else {
             shards[target1].unit->ApplyControlledSingleBit(controlsMapped, controlLen, shards[target1].mapped, mtrx);
         }

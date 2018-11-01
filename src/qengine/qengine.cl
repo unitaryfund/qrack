@@ -13,7 +13,7 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr)
+void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
     bitCapInt ID, Nthreads, lcv;
 
@@ -26,7 +26,6 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     bitCapInt maxI = bitCapIntPtr[1];
     bitCapInt offset1 = bitCapIntPtr[2];
     bitCapInt offset2 = bitCapIntPtr[3];
-    constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
     cmplx Y0, Y1;
     bitCapInt i, iLow, iHigh;
@@ -49,7 +48,7 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
     }
 }
 
-void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts)
+void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts)
 {
     bitCapInt ID, Nthreads, lcv;
     real1 nrm1, nrm2;
@@ -63,7 +62,6 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     bitCapInt maxI = bitCapIntPtr[1];
     bitCapInt offset1 = bitCapIntPtr[2];
     bitCapInt offset2 = bitCapIntPtr[3];
-    constant bitCapInt* qPowersSorted = (bitCapIntPtr + 4);
 
     cmplx Y0, Y1, YT;
     bitCapInt i, iLow, iHigh;

@@ -358,6 +358,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         &(device_context->wait_events[1]));
     queue.flush();
 
+    cl::Buffer powersBuffer = cl::Buffer(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(bitCapInt) * bitCount, (void*)qPowersSorted);
+
     doCalcNorm &= (bitCount == 1);
 
     OCLAPI api_call;
@@ -371,8 +374,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, cmplxBuffer);
     ocl.call.setArg(2, ulongBuffer);
+    ocl.call.setArg(3, powersBuffer);
     if (doCalcNorm) {
-        ocl.call.setArg(3, nrmBuffer);
+        ocl.call.setArg(4, nrmBuffer);
     }
 
     cl::Event kernelEvent;
