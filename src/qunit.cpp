@@ -301,9 +301,9 @@ void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target,
     } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
         if (shards[control].unit->IsPhaseSeparable()) {
             ForceM(control, !anti);
+            ((*(shards[target].unit)).*fn)(shards[target].mapped);
+            return;
         }
-        ((*(shards[target].unit)).*fn)(shards[target].mapped);
-        return;
     }
 
     bitLenInt tCopy = target;
@@ -324,9 +324,9 @@ void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control,
     } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
         if (shards[control].unit->IsPhaseSeparable()) {
             ForceM(control, true);
+            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
+            return;
         }
-        ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-        return;
     }
 
     bitLenInt tCopy = target;
@@ -571,37 +571,41 @@ void QUnit::ApplyAntiControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, target, target, mtrx, true, false, false, false);
 }
 
-#if 0
-void QUnit::CSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::CSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, false, false);
 }
 
-void QUnit::AntiCSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::AntiCSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, false, false);
 }
 
-void QUnit::CSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::CSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, true, false);
 }
 
-void QUnit::AntiCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::AntiCSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, true, false);
 }
 
-void QUnit::CISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::CISqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, true, true);
 }
 
-void QUnit::AntiCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QUnit::AntiCISqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, true, true);
 }
-#endif
 
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target1,
     const bitLenInt& target2, const complex* mtrx, const bool& anti, const bool& swap, const bool& squareroot,
@@ -621,21 +625,30 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     if (prob <= REAL_CLAMP) {
         return;
     } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+        bool isClassical = true;
         for (i = 0; i < controlLen; i++) {
             if (shards[controls[i]].unit->IsPhaseSeparable()) {
                 ForceM(controls[i], !anti);
-            }
-        }
-        if (swap) {
-            if (squareroot) {
-                SqrtSwap(target1, target2);
             } else {
-                Swap(target1, target2);
+                isClassical = false;
             }
-        } else {
-            ApplySingleBit(mtrx, true, target1);
         }
-        return;
+        if (isClassical) {
+            if (swap) {
+                if (squareroot) {
+                    if (inverse) {
+                        ISqrtSwap(target1, target2);
+                    } else {
+                        SqrtSwap(target1, target2);
+                    }
+                } else {
+                    Swap(target1, target2);
+                }
+            } else {
+                ApplySingleBit(mtrx, true, target1);
+            }
+            return;
+        }
     }
 
     std::vector<bitLenInt> allBits(controlLen + 1);
@@ -658,15 +671,15 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         if (swap) {
             if (squareroot) {
                 if (inverse) {
-                    // shards[target1].unit->AntiCISqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
-                    // shards[target2].mapped);
+                    shards[target1].unit->AntiCISqrtSwap(
+                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
                 } else {
-                    // shards[target1].unit->AntiCSqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
-                    // shards[target2].mapped);
+                    shards[target1].unit->AntiCSqrtSwap(
+                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
                 }
             } else {
-                // shards[target1].unit->AntiCSwap(controlsMapped, controlLen, shards[target1].mapped,
-                // shards[target2].mapped);
+                shards[target1].unit->AntiCSwap(
+                    controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
             }
         } else {
             shards[target1].unit->ApplyAntiControlledSingleBit(
@@ -676,15 +689,14 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         if (swap) {
             if (squareroot) {
                 if (inverse) {
-                    // shards[target1].unit->CISqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
-                    // shards[target2].mapped);
+                    shards[target1].unit->CISqrtSwap(
+                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
                 } else {
-                    // shards[target1].unit->CSqrtSwap(controlsMapped, controlLen, shards[target1].mapped,
-                    // shards[target2].mapped);
+                    shards[target1].unit->CSqrtSwap(
+                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
                 }
             } else {
-                // shards[target1].unit->CSwap(controlsMapped, controlLen, shards[target1].mapped,
-                // shards[target2].mapped);
+                shards[target1].unit->CSwap(controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
             }
         } else {
             shards[target1].unit->ApplyControlledSingleBit(controlsMapped, controlLen, shards[target1].mapped, mtrx);
@@ -706,14 +718,21 @@ void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
         if (prob <= REAL_CLAMP) {
             return;
         } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            bool isClassical = true;
             if (shards[inputBit1].unit->IsPhaseSeparable()) {
                 ForceM(inputBit1, true);
+            } else {
+                isClassical = false;
             }
-            if (shards[inputBit2].unit->IsPhaseSeparable()) {
+            if (isClassical && (shards[inputBit2].unit->IsPhaseSeparable())) {
                 ForceM(inputBit2, true);
+            } else {
+                isClassical = false;
             }
-            X(outputBit);
-            return;
+            if (isClassical) {
+                X(outputBit);
+                return;
+            }
         }
     }
 
@@ -730,14 +749,21 @@ void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt output
         if (prob <= REAL_CLAMP) {
             return;
         } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+            bool isClassical = true;
             if (shards[inputBit1].unit->IsPhaseSeparable()) {
                 ForceM(inputBit1, false);
+            } else {
+                isClassical = false;
             }
-            if (shards[inputBit2].unit->IsPhaseSeparable()) {
+            if (isClassical && (shards[inputBit2].unit->IsPhaseSeparable())) {
                 ForceM(inputBit2, false);
+            } else {
+                isClassical = false;
             }
-            X(outputBit);
-            return;
+            if (isClassical) {
+                X(outputBit);
+                return;
+            }
         }
     }
 

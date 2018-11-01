@@ -306,7 +306,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_isqrtswap")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xb2000));
 }
 
-#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
 {
     bitLenInt control[1] = { 8 };
@@ -339,7 +338,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cisqrtswap")
     qftReg->CISqrtSwap(control, 1, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
 }
-#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {

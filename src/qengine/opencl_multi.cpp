@@ -738,8 +738,8 @@ void QEngineOCLMulti::ApplyAntiControlledSingleBit(
         [&](QEngineOCLPtr engine) { engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx); }, bits);
 }
 
-#if 0
-void QEngineOCLMulti::CSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QEngineOCLMulti::CSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     std::vector<bitLenInt> bits(controlLen + 2);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -747,11 +747,11 @@ void QEngineOCLMulti::CSwap(const bitLenInt* controls, const bitLenInt& controlL
     }
     bits[controlLen] = qubit1;
     bits[controlLen + 1] = qubit2;
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); }, bits);
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); }, bits);
 }
 
-void QEngineOCLMulti::AntiCSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QEngineOCLMulti::AntiCSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     std::vector<bitLenInt> bits(controlLen + 2);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -759,11 +759,11 @@ void QEngineOCLMulti::AntiCSwap(const bitLenInt* controls, const bitLenInt& cont
     }
     bits[controlLen] = qubit1;
     bits[controlLen + 1] = qubit2;
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); }, bits);
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); }, bits);
 }
 
-void QEngineOCLMulti::CSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QEngineOCLMulti::CSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     std::vector<bitLenInt> bits(controlLen + 2);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -771,11 +771,11 @@ void QEngineOCLMulti::CSqrtSwap(const bitLenInt* controls, const bitLenInt& cont
     }
     bits[controlLen] = qubit1;
     bits[controlLen + 1] = qubit2;
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) { engine->CSqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->CSqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
 }
 
-void QEngineOCLMulti::AntiCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QEngineOCLMulti::AntiCSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     std::vector<bitLenInt> bits(controlLen + 2);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -783,11 +783,11 @@ void QEngineOCLMulti::AntiCSqrtSwap(const bitLenInt* controls, const bitLenInt& 
     }
     bits[controlLen] = qubit1;
     bits[controlLen + 1] = qubit2;
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) { engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
 }
 
-void QEngineOCLMulti::CISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QEngineOCLMulti::CISqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     std::vector<bitLenInt> bits(controlLen + 2);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -795,11 +795,11 @@ void QEngineOCLMulti::CISqrtSwap(const bitLenInt* controls, const bitLenInt& con
     }
     bits[controlLen] = qubit1;
     bits[controlLen + 1] = qubit2;
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) { engine->CISqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->CISqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
 }
 
-void QEngineOCLMulti::AntiCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QEngineOCLMulti::AntiCISqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     std::vector<bitLenInt> bits(controlLen + 2);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -807,10 +807,8 @@ void QEngineOCLMulti::AntiCISqrtSwap(const bitLenInt* controls, const bitLenInt&
     }
     bits[controlLen] = qubit1;
     bits[controlLen + 1] = qubit2;
-    CombineAndOp(
-        [&](QEngineOCLPtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
+    CombineAndOp([&](QEngineOCLPtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); }, bits);
 }
-#endif
 
 void QEngineOCLMulti::X(bitLenInt qubitIndex)
 {

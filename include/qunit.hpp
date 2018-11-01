@@ -68,14 +68,18 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
-    // virtual void CSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const
-    // bitLenInt& qubit2);  virtual void AntiCSwap(const bitLenInt* controls, const bitLenInt& controlLen, const
-    // bitLenInt& qubit1, const bitLenInt& qubit2);  virtual void CSqrtSwap(const bitLenInt* controls, const bitLenInt&
-    // controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);  virtual void AntiCSqrtSwap(const bitLenInt*
-    // controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);  virtual void
-    // CISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt&
-    // qubit2);  virtual void AntiCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt&
-    // qubit1, const bitLenInt& qubit2);
+    virtual void CSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void AntiCSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void CSqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void AntiCSqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void CISqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void AntiCISqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     virtual void CNOT(bitLenInt control, bitLenInt target);
