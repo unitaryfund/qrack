@@ -52,6 +52,7 @@ public:
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
     virtual void SetQuantumState(complex* inputState);
+    virtual void GetQuantumState(complex* outputState);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy);

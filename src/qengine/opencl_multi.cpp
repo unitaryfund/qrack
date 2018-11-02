@@ -311,6 +311,14 @@ void QEngineOCLMulti::SetQuantumState(complex* inputState)
     SeparateEngines();
 }
 
+// This method has not been parallelized.
+void QEngineOCLMulti::GetQuantumState(complex* outputState)
+{
+    CombineEngines(qubitCount - 1);
+    substateEngines[0]->GetQuantumState(outputState);
+    SeparateEngines();
+}
+
 void QEngineOCLMulti::SetPermutation(bitCapInt perm)
 {
     if (subEngineCount == 1) {

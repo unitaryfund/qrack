@@ -94,6 +94,13 @@ void QUnit::SetQuantumState(complex* inputState)
     }
 }
 
+void QUnit::GetQuantumState(complex* outputState)
+{
+    QUnit qUnitCopy(*this);
+    qUnitCopy.EntangleRange(0, qubitCount);
+    qUnitCopy.shards[0].unit->GetQuantumState(outputState);
+}
+
 /*
  * Append QInterface to the end of the unit.
  */

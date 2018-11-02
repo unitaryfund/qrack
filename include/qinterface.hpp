@@ -161,6 +161,9 @@ public:
     /** Set an arbitrary pure quantum state */
     virtual void SetQuantumState(complex* inputState) = 0;
 
+    /** Get the pure quantum state */
+    virtual void GetQuantumState(complex* outputState) = 0;
+
     /** Set to a specific permutation */
     virtual void SetPermutation(bitCapInt perm) = 0;
 

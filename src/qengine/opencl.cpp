@@ -1740,6 +1740,16 @@ void QEngineOCL::SetQuantumState(complex* inputState)
     UnlockSync();
 }
 
+/// Get pure quantum state, in unsigned int permutation basis
+void QEngineOCL::GetQuantumState(complex* outputState)
+{
+    knowIsPhaseSeparable = false;
+
+    LockSync(CL_MAP_WRITE);
+    std::copy(stateVec, stateVec + maxQPower, outputState);
+    UnlockSync();
+}
+
 void QEngineOCL::NormalizeState(real1 nrm)
 {
     if (nrm < ZERO_R1) {

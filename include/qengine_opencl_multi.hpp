@@ -72,6 +72,7 @@ public:
     }
 
     virtual void SetQuantumState(complex* inputState);
+    virtual void GetQuantumState(complex* outputState);
     virtual void SetPermutation(bitCapInt perm);
 
     virtual bitLenInt Cohere(QEngineOCLMultiPtr toCopy);

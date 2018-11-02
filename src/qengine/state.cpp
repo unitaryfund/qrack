@@ -100,7 +100,14 @@ void QEngineCPU::ResetStateVec(complex* nStateVec)
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
+void QEngineCPU::SetQuantumState(complex* inputState)
+{
+    std::copy(inputState, inputState + maxQPower, stateVec);
+    runningNorm = ONE_R1;
+}
+
+/// Get pure quantum state, in unsigned int permutation basis
+void QEngineCPU::GetQuantumState(complex* outputState) { std::copy(stateVec, stateVec + maxQPower, outputState); }
 
     /**
      * Apply a 2x2 matrix to the state vector

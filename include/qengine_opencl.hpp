@@ -173,6 +173,7 @@ public:
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
 
     virtual void SetQuantumState(complex* inputState);
+    virtual void GetQuantumState(complex* outputState);
 
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
