@@ -101,6 +101,15 @@ void QUnit::GetQuantumState(complex* outputState)
     qUnitCopy.shards[0].unit->GetQuantumState(outputState);
 }
 
+complex QUnit::GetAmplitude(bitCapInt perm)
+{
+    complex* tempState = new complex[maxQPower];
+    GetQuantumState(tempState);
+    complex toRet = tempState[perm];
+    delete[] tempState;
+    return toRet;
+}
+
 /*
  * Append QInterface to the end of the unit.
  */

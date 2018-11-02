@@ -53,6 +53,7 @@ public:
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
+    virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
     using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy);

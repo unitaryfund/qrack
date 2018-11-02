@@ -319,6 +319,15 @@ void QEngineOCLMulti::GetQuantumState(complex* outputState)
     SeparateEngines();
 }
 
+complex QEngineOCLMulti::GetAmplitude(bitCapInt perm)
+{
+    NormalizeState();
+
+    bitLenInt subIndex = perm / subMaxQPower;
+    perm -= subIndex * subMaxQPower;
+    return substateEngines[subIndex]->GetAmplitude(perm);
+}
+
 void QEngineOCLMulti::SetPermutation(bitCapInt perm)
 {
     if (subEngineCount == 1) {

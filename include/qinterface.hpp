@@ -158,11 +158,23 @@ public:
     /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
     int GetMaxQPower() { return maxQPower; }
 
-    /** Set an arbitrary pure quantum state */
+    /** Set an arbitrary pure quantum state representation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
     virtual void SetQuantumState(complex* inputState) = 0;
 
-    /** Get the pure quantum state */
+    /** Get the pure quantum state representation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
     virtual void GetQuantumState(complex* outputState) = 0;
+
+    /** Get the representational amplitude of a full permutation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual complex GetAmplitude(bitCapInt perm) = 0;
 
     /** Set to a specific permutation */
     virtual void SetPermutation(bitCapInt perm) = 0;
