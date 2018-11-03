@@ -143,19 +143,20 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 
     QInterfacePtr unit = shards[start].unit;
     bitLenInt mapped = shards[start].mapped;
+    bitLenInt unitLength = unit->GetQubitCount();
 
     if (dest && unit->GetQubitCount() > length) {
         unit->Decohere(mapped, length, dest);
     } else if (dest) {
         dest->CopyState(unit);
-    } else {
+    } else if (unitLength > length) {
         unit->Dispose(mapped, length);
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 
-    if (unit->GetQubitCount() == length) {
+    if (unitLength == length) {
         return;
     }
 
