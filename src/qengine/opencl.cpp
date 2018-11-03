@@ -794,6 +794,10 @@ bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {
+    if (qubitCount == 1) {
+        return ProbAll(1);
+    }
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -1823,6 +1827,7 @@ void QEngineOCL::UpdateRunningNorm()
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, ulongBuffer);
     ocl.call.setArg(2, nrmBuffer);
+    ocl.call.setArg(3, cl::Local(sizeof(real1) * nrmGroupSize));
 
     cl::Event kernelEvent;
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
@@ -1835,8 +1840,9 @@ void QEngineOCL::UpdateRunningNorm()
     waitVec.push_back(kernelEvent);
 
     runningNorm = ZERO_R1;
-    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * nrmGroupCount, &waitVec);
-    for (unsigned long int i = 0; i < nrmGroupCount; i++) {
+    queue.enqueueMapBuffer(
+        nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (nrmGroupCount / nrmGroupSize), &waitVec);
+    for (size_t i = 0; i < (nrmGroupCount / nrmGroupSize); i++) {
         runningNorm += nrmArray[i];
     }
     cl::Event unmapEvent;

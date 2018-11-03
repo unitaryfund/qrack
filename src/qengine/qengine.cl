@@ -1447,8 +1447,8 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     }
 }
 
-void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr) {
-    bitCapInt ID, Nthreads, lcv;
+void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
+    bitCapInt ID, Nthreads, lcv, locID, locNthreads;
     
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
@@ -1466,7 +1466,21 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
         }
         partNrm += nrm;
     }
-    norm_ptr[ID] = partNrm;
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = partNrm;
+    
+    for (lcv = (locNthreads >> 1); lcv > 0; lcv >>= 1) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0) {
+        norm_ptr[get_group_id(0)] = lProbBuffer[0];
+    }
 }
 
 void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant cmplx* cmplx_ptr) {

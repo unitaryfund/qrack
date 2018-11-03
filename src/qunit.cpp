@@ -465,6 +465,7 @@ bool QUnit::IsPhaseSeparable(bool forceCheck)
     for (bitLenInt i = 0; i < (units.size()); i++) {
         if (!(units[i]->IsPhaseSeparable())) {
             toRet = false;
+            break;
         }
     }
 
