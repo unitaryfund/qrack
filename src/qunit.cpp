@@ -476,10 +476,7 @@ bool QUnit::IsPhaseSeparable(bool forceCheck)
     return toRet;
 }
 
-bool QUnit::IsPhaseSeparable(bitLenInt qubit)
-{
-    return shards[qubit].unit->IsPhaseSeparable();
-}
+bool QUnit::IsPhaseSeparable(bitLenInt qubit) { return shards[qubit].unit->IsPhaseSeparable(); }
 
 real1 QUnit::Prob(bitLenInt qubit)
 {
