@@ -630,13 +630,14 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     int i;
     real1 prob = ONE_R1;
     for (i = 0; i < controlLen; i++) {
-        prob *= Prob(controls[i]);
+        if (anti) {
+            prob *= ONE_R1 - Prob(controls[i]);
+        } else {
+            prob *= Prob(controls[i]);
+        }
         if (prob <= REAL_CLAMP) {
             break;
         }
-    }
-    if (anti) {
-        prob = ONE_R1 - prob;
     }
     if (prob <= REAL_CLAMP) {
         return;
