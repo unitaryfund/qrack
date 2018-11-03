@@ -210,6 +210,7 @@ public:
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
+    virtual bool IsPhaseSeparable(bitLenInt qubit);
 
     /** @} */
 

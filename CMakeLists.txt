@@ -106,7 +106,6 @@ install (FILES
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp
-    include/qengine_opencl_multi.hpp
     include/qinterface.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )

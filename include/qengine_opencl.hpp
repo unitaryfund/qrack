@@ -16,6 +16,7 @@
 #error OpenCL has not been enabled
 #endif
 
+#include "common/oclengine.hpp"
 #include "qengine.hpp"
 
 namespace Qrack {
@@ -96,6 +97,7 @@ public:
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    using QInterface::IsPhaseSeparable;
     virtual bool IsPhaseSeparable(bool forceCheck = false);
 
     /* Operations that have an improved implementation. */
