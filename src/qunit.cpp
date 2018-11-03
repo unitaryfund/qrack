@@ -40,7 +40,10 @@ QUnit::QUnit(
     }
 }
 
-void QUnit::CopyState(QUnitPtr orig)
+void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
+
+// protected method
+void QUnit::CopyState(QUnit* orig)
 {
     shards.clear();
     SetQubitCount(orig->GetQubitCount());
@@ -96,18 +99,29 @@ void QUnit::SetQuantumState(complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
-    QUnit qUnitCopy(*this);
+    QUnit qUnitCopy(engine, 1, 0);
+    qUnitCopy.CopyState(this);
     qUnitCopy.EntangleRange(0, qubitCount);
     qUnitCopy.shards[0].unit->GetQuantumState(outputState);
 }
 
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
-    complex* tempState = new complex[maxQPower];
-    GetQuantumState(tempState);
-    complex toRet = tempState[perm];
-    delete[] tempState;
-    return toRet;
+    complex result(ONE_R1, ZERO_R1);
+
+    std::map<QInterfacePtr, bitCapInt> perms;
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (perm & (1 << i)) {
+            perms[shards[i].unit] |= 1 << shards[i].mapped;
+        }
+    }
+
+    for (auto&& qi : perms) {
+        result *= qi.first->GetAmplitude(qi.second);
+    }
+
+    return result;
 }
 
 /*

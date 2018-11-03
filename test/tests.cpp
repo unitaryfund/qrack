@@ -1694,6 +1694,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_proball")
     REQUIRE(qftReg->ProbAll(0x03) < 0.01);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
+{
+    qftReg->SetPermutation(0x02);
+    REQUIRE(norm(qftReg->GetAmplitude(0x02)) > 0.99);
+    REQUIRE(norm(qftReg->GetAmplitude(0x03)) < 0.01);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 {
     int i;

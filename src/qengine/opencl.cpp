@@ -1746,16 +1746,14 @@ void QEngineOCL::SetQuantumState(complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
-    {
-        if (doNormalize && (runningNorm != ONE_R1)) {
-            NormalizeState();
-        }
-
-        complex amp[1];
-        std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-        queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * fullRegister, sizeof(complex), amp, &waitVec);
-        return amp[0];
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
     }
+
+    complex amp[1];
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * fullRegister, sizeof(complex), amp, &waitVec);
+    return amp[0];
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
