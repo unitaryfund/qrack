@@ -101,7 +101,7 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
     // Single bit operations are better optimized for this special case:
     if (length == 1) {
         if (M(bits[0])) {
-            return 1;
+            return (1U << bits[0]);
         } else {
             return 0;
         }
@@ -162,7 +162,7 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
 
     i = 0;
     for (bitLenInt p = 0; p < length; p++) {
-        if ((1 << p) & result) {
+        if ((1U << p) & result) {
             i |= qPowers[p];
         }
     }
