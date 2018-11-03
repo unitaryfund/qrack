@@ -231,16 +231,5 @@ private:
     void ShuffleBuffers(QEngineOCLPtr engine1, QEngineOCLPtr engine2);
 
     bitLenInt SeparateMetaCNOT(bool anti, std::vector<bitLenInt> controls, bitLenInt target, bitLenInt length);
-
-    inline bitCapInt log2(bitCapInt n)
-    {
-        bitLenInt pow = 0;
-        bitLenInt p = n >> 1;
-        while (p != 0) {
-            p >>= 1;
-            pow++;
-        }
-        return pow;
-    }
 };
 } // namespace Qrack

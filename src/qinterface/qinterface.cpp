@@ -756,18 +756,20 @@ real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 real1 QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     real1 prob = ONE_R1;
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length; // c accumulates the total bits set in v
+    bitCapInt power;
     std::vector<bitLenInt> bits;
     std::vector<bool> bitsSet;
-    bitLenInt bit;
-    bitCapInt pwr;
-    for (bit = 0; bit < (sizeof(bitCapInt) * 8); bit++) {
-        pwr = (1 << bit);
-        if (pwr & mask) {
-            bits.push_back(bit);
-            bitsSet.push_back(!(!(permutation & pwr)));
-        }
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        power = (v ^ oldV) & oldV;
+        bits.push_back(log2(power));
+        bitsSet.push_back(!(!(power & permutation)));
     }
-    for (bit = 0; bit < (bits.size()); bit++) {
+    for (bitLenInt bit = 0; bit < length; bit++) {
         if (bitsSet[bit]) {
             prob *= Prob(bits[bit]);
         } else {

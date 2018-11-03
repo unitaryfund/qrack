@@ -131,6 +131,17 @@ protected:
 
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
+    inline bitCapInt log2(bitCapInt n)
+    {
+        bitLenInt pow = 0;
+        bitLenInt p = n >> 1;
+        while (p != 0) {
+            p >>= 1;
+            pow++;
+        }
+        return pow;
+    }
+
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : doNormalize(doNorm)
