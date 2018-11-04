@@ -1763,7 +1763,9 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineOCL::GetQuantumState(complex* outputState)
 {
-    knowIsPhaseSeparable = false;
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
 
     LockSync(CL_MAP_WRITE);
     std::copy(stateVec, stateVec + maxQPower, outputState);

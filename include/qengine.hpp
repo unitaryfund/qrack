@@ -38,7 +38,11 @@ public:
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
-    virtual void ApplyM(bitCapInt regMask, bool result, complex nrm);
+    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
+    {
+        bitCapInt powerTest = result ? qPower : 0U;
+        ApplyM(qPower, powerTest, nrm);
+    }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);

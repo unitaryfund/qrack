@@ -70,6 +70,14 @@ QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
 
 complex* QEngineCPU::GetStateVector() { return stateVec; }
 
+complex QEngineCPU::GetAmplitude(bitCapInt perm)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+    return stateVec[perm];
+}
+
 void QEngineCPU::SetPermutation(bitCapInt perm)
 {
     knowIsPhaseSeparable = true;
@@ -107,7 +115,14 @@ void QEngineCPU::SetQuantumState(complex* inputState)
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
-void QEngineCPU::GetQuantumState(complex* outputState) { std::copy(stateVec, stateVec + maxQPower, outputState); }
+void QEngineCPU::GetQuantumState(complex* outputState)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    std::copy(stateVec, stateVec + maxQPower, outputState);
+}
 
     /**
      * Apply a 2x2 matrix to the state vector
