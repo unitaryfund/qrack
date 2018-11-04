@@ -254,9 +254,9 @@ protected:
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
 
-    virtual void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target1,
-        const bitLenInt& target2, const complex* mtrx, const bool& anti, const bool& swap, const bool& squareroot,
-        const bool& inverse);
+    template <typename CF, typename F>
+    void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
+        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f);
 
     void NormalizeState(real1 nrm = -999.0) { /*intentionally left blank*/}
 

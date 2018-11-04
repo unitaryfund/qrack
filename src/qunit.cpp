@@ -163,7 +163,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
         unit->Decohere(mapped, length, dest);
     } else if (dest) {
         dest->CopyState(unit);
-    } else if (unitLength > length) {
+    } else {
         unit->Dispose(mapped, length);
     }
 
@@ -373,12 +373,12 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
         if (shards[bits[i]].unit->GetQubitCount() > 1) {
             real1 oneChance = Prob(bits[i]);
             if (oneChance <= REAL_CLAMP) {
-                if (shards[bits[i]].unit->IsPhaseSeparable()) {
+                if (shards[bits[i]].unit->IsPhaseSeparable(bits[i])) {
                     didSeparate = true;
                     ForceM(bits[i], false);
                 }
             } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
-                if (shards[bits[i]].unit->IsPhaseSeparable()) {
+                if (shards[bits[i]].unit->IsPhaseSeparable(bits[i])) {
                     didSeparate = true;
                     ForceM(bits[i], true);
                 }
@@ -490,7 +490,7 @@ bool QUnit::IsPhaseSeparable(bool forceCheck)
     return toRet;
 }
 
-bool QUnit::IsPhaseSeparable(bitLenInt qubit) { return shards[qubit].unit->IsPhaseSeparable(); }
+bool QUnit::IsPhaseSeparable(bitLenInt qubit) { return shards[qubit].unit->IsPhaseSeparable(qubit); }
 
 real1 QUnit::Prob(bitLenInt qubit)
 {
@@ -596,54 +596,94 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyEitherControlled(controls, controlLen, target, target, mtrx, false, false, false, false);
+    ApplyEitherControlled(controls, controlLen, { target }, false,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->ApplyControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
+            TrySeparate({ target });
+        },
+        [&]() { ApplySingleBit(mtrx, true, target); });
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyEitherControlled(controls, controlLen, target, target, mtrx, true, false, false, false);
+    ApplyEitherControlled(controls, controlLen, { target }, true,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->ApplyAntiControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
+            TrySeparate({ target });
+        },
+        [&]() { ApplySingleBit(mtrx, true, target); });
 }
 
 void QUnit::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, false, false);
+    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->CSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            TrySeparate({ qubit1, qubit2 });
+        },
+        [&]() { Swap(qubit1, qubit2); });
 }
 
 void QUnit::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, false, false);
+    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->AntiCSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            TrySeparate({ qubit1, qubit2 });
+        },
+        [&]() { Swap(qubit1, qubit2); });
 }
 
 void QUnit::CSqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, true, false);
+    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->CSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            TrySeparate({ qubit1, qubit2 });
+        },
+        [&]() { SqrtSwap(qubit1, qubit2); });
 }
 
 void QUnit::AntiCSqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, true, false);
+    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->AntiCSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            TrySeparate({ qubit1, qubit2 });
+        },
+        [&]() { SqrtSwap(qubit1, qubit2); });
 }
 
 void QUnit::CISqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, false, true, true, true);
+    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->CISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            TrySeparate({ qubit1, qubit2 });
+        },
+        [&]() { ISqrtSwap(qubit1, qubit2); });
 }
 
 void QUnit::AntiCISqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    ApplyEitherControlled(controls, controlLen, qubit1, qubit2, NULL, true, true, true, true);
+    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
+        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
+            unit->AntiCISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            TrySeparate({ qubit1, qubit2 });
+        },
+        [&]() { ISqrtSwap(qubit1, qubit2); });
 }
 
-void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target1,
-    const bitLenInt& target2, const complex* mtrx, const bool& anti, const bool& swap, const bool& squareroot,
-    const bool& inverse)
+template <typename CF, typename F>
+void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
 {
     int i;
     real1 prob = ONE_R1;
@@ -666,82 +706,32 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 ForceM(controls[i], !anti);
             } else {
                 isClassical = false;
+                break;
             }
         }
         if (isClassical) {
-            if (swap) {
-                if (squareroot) {
-                    if (inverse) {
-                        ISqrtSwap(target1, target2);
-                    } else {
-                        SqrtSwap(target1, target2);
-                    }
-                } else {
-                    Swap(target1, target2);
-                }
-            } else {
-                ApplySingleBit(mtrx, true, target1);
-            }
+            fn();
             return;
         }
     }
 
-    std::vector<bitLenInt> allBits(controlLen + 1);
-    std::vector<bitLenInt*> ebits(controlLen + 1);
+    std::vector<bitLenInt> allBits(controlLen + targets.size());
+    std::vector<bitLenInt*> ebits(controlLen + targets.size());
     for (i = 0; i < controlLen; i++) {
         allBits[i] = controls[i];
         ebits[i] = &allBits[i];
     }
-    allBits[controlLen] = target1;
-    ebits[controlLen] = &allBits[controlLen];
-    if (swap) {
-        allBits.push_back(target2);
-        ebits.push_back(&allBits[controlLen + 1]);
+    for (i = 0; i < (int)targets.size(); i++) {
+        allBits[controlLen + i] = targets[i];
+        ebits[controlLen + i] = &allBits[controlLen + i];
     }
-    EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
-    std::copy(allBits.begin(), allBits.end(), controlsMapped);
-    if (anti) {
-        if (swap) {
-            if (squareroot) {
-                if (inverse) {
-                    shards[target1].unit->AntiCISqrtSwap(
-                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
-                } else {
-                    shards[target1].unit->AntiCSqrtSwap(
-                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
-                }
-            } else {
-                shards[target1].unit->AntiCSwap(
-                    controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
-            }
-        } else {
-            shards[target1].unit->ApplyAntiControlledSingleBit(
-                controlsMapped, controlLen, shards[target1].mapped, mtrx);
-        }
-    } else {
-        if (swap) {
-            if (squareroot) {
-                if (inverse) {
-                    shards[target1].unit->CISqrtSwap(
-                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
-                } else {
-                    shards[target1].unit->CSqrtSwap(
-                        controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
-                }
-            } else {
-                shards[target1].unit->CSwap(controlsMapped, controlLen, shards[target1].mapped, shards[target2].mapped);
-            }
-        } else {
-            shards[target1].unit->ApplyControlledSingleBit(controlsMapped, controlLen, shards[target1].mapped, mtrx);
-        }
-    }
-    if (swap) {
-        TrySeparate({ target1, target2 });
-    } else {
-        TrySeparate({ target1 });
-    }
+    std::copy(allBits.begin(), allBits.begin() + controlLen, controlsMapped);
+
+    cfn(unit, controlsMapped);
+
     delete[] controlsMapped;
 }
 

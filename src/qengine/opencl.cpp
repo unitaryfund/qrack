@@ -1837,10 +1837,14 @@ void QEngineOCL::UpdateRunningNorm()
     waitVec.clear();
     waitVec.push_back(kernelEvent);
 
+    unsigned int size = (nrmGroupCount / nrmGroupSize);
+    if (size == 0) {
+        size = 1;
+    }
+
     runningNorm = ZERO_R1;
-    queue.enqueueMapBuffer(
-        nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (nrmGroupCount / nrmGroupSize), &waitVec);
-    for (size_t i = 0; i < (nrmGroupCount / nrmGroupSize); i++) {
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * size, &waitVec);
+    for (size_t i = 0; i < size; i++) {
         runningNorm += nrmArray[i];
     }
     cl::Event unmapEvent;
