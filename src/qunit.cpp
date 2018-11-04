@@ -45,24 +45,20 @@ void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 // protected method
 void QUnit::CopyState(QUnit* orig)
 {
-    shards.clear();
     SetQubitCount(orig->GetQubitCount());
+    shards.clear();
 
     /* Set up the shards to refer to the new unit. */
     std::map<QInterfacePtr, QInterfacePtr> otherUnits;
-    for (auto otherShard : orig->shards) {
+    for (auto&& otherShard : orig->shards) {
         QEngineShard shard;
         shard.mapped = otherShard.mapped;
         if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] =
-                CreateQuantumInterface(engine, engine, otherShard.unit->GetQubitCount(), 0, rand_generator);
+            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
+            otherUnits[otherShard.unit]->CopyState(otherShard.unit);
         }
         shard.unit = otherUnits[otherShard.unit];
         shards.push_back(shard);
-    }
-
-    for (auto otherUnit : otherUnits) {
-        otherUnit.second->CopyState(otherUnit.first);
     }
 }
 
@@ -71,8 +67,8 @@ void QUnit::CopyState(QInterfacePtr orig)
     QInterfacePtr unit = CreateQuantumInterface(engine, engine, orig->GetQubitCount(), 0, rand_generator);
     unit->CopyState(orig);
 
-    shards.clear();
     SetQubitCount(orig->GetQubitCount());
+    shards.clear();
 
     /* Set up the shards to refer to the new unit. */
     for (bitLenInt i = 0; i < (orig->GetQubitCount()); i++) {
@@ -100,9 +96,8 @@ void QUnit::SetQuantumState(complex* inputState)
 void QUnit::GetQuantumState(complex* outputState)
 {
     QUnit qUnitCopy(engine, 1, 0);
-    qUnitCopy.CopyState(this);
-    qUnitCopy.EntangleRange(0, qubitCount);
-    qUnitCopy.shards[0].unit->GetQuantumState(outputState);
+    qUnitCopy.CopyState((QUnit*)this);
+    qUnitCopy.EntangleAll()->GetQuantumState(outputState);
 }
 
 complex QUnit::GetAmplitude(bitCapInt perm)
@@ -112,8 +107,8 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     std::map<QInterfacePtr, bitCapInt> perms;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (perm & (1 << i)) {
-            perms[shards[i].unit] |= 1 << shards[i].mapped;
+        if (perm & (1U << i)) {
+            perms[shards[i].unit] |= 1U << shards[i].mapped;
         }
     }
 
@@ -293,6 +288,41 @@ QInterfacePtr QUnit::EntangleRange(
     QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
     OrderContiguous(shards[start1].unit);
     return toRet;
+}
+
+QInterfacePtr QUnit::EntangleAll()
+{
+    std::vector<QInterfacePtr> units;
+    units.reserve(qubitCount);
+
+    QInterfacePtr unit1 = shards[0].unit;
+    std::map<QInterfacePtr, bool> found;
+
+    found[unit1] = true;
+
+    /* Walk through all of the supplied bits and create a unique list to cohere. */
+    for (bitLenInt bit = 1; bit < qubitCount; bit++) {
+        if (found.find(shards[bit].unit) == found.end()) {
+            found[shards[bit].unit] = true;
+            units.push_back(shards[bit].unit);
+        }
+    }
+
+    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
+    if (units.size() != 0) {
+        auto&& offsets = unit1->QInterface::Cohere(units);
+
+        /* Since each unit will be collapsed in-order, one set of bits at a time. */
+        for (auto&& shard : shards) {
+            auto search = offsets.find(shard.unit);
+            if (search != offsets.end()) {
+                shard.mapped += search->second;
+                shard.unit = unit1;
+            }
+        }
+    }
+
+    return unit1;
 }
 
 /*
@@ -505,8 +535,8 @@ real1 QUnit::ProbAll(bitCapInt perm)
     std::map<QInterfacePtr, bitCapInt> perms;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (perm & (1 << i)) {
-            perms[shards[i].unit] |= 1 << shards[i].mapped;
+        if (perm & (1U << i)) {
+            perms[shards[i].unit] |= 1U << shards[i].mapped;
         }
     }
 

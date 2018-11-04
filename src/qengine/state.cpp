@@ -90,7 +90,7 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
     ResetStateVec(AllocStateVec(maxQPower));
 
     QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
-    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
+    std::copy(src->stateVec, src->stateVec + src->maxQPower, stateVec);
 }
 
 void QEngineCPU::ResetStateVec(complex* nStateVec)

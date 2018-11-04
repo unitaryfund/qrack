@@ -228,6 +228,7 @@ protected:
     QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
     QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
+    QInterfacePtr EntangleAll();
 
     template <class It> QInterfacePtr EntangleIterator(It first, It last);
 
