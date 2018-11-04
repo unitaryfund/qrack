@@ -23,6 +23,8 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
             stateVec[i] = complex(ZERO_R1, ZERO_R1);
         }
     });
+
+    UpdateRunningNorm();
 }
 
 // Apply X ("not") gate to each bit in "length," starting from bit index

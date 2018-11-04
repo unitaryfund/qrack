@@ -89,7 +89,7 @@ bool QEngine::M(bitLenInt qubit)
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
+bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
 {
     // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
     // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
@@ -100,10 +100,18 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
 
     // Single bit operations are better optimized for this special case:
     if (length == 1) {
-        if (M(bits[0])) {
-            return (1U << bits[0]);
+        if (values == NULL) {
+            if (M(bits[0])) {
+                return (1U << bits[0]);
+            } else {
+                return 0;
+            }
         } else {
-            return 0;
+            if (ForceM(bits[0], values[0])) {
+                return (1U << bits[0]);
+            } else {
+                return 0;
+            }
         }
     }
 
@@ -113,7 +121,6 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
 
     bitCapInt i;
 
-    real1 prob = Rand();
     real1 angle = Rand() * 2.0 * M_PI;
     real1 cosine = cos(angle);
     real1 sine = sin(angle);
@@ -121,15 +128,31 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
     bitCapInt* qPowers = new bitCapInt[length];
     bitCapInt regMask = 0;
     for (i = 0; i < length; i++) {
-        qPowers[i] = 1 << bits[i];
+        qPowers[i] = 1U << bits[i];
         regMask |= qPowers[i];
     }
     std::sort(qPowers, qPowers + length);
 
     bitCapInt lengthPower = 1 << length;
-    real1* probArray = new real1[lengthPower]();
     real1 nrmlzr = ONE_R1;
     bitCapInt lcv, result;
+    complex nrm;
+
+    if (values != NULL) {
+        result = 0U;
+        for (bitLenInt j = 0; j < length; j++) {
+            result |= values[j] ? (1U << bits[j]) : 0U;
+        }
+        nrmlzr = ProbMask(regMask, result);
+        nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+        ApplyM(regMask, result, nrm);
+
+        // No need to check against probabilities:
+        return result;
+    }
+
+    real1 prob = Rand();
+    real1* probArray = new real1[lengthPower]();
 
     ProbMaskAll(regMask, probArray);
 
@@ -170,7 +193,7 @@ bitCapInt QEngine::M(const bitLenInt* bits, const bitLenInt& length)
 
     delete[] qPowers;
 
-    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+    nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
 
     ApplyM(regMask, result, nrm);
 

@@ -728,7 +728,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 }
 
 // Bit-wise apply measurement gate to a register
-bitCapInt QInterface::M(const bitLenInt* bits, const bitLenInt& length)
+bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
 {
     // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
     // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
@@ -738,8 +738,14 @@ bitCapInt QInterface::M(const bitLenInt* bits, const bitLenInt& length)
     }
 
     bitCapInt result = 0;
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        result |= M(bits[bit]) ? (1U << (bits[bit])) : 0;
+    if (values == NULL) {
+        for (bitLenInt bit = 0; bit < length; bit++) {
+            result |= M(bits[bit]) ? (1U << (bits[bit])) : 0;
+        }
+    } else {
+        for (bitLenInt bit = 0; bit < length; bit++) {
+            result |= ForceM(bits[bit], values[bit]) ? (1U << (bits[bit])) : 0;
+        }
     }
     return result;
 }

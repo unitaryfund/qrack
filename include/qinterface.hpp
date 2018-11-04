@@ -1181,7 +1181,10 @@ public:
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length);
+    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
+
+    /** Measure bits with indices in array, and return a mask of the results */
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from

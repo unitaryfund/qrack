@@ -437,6 +437,8 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
         &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
+
+    UpdateRunningNorm();
 }
 
 void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
@@ -474,6 +476,8 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
         &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
+
+    UpdateRunningNorm();
 }
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)

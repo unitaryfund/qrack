@@ -91,6 +91,10 @@ void QUnit::SetQuantumState(complex* inputState)
         shard.unit = unit;
         shard.mapped = idx++;
     }
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        TrySeparate({ i });
+    }
 }
 
 void QUnit::GetQuantumState(complex* outputState)
