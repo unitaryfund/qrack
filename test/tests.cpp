@@ -1706,6 +1706,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
     complex state[1U << 4U];
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0x0b, rng);
     qftReg->GetQuantumState(state);
+    qftReg->SetQuantumState(state);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
