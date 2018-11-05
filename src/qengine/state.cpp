@@ -545,6 +545,10 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 // Returns probability of permutation of the register
 real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
     int num_threads = GetConcurrencyLevel();
     real1* probs = new real1[num_threads]();
 
@@ -566,6 +570,10 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 // Returns probability of permutation of the mask
 real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
     bitCapInt v = mask; // count the number of bits set in v
     bitCapInt oldV;
     bitLenInt length; // c accumulates the total bits set in v

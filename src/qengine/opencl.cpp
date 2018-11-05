@@ -233,6 +233,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
+
     nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
     // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
     cl::Event fillEvent;
