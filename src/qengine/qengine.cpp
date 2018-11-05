@@ -208,12 +208,20 @@ void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     ApplyControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
+
+    if (controlLen != 0) {
+        UpdateRunningNorm();
+    }
 }
 
 void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     ApplyAntiControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
+
+    if (controlLen != 0) {
+        UpdateRunningNorm();
+    }
 }
 
 void QEngine::CSwap(
