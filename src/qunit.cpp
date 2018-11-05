@@ -114,7 +114,9 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         if (perms.find(shards[i].unit) == perms.end()) {
             perms[shards[i].unit] = 0U;
         }
-        perms[shards[i].unit] |= 1U << shards[i].mapped;
+        if (perm & (1U << i)) {
+            perms[shards[i].unit] |= 1U << shards[i].mapped;
+        }
     }
 
     for (auto&& qi : perms) {
