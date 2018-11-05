@@ -207,13 +207,13 @@ void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyControlled2x2(controls, controlLen, target, mtrx, false);
+    ApplyControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
 }
 
 void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyAntiControlled2x2(controls, controlLen, target, mtrx, false);
+    ApplyAntiControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
 }
 
 void QEngine::CSwap(
