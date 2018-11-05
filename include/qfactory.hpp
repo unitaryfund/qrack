@@ -17,6 +17,8 @@
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
 #include "qunitmulti.hpp"
+#else 
+#include "qunit.hpp"
 #endif
 
 namespace Qrack {
