@@ -952,6 +952,35 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     shards[start].unit->INC(toMod, shards[start].mapped, length);
 }
 
+void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        INC(toMod, start, length);
+        return;
+    }
+
+    std::vector<bitLenInt> bits(length + controlLen);
+    std::vector<bitLenInt*> ebits(length + controlLen);
+    for (auto i = 0; i < length; i++) {
+        bits[i] = i + start;
+        ebits[i] = &bits[i];
+    }
+    for (auto i = 0; i < controlLen; i++) {
+        bits[i + length] = controls[i];
+        ebits[i + length] = &bits[i + length];
+    }
+
+    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    OrderContiguous(shards[start].unit);
+
+    bitLenInt* controlsMapped = new bitLenInt[controlLen];
+    std::copy(bits.begin() + length, bits.end(), controlsMapped);
+
+    unit->CINC(toMod, bits[0], length, controlsMapped, controlLen);
+
+    delete[] controlsMapped;
+}
+
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     /*

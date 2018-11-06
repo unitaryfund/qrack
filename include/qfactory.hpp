@@ -17,7 +17,7 @@
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
 #include "qunitmulti.hpp"
-#else 
+#else
 #include "qunit.hpp"
 #endif
 

@@ -1279,6 +1279,37 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
+{
+    int i;
+
+    bitLenInt controls[1] = { 8 };
+
+    qftReg->SetPermutation(250);
+
+    for (i = 0; i < 8; i++) {
+        // Turn control on
+        qftReg->X(controls[0]);
+
+        qftReg->CINC(1, 0, 8, controls, 1);
+        if (i < 5) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
+        }
+
+        // Turn control off
+        qftReg->X(controls[0]);
+
+        qftReg->CINC(1, 0, 8, controls, 1);
+        if (i < 5) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
+        }
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
     int i;

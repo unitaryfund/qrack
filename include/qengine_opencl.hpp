@@ -115,6 +115,8 @@ public:
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -194,6 +196,8 @@ protected:
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
         bitCapInt valuesLength = 0, bool isParallel = false);
+    void CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
+        const bitLenInt controlLen, unsigned char* values = NULL, bitCapInt valuesLength = 0, bool isParallel = false);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
@@ -204,6 +208,8 @@ protected:
     /* Utility functions used by the operations above. */
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
     void INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
+    void CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
+        const bitLenInt* controls, const bitLenInt controlLen);
     void INTC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
     void INTS(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,

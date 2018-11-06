@@ -1085,6 +1085,10 @@ public:
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
 
+    /** Add integer (without sign, with controls) */
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
+
     /** Add integer (without sign, with carry) */
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 

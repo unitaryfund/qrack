@@ -523,6 +523,41 @@ void kernel inc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     }
 }
 
+void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
+{
+    bitCapInt ID, Nthreads, i, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - 1;
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toAdd = bitCapIntPtr[5];
+    bitCapInt controlLen = bitCapIntPtr[6];
+    bitCapInt controlMask = bitCapIntPtr[7];
+    bitCapInt otherRes, inRes;
+    bitCapInt iHigh, iLow;
+    bitLenInt p;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < controlLen; p++) {
+            iLow = iHigh & (controlPowers[p] - 1);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1;
+        }
+        i |= iHigh;
+
+        otherRes = (i & otherMask);
+        inRes = (i & inOutMask);
+
+        inRes = (((lengthMask + 1 + (inRes >> inOutStart)) - toAdd) & lengthMask) << inOutStart;
+        nStateVec[i | controlMask] = stateVec[inRes | otherRes | controlMask];
+    }
+}
+
 void kernel dec(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, i;

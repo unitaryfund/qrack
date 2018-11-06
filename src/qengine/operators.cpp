@@ -162,6 +162,47 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     }
 }
 
+/// Add integer (without sign, with controls)
+void QEngineCPU::CINC(
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt lengthMask = lengthPower - 1;
+    toAdd &= lengthMask;
+    if ((length > 0) && (toAdd > 0)) {
+        bitCapInt inOutMask = lengthMask << inOutStart;
+        bitCapInt otherMask = maxQPower - 1;
+
+        bitCapInt* controlPowers = new bitCapInt[controlLen];
+        bitCapInt controlMask = 0U;
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            controlPowers[i] = 1U << controls[i];
+            controlMask |= controlPowers[i];
+        }
+        std::sort(controlPowers, controlPowers + controlLen);
+
+        otherMask ^= inOutMask | controlMask;
+
+        complex* nStateVec = AllocStateVec(maxQPower);
+        std::copy(stateVec, stateVec + maxQPower, nStateVec);
+
+        par_for_mask(0, maxQPower, controlPowers, controlLen, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt inOutRes = lcv & inOutMask;
+            bitCapInt inOutInt = inOutRes >> inOutStart;
+            bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
+            if (outInt >= lengthPower) {
+                outInt -= lengthPower;
+            }
+            nStateVec[(outInt << inOutStart) | otherRes | controlMask] = stateVec[lcv | controlMask];
+        });
+
+        delete[] controlPowers;
+
+        ResetStateVec(nStateVec);
+    }
+}
+
 /// Add BCD integer (without sign)
 void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {

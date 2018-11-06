@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <memory>
 
 #include "oclengine.hpp"
@@ -282,20 +284,41 @@ void QEngineOCL::SetPermutation(bitCapInt perm)
 void QEngineOCL::DispatchCall(
     OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower, bool isParallel)
 {
+    CDispatchCall(api_call, bciArgs, NULL, 0, values, valuesPower, isParallel);
+}
+
+void QEngineOCL::CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
+    const bitLenInt controlLen, unsigned char* values, bitCapInt valuesPower, bool isParallel)
+{
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+
+    /* Allocate a temporary nStateVec, or use the one supplied. */
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer;
+    cl::Buffer controlBuffer;
+    if (controlLen > 0) {
+        controlBuffer =
+            cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * controlLen, controlPowers);
+    }
+
     device_context->wait_events.resize(2);
 
     queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
         &(device_context->wait_events[0]));
     queue.flush();
 
-    /* Allocate a temporary nStateVec, or use the one supplied. */
-    complex* nStateVec = AllocStateVec(maxQPower);
-    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
+    nStateBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
-    queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
-        &(device_context->wait_events[1]));
-    queue.flush();
+
+    if (controlLen > 0) {
+        queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, &waitVec,
+            &(device_context->wait_events[1]));
+        queue.flush();
+    } else {
+        queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
+            &(device_context->wait_events[1]));
+        queue.flush();
+    }
 
     bitCapInt maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
@@ -316,6 +339,9 @@ void QEngineOCL::DispatchCall(
                 context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         }
         ocl.call.setArg(3, loadBuffer);
+    }
+    if (controlLen > 0) {
+        ocl.call.setArg(3, controlBuffer);
     }
 
     cl::Event kernelEvent;
@@ -360,7 +386,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     queue.flush();
 
     cl::Buffer powersBuffer = cl::Buffer(
-        context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(bitCapInt) * bitCount, (void*)qPowersSorted);
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * bitCount, (void*)qPowersSorted);
 
     doCalcNorm &= (bitCount == 1);
 
@@ -1197,10 +1223,41 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, co
     DispatchCall(api_call, bciArgs);
 }
 
+/// Add or Subtract integer (without sign or carry, with controls)
+void QEngineOCL::CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
+    const bitLenInt* controls, const bitLenInt controlLen)
+{
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt regMask = (lengthPower - 1) << start;
+
+    bitCapInt controlMask = 0U;
+    bitCapInt* controlPowers = new bitCapInt[controlLen];
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        controlPowers[i] = 1U << controls[i];
+        controlMask |= controlPowers[i];
+    }
+    std::sort(controlPowers, controlPowers + controlLen);
+
+    bitCapInt otherMask = (maxQPower - 1) ^ (regMask | controlMask);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> controlLen, regMask, otherMask, lengthPower, start, toMod,
+        controlLen, controlMask, 0, 0 };
+
+    CDispatchCall(api_call, bciArgs, controlPowers, controlLen);
+
+    delete[] controlPowers;
+}
+
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
 {
     INT(OCL_API_INC, toAdd, start, length);
+}
+
+void QEngineOCL::CINC(
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    CINT(OCL_API_CINC, toAdd, inOutStart, length, controls, controlLen);
 }
 
 /** Subtract integer (without sign, with carry) */

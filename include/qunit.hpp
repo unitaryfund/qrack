@@ -151,6 +151,8 @@ public:
      */
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
     virtual void INCSC(
