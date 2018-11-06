@@ -57,6 +57,7 @@ enum OCLAPI {
     OCL_API_INC,
     OCL_API_CINC,
     OCL_API_DEC,
+    OCL_API_CDEC,
     OCL_API_INCC,
     OCL_API_DECC,
     OCL_API_INCS,

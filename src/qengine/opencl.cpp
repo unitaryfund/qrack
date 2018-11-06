@@ -1266,6 +1266,12 @@ void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt len
     INT(OCL_API_DEC, toSub, start, length);
 }
 
+void QEngineOCL::CDEC(
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    CINT(OCL_API_CDEC, toSub, inOutStart, length, controls, controlLen);
+}
+
 /// Add or Subtract integer (without sign, with carry)
 void QEngineOCL::INTC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)

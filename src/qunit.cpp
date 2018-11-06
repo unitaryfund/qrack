@@ -952,7 +952,8 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     shards[start].unit->INC(toMod, shards[start].mapped, length);
 }
 
-void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CINT(
+    CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         INC(toMod, start, length);
@@ -976,9 +977,19 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
     std::copy(bits.begin() + length, bits.end(), controlsMapped);
 
-    unit->CINC(toMod, bits[0], length, controlsMapped, controlLen);
+    ((*unit).*fn)(toMod, bits[0], length, controlsMapped, controlLen);
 
     delete[] controlsMapped;
+}
+
+void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    CINT(&QInterface::CINC, toMod, start, length, controls, controlLen);
+}
+
+void QUnit::CDEC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    CINT(&QInterface::CDEC, toMod, start, length, controls, controlLen);
 }
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
