@@ -1313,24 +1313,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec")
 {
     int i;
-    int start = 0x08;
 
     bitLenInt controls[1] = { 8 };
 
-    qftReg->SetPermutation(start);
+    qftReg->SetPermutation(0x08);
     for (i = 0; i < 8; i++) {
         // Turn control on
         qftReg->X(controls[0]);
 
         qftReg->CDEC(9, 0, 8, controls, 1);
-        start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
 
         // Turn control off
         qftReg->X(controls[0]);
 
         qftReg->CDEC(9, 0, 8, controls, 1);
-        start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
     }
 }

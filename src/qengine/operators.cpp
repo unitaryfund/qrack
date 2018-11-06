@@ -166,6 +166,11 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 void QEngineCPU::CINC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        INC(toAdd, inOutStart, length);
+        return;
+    }
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt lengthMask = lengthPower - 1;
     toAdd &= lengthMask;
@@ -520,6 +525,11 @@ void QEngineCPU::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 void QEngineCPU::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        DEC(toSub, inOutStart, length);
+        return;
+    }
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt lengthMask = lengthPower - 1;
     toSub &= lengthMask;

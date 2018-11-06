@@ -955,11 +955,6 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 void QUnit::CINT(
     CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0) {
-        INC(toMod, start, length);
-        return;
-    }
-
     std::vector<bitLenInt> bits(length + controlLen);
     std::vector<bitLenInt*> ebits(length + controlLen);
     for (auto i = 0; i < length; i++) {
@@ -984,11 +979,21 @@ void QUnit::CINT(
 
 void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        INC(toMod, start, length);
+        return;
+    }
+
     CINT(&QInterface::CINC, toMod, start, length, controls, controlLen);
 }
 
 void QUnit::CDEC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        DEC(toMod, start, length);
+        return;
+    }
+
     CINT(&QInterface::CDEC, toMod, start, length, controls, controlLen);
 }
 

@@ -1257,6 +1257,11 @@ void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt len
 void QEngineOCL::CINC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        INC(toAdd, inOutStart, length);
+        return;
+    }
+
     CINT(OCL_API_CINC, toAdd, inOutStart, length, controls, controlLen);
 }
 
@@ -1269,6 +1274,11 @@ void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt len
 void QEngineOCL::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        DEC(toSub, inOutStart, length);
+        return;
+    }
+
     CINT(OCL_API_CDEC, toSub, inOutStart, length, controls, controlLen);
 }
 
