@@ -1504,89 +1504,193 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 }
 
 /** Multiply by integer */
-void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
+void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    if (clearCarry) {
+    bitCapInt lowPower = 1U << length;
+    toMul %= lowPower;
+    if (toMul == 0) {
+        SetReg(inOutStart, length, 0);
         SetReg(carryStart, length, 0);
+        return;
     }
-    if ((length > 0) && (toMul != 1)) {
-        bitCapInt lowMask = (1 << length) - 1;
-        bitCapInt highMask = lowMask << length;
-        bitCapInt inOutMask = lowMask << inOutStart;
-        bitCapInt carryMask = lowMask << carryStart;
-        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
 
-        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMul, lowMask, highMask, inOutMask, carryMask,
-            otherMask, length, inOutStart, carryStart };
-
-        DispatchCall(OCL_API_MUL, bciArgs);
-    }
+    MULx(OCL_API_MUL, toMul, inOutStart, carryStart, length);
 }
 
 /** Divide by integer */
 void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    if (toDiv == 0) {
-        throw "DIV by zero";
+    bitCapInt lowPower = 1U << length;
+    if ((toDiv == 0) || (toDiv >= lowPower)) {
+        throw "DIV by zero (or modulo 0 to register size)";
     }
-    if ((length > 0) && (toDiv != 1)) {
-        bitCapInt lowMask = (1 << length) - 1;
-        bitCapInt highMask = lowMask << length;
-        bitCapInt inOutMask = lowMask << inOutStart;
-        bitCapInt carryMask = lowMask << carryStart;
-        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
 
-        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toDiv, lowMask, highMask, inOutMask, carryMask,
-            otherMask, length, inOutStart, carryStart };
-
-        DispatchCall(OCL_API_DIV, bciArgs);
-    }
+    MULx(OCL_API_DIV, toDiv, inOutStart, carryStart, length);
 }
 
 /** Controlled multiplication by integer */
-void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
-    bitLenInt length, bool clearCarry)
+void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
-    if (clearCarry) {
-        SetReg(carryStart, length, 0);
+    if (controlLen == 0) {
+        MUL(toMul, inOutStart, carryStart, length);
     }
+
+    SetReg(carryStart, length, 0);
+
+    bitCapInt lowPower = 1U << length;
+    toMul %= lowPower;
     if (toMul == 0) {
         SetReg(inOutStart, length, 0);
         return;
     }
-    if ((length > 0) && (toMul != 1)) {
-        bitCapInt lowMask = (1 << length) - 1;
-        bitCapInt inOutMask = lowMask << inOutStart;
-        bitCapInt carryMask = lowMask << carryStart;
-        bitCapInt controlPower = 1 << controlBit;
-        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
 
-        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (length + 1), toMul, lowMask, controlPower, inOutMask,
-            carryMask, otherMask, length, inOutStart, carryStart };
-
-        DispatchCall(OCL_API_CMUL, bciArgs);
+    if (toMul == 1) {
+        return;
     }
+
+    CMULx(OCL_API_CMUL, toMul, inOutStart, carryStart, length, controls, controlLen);
 }
 
 /** Controlled division by integer */
-void QEngineOCL::CDIV(
-    bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
+void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
-    if (toDiv == 0) {
-        throw "DIV by zero";
+    if (controlLen == 0) {
+        DIV(toDiv, inOutStart, carryStart, length);
     }
-    if ((length > 0) && (toDiv != 1)) {
-        bitCapInt lowMask = (1 << length) - 1;
-        bitCapInt inOutMask = lowMask << inOutStart;
-        bitCapInt carryMask = lowMask << carryStart;
-        bitCapInt controlPower = 1 << controlBit;
-        bitCapInt otherMask = (maxQPower - 1) ^ (inOutMask | carryMask);
 
-        bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (length + 1), toDiv, lowMask, controlPower, inOutMask,
-            carryMask, otherMask, length, inOutStart, carryStart };
-
-        DispatchCall(OCL_API_CDIV, bciArgs);
+    bitCapInt lowPower = 1U << length;
+    if (toDiv == 0 || (toDiv >= lowPower)) {
+        throw "DIV by zero (or modulo 0 to register size)";
     }
+
+    if (toDiv == 1) {
+        return;
+    }
+
+    CMULx(OCL_API_CDIV, toDiv, inOutStart, carryStart, length, controls, controlLen);
+}
+
+void QEngineOCL::MULx(
+    OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart, const bitLenInt length)
+{
+    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt inOutMask = lowMask << inOutStart;
+    bitCapInt carryMask = lowMask << carryStart;
+    bitCapInt skipMask = (1U << carryStart) - 1U;
+    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMod, inOutMask, carryMask, otherMask, length, inOutStart,
+        carryStart, skipMask, 0 };
+
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+
+    /* Allocate a temporary nStateVec, or use the one supplied. */
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+
+    device_context->wait_events.resize(2);
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
+    queue.flush();
+
+    queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
+        &(device_context->wait_events[1]));
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    OCLDeviceCall ocl = device_context->Reserve(api_call);
+    clFinish();
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, *nStateBuffer);
+
+    cl::Event kernelEvent;
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+
+    kernelEvent.wait();
+    ResetStateVec(nStateVec, nStateBuffer);
+}
+
+void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
+    const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen)
+{
+    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt inOutMask = lowMask << inOutStart;
+    bitCapInt carryMask = lowMask << carryStart;
+
+    bitCapInt* skipPowers = new bitCapInt[controlLen + length];
+    bitCapInt* controlPowers = new bitCapInt[controlLen];
+    bitCapInt controlMask = 0U;
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        controlPowers[i] = 1U << controls[i];
+        skipPowers[i] = controlPowers[i];
+        controlMask |= controlPowers[i];
+    }
+    for (bitLenInt i = 0U; i < length; i++) {
+        skipPowers[i + controlLen] = 1U << (carryStart + i);
+    }
+    std::sort(skipPowers, skipPowers + controlLen + length);
+
+    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask | controlMask);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (controlLen + length), toMod, controlLen, controlMask, inOutMask,
+        carryMask, otherMask, length, inOutStart, carryStart };
+
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+
+    /* Allocate a temporary nStateVec, or use the one supplied. */
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+
+    cl::Buffer controlBuffer = cl::Buffer(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * ((controlLen * 2) + length), skipPowers);
+
+    device_context->wait_events.resize(2);
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
+        &(device_context->wait_events[0]));
+    queue.flush();
+
+    queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
+        &(device_context->wait_events[1]));
+    queue.flush();
+
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    OCLDeviceCall ocl = device_context->Reserve(api_call);
+    clFinish();
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, ulongBuffer);
+    ocl.call.setArg(2, *nStateBuffer);
+    ocl.call.setArg(3, controlBuffer);
+
+    cl::Event kernelEvent;
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+
+    kernelEvent.wait();
+    ResetStateVec(nStateVec, nStateBuffer);
+
+    delete[] skipPowers;
 }
 
 /** Set 8 bit register bits based on read from classical memory */

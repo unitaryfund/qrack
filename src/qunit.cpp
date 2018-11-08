@@ -1102,10 +1102,10 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
     INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
 }
 
-void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCarry)
+void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     EntangleRange(inOutStart, length, carryStart, length);
-    shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length, clearCarry);
+    shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
@@ -1114,19 +1114,53 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
-void QUnit::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length,
-    bool clearCarry)
+void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
-    EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
-    shards[inOutStart].unit->CMUL(
-        toMul, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length, clearCarry);
+    std::vector<bitLenInt> bits(2 * length + controlLen);
+    std::vector<bitLenInt*> ebits(2 * length + controlLen);
+    for (auto i = 0; i < length; i++) {
+        bits[i] = i + start;
+        bits[i + length] = i + carryStart;
+        ebits[i] = &bits[i];
+        ebits[i + length] = &bits[i + length];
+    }
+    for (auto i = 0; i < controlLen; i++) {
+        bits[i + 2 * length] = controls[i];
+        ebits[i + 2 * length] = &bits[i + 2 * length];
+    }
+
+    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    OrderContiguous(shards[start].unit);
+
+    bitLenInt* controlsMapped = new bitLenInt[controlLen];
+    std::copy(bits.begin() + (2 * length), bits.end(), controlsMapped);
+
+    ((*unit).*fn)(toMod, bits[0], bits[length], length, controlsMapped, controlLen);
+
+    delete[] controlsMapped;
 }
 
-void QUnit::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length)
+void QUnit::CMUL(
+    bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    EntangleRange(inOutStart, length, carryStart, length, controlBit, 1);
-    shards[inOutStart].unit->CDIV(
-        toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, shards[controlBit].mapped, length);
+    if (controlLen == 0) {
+        MUL(toMod, start, carryStart, length);
+        return;
+    }
+
+    CMULx(&QInterface::CMUL, toMod, start, carryStart, length, controls, controlLen);
+}
+
+void QUnit::CDIV(
+    bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        DIV(toMod, start, carryStart, length);
+        return;
+    }
+
+    CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controls, controlLen);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)

@@ -1135,19 +1135,18 @@ public:
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Multiply by integer */
-    virtual void MUL(
-        bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCary = false) = 0;
+    virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
 
     /** Divide by integer */
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
 
     /** Controlled multiplication by integer */
-    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
-        bitLenInt length, bool clearCarry = false) = 0;
+    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled division by power of integer */
-    virtual void CDIV(
-        bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length) = 0;
+    virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** @} */
 

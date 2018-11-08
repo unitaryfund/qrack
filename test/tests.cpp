@@ -1310,28 +1310,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec")
-{
-    int i;
-
-    bitLenInt controls[1] = { 8 };
-
-    qftReg->SetPermutation(0x08);
-    for (i = 0; i < 8; i++) {
-        // Turn control on
-        qftReg->X(controls[0]);
-
-        qftReg->CDEC(9, 0, 8, controls, 1);
-        REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
-
-        // Turn control off
-        qftReg->X(controls[0]);
-
-        qftReg->CDEC(9, 0, 8, controls, 1);
-        REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
-    }
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
     int i;
@@ -1436,6 +1414,28 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec")
+{
+    int i;
+
+    bitLenInt controls[1] = { 8 };
+
+    qftReg->SetPermutation(0x08);
+    for (i = 0; i < 8; i++) {
+        // Turn control on
+        qftReg->X(controls[0]);
+
+        qftReg->CDEC(9, 0, 8, controls, 1);
+        REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
+
+        // Turn control off
+        qftReg->X(controls[0]);
+
+        qftReg->CDEC(9, 0, 8, controls, 1);
+        REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
 {
     int i;
@@ -1443,10 +1443,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
     qftReg->SetPermutation(3);
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
-        qftReg->MUL(2, 0, 8, 8, true);
+        qftReg->SetReg(8, 8, 0x00);
+        qftReg->MUL(2, 0, 8, 8);
+        res &= 0xFF;
         res *= 2;
         REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
-        res &= 255;
     }
 }
 
@@ -1467,10 +1468,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
 {
     int i;
 
+    bitLenInt controls[1] = { 16 };
+
     qftReg->SetPermutation(3 | (1 << 16));
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
-        qftReg->CMUL(2, 0, 8, 16, 8, true);
+        qftReg->CMUL(2, 0, 8, 8, controls, 1);
         if ((i % 2) == 0) {
             res *= 2;
         }
@@ -1484,10 +1487,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 {
     int i;
 
+    bitLenInt controls[1] = { 16 };
+
     qftReg->SetPermutation(256 | (1 << 16));
     bitCapInt res = 256;
     for (i = 0; i < 8; i++) {
-        qftReg->CDIV(2, 0, 8, 16, 8);
+        qftReg->CDIV(2, 0, 8, 8, controls, 1);
         if ((i % 2) == 0) {
             res /= 2;
         }
@@ -2223,43 +2228,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
             HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
     }
     free(toLoad);
-}
-
-void ExpMod(QInterfacePtr qftReg, bitCapInt base, bitLenInt baseStart, bitLenInt baseLen, bitLenInt expStart,
-    bitLenInt expLen, bitLenInt carryStart, bitLenInt recordStart)
-{
-    bitCapInt workingPower = base;
-    bitLenInt regStart1, regStart2;
-    bitLenInt i;
-    for (i = 0; i < expLen; i++) {
-        if (i & 1) {
-            regStart1 = carryStart;
-            regStart2 = baseStart;
-        } else {
-            regStart1 = baseStart;
-            regStart2 = carryStart;
-        }
-        qftReg->CMUL(workingPower, regStart1, recordStart, expStart + i, baseLen, false);
-        qftReg->CNOT(regStart1, regStart2, baseLen);
-        qftReg->CDIV(workingPower, regStart1, recordStart, expStart + i, baseLen);
-        qftReg->SetReg(regStart1, baseLen, 0);
-        workingPower *= base;
-    }
-    if (i & 1) {
-        qftReg->CNOT(carryStart, baseStart, baseLen);
-        qftReg->SetReg(carryStart, baseLen, 0);
-    }
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_expmod")
-{
-    bitLenInt baseLen = 4;
-    bitLenInt expLen = 2;
-    qftReg->SetPermutation(1);
-    // Last bits are exponent:
-    qftReg->SetReg(20 - expLen, expLen, 2);
-    ExpMod(qftReg, 5, 0, baseLen, 20 - expLen, expLen, 2 * baseLen, baseLen);
-    REQUIRE_THAT(qftReg, HasProbability(0, baseLen, 25));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
