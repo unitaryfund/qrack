@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "common/parallel_for.hpp"
+#include "common/qrack_types.hpp"
 
 // The state vector must be an aligned piece of RAM, to be used by OpenCL.
 // We align to an ALIGN_SIZE byte boundary.

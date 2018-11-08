@@ -1,3 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+//
+// This is a multithreaded, universal quantum register simulation, allowing
+// (nonphysical) register cloning and direct measurement of probability and
+// phase, to leverage what advantages classical emulation of qubits can have.
+//
+// Licensed under the GNU General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// for details.
+
+#pragma once
+
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -14,7 +28,7 @@
 #define min_norm 1e-9f
 #define polar(A, B) std::polar(A, B)
 #else
-#include "common/complex16simd.hpp"
+#include "complex16simd.hpp"
 #define complex Complex16Simd
 #define real1 double
 #define ZERO_R1 0.0
