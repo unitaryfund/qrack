@@ -1350,7 +1350,7 @@ void kernel cmul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
             partControlMask = 0;
             for (k = 0; k < controlLen; k++) {
                 if (j & (1 << k)) {
-                    partControlMask |= controlPowers[(controlLen + len) + k];
+                    partControlMask |= controlPowers[controlLen + len + k];
                 }
             }
             nStateVec[i | partControlMask] = stateVec[i | partControlMask];
@@ -1400,7 +1400,7 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
             partControlMask = 0;
             for (k = 0; k < controlLen; k++) {
                 if (j & (1 << k)) {
-                    partControlMask |= controlPowers[(controlLen + len) + k];
+                    partControlMask |= controlPowers[controlLen + len + k];
                 }
             }
             nStateVec[i | partControlMask] = stateVec[i | partControlMask];

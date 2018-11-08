@@ -1506,11 +1506,12 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 /** Multiply by integer */
 void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    SetReg(carryStart, length, 0);
+
     bitCapInt lowPower = 1U << length;
     toMul %= lowPower;
     if (toMul == 0) {
         SetReg(inOutStart, length, 0);
-        SetReg(carryStart, length, 0);
         return;
     }
 
@@ -1534,6 +1535,7 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 {
     if (controlLen == 0) {
         MUL(toMul, inOutStart, carryStart, length);
+        return;
     }
 
     SetReg(carryStart, length, 0);
@@ -1558,6 +1560,7 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 {
     if (controlLen == 0) {
         DIV(toDiv, inOutStart, carryStart, length);
+        return;
     }
 
     bitCapInt lowPower = 1U << length;

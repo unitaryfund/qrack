@@ -925,6 +925,7 @@ void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 {
     if (controlLen == 0) {
         MUL(toMul, inOutStart, carryStart, length);
+        return;
     }
 
     SetReg(carryStart, length, 0);
@@ -991,6 +992,7 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 {
     if (controlLen == 0) {
         DIV(toDiv, inOutStart, carryStart, length);
+        return;
     }
 
     bitCapInt lowPower = 1U << length;
