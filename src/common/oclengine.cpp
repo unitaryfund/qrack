@@ -14,13 +14,14 @@
 #include <memory>
 
 #include "oclengine.hpp"
-#include "qenginecl.hpp"
 
 #if ENABLE_COMPLEX8
 #include "qheader_floatcl.hpp"
 #else
 #include "qheader_doublecl.hpp"
 #endif
+
+#include "qenginecl.hpp"
 
 namespace Qrack {
 
