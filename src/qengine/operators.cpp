@@ -10,8 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include <iostream>
-
 #include "qengine_cpu.hpp"
 
 namespace Qrack {
@@ -895,8 +893,7 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     bitCapInt lowPower = 1U << length;
-    toDiv %= lowPower;
-    if (toDiv == 0) {
+    if ((toDiv == 0) || (toDiv >= lowPower)) {
         throw "DIV by zero (or modulo 0 to register size)";
     }
     if ((length > 0U) && (toDiv != 1U)) {
@@ -996,7 +993,7 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     bitCapInt lowPower = 1U << length;
-    if (toDiv == 0 || (toDiv >= lowPower)) {
+    if ((toDiv == 0) || (toDiv >= lowPower)) {
         throw "DIV by zero (or modulo 0 to register size)";
     }
     if ((length > 0U) && (toDiv != 1U)) {

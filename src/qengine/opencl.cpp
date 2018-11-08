@@ -10,8 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
 // for details.
 
-#include <iostream>
-
 #include <memory>
 
 #include "oclengine.hpp"
@@ -1564,7 +1562,7 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     bitCapInt lowPower = 1U << length;
-    if (toDiv == 0 || (toDiv >= lowPower)) {
+    if ((toDiv == 0) || (toDiv >= lowPower)) {
         throw "DIV by zero (or modulo 0 to register size)";
     }
 
