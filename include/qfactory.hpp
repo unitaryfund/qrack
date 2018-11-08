@@ -43,19 +43,4 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     }
 }
 
-template <typename... Ts>
-QEnginePtr CreateQuantumEngine(QInterfaceEngine engine, QInterfaceEngine subengine, Ts... args)
-{
-    switch (engine) {
-    case QINTERFACE_CPU:
-        return std::make_shared<QEngineCPU>(args...);
-#if ENABLE_OPENCL
-    case QINTERFACE_OPENCL:
-        return std::make_shared<QEngineOCL>(args...);
-#endif
-    default:
-        return NULL;
-    }
-}
-
 } // namespace Qrack
