@@ -14,11 +14,27 @@
 
 namespace Qrack {
 
-// Bit-wise apply "anti-"controlled-not to three registers
+// Bit-wise apply swap to two registers
 void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         Swap(qubit1 + bit, qubit2 + bit);
+    }
+}
+
+// Bit-wise apply square root of swap to two registers
+void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        SqrtSwap(qubit1 + bit, qubit2 + bit);
+    }
+}
+
+// Bit-wise apply inverse square root of swap to two registers
+void QInterface::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        ISqrtSwap(qubit1 + bit, qubit2 + bit);
     }
 }
 
@@ -48,6 +64,38 @@ void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         CNOT(control + bit, target + bit);
+    }
+}
+
+// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
+void QInterface::S(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        S(start + bit);
+    }
+}
+
+// Apply inverse S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
+void QInterface::IS(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        IS(start + bit);
+    }
+}
+
+// Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
+void QInterface::T(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        T(start + bit);
+    }
+}
+
+// Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
+void QInterface::IT(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        IT(start + bit);
     }
 }
 
@@ -661,7 +709,26 @@ void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitL
 }
 
 // Bit-wise apply measurement gate to a register
-bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
+bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+{
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
+    bitCapInt res = 0;
+    bitCapInt power;
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        power = 1U << bit;
+        res |= ForceM(start + bit, !(!(power & result)), doForce, ONE_R1) ? power : 0;
+    }
+    return res;
+}
+
+// Bit-wise apply measurement gate to a register
+bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
 {
     // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
     // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
@@ -671,10 +738,51 @@ bitCapInt QInterface::MReg(bitLenInt start, bitLenInt length)
     }
 
     bitCapInt result = 0;
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        result |= M(start + bit) ? (1 << bit) : 0;
+    if (values == NULL) {
+        for (bitLenInt bit = 0; bit < length; bit++) {
+            result |= M(bits[bit]) ? (1U << (bits[bit])) : 0;
+        }
+    } else {
+        for (bitLenInt bit = 0; bit < length; bit++) {
+            result |= ForceM(bits[bit], values[bit]) ? (1U << (bits[bit])) : 0;
+        }
     }
     return result;
+}
+
+// Returns probability of permutation of the register
+real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
+    bitCapInt mask = ((1U << length) - 1) << start;
+    bitCapInt perm = permutation << start;
+    return ProbMask(mask, perm);
+}
+
+// Returns probability of permutation of the mask
+real1 QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
+    real1 prob = ONE_R1;
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length; // c accumulates the total bits set in v
+    bitCapInt power;
+    std::vector<bitLenInt> bits;
+    std::vector<bool> bitsSet;
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        power = (v ^ oldV) & oldV;
+        bits.push_back(log2(power));
+        bitsSet.push_back(!(!(power & permutation)));
+    }
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        if (bitsSet[bit]) {
+            prob *= Prob(bits[bit]);
+        } else {
+            prob *= (ONE_R1 - Prob(bits[bit]));
+        }
+    }
+    return prob;
 }
 
 /// "Circular shift right" - (Uses swap-based algorithm for speed)

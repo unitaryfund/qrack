@@ -150,12 +150,18 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_DECOHEREAMP] = cl::Kernel(program, "decohereamp");
         all_device_contexts[i]->calls[OCL_API_DISPOSEPROB] = cl::Kernel(program, "disposeprob");
         all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
+        all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
+        all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");
+        all_device_contexts[i]->calls[OCL_API_PROBMASK] = cl::Kernel(program, "probmask");
+        all_device_contexts[i]->calls[OCL_API_PROBMASKALL] = cl::Kernel(program, "probmaskall");
         all_device_contexts[i]->calls[OCL_API_ISPHASESEPARABLE] = cl::Kernel(program, "isphaseseparable");
         all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
         all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
         all_device_contexts[i]->calls[OCL_API_ROR] = cl::Kernel(program, "ror");
         all_device_contexts[i]->calls[OCL_API_INC] = cl::Kernel(program, "inc");
+        all_device_contexts[i]->calls[OCL_API_CINC] = cl::Kernel(program, "cinc");
         all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
+        all_device_contexts[i]->calls[OCL_API_CDEC] = cl::Kernel(program, "cdec");
         all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
         all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
         all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
@@ -174,6 +180,7 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
         all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
         all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
+        all_device_contexts[i]->calls[OCL_API_APPLYMREG] = cl::Kernel(program, "applymreg");
         all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
         all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
         all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");

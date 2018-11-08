@@ -35,7 +35,7 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
     complex phaseFac, bool partialInit)
-    : QInterface(qBitCount, rgp)
+    : QEngine(qBitCount, rgp)
     , stateVec(NULL)
 {
     doNormalize = true;
@@ -60,7 +60,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QInterface(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -69,6 +69,14 @@ QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
 }
 
 complex* QEngineCPU::GetStateVector() { return stateVec; }
+
+complex QEngineCPU::GetAmplitude(bitCapInt perm)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+    return stateVec[perm];
+}
 
 void QEngineCPU::SetPermutation(bitCapInt perm)
 {
@@ -90,7 +98,7 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
     ResetStateVec(AllocStateVec(maxQPower));
 
     QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
-    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
+    std::copy(src->stateVec, src->stateVec + src->maxQPower, stateVec);
 }
 
 void QEngineCPU::ResetStateVec(complex* nStateVec)
@@ -100,7 +108,21 @@ void QEngineCPU::ResetStateVec(complex* nStateVec)
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineCPU::SetQuantumState(complex* inputState) { std::copy(inputState, inputState + maxQPower, stateVec); }
+void QEngineCPU::SetQuantumState(complex* inputState)
+{
+    std::copy(inputState, inputState + maxQPower, stateVec);
+    runningNorm = ONE_R1;
+}
+
+/// Get pure quantum state, in unsigned int permutation basis
+void QEngineCPU::GetQuantumState(complex* outputState)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    std::copy(stateVec, stateVec + maxQPower, outputState);
+}
 
     /**
      * Apply a 2x2 matrix to the state vector
@@ -518,6 +540,69 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
     }
 
     return norm(stateVec[fullRegister]);
+}
+
+// Returns probability of permutation of the register
+real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    int num_threads = GetConcurrencyLevel();
+    real1* probs = new real1[num_threads]();
+
+    bitCapInt perm = permutation << start;
+
+    par_for_skip(0, maxQPower, (1U << start), length,
+        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | perm]); });
+
+    real1 prob = ZERO_R1;
+    for (int thrd = 0; thrd < num_threads; thrd++) {
+        prob += probs[thrd];
+    }
+
+    delete[] probs;
+
+    return prob;
+}
+
+// Returns probability of permutation of the mask
+real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length; // c accumulates the total bits set in v
+    std::vector<bitCapInt> skipPowersVec;
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - 1; // clear the least significant bit set
+        skipPowersVec.push_back((v ^ oldV) & oldV);
+    }
+
+    bitCapInt* skipPowers = new bitCapInt[skipPowersVec.size()];
+    std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
+
+    int num_threads = GetConcurrencyLevel();
+    real1* probs = new real1[num_threads]();
+
+    par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
+        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec[lcv | permutation]); });
+
+    delete[] skipPowers;
+
+    real1 prob = ZERO_R1;
+    for (int thrd = 0; thrd < num_threads; thrd++) {
+        prob += probs[thrd];
+    }
+
+    delete[] probs;
+
+    return prob;
 }
 
 void QEngineCPU::NormalizeState(real1 nrm)

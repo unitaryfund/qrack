@@ -98,7 +98,8 @@ void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
     real1 sine = sin(radians / 2.0);
     const complex mtrx[4] = { complex(ONE_R1, 0), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(cosine, sine) };
-    ApplyControlled2x2(control, target, mtrx, false);
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, mtrx);
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
@@ -110,7 +111,8 @@ void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target)
     real1 sine = sin(radians / 2.0);
     complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
         complex(cosine, ZERO_R1) };
-    ApplyControlled2x2(control, target, pauliRX, false);
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, pauliRX);
 }
 
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
@@ -122,7 +124,8 @@ void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target)
     real1 sine = sin(radians / 2.0);
     complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
         complex(cosine, ZERO_R1) };
-    ApplyControlled2x2(control, target, pauliRY, false);
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, pauliRY);
 }
 
 /// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
@@ -134,7 +137,8 @@ void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target)
     real1 sine = sin(radians / 2.0);
     const complex pauliRZ[4] = { complex(cosine, -sine), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(cosine, sine) };
-    ApplyControlled2x2(control, target, pauliRZ, false);
+    bitLenInt controls[1] = { control };
+    ApplyControlledSingleBit(controls, 1, target, pauliRZ);
 }
 
 } // namespace Qrack

@@ -129,16 +129,18 @@ protected:
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyM(bitCapInt qPower, bool result, complex nrm) = 0;
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
+
+    inline bitCapInt log2(bitCapInt n)
+    {
+        bitLenInt pow = 0;
+        bitLenInt p = n >> 1;
+        while (p != 0) {
+            p >>= 1;
+            pow++;
+        }
+        return pow;
+    }
 
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
@@ -167,8 +169,23 @@ public:
     /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
     int GetMaxQPower() { return maxQPower; }
 
-    /** Set an arbitrary pure quantum state */
+    /** Set an arbitrary pure quantum state representation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
     virtual void SetQuantumState(complex* inputState) = 0;
+
+    /** Get the pure quantum state representation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void GetQuantumState(complex* outputState) = 0;
+
+    /** Get the representational amplitude of a full permutation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual complex GetAmplitude(bitCapInt perm) = 0;
 
     /** Set to a specific permutation */
     virtual void SetPermutation(bitCapInt perm) = 0;
@@ -303,7 +320,61 @@ public:
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
+
+    /**
+     * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
+     *
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
+     * set to true.
+     */
+    virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+
+    /**
+     * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
+     *
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
+     * set to true.
+     */
+    virtual void ApplyAntiControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+
+    /**
+     * Apply a swap with arbitrary control bits.
+     */
+    virtual void CSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+
+    /**
+     * Apply a swap with arbitrary (anti) control bits.
+     */
+    virtual void AntiCSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+
+    /**
+     * Apply a square root of swap with arbitrary control bits.
+     */
+    virtual void CSqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+
+    /**
+     * Apply a square root of swap with arbitrary (anti) control bits.
+     */
+    virtual void AntiCSqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+
+    /**
+     * Apply an inverse square root of swap with arbitrary control bits.
+     */
+    virtual void CISqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+
+    /**
+     * Apply an inverse square root of swap with arbitrary (anti) control bits.
+     */
+    virtual void AntiCISqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
 
     /**
      * Doubly-controlled NOT gate
@@ -387,7 +458,42 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex);
+    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false, ONE_R1); };
+
+    /**
+     * Act as if is a measurement was applied, except force the (usually random) result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1) = 0;
+
+    /**
+     * S gate
+     *
+     * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void S(bitLenInt qubitIndex);
+
+    /**
+     * Inverse S gate
+     *
+     * Applies an inverse 1/4 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void IS(bitLenInt qubitIndex);
+
+    /**
+     * T gate
+     *
+     * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void T(bitLenInt qubitIndex);
+
+    /**
+     * Inverse T gate
+     *
+     * Applies an inverse 1/8 phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void IT(bitLenInt qubitIndex);
 
     /**
      * X gate
@@ -692,6 +798,18 @@ public:
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
 
+    /** Bitwise S operator (1/4 phase rotation) */
+    virtual void S(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse S operator (1/4 phase rotation) */
+    virtual void IS(bitLenInt start, bitLenInt length);
+
+    /** Bitwise T operator (1/8 phase rotation) */
+    virtual void T(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse T operator (1/8 phase rotation) */
+    virtual void IT(bitLenInt start, bitLenInt length);
+
     /** Bitwise Pauli X (or logical "NOT") operator */
     virtual void X(bitLenInt start, bitLenInt length);
 
@@ -967,6 +1085,10 @@ public:
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
 
+    /** Add integer (without sign, with controls) */
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
+
     /** Add integer (without sign, with carry) */
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
@@ -989,6 +1111,10 @@ public:
     /** Subtract classical integer (without sign) */
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) = 0;
 
+    /** Subtract classical integer (without sign, with controls) */
+    virtual void CDEC(
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
+
     /** Subtract classical integer (without sign, with carry) */
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
@@ -1009,19 +1135,18 @@ public:
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Multiply by integer */
-    virtual void MUL(
-        bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bool clearCary = false) = 0;
+    virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
 
     /** Divide by integer */
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
 
     /** Controlled multiplication by integer */
-    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit,
-        bitLenInt length, bool clearCarry = false) = 0;
+    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled division by power of integer */
-    virtual void CDIV(
-        bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt controlBit, bitLenInt length) = 0;
+    virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** @} */
 
@@ -1053,7 +1178,20 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
 
     /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
+
+    /**
+     * Act as if is a measurement was applied, except force the (usually random) result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
+
+    /** Measure bits with indices in array, and return a mask of the results */
+    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
+
+    /** Measure bits with indices in array, and return a mask of the results */
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from
@@ -1177,10 +1315,22 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Square root of Swap gate */
+    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+
+    /** Bitwise square root of swap */
+    virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Inverse square root of Swap gate */
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+
+    /** Bitwise inverse square root of swap */
+    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
@@ -1215,6 +1365,13 @@ public:
     virtual bool IsPhaseSeparable(bool forceCheck = false) = 0;
 
     /**
+     * Check whether phase is constant across permutation basis
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool IsPhaseSeparable(bitLenInt qubit) { return IsPhaseSeparable(); }
+
+    /**
      * Direct measure of bit probability to be in |1> state
      *
      * \warning PSEUDO-QUANTUM
@@ -1222,11 +1379,29 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex) = 0;
 
     /**
-     * Direct measure of full register probability to be in permutation state
+     * Direct measure of full permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
     virtual real1 ProbAll(bitCapInt fullRegister) = 0;
+
+    /**
+     * Direct measure of register permutation probability
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+
+    /**
+     * Direct measure of masked permutation probability
+     *
+     * "mask" masks the bits to check the probability of. "permutation" sets the 0 or 1 value for each bit in the mask.
+     * Bits which are set in the mask can be set to 0 or 1 in the permutation, while reset bits in the mask should be 0
+     * in the permutation.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state
@@ -1238,17 +1413,6 @@ public:
      * factor.
      */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
-
-    /**
-     * Act as though a measurement was applied, except force the result of the measurement.
-     *
-     * That is, genuine measurement of a qubit in superposition has a probabilistic result. This method allows the
-     * programmer to choose the outcome of the measurement, and proceed as if the measurement randomly resulted in the
-     * chosen bit value.
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
 
     /** @} */
 };
