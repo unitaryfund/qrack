@@ -5,5 +5,5 @@ install:
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
 script:
   - mkdir _build && cd _build && cmake -DUSE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
-  - rm -r _build
+  - cd .. && rm -r _build
   - mkdir _build && cd _build && cmake -DUSE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
