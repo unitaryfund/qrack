@@ -40,13 +40,13 @@ if (ENABLE_OPENCL)
 
     # Build the OpenCL command files
     find_program (XXD_BIN xxd)
-    file (GLOB_RECURSE COMPILABLE_RESOURCES "src/qengine/*.cl")
+    file (GLOB_RECURSE COMPILABLE_RESOURCES "src/common/*.cl")
     foreach (INPUT_FILE ${COMPILABLE_RESOURCES})
         get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
         get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
         get_filename_component (INPUT_DIR ${INPUT_FILE} DIRECTORY)
 
-        set (OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/${INPUT_BASENAME}cl.hpp)
+        set (OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/common/${INPUT_BASENAME}cl.hpp)
 
         message (" Creating XXD Rule for ${INPUT_FILE} -> ${OUTPUT_FILE}")
         add_custom_command (

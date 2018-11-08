@@ -65,8 +65,8 @@ if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
     set(QRACK_COMPILE_OPTS -mavx)
 endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
 
-configure_file(include/config.h.in include/config.h @ONLY)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+configure_file(include/common/config.h.in include/common/config.h @ONLY)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
 enable_testing()
 
@@ -89,6 +89,8 @@ set_target_properties (qrack PROPERTIES
 
 # Install common headers
 install (FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
+    include/common/qrack_types.hpp
     include/common/complex16simd.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
@@ -99,7 +101,6 @@ install (FILES
 
 # Install qrack library headers
 install (FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/include/config.h
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp

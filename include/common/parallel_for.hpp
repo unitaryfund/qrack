@@ -13,9 +13,10 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 /* Needed for bitCapInt typedefs. */
-#include "qrack/qinterface.hpp"
+#include "qrack_types.hpp"
 
 namespace Qrack {
 
