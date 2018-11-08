@@ -31,6 +31,10 @@ Instantiate a Qrack::QUnit, specifying the desired number of qubits. (Optionally
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
+## Documentation
+
+Live version of the documentation, including API reference, can be obtained at: https://vm6502q.readthedocs.io/en/latest/
+
 ## test/tests.cpp
 
 The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
