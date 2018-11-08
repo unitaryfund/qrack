@@ -15,7 +15,7 @@
 #include <functional>
 
 /* Needed for bitCapInt typedefs. */
-#include "qinterface.hpp"
+#include "qrack/qinterface.hpp"
 
 namespace Qrack {
 
