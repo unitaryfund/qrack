@@ -6,8 +6,8 @@
 // See https://arxiv.org/abs/1710.05867
 // (The makers of Qrack have no affiliation with the authors of that paper.)
 //
-// Licensed under the GNU General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// Licensed under the GNU Lesser General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
 #pragma once

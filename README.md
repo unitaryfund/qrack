@@ -95,4 +95,4 @@ Daniel Strano would like to specifically note that Benn Bollay is almost entirel
 
 Licensed under the GNU General Public License V3.
 
-See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html for details.
+See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html for details.

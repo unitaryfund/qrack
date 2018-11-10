@@ -6,8 +6,8 @@
 // (nonphysical) register cloning and direct measurement of probability and
 // phase, to leverage what advantages classical emulation of qubits can have.
 //
-// Licensed under the GNU General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/gpl-3.0.en.html
+// Licensed under the GNU Lesser General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
 #include "qengine.hpp"
