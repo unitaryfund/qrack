@@ -542,10 +542,10 @@ real1 QUnit::ProbAll(bitCapInt perm)
     std::map<QInterfacePtr, bitCapInt> perms;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (perms.find(shards[i].unit) == perms.end()) {
+            perms[shards[i].unit] = 0U;
+        }
         if (perm & (1U << i)) {
-            if (perms.find(shards[i].unit) == perms.end()) {
-                perms[shards[i].unit] = 0U;
-            }
             perms[shards[i].unit] |= 1U << shards[i].mapped;
         }
     }

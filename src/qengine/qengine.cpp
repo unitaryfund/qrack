@@ -207,9 +207,10 @@ void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
-
-    if (controlLen != 0) {
+    if (controlLen == 0) {
+        ApplySingleBit(mtrx, true, target);
+    } else {
+        ApplyControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
         UpdateRunningNorm();
     }
 }

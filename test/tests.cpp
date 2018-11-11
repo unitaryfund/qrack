@@ -1754,9 +1754,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_proball")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
 {
-    qftReg->SetPermutation(0x02);
-    REQUIRE(norm(qftReg->GetAmplitude(0x02)) > 0.99);
-    REQUIRE(norm(qftReg->GetAmplitude(0x03)) < 0.01);
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0, 2);
+    REQUIRE(norm((qftReg->GetAmplitude(0x01)) + (qftReg->GetAmplitude(0x03))) < 0.01);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
