@@ -130,7 +130,6 @@ void QEngineCPU::GetQuantumState(complex* outputState)
      * A fundamental operation used by almost all gates.
      */
 
-/*
 #if ENABLE_COMPLEX_X2
 
 #if ENABLE_COMPLEX8
@@ -156,7 +155,6 @@ union ComplexUnion {
         cmplx[1] = cmplx1;
     }
 };
-#endif
 #endif
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
@@ -208,7 +206,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 #else
-*/
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
@@ -254,7 +251,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
     }
 }
-//#endif
+#endif
 
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
