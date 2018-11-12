@@ -27,7 +27,7 @@ struct Complex8x2Simd {
     inline Complex8x2Simd(const __m128& v2) { _val2 = v2; }
     inline Complex8x2Simd(const float& r1, const float& i1, const float& r2, const float& i2)
     {
-        _val2 = _mm_set_ps(i1, r1, i2, r2);
+        _val2 = _mm_set_ps(i2, r2, i1, r1);
     }
     inline Complex8x2Simd operator+(const Complex8x2Simd& other) const { return _mm_add_ps(_val2, other._val2); }
     inline Complex8x2Simd operator+=(const Complex8x2Simd& other)

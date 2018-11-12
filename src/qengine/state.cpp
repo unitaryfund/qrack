@@ -140,7 +140,7 @@ union ComplexUnion {
     inline ComplexUnion(){};
     inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
     {
-        cmplx2 = complex2(real(cmplx1), imag(cmplx1), real(cmplx0), imag(cmplx0));
+        cmplx2 = complex2(real(cmplx0), imag(cmplx0), real(cmplx1), imag(cmplx1));
     }
 };
 #else
