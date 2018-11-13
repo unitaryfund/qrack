@@ -11,6 +11,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <future>
+
 #include "qfactory.hpp"
 #include "qfusion.hpp"
 
@@ -42,11 +44,16 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
      std::shared_ptr<complex[4]> outBuffer;
      if (bitBuffers[qubitIndex]) {
          std::shared_ptr<complex[4]> inBuffer = bitBuffers[qubitIndex];
+         std::vector<std::future<void>> futures(4);
 
-         outBuffer[0] = (mtrx[0] * inBuffer[0]) + (mtrx[1] * inBuffer[2]);
-         outBuffer[1] = (mtrx[0] * inBuffer[1]) + (mtrx[1] * inBuffer[3]);
-         outBuffer[2] = (mtrx[2] * inBuffer[0]) + (mtrx[3] * inBuffer[2]);
-         outBuffer[3] = (mtrx[2] * inBuffer[1]) + (mtrx[3] * inBuffer[3]);
+         futures[0] = std::async(std::launch::async, [&]() { outBuffer[0] = (mtrx[0] * inBuffer[0]) + (mtrx[1] * inBuffer[2]); });
+         futures[1] = std::async(std::launch::async, [&]() { outBuffer[1] = (mtrx[0] * inBuffer[1]) + (mtrx[1] * inBuffer[3]); });
+         futures[2] = std::async(std::launch::async, [&]() { outBuffer[2] = (mtrx[2] * inBuffer[0]) + (mtrx[3] * inBuffer[2]); });
+         futures[3] = std::async(std::launch::async, [&]() { outBuffer[3] = (mtrx[2] * inBuffer[1]) + (mtrx[3] * inBuffer[3]); });
+
+         for (int i = 0; i < 4; i++) {
+            futures[i].get();
+         }
 
          bitBuffers[qubitIndex] = outBuffer;
      } else {
