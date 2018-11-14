@@ -11,8 +11,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <future>
 #include <ctime>
+#include <future>
 #include <initializer_list>
 #include <map>
 
@@ -21,7 +21,8 @@
 
 namespace Qrack {
 
-QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+QFusion::QFusion(
+    QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
     : QInterface(qBitCount)
     , engineType(eng)
     , bitBuffers(qBitCount)
@@ -232,7 +233,8 @@ bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
     return qReg->ForceM(qubit, result, doForce, nrmlzr);
 }
 
-bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce) {
+bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+{
     FlushReg(start, length);
     return qReg->ForceMReg(start, length, result, doForce);
 }
@@ -398,8 +400,9 @@ void QFusion::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt 
     qReg->PhaseFlipIfLess(greaterPerm, start, length);
 }
 
-void QFusion::PhaseFlip() {
-    FlushAll(); 
+void QFusion::PhaseFlip()
+{
+    FlushAll();
     qReg->PhaseFlip();
 }
 
@@ -468,7 +471,8 @@ real1 QFusion::Prob(bitLenInt qubitIndex)
     return qReg->Prob(qubitIndex);
 }
 
-real1 QFusion::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) {
+real1 QFusion::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
     FlushReg(start, length);
     return qReg->ProbReg(start, length, permutation);
 }

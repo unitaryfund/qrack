@@ -35,8 +35,9 @@ protected:
         bitBuffers.resize(qb);
     }
 
-    virtual void NormalizeState(real1 nrm = -999.0) {
-        //Intentionally left blank
+    virtual void NormalizeState(real1 nrm = -999.0)
+    {
+        // Intentionally left blank
     }
 
 public:
@@ -51,7 +52,10 @@ public:
     using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
     virtual bitLenInt Cohere(QFusionPtr toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QFusion>(dest)); }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        Decohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));
+    }
     virtual void Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
@@ -117,7 +121,7 @@ public:
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QFusion>(orig)); } 
+    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QFusion>(orig)); }
     virtual void CopyState(QFusionPtr orig);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 Prob(bitLenInt qubitIndex);
