@@ -41,7 +41,6 @@ QFusion::QFusion(
 void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
 {
     if (qubitCount < MIN_FUSION_BITS) {
-        FlushBit(qubitIndex);
         qReg->ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
         return;
     }
@@ -114,6 +113,11 @@ void QFusion::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     DiscardReg(start, length);
     qReg->SetReg(start, length, value);
+}
+
+void QFusion::SetBit(bitLenInt qubitIndex, bool value) {
+    DiscardBit(qubitIndex);
+    qReg->SetBit(qubitIndex, value);
 }
 
 bitLenInt QFusion::Cohere(QFusionPtr toCopy)
@@ -231,6 +235,11 @@ bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
     FlushBit(qubit);
     return qReg->ForceM(qubit, result, doForce, nrmlzr);
+}
+
+bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values) {
+    FlushList(bits, length);
+    return qReg->ForceM(bits, length, values);
 }
 
 bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
@@ -402,8 +411,23 @@ void QFusion::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt 
 
 void QFusion::PhaseFlip()
 {
-    FlushAll();
-    qReg->PhaseFlip();
+    if (qubitCount < MIN_FUSION_BITS) {
+        FlushAll();
+        qReg->PhaseFlip();
+        return;
+    }
+
+    complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1) };
+    // Try to add this to an existing buffer:
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (bitBuffers[i]) {
+            ApplySingleBit(pfm, false, i);
+            return;
+        }
+    }
+
+    // If no buffer is active, put in the 0 bit:
+    ApplySingleBit(pfm, false, 0);
 }
 
 bitCapInt QFusion::IndexedLDA(
@@ -475,6 +499,11 @@ real1 QFusion::ProbReg(const bitLenInt& start, const bitLenInt& length, const bi
 {
     FlushReg(start, length);
     return qReg->ProbReg(start, length, permutation);
+}
+
+real1 QFusion::ProbMask(const bitCapInt& mask, const bitCapInt& permutation) {
+    FlushMask(mask);
+    return qReg->ProbMask(mask, permutation);
 }
 
 real1 QFusion::ProbAll(bitCapInt fullRegister)

@@ -49,6 +49,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm);
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
     virtual bitLenInt Cohere(QFusionPtr toCopy);
@@ -76,6 +77,7 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1);
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
@@ -126,6 +128,7 @@ public:
     virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
 protected:
@@ -143,16 +146,32 @@ protected:
         }
     }
     inline void FlushAll() { FlushReg(0, qubitCount); }
+    inline void DiscardBit(const bitLenInt& qubitIndex) { bitBuffers[qubitIndex] = NULL; }
     inline void DiscardReg(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++)
-            bitBuffers[start + i] = NULL;
+            DiscardBit(start + i);
     }
     inline void DiscardAll() { DiscardReg(0, qubitCount); }
     inline void FlushList(const bitLenInt* bitList, const bitLenInt& bitListLen)
     {
         for (bitLenInt i = 0; i < bitListLen; i++)
             FlushBit(bitList[i]);
+    }
+    inline void FlushMask(const bitCapInt mask)
+    {
+        bitCapInt v = mask; // count the number of bits set in v
+        bitCapInt oldV;
+        bitCapInt power;
+        bitLenInt length; // c accumulates the total bits set in v
+        for (length = 0; v; length++) {
+            oldV = v;
+            v &= v - 1; // clear the least significant bit set
+            power = (v ^ oldV) & oldV;
+            if (power) {
+                FlushBit(log2(power));
+            }
+        }
     }
 };
 } // namespace Qrack

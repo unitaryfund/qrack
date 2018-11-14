@@ -567,12 +567,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
 {
-    bool result;
-    if (doForce) {
-        result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, true, nrmlzr);
-    } else {
-        result = shards[qubit].unit->M(shards[qubit].mapped);
-    }
+    bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce, nrmlzr);
 
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
@@ -1127,9 +1122,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip()
 {
-    for (auto&& shard : shards) {
-        shard.unit->PhaseFlip();
-    }
+    shards[0].unit->PhaseFlip();
 }
 
 bitCapInt QUnit::IndexedLDA(
