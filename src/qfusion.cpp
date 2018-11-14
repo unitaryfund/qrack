@@ -115,7 +115,8 @@ void QFusion::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     qReg->SetReg(start, length, value);
 }
 
-void QFusion::SetBit(bitLenInt qubitIndex, bool value) {
+void QFusion::SetBit(bitLenInt qubitIndex, bool value)
+{
     DiscardBit(qubitIndex);
     qReg->SetBit(qubitIndex, value);
 }
@@ -237,7 +238,8 @@ bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
     return qReg->ForceM(qubit, result, doForce, nrmlzr);
 }
 
-bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values) {
+bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
+{
     FlushList(bits, length);
     return qReg->ForceM(bits, length, values);
 }
@@ -417,7 +419,8 @@ void QFusion::PhaseFlip()
         return;
     }
 
-    complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1) };
+    complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(-ONE_R1, ZERO_R1) };
     // Try to add this to an existing buffer:
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (bitBuffers[i]) {
@@ -501,7 +504,8 @@ real1 QFusion::ProbReg(const bitLenInt& start, const bitLenInt& length, const bi
     return qReg->ProbReg(start, length, permutation);
 }
 
-real1 QFusion::ProbMask(const bitCapInt& mask, const bitCapInt& permutation) {
+real1 QFusion::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
     FlushMask(mask);
     return qReg->ProbMask(mask, permutation);
 }

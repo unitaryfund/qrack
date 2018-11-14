@@ -1120,10 +1120,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
         start, flagIndex);
 }
 
-void QUnit::PhaseFlip()
-{
-    shards[0].unit->PhaseFlip();
-}
+void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
 
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)

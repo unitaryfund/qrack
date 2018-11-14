@@ -1800,7 +1800,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
     // std::cout << "Full Result:    " << qftReg << std::endl;
     // std::cout << "Per Bit Result: " << std::showpoint << qftReg << std::endl;
 
-    //qftReg->MReg(0, 8);
+    // qftReg->MReg(0, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, TARGET_PROB));
 }
