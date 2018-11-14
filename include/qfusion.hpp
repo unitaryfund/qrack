@@ -47,12 +47,12 @@ public:
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm);
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+    using QInterface::Cohere;
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
     virtual bitLenInt Cohere(QFusionPtr toCopy);
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QFusionPtr> toCopy);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy);
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Decohere(start, length, std::dynamic_pointer_cast<QFusion>(dest)); }
     virtual void Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
@@ -72,6 +72,7 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1);
+    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
@@ -116,10 +117,11 @@ public:
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
+    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QFusion>(orig)); } 
     virtual void CopyState(QFusionPtr orig);
-    virtual void CopyState(QInterfacePtr orig);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 Prob(bitLenInt qubitIndex);
+    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
 protected:

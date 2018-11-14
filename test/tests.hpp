@@ -26,6 +26,7 @@
  */
 extern enum Qrack::QInterfaceEngine testEngineType;
 extern enum Qrack::QInterfaceEngine testSubEngineType;
+extern enum Qrack::QInterfaceEngine testSubSubEngineType;
 extern std::shared_ptr<std::default_random_engine> rng;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */

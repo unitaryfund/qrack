@@ -1707,7 +1707,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decohere(0, 4, qftReg2);
@@ -1731,8 +1731,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
 {
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0x0b, rng);
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testSubEngineType, testSubEngineType, 4, 0x02, rng);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
     qftReg->Cohere(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
@@ -1762,7 +1762,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
 {
     complex state[1U << 4U];
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0x0b, rng);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
     qftReg->GetQuantumState(state);
     qftReg->SetQuantumState(state);
 }

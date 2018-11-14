@@ -109,6 +109,12 @@ void QFusion::SetPermutation(bitCapInt perm)
     qReg->SetPermutation(perm);
 }
 
+void QFusion::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+{
+    DiscardReg(start, length);
+    qReg->SetReg(start, length, value);
+}
+
 bitLenInt QFusion::Cohere(QFusionPtr toCopy)
 {
     FlushAll();
@@ -118,66 +124,32 @@ bitLenInt QFusion::Cohere(QFusionPtr toCopy)
     return toRet;
 }
 
-std::map<QInterfacePtr, bitLenInt> QFusion::Cohere(std::vector<QFusionPtr> toCopy)
-{
-    std::vector<QInterfacePtr> tCI(toCopy.size());
-    FlushAll();
-    for (bitLenInt i = 0; i < toCopy.size(); i++) {
-        toCopy[i]->FlushAll();
-        tCI[i] = toCopy[i]->qReg;
-    }
-    std::map<QInterfacePtr, bitLenInt> toRet = qReg->Cohere(tCI);
-    SetQubitCount(qReg->GetQubitCount());
-    return toRet;
-}
-
-bitLenInt QFusion::Cohere(QInterfacePtr toCopy)
-{
-    FlushAll();
-    bitLenInt toRet = qReg->Cohere(toCopy);
-    SetQubitCount(qReg->GetQubitCount());
-    return toRet;
-}
-
-std::map<QInterfacePtr, bitLenInt> QFusion::Cohere(std::vector<QInterfacePtr> toCopy)
-{
-    FlushAll();
-    std::map<QInterfacePtr, bitLenInt> toRet = qReg->Cohere(toCopy);
-    SetQubitCount(qReg->GetQubitCount());
-    return toRet;
-}
-
 void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
-    FlushReg(start, length);
     qReg->Decohere(start, length, dest->qReg);
     dest->SetQubitCount(length);
     for (bitLenInt i = 0; i < length; i++) {
         dest->bitBuffers[i] = bitBuffers[start + i];
+        bitBuffers[start + i] = NULL;
     }
-    bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+    if (length < qubitCount) {
+        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+    }
     SetQubitCount(qReg->GetQubitCount());
     if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
     }
-}
-
-void QFusion::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-{
-    FlushReg(start, length);
-    qReg->Decohere(start, length, dest);
-    bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
-    SetQubitCount(qReg->GetQubitCount());
-    if (qubitCount < MIN_FUSION_BITS) {
-        FlushAll();
+    if (dest->GetQubitCount() < MIN_FUSION_BITS) {
+        dest->FlushAll();
     }
 }
-
 void QFusion::Dispose(bitLenInt start, bitLenInt length)
 {
     DiscardReg(start, length);
     qReg->Dispose(start, length);
-    bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+    if (length < qubitCount) {
+        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+    }
     SetQubitCount(qReg->GetQubitCount());
     if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
@@ -258,6 +230,11 @@ bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
     FlushBit(qubit);
     return qReg->ForceM(qubit, result, doForce, nrmlzr);
+}
+
+bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce) {
+    FlushReg(start, length);
+    return qReg->ForceMReg(start, length, result, doForce);
 }
 
 void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -421,7 +398,10 @@ void QFusion::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt 
     qReg->PhaseFlipIfLess(greaterPerm, start, length);
 }
 
-void QFusion::PhaseFlip() { qReg->PhaseFlip(); }
+void QFusion::PhaseFlip() {
+    FlushAll(); 
+    qReg->PhaseFlip();
+}
 
 bitCapInt QFusion::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
@@ -476,22 +456,21 @@ void QFusion::CopyState(QFusionPtr orig)
     qReg->CopyState(orig->qReg);
 }
 
-void QFusion::CopyState(QInterfacePtr orig)
-{
-    FlushAll();
-    qReg->CopyState(orig);
-}
-
 bool QFusion::IsPhaseSeparable(bool forceCheck)
 {
     FlushAll();
-    return IsPhaseSeparable(forceCheck);
+    return qReg->IsPhaseSeparable(forceCheck);
 }
 
 real1 QFusion::Prob(bitLenInt qubitIndex)
 {
     FlushBit(qubitIndex);
     return qReg->Prob(qubitIndex);
+}
+
+real1 QFusion::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) {
+    FlushReg(start, length);
+    return qReg->ProbReg(start, length, permutation);
 }
 
 real1 QFusion::ProbAll(bitCapInt fullRegister)

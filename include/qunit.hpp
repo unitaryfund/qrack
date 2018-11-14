@@ -85,10 +85,6 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void CNOT(bitLenInt control, bitLenInt target);
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
     virtual void H(bitLenInt qubit);
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual void X(bitLenInt qubit);
