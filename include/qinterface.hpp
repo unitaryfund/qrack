@@ -63,7 +63,8 @@ enum QInterfaceEngine {
      * Create a QUnit, which utilizes other QInterface classes to minimize the amount of work that's needed for any
      * given operation based on the entanglement of the bits involved.
      *
-     * This, combined with QINTERFACE_QFUSION and QINTERFACE_OPTIMAL, is the recommended object to use as a library consumer.
+     * This, combined with QINTERFACE_QFUSION and QINTERFACE_OPTIMAL, is the recommended object to use as a library
+     * consumer.
      */
     QINTERFACE_QUNIT,
 

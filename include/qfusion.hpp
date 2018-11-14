@@ -27,18 +27,30 @@ protected:
 
     std::vector<std::shared_ptr<complex[4]>> bitBuffers;
 
-    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        qubitCount = qb;
+        maxQPower = 1 << qubitCount;
+        bitBuffers.resize(qb);
+    }
+
+    virtual void NormalizeState(real1 nrm = -999.0) {
+        //Intentionally left blank
+    }
 
 public:
-    QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
+    QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm);
+    virtual bitLenInt Cohere(QFusionPtr toCopy);
+    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QFusionPtr> toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy);
     virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
@@ -103,19 +115,37 @@ public:
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
+    virtual void CopyState(QFusionPtr orig);
     virtual void CopyState(QInterfacePtr orig);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
-
 protected:
-    inline void FlushBit(bitLenInt qubitIndex) { 
+    inline void FlushBit(bitLenInt qubitIndex)
+    {
         if (bitBuffers[qubitIndex]) {
             qReg->ApplySingleBit(bitBuffers[qubitIndex].get(), true, qubitIndex);
             bitBuffers[qubitIndex] = NULL;
         }
     }
-    inline void FlushReg(const bitLenInt& start, const bitLenInt& length);
+    inline void FlushReg(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0U; i < length; i++) {
+            FlushBit(start + i);
+        }
+    }
+    inline void FlushAll() { FlushReg(0, qubitCount); }
+    inline void DiscardReg(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++)
+            bitBuffers[start + i] = NULL;
+    }
+    inline void DiscardAll() { DiscardReg(0, qubitCount); }
+    inline void FlushList(const bitLenInt* bitList, const bitLenInt& bitListLen)
+    {
+        for (bitLenInt i = 0; i < bitListLen; i++)
+            FlushBit(bitList[i]);
+    }
 };
-}
+} // namespace Qrack
