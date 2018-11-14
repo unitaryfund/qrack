@@ -7,7 +7,7 @@
 // See https://arxiv.org/abs/1710.05867
 // (The makers of Qrack have no affiliation with the authors of that paper.)
 //
-// Licensed under the GNU Lesser General Public License V3.
+// Licensed under the GNU Lesser General Public License VMIN_FUSION_BITS.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
@@ -39,12 +39,13 @@ QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
 
 void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
 {
-    if (qubitCount < 3U) {
-        qReg->ApplySingleBit(mtrx, true, qubitIndex);
+    if (qubitCount < MIN_FUSION_BITS) {
+        FlushBit(qubitIndex);
+        qReg->ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
         return;
     }
 
-    std::shared_ptr<complex[4]> outBuffer;
+    std::shared_ptr<complex[4]> outBuffer(new complex[4]);
     if (bitBuffers[qubitIndex]) {
         std::shared_ptr<complex[4]> inBuffer = bitBuffers[qubitIndex];
         std::vector<std::future<void>> futures(4);
@@ -77,12 +78,11 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
         for (int i = 0; i < 4; i++) {
             futures[i].get();
         }
-
-        bitBuffers[qubitIndex] = outBuffer;
     } else {
         std::copy(mtrx, mtrx + 4, outBuffer.get());
-        bitBuffers[qubitIndex] = outBuffer;
     }
+
+    bitBuffers[qubitIndex] = outBuffer;
 }
 
 void QFusion::SetQuantumState(complex* inputState)
@@ -157,7 +157,7 @@ void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
     }
     bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
     SetQubitCount(qReg->GetQubitCount());
-    if (qubitCount < 3) {
+    if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
     }
 }
@@ -168,7 +168,7 @@ void QFusion::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     qReg->Decohere(start, length, dest);
     bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
     SetQubitCount(qReg->GetQubitCount());
-    if (qubitCount < 3) {
+    if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
     }
 }
@@ -179,7 +179,7 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     qReg->Dispose(start, length);
     bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
     SetQubitCount(qReg->GetQubitCount());
-    if (qubitCount < 3) {
+    if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
     }
 }

@@ -21,6 +21,7 @@ typedef std::shared_ptr<QFusion> QFusionPtr;
 
 class QFusion : public QInterface {
 protected:
+    static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
     QInterfaceEngine engineType;
     std::shared_ptr<std::default_random_engine> rand_generator;
