@@ -2,9 +2,9 @@
 //
 // (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
 //
-// QUnit maintains explicit separability of qubits as an optimization on a QEngine.
-// See https://arxiv.org/abs/1710.05867
-// (The makers of Qrack have no affiliation with the authors of that paper.)
+// QFusion adds an optional "gate fusion" layer on top of a QEngine or QUnit.
+// Single bit gates are buffered in per-bit 2x2 complex matrices, to reduce the cost
+// of successive application of single bit gates to the same bit.
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
@@ -132,6 +132,9 @@ public:
     virtual real1 ProbAll(bitCapInt fullRegister);
 
 protected:
+    /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
+     * nonbufferable operations */
+
     inline void FlushBit(bitLenInt qubitIndex)
     {
         if (bitBuffers[qubitIndex]) {
@@ -139,25 +142,21 @@ protected:
             bitBuffers[qubitIndex] = NULL;
         }
     }
+
     inline void FlushReg(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0U; i < length; i++) {
             FlushBit(start + i);
         }
     }
-    inline void FlushAll() { FlushReg(0, qubitCount); }
-    inline void DiscardBit(const bitLenInt& qubitIndex) { bitBuffers[qubitIndex] = NULL; }
-    inline void DiscardReg(const bitLenInt& start, const bitLenInt& length)
-    {
-        for (bitLenInt i = 0; i < length; i++)
-            DiscardBit(start + i);
-    }
-    inline void DiscardAll() { DiscardReg(0, qubitCount); }
+
     inline void FlushList(const bitLenInt* bitList, const bitLenInt& bitListLen)
     {
-        for (bitLenInt i = 0; i < bitListLen; i++)
+        for (bitLenInt i = 0; i < bitListLen; i++) {
             FlushBit(bitList[i]);
+        }
     }
+
     inline void FlushMask(const bitCapInt mask)
     {
         bitCapInt v = mask; // count the number of bits set in v
@@ -173,5 +172,20 @@ protected:
             }
         }
     }
+
+    inline void FlushAll() { FlushReg(0, qubitCount); }
+
+    /** Buffer discard methods, for when the state of a bit becomes irrelevant before a buffer flush */
+
+    inline void DiscardBit(const bitLenInt& qubitIndex) { bitBuffers[qubitIndex] = NULL; }
+
+    inline void DiscardReg(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            DiscardBit(start + i);
+        }
+    }
+
+    inline void DiscardAll() { DiscardReg(0, qubitCount); }
 };
 } // namespace Qrack
