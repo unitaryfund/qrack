@@ -52,7 +52,7 @@ QFusion::QFusion(
  * number of gates requires an additional 8 complex multiplications per gate, independent of the number of qubits in the
  * composed state vector. Ultimately applying the buffered, composed gate with tensor slicing requires 2^(N+1) complex
  * multiplications, once. Hence, if a QEngine has at least 3 qubits, the successive application of at least 2 gates on
- * the same bit is cheaper with "gate fusion," (M-1)*8+2^(N+1) multiplications for M gates instead of 2^(M+N+1)
+ * the same bit is cheaper with "gate fusion," (M-1)*8+2^(N+1) multiplications for M gates instead of M*(2^(N+1))
  * multiplications.
  *
  * QFusion must flush these buffers, applying them to the state vector, when an operation is applied that can't be
