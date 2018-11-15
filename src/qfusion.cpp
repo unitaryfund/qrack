@@ -181,6 +181,10 @@ void QFusion::ApplyAntiControlledSingleBit(
 void QFusion::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     FlushList(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
@@ -190,6 +194,10 @@ void QFusion::CSwap(
 void QFusion::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     FlushList(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
@@ -199,6 +207,10 @@ void QFusion::AntiCSwap(
 void QFusion::CSqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     FlushList(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
@@ -208,6 +220,10 @@ void QFusion::CSqrtSwap(
 void QFusion::AntiCSqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     FlushList(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
@@ -217,6 +233,10 @@ void QFusion::AntiCSqrtSwap(
 void QFusion::CISqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     FlushList(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
@@ -226,6 +246,10 @@ void QFusion::CISqrtSwap(
 void QFusion::AntiCISqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     FlushList(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
@@ -414,7 +438,6 @@ void QFusion::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt 
 void QFusion::PhaseFlip()
 {
     if (qubitCount < MIN_FUSION_BITS) {
-        FlushAll();
         qReg->PhaseFlip();
         return;
     }

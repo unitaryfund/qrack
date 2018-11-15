@@ -33,8 +33,6 @@ public:
     virtual ~QEngine(){};
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
-    using QInterface::M;
-    virtual bool M(bitLenInt qubit);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
