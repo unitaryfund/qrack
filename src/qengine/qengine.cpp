@@ -86,13 +86,13 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
             if (M(bits[0])) {
                 return (1U << bits[0]);
             } else {
-                return 0;
+                return 0U;
             }
         } else {
             if (ForceM(bits[0], values[0])) {
                 return (1U << bits[0]);
             } else {
-                return 0;
+                return 0U;
             }
         }
     }
@@ -565,9 +565,9 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
         if (ForceM(start, result & 1U, doForce)) {
-            return 1U << start;
+            return 1U;
         } else {
-            return 0;
+            return 0U;
         }
     }
 

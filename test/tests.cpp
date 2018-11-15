@@ -1899,7 +1899,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     const bitLenInt valueLength = 6;
     const bitLenInt carryIndex = 19;
     const int TARGET_VALUE = 6;
-    const int TARGET_KEY = 5;
+    const int TARGET_KEY = 18;
 
     bool foundPerm = false;
 

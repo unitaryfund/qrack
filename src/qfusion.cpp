@@ -258,19 +258,19 @@ void QFusion::AntiCISqrtSwap(
 
 bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
 {
-    FlushBit(qubit);
+    FlushAll();
     return qReg->ForceM(qubit, result, doForce, nrmlzr);
 }
 
 bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
 {
-    FlushList(bits, length);
+    FlushAll();
     return qReg->ForceM(bits, length, values);
 }
 
 bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
-    FlushReg(start, length);
+    FlushAll();
     return qReg->ForceMReg(start, length, result, doForce);
 }
 
