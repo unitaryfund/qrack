@@ -23,7 +23,6 @@ class QFusion : public QInterface {
 protected:
     static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
-    QInterfaceEngine engineType;
     std::shared_ptr<std::default_random_engine> rand_generator;
 
     std::vector<std::shared_ptr<complex[4]>> bitBuffers;

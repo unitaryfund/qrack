@@ -23,7 +23,6 @@ namespace Qrack {
 QFusion::QFusion(
     QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
     : QInterface(qBitCount)
-    , engineType(eng)
     , bitBuffers(qBitCount)
 {
     if (rgp == nullptr) {
@@ -34,7 +33,7 @@ QFusion::QFusion(
         rand_generator = rgp;
     }
 
-    qReg = CreateQuantumInterface(engineType, qBitCount, initState, rand_generator);
+    qReg = CreateQuantumInterface(eng, qBitCount, initState, rand_generator);
 }
 
 /**
