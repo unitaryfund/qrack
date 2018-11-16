@@ -74,7 +74,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
 
     BitBufferPtr bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
-    if (!(bfr->CompareControls(bitBuffers[qubitIndex]))) {
+    if (bitControls[qubitIndex].size() > 0 || !(bfr->CompareControls(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(qubitIndex);
     }
@@ -198,7 +198,7 @@ void QFusion::ApplyControlledSingleBit(
     }
 
     BitBufferPtr bfr = std::make_shared<BitBuffer>(false, controls, controlLen, mtrx);
-    if (!(bfr->CompareControls(bitBuffers[target]))) {
+    if (bitControls[target].size() > 0 || !(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
@@ -237,7 +237,7 @@ void QFusion::ApplyAntiControlledSingleBit(
     }
 
     BitBufferPtr bfr = std::make_shared<BitBuffer>(true, controls, controlLen, mtrx);
-    if (!(bfr->CompareControls(bitBuffers[target]))) {
+    if (bitControls[target].size() > 0 || !(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
