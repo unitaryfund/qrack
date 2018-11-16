@@ -163,11 +163,12 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 
             // Finally, nothing controls this bit any longer:
             std::vector<bitLenInt>::iterator found;
+            bitLenInt control;
             for (i = 0; i < bfr->controls.size(); i++) {
-                found = std::find(
-                    bitControls[bfr->controls[i]].begin(), bitControls[bfr->controls[i]].end(), bfr->controls[i]);
-                if (found != bitControls[bfr->controls[i]].end()) {
-                    bitControls[bfr->controls[i]].erase(found);
+                control = bfr->controls[i];
+                found = std::find(bitControls[control].begin(), bitControls[control].end(), control);
+                if (found != bitControls[control].end()) {
+                    bitControls[control].erase(found);
                 }
             }
         }
