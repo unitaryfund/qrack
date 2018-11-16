@@ -322,14 +322,14 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
 // Z X Z X to any given bit, for example).
 void QFusion::PhaseFlip()
 {
-    FlushAll();
-
     // If we're below the buffering threshold, direct application is cheaper.
     if (qubitCount < MIN_FUSION_BITS) {
+        FlushAll();
         qReg->PhaseFlip();
         return;
     }
 
+    // We buffer the phase flip a single bit operation in bit 0.
     complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
     ApplySingleBit(pfm, false, 0);
