@@ -23,7 +23,6 @@ namespace Qrack {
 QFusion::QFusion(
     QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
     : QInterface(qBitCount)
-    , engineType(eng)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
@@ -35,7 +34,7 @@ QFusion::QFusion(
         rand_generator = rgp;
     }
 
-    qReg = CreateQuantumInterface(engineType, qBitCount, initState, rand_generator);
+    qReg = CreateQuantumInterface(eng, qBitCount, initState, rand_generator);
 }
 
 /**
@@ -53,7 +52,7 @@ QFusion::QFusion(
  * number of gates requires an additional 8 complex multiplications per gate, independent of the number of qubits in the
  * composed state vector. Ultimately applying the buffered, composed gate with tensor slicing requires 2^(N+1) complex
  * multiplications, once. Hence, if a QEngine has at least 3 qubits, the successive application of at least 2 gates on
- * the same bit is cheaper with "gate fusion," (M-1)*8+2^(N+1) multiplications for M gates instead of 2^(M+N+1)
+ * the same bit is cheaper with "gate fusion," (M-1)*8+2^(N+1) multiplications for M gates instead of M*(2^(N+1))
  * multiplications.
  *
  * QFusion must flush these buffers, applying them to the state vector, when an operation is applied that can't be
@@ -72,7 +71,6 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     }
 
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
-
     BitBufferPtr bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
     if ((bitControls[qubitIndex].size() > 0) || !(bfr->CompareControls(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
@@ -298,7 +296,7 @@ void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
     FlushReg(start, length);
 
     qReg->Decohere(start, length, dest->qReg);
-
+  
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
     }
@@ -346,7 +344,7 @@ void QFusion::PhaseFlip()
         qReg->PhaseFlip();
         return;
     }
-
+  
     // We buffer the phase flip as a single bit operation in bit 0.
     complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
