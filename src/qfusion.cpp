@@ -296,7 +296,7 @@ void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
     FlushReg(start, length);
 
     qReg->Decohere(start, length, dest->qReg);
-  
+
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
     }
@@ -344,7 +344,7 @@ void QFusion::PhaseFlip()
         qReg->PhaseFlip();
         return;
     }
-  
+
     // We buffer the phase flip as a single bit operation in bit 0.
     complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };

@@ -20,7 +20,7 @@ struct BitBuffer;
 typedef std::shared_ptr<BitBuffer> BitBufferPtr;
 typedef std::shared_ptr<complex[4]> BitOp;
 
-// We declare this as a class, rather than a struct, because it should be a nullable type:
+// This is a buffer struct that's capable of representing both single bit and controlled single bit gates.
 struct BitBuffer {
     bool anti;
     std::vector<bitLenInt> controls;
@@ -65,7 +65,7 @@ struct BitBuffer {
         return true;
     }
 };
-  
+
 class QFusion;
 typedef std::shared_ptr<QFusion> QFusionPtr;
 
