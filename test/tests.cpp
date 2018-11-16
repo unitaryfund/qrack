@@ -2360,6 +2360,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
     qftReg->CNOT(0, 1);
     qftReg->X(0);
     qftReg->CNOT(0, 1);
+    qftReg->X(2);
+    qftReg->CNOT(2, 3);
+    qftReg->SetBit(3, false);
 
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x2));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x6));
 }

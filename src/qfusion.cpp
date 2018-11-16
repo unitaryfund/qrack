@@ -182,6 +182,24 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
     }
 }
 
+void QFusion::DiscardBit(const bitLenInt& qubitIndex)
+{
+    BitBufferPtr bfr = bitBuffers[qubitIndex];
+    if (bfr) {
+        // If we are discarding this bit, it is no longer controlled by any other bit.
+        std::vector<bitLenInt>::iterator found;
+        bitLenInt control;
+        for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
+            control = bfr->controls[i];
+            found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
+            if (found != bitControls[control].end()) {
+                bitControls[control].erase(found);
+            }
+        }
+    }
+    bitBuffers[qubitIndex] = NULL;
+}
+
 void QFusion::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
@@ -329,7 +347,7 @@ void QFusion::PhaseFlip()
         return;
     }
 
-    // We buffer the phase flip a single bit operation in bit 0.
+    // We buffer the phase flip as a single bit operation in bit 0.
     complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
     ApplySingleBit(pfm, false, 0);

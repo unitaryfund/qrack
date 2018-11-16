@@ -225,7 +225,7 @@ protected:
 
     /** Buffer discard methods, for when the state of a bit becomes irrelevant before a buffer flush */
 
-    inline void DiscardBit(const bitLenInt& qubitIndex) { bitBuffers[qubitIndex] = NULL; }
+    void DiscardBit(const bitLenInt& qubitIndex);
 
     inline void DiscardReg(const bitLenInt& start, const bitLenInt& length)
     {
