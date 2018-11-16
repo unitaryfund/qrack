@@ -138,7 +138,7 @@ BitOp QFusion::Mul2x2(BitOp left, BitOp right)
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
-    bitLenInt i, j;
+    bitLenInt i;
 
     for (i = 0; i < bitControls[qubitIndex].size(); i++) {
         FlushBit(bitControls[qubitIndex][i]);
@@ -162,12 +162,12 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
             delete[] ctrls;
 
             // Finally, nothing controls this bit any longer:
+            std::vector<bitLenInt>::iterator found;
             for (i = 0; i < bfr->controls.size(); i++) {
-                for (j = 0; j < bitControls[bfr->controls[i]].size(); j++) {
-                    if (bitControls[bfr->controls[i]][j] == qubitIndex) {
-                        bitControls[bfr->controls[i]].erase(bitControls[bfr->controls[i]].begin() + j);
-                        break;
-                    }
+                found = std::find(
+                    bitControls[bfr->controls[i]].begin(), bitControls[bfr->controls[i]].end(), bfr->controls[i]);
+                if (found != bitControls[bfr->controls[i]].end()) {
+                    bitControls[bfr->controls[i]].erase(found);
                 }
             }
         }
