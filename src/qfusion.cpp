@@ -166,7 +166,7 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
             bitLenInt control;
             for (i = 0; i < bfr->controls.size(); i++) {
                 control = bfr->controls[i];
-                found = std::find(bitControls[control].begin(), bitControls[control].end(), control);
+                found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
                 if (found != bitControls[control].end()) {
                     bitControls[control].erase(found);
                 }
