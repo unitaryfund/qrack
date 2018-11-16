@@ -24,6 +24,7 @@ using namespace Qrack;
 
 enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
+enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 std::shared_ptr<std::default_random_engine> rng;
 
 int main(int argc, char* argv[])
@@ -36,6 +37,7 @@ int main(int argc, char* argv[])
     bool disable_qunit = false;
     bool disable_opencl_multi = false;
     bool disable_single = false;
+    bool disable_qfusion = false;
 
     using namespace Catch::clara;
 
@@ -48,7 +50,8 @@ int main(int argc, char* argv[])
         Opt(disable_qunit)["--disable-qunit"]("Disable QUnit implementation tests") |
         Opt(disable_cpu)["--disable-cpu"]("Disable the CPU-based implementation tests") |
         Opt(disable_opencl_multi)["--disable-opencl-multi"]("Disable multiple device OpenCL tests") |
-        Opt(disable_single)["--disable-single"]("Disable aingle processor engine tests");
+        Opt(disable_single)["--disable-single"]("Disable single processor engine tests") |
+        Opt(disable_qfusion)["--disable-qfusion"]("Disable gate fusion tests");
 
     session.cli(cli);
 
@@ -81,8 +84,29 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QEngine -> OpenCL ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL;
             testSubEngineType = QINTERFACE_OPENCL;
+            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
                 .reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+#endif
+    }
+
+    if (num_failed == 0 && !disable_qfusion) {
+        testEngineType = QINTERFACE_QFUSION;
+        testSubEngineType = QINTERFACE_CPU;
+        testSubSubEngineType = QINTERFACE_CPU;
+        if (num_failed == 0 && !disable_cpu && !disable_single) {
+            session.config().stream() << "############ QFusion -> CPU ############" << std::endl;
+            num_failed = session.run();
+        }
+
+#if ENABLE_OPENCL
+        if (num_failed == 0 && !disable_opencl && !disable_single) {
+            session.config().stream() << "############ QFusion -> OpenCL ############" << std::endl;
+            testEngineType = QINTERFACE_QFUSION;
+            testSubEngineType = QINTERFACE_OPENCL;
+            testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
 #endif
@@ -93,6 +117,7 @@ int main(int argc, char* argv[])
         if (!disable_cpu && !disable_single) {
             session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
             testSubEngineType = QINTERFACE_CPU;
+            testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
 
@@ -100,6 +125,7 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && !disable_opencl && !disable_single) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
+            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
                 .reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
@@ -109,9 +135,31 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnitMulti ############" << std::endl;
             testEngineType = QINTERFACE_QUNITMULTI;
             testSubEngineType = QINTERFACE_OPENCL;
+            testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
 #endif
+
+        if (num_failed == 0 && !disable_qfusion) {
+            testEngineType = QINTERFACE_QUNIT;
+            if (!disable_cpu && !disable_single) {
+                session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+                testSubEngineType = QINTERFACE_QFUSION;
+                testSubSubEngineType = QINTERFACE_CPU;
+                num_failed = session.run();
+            }
+
+#if ENABLE_OPENCL
+            if (num_failed == 0 && !disable_opencl && !disable_single) {
+                session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
+                testSubEngineType = QINTERFACE_QFUSION;
+                testSubSubEngineType = QINTERFACE_OPENCL;
+                CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0)
+                    .reset(); /* Get the OpenCL banner out of the way. */
+                num_failed = session.run();
+            }
+#endif
+        }
     }
 
     return num_failed;
@@ -128,5 +176,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     std::shared_ptr<std::default_random_engine> rng = std::make_shared<std::default_random_engine>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 20, 0, rng);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
 }

@@ -753,9 +753,15 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
 // Returns probability of permutation of the register
 real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
-    bitCapInt mask = ((1U << length) - 1) << start;
-    bitCapInt perm = permutation << start;
-    return ProbMask(mask, perm);
+    real1 prob = ONE_R1;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (permutation & (1U << i)) {
+            prob *= Prob(start + i);
+        } else {
+            prob *= (ONE_R1 - Prob(start + i));
+        }
+    }
+    return prob;
 }
 
 // Returns probability of permutation of the mask

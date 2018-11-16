@@ -48,6 +48,13 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
         NormalizeState();
     }
 
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
+    }
+
     if (!doForce) {
         real1 prob = Rand();
         real1 oneChance = Prob(qubit);
@@ -70,43 +77,31 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
     return result;
 }
 
-/// Measurement gate
-bool QEngine::M(bitLenInt qubit)
-{
-    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
-    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
-    // meaning the relative amplitude phases might only become separable in the process if they are not already.
-    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
-        knowIsPhaseSeparable = false;
-    }
-    return ForceM(qubit, false, false);
-}
-
 /// Measure permutation state of a register
 bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
 {
-    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
-    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
-    // meaning the relative amplitude phases might only become separable in the process if they are not already.
-    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
-        knowIsPhaseSeparable = false;
-    }
-
     // Single bit operations are better optimized for this special case:
     if (length == 1) {
         if (values == NULL) {
             if (M(bits[0])) {
                 return (1U << bits[0]);
             } else {
-                return 0;
+                return 0U;
             }
         } else {
             if (ForceM(bits[0], values[0])) {
                 return (1U << bits[0]);
             } else {
-                return 0;
+                return 0U;
             }
         }
+    }
+
+    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
+    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
+    // meaning the relative amplitude phases might only become separable in the process if they are not already.
+    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
+        knowIsPhaseSeparable = false;
     }
 
     if (runningNorm != ONE_R1) {
@@ -567,20 +562,20 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 /// Measure permutation state of a register
 bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
+    // Single bit operations are better optimized for this special case:
+    if (length == 1U) {
+        if (ForceM(start, result & 1U, doForce)) {
+            return 1U;
+        } else {
+            return 0U;
+        }
+    }
+
     // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
     // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
     // meaning the relative amplitude phases might only become separable in the process if they are not already.
     if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
         knowIsPhaseSeparable = false;
-    }
-
-    // Single bit operations are better optimized for this special case:
-    if (length == 1) {
-        if (M(start)) {
-            return 1;
-        } else {
-            return 0;
-        }
     }
 
     if (runningNorm != ONE_R1) {

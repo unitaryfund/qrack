@@ -23,6 +23,7 @@ add_library (qrack STATIC
     src/qengine/operators.cpp
     src/qengine/gates.cpp
     src/qengine/state.cpp
+    src/qfusion.cpp
     src/qunit.cpp
     )
 
@@ -104,6 +105,7 @@ install (FILES
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
+    include/qfusion.hpp
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp

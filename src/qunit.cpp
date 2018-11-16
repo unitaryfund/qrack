@@ -21,8 +21,16 @@ namespace Qrack {
 
 QUnit::QUnit(
     QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+    : QUnit(eng, eng, qBitCount, initState, rgp)
+{
+    // Intentionally left blank
+}
+
+QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
+    std::shared_ptr<std::default_random_engine> rgp)
     : QInterface(qBitCount)
     , engine(eng)
+    , subengine(subEng)
 {
     if (rgp == nullptr) {
         /* Used to control the random seed for all allocated interfaces. */
@@ -35,7 +43,7 @@ QUnit::QUnit(
     shards.resize(qBitCount);
 
     for (bitLenInt i = 0; i < qBitCount; i++) {
-        shards[i].unit = CreateQuantumInterface(engine, engine, 1, ((1 << i) & initState) >> i, rand_generator);
+        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & initState) >> i, rand_generator);
         shards[i].mapped = 0;
     }
 }
@@ -54,7 +62,7 @@ void QUnit::CopyState(QUnit* orig)
         QEngineShard shard;
         shard.mapped = otherShard.mapped;
         if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, engine, 1, 0, rand_generator);
+            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator);
             otherUnits[otherShard.unit]->CopyState(otherShard.unit);
         }
         shard.unit = otherUnits[otherShard.unit];
@@ -64,7 +72,7 @@ void QUnit::CopyState(QUnit* orig)
 
 void QUnit::CopyState(QInterfacePtr orig)
 {
-    QInterfacePtr unit = CreateQuantumInterface(engine, engine, orig->GetQubitCount(), 0, rand_generator);
+    QInterfacePtr unit = CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator);
     unit->CopyState(orig);
 
     SetQubitCount(orig->GetQubitCount());
@@ -83,7 +91,7 @@ void QUnit::SetQuantumState(complex* inputState)
 {
     knowIsPhaseSeparable = false;
 
-    auto unit = CreateQuantumInterface(engine, engine, qubitCount, 0, rand_generator);
+    auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator);
     unit->SetQuantumState(inputState);
 
     int idx = 0;
@@ -99,7 +107,7 @@ void QUnit::SetQuantumState(complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
-    QUnit qUnitCopy(engine, 1, 0);
+    QUnit qUnitCopy(engine, subengine, 1, 0);
     qUnitCopy.CopyState((QUnit*)this);
     qUnitCopy.EntangleAll()->GetQuantumState(outputState);
 }
@@ -559,12 +567,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
 {
-    bool result;
-    if (doForce) {
-        result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, true, nrmlzr);
-    } else {
-        result = shards[qubit].unit->M(shards[qubit].mapped);
-    }
+    bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce, nrmlzr);
 
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
@@ -574,7 +577,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, engine, 1, result ? 1 : 0, rand_generator);
+    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator);
     unit->Dispose(mapped, 1);
 
     /* Update the mappings. */
@@ -773,75 +776,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     cfn(unit, controlsMapped);
 
     delete[] controlsMapped;
-}
-
-void QUnit::CCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
-{
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) ||
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
-        real1 prob = Prob(inputBit1) * Prob(inputBit2);
-        if (prob <= REAL_CLAMP) {
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            bool isClassical = true;
-            if (shards[inputBit1].unit->IsPhaseSeparable()) {
-                ForceM(inputBit1, true);
-            } else {
-                isClassical = false;
-            }
-            if (isClassical && (shards[inputBit2].unit->IsPhaseSeparable())) {
-                ForceM(inputBit2, true);
-            } else {
-                isClassical = false;
-            }
-            if (isClassical) {
-                X(outputBit);
-                return;
-            }
-        }
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCallMember(PTR3(CCNOT), inputBit1, inputBit2, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::AntiCCNOT(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
-{
-    if (((shards[inputBit1].unit) != (shards[outputBit].unit)) ||
-        ((shards[inputBit2].unit) != (shards[outputBit].unit))) {
-        real1 prob = (ONE_R1 - Prob(inputBit1)) * (ONE_R1 - Prob(inputBit2));
-        if (prob <= REAL_CLAMP) {
-            return;
-        } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-            bool isClassical = true;
-            if (shards[inputBit1].unit->IsPhaseSeparable()) {
-                ForceM(inputBit1, false);
-            } else {
-                isClassical = false;
-            }
-            if (isClassical && (shards[inputBit2].unit->IsPhaseSeparable())) {
-                ForceM(inputBit2, false);
-            } else {
-                isClassical = false;
-            }
-            if (isClassical) {
-                X(outputBit);
-                return;
-            }
-        }
-    }
-
-    bitLenInt oCopy = outputBit;
-    EntangleAndCallMember(PTR3(AntiCCNOT), inputBit1, inputBit2, outputBit);
-    TrySeparate({ oCopy });
-}
-
-void QUnit::CNOT(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CNOT), PTR1(X), control, target); }
-
-void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
-{
-    ControlCallMember(PTR2(AntiCNOT), PTR1(X), control, target, true);
 }
 
 void QUnit::H(bitLenInt qubit) { shards[qubit].unit->H(shards[qubit].mapped); }
@@ -1186,12 +1120,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
         start, flagIndex);
 }
 
-void QUnit::PhaseFlip()
-{
-    for (auto&& shard : shards) {
-        shard.unit->PhaseFlip();
-    }
-}
+void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
 
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
