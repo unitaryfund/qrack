@@ -138,7 +138,9 @@ BitOp QFusion::Mul2x2(BitOp left, BitOp right)
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
-    for (bitLenInt i = 0; i < bitControls[qubitIndex].size(); i++) {
+    bitLenInt i, j;
+
+    for (i = 0; i < bitControls[qubitIndex].size(); i++) {
         FlushBit(bitControls[qubitIndex][i]);
     }
     bitControls[qubitIndex].resize(0);
@@ -158,6 +160,16 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
             }
 
             delete[] ctrls;
+
+            // Finally, nothing controls this bit any longer:
+            for (i = 0; i < bfr->controls.size(); i++) {
+                for (j = 0; j < bitControls[bfr->controls[i]].size(); j++) {
+                    if (bitControls[bfr->controls[i]][j] == qubitIndex) {
+                        bitControls[bfr->controls[i]].erase(bitControls[bfr->controls[i]].begin() + j);
+                        break;
+                    }
+                }
+            }
         }
         bitBuffers[qubitIndex] = NULL;
     }
@@ -190,8 +202,10 @@ void QFusion::ApplyControlledSingleBit(
         FlushBit(target);
     }
 
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        bitControls[controls[i]].push_back(target);
+    if (bitBuffers[target] == NULL) {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            bitControls[controls[i]].push_back(target);
+        }
     }
 
     // Now, we're going to chain our buffered gates;
@@ -225,6 +239,12 @@ void QFusion::ApplyAntiControlledSingleBit(
     if (!(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
+    }
+
+    if (bitBuffers[target] == NULL) {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            bitControls[controls[i]].push_back(target);
+        }
     }
 
     // Now, we're going to chain our buffered gates;
