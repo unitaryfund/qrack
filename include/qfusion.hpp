@@ -16,6 +16,56 @@
 
 namespace Qrack {
 
+struct BitBuffer;
+typedef std::shared_ptr<BitBuffer> BitBufferPtr;
+typedef std::shared_ptr<complex[4]> BitOp;
+
+// We declare this as a class, rather than a struct, because it should be a nullable type:
+struct BitBuffer {
+    bool anti;
+    std::vector<bitLenInt> controls;
+    BitOp matrix;
+
+    BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
+        : anti(antiCtrl)
+        , controls(cntrlLen)
+        , matrix(new complex[4])
+    {
+        if (cntrlLen > 0) {
+            std::copy(cntrls, cntrls + cntrlLen, controls.begin());
+            std::sort(controls.begin(), controls.end());
+        }
+
+        std::copy(mtrx, mtrx + 4, matrix.get());
+    }
+
+    bool CompareControls(BitBufferPtr toCmp)
+    {
+        if (toCmp == NULL) {
+            // If a bit buffer is empty, it's fine to overwrite it.
+            return true;
+        }
+
+        // Otherwise, we return "false" if we need to flush, and true if we can keep buffering.
+
+        if (anti != toCmp->anti) {
+            return false;
+        }
+
+        if (controls.size() != toCmp->controls.size()) {
+            return false;
+        }
+
+        for (bitLenInt i = 0; i < controls.size(); i++) {
+            if (controls[i] != toCmp->controls[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+
 class QFusion;
 typedef std::shared_ptr<QFusion> QFusionPtr;
 
@@ -26,13 +76,15 @@ protected:
     QInterfaceEngine engineType;
     std::shared_ptr<std::default_random_engine> rand_generator;
 
-    std::vector<std::shared_ptr<complex[4]>> bitBuffers;
+    std::vector<BitBufferPtr> bitBuffers;
+    std::vector<std::vector<bitLenInt>> bitControls;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
         maxQPower = 1 << qubitCount;
         bitBuffers.resize(qb);
+        bitControls.resize(qb);
     }
 
     virtual void NormalizeState(real1 nrm = -999.0)
@@ -132,16 +184,12 @@ public:
     virtual real1 ProbAll(bitCapInt fullRegister);
 
 protected:
+    BitOp Mul2x2(BitOp left, BitOp right);
+
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
      * nonbufferable operations */
 
-    inline void FlushBit(bitLenInt qubitIndex)
-    {
-        if (bitBuffers[qubitIndex]) {
-            qReg->ApplySingleBit(bitBuffers[qubitIndex].get(), true, qubitIndex);
-            bitBuffers[qubitIndex] = NULL;
-        }
-    }
+    void FlushBit(const bitLenInt& qubitIndex);
 
     inline void FlushReg(const bitLenInt& start, const bitLenInt& length)
     {
