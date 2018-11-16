@@ -2352,3 +2352,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap_reg")
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
+{
+    qftReg->SetPermutation(0);
+    qftReg->X(0);
+    qftReg->CNOT(0, 1);
+    qftReg->X(0);
+    qftReg->CNOT(0, 1);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x2));
+}

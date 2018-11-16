@@ -74,7 +74,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
 
     BitBufferPtr bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
-    if (bitControls[qubitIndex].size() > 0 || !(bfr->CompareControls(bitBuffers[qubitIndex]))) {
+    if ((bitControls[qubitIndex].size() > 0) || !(bfr->CompareControls(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(qubitIndex);
     }
@@ -140,6 +140,9 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
     bitLenInt i;
 
+    // Before any bit is buffered as a control, it's flushed.
+    // If the bit needs to be flushed again, before buffering as a target bit, everything that depends on it as a
+    // control needs to be flushed.
     for (i = 0; i < bitControls[qubitIndex].size(); i++) {
         FlushBit(bitControls[qubitIndex][i]);
     }
@@ -148,8 +151,10 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
     BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
         if (bfr->controls.size() == 0) {
+            // If this bit has a buffer, with nothing controlling it, we just flush this bit.
             qReg->ApplySingleBit(bfr->matrix.get(), true, qubitIndex);
         } else {
+            // If this bit is controlled by other bits, first, we flush this bit.
             bitLenInt* ctrls = new bitLenInt[bfr->controls.size()];
             std::copy(bfr->controls.begin(), bfr->controls.end(), ctrls);
 
@@ -161,7 +166,8 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 
             delete[] ctrls;
 
-            // Finally, nothing controls this bit any longer:
+            // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
+            // controlled by another bit.
             std::vector<bitLenInt>::iterator found;
             bitLenInt control;
             for (i = 0; i < bfr->controls.size(); i++) {
@@ -198,11 +204,12 @@ void QFusion::ApplyControlledSingleBit(
     }
 
     BitBufferPtr bfr = std::make_shared<BitBuffer>(false, controls, controlLen, mtrx);
-    if (bitControls[target].size() > 0 || !(bfr->CompareControls(bitBuffers[target]))) {
+    if ((bitControls[target].size() > 0) || !(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
 
+    // We record that this bit is controlled by the bits in its control list.
     if (bitBuffers[target] == NULL) {
         for (bitLenInt i = 0; i < controlLen; i++) {
             bitControls[controls[i]].push_back(target);
@@ -237,11 +244,12 @@ void QFusion::ApplyAntiControlledSingleBit(
     }
 
     BitBufferPtr bfr = std::make_shared<BitBuffer>(true, controls, controlLen, mtrx);
-    if (bitControls[target].size() > 0 || !(bfr->CompareControls(bitBuffers[target]))) {
+    if ((bitControls[target].size() > 0) || !(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
 
+    // We record that this bit is controlled by the bits in its control list.
     if (bitBuffers[target] == NULL) {
         for (bitLenInt i = 0; i < controlLen; i++) {
             bitControls[controls[i]].push_back(target);
