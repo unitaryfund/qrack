@@ -867,10 +867,8 @@ void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outp
 
 void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
-    if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
-        for (bitLenInt i = 0; i < length; i++) {
-            XOR(inputStart1 + i, inputStart2 + i, outputStart + i);
-        }
+    for (bitLenInt i = 0; i < length; i++) {
+        XOR(inputStart1 + i, inputStart2 + i, outputStart + i);
     }
 }
 
