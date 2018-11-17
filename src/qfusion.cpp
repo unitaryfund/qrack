@@ -83,7 +83,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     bfr->matrix = Mul2x2(inBuffer, bitBuffers[qubitIndex] == NULL ? NULL : bitBuffers[qubitIndex]->matrix);
     bitBuffers[qubitIndex] = bfr;
 
-    // Almost all additional methods just wrap operations with buffer flushes, or discard the buffers.
+    // Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or discard the buffers.
 }
 
 BitOp QFusion::Mul2x2(BitOp left, BitOp right)
