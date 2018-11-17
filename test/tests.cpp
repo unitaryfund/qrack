@@ -315,6 +315,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
     qftReg->SetPermutation(0x101);
     qftReg->CSwap(control, 1, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
+    qftReg->H(8);
+    qftReg->CSwap(control, 1, 0, 4);
+    qftReg->CSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_csqrtswap")
@@ -328,6 +332,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_csqrtswap")
     qftReg->CSqrtSwap(control, 1, 0, 4);
     qftReg->CSqrtSwap(control, 1, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
+    qftReg->H(8);
+    qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CSqrtSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cisqrtswap")
@@ -335,6 +345,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cisqrtswap")
     bitLenInt control[1] = { 8 };
     qftReg->SetPermutation(0x101);
     qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->CISqrtSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
+    qftReg->H(8);
+    qftReg->CISqrtSwap(control, 1, 0, 4);
+    qftReg->CISqrtSwap(control, 1, 0, 4);
+    qftReg->CISqrtSwap(control, 1, 0, 4);
     qftReg->CISqrtSwap(control, 1, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
 }
@@ -361,6 +377,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_bit")
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
+{
+    complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
+    bitLenInt controls[3] = { 0, 1, 3 };
+    qftReg->SetPermutation(0x80000);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
+    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00));
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
@@ -1283,6 +1313,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
 {
     int i;
 
+    qftReg->SetPermutation(1);
+    qftReg->CINC(1, 0, 8, NULL, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+
     bitLenInt controls[1] = { 8 };
 
     qftReg->SetPermutation(250);
@@ -1314,6 +1348,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
     int i;
     int start = 0x08;
+
+    qftReg->SetPermutation(2);
+    qftReg->CDEC(1, 0, 8, NULL, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
@@ -1470,6 +1508,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
 
     bitLenInt controls[1] = { 16 };
 
+    qftReg->SetPermutation(1);
+    qftReg->CMUL(2, 0, 8, 8, NULL, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+
     qftReg->SetPermutation(3 | (1 << 16));
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
@@ -1488,6 +1530,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
     int i;
 
     bitLenInt controls[1] = { 16 };
+
+    qftReg->SetPermutation(2);
+    qftReg->CDIV(2, 0, 8, 8, NULL, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(256 | (1 << 16));
     bitCapInt res = 256;
@@ -1751,6 +1797,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_proball")
     qftReg->SetPermutation(0x02);
     REQUIRE(qftReg->ProbAll(0x02) > 0.99);
     REQUIRE(qftReg->ProbAll(0x03) < 0.01);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_probreg")
+{
+    qftReg->SetPermutation(0x20);
+    REQUIRE(qftReg->ProbReg(4, 4, 0x2) > 0.99);
+    REQUIRE(qftReg->ProbReg(4, 4, 0x3) < 0.01);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
+{
+    qftReg->SetPermutation(0x21);
+    REQUIRE(qftReg->ProbMask(0xF0, 0x20) > 0.99);
+    REQUIRE(qftReg->ProbMask(0xF0, 0x40) < 0.01);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")

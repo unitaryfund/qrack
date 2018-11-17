@@ -45,14 +45,15 @@ void QUnitMulti::RedistributeQEngines()
     }
 
     bitCapInt partSize = 0;
-    int devicesLeft = deviceCount;
+    int deviceId = 0;
     for (bitLenInt i = 0; i < qips.size(); i++) {
+        (dynamic_cast<QEngineOCL*>(qips[i].get()))->SetDevice(deviceIDs[deviceId]);
+
         partSize += 1U << (qips[i]->GetQubitCount());
-        if (partSize >= (totSize / devicesLeft)) {
-            (dynamic_cast<QEngineOCL*>(qips[i].get()))->SetDevice(deviceIDs[deviceCount - devicesLeft]);
+        if (partSize >= (totSize / deviceCount)) {
             partSize = 0;
-            if (devicesLeft > 1) {
-                devicesLeft--;
+            if (deviceId > 0) {
+                deviceId--;
             }
         }
     }
@@ -64,32 +65,10 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     RedistributeQEngines();
 }
 
-template <class It> QInterfacePtr QUnitMulti::EntangleIterator(It first, It last)
+QInterfacePtr QUnitMulti::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
-    RedistributeQEngines();
-    return toRet;
-}
-
-QInterfacePtr QUnitMulti::EntangleRange(bitLenInt start, bitLenInt length)
-{
-    QInterfacePtr toRet = QUnit::EntangleRange(start, length);
-    RedistributeQEngines();
-    return toRet;
-}
-
-QInterfacePtr QUnitMulti::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
-{
-    QInterfacePtr toRet = QUnit::EntangleRange(start1, length1, start2, length2);
-    RedistributeQEngines();
-    return toRet;
-}
-
-QInterfacePtr QUnitMulti::EntangleRange(
-    bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3)
-{
-    QInterfacePtr toRet = QUnit::EntangleRange(start1, length1, start2, length2, start3, length3);
-    RedistributeQEngines();
+    //RedistributeQEngines();
     return toRet;
 }
 

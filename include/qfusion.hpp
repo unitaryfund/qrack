@@ -86,11 +86,6 @@ protected:
         bitControls.resize(qb);
     }
 
-    virtual void NormalizeState(real1 nrm = -999.0)
-    {
-        // Intentionally left blank
-    }
-
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);

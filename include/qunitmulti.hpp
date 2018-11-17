@@ -140,12 +140,7 @@ public:
     virtual void CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length);
 
 protected:
-    QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
-    QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
-    QInterfacePtr EntangleRange(
-        bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
-
-    template <class It> QInterfacePtr EntangleIterator(It first, It last);
+    virtual QInterfacePtr EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     bool TrySeparate(std::vector<bitLenInt> bits);

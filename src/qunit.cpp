@@ -196,7 +196,7 @@ void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { De
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
-template <class It> QInterfacePtr QUnit::EntangleIterator(It first, It last)
+QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     std::vector<QInterfacePtr> units;
     units.reserve((int)(last - first));
@@ -236,7 +236,7 @@ template <class It> QInterfacePtr QUnit::EntangleIterator(It first, It last)
     return unit1;
 }
 
-QInterfacePtr QUnit::Entangle(std::initializer_list<bitLenInt*> bits)
+QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 {
     return EntangleIterator(bits.begin(), bits.end());
 }
@@ -960,12 +960,23 @@ void QUnit::INCxx(
      */
     M(flag2Index);
 
-    EntangleRange(start, length);
 
-    /* Make sure the flag bit is entangled in the same QU. */
-    EntangleAndCall(
-        [&](QInterfacePtr unit, bitLenInt b1, bitLenInt b2, bitLenInt b3) { ((*unit).*fn)(toMod, b1, length, b2, b3); },
-        start, flag1Index, flag2Index);
+    /* Make sure the flag bits are entangled in the same QU. */
+    std::vector<bitLenInt> bits(length + 2);
+    std::vector<bitLenInt*> ebits(length + 2);
+    for (auto i = 0; i < length; i++) {
+        bits[i] = i + start;
+        ebits[i] = &bits[i];
+    }
+    bits[length] = flag1Index;
+    ebits[length] = &bits[length];
+    bits[length + 1] = flag2Index;
+    ebits[length + 1] = &bits[length + 1];
+
+    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    OrderContiguous(unit);
+
+    ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 }
 
 void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
