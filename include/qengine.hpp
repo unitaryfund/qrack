@@ -83,10 +83,8 @@ protected:
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyControlled2x2(
         bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyDoublyAntiControlled2x2(
