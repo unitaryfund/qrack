@@ -85,9 +85,5 @@ protected:
         const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
 };
 } // namespace Qrack

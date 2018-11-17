@@ -389,39 +389,6 @@ void QEngine::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt&
     delete[] qPowersSorted;
 }
 
-void QEngine::ApplyDoublyControlled2x2(
-    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
-{
-    if (does2x2PhaseShift(mtrx)) {
-        knowIsPhaseSeparable = false;
-    }
-    bitCapInt qPowers[3];
-    bitCapInt qPowersSorted[3];
-    qPowers[0] = 1 << control1;
-    qPowers[1] = 1 << control2;
-    qPowers[2] = 1 << target;
-    std::copy(qPowers, qPowers + 3, qPowersSorted);
-    std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(
-        (qPowers[0]) | (qPowers[1]), (qPowers[0]) | (qPowers[1]) | (qPowers[2]), mtrx, 3, qPowersSorted, doCalcNorm);
-}
-
-void QEngine::ApplyDoublyAntiControlled2x2(
-    bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm)
-{
-    if (does2x2PhaseShift(mtrx)) {
-        knowIsPhaseSeparable = false;
-    }
-    bitCapInt qPowers[3];
-    bitCapInt qPowersSorted[3];
-    qPowers[0] = 1 << control1;
-    qPowers[1] = 1 << control2;
-    qPowers[2] = 1 << target;
-    std::copy(qPowers, qPowers + 3, qPowersSorted);
-    std::sort(qPowersSorted, qPowersSorted + 3);
-    Apply2x2(0, qPowers[2], mtrx, 3, qPowersSorted, doCalcNorm);
-}
-
 /// Swap values of two bits in register
 void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
