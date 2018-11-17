@@ -18,7 +18,7 @@ namespace Qrack {
 
 struct BitBuffer;
 typedef std::shared_ptr<BitBuffer> BitBufferPtr;
-typedef std::shared_ptr<complex[4]> BitOp;
+typedef std::shared_ptr<complex> BitOp;
 
 // This is a buffer struct that's capable of representing both single bit and controlled single bit gates.
 struct BitBuffer {
@@ -29,7 +29,7 @@ struct BitBuffer {
     BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
         : anti(antiCtrl)
         , controls(cntrlLen)
-        , matrix(new complex[4])
+        , matrix(new complex[4], std::default_delete<complex[]>())
     {
         if (cntrlLen > 0) {
             std::copy(cntrls, cntrls + cntrlLen, controls.begin());

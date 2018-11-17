@@ -78,7 +78,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     }
 
     // Now, we're going to chain our buffered gates;
-    BitOp inBuffer(new complex[4]);
+    BitOp inBuffer(new complex[4], std::default_delete<complex[]>());
     std::copy(mtrx, mtrx + 4, inBuffer.get());
     bfr->matrix = Mul2x2(inBuffer, bitBuffers[qubitIndex] == NULL ? NULL : bitBuffers[qubitIndex]->matrix);
     bitBuffers[qubitIndex] = bfr;
@@ -94,33 +94,33 @@ BitOp QFusion::Mul2x2(BitOp left, BitOp right)
     // exactly 0 component, number theoretically. (If it's not exactly 0 by number theory, it's numerically negligible,
     // and we're safe.)
 
-    BitOp outBuffer(new complex[4]);
+    BitOp outBuffer(new complex[4], std::default_delete<complex[]>());
 
     if (right) {
         std::vector<std::future<void>> futures(4);
 
         futures[0] = std::async(std::launch::async, [&]() {
-            outBuffer[0] = (left[0] * right[0]) + (left[1] * right[2]);
-            if (norm(outBuffer[0]) < min_norm) {
-                outBuffer[0] = complex(ZERO_R1, ZERO_R1);
+            outBuffer.get()[0] = (left.get()[0] * right.get()[0]) + (left.get()[1] * right.get()[2]);
+            if (norm(outBuffer.get()[0]) < min_norm) {
+                outBuffer.get()[0] = complex(ZERO_R1, ZERO_R1);
             }
         });
         futures[1] = std::async(std::launch::async, [&]() {
-            outBuffer[1] = (left[0] * right[1]) + (left[1] * right[3]);
-            if (norm(outBuffer[1]) < min_norm) {
-                outBuffer[1] = complex(ZERO_R1, ZERO_R1);
+            outBuffer.get()[1] = (left.get()[0] * right.get()[1]) + (left.get()[1] * right.get()[3]);
+            if (norm(outBuffer.get()[1]) < min_norm) {
+                outBuffer.get()[1] = complex(ZERO_R1, ZERO_R1);
             }
         });
         futures[2] = std::async(std::launch::async, [&]() {
-            outBuffer[2] = (left[2] * right[0]) + (left[3] * right[2]);
-            if (norm(outBuffer[2]) < min_norm) {
-                outBuffer[2] = complex(ZERO_R1, ZERO_R1);
+            outBuffer.get()[2] = (left.get()[2] * right.get()[0]) + (left.get()[3] * right.get()[2]);
+            if (norm(outBuffer.get()[2]) < min_norm) {
+                outBuffer.get()[2] = complex(ZERO_R1, ZERO_R1);
             }
         });
         futures[3] = std::async(std::launch::async, [&]() {
-            outBuffer[3] = (left[2] * right[1]) + (left[3] * right[3]);
-            if (norm(outBuffer[3]) < min_norm) {
-                outBuffer[3] = complex(ZERO_R1, ZERO_R1);
+            outBuffer.get()[3] = (left.get()[2] * right.get()[1]) + (left.get()[3] * right.get()[3]);
+            if (norm(outBuffer.get()[3]) < min_norm) {
+                outBuffer.get()[3] = complex(ZERO_R1, ZERO_R1);
             }
         });
 
