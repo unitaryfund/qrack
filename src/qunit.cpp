@@ -236,10 +236,7 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
     return unit1;
 }
 
-QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
-{
-    return EntangleIterator(bits.begin(), bits.end());
-}
+QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits) { return EntangleIterator(bits.begin(), bits.end()); }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
@@ -759,19 +756,25 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     std::vector<bitLenInt> allBits(controlLen + targets.size());
-    std::vector<bitLenInt*> ebits(controlLen + targets.size());
     for (i = 0; i < controlLen; i++) {
         allBits[i] = controls[i];
-        ebits[i] = &allBits[i];
     }
     for (i = 0; i < (int)targets.size(); i++) {
         allBits[controlLen + i] = targets[i];
-        ebits[controlLen + i] = &allBits[controlLen + i];
     }
+    std::sort(allBits.begin() + controlLen, allBits.end());
+
+    std::vector<bitLenInt*> ebits(controlLen + targets.size());
+    for (i = 0; i < (int)(controlLen + targets.size()); i++) {
+        ebits[i] = &allBits[i];
+    }
+
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
-    std::copy(allBits.begin(), allBits.begin() + controlLen, controlsMapped);
+    for (i = 0; i < controlLen; i++) {
+        controlsMapped[i] = shards[controls[i]].mapped;
+    }
 
     cfn(unit, controlsMapped);
 
@@ -891,18 +894,23 @@ void QUnit::CINT(
 {
     EntangleRange(start, length);
     std::vector<bitLenInt> bits(controlLen + 1);
-    std::vector<bitLenInt*> ebits(controlLen + 1);
     for (auto i = 0; i < controlLen; i++) {
         bits[i] = controls[i];
-        ebits[i] = &bits[i];
     }
     bits[controlLen] = start;
-    ebits[controlLen] = &bits[controlLen];
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(controlLen + 1);
+    for (auto i = 0; i < (controlLen + 1); i++) {
+        ebits[i] = &bits[i];
+    }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
-    std::copy(bits.begin(), bits.begin() + controlLen, controlsMapped);
+    for (auto i = 0; i < controlLen; i++) {
+        controlsMapped[i] = shards[controls[i]].mapped;
+    }
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, controlsMapped, controlLen);
 
@@ -939,11 +947,14 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleRange(start, length);
+
     std::vector<bitLenInt> bits(2);
-    std::vector<bitLenInt*> ebits(2);
     bits[0] = start;
-    ebits[0] = &bits[0];
     bits[1] = flagIndex;
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(2);
+    ebits[0] = &bits[0];
     ebits[1] = &bits[1];
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
@@ -965,16 +976,17 @@ void QUnit::INCxx(
      */
     M(flag2Index);
 
-
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
     std::vector<bitLenInt> bits(3);
-    std::vector<bitLenInt*> ebits(3);
     bits[0] = start;
-    ebits[0] = &bits[0];
     bits[1] = flag1Index;
-    ebits[1] = &bits[1];
     bits[2] = flag2Index;
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(3);
+    ebits[0] = &bits[0];
+    ebits[1] = &bits[1];
     ebits[2] = &bits[2];
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
@@ -1068,20 +1080,24 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     EntangleRange(start, length);
     EntangleRange(carryStart, length);
     std::vector<bitLenInt> bits(controlLen + 2);
-    std::vector<bitLenInt*> ebits(controlLen + 2);
     for (auto i = 0; i < controlLen; i++) {
         bits[i] = controls[i];
-        ebits[i] = &bits[i];
     }
     bits[controlLen] = start;
-    ebits[controlLen] = &bits[controlLen];
     bits[controlLen + 1] = carryStart;
-    ebits[controlLen + 1] = &bits[controlLen + 1];
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(controlLen + 2);
+    for (auto i = 0; i < (controlLen + 2); i++) {
+        ebits[i] = &bits[i];
+    }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
     bitLenInt* controlsMapped = new bitLenInt[controlLen];
-    std::copy(bits.begin(), bits.begin() + controlLen, controlsMapped);
+    for (auto i = 0; i < controlLen; i++) {
+        controlsMapped[i] = shards[controls[i]].mapped;
+    }
 
     ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length, controlsMapped, controlLen);
 
@@ -1131,14 +1147,16 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     EntangleRange(start, length);
 
     std::vector<bitLenInt> bits(2);
-    std::vector<bitLenInt*> ebits(2);
     bits[0] = start;
-    ebits[0] = &bits[0];
     bits[1] = flagIndex;
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(2);
+    ebits[0] = &bits[0];
     ebits[1] = &bits[1];
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
-    
+
     unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 

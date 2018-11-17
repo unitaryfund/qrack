@@ -35,8 +35,7 @@ public:
     QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : QInterface(n, rgp)
         , runningNorm(ONE_R1)
-        , doNormalize(doNorm)
-        {};
+        , doNormalize(doNorm){};
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);

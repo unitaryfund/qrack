@@ -65,7 +65,8 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     RedistributeQEngines();
 }
 
-QInterfacePtr QUnitMulti::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
+QInterfacePtr QUnitMulti::EntangleIterator(
+    std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
     RedistributeQEngines();
