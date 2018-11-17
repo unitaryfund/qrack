@@ -52,8 +52,8 @@ void QUnitMulti::RedistributeQEngines()
         partSize += 1U << (qips[i]->GetQubitCount());
         if (partSize >= (totSize / deviceCount)) {
             partSize = 0;
-            if (deviceId > 0) {
-                deviceId--;
+            if (deviceId < (deviceCount - 1)) {
+                deviceId++;
             }
         }
     }
@@ -68,7 +68,7 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 QInterfacePtr QUnitMulti::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
-    //RedistributeQEngines();
+    RedistributeQEngines();
     return toRet;
 }
 
@@ -87,7 +87,7 @@ void QUnitMulti::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     MReg(start, length);
 
     par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) {
-        shards[bit + start].unit->SetPermutation((value & (1 << bit)) > 0 ? 1 : 0);
+        shards[bit + start].unit->SetBit(shards[bit + start].mapped, !(!(value & (1 << bit))));
     });
 }
 

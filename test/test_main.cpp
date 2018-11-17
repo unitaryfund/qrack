@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
+#if 0
         if (num_failed == 0 && !disable_opencl && !disable_opencl_multi) {
             session.config().stream() << "############ QUnitMulti ############" << std::endl;
             testEngineType = QINTERFACE_QUNITMULTI;
@@ -138,6 +139,8 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+#endif
+
 #endif
 
         if (num_failed == 0 && !disable_qfusion) {

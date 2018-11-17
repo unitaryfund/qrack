@@ -176,13 +176,16 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         clFinish(true);
     }
 
+    int oldDeviceID = deviceID;
     deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
+    cl::CommandQueue oldQueue = queue;
     queue = device_context->queue;
-    clFinish(true);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
+    clFinish(true);
+
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
@@ -219,8 +222,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
-    } else if (nrmGroupCount != oldNrmGroupCount) {
-        delete[] nrmArray;
+    } else if ((oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+        nrmBuffer = NULL;
+        free(nrmArray);
+        nrmArray = NULL;
 #ifdef __APPLE__
         posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #else
@@ -229,16 +234,34 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // create buffers on device (allocate space on GPU)
-    stateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+    if (didInit) {
+        complex* nStateVec = AllocStateVec(maxQPower);
+
+        oldQueue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower, NULL);
+
+        std::copy(stateVec, stateVec + maxQPower, nStateVec);
+
+        cl::Event unmapEvent;
+        oldQueue.enqueueUnmapMemObject(*stateBuffer, stateVec, NULL, &unmapEvent);
+        unmapEvent.wait();
+
+        stateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+        free(stateVec);
+        stateVec = nStateVec;
+    } else {
+        stateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+    }
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
 
-    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
-    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-    cl::Event fillEvent;
-    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
-    device_context->wait_events.push_back(fillEvent);
+    if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+        nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+        // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+        cl::Event fillEvent;
+        queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
+        device_context->wait_events.push_back(fillEvent);
+    }
 }
 
 void QEngineOCL::SetQubitCount(bitLenInt qb)
