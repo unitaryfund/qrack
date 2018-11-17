@@ -318,7 +318,24 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
     qftReg->H(8);
     qftReg->CSwap(control, 1, 0, 4);
     qftReg->CSwap(control, 1, 0, 4);
+    qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticswap")
+{
+    bitLenInt control[1] = { 8 };
+    qftReg->SetPermutation(0x101);
+    qftReg->AntiCSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
+    qftReg->SetPermutation(0x001);
+    qftReg->AntiCSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
+    qftReg->H(8);
+    qftReg->AntiCSwap(control, 1, 0, 4);
+    qftReg->AntiCSwap(control, 1, 0, 4);
+    qftReg->H(8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_csqrtswap")
@@ -337,7 +354,28 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_csqrtswap")
     qftReg->CSqrtSwap(control, 1, 0, 4);
     qftReg->CSqrtSwap(control, 1, 0, 4);
     qftReg->CSqrtSwap(control, 1, 0, 4);
+    qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticsqrtswap")
+{
+    bitLenInt control[1] = { 8 };
+    qftReg->SetPermutation(0x101);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
+    qftReg->SetPermutation(0x001);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
+    qftReg->H(8);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->H(8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x010));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cisqrtswap")
@@ -352,7 +390,24 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cisqrtswap")
     qftReg->CISqrtSwap(control, 1, 0, 4);
     qftReg->CISqrtSwap(control, 1, 0, 4);
     qftReg->CISqrtSwap(control, 1, 0, 4);
+    qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x101));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticisqrtswap")
+{
+    bitLenInt control[1] = { 8 };
+    qftReg->SetPermutation(0x001);
+    qftReg->AntiCSqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
+    qftReg->H(8);
+    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    qftReg->AntiCISqrtSwap(control, 1, 0, 4);
+    qftReg->H(8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
@@ -378,6 +433,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_bit")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
@@ -391,6 +455,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
