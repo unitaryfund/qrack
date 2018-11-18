@@ -18,6 +18,11 @@ namespace Qrack {
 QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
     : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp)
 {
+    // Notice that this constructor does not take an engine type parameter, and it always passes QINTERFACE_OPENCL to
+    // the QUnit constructor. For QUnitMulti, the "shard" engines are therefore guaranteed to always be QEngineOCL
+    // types, and it's safe to assume that they can be cast from QInterfacePtr types to QEngineOCLPtr types in this
+    // class.
+
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
 

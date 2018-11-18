@@ -432,6 +432,10 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
+    /* Before we call OrderContinguous, when we are cohering lists of shards, we should always proactively sort the
+     * order in which we cohere qubits into a single engine. This is a cheap way to reduce the need for costly qubit
+     * swap gates, later. */
+
     if (unit->GetQubitCount() == 1) {
         return;
     }
