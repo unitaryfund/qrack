@@ -74,26 +74,11 @@ public:
 
     virtual void SetQubitCount(bitLenInt qb);
 
-    virtual void EnableNormalize(bool doN) { doNormalize = doN; }
-    virtual real1 GetNorm(bool update = true)
-    {
-        if (update) {
-            UpdateRunningNorm();
-        }
-        return runningNorm;
-    }
-    virtual void SetNorm(real1 n) { runningNorm = n; }
-
     // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
     virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
     virtual void UnlockSync();
     virtual void Sync();
     virtual void clFinish(bool doHard = false);
-    virtual complex* GetStateVector() { return stateVec; }
-    virtual cl::Context& GetCLContext() { return context; }
-    virtual int GetCLContextID() { return device_context->context_id; }
-    virtual cl::CommandQueue& GetCLQueue() { return queue; }
-    virtual BufferPtr GetStateBuffer() { return stateBuffer; }
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
@@ -174,7 +159,6 @@ public:
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
-    virtual int GetDeviceID() { return deviceID; }
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
 
     virtual void SetQuantumState(complex* inputState);

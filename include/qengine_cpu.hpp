@@ -42,8 +42,6 @@ public:
     QEngineCPU(QEngineCPUPtr toCopy);
     ~QEngineCPU() { delete[] stateVec; }
 
-    virtual void EnableNormalize(bool doN) { doNormalize = doN; }
-
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
@@ -153,14 +151,6 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     using QInterface::IsPhaseSeparable;
     virtual bool IsPhaseSeparable(bool forceCheck = false);
-    virtual real1 GetNorm(bool update = true)
-    {
-        if (update) {
-            UpdateRunningNorm();
-        }
-        return runningNorm;
-    }
-    virtual void SetNorm(real1 n) { runningNorm = n; }
     virtual void NormalizeState(real1 nrm = -999.0);
 
     /** @} */

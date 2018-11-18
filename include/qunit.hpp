@@ -233,14 +233,15 @@ protected:
     void CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
         bitLenInt controlLen);
 
-    QInterfacePtr Entangle(std::initializer_list<bitLenInt*> bits);
-    QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
-    QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
-    QInterfacePtr EntangleRange(
+    virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
+    virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
+    virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
+    virtual QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
-    QInterfacePtr EntangleAll();
+    virtual QInterfacePtr EntangleAll();
 
-    template <class It> QInterfacePtr EntangleIterator(It first, It last);
+    virtual QInterfacePtr EntangleIterator(
+        std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
@@ -251,11 +252,11 @@ protected:
     template <typename CF, typename F>
     void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
 
-    bool TrySeparate(std::vector<bitLenInt> bits);
+    virtual bool TrySeparate(std::vector<bitLenInt> bits);
 
     void OrderContiguous(QInterfacePtr unit);
 
-    void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     struct QSortEntry {
         bitLenInt bit;
@@ -268,8 +269,6 @@ protected:
     template <typename CF, typename F>
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
         const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f);
-
-    void NormalizeState(real1 nrm = -999.0) { /*intentionally left blank*/}
 
     /* Debugging and diagnostic routines. */
     void DumpShards();

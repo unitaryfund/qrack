@@ -24,13 +24,18 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
  * Abstract QEngine implementation, for all "Schroedinger method" engines
  */
 class QEngine : public QInterface {
+protected:
+    real1 runningNorm;
+    bool doNormalize;
+
+    virtual void UpdateRunningNorm() = 0;
+    virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:
     QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
-        : QInterface(n, rgp, doNorm){};
-
-    /** Destructor of QInterface */
-    virtual ~QEngine(){};
+        : QInterface(n, rgp)
+        , runningNorm(ONE_R1)
+        , doNormalize(doNorm){};
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
@@ -78,16 +83,7 @@ protected:
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(bitLenInt control, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyDoublyAntiControlled2x2(
-        bitLenInt control1, bitLenInt control2, bitLenInt target, const complex* mtrx, bool doCalcNorm);
-
-    virtual void UpdateRunningNorm() = 0;
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
 };
 } // namespace Qrack
