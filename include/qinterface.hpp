@@ -95,8 +95,6 @@ class QInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
-    real1 runningNorm;
-    bool doNormalize;
     bool knowIsPhaseSeparable;
     bool isPhaseSeparable;
 
@@ -114,8 +112,6 @@ protected:
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
-
     inline bitCapInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
@@ -128,9 +124,8 @@ protected:
     }
 
 public:
-    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
-        : doNormalize(doNorm)
-        , knowIsPhaseSeparable(true)
+    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+        : knowIsPhaseSeparable(true)
         , isPhaseSeparable(true)
         , rand_distribution(0.0, 1.0)
     {
@@ -573,11 +568,6 @@ public:
      * result.
      */
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
-
-    /**
-     *  Full Adder Gate that takes one classical input bit, one input qubit, and one carry qubit
-     */
-    virtual void CLFullAdder(bool toAdd, bitLenInt input, bitLenInt carry);
 
     /** @} */
 

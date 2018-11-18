@@ -138,6 +138,7 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
         }
+
 #endif
 
         if (num_failed == 0 && !disable_qfusion) {

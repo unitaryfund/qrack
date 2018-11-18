@@ -176,13 +176,16 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         clFinish(true);
     }
 
+    int oldDeviceID = deviceID;
     deviceID = dID;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
     context = device_context->context;
+    cl::CommandQueue oldQueue = queue;
     queue = device_context->queue;
-    clFinish(true);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
+    clFinish(true);
+
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
@@ -219,8 +222,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
-    } else if (nrmGroupCount != oldNrmGroupCount) {
-        delete[] nrmArray;
+    } else if ((oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+        nrmBuffer = NULL;
+        free(nrmArray);
+        nrmArray = NULL;
 #ifdef __APPLE__
         posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #else
@@ -229,16 +234,36 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // create buffers on device (allocate space on GPU)
-    stateBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+    if (didInit) {
+        complex* nStateVec = AllocStateVec(maxQPower);
+
+        oldQueue.enqueueMapBuffer(*stateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower, NULL);
+
+        std::copy(stateVec, stateVec + maxQPower, nStateVec);
+
+        cl::Event unmapEvent;
+        oldQueue.enqueueUnmapMemObject(*stateBuffer, stateVec, NULL, &unmapEvent);
+        unmapEvent.wait();
+
+        stateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
+        free(stateVec);
+        stateVec = nStateVec;
+    } else {
+        stateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, stateVec);
+    }
     cmplxBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
 
-    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
-    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-    cl::Event fillEvent;
-    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
-    device_context->wait_events.push_back(fillEvent);
+    if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+        nrmBuffer =
+            cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+        // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+        cl::Event fillEvent;
+        queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
+        device_context->wait_events.push_back(fillEvent);
+    }
 }
 
 void QEngineOCL::SetQubitCount(bitLenInt qb)
@@ -540,9 +565,24 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
+
+    BufferPtr otherStateBuffer;
+    complex* otherStateVec;
+    if (toCopy->deviceID == deviceID) {
+        otherStateVec = toCopy->stateVec;
+        otherStateBuffer = toCopy->stateBuffer;
+    } else {
+        otherStateVec = AllocStateVec(toCopy->maxQPower);
+        toCopy->LockSync(CL_MAP_READ);
+        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
+        toCopy->UnlockSync();
+        otherStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+    }
+
     clFinish();
     ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *(toCopy->stateBuffer));
+    ocl.call.setArg(1, *otherStateBuffer);
     ocl.call.setArg(2, ulongBuffer);
     ocl.call.setArg(3, *nStateBuffer);
 
@@ -658,11 +698,28 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
         size_t ngs2 = FixGroupSize(ngc2, nrmGroupSize);
 
+        BufferPtr otherStateBuffer;
+        complex* otherStateVec;
+        if (destination->deviceID == deviceID) {
+            otherStateVec = destination->stateVec;
+            otherStateBuffer = destination->stateBuffer;
+        } else {
+            otherStateVec = AllocStateVec(destination->maxQPower);
+            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+                sizeof(complex) * destination->maxQPower, otherStateVec);
+
+            cl::Event fillEvent;
+            queue.enqueueFillBuffer(*otherStateBuffer, complex(ZERO_R1, ZERO_R1), 0,
+                sizeof(complex) * destination->maxQPower, &waitVec, &fillEvent);
+            queue.flush();
+            fillEvent.wait();
+        }
+
         writeEvent.wait();
         amp_call.call.setArg(0, probBuffer2);
         amp_call.call.setArg(1, angleBuffer2);
         amp_call.call.setArg(2, ulongBuffer);
-        amp_call.call.setArg(3, *(destination->stateBuffer));
+        amp_call.call.setArg(3, *otherStateBuffer);
 
         queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
             cl::NDRange(ngc2), // global number of work items
@@ -675,6 +732,12 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
         delete[] partStateProb;
         delete[] partStateAngle;
+
+        if (destination->deviceID != deviceID) {
+            destination->LockSync(CL_MAP_READ | CL_MAP_WRITE);
+            std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
+            destination->UnlockSync();
+        }
     }
 
     // If we either Decohere or Dispose, calculate the state of the bit system that remains.

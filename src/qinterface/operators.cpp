@@ -158,15 +158,4 @@ void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
         X(outputBit);
     }
 }
-
-void QInterface::CLFullAdder(bool toAdd, bitLenInt input, bitLenInt carry)
-{
-    if (toAdd) {
-        AntiCNOT(carry, input);
-        // TODO
-    } else {
-        CNOT(carry, input);
-        XOR(carry, input, carry);
-    }
-}
 } // namespace Qrack
