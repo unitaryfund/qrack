@@ -17,47 +17,23 @@
 namespace Qrack {
 
 struct BitBuffer;
+struct GateBuffer;
+struct ArithmeticBuffer;
 typedef std::shared_ptr<BitBuffer> BitBufferPtr;
+typedef std::shared_ptr<GateBuffer> GateBufferPtr;
+typedef std::shared_ptr<ArithmeticBuffer> ArithmeticBufferPtr;
 typedef std::shared_ptr<complex> BitOp;
 
 // This is a buffer struct that's capable of representing both single bit and controlled single bit gates.
 struct BitBuffer {
     bool anti;
-    std::vector<bitLenInt> controls;
-    BitOp matrix;
-
-    // For arithmetic gates:
     bool isArithmetic;
-    bitLenInt start;
-    bitLenInt length;
-    int toAdd;
+    std::vector<bitLenInt> controls;
 
-    BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
+    BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, bool isArith)
         : anti(antiCtrl)
+        , isArithmetic(isArith)
         , controls(cntrlLen)
-        , matrix(new complex[4], std::default_delete<complex[]>())
-        , isArithmetic(false)
-        , start(0)
-        , length(0)
-        , toAdd(0)
-    {
-        if (cntrlLen > 0) {
-            std::copy(cntrls, cntrls + cntrlLen, controls.begin());
-            std::sort(controls.begin(), controls.end());
-        }
-
-        std::copy(mtrx, mtrx + 4, matrix.get());
-    }
-
-    BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const bitLenInt& strt,
-        const bitLenInt& len, int intToAdd)
-        : anti(antiCtrl)
-        , controls(cntrlLen)
-        , matrix(NULL)
-        , isArithmetic(true)
-        , start(strt)
-        , length(len)
-        , toAdd(intToAdd)
     {
         if (cntrlLen > 0) {
             std::copy(cntrls, cntrls + cntrlLen, controls.begin());
@@ -65,7 +41,7 @@ struct BitBuffer {
         }
     }
 
-    bool CompareControls(BitBufferPtr toCmp)
+    virtual bool CompareControls(BitBufferPtr toCmp)
     {
         if (toCmp == NULL) {
             // If a bit buffer is empty, it's fine to overwrite it.
@@ -82,14 +58,6 @@ struct BitBuffer {
             return false;
         }
 
-        if (start != toCmp->start) {
-            return false;
-        }
-
-        if (length != toCmp->length) {
-            return false;
-        }
-
         if (controls.size() != toCmp->controls.size()) {
             return false;
         }
@@ -98,6 +66,55 @@ struct BitBuffer {
             if (controls[i] != toCmp->controls[i]) {
                 return false;
             }
+        }
+
+        return true;
+    }
+};
+
+struct GateBuffer : BitBuffer {
+    BitOp matrix;
+
+    GateBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
+        : BitBuffer(antiCtrl, cntrls, cntrlLen, false)
+        , matrix(new complex[4], std::default_delete<complex[]>())
+    {
+        std::copy(mtrx, mtrx + 4, matrix.get());
+    }
+};
+
+struct ArithmeticBuffer : BitBuffer {
+    bitLenInt start;
+    bitLenInt length;
+    int toAdd;
+
+    ArithmeticBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const bitLenInt& strt,
+        const bitLenInt& len, int intToAdd)
+        : BitBuffer(antiCtrl, cntrls, cntrlLen, true)
+        , start(strt)
+        , length(len)
+        , toAdd(intToAdd)
+    {
+        // Intentionally left blank.
+    }
+
+    virtual bool CompareControls(BitBufferPtr toCmp)
+    {
+        if (toCmp == NULL) {
+            return true;
+        }
+
+        if (BitBuffer::CompareControls(toCmp) == false) {
+            return false;
+        }
+
+        ArithmeticBuffer* toCmpArith = dynamic_cast<ArithmeticBuffer*>(toCmp.get());
+        if (start != toCmpArith->start) {
+            return false;
+        }
+
+        if (length != toCmpArith->length) {
+            return false;
         }
 
         return true;
