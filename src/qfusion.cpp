@@ -22,19 +22,19 @@ namespace Qrack {
 
 QFusion::QFusion(
     QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
-    : QInterface(qBitCount)
+    : QInterface(qBitCount, rgp)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
-    if (rgp == nullptr) {
-        /* Used to control the random seed for all allocated interfaces. */
-        rand_generator = std::make_shared<std::default_random_engine>();
-        rand_generator->seed(std::time(0));
-    } else {
-        rand_generator = rgp;
-    }
+    qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp);
+}
 
-    qReg = CreateQuantumInterface(eng, qBitCount, initState, rand_generator);
+QFusion::QFusion(QInterfacePtr target)
+    : QInterface(target->GetQubitCount())
+    , bitBuffers(target->GetQubitCount())
+    , bitControls(target->GetQubitCount())
+{
+    qReg = target;
 }
 
 /**

@@ -73,7 +73,6 @@ class QFusion : public QInterface {
 protected:
     static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
-    std::shared_ptr<std::default_random_engine> rand_generator;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;
@@ -89,6 +88,7 @@ protected:
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
+    QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -176,6 +176,15 @@ public:
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
+
+    virtual QInterfacePtr ReturnEngine()
+    {
+        FlushAll();
+        QInterfacePtr toRet = qReg;
+        qReg = NULL;
+        SetQubitCount(0);
+        return toRet;
+    }
 
 protected:
     BitOp Mul2x2(BitOp left, BitOp right);
