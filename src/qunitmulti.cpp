@@ -22,7 +22,7 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     // the QUnit constructor. For QUnitMulti, the "shard" engines are therefore guaranteed to always be QEngineOCL
     // types, and it's safe to assume that they can be cast from QInterfacePtr types to QEngineOCLPtr types in this
     // class.
-
+  
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
 
@@ -69,7 +69,6 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     QUnit::Detach(start, length, dest);
     RedistributeQEngines();
 }
-
 QInterfacePtr QUnitMulti::EntangleIterator(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
