@@ -2506,20 +2506,24 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
 {
-    qftReg->SetPermutation(0);
-    qftReg->X(0);
-    qftReg->CNOT(0, 1);
-    qftReg->X(0);
-    qftReg->CNOT(0, 1);
-    qftReg->X(2);
-    qftReg->CNOT(2, 3);
-    qftReg->SetBit(3, false);
+    QFusion optimizer(qftReg);
 
-    qftReg->AntiCCNOT(4, 5, 6);
-    qftReg->CCNOT(4, 5, 7);
-    qftReg->X(6);
-    qftReg->AntiCCNOT(4, 5, 6);
-    qftReg->AntiCCNOT(4, 5, 7);
+    optimizer.SetPermutation(0);
+    optimizer.X(0);
+    optimizer.CNOT(0, 1);
+    optimizer.X(0);
+    optimizer.CNOT(0, 1);
+    optimizer.X(2);
+    optimizer.CNOT(2, 3);
+    optimizer.SetBit(3, false);
+
+    optimizer.AntiCCNOT(4, 5, 6);
+    optimizer.CCNOT(4, 5, 7);
+    optimizer.X(6);
+    optimizer.AntiCCNOT(4, 5, 6);
+    optimizer.AntiCCNOT(4, 5, 7);
+
+    qftReg = optimizer.ReturnEngine();
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC6));
 }
