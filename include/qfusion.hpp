@@ -82,6 +82,14 @@ struct BitBuffer {
             return false;
         }
 
+        if (start != toCmp->start) {
+            return false;
+        }
+
+        if (length != toCmp->length) {
+            return false;
+        }
+
         if (controls.size() != toCmp->controls.size()) {
             return false;
         }
