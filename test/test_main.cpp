@@ -137,13 +137,6 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_OPENCL;
             testSubSubEngineType = QINTERFACE_OPENCL;
             num_failed = session.run();
-
-            if (num_failed == 0) {
-                session.config().stream() << "############ QUnitMulti ############" << std::endl;
-                testEngineType = QINTERFACE_QUNITMULTI;
-                testSubEngineType = QINTERFACE_OPENCL;
-                num_failed = session.run();
-            }
         }
 
 #endif
