@@ -542,7 +542,7 @@ void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitL
     for (i = 0; i < controlLen; i++) {
         FlushBit(controls[i]);
     }
-    
+
     BitBufferPtr toCheck;
     BitBufferPtr bfr = std::make_shared<BitBuffer>(false, controls, controlLen, inOutStart, length, toAdd);
 
