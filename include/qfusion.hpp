@@ -26,10 +26,20 @@ struct BitBuffer {
     std::vector<bitLenInt> controls;
     BitOp matrix;
 
+    // For arithmetic gates:
+    bool isArithmetic;
+    bitLenInt start;
+    bitLenInt length;
+    int toAdd;
+
     BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
         : anti(antiCtrl)
         , controls(cntrlLen)
         , matrix(new complex[4], std::default_delete<complex[]>())
+        , isArithmetic(false)
+        , start(0)
+        , length(0)
+        , toAdd(0)
     {
         if (cntrlLen > 0) {
             std::copy(cntrls, cntrls + cntrlLen, controls.begin());
@@ -37,6 +47,22 @@ struct BitBuffer {
         }
 
         std::copy(mtrx, mtrx + 4, matrix.get());
+    }
+
+    BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const bitLenInt& strt,
+        const bitLenInt& len, int intToAdd)
+        : anti(antiCtrl)
+        , controls(cntrlLen)
+        , matrix(NULL)
+        , isArithmetic(true)
+        , start(strt)
+        , length(len)
+        , toAdd(intToAdd)
+    {
+        if (cntrlLen > 0) {
+            std::copy(cntrls, cntrls + cntrlLen, controls.begin());
+            std::sort(controls.begin(), controls.end());
+        }
     }
 
     bool CompareControls(BitBufferPtr toCmp)
@@ -49,6 +75,10 @@ struct BitBuffer {
         // Otherwise, we return "false" if we need to flush, and true if we can keep buffering.
 
         if (anti != toCmp->anti) {
+            return false;
+        }
+
+        if (isArithmetic != toCmp->isArithmetic) {
             return false;
         }
 

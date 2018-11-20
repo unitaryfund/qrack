@@ -151,7 +151,18 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
     if (bfr) {
         if (bfr->controls.size() == 0) {
             // If this bit has a buffer, with nothing controlling it, we just flush this bit.
-            qReg->ApplySingleBit(bfr->matrix.get(), true, qubitIndex);
+            if (bfr->isArithmetic) {
+                if (bfr->toAdd > 0) {
+                    qReg->INC(bfr->toAdd, bfr->start, bfr->length);
+                } else if (bfr->toAdd < 0) {
+                    qReg->DEC(-(bfr->toAdd), bfr->start, bfr->length);
+                }
+                for (i = 0; i < bfr->length; i++) {
+                    bitBuffers[bfr->start + i] = NULL;
+                }
+            } else {
+                qReg->ApplySingleBit(bfr->matrix.get(), true, qubitIndex);
+            }
         } else {
             // If this bit is controlled by other bits, first, we flush this bit.
             bitLenInt* ctrls = new bitLenInt[bfr->controls.size()];
@@ -487,8 +498,30 @@ bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
 void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
-    FlushReg(start, length);
-    qReg->INC(toAdd, start, length);
+    // We can fuse arithmetic, but this does not necessarily commute with nonarithmetic gates.
+    // We must flush the bit buffers, if they aren't arithmetic buffers.
+
+    bitLenInt i;
+    BitBufferPtr toCheck;
+    for (i = 0; i < length; i++) {
+        toCheck = bitBuffers[start + i];
+        if ((toCheck != NULL) &&
+            (!(toCheck->isArithmetic) || (toCheck->start != start) || (toCheck->length != length))) {
+            FlushReg(start, length);
+            break;
+        }
+    }
+
+    toCheck = bitBuffers[start];
+    BitBufferPtr bfr;
+    if (toCheck == NULL) {
+        bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, start, length, toAdd);
+        for (i = 0; i < length; i++) {
+            bitBuffers[start + i] = bfr;
+        }
+    } else {
+        toCheck->toAdd += toAdd;
+    }
 }
 
 void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
@@ -542,8 +575,30 @@ void QFusion::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
 
 void QFusion::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
-    FlushReg(start, length);
-    qReg->DEC(toSub, start, length);
+    // We can fuse arithmetic, but this does not necessarily commute with nonarithmetic gates.
+    // We must flush the bit buffers, if they aren't arithmetic buffers.
+
+    bitLenInt i;
+    BitBufferPtr toCheck;
+    for (i = 0; i < length; i++) {
+        toCheck = bitBuffers[start + i];
+        if ((toCheck != NULL) &&
+            (!(toCheck->isArithmetic) || (toCheck->start != start) || (toCheck->length != length))) {
+            FlushReg(start, length);
+            break;
+        }
+    }
+
+    toCheck = bitBuffers[start];
+    BitBufferPtr bfr;
+    if (toCheck == NULL) {
+        bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, start, length, -toSub);
+        for (i = 0; i < length; i++) {
+            bitBuffers[start + i] = bfr;
+        }
+    } else {
+        toCheck->toAdd -= toSub;
+    }
 }
 
 void QFusion::CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
