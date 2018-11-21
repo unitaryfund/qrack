@@ -24,7 +24,7 @@ typedef std::shared_ptr<GateBuffer> GateBufferPtr;
 typedef std::shared_ptr<ArithmeticBuffer> ArithmeticBufferPtr;
 typedef std::shared_ptr<complex> BitOp;
 
-// This is a buffer struct that's capable of representing both single bit and controlled single bit gates.
+// This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
 struct BitBuffer {
     bool anti;
     bool isArithmetic;

@@ -212,6 +212,11 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
 {
     BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
+        // If this is an arithmetic buffer, it has side-effects for other bits.
+        if (bfr->isArithmetic) {
+            FlushBit(qubitIndex);
+            return;
+        }
         // If we are discarding this bit, it is no longer controlled by any other bit.
         std::vector<bitLenInt>::iterator found;
         bitLenInt control;
