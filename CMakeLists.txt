@@ -97,6 +97,7 @@ install (FILES
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
+    include/common/bitbuffer.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 

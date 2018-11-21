@@ -97,48 +97,10 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 
     BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
-        if (bfr->controls.size() == 0) {
-            // If this bit has a buffer, with nothing controlling it, we just flush this bit.
-            if (bfr->isArithmetic) {
-                ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(bitBuffers[qubitIndex].get());
-                if (aBfr->toAdd > 0) {
-                    qReg->INC(aBfr->toAdd, aBfr->start, aBfr->length);
-                } else if (aBfr->toAdd < 0) {
-                    qReg->DEC(-(aBfr->toAdd), aBfr->start, aBfr->length);
-                }
-                for (i = 0; i < aBfr->length; i++) {
-                    bitBuffers[aBfr->start + i] = NULL;
-                }
-            } else {
-                GateBuffer* gBfr = dynamic_cast<GateBuffer*>(bitBuffers[qubitIndex].get());
-                qReg->ApplySingleBit(gBfr->matrix.get(), true, qubitIndex);
-            }
-        } else {
-            // If this bit is controlled by other bits, first, we flush this bit.
-            bitLenInt* ctrls = new bitLenInt[bfr->controls.size()];
-            std::copy(bfr->controls.begin(), bfr->controls.end(), ctrls);
+        // First, we flush this bit.
+        bfr->Apply(qReg, qubitIndex, &bitBuffers);
 
-            if (bfr->isArithmetic) {
-                ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(bitBuffers[qubitIndex].get());
-                if (aBfr->toAdd > 0) {
-                    qReg->CINC(aBfr->toAdd, aBfr->start, aBfr->length, ctrls, aBfr->controls.size());
-                } else if (aBfr->toAdd < 0) {
-                    qReg->CDEC(-(aBfr->toAdd), aBfr->start, aBfr->length, ctrls, aBfr->controls.size());
-                }
-                for (i = 0; i < aBfr->length; i++) {
-                    bitBuffers[aBfr->start + i] = NULL;
-                }
-            } else {
-                GateBuffer* gBfr = dynamic_cast<GateBuffer*>(bitBuffers[qubitIndex].get());
-                if (gBfr->anti) {
-                    qReg->ApplyAntiControlledSingleBit(ctrls, gBfr->controls.size(), qubitIndex, gBfr->matrix.get());
-                } else {
-                    qReg->ApplyControlledSingleBit(ctrls, gBfr->controls.size(), qubitIndex, gBfr->matrix.get());
-                }
-            }
-
-            delete[] ctrls;
-
+        if (bfr->controls.size() > 0) {
             // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
             // controlled by another bit.
             std::vector<bitLenInt>::iterator found;
@@ -151,7 +113,6 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
                 }
             }
         }
-        bitBuffers[qubitIndex] = NULL;
     }
 }
 
