@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <future>
+
 #include "qinterface.hpp"
 
 namespace Qrack {
@@ -39,6 +41,14 @@ struct BitBuffer {
             std::copy(cntrls, cntrls + cntrlLen, controls.begin());
             std::sort(controls.begin(), controls.end());
         }
+    }
+
+    BitBuffer(BitBuffer* toCopy)
+        : anti(toCopy->anti)
+        , isArithmetic(toCopy->isArithmetic)
+        , controls(toCopy->controls)
+    {
+        // Intentionally left blank.
     }
 
     virtual bool CompareControls(BitBufferPtr toCmp)
@@ -72,7 +82,7 @@ struct BitBuffer {
     }
 };
 
-struct GateBuffer : BitBuffer {
+struct GateBuffer : public BitBuffer {
     BitOp matrix;
 
     GateBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
@@ -81,9 +91,67 @@ struct GateBuffer : BitBuffer {
     {
         std::copy(mtrx, mtrx + 4, matrix.get());
     }
+
+    GateBuffer(GateBuffer* toCopy, BitOp mtrx)
+        : BitBuffer(toCopy)
+        , matrix(mtrx)
+    {
+        // Intentionally left blank.
+    }
+
+    GateBufferPtr LeftMul(BitBufferPtr rightBuffer)
+    {
+        // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
+        // We parallelize this, since we can.
+        // If a matrix component is very close to zero, we assume it's floating-point-error on a composition that has an
+        // exactly 0 component, number theoretically. (If it's not exactly 0 by number theory, it's numerically
+        // negligible, and we're safe.)
+
+        BitOp outBuffer(new complex[4], std::default_delete<complex[]>());
+
+        if (rightBuffer != NULL) {
+            GateBuffer* rightGate = dynamic_cast<GateBuffer*>(rightBuffer.get());
+            BitOp right = rightGate->matrix;
+
+            std::vector<std::future<void>> futures(4);
+
+            futures[0] = std::async(std::launch::async, [&]() {
+                outBuffer.get()[0] = (matrix.get()[0] * right.get()[0]) + (matrix.get()[1] * right.get()[2]);
+                if (norm(outBuffer.get()[0]) < min_norm) {
+                    outBuffer.get()[0] = complex(ZERO_R1, ZERO_R1);
+                }
+            });
+            futures[1] = std::async(std::launch::async, [&]() {
+                outBuffer.get()[1] = (matrix.get()[0] * right.get()[1]) + (matrix.get()[1] * right.get()[3]);
+                if (norm(outBuffer.get()[1]) < min_norm) {
+                    outBuffer.get()[1] = complex(ZERO_R1, ZERO_R1);
+                }
+            });
+            futures[2] = std::async(std::launch::async, [&]() {
+                outBuffer.get()[2] = (matrix.get()[2] * right.get()[0]) + (matrix.get()[3] * right.get()[2]);
+                if (norm(outBuffer.get()[2]) < min_norm) {
+                    outBuffer.get()[2] = complex(ZERO_R1, ZERO_R1);
+                }
+            });
+            futures[3] = std::async(std::launch::async, [&]() {
+                outBuffer.get()[3] = (matrix.get()[2] * right.get()[1]) + (matrix.get()[3] * right.get()[3]);
+                if (norm(outBuffer.get()[3]) < min_norm) {
+                    outBuffer.get()[3] = complex(ZERO_R1, ZERO_R1);
+                }
+            });
+
+            for (int i = 0; i < 4; i++) {
+                futures[i].get();
+            }
+        } else {
+            std::copy(matrix.get(), matrix.get() + 4, outBuffer.get());
+        }
+
+        return std::make_shared<GateBuffer>(this, outBuffer);
+    }
 };
 
-struct ArithmeticBuffer : BitBuffer {
+struct ArithmeticBuffer : public BitBuffer {
     bitLenInt start;
     bitLenInt length;
     int toAdd;
@@ -232,7 +300,7 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
-    virtual QInterfacePtr ReturnEngine()
+    virtual QInterfacePtr ReleaseEngine()
     {
         FlushAll();
         QInterfacePtr toRet = qReg;
@@ -242,8 +310,6 @@ public:
     }
 
 protected:
-    BitOp Mul2x2(BitOp left, BitOp right);
-
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
      * nonbufferable operations */
 
@@ -293,5 +359,8 @@ protected:
     }
 
     inline void DiscardAll() { DiscardReg(0, qubitCount); }
+
+    /** Method to compose arithmetic gates */
+    void BufferArithmetic(bitLenInt* controls, bitLenInt controlLen, int toAdd, bitLenInt inOutStart, bitLenInt length);
 };
 } // namespace Qrack
