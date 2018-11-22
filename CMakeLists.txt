@@ -14,6 +14,7 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
+    src/common/bitbuffer.cpp
     src/qinterface/qinterface.cpp
     src/qinterface/protected.cpp
     src/qinterface/operators.cpp

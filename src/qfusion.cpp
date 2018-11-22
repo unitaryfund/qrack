@@ -71,7 +71,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
-    if ((bitControls[qubitIndex].size() > 0) || !(bfr->CompareControls(bitBuffers[qubitIndex]))) {
+    if ((bitControls[qubitIndex].size() > 0) || !(bfr->Combinable(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(qubitIndex);
     }
@@ -160,7 +160,7 @@ void QFusion::ApplyControlledSingleBit(
     }
 
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, controls, controlLen, mtrx);
-    if ((bitControls[target].size() > 0) || !(bfr->CompareControls(bitBuffers[target]))) {
+    if ((bitControls[target].size() > 0) || !(bfr->Combinable(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
@@ -197,7 +197,7 @@ void QFusion::ApplyAntiControlledSingleBit(
     }
 
     GateBufferPtr bfr = std::make_shared<GateBuffer>(true, controls, controlLen, mtrx);
-    if ((bitControls[target].size() > 0) || !(bfr->CompareControls(bitBuffers[target]))) {
+    if ((bitControls[target].size() > 0) || !(bfr->Combinable(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
@@ -436,7 +436,8 @@ void QFusion::BufferArithmetic(
 
     for (i = 0; i < length; i++) {
         toCheck = bitBuffers[inOutStart + i];
-        if (!(bfr->CompareControls(toCheck))) {
+        // "Combinable" checks whether two buffers can be combined, including gate vs. arithmetic types.
+        if (!(bfr->Combinable(toCheck))) {
             FlushReg(inOutStart, length);
             break;
         }
@@ -451,6 +452,8 @@ void QFusion::BufferArithmetic(
             bitControls[controls[i]].push_back(inOutStart);
         }
     } else {
+        // After the buffers have been compared with "Combinable," it's safe to assume the old buffer is an
+        // ArithmeticBuffer.
         dynamic_cast<ArithmeticBuffer*>(toCheck.get())->toAdd += toAdd;
     }
 }
