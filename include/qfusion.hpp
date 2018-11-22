@@ -12,8 +12,6 @@
 
 #pragma once
 
-#include <future>
-
 #include "common/bitbuffer.hpp"
 #include "qinterface.hpp"
 
