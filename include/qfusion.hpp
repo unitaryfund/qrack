@@ -12,59 +12,10 @@
 
 #pragma once
 
+#include "common/bitbuffer.hpp"
 #include "qinterface.hpp"
 
 namespace Qrack {
-
-struct BitBuffer;
-typedef std::shared_ptr<BitBuffer> BitBufferPtr;
-typedef std::shared_ptr<complex> BitOp;
-
-// This is a buffer struct that's capable of representing both single bit and controlled single bit gates.
-struct BitBuffer {
-    bool anti;
-    std::vector<bitLenInt> controls;
-    BitOp matrix;
-
-    BitBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& cntrlLen, const complex* mtrx)
-        : anti(antiCtrl)
-        , controls(cntrlLen)
-        , matrix(new complex[4], std::default_delete<complex[]>())
-    {
-        if (cntrlLen > 0) {
-            std::copy(cntrls, cntrls + cntrlLen, controls.begin());
-            std::sort(controls.begin(), controls.end());
-        }
-
-        std::copy(mtrx, mtrx + 4, matrix.get());
-    }
-
-    bool CompareControls(BitBufferPtr toCmp)
-    {
-        if (toCmp == NULL) {
-            // If a bit buffer is empty, it's fine to overwrite it.
-            return true;
-        }
-
-        // Otherwise, we return "false" if we need to flush, and true if we can keep buffering.
-
-        if (anti != toCmp->anti) {
-            return false;
-        }
-
-        if (controls.size() != toCmp->controls.size()) {
-            return false;
-        }
-
-        for (bitLenInt i = 0; i < controls.size(); i++) {
-            if (controls[i] != toCmp->controls[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-};
 
 class QFusion;
 typedef std::shared_ptr<QFusion> QFusionPtr;
@@ -73,7 +24,6 @@ class QFusion : public QInterface {
 protected:
     static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
-    std::shared_ptr<std::default_random_engine> rand_generator;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;
@@ -89,6 +39,7 @@ protected:
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr);
+    QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -177,9 +128,16 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
-protected:
-    BitOp Mul2x2(BitOp left, BitOp right);
+    virtual QInterfacePtr ReleaseEngine()
+    {
+        FlushAll();
+        QInterfacePtr toRet = qReg;
+        qReg = NULL;
+        SetQubitCount(0);
+        return toRet;
+    }
 
+protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
      * nonbufferable operations */
 
@@ -229,5 +187,8 @@ protected:
     }
 
     inline void DiscardAll() { DiscardReg(0, qubitCount); }
+
+    /** Method to compose arithmetic gates */
+    void BufferArithmetic(bitLenInt* controls, bitLenInt controlLen, int toAdd, bitLenInt inOutStart, bitLenInt length);
 };
 } // namespace Qrack

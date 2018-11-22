@@ -14,6 +14,7 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
+    src/common/bitbuffer.cpp
     src/qinterface/qinterface.cpp
     src/qinterface/protected.cpp
     src/qinterface/operators.cpp
@@ -97,6 +98,7 @@ install (FILES
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
+    include/common/bitbuffer.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
