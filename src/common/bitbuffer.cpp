@@ -65,7 +65,7 @@ GateBuffer::GateBuffer(bool antiCtrl, const bitLenInt* cntrls, const bitLenInt& 
     std::copy(mtrx, mtrx + 4, matrix.get());
 }
 
-GateBufferPtr GateBuffer::LeftMul(BitBufferPtr rightBuffer)
+BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
 {
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
     // We parallelize this, since we can.
@@ -141,10 +141,11 @@ bool ArithmeticBuffer::Combinable(BitBufferPtr toCmp)
         return true;
     }
 
-    if (BitBuffer::Combinable(toCmp) == false) {
+    if (!(BitBuffer::Combinable(toCmp))) {
         return false;
     }
 
+    // BitBuffer::Combinable requires either both or neither of the buyers to be arithmetic, which makes this cast safe
     ArithmeticBuffer* toCmpArith = dynamic_cast<ArithmeticBuffer*>(toCmp.get());
     if (start != toCmpArith->start) {
         return false;
@@ -180,6 +181,16 @@ void ArithmeticBuffer::Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, st
 
     for (bitLenInt i = 0; i < length; i++) {
         (*bitBuffers)[start + i] = NULL;
+    }
+}
+
+BitBufferPtr ArithmeticBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
+{
+    if (rightBuffer) {
+        ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(rightBuffer.get());
+        return std::make_shared<ArithmeticBuffer>(this, aBfr->toAdd);
+    } else {
+        return std::make_shared<ArithmeticBuffer>(this, 0);
     }
 }
 } // namespace Qrack

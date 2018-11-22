@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 #include "qinterface.hpp"
 
@@ -47,6 +47,8 @@ struct BitBuffer {
     virtual void Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers) = 0;
 
     virtual bool Combinable(BitBufferPtr toCmp);
+
+    virtual BitBufferPtr LeftRightCompose(BitBufferPtr rightBuffer) = 0;
 };
 
 struct GateBuffer : public BitBuffer {
@@ -61,9 +63,9 @@ struct GateBuffer : public BitBuffer {
         // Intentionally left blank.
     }
 
-    GateBufferPtr LeftMul(BitBufferPtr rightBuffer);
-
     virtual void Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers);
+
+    virtual BitBufferPtr LeftRightCompose(BitBufferPtr rightBuffer);
 };
 
 struct ArithmeticBuffer : public BitBuffer {
@@ -81,8 +83,19 @@ struct ArithmeticBuffer : public BitBuffer {
         // Intentionally left blank.
     }
 
+    ArithmeticBuffer(ArithmeticBuffer* toCopy, int add)
+        : BitBuffer(toCopy)
+        , start(toCopy->start)
+        , length(toCopy->length)
+        , toAdd(toCopy->toAdd + add)
+    {
+        // Intentionally left blank.
+    }
+
     virtual bool Combinable(BitBufferPtr toCmp);
 
     virtual void Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers);
+
+    virtual BitBufferPtr LeftRightCompose(BitBufferPtr rightBuffer);
 };
 } // namespace Qrack

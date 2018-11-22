@@ -77,7 +77,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     }
 
     // Now, we're going to chain our buffered gates;
-    bitBuffers[qubitIndex] = bfr->LeftMul(bitBuffers[qubitIndex]);
+    bitBuffers[qubitIndex] = bfr->LeftRightCompose(bitBuffers[qubitIndex]);
 }
 
 // Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
@@ -173,7 +173,7 @@ void QFusion::ApplyControlledSingleBit(
     }
 
     // Now, we're going to chain our buffered gates;
-    bitBuffers[target] = bfr->LeftMul(bitBuffers[target]);
+    bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
 void QFusion::ApplyAntiControlledSingleBit(
@@ -210,7 +210,7 @@ void QFusion::ApplyAntiControlledSingleBit(
     }
 
     // Now, we're going to chain our buffered gates;
-    bitBuffers[target] = bfr->LeftMul(bitBuffers[target]);
+    bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
 // "Cohere" will increase the cost of application of every currently buffered gate by a factor of 2 per "cohered" qubit,
@@ -444,17 +444,18 @@ void QFusion::BufferArithmetic(
     }
 
     toCheck = bitBuffers[inOutStart];
+
+    // After the buffers have been compared with "Combinable," it's safe to assume the old buffer is an
+    // ArithmeticBuffer.
+    BitBufferPtr nBfr = bfr->LeftRightCompose(toCheck);
+    for (i = 0; i < length; i++) {
+        bitBuffers[inOutStart + i] = nBfr;
+    }
+
     if (toCheck == NULL) {
-        for (i = 0; i < length; i++) {
-            bitBuffers[inOutStart + i] = bfr;
-        }
         for (i = 0; i < controlLen; i++) {
             bitControls[controls[i]].push_back(inOutStart);
         }
-    } else {
-        // After the buffers have been compared with "Combinable," it's safe to assume the old buffer is an
-        // ArithmeticBuffer.
-        dynamic_cast<ArithmeticBuffer*>(toCheck.get())->toAdd += toAdd;
     }
 }
 
