@@ -141,7 +141,7 @@ bool ArithmeticBuffer::Combinable(BitBufferPtr toCmp)
         return true;
     }
 
-    if (!(BitBuffer::Combinable(toCmp))) {
+    if (!BitBuffer::Combinable(toCmp)) {
         return false;
     }
 
