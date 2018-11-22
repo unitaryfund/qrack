@@ -2523,7 +2523,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
     optimizer.AntiCCNOT(4, 5, 6);
     optimizer.AntiCCNOT(4, 5, 7);
 
-    qftReg = optimizer.ReturnEngine();
+    qftReg = optimizer.ReleaseEngine();
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC6));
 }

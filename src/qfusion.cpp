@@ -11,7 +11,6 @@
 // for details.
 
 #include <ctime>
-#include <future>
 #include <initializer_list>
 #include <map>
 
@@ -71,69 +70,18 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
     }
 
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
     if ((bitControls[qubitIndex].size() > 0) || !(bfr->CompareControls(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(qubitIndex);
     }
 
     // Now, we're going to chain our buffered gates;
-    BitOp inBuffer(new complex[4], std::default_delete<complex[]>());
-    std::copy(mtrx, mtrx + 4, inBuffer.get());
-    bfr->matrix = Mul2x2(inBuffer, bitBuffers[qubitIndex] == NULL ? NULL : bitBuffers[qubitIndex]->matrix);
-    bitBuffers[qubitIndex] = bfr;
+    bitBuffers[qubitIndex] = bfr->LeftMul(bitBuffers[qubitIndex]);
 }
 
 // Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
 // discard the buffers.
-
-BitOp QFusion::Mul2x2(BitOp left, BitOp right)
-{
-    // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
-    // We parallelize this, since we can.
-    // If a matrix component is very close to zero, we assume it's floating-point-error on a composition that has an
-    // exactly 0 component, number theoretically. (If it's not exactly 0 by number theory, it's numerically negligible,
-    // and we're safe.)
-
-    BitOp outBuffer(new complex[4], std::default_delete<complex[]>());
-
-    if (right) {
-        std::vector<std::future<void>> futures(4);
-
-        futures[0] = std::async(std::launch::async, [&]() {
-            outBuffer.get()[0] = (left.get()[0] * right.get()[0]) + (left.get()[1] * right.get()[2]);
-            if (norm(outBuffer.get()[0]) < min_norm) {
-                outBuffer.get()[0] = complex(ZERO_R1, ZERO_R1);
-            }
-        });
-        futures[1] = std::async(std::launch::async, [&]() {
-            outBuffer.get()[1] = (left.get()[0] * right.get()[1]) + (left.get()[1] * right.get()[3]);
-            if (norm(outBuffer.get()[1]) < min_norm) {
-                outBuffer.get()[1] = complex(ZERO_R1, ZERO_R1);
-            }
-        });
-        futures[2] = std::async(std::launch::async, [&]() {
-            outBuffer.get()[2] = (left.get()[2] * right.get()[0]) + (left.get()[3] * right.get()[2]);
-            if (norm(outBuffer.get()[2]) < min_norm) {
-                outBuffer.get()[2] = complex(ZERO_R1, ZERO_R1);
-            }
-        });
-        futures[3] = std::async(std::launch::async, [&]() {
-            outBuffer.get()[3] = (left.get()[2] * right.get()[1]) + (left.get()[3] * right.get()[3]);
-            if (norm(outBuffer.get()[3]) < min_norm) {
-                outBuffer.get()[3] = complex(ZERO_R1, ZERO_R1);
-            }
-        });
-
-        for (int i = 0; i < 4; i++) {
-            futures[i].get();
-        }
-    } else {
-        std::copy(left.get(), left.get() + 4, outBuffer.get());
-    }
-
-    return outBuffer;
-}
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
@@ -149,44 +97,10 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 
     BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
-        if (bfr->controls.size() == 0) {
-            // If this bit has a buffer, with nothing controlling it, we just flush this bit.
-            if (bfr->isArithmetic) {
-                if (bfr->toAdd > 0) {
-                    qReg->INC(bfr->toAdd, bfr->start, bfr->length);
-                } else if (bfr->toAdd < 0) {
-                    qReg->DEC(-(bfr->toAdd), bfr->start, bfr->length);
-                }
-                for (i = 0; i < bfr->length; i++) {
-                    bitBuffers[bfr->start + i] = NULL;
-                }
-            } else {
-                qReg->ApplySingleBit(bfr->matrix.get(), true, qubitIndex);
-            }
-        } else {
-            // If this bit is controlled by other bits, first, we flush this bit.
-            bitLenInt* ctrls = new bitLenInt[bfr->controls.size()];
-            std::copy(bfr->controls.begin(), bfr->controls.end(), ctrls);
+        // First, we flush this bit.
+        bfr->Apply(qReg, qubitIndex, &bitBuffers);
 
-            if (bfr->isArithmetic) {
-                if (bfr->toAdd > 0) {
-                    qReg->CINC(bfr->toAdd, bfr->start, bfr->length, ctrls, bfr->controls.size());
-                } else if (bfr->toAdd < 0) {
-                    qReg->CDEC(-(bfr->toAdd), bfr->start, bfr->length, ctrls, bfr->controls.size());
-                }
-                for (i = 0; i < bfr->length; i++) {
-                    bitBuffers[bfr->start + i] = NULL;
-                }
-            } else {
-                if (bfr->anti) {
-                    qReg->ApplyAntiControlledSingleBit(ctrls, bfr->controls.size(), qubitIndex, bfr->matrix.get());
-                } else {
-                    qReg->ApplyControlledSingleBit(ctrls, bfr->controls.size(), qubitIndex, bfr->matrix.get());
-                }
-            }
-
-            delete[] ctrls;
-
+        if (bfr->controls.size() > 0) {
             // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
             // controlled by another bit.
             std::vector<bitLenInt>::iterator found;
@@ -199,7 +113,6 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
                 }
             }
         }
-        bitBuffers[qubitIndex] = NULL;
     }
 }
 
@@ -207,6 +120,11 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
 {
     BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
+        // If this is an arithmetic buffer, it has side-effects for other bits.
+        if (bfr->isArithmetic) {
+            FlushBit(qubitIndex);
+            return;
+        }
         // If we are discarding this bit, it is no longer controlled by any other bit.
         std::vector<bitLenInt>::iterator found;
         bitLenInt control;
@@ -241,7 +159,7 @@ void QFusion::ApplyControlledSingleBit(
         FlushBit(controls[i]);
     }
 
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(false, controls, controlLen, mtrx);
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, controls, controlLen, mtrx);
     if ((bitControls[target].size() > 0) || !(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
@@ -255,9 +173,7 @@ void QFusion::ApplyControlledSingleBit(
     }
 
     // Now, we're going to chain our buffered gates;
-    BitOp outMatrix = Mul2x2(bfr->matrix, bitBuffers[target] == NULL ? NULL : bitBuffers[target]->matrix);
-    bfr->matrix = outMatrix;
-    bitBuffers[target] = bfr;
+    bitBuffers[target] = bfr->LeftMul(bitBuffers[target]);
 }
 
 void QFusion::ApplyAntiControlledSingleBit(
@@ -280,7 +196,7 @@ void QFusion::ApplyAntiControlledSingleBit(
         FlushBit(controls[i]);
     }
 
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(true, controls, controlLen, mtrx);
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(true, controls, controlLen, mtrx);
     if ((bitControls[target].size() > 0) || !(bfr->CompareControls(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
@@ -294,9 +210,7 @@ void QFusion::ApplyAntiControlledSingleBit(
     }
 
     // Now, we're going to chain our buffered gates;
-    BitOp outMatrix = Mul2x2(bfr->matrix, bitBuffers[target] == NULL ? NULL : bitBuffers[target]->matrix);
-    bfr->matrix = outMatrix;
-    bitBuffers[target] = bfr;
+    bitBuffers[target] = bfr->LeftMul(bitBuffers[target]);
 }
 
 // "Cohere" will increase the cost of application of every currently buffered gate by a factor of 2 per "cohered" qubit,
@@ -505,34 +419,8 @@ bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     return qReg->ForceMReg(start, length, result, doForce);
 }
 
-void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-{
-    // We can fuse arithmetic, but this does not necessarily commute with nonarithmetic gates.
-    // We must flush the bit buffers, if they aren't arithmetic buffers.
-
-    bitLenInt i;
-    BitBufferPtr toCheck;
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, start, length, toAdd);
-
-    for (i = 0; i < length; i++) {
-        toCheck = bitBuffers[start + i];
-        if (!(bfr->CompareControls(toCheck))) {
-            FlushReg(start, length);
-            break;
-        }
-    }
-
-    toCheck = bitBuffers[start];
-    if (toCheck == NULL) {
-        for (i = 0; i < length; i++) {
-            bitBuffers[start + i] = bfr;
-        }
-    } else {
-        toCheck->toAdd += toAdd;
-    }
-}
-
-void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QFusion::BufferArithmetic(
+    bitLenInt* controls, bitLenInt controlLen, int toAdd, bitLenInt inOutStart, bitLenInt length)
 {
     // We can fuse arithmetic, but this does not necessarily commute with nonarithmetic gates.
     // We must flush the bit buffers, if they aren't arithmetic buffers.
@@ -544,7 +432,7 @@ void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitL
     }
 
     BitBufferPtr toCheck;
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(false, controls, controlLen, inOutStart, length, toAdd);
+    BitBufferPtr bfr = std::make_shared<ArithmeticBuffer>(false, controls, controlLen, inOutStart, length, toAdd);
 
     for (i = 0; i < length; i++) {
         toCheck = bitBuffers[inOutStart + i];
@@ -563,8 +451,18 @@ void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitL
             bitControls[controls[i]].push_back(inOutStart);
         }
     } else {
-        toCheck->toAdd += toAdd;
+        dynamic_cast<ArithmeticBuffer*>(toCheck.get())->toAdd += toAdd;
     }
+}
+
+void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    BufferArithmetic(NULL, 0, toAdd, start, length);
+}
+
+void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    BufferArithmetic(controls, controlLen, toAdd, inOutStart, length);
 }
 
 void QFusion::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -611,64 +509,12 @@ void QFusion::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
 
 void QFusion::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
-    // We can fuse arithmetic, but this does not necessarily commute with nonarithmetic gates.
-    // We must flush the bit buffers, if they aren't arithmetic buffers.
-
-    bitLenInt i;
-    BitBufferPtr toCheck;
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(false, (const bitLenInt*)NULL, 0, start, length, -toSub);
-
-    for (i = 0; i < length; i++) {
-        toCheck = bitBuffers[start + i];
-        if (!(bfr->CompareControls(toCheck))) {
-            FlushReg(start, length);
-            break;
-        }
-    }
-
-    toCheck = bitBuffers[start];
-    if (toCheck == NULL) {
-        for (i = 0; i < length; i++) {
-            bitBuffers[start + i] = bfr;
-        }
-    } else {
-        toCheck->toAdd -= toSub;
-    }
+    BufferArithmetic(NULL, 0, -toSub, start, length);
 }
 
 void QFusion::CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    // We can fuse arithmetic, but this does not necessarily commute with nonarithmetic gates.
-    // We must flush the bit buffers, if they aren't arithmetic buffers.
-
-    bitLenInt i;
-
-    for (i = 0; i < controlLen; i++) {
-        FlushBit(controls[i]);
-    }
-
-    BitBufferPtr toCheck;
-    BitBufferPtr bfr = std::make_shared<BitBuffer>(false, controls, controlLen, inOutStart, length, -toSub);
-
-    for (i = 0; i < length; i++) {
-        toCheck = bitBuffers[inOutStart + i];
-        if (!(bfr->CompareControls(toCheck))) {
-            FlushReg(inOutStart, length);
-            break;
-        }
-    }
-
-    toCheck = bitBuffers[inOutStart];
-    if (toCheck == NULL) {
-        for (i = 0; i < length; i++) {
-            bitBuffers[inOutStart + i] = bfr;
-        }
-        for (i = 0; i < controlLen; i++) {
-            bitControls[controls[i]].push_back(inOutStart);
-        }
-    } else {
-        toCheck->toAdd -= toSub;
-    }
+    BufferArithmetic(controls, controlLen, -toSub, inOutStart, length);
 }
 
 void QFusion::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
