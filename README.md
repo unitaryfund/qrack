@@ -1,6 +1,6 @@
 # Qrack
 
-[![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds)
+[![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
 This is a multithreaded framework for developing classically emulated virtual universal quantum processors. It has CPU, GPU, and multi-processor engine types.
 
