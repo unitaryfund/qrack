@@ -49,6 +49,8 @@ struct BitBuffer {
     virtual bool Combinable(BitBufferPtr toCmp);
 
     virtual BitBufferPtr LeftRightCompose(BitBufferPtr rightBuffer) = 0;
+
+    virtual bool IsIdentity() = 0;
 };
 
 struct GateBuffer : public BitBuffer {
@@ -66,6 +68,8 @@ struct GateBuffer : public BitBuffer {
     virtual void Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers);
 
     virtual BitBufferPtr LeftRightCompose(BitBufferPtr rightBuffer);
+
+    virtual bool IsIdentity();
 };
 
 struct ArithmeticBuffer : public BitBuffer {
@@ -97,5 +101,7 @@ struct ArithmeticBuffer : public BitBuffer {
     virtual void Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers);
 
     virtual BitBufferPtr LeftRightCompose(BitBufferPtr rightBuffer);
+
+    virtual bool IsIdentity();
 };
 } // namespace Qrack

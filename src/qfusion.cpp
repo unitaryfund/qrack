@@ -85,6 +85,13 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
+    // If we ended up with a buffer that's (approximately or exactly) equal to identity operator, we can discard it
+    // instead of applying it.
+    if (bitBuffers[qubitIndex] && bitBuffers[qubitIndex]->IsIdentity()) {
+        DiscardBit(qubitIndex);
+        return;
+    }
+
     bitLenInt i;
 
     // Before any bit is buffered as a control, it's flushed.
@@ -122,8 +129,18 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
     if (bfr) {
         // If this is an arithmetic buffer, it has side-effects for other bits.
         if (bfr->isArithmetic) {
-            FlushBit(qubitIndex);
-            return;
+            // In this branch, we definitely have an ArithmeticBuffer, so it's safe to cast.
+            if (bfr->IsIdentity()) {
+                // If the buffer is adding 0, we can throw it away.
+                ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(bfr.get());
+                for (bitLenInt i = 0; i < (aBfr->length); i++) {
+                    bitBuffers[aBfr->start + i] = NULL;
+                }
+            } else {
+                // If the buffer is adding or subtracting a nonzero value, it has side-effects for other bits.
+                FlushBit(qubitIndex);
+                return;
+            }
         }
         // If we are discarding this bit, it is no longer controlled by any other bit.
         std::vector<bitLenInt>::iterator found;

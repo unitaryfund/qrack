@@ -83,26 +83,38 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
 
         futures[0] = std::async(std::launch::async, [&]() {
             outBuffer.get()[0] = (matrix.get()[0] * right.get()[0]) + (matrix.get()[1] * right.get()[2]);
-            if (norm(outBuffer.get()[0]) < min_norm) {
+            real1 nrm = norm(outBuffer.get()[0]);
+            if (nrm < min_norm) {
                 outBuffer.get()[0] = complex(ZERO_R1, ZERO_R1);
+            } else if ((ONE_R1 - nrm) < min_norm) {
+                outBuffer.get()[0] /= sqrt(nrm);
             }
         });
         futures[1] = std::async(std::launch::async, [&]() {
             outBuffer.get()[1] = (matrix.get()[0] * right.get()[1]) + (matrix.get()[1] * right.get()[3]);
-            if (norm(outBuffer.get()[1]) < min_norm) {
+            real1 nrm = norm(outBuffer.get()[1]);
+            if (nrm < min_norm) {
                 outBuffer.get()[1] = complex(ZERO_R1, ZERO_R1);
+            } else if ((ONE_R1 - nrm) < min_norm) {
+                outBuffer.get()[1] /= sqrt(nrm);
             }
         });
         futures[2] = std::async(std::launch::async, [&]() {
             outBuffer.get()[2] = (matrix.get()[2] * right.get()[0]) + (matrix.get()[3] * right.get()[2]);
-            if (norm(outBuffer.get()[2]) < min_norm) {
+            real1 nrm = norm(outBuffer.get()[2]);
+            if (nrm < min_norm) {
                 outBuffer.get()[2] = complex(ZERO_R1, ZERO_R1);
+            } else if ((ONE_R1 - nrm) < min_norm) {
+                outBuffer.get()[2] /= sqrt(nrm);
             }
         });
         futures[3] = std::async(std::launch::async, [&]() {
             outBuffer.get()[3] = (matrix.get()[2] * right.get()[1]) + (matrix.get()[3] * right.get()[3]);
-            if (norm(outBuffer.get()[3]) < min_norm) {
+            real1 nrm = norm(outBuffer.get()[3]);
+            if (nrm < min_norm) {
                 outBuffer.get()[3] = complex(ZERO_R1, ZERO_R1);
+            } else if ((ONE_R1 - nrm) < min_norm) {
+                outBuffer.get()[3] /= sqrt(nrm);
             }
         });
 
@@ -114,6 +126,31 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
     }
 
     return std::make_shared<GateBuffer>(this, outBuffer);
+}
+
+bool GateBuffer::IsIdentity()
+{
+    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
+    // then we can discard this buffer without applying it.
+    complex toTest = matrix.get()[0];
+    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+    toTest = matrix.get()[1];
+    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+    toTest = matrix.get()[2];
+    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+    toTest = matrix.get()[3];
+    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+
+    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
+    return true;
 }
 
 void GateBuffer::Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers)
@@ -192,5 +229,12 @@ BitBufferPtr ArithmeticBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
     } else {
         return std::make_shared<ArithmeticBuffer>(this, 0);
     }
+}
+
+bool ArithmeticBuffer::IsIdentity()
+{
+    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
+    // then we can discard this buffer without applying it. If "toAdd" is zero, this is the identity operator.
+    return (toAdd == 0);
 }
 } // namespace Qrack
