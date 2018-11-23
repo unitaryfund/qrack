@@ -478,12 +478,16 @@ void QFusion::BufferArithmetic(
 
 void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
-    BufferArithmetic(NULL, 0, toAdd, start, length);
+    if (toAdd & ((1U << length) - 1U)) {
+        BufferArithmetic(NULL, 0, toAdd, start, length);
+    }
 }
 
 void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    BufferArithmetic(controls, controlLen, toAdd, inOutStart, length);
+    if (toAdd & ((1U << length) - 1U)) {
+        BufferArithmetic(controls, controlLen, toAdd, inOutStart, length);
+    }
 }
 
 void QFusion::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -495,9 +499,11 @@ void QFusion::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt
 
 void QFusion::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    FlushReg(start, length);
-    FlushBit(overflowIndex);
-    qReg->INCS(toAdd, start, length, overflowIndex);
+    if (toAdd & ((1U << length) - 1U)) {
+        FlushReg(start, length);
+        FlushBit(overflowIndex);
+        qReg->INCS(toAdd, start, length, overflowIndex);
+    }
 }
 
 void QFusion::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
@@ -517,8 +523,10 @@ void QFusion::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenIn
 
 void QFusion::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
-    FlushReg(start, length);
-    qReg->INCBCD(toAdd, start, length);
+    if (toAdd & ((1U << length) - 1U)) {
+        FlushReg(start, length);
+        qReg->INCBCD(toAdd, start, length);
+    }
 }
 
 void QFusion::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -530,12 +538,16 @@ void QFusion::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
 
 void QFusion::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
-    BufferArithmetic(NULL, 0, -toSub, start, length);
+    if (toSub & ((1U << length) - 1U)) {
+        BufferArithmetic(NULL, 0, -toSub, start, length);
+    }
 }
 
 void QFusion::CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    BufferArithmetic(controls, controlLen, -toSub, inOutStart, length);
+    if (toSub & ((1U << length) - 1U)) {
+        BufferArithmetic(controls, controlLen, -toSub, inOutStart, length);
+    }
 }
 
 void QFusion::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -547,9 +559,11 @@ void QFusion::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt
 
 void QFusion::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    FlushReg(start, length);
-    FlushBit(overflowIndex);
-    qReg->DECS(toSub, start, length, overflowIndex);
+    if (toSub & ((1U << length) - 1U)) {
+        FlushReg(start, length);
+        FlushBit(overflowIndex);
+        qReg->DECS(toSub, start, length, overflowIndex);
+    }
 }
 
 void QFusion::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
@@ -569,8 +583,10 @@ void QFusion::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenIn
 
 void QFusion::DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
-    FlushReg(start, length);
-    qReg->DECBCD(toSub, start, length);
+    if (toSub & ((1U << length) - 1U)) {
+        FlushReg(start, length);
+        qReg->DECBCD(toSub, start, length);
+    }
 }
 
 void QFusion::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -582,34 +598,45 @@ void QFusion::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
 
 void QFusion::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    FlushReg(inOutStart, length);
-    FlushReg(carryStart, length);
-    qReg->MUL(toMul, inOutStart, carryStart, length);
+    if (toMul == 0U) {
+        SetReg(inOutStart, length, 0U);
+        SetReg(carryStart, length, 0U);
+    } else if (toMul > 1U) {
+        FlushReg(inOutStart, length);
+        FlushReg(carryStart, length);
+        qReg->MUL(toMul, inOutStart, carryStart, length);
+    }
 }
 
 void QFusion::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    FlushReg(inOutStart, length);
-    FlushReg(carryStart, length);
-    qReg->DIV(toDiv, inOutStart, carryStart, length);
+    if (toDiv != 1U) {
+        FlushReg(inOutStart, length);
+        FlushReg(carryStart, length);
+        qReg->DIV(toDiv, inOutStart, carryStart, length);
+    }
 }
 
 void QFusion::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
-    FlushList(controls, controlLen);
-    FlushReg(inOutStart, length);
-    FlushReg(carryStart, length);
-    qReg->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
+    if (toMul != 1U) {
+        FlushList(controls, controlLen);
+        FlushReg(inOutStart, length);
+        FlushReg(carryStart, length);
+        qReg->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
+    }
 }
 
 void QFusion::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
-    FlushList(controls, controlLen);
-    FlushReg(inOutStart, length);
-    FlushReg(carryStart, length);
-    qReg->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
+    if (toDiv != 1U) {
+        FlushList(controls, controlLen);
+        FlushReg(inOutStart, length);
+        FlushReg(carryStart, length);
+        qReg->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
+    }
 }
 
 void QFusion::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
@@ -659,22 +686,28 @@ bitCapInt QFusion::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLe
 
 void QFusion::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
-    std::swap(bitBuffers[qubitIndex1], bitBuffers[qubitIndex2]);
-    qReg->Swap(qubitIndex1, qubitIndex2);
+    if (qubitIndex1 != qubitIndex2) {
+        std::swap(bitBuffers[qubitIndex1], bitBuffers[qubitIndex2]);
+        qReg->Swap(qubitIndex1, qubitIndex2);
+    }
 }
 
 void QFusion::SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
-    FlushBit(qubitIndex1);
-    FlushBit(qubitIndex2);
-    qReg->SqrtSwap(qubitIndex1, qubitIndex2);
+    if (qubitIndex1 != qubitIndex2) {
+        FlushBit(qubitIndex1);
+        FlushBit(qubitIndex2);
+        qReg->SqrtSwap(qubitIndex1, qubitIndex2);
+    }
 }
 
 void QFusion::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
-    FlushBit(qubitIndex1);
-    FlushBit(qubitIndex2);
-    qReg->ISqrtSwap(qubitIndex1, qubitIndex2);
+    if (qubitIndex1 != qubitIndex2) {
+        FlushBit(qubitIndex1);
+        FlushBit(qubitIndex2);
+        qReg->ISqrtSwap(qubitIndex1, qubitIndex2);
+    }
 }
 
 void QFusion::CopyState(QFusionPtr orig)
