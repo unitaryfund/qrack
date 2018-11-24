@@ -478,14 +478,14 @@ void QFusion::BufferArithmetic(
 
 void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
-    if (toAdd & ((1U << length) - 1U)) {
+    if (MODLEN(toAdd, length)) {
         BufferArithmetic(NULL, 0, toAdd, start, length);
     }
 }
 
 void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    if (toAdd & ((1U << length) - 1U)) {
+    if (MODLEN(toAdd, length)) {
         BufferArithmetic(controls, controlLen, toAdd, inOutStart, length);
     }
 }
@@ -499,7 +499,7 @@ void QFusion::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt
 
 void QFusion::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    if (toAdd & ((1U << length) - 1U)) {
+    if (MODLEN(toAdd, length)) {
         FlushReg(start, length);
         FlushBit(overflowIndex);
         qReg->INCS(toAdd, start, length, overflowIndex);
@@ -523,7 +523,7 @@ void QFusion::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenIn
 
 void QFusion::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
-    if (toAdd & ((1U << length) - 1U)) {
+    if (MODLEN(toAdd, length)) {
         FlushReg(start, length);
         qReg->INCBCD(toAdd, start, length);
     }
@@ -538,14 +538,14 @@ void QFusion::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
 
 void QFusion::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
-    if (toSub & ((1U << length) - 1U)) {
+    if (MODLEN(toSub, length)) {
         BufferArithmetic(NULL, 0, -toSub, start, length);
     }
 }
 
 void QFusion::CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    if (toSub & ((1U << length) - 1U)) {
+    if (MODLEN(toSub, length)) {
         BufferArithmetic(controls, controlLen, -toSub, inOutStart, length);
     }
 }
@@ -559,7 +559,7 @@ void QFusion::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt
 
 void QFusion::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    if (toSub & ((1U << length) - 1U)) {
+    if (MODLEN(toSub, length)) {
         FlushReg(start, length);
         FlushBit(overflowIndex);
         qReg->DECS(toSub, start, length, overflowIndex);
@@ -583,7 +583,7 @@ void QFusion::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenIn
 
 void QFusion::DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
-    if (toSub & ((1U << length) - 1U)) {
+    if (MODLEN(toSub, length)) {
         FlushReg(start, length);
         qReg->DECBCD(toSub, start, length);
     }
