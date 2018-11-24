@@ -55,7 +55,8 @@ void QUnitMulti::RedistributeQEngines()
 
     for (i = 0; i < qinfos.size(); i++) {
         devID = i;
-        // If a given device has 0 load, or if the engine adds negligible load, we can keep let any given unit keep its residency on this device.
+        // If a given device has 0 load, or if the engine adds negligible load, we can keep let any given unit keep its
+        // residency on this device.
         if (qinfos[i].size <= 2U) {
             break;
         }
