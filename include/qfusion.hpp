@@ -15,6 +15,12 @@
 #include "common/bitbuffer.hpp"
 #include "qinterface.hpp"
 
+// MODLEN returns "arg" modulo the capacity of "len" bits. We use it to check if an arithmetic "arg" is equivalent to
+// the identity operator. (That is, we check if [addend] % [maxInt] == 0, such that we are effectively adding or
+// subtracting 0.) If a method call is equivalent to the identity operator, it makes no difference, so we do not flush
+// for it or buffer it.
+#define MODLEN(arg, len) (arg & ((1U << len) - 1U))
+
 namespace Qrack {
 
 class QFusion;
