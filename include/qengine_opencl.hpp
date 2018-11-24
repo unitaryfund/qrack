@@ -160,6 +160,7 @@ public:
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
+    virtual int GetDeviceID() { return deviceID; }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);

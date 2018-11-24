@@ -26,6 +26,24 @@ namespace Qrack {
 struct QEngineInfo {
     bitCapInt size;
     bitLenInt deviceID;
+    QEngineOCL* unit;
+
+    QEngineInfo(bitCapInt sz, bitLenInt devID, QEngineOCL* u)
+        : size(sz)
+        , deviceID(devID)
+        , unit(u)
+    {
+        // Intentionally left blank
+    }
+
+    bool operator<(const QEngineInfo& other)
+    {
+        if (size == other.size) {
+            return deviceID < other.deviceID;
+        } else {
+            return size < other.size;
+        }
+    }
 };
 
 class QUnitMulti;
@@ -36,7 +54,6 @@ class QUnitMulti : public QUnit, public ParallelFor {
 protected:
     int deviceCount;
     int defaultDeviceID;
-    std::vector<int> deviceIDs;
 
 public:
     QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
