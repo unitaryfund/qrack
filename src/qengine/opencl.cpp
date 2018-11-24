@@ -177,8 +177,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     int oldDeviceID = deviceID;
-    deviceID = dID;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(deviceID);
+    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
+    deviceID = device_context->context_id;
     context = device_context->context;
     cl::CommandQueue oldQueue = queue;
     queue = device_context->queue;

@@ -24,42 +24,59 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     // class.
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
-
-    deviceIDs.resize(deviceCount);
-    for (int i = 0; i < deviceCount; i++) {
-        deviceIDs[i] = i;
-    }
-    if (defaultDeviceID > 0) {
-        std::swap(deviceIDs[0], deviceIDs[defaultDeviceID]);
-    }
-
-    RedistributeQEngines();
 }
 
 void QUnitMulti::RedistributeQEngines()
 {
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
+    std::vector<QEngineInfo> qinfos;
     bitCapInt totSize = 0;
+    bitCapInt sz;
+    QEngineOCL* qOCL;
+
     for (auto&& shard : shards) {
         if (std::find(qips.begin(), qips.end(), shard.unit) == qips.end()) {
-            totSize += 1U << ((shard.unit)->GetQubitCount());
+            sz = 1U << ((shard.unit)->GetQubitCount());
+            totSize += sz;
             qips.push_back(shard.unit);
+            qOCL = dynamic_cast<QEngineOCL*>(shard.unit.get());
+            qinfos.push_back(QEngineInfo(sz, qOCL->GetDeviceID(), qOCL));
         }
     }
 
-    bitCapInt partSize = 0;
-    int deviceId = 0;
-    for (bitLenInt i = 0; i < qips.size(); i++) {
-        (dynamic_cast<QEngineOCL*>(qips[i].get()))->SetDevice(deviceIDs[deviceId]);
+    std::vector<bitCapInt> devSizes(deviceCount);
+    std::fill(devSizes.begin(), devSizes.end(), 0U);
+    bitLenInt devID;
+    bitLenInt i, j;
 
-        partSize += 1U << (qips[i]->GetQubitCount());
-        if (partSize >= (totSize / deviceCount)) {
-            partSize = 0;
-            if (deviceId < (deviceCount - 1)) {
-                deviceId++;
-            }
+    // We distribute in descending size order:
+    std::sort(qinfos.rbegin(), qinfos.rend());
+
+    for (i = 0; i < qinfos.size(); i++) {
+        devID = i;
+        // If a given device has 0 load, or if the engine adds negligible load, we can keep let any given unit keep its residency on this device.
+        if (qinfos[i].size <= 2U) {
+            break;
         }
+        if (devSizes[qinfos[i].deviceID] != 0U) {
+            // If two devices have identical load, we prefer the default OpenCL device.
+            sz = devSizes[defaultDeviceID];
+            devID = defaultDeviceID;
+
+            // Find the device with the lowest load.
+            for (j = 0; j < deviceCount; j++) {
+                if (devSizes[j] < sz) {
+                    sz = devSizes[j];
+                    devID = j;
+                }
+            }
+
+            // Add this unit to the device with the lowest load.
+            qinfos[i].unit->SetDevice(devID);
+        }
+        // Update the size of buffers handles by this device.
+        devSizes[devID] += qinfos[i].size;
     }
 }
 
