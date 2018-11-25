@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
     if (!qengine && !qfusion && !qunit && !qunit_qfusion) {
         qfusion = true;
         qunit = true;
+        qunit_qfusion = true;
         qengine = true;
     }
 
