@@ -33,7 +33,7 @@ For more information, compile the doxygen.config in the root folder, and then ch
 
 ## Documentation
 
-Live version of the documentation, including API reference, can be obtained at: https://vm6502q.readthedocs.io/en/latest/
+Live version of the documentation, including API reference, can be obtained at: https://qrack.readthedocs.io/en/latest/
 
 ## test/tests.cpp
 
