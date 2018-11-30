@@ -366,17 +366,17 @@ void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target,
     if (anti) {
         prob = ONE_R1 - prob;
     }
-    if (prob <= REAL_CLAMP) {
+    if (prob <= min_norm) {
         if (shards[control].unit->IsPhaseSeparable()) {
             ForceM(control, anti);
         }
         return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+    } else if (min_norm >= (ONE_R1 - prob)) {
         if (shards[control].unit->IsPhaseSeparable()) {
             ForceM(control, !anti);
-            ((*(shards[target].unit)).*fn)(shards[target].mapped);
-            return;
         }
+        ((*(shards[target].unit)).*fn)(shards[target].mapped);
+        return;
     }
 
     bitLenInt tCopy = target;
@@ -389,17 +389,17 @@ template <typename CF, typename F>
 void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
 {
     real1 prob = Prob(control);
-    if (prob <= REAL_CLAMP) {
+    if (prob <= min_norm) {
         if (shards[control].unit->IsPhaseSeparable()) {
             ForceM(control, false);
         }
         return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
+    } else if (min_norm >= (ONE_R1 - prob)) {
         if (shards[control].unit->IsPhaseSeparable()) {
             ForceM(control, true);
-            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-            return;
         }
+        ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
+        return;
     }
 
     bitLenInt tCopy = target;
@@ -413,14 +413,12 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
     bool didSeparate = false;
     for (bitLenInt i = 0; i < (bits.size()); i++) {
         if (shards[bits[i]].unit->GetQubitCount() > 1) {
-            real1 oneChance = Prob(bits[i]);
-            if (oneChance <= REAL_CLAMP) {
-                if (shards[bits[i]].unit->IsPhaseSeparable(bits[i])) {
+            if (shards[bits[i]].unit->IsPhaseSeparable(bits[i])) {
+                real1 oneChance = Prob(bits[i]);
+                if (oneChance <= min_norm) {
                     didSeparate = true;
                     ForceM(bits[i], false);
-                }
-            } else if (oneChance >= (ONE_R1 - REAL_CLAMP)) {
-                if (shards[bits[i]].unit->IsPhaseSeparable(bits[i])) {
+                } else if (oneChance >= (ONE_R1 - min_norm)) {
                     didSeparate = true;
                     ForceM(bits[i], true);
                 }
@@ -737,26 +735,21 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         } else {
             prob *= Prob(controls[i]);
         }
-        if (prob <= REAL_CLAMP) {
+        if (prob <= min_norm) {
             break;
         }
     }
-    if (prob <= REAL_CLAMP) {
+    if (prob <= min_norm) {
         return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        bool isClassical = true;
+    } else if (min_norm >= (ONE_R1 - prob)) {
         for (i = 0; i < controlLen; i++) {
             if (shards[controls[i]].unit->IsPhaseSeparable()) {
                 ForceM(controls[i], !anti);
-            } else {
-                isClassical = false;
-                break;
             }
         }
-        if (isClassical) {
-            fn();
-            return;
-        }
+        
+        fn();
+        return;
     }
 
     std::vector<bitLenInt> allBits(controlLen + targets.size());

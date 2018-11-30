@@ -15,12 +15,6 @@
 #include <cfloat>
 #include <random>
 
-#if ENABLE_COMPLEX8
-#define REAL_CLAMP 1e-9f
-#else
-#define REAL_CLAMP 1e-15
-#endif
-
 #include "qinterface.hpp"
 
 namespace Qrack {

@@ -19,7 +19,7 @@ bool does2x2PhaseShift(const complex* mtrx)
     bool doesShift = false;
     real1 phase = -M_PI * 2;
     for (int i = 0; i < 4; i++) {
-        if (norm(mtrx[i]) > ZERO_R1) {
+        if (norm(mtrx[i]) > min_norm) {
             if (phase < -M_PI) {
                 phase = arg(mtrx[i]);
                 continue;
