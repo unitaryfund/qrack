@@ -101,7 +101,9 @@ void QUnit::SetQuantumState(complex* inputState)
     }
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        TrySeparate({ i });
+        if (!TrySeparate({ i })) {
+            shards[i].isPhaseDirty = true;
+        }
     }
 }
 
@@ -622,7 +624,7 @@ void QUnit::ApplyControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, { target }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->ApplyControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
-            TrySeparate({ target });
+            return TrySeparate({ target });
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -633,7 +635,7 @@ void QUnit::ApplyAntiControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, { target }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->ApplyAntiControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
-            TrySeparate({ target });
+            return TrySeparate({ target });
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -644,7 +646,7 @@ void QUnit::CSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -655,7 +657,7 @@ void QUnit::AntiCSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -666,7 +668,7 @@ void QUnit::CSqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -677,7 +679,7 @@ void QUnit::AntiCSqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -688,7 +690,7 @@ void QUnit::CISqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -699,7 +701,7 @@ void QUnit::AntiCISqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -754,14 +756,20 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         controlsMapped[i] = shards[controls[i]].mapped;
     }
 
-    cfn(unit, controlsMapped);
-
-    for (i = 0; i < controlLen; i++) {
-        if (shards[controls[i]].isPhaseDirty) {
-            for (j = 0; j < (int)targets.size(); j++) {
-                shards[targets[j]].isPhaseDirty = true;
+    if (cfn(unit, controlsMapped)) {
+        // If "cfn" returns true, it was able to separate bits. This only happens if all permutations are in phase.
+        for (j = 0; j < (int)targets.size(); j++) {
+            shards[targets[j]].isPhaseDirty = false;
+        }
+    } else {
+        // Otherwise, the phase might be dirty if the controls have dirty phase.
+        for (i = 0; i < controlLen; i++) {
+            if (shards[controls[i]].isPhaseDirty) {
+                for (j = 0; j < (int)targets.size(); j++) {
+                    shards[targets[j]].isPhaseDirty = true;
+                }
+                break;
             }
-            break;
         }
     }
 
