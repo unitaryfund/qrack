@@ -517,6 +517,8 @@ real1 QUnit::ProbAll(bitCapInt perm)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
 {
+    shards[qubit].isPhaseDirty = false;
+
     bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce, nrmlzr);
 
     QInterfacePtr unit = shards[qubit].unit;
