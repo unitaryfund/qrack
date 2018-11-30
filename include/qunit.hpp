@@ -23,6 +23,7 @@ namespace Qrack {
 struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
+    bool isPhaseDirty = false;
 };
 
 class QUnit;
@@ -79,14 +80,8 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void H(bitLenInt qubit);
     using QInterface::ForceM;
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
-    virtual void X(bitLenInt qubit);
-    virtual void Y(bitLenInt qubit);
-    virtual void Z(bitLenInt qubit);
-    virtual void CY(bitLenInt control, bitLenInt target);
-    virtual void CZ(bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -111,30 +106,6 @@ public:
     virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
     using QInterface::CLXOR;
     virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-
-    /** @} */
-
-    /**
-     * \defgroup RotGates Rotational gates:
-     *
-     * NOTE: Dyadic operation angle sign is reversed from radian rotation
-     * operators and lacks a division by a factor of two.
-     *
-     * @{
-     */
-
-    virtual void RT(real1 radians, bitLenInt qubit);
-    virtual void RX(real1 radians, bitLenInt qubit);
-    virtual void RY(real1 radians, bitLenInt qubit);
-    virtual void RZ(real1 radians, bitLenInt qubit);
-    virtual void Exp(real1 radians, bitLenInt qubit);
-    virtual void ExpX(real1 radians, bitLenInt qubit);
-    virtual void ExpY(real1 radians, bitLenInt qubit);
-    virtual void ExpZ(real1 radians, bitLenInt qubit);
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
-    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
-    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -240,11 +211,6 @@ protected:
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
-
-    template <typename CF, typename F>
-    void ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti = false);
-    template <typename CF, typename F>
-    void ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target);
 
     virtual bool TrySeparate(std::vector<bitLenInt> bits);
 
