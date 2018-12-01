@@ -387,7 +387,7 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                 }
 
                 if (shard.isPhaseDirty) {
-                    if (abs(arg(testBit->GetAmplitude(0)) - arg(testBit->GetAmplitude(1))) < min_norm) {
+                    if (std::abs(arg(testBit->GetAmplitude(0)) - arg(testBit->GetAmplitude(1))) < min_norm) {
                         shards[bits[i]].isPhaseDirty = false;
                     }
                 }
