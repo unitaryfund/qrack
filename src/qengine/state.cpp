@@ -605,6 +605,44 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return prob;
 }
 
+bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare) {
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    // Make sure both engines are normalized
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+    if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
+        toCompare->NormalizeState();
+    }
+
+
+    int numCores = GetConcurrencyLevel();
+    real1* partError = new real1[numCores]();
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        real1 elemError = norm(stateVec[lcv] - toCompare->stateVec[lcv]);
+        if (elemError > min_norm) {
+            partError[cpu] += elemError;
+        }
+    });
+
+    bool isSame = true;
+    for (int i = 0; i < numCores; i++) {
+        if (partError[i] > 0) {
+            isSame = false;
+            break;
+        }
+    }
+
+    delete[] partError;
+
+    return isSame;
+}
+
 void QEngineCPU::NormalizeState(real1 nrm)
 {
     if (nrm < ZERO_R1) {

@@ -1389,6 +1389,14 @@ public:
      */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
 
+    /**
+     * Compare state vectors approximately, component by component, to determine whether this state vector is the same as the target.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+
+    virtual bool ApproxCompare(QInterfacePtr toCompare) = 0; 
+
     /** @} */
 };
 } // namespace Qrack

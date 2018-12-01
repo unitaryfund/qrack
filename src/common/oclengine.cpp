@@ -178,6 +178,7 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
         all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
         all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
+        all_device_contexts[i]->calls[OCL_API_APPROXCOMPARE] = cl::Kernel(program, "approxcompare");
         all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
         all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
         all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");

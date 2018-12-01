@@ -134,6 +134,9 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
+    virtual bool ApproxCompare(QInterfacePtr toCompare) { return ApproxCompare(std::dynamic_pointer_cast<QFusion>(toCompare)); }
+    virtual bool ApproxCompare(QFusionPtr toCompare);
+
     virtual QInterfacePtr ReleaseEngine()
     {
         FlushAll();
