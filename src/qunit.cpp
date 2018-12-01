@@ -101,7 +101,9 @@ void QUnit::SetQuantumState(complex* inputState)
     }
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        TrySeparate({ i });
+        if (!TrySeparate({ i })) {
+            shards[i].isPhaseDirty = true;
+        }
     }
 }
 
@@ -359,55 +361,6 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
     ((*qbits).*fn)(radians, bits...);
 }
 
-template <typename CF, typename F>
-void QUnit::ControlCallMember(CF cfn, F fn, bitLenInt control, bitLenInt target, bool anti)
-{
-    real1 prob = Prob(control);
-    if (anti) {
-        prob = ONE_R1 - prob;
-    }
-    if (prob <= REAL_CLAMP) {
-        if (shards[control].unit->IsPhaseSeparable()) {
-            ForceM(control, anti);
-        }
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[control].unit->IsPhaseSeparable()) {
-            ForceM(control, !anti);
-            ((*(shards[target].unit)).*fn)(shards[target].mapped);
-            return;
-        }
-    }
-
-    bitLenInt tCopy = target;
-    auto qbits = Entangle({ &control, &target });
-    ((*qbits).*cfn)(control, target);
-    TrySeparate({ tCopy });
-}
-
-template <typename CF, typename F>
-void QUnit::ControlRotCallMember(CF cfn, F fn, real1 radians, bitLenInt control, bitLenInt target)
-{
-    real1 prob = Prob(control);
-    if (prob <= REAL_CLAMP) {
-        if (shards[control].unit->IsPhaseSeparable()) {
-            ForceM(control, false);
-        }
-        return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        if (shards[control].unit->IsPhaseSeparable()) {
-            ForceM(control, true);
-            ((*(shards[target].unit)).*fn)(radians, shards[target].mapped);
-            return;
-        }
-    }
-
-    bitLenInt tCopy = target;
-    auto qbits = Entangle({ &control, &target });
-    ((*qbits).*cfn)(radians, control, target);
-    TrySeparate({ tCopy });
-}
-
 bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
 {
     bool didSeparate = false;
@@ -434,9 +387,9 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                     }
                 }
 
-                //if (shard.isPhaseDirty && testBit->IsPhaseSeparable()) {
-                //    shards[bits[i]].isPhaseDirty = false;
-                //}
+                if (shard.isPhaseDirty && testBit->IsPhaseSeparable()) {
+                    shards[bits[i]].isPhaseDirty = false;
+                }
             }
         }
     }
@@ -581,6 +534,8 @@ real1 QUnit::ProbAll(bitCapInt perm)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
 {
+    shards[qubit].isPhaseDirty = false;
+
     bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce, nrmlzr);
 
     QInterfacePtr unit = shards[qubit].unit;
@@ -647,6 +602,36 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2) { EntangleAndCallMembe
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
+    bool doesShift = false;
+    real1 phase = -M_PI * 2;
+    for (int i = 0; i < 4; i++) {
+        if (norm(mtrx[i]) > min_norm) {
+            if (phase < -M_PI) {
+                phase = arg(mtrx[i]);
+                continue;
+            }
+
+            real1 diff = arg(mtrx[i]) - phase;
+            if (diff < ZERO_R1) {
+                diff = -diff;
+            }
+            if (diff > M_PI) {
+                diff = (2 * M_PI) - diff;
+            }
+            if (diff > min_norm) {
+                doesShift = true;
+                break;
+            }
+        }
+    }
+
+    // If this operation can induce a superposition of phase, mark the shard "isPhaseDirty." This is necessary to track
+    // entanglement.
+    if (doesShift) {
+        shards[qubit].isPhaseDirty = true;
+        // This operation might make a "phase dirty" bit into a "phase clean" bit for entanglement, but we can't detect
+        // that, yet.
+    }
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
 }
 
@@ -656,7 +641,7 @@ void QUnit::ApplyControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, { target }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->ApplyControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
-            TrySeparate({ target });
+            return TrySeparate({ target });
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -667,7 +652,7 @@ void QUnit::ApplyAntiControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, { target }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->ApplyAntiControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
-            TrySeparate({ target });
+            return TrySeparate({ target });
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -678,7 +663,7 @@ void QUnit::CSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -689,7 +674,7 @@ void QUnit::AntiCSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -700,7 +685,7 @@ void QUnit::CSqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -711,7 +696,7 @@ void QUnit::AntiCSqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -722,7 +707,7 @@ void QUnit::CISqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -733,7 +718,7 @@ void QUnit::AntiCISqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            TrySeparate({ qubit1, qubit2 });
+            return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -742,7 +727,7 @@ template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
     const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
 {
-    int i;
+    int i, j;
     real1 prob = ONE_R1;
     for (i = 0; i < controlLen; i++) {
         if (anti) {
@@ -750,26 +735,21 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         } else {
             prob *= Prob(controls[i]);
         }
-        if (prob <= REAL_CLAMP) {
+        if (prob <= min_norm) {
             break;
         }
     }
-    if (prob <= REAL_CLAMP) {
+    if (prob <= min_norm) {
         return;
-    } else if (REAL_CLAMP >= (ONE_R1 - prob)) {
-        bool isClassical = true;
+    } else if (min_norm >= (ONE_R1 - prob)) {
         for (i = 0; i < controlLen; i++) {
-            if (shards[controls[i]].unit->IsPhaseSeparable()) {
+            if (!shards[controls[i]].isPhaseDirty) {
                 ForceM(controls[i], !anti);
-            } else {
-                isClassical = false;
-                break;
             }
         }
-        if (isClassical) {
-            fn();
-            return;
-        }
+
+        fn();
+        return;
     }
 
     std::vector<bitLenInt> allBits(controlLen + targets.size());
@@ -793,57 +773,20 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         controlsMapped[i] = shards[controls[i]].mapped;
     }
 
-    cfn(unit, controlsMapped);
+    if (!cfn(unit, controlsMapped)) {
+        // If "cfn" returns true, it was able to separate bits. This only happens if all permutations are in phase.
+        // Otherwise, the phase might be dirty if the controls have dirty phase.
+        for (i = 0; i < controlLen; i++) {
+            if (shards[controls[i]].isPhaseDirty) {
+                for (j = 0; j < (int)targets.size(); j++) {
+                    shards[targets[j]].isPhaseDirty = true;
+                }
+                break;
+            }
+        }
+    }
 
     delete[] controlsMapped;
-}
-
-void QUnit::H(bitLenInt qubit) { shards[qubit].unit->H(shards[qubit].mapped); }
-
-void QUnit::X(bitLenInt qubit) { shards[qubit].unit->X(shards[qubit].mapped); }
-
-void QUnit::Y(bitLenInt qubit) { shards[qubit].unit->Y(shards[qubit].mapped); }
-
-void QUnit::Z(bitLenInt qubit) { shards[qubit].unit->Z(shards[qubit].mapped); }
-
-void QUnit::CY(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CY), PTR1(Y), control, target); }
-
-void QUnit::CZ(bitLenInt control, bitLenInt target) { ControlCallMember(PTR2(CZ), PTR1(Z), control, target); }
-
-void QUnit::RT(real1 radians, bitLenInt qubit) { shards[qubit].unit->RT(radians, shards[qubit].mapped); }
-
-void QUnit::RX(real1 radians, bitLenInt qubit) { shards[qubit].unit->RX(radians, shards[qubit].mapped); }
-
-void QUnit::RY(real1 radians, bitLenInt qubit) { shards[qubit].unit->RY(radians, shards[qubit].mapped); }
-
-void QUnit::RZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->RZ(radians, shards[qubit].mapped); }
-
-void QUnit::Exp(real1 radians, bitLenInt qubit) { shards[qubit].unit->Exp(radians, shards[qubit].mapped); }
-
-void QUnit::ExpX(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpX(radians, shards[qubit].mapped); }
-
-void QUnit::ExpY(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpY(radians, shards[qubit].mapped); }
-
-void QUnit::ExpZ(real1 radians, bitLenInt qubit) { shards[qubit].unit->ExpZ(radians, shards[qubit].mapped); }
-
-void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
-{
-    ControlRotCallMember(PTR2A(CRT), PTRA(RT), radians, control, target);
-}
-
-void QUnit::CRX(real1 radians, bitLenInt control, bitLenInt target)
-{
-    ControlRotCallMember(PTR2A(CRX), PTRA(RX), radians, control, target);
-}
-
-void QUnit::CRY(real1 radians, bitLenInt control, bitLenInt target)
-{
-    ControlRotCallMember(PTR2A(CRY), PTRA(RY), radians, control, target);
-}
-
-void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
-{
-    ControlRotCallMember(PTR2A(CRZ), PTRA(RZ), radians, control, target);
 }
 
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
@@ -1144,15 +1087,25 @@ void QUnit::CDIV(
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     knowIsPhaseSeparable = false;
+
     EntangleRange(start, length);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
+
+    for (bitLenInt i = 0; i < length; i++) {
+        shards[start + i].isPhaseDirty = true;
+    }
 }
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
     knowIsPhaseSeparable = false;
+
     EntangleRange(start, length);
     shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
+
+    for (bitLenInt i = 0; i < length; i++) {
+        shards[start + i].isPhaseDirty = true;
+    }
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -1173,6 +1126,11 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
     unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
+
+    for (bitLenInt i = 0; i < length; i++) {
+        shards[start + i].isPhaseDirty = true;
+    }
+    shards[flagIndex].isPhaseDirty = true;
 }
 
 void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
