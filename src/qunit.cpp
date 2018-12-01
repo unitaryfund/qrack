@@ -364,9 +364,17 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
 {
     bool didSeparate = false;
+    QInterfacePtr unit;
     for (bitLenInt i = 0; i < (bits.size()); i++) {
-        if (shards[bits[i]].unit->GetQubitCount() > 1) {
-            if (shards[bits[i]].unit->IsPhaseSeparable()) {
+        unit = shards[bits[i]].unit;
+        if (unit->GetQubitCount() > 1) {
+            if (unit->IsPhaseSeparable()) {
+                // If the unit IsPhaseSeparable, then all bits in the unit can be assumed to be "not phase dirty."
+                for (bitLenInt j = 0; j < qubitCount; j++) {
+                    if (shards[j].unit == unit) {
+                        shards[j].isPhaseDirty = false;
+                    }
+                }
                 real1 oneChance = Prob(bits[i]);
                 if (oneChance <= min_norm) {
                     didSeparate = true;
@@ -610,10 +618,12 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
         }
     }
 
-    // If this operation can induce a superposition of phase, mark the shard "isPhaseDirty." This is necessary to track entanglement.
+    // If this operation can induce a superposition of phase, mark the shard "isPhaseDirty." This is necessary to track
+    // entanglement.
     if (doesShift) {
         shards[qubit].isPhaseDirty = true;
-        // This operation might make a "phase dirty" bit into a "phase clean" bit for entanglement, but we can't detect that, yet.
+        // This operation might make a "phase dirty" bit into a "phase clean" bit for entanglement, but we can't detect
+        // that, yet.
     }
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
 }
@@ -730,7 +740,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 ForceM(controls[i], !anti);
             }
         }
-        
+
         fn();
         return;
     }
@@ -756,12 +766,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         controlsMapped[i] = shards[controls[i]].mapped;
     }
 
-    if (cfn(unit, controlsMapped)) {
+    if (!cfn(unit, controlsMapped)) {
         // If "cfn" returns true, it was able to separate bits. This only happens if all permutations are in phase.
-        for (j = 0; j < (int)targets.size(); j++) {
-            shards[targets[j]].isPhaseDirty = false;
-        }
-    } else {
         // Otherwise, the phase might be dirty if the controls have dirty phase.
         for (i = 0; i < controlLen; i++) {
             if (shards[controls[i]].isPhaseDirty) {
