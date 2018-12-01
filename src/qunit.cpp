@@ -364,24 +364,31 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
 {
     bool didSeparate = false;
-    QInterfacePtr unit;
+    QEngineShard shard;
     for (bitLenInt i = 0; i < (bits.size()); i++) {
-        unit = shards[bits[i]].unit;
-        if (unit->GetQubitCount() > 1) {
-            if (unit->IsPhaseSeparable()) {
-                // If the unit IsPhaseSeparable, then all bits in the unit can be assumed to be "not phase dirty."
-                for (bitLenInt j = 0; j < qubitCount; j++) {
-                    if (shards[j].unit == unit) {
-                        shards[j].isPhaseDirty = false;
+        shard = shards[bits[i]];
+        if (shard.unit->GetQubitCount() > 1) {
+            QInterfacePtr unitCopy = CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0, rand_generator);
+            unitCopy->CopyState(shard.unit);
+
+            QInterfacePtr testBit = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator);
+            unitCopy->Decohere(shard.mapped, 1, testBit);
+            unitCopy->Cohere(testBit);
+
+            didSeparate = unitCopy->ApproxCompare(shard.unit);
+            if (didSeparate) {
+                // The bit is separable. Keep the test unit, and update the shard mappings.
+                shards[bits[i]].unit = testBit;
+                shards[bits[i]].mapped = 0;
+                shard.unit->Dispose(shard.mapped, 1);
+                for (auto&& shrd : shards) {
+                    if ((shrd.unit == shard.unit) && (shrd.mapped > shard.mapped)) {
+                        shrd.mapped--;
                     }
                 }
-                real1 oneChance = Prob(bits[i]);
-                if (oneChance <= min_norm) {
-                    didSeparate = true;
-                    ForceM(bits[i], false);
-                } else if (oneChance >= (ONE_R1 - min_norm)) {
-                    didSeparate = true;
-                    ForceM(bits[i], true);
+
+                if (shard.isPhaseDirty && testBit->IsPhaseSeparable()) {
+                    shards[bits[i]].isPhaseDirty = false;
                 }
             }
         }
@@ -1153,6 +1160,23 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
         valueLength, shards[carryIndex].mapped, values);
+}
+
+bool QUnit::ApproxCompare(QUnitPtr toCompare) {
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    QUnit thisCopy(engine, subengine, 1, 0);
+    thisCopy.CopyState((QUnit*)this);
+    thisCopy.EntangleAll();
+
+    QUnit thatCopy(engine, subengine, 1, 0);
+    thatCopy.CopyState(toCompare);
+    thatCopy.EntangleAll();
+
+    return thisCopy.shards[0].unit->ApproxCompare(thatCopy.shards[0].unit);
 }
 
 } // namespace Qrack

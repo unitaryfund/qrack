@@ -179,6 +179,8 @@ public:
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual bool IsPhaseSeparable(bitLenInt qubit);
+    virtual bool ApproxCompare(QInterfacePtr toCompare) { return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare)); }
+    virtual bool ApproxCompare(QUnitPtr toCompare);
 
     /** @} */
 

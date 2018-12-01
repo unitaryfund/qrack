@@ -746,4 +746,18 @@ real1 QFusion::ProbAll(bitCapInt fullRegister)
     FlushAll();
     return qReg->ProbAll(fullRegister);
 }
+
+bool QFusion::ApproxCompare(QFusionPtr toCompare) {
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    // Make sure all buffers are flushed before comparison
+    FlushAll();
+    toCompare->FlushAll();
+
+    // Compare the wrapped objects
+    return qReg->ApproxCompare(toCompare->qReg);
+}
 } // namespace Qrack

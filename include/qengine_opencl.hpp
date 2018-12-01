@@ -166,6 +166,9 @@ public:
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
 
+    virtual bool ApproxCompare(QInterfacePtr toCompare) { return ApproxCompare(std::dynamic_pointer_cast<QEngineOCL>(toCompare)); }
+    virtual bool ApproxCompare(QEngineOCLPtr toCompare);
+
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
 

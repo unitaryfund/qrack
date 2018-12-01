@@ -2014,6 +2014,66 @@ void QEngineOCL::GetQuantumState(complex* outputState)
     UnlockSync();
 }
 
+bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare) {
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    // Make sure both engines are normalized
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+    if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
+        toCompare->NormalizeState();
+    }
+
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPROXCOMPARE);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+
+    queue.enqueueWriteBuffer(ulongBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec);
+
+    ocl.call.setArg(0, *stateBuffer);
+    ocl.call.setArg(1, *(toCompare->stateBuffer));
+    ocl.call.setArg(2, ulongBuffer);
+    ocl.call.setArg(3, nrmBuffer);
+    ocl.call.setArg(4, cl::Local(sizeof(real1) * nrmGroupSize));
+
+    cl::Event kernelEvent;
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(nrmGroupCount), // global number of work items
+        cl::NDRange(nrmGroupSize), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+    waitVec.clear();
+    waitVec.push_back(kernelEvent);
+
+    unsigned int size = (nrmGroupCount / nrmGroupSize);
+    if (size == 0) {
+        size = 1;
+    }
+
+    bool isSame = true;
+    runningNorm = ZERO_R1;
+    queue.enqueueMapBuffer(nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * size, &waitVec);
+    for (size_t i = 0; i < size; i++) {
+        if (nrmArray[i] > 0) {
+            isSame = false;
+            break;
+        }
+    }
+    cl::Event unmapEvent;
+    queue.enqueueUnmapMemObject(nrmBuffer, nrmArray, NULL, &unmapEvent);
+    queue.flush();
+    device_context->wait_events.push_back(unmapEvent);
+
+    return isSame;
+}
+
 void QEngineOCL::NormalizeState(real1 nrm)
 {
     if (nrm < ZERO_R1) {
