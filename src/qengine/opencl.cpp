@@ -131,8 +131,6 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
-    knowIsPhaseSeparable = false;
-
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
 
@@ -283,9 +281,6 @@ void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 
 void QEngineOCL::SetPermutation(bitCapInt perm)
 {
-    knowIsPhaseSeparable = true;
-    isPhaseSeparable = true;
-
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     cl::Event fillEvent1;
@@ -785,103 +780,6 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 }
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
-
-/// PSEUDO-QUANTUM Check whether bit phase is separable in permutation basis
-bool QEngineOCL::IsPhaseSeparable(bool forceCheck)
-{
-    if ((!forceCheck) && knowIsPhaseSeparable) {
-        return isPhaseSeparable;
-    }
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
-    }
-
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(1);
-
-    queue.enqueueWriteBuffer(ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
-        &(device_context->wait_events[0]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    bitLenInt* isAllSame = new bitLenInt[ngc];
-    std::fill(isAllSame, isAllSame + ngc, 1);
-    real1* phases = new real1[ngc];
-    std::fill(phases, phases + ngc, -PI_R1 * 2);
-
-    cl::Buffer isAllSameBuffer =
-        cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(bitLenInt) * ngc, isAllSame);
-    cl::Buffer phasesBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * ngc, phases);
-
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_ISPHASESEPARABLE);
-    clFinish();
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, ulongBuffer);
-    ocl.call.setArg(2, phasesBuffer);
-    ocl.call.setArg(3, isAllSameBuffer);
-
-    // Note that the global size is 1 (serial). This is because the kernel is not very easily parallelized, but we
-    // ultimately want to offload all manipulation of stateVec from host code to OpenCL kernels.
-    cl::Event kernelEvent;
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    waitVec.clear();
-    waitVec.push_back(kernelEvent);
-
-    bool toRet = true;
-    queue.enqueueMapBuffer(isAllSameBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(bitLenInt) * ngc, &waitVec);
-    for (size_t i = 0; i < ngc; i++) {
-        toRet &= (isAllSame[i] == 1);
-    }
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(isAllSameBuffer, isAllSame, NULL, &unmapEvent);
-
-    if (toRet) {
-        unmapEvent.wait();
-        queue.enqueueMapBuffer(phasesBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc);
-        real1 phase = -PI_R1 * 2;
-        for (size_t i = 0; i < ngc; i++) {
-            if (phase < (-PI_R1)) {
-                if (phases[i] >= (-PI_R1)) {
-                    phase = phases[i];
-                }
-                continue;
-            }
-
-            real1 diff = phases[i] - phase;
-            if (diff < ZERO_R1) {
-                diff = -diff;
-            }
-            if (diff > PI_R1) {
-                diff = (2 * PI_R1) - diff;
-            }
-            if (diff > min_norm) {
-                toRet = false;
-                break;
-            }
-        }
-        queue.enqueueUnmapMemObject(phasesBuffer, phases, NULL, &unmapEvent);
-    }
-    knowIsPhaseSeparable = true;
-    isPhaseSeparable = toRet;
-
-    unmapEvent.wait();
-
-    delete[] isAllSame;
-    delete[] phases;
-
-    return toRet;
-}
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
@@ -1878,8 +1776,6 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    knowIsPhaseSeparable = false;
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
@@ -1911,8 +1807,6 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    knowIsPhaseSeparable = false;
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
@@ -1946,8 +1840,6 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 
 void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    knowIsPhaseSeparable = false;
-
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIPIFLESS);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
@@ -1982,8 +1874,6 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(complex* inputState)
 {
-    knowIsPhaseSeparable = false;
-
     LockSync(CL_MAP_WRITE);
     std::copy(inputState, inputState + maxQPower, stateVec);
     runningNorm = ONE_R1;
@@ -2014,7 +1904,8 @@ void QEngineOCL::GetQuantumState(complex* outputState)
     UnlockSync();
 }
 
-bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare) {
+bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
+{
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         return false;

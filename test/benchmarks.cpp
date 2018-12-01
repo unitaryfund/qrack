@@ -31,7 +31,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 28;
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts)
 {
@@ -89,15 +89,32 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         std::cout << (avgt * 1000.0 / CLOCKS_PER_SEC) << ","; /* Average Time (ms) */
         std::cout << (stdet * 1000.0 / CLOCKS_PER_SEC) << ","; /* Sample Std. Deviation (ms) */
         std::cout << (trialClocks[0] * 1000.0 / CLOCKS_PER_SEC) << ","; /* Fastest (ms) */
-        std::cout << (trialClocks[ITERATIONS / 4 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* 1st Quartile (ms) */
-        std::cout << (trialClocks[ITERATIONS / 2 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* Median (ms) */
-        std::cout << (trialClocks[(3 * ITERATIONS) / 4 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* 3rd Quartile (ms) */
+        if (ITERATIONS % 4 == 0) {
+            std::cout << ((trialClocks[ITERATIONS / 4 - 1] + trialClocks[ITERATIONS / 4]) * 500.0 / CLOCKS_PER_SEC)
+                      << ","; /* 1st Quartile (ms) */
+        } else {
+            std::cout << (trialClocks[ITERATIONS / 4 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* 1st Quartile (ms) */
+        }
+        if (ITERATIONS % 2 == 0) {
+            std::cout << ((trialClocks[ITERATIONS / 2 - 1] + trialClocks[ITERATIONS / 2]) * 500.0 / CLOCKS_PER_SEC)
+                      << ","; /* Median (ms) */
+        } else {
+            std::cout << (trialClocks[ITERATIONS / 2 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* Median (ms) */
+        }
+        if (ITERATIONS % 4 == 0) {
+            std::cout << ((trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) * 500.0 /
+                             CLOCKS_PER_SEC)
+                      << ","; /* 3rd Quartile (ms) */
+        } else {
+            std::cout << (trialClocks[(3 * ITERATIONS) / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)
+                      << ","; /* 3rd Quartile (ms) */
+        }
         std::cout << (trialClocks[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC) << std::endl; /* Slowest (ms) */
     }
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVariable(fn, MaxQubits); }
-
+#if 0
 TEST_CASE("test_cnot")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -327,12 +344,20 @@ TEST_CASE("test_decsc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECSC(1, 0, n - 2, n - 2, n - 1); });
 }
+#endif
+TEST_CASE("test_qft_ideal_init")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        qftReg->QFT(0, n);
+        qftReg->MReg(0, qftReg->GetQubitCount());
+    });
+}
 
-TEST_CASE("test_qft_h")
+TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
 }
-
+#if 0
 TEST_CASE("test_zero_phase_flip")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->ZeroPhaseFlip(0, n); });
@@ -459,3 +484,4 @@ TEST_CASE("test_grover")
         },
         16);
 }
+#endif

@@ -128,13 +128,15 @@ public:
 
     virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QFusion>(orig)); }
     virtual void CopyState(QFusionPtr orig);
-    virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare) { return ApproxCompare(std::dynamic_pointer_cast<QFusion>(toCompare)); }
+    virtual bool ApproxCompare(QInterfacePtr toCompare)
+    {
+        return ApproxCompare(std::dynamic_pointer_cast<QFusion>(toCompare));
+    }
     virtual bool ApproxCompare(QFusionPtr toCompare);
 
     virtual QInterfacePtr ReleaseEngine()

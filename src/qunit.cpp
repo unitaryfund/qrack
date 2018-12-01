@@ -89,8 +89,6 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(complex* inputState)
 {
-    knowIsPhaseSeparable = false;
-
     auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator);
     unit->SetQuantumState(inputState);
 
@@ -368,7 +366,8 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
     for (bitLenInt i = 0; i < (bits.size()); i++) {
         shard = shards[bits[i]];
         if (shard.unit->GetQubitCount() > 1) {
-            QInterfacePtr unitCopy = CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0, rand_generator);
+            QInterfacePtr unitCopy =
+                CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0, rand_generator);
             unitCopy->CopyState(shard.unit);
 
             QInterfacePtr testBit = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator);
@@ -387,8 +386,10 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                     }
                 }
 
-                if (shard.isPhaseDirty && testBit->IsPhaseSeparable()) {
-                    shards[bits[i]].isPhaseDirty = false;
+                if (shard.isPhaseDirty) {
+                    if (abs(arg(testBit->GetAmplitude(0)) - arg(testBit->GetAmplitude(1))) < min_norm) {
+                        shards[bits[i]].isPhaseDirty = false;
+                    }
                 }
             }
         }
@@ -468,41 +469,6 @@ void QUnit::DumpShards()
         printf("%2d.\t%p[%d]\n", i++, shard.unit.get(), shard.mapped);
     }
 }
-
-bool QUnit::IsPhaseSeparable(bool forceCheck)
-{
-    if ((!forceCheck) && knowIsPhaseSeparable) {
-        return isPhaseSeparable;
-    }
-
-    bool toRet = true;
-
-    std::vector<QInterfacePtr> units;
-    units.reserve((int)(qubitCount));
-    std::map<QInterfacePtr, bool> found;
-
-    /* Walk through all of the supplied bits and create a unique list to check. */
-    for (bitLenInt bit = 0; bit < qubitCount; ++bit) {
-        if (found.find(shards[bit].unit) == found.end()) {
-            found[shards[bit].unit] = true;
-            units.push_back(shards[bit].unit);
-        }
-    }
-
-    for (bitLenInt i = 0; i < (units.size()); i++) {
-        if (!(units[i]->IsPhaseSeparable())) {
-            toRet = false;
-            break;
-        }
-    }
-
-    knowIsPhaseSeparable = true;
-    isPhaseSeparable = toRet;
-
-    return toRet;
-}
-
-bool QUnit::IsPhaseSeparable(bitLenInt qubit) { return shards[qubit].unit->IsPhaseSeparable(qubit); }
 
 real1 QUnit::Prob(bitLenInt qubit)
 {
@@ -1086,8 +1052,6 @@ void QUnit::CDIV(
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    knowIsPhaseSeparable = false;
-
     EntangleRange(start, length);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
 
@@ -1098,8 +1062,6 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    knowIsPhaseSeparable = false;
-
     EntangleRange(start, length);
     shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
 
@@ -1110,8 +1072,6 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    knowIsPhaseSeparable = false;
-
     EntangleRange(start, length);
 
     std::vector<bitLenInt> bits(2);
@@ -1162,7 +1122,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         valueLength, shards[carryIndex].mapped, values);
 }
 
-bool QUnit::ApproxCompare(QUnitPtr toCompare) {
+bool QUnit::ApproxCompare(QUnitPtr toCompare)
+{
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         return false;

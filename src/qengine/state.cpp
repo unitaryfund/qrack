@@ -80,9 +80,6 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 
 void QEngineCPU::SetPermutation(bitCapInt perm)
 {
-    knowIsPhaseSeparable = true;
-    isPhaseSeparable = true;
-
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
     real1 angle = Rand() * 2.0 * PI_R1;
     stateVec[perm] = complex(cos(angle), sin(angle));
@@ -91,8 +88,6 @@ void QEngineCPU::SetPermutation(bitCapInt perm)
 
 void QEngineCPU::CopyState(QInterfacePtr orig)
 {
-    knowIsPhaseSeparable = false;
-
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
     ResetStateVec(AllocStateVec(maxQPower));
@@ -428,81 +423,6 @@ void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
 
-/// PSEUDO-QUANTUM Check whether phase is constant across permutation basis
-bool QEngineCPU::IsPhaseSeparable(bool forceCheck)
-{
-    if ((!forceCheck) && knowIsPhaseSeparable) {
-        return isPhaseSeparable;
-    }
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
-    }
-
-    int numCores = GetConcurrencyLevel();
-    bool* isAllSame = new bool[numCores];
-    std::fill(isAllSame, isAllSame + numCores, true);
-    real1* phases = new real1[numCores];
-    std::fill(phases, phases + numCores, -PI_R1 * 2);
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        real1 nrm = norm(stateVec[lcv]);
-        if (nrm > min_norm) {
-            real1 nPhase = arg(stateVec[lcv]);
-            if (phases[cpu] < (-PI_R1)) {
-                phases[cpu] = nPhase;
-            } else {
-                real1 diff = phases[cpu] - nPhase;
-                if (diff < ZERO_R1) {
-                    diff = -diff;
-                }
-                if (diff > PI_R1) {
-                    diff = (2 * PI_R1) - diff;
-                }
-                if (diff > min_norm) {
-                    isAllSame[cpu] = false;
-                }
-            }
-        }
-    });
-
-    bool toRet = true;
-    real1 phase = -PI_R1 * 2;
-    for (int i = 0; i < numCores; i++) {
-        if ((!toRet) || (!isAllSame[i])) {
-            toRet = false;
-            break;
-        }
-
-        if (phase < (-PI_R1)) {
-            if (phases[i] >= (-PI_R1)) {
-                phase = phases[i];
-            }
-            continue;
-        }
-
-        real1 diff = phases[i] - phase;
-        if (diff < ZERO_R1) {
-            diff = -diff;
-        }
-        if (diff > PI_R1) {
-            diff = (2 * PI_R1) - diff;
-        }
-        if (diff > min_norm) {
-            toRet = false;
-            break;
-        }
-    }
-
-    delete[] isAllSame;
-    delete[] phases;
-
-    knowIsPhaseSeparable = true;
-    isPhaseSeparable = toRet;
-
-    return toRet;
-}
-
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {
@@ -605,7 +525,8 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return prob;
 }
 
-bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare) {
+bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
+{
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         return false;
@@ -618,7 +539,6 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare) {
     if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
         toCompare->NormalizeState();
     }
-
 
     int numCores = GetConcurrencyLevel();
     real1* partError = new real1[numCores]();
