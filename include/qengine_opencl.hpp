@@ -82,8 +82,6 @@ public:
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
-    using QEngine::IsPhaseSeparable;
-    virtual bool IsPhaseSeparable(bool forceCheck = false);
 
     /* Operations that have an improved implementation. */
     using QEngine::X;
@@ -165,6 +163,12 @@ public:
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
+
+    virtual bool ApproxCompare(QInterfacePtr toCompare)
+    {
+        return ApproxCompare(std::dynamic_pointer_cast<QEngineOCL>(toCompare));
+    }
+    virtual bool ApproxCompare(QEngineOCLPtr toCompare);
 
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();

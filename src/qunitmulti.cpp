@@ -117,13 +117,6 @@ void QUnitMulti::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 // Bit-wise apply measurement gate to a register
 bitCapInt QUnitMulti::MReg(bitLenInt start, bitLenInt length)
 {
-    // Measurement introduces an overall phase shift. Since it is applied to every state, this will not change the
-    // status of our cached knowledge of phase separability. However, measurement could set some amplitudes to zero,
-    // meaning the relative amplitude phases might only become separable in the process if they are not already.
-    if (knowIsPhaseSeparable && (!isPhaseSeparable)) {
-        knowIsPhaseSeparable = false;
-    }
-
     int numCores = GetConcurrencyLevel();
 
     bitCapInt* partResults = new bitCapInt[numCores]();

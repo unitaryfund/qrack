@@ -149,9 +149,12 @@ public:
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
-    using QInterface::IsPhaseSeparable;
-    virtual bool IsPhaseSeparable(bool forceCheck = false);
     virtual void NormalizeState(real1 nrm = -999.0);
+    virtual bool ApproxCompare(QInterfacePtr toCompare)
+    {
+        return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
+    }
+    virtual bool ApproxCompare(QEngineCPUPtr toCompare);
 
     /** @} */
 

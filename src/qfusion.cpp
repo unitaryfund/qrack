@@ -717,12 +717,6 @@ void QFusion::CopyState(QFusionPtr orig)
     qReg->CopyState(orig->qReg);
 }
 
-bool QFusion::IsPhaseSeparable(bool forceCheck)
-{
-    FlushAll();
-    return qReg->IsPhaseSeparable(forceCheck);
-}
-
 real1 QFusion::Prob(bitLenInt qubitIndex)
 {
     FlushBit(qubitIndex);
@@ -745,5 +739,20 @@ real1 QFusion::ProbAll(bitCapInt fullRegister)
 {
     FlushAll();
     return qReg->ProbAll(fullRegister);
+}
+
+bool QFusion::ApproxCompare(QFusionPtr toCompare)
+{
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    // Make sure all buffers are flushed before comparison
+    FlushAll();
+    toCompare->FlushAll();
+
+    // Compare the wrapped objects
+    return qReg->ApproxCompare(toCompare->qReg);
 }
 } // namespace Qrack

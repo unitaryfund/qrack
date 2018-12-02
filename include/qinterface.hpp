@@ -95,9 +95,6 @@ class QInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
-    bool knowIsPhaseSeparable;
-    bool isPhaseSeparable;
-
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
@@ -125,9 +122,7 @@ protected:
 
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
-        : knowIsPhaseSeparable(true)
-        , isPhaseSeparable(true)
-        , rand_distribution(0.0, 1.0)
+        : rand_distribution(0.0, 1.0)
     {
         SetQubitCount(n);
 
@@ -1333,20 +1328,6 @@ public:
     virtual void CopyState(QInterfacePtr orig) = 0;
 
     /**
-     * Check whether phase is constant across permutation basis
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bool IsPhaseSeparable(bool forceCheck = false) = 0;
-
-    /**
-     * Check whether phase is constant across permutation basis
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bool IsPhaseSeparable(bitLenInt qubit) { return IsPhaseSeparable(); }
-
-    /**
      * Direct measure of bit probability to be in |1> state
      *
      * \warning PSEUDO-QUANTUM
@@ -1388,6 +1369,15 @@ public:
      * factor.
      */
     virtual void SetBit(bitLenInt qubitIndex1, bool value);
+
+    /**
+     * Compare state vectors approximately, component by component, to determine whether this state vector is the same
+     * as the target.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+
+    virtual bool ApproxCompare(QInterfacePtr toCompare) = 0;
 
     /** @} */
 };

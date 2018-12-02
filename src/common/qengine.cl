@@ -1575,10 +1575,44 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
-        if (nrm < min_norm) {
-            nrm = ZERO_R1;
+        if (nrm > min_norm) {
+            partNrm += nrm;
         }
-        partNrm += nrm;
+    }
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = partNrm;
+    
+    for (lcv = (locNthreads >> 1); lcv > 0; lcv >>= 1) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0) {
+        norm_ptr[get_group_id(0)] = lProbBuffer[0];
+    }
+}
+
+void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
+    bitCapInt ID, Nthreads, lcv, locID, locNthreads;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    cmplx amp;
+    real1 nrm;
+    real1 partNrm = ZERO_R1;
+
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        amp = stateVec1[lcv] - stateVec2[lcv];
+        nrm = dot(amp, amp);
+        if (nrm > min_norm) {
+            partNrm += nrm;
+        }
     }
 
     locID = get_local_id(0);
