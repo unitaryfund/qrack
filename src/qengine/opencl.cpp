@@ -193,7 +193,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= 1U;
     }
     procElemCount = procElemPow;
-    nrmGroupCount = procElemCount * 64 * nrmGroupSize;
+    nrmGroupCount = maxQPower;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > maxWorkItems) {
         nrmGroupCount = maxWorkItems;
@@ -594,6 +594,14 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     kernelEvent.wait();
     ResetStateVec(nStateVec, nStateBuffer);
 
+    // The default nrmGroupCount and nrmBuffer size depend on the number of probability amplitudes.
+    nrmGroupCount = maxQPower;
+    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+    cl::Event fillEvent;
+    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
+    device_context->wait_events.push_back(fillEvent);
+
     return result;
 }
 
@@ -772,6 +780,14 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
+
+    // The default nrmGroupCount and nrmBuffer size depend on the number of probability amplitudes.
+    nrmGroupCount = maxQPower;
+    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+    cl::Event fillEvent;
+    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
+    device_context->wait_events.push_back(fillEvent);
 }
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
