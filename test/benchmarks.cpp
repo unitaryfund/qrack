@@ -344,7 +344,7 @@ TEST_CASE("test_decsc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECSC(1, 0, n - 2, n - 2, n - 1); });
 }
-#endif
+
 TEST_CASE("test_qft_ideal_init")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
@@ -352,7 +352,7 @@ TEST_CASE("test_qft_ideal_init")
         qftReg->MReg(0, qftReg->GetQubitCount());
     });
 }
-
+#endif
 TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
