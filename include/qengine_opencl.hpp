@@ -178,6 +178,7 @@ protected:
 
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
+    void ReinitNormBuffer();
     virtual complex* AllocStateVec(bitCapInt elemCount);
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);

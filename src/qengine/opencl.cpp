@@ -264,6 +264,35 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 }
 
+void QEngineOCL::ReinitNormBuffer()
+{
+    size_t nrmVecAlignSize =
+        ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+
+    if (nrmArray == NULL) {
+#ifdef __APPLE__
+        posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
+#else
+        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
+#endif
+    } else {
+        nrmBuffer = NULL;
+        free(nrmArray);
+        nrmArray = NULL;
+#ifdef __APPLE__
+        posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
+#else
+        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
+#endif
+    }
+
+    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
+    cl::Event fillEvent;
+    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
+    device_context->wait_events.push_back(fillEvent);
+}
+
 void QEngineOCL::SetQubitCount(bitLenInt qb)
 {
     qubitCount = qb;
@@ -596,11 +625,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     // The default nrmGroupCount and nrmBuffer size depend on the number of probability amplitudes.
     nrmGroupCount = maxQPower;
-    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
-    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-    cl::Event fillEvent;
-    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
-    device_context->wait_events.push_back(fillEvent);
+    ReinitNormBuffer();
 
     return result;
 }
@@ -783,11 +808,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     // The default nrmGroupCount and nrmBuffer size depend on the number of probability amplitudes.
     nrmGroupCount = maxQPower;
-    nrmBuffer = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
-    // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-    cl::Event fillEvent;
-    queue.enqueueFillBuffer(nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
-    device_context->wait_events.push_back(fillEvent);
+    ReinitNormBuffer();
 }
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)

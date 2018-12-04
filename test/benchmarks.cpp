@@ -119,7 +119,7 @@ TEST_CASE("test_cnot")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
 }
-
+#if 0
 TEST_CASE("test_anticnot")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->AntiCNOT(0, n / 2, n / 2); });
@@ -139,12 +139,12 @@ TEST_CASE("test_swap")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-
+#endif
 TEST_CASE("test_x")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
-
+#if 0
 TEST_CASE("test_y")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0, n); });
@@ -344,7 +344,7 @@ TEST_CASE("test_decsc")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->DECSC(1, 0, n - 2, n - 2, n - 1); });
 }
-
+#endif
 TEST_CASE("test_qft_ideal_init")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
@@ -357,7 +357,7 @@ TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
 }
-
+#if 0
 TEST_CASE("test_zero_phase_flip")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->ZeroPhaseFlip(0, n); });
@@ -439,7 +439,7 @@ TEST_CASE("test_swap_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-
+#endif
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
