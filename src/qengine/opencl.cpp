@@ -193,12 +193,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= 1U;
     }
     procElemCount = procElemPow;
-    nrmGroupCount = maxQPower;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
-    if (nrmGroupCount > maxWorkItems) {
-        nrmGroupCount = maxWorkItems;
-    }
-    nrmGroupCount = FixWorkItemCount(nrmGroupCount, nrmGroupCount);
+    nrmGroupCount = FixWorkItemCount(maxQPower, maxWorkItems);
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
@@ -624,7 +620,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     ResetStateVec(nStateVec, nStateBuffer);
 
     // The default nrmGroupCount and nrmBuffer size depend on the number of probability amplitudes.
-    nrmGroupCount = maxQPower;
+    nrmGroupCount = FixWorkItemCount(maxQPower, maxWorkItems);
     ReinitNormBuffer();
 
     return result;
@@ -807,7 +803,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     delete[] remainderStateAngle;
 
     // The default nrmGroupCount and nrmBuffer size depend on the number of probability amplitudes.
-    nrmGroupCount = maxQPower;
+    nrmGroupCount = FixWorkItemCount(maxQPower, maxWorkItems);
     ReinitNormBuffer();
 }
 
