@@ -411,6 +411,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    for (bitCapInt j = 0; j < bitCount; j++) {
+        bciArgs[4] |= qPowersSorted[j];
+    }
     queue.enqueueWriteBuffer(*ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
         &(device_context->wait_events[1]));
     queue.flush();
@@ -419,7 +422,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * bitCount, (void*)qPowersSorted);
 
     doCalcNorm &= doNormalize && (bitCount == 1);
-    bool isSparse = qPowersSorted[0] >= ngs;
+    bool isSparse =
+        (qPowersSorted[0] >= ngs) && ((offset1 == 0) || (offset1 >= 16)) && ((offset2 == 0) || (offset2 >= 16));
 
     OCLAPI api_call;
     if (doCalcNorm) {

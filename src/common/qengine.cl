@@ -92,19 +92,16 @@ void kernel apply2x2stride(global cmplx* stateVec, constant cmplx* cmplxPtr, con
         }
         i |= iHigh;
 
-        evs[0] = async_work_group_copy(lBuffer, &stateVec[i | offset1], locSize, 0);
-        evs[1] = async_work_group_copy(&lBuffer[locSize], &stateVec[i | offset2], locSize, 0);
-        wait_group_events(2, evs);
-
-        Y0 = lBuffer[locID];
-        Y1 = lBuffer[locID + locSize]; 
+        Y0 = stateVec[(i + locID) | offset1];
+        Y1 = stateVec[(i + locID) | offset2];
 
         lBuffer[locID] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], Y1));
         lBuffer[locID + locSize] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
 
+        barrier(CLK_LOCAL_MEM_FENCE);
+
         evs[0] = async_work_group_copy(&stateVec[i | offset1], lBuffer, locSize, 0);
         evs[1] = async_work_group_copy(&stateVec[i | offset2], &lBuffer[locSize], locSize, 0);
-        wait_group_events(2, evs);
     }
 }
 
@@ -208,18 +205,16 @@ void kernel apply2x2normstride(global cmplx* stateVec, constant cmplx* cmplxPtr,
         }
         i |= iHigh;
 
-        evs[0] = async_work_group_copy(lBuffer, &stateVec[i | offset1], locSize, 0);
-        evs[1] = async_work_group_copy(&lBuffer[locSize], &stateVec[i | offset2], locSize, 0);
-        wait_group_events(2, evs);
-
-        YT = lBuffer[locID];
-        Y1 = lBuffer[locID + locSize]; 
+        YT = stateVec[(i + locID) | offset1];
+        Y1 = stateVec[(i + locID) | offset2];
 
         Y0 = nrm * (zmul(mtrx[0], YT) + zmul(mtrx[1], Y1));
         Y1 = nrm * (zmul(mtrx[2], YT) + zmul(mtrx[3], Y1));
 
         lBuffer[locID] = Y0;
-        lBuffer[locID + locSize] = Y1; 
+        lBuffer[locID + locSize] = Y1;
+
+        barrier(CLK_LOCAL_MEM_FENCE);
 
         evs[0] = async_work_group_copy(&stateVec[i | offset1], lBuffer, locSize, 0);
         evs[1] = async_work_group_copy(&stateVec[i | offset2], &lBuffer[locSize], locSize, 0);
@@ -233,8 +228,6 @@ void kernel apply2x2normstride(global cmplx* stateVec, constant cmplx* cmplxPtr,
             nrm1 += nrm2;
         }
         partNrm += nrm1;
-
-        wait_group_events(2, evs);
     }
 
     local real1* lProbBuffer = (local real1*)lBuffer;
