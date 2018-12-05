@@ -73,18 +73,17 @@ void kernel apply2x2stride(global cmplx* stateVec, constant cmplx* cmplxPtr, con
 
     real1 nrm = cmplxPtr[4].x;
     bitCapInt bitCount = bitCapIntPtr[0];
-    bitCapInt maxI = bitCapIntPtr[1] / groupCount;
+    bitCapInt maxI = bitCapIntPtr[1] / (groupCount * locSize);
     bitCapInt offset1 = bitCapIntPtr[2];
     bitCapInt offset2 = bitCapIntPtr[3];
 
     event_t evs[2];
 
     cmplx Y0, Y1;
-    bitCapInt i, iLow, iHigh, j;
+    bitCapInt i, iLow, iHigh;
     bitLenInt p;
     for (lcv = 0; lcv < maxI; lcv++) {
-        j = locID + (locSize * (groupID + lcv * groupCount));
-        iHigh = j;
+        iHigh = locSize * (groupID + (lcv * groupCount));
         i = 0;
         for (p = 0; p < bitCount; p++) {
             iLow = iHigh & (qPowersSorted[p] - 1);
@@ -188,20 +187,19 @@ void kernel apply2x2normstride(global cmplx* stateVec, constant cmplx* cmplxPtr,
 
     real1 nrm = cmplxPtr[4].x;
     bitCapInt bitCount = bitCapIntPtr[0];
-    bitCapInt maxI = bitCapIntPtr[1];
+    bitCapInt maxI = bitCapIntPtr[1] / (groupCount * locSize);
     bitCapInt offset1 = bitCapIntPtr[2];
     bitCapInt offset2 = bitCapIntPtr[3];
 
     event_t evs[2];
 
     cmplx Y0, Y1, YT;
-    bitCapInt i, iLow, iHigh, j;
+    bitCapInt i, iLow, iHigh;
     bitLenInt p;
     real1 partNrm = ZERO_R1;
 
     for (lcv = 0; lcv < maxI; lcv++) {
-        j = locID + (locSize * (groupID + lcv * groupCount));
-        iHigh = j;
+        iHigh = locSize * (groupID + (lcv * groupCount));
         i = 0;
         for (p = 0; p < bitCount; p++) {
             iLow = iHigh & (qPowersSorted[p] - 1);
