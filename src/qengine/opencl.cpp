@@ -419,12 +419,25 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * bitCount, (void*)qPowersSorted);
 
     doCalcNorm &= doNormalize && (bitCount == 1);
+    long stride = offset2 - offset1;
+    if (stride > 0) {
+        stride = -stride;
+    }
+    bool isSparse = ((bitCapInt)stride) < 2U * ngs;
 
     OCLAPI api_call;
     if (doCalcNorm) {
-        api_call = OCL_API_APPLY2X2_NORM;
+        if (isSparse) {
+            api_call = OCL_API_APPLY2X2_NORM_STRIDE;
+        } else {
+            api_call = OCL_API_APPLY2X2_NORM;
+        }
     } else {
-        api_call = OCL_API_APPLY2X2;
+        if (isSparse) {
+            api_call = OCL_API_APPLY2X2_STRIDE;
+        } else {
+            api_call = OCL_API_APPLY2X2;
+        }
     }
     OCLDeviceCall ocl = device_context->Reserve(api_call);
     clFinish();
@@ -433,9 +446,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     ocl.call.setArg(2, *ulongBuffer);
     ocl.call.setArg(3, powersBuffer);
     // ocl.call.setArg(4, cl::Local(sizeof(complex) * ngs * 2));
+    if (doCalcNorm || isSparse) {
+        ocl.call.setArg(4, cl::Local(sizeof(real1) * ngs * 2));
+    }
     if (doCalcNorm) {
-        ocl.call.setArg(4, *nrmBuffer);
-        ocl.call.setArg(5, cl::Local(sizeof(real1) * ngs));
+        ocl.call.setArg(5, *nrmBuffer);
     }
 
     cl::Event kernelEvent;
