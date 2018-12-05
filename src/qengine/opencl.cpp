@@ -423,7 +423,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (stride > 0) {
         stride = -stride;
     }
-    bool isSparse = ((bitCapInt)stride) < 2U * ngs;
+    bool isSparse = ((bitCapInt)stride) < ngs;
 
     OCLAPI api_call;
     if (doCalcNorm) {
