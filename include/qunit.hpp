@@ -34,6 +34,8 @@ protected:
     QInterfaceEngine engine;
     QInterfaceEngine subengine;
     std::vector<QEngineShard> shards;
+    complex phaseFactor;
+    bool doNormalize;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
 
@@ -45,9 +47,11 @@ protected:
 
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr);
+        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
+        bool doNorm = true);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr);
+        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
+        bool doNorm = true);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);

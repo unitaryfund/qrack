@@ -123,7 +123,7 @@ void OCLEngine::InitOCL()
 
         cl::Program program = cl::Program(devCntxt->context, sources);
 
-        cl_int buildError = program.build({ all_devices[i] });
+        cl_int buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
@@ -155,7 +155,6 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");
         all_device_contexts[i]->calls[OCL_API_PROBMASK] = cl::Kernel(program, "probmask");
         all_device_contexts[i]->calls[OCL_API_PROBMASKALL] = cl::Kernel(program, "probmaskall");
-        all_device_contexts[i]->calls[OCL_API_ISPHASESEPARABLE] = cl::Kernel(program, "isphaseseparable");
         all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
         all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
         all_device_contexts[i]->calls[OCL_API_ROR] = cl::Kernel(program, "ror");

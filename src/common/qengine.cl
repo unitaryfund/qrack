@@ -59,10 +59,9 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
         stateVec[i | offset2] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
     }
 }
-
-void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts)
+void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
 {
-    bitCapInt ID, Nthreads, lcv;
+    bitCapInt ID, Nthreads, lcv, locID, locNthreads;
     real1 nrm1, nrm2;
 
     ID = get_global_id(0);
@@ -108,7 +107,21 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
         }
         partNrm += nrm1;
     }
-    nrmParts[ID] = partNrm;
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = partNrm;
+    
+    for (lcv = (locNthreads >> 1); lcv > 0; lcv >>= 1) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0) {
+        nrmParts[get_group_id(0)] = lProbBuffer[0];
+    }
 }
 
 void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
@@ -207,39 +220,6 @@ void kernel decohereamp(global real1* stateProb, global real1* stateAngle, const
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
         nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
-    }
-}
-
-void kernel isphaseseparable(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* phases, global bitLenInt* isAllSame)
-{
-    bitCapInt ID, Nthreads, lcv;
-
-    ID = get_global_id(0);
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    real1 nrm;
-    cmplx amp;
-
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = stateVec[lcv];
-        nrm = dot(amp, amp);
-        if (nrm > min_norm) {
-            real1 nPhase = arg(stateVec[lcv]);
-            if (phases[ID] < (-PI_R1)) {
-                phases[ID] = nPhase;
-            } else {
-                real1 diff = phases[ID] - nPhase;
-                if (diff < ZERO_R1) {
-                    diff = -diff;
-                }
-                if (diff > PI_R1) {
-                    diff = (2 * PI_R1) - diff;
-                }
-                if (diff > min_norm) {
-                    isAllSame[ID] = 0;
-                }
-            }
-        }
     }
 }
 

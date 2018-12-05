@@ -34,28 +34,26 @@ namespace Qrack {
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool partialInit)
-    : QEngine(qBitCount, rgp)
+    complex phaseFac, bool doNorm)
+    : QEngine(qBitCount, rgp, doNorm)
     , stateVec(NULL)
 {
-    doNormalize = true;
     SetConcurrencyLevel(std::thread::hardware_concurrency());
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    runningNorm = partialInit ? ZERO_R1 : ONE_R1;
+    runningNorm = ONE_R1;
     SetQubitCount(qBitCount);
 
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-    if (!partialInit) {
-        if (phaseFac == complex(-999.0, -999.0)) {
-            real1 angle = Rand() * 2.0 * PI_R1;
-            stateVec[initState] = complex(cos(angle), sin(angle));
-        } else {
-            stateVec[initState] = phaseFac;
-        }
+
+    if (phaseFac == complex(-999.0, -999.0)) {
+        real1 angle = Rand() * 2.0 * PI_R1;
+        stateVec[initState] = complex(cos(angle), sin(angle));
+    } else {
+        stateVec[initState] = phaseFac;
     }
 }
 

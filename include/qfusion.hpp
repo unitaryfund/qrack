@@ -30,6 +30,8 @@ class QFusion : public QInterface {
 protected:
     static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
+    complex phaseFactor;
+    bool doNormalize;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;
@@ -44,7 +46,8 @@ protected:
 
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr);
+        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
+        bool doNorm = true);
     QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(complex* inputState);
