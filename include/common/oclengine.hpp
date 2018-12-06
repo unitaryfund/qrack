@@ -39,6 +39,7 @@ typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
 enum OCLAPI {
     OCL_API_UNKNOWN = 0,
     OCL_API_APPLY2X2,
+    OCL_API_APPLY2X2_UNIT,
     OCL_API_APPLY2X2_NORM,
     OCL_API_COHERE,
     OCL_API_DECOHEREPROB,

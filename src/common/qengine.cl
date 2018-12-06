@@ -66,6 +66,44 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
     }
 }
 
+void kernel apply2x2unit(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+{
+    //Bring everything into private memory as soon and as efficiently as possible.
+
+    bitCapInt ID, Nthreads, lcv;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+
+    cmplx4 mtrx = vload8(0, cmplxPtr);
+
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt bitCount = args.x;
+    bitCapInt maxI = args.y;
+    bitCapInt offset1 = args.z;
+    bitCapInt offset2 = args.w;
+
+    cmplx Y0, Y1;
+    bitCapInt i, iLow, iHigh;
+    bitLenInt p;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0U;
+        for (p = 0U; p < bitCount; p++) {
+            iLow = iHigh & (qPowersSorted[p] - 1U);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1U;
+        }
+        i |= iHigh;
+
+        Y0 = stateVec[i | offset1];
+        Y1 = stateVec[i | offset2]; 
+
+        stateVec[i | offset1] = zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1);
+        stateVec[i | offset2] = zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1);
+    }
+}
+
 void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, local real1* lProbBuffer, global real1* nrmParts)
 {
     //Bring everything into private memory as soon and as efficiently as possible.

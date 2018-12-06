@@ -405,11 +405,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
-    cmplx[4] = complex(
-        (doNormalize && (bitCount == 1) && (runningNorm > min_norm)) ? (ONE_R1 / sqrt(runningNorm)) : ONE_R1, ZERO_R1);
+    bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
+    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / sqrt(runningNorm)), ZERO_R1);
+    size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
 
-    queue.enqueueWriteBuffer(*cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec,
-        &(device_context->wait_events[0]));
+    queue.enqueueWriteBuffer(
+        *cmplxBuffer, CL_FALSE, 0, sizeof(complex) * cmplxSize, cmplx, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
@@ -424,7 +425,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (doCalcNorm) {
         api_call = OCL_API_APPLY2X2_NORM;
     } else {
-        api_call = OCL_API_APPLY2X2;
+        if (isUnitLength) {
+            api_call = OCL_API_APPLY2X2_UNIT;
+        } else {
+            api_call = OCL_API_APPLY2X2;
+        }
     }
     OCLDeviceCall ocl = device_context->Reserve(api_call);
     ocl.call.setArg(0, *stateBuffer);

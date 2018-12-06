@@ -11,9 +11,11 @@
 // for details.
 
 #include <atomic>
+#include <chrono>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <thread>
 
 #include "catch.hpp"
 #include "qfactory.hpp"
@@ -31,7 +33,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 26;
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts)
 {
