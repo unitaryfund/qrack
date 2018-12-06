@@ -191,7 +191,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= 1U;
     }
     procElemCount = procElemPow;
-    nrmGroupCount = procElemCount * 64 * nrmGroupSize;
+    nrmGroupCount = procElemCount * 2 * nrmGroupSize;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     if (nrmGroupCount > maxWorkItems) {
         nrmGroupCount = maxWorkItems;
