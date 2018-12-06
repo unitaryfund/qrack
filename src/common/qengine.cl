@@ -25,15 +25,16 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
     bitCapInt ID, Nthreads, lcv;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    cmplx mtrx[4] = { cmplxPtr[0], cmplxPtr[1], cmplxPtr[2], cmplxPtr[3] };
 
-    real1 nrm = cmplxPtr[4].x;
+    cmplx4 mtrx = vload8(0, cmplxPtr);
+    real1 nrm = cmplxPtr[8];
+
     bitCapInt bitCount = bitCapIntPtr[0];
     bitCapInt maxI = bitCapIntPtr[1];
     bitCapInt offset1 = bitCapIntPtr[2];
@@ -55,66 +56,22 @@ void kernel apply2x2(global cmplx* stateVec, constant cmplx* cmplxPtr, constant 
         Y0 = stateVec[i | offset1];
         Y1 = stateVec[i | offset2]; 
 
-        stateVec[i | offset1] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], Y1));
-        stateVec[i | offset2] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
+        stateVec[i | offset1] = nrm * (zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1));
+        stateVec[i | offset2] = nrm * (zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1));
     }
 }
 
-void kernel apply2x2stride(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, local cmplx* lBuffer)
-{
-    bitCapInt lcv;
-
-    bitCapInt locID = get_local_id(0);
-    bitCapInt locSize = get_local_size(0);
-    bitCapInt groupID = get_group_id(0);
-    bitCapInt itemCount = get_global_size(0);
-    bitCapInt groupCount = itemCount / locSize;
-    cmplx mtrx[4] = { cmplxPtr[0], cmplxPtr[1], cmplxPtr[2], cmplxPtr[3] };
-
-    real1 nrm = cmplxPtr[4].x;
-    bitCapInt bitCount = bitCapIntPtr[0];
-    bitCapInt maxI = bitCapIntPtr[1] / (groupCount * locSize);
-    bitCapInt offset1 = bitCapIntPtr[2];
-    bitCapInt offset2 = bitCapIntPtr[3];
-
-    event_t evs[2];
-
-    cmplx Y0, Y1;
-    bitCapInt i, iLow, iHigh;
-    bitLenInt p;
-    for (lcv = 0; lcv < maxI; lcv++) {
-        iHigh = locSize * (groupID + (lcv * groupCount));
-        i = 0;
-        for (p = 0; p < bitCount; p++) {
-            iLow = iHigh & (qPowersSorted[p] - 1);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1;
-        }
-        i |= iHigh;
-
-        Y0 = stateVec[(i + locID) | offset1];
-        Y1 = stateVec[(i + locID) | offset2];
-
-        lBuffer[locID] = nrm * (zmul(mtrx[0], Y0) + zmul(mtrx[1], Y1));
-        lBuffer[locID + locSize] = nrm * (zmul(mtrx[2], Y0) + zmul(mtrx[3], Y1));
-
-        barrier(CLK_LOCAL_MEM_FENCE);
-
-        evs[0] = async_work_group_copy(&stateVec[i | offset1], lBuffer, locSize, 0);
-        evs[1] = async_work_group_copy(&stateVec[i | offset2], &lBuffer[locSize], locSize, 0);
-    }
-}
-
-void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, local real1* lProbBuffer, global real1* nrmParts)
+void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, local real1* lProbBuffer, global real1* nrmParts)
 {
     bitCapInt ID, Nthreads, lcv, locID, locNthreads;
     real1 nrm1, nrm2;
 
     ID = get_global_id(0);
     Nthreads = get_global_size(0);
-    cmplx mtrx[4] = { cmplxPtr[0], cmplxPtr[1], cmplxPtr[2], cmplxPtr[3] };
 
-    real1 nrm = cmplxPtr[4].x;
+    cmplx4 mtrx = vload8(0, cmplxPtr);
+    real1 nrm = cmplxPtr[8];
+
     bitCapInt bitCount = bitCapIntPtr[0];
     bitCapInt maxI = bitCapIntPtr[1];
     bitCapInt offset1 = bitCapIntPtr[2];
@@ -138,8 +95,8 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
         YT = stateVec[i | offset1];
         Y1 = stateVec[i | offset2];
 
-        Y0 = nrm * (zmul(mtrx[0], YT) + zmul(mtrx[1], Y1));
-        Y1 = nrm * (zmul(mtrx[2], YT) + zmul(mtrx[3], Y1));
+        Y0 = nrm * (zmul(mtrx.lo.lo, YT) + zmul(mtrx.lo.hi, Y1));
+        Y1 = nrm * (zmul(mtrx.hi.lo, YT) + zmul(mtrx.hi.hi, Y1));
 
         stateVec[i | offset1] = Y0;
         stateVec[i | offset2] = Y1;
@@ -159,81 +116,6 @@ void kernel apply2x2norm(global cmplx* stateVec, constant cmplx* cmplxPtr, const
     lProbBuffer[locID] = partNrm;
     
     for (lcv = (locNthreads >> 1); lcv > 0; lcv >>= 1) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        } 
-    }
-
-    if (locID == 0) {
-        nrmParts[get_group_id(0)] = lProbBuffer[0];
-    }
-}
-
-void kernel apply2x2normstride(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, local cmplx* lBuffer, global real1* nrmParts)
-{
-    real1 nrm1, nrm2;
-    bitCapInt lcv;
-
-    bitCapInt locID = get_local_id(0);
-    bitCapInt locSize = get_local_size(0);
-    bitCapInt groupID = get_group_id(0);
-    bitCapInt itemCount = get_global_size(0);
-    bitCapInt groupCount = itemCount / locSize;
-    cmplx mtrx[4] = { cmplxPtr[0], cmplxPtr[1], cmplxPtr[2], cmplxPtr[3] };
-
-    real1 nrm = cmplxPtr[4].x;
-    bitCapInt bitCount = bitCapIntPtr[0];
-    bitCapInt maxI = bitCapIntPtr[1] / (groupCount * locSize);
-    bitCapInt offset1 = bitCapIntPtr[2];
-    bitCapInt offset2 = bitCapIntPtr[3];
-
-    event_t evs[2];
-
-    cmplx Y0, Y1, YT;
-    bitCapInt i, iLow, iHigh;
-    bitLenInt p;
-    real1 partNrm = ZERO_R1;
-
-    for (lcv = 0; lcv < maxI; lcv++) {
-        iHigh = locSize * (groupID + (lcv * groupCount));
-        i = 0;
-        for (p = 0; p < bitCount; p++) {
-            iLow = iHigh & (qPowersSorted[p] - 1);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1;
-        }
-        i |= iHigh;
-
-        YT = stateVec[(i + locID) | offset1];
-        Y1 = stateVec[(i + locID) | offset2];
-
-        Y0 = nrm * (zmul(mtrx[0], YT) + zmul(mtrx[1], Y1));
-        Y1 = nrm * (zmul(mtrx[2], YT) + zmul(mtrx[3], Y1));
-
-        lBuffer[locID] = Y0;
-        lBuffer[locID + locSize] = Y1;
-
-        barrier(CLK_LOCAL_MEM_FENCE);
-
-        evs[0] = async_work_group_copy(&stateVec[i | offset1], lBuffer, locSize, 0);
-        evs[1] = async_work_group_copy(&stateVec[i | offset2], &lBuffer[locSize], locSize, 0);
-
-        nrm1 = dot(Y0, Y0);
-        nrm2 = dot(Y1, Y1);
-        if (nrm1 < min_norm) {
-            nrm1 = ZERO_R1;
-        }
-        if (nrm2 >= min_norm) {
-            nrm1 += nrm2;
-        }
-        partNrm += nrm1;
-    }
-
-    local real1* lProbBuffer = (local real1*)lBuffer;
-    lProbBuffer[locID] = partNrm;
-    
-    for (lcv = (locSize >> 1); lcv > 0; lcv >>= 1) {
         barrier(CLK_LOCAL_MEM_FENCE);
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
