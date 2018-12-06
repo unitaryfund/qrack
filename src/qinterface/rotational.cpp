@@ -96,7 +96,7 @@ void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
 
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    const complex mtrx[4] = { complex(ONE_R1, 0), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+    const complex mtrx[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(cosine, sine) };
     bitLenInt controls[1] = { control };
     ApplyControlledSingleBit(controls, 1, target, mtrx);
