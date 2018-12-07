@@ -26,6 +26,7 @@ enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 std::shared_ptr<std::default_random_engine> rng;
+bool disable_normalization = false;
 
 int main(int argc, char* argv[])
 {
@@ -50,7 +51,10 @@ int main(int argc, char* argv[])
         Opt(qunit_qfusion)["--layer-qunit-qfusion"]("Enable gate fusion tests under the QUnit layer") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
-        Opt(opencl_multi)["--proc-opencl-multi"]("Multiprocessor OpenCL tests");
+        Opt(opencl_multi)["--proc-opencl-multi"]("Multiprocessor OpenCL tests") |
+        Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
+                                                              "accurate computation. Usually makes QEngine types "
+                                                              "faster and QUnit types slower.)");
 
     session.cli(cli);
 
@@ -192,5 +196,10 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     std::shared_ptr<std::default_random_engine> rng = std::make_shared<std::default_random_engine>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
+    if (disable_normalization) {
+        qftReg = CreateQuantumInterface(
+            testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, complex(ONE_R1, ZERO_R1), true);
+    } else {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
+    }
 }

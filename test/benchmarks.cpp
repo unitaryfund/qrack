@@ -62,8 +62,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
     for (numBits = 3; numBits <= mxQbts; numBits++) {
-        QInterfacePtr qftReg = CreateQuantumInterface(
-            testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng, complex(ONE_R1, ZERO_R1), false);
+        QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
+            0, rng, complex(ONE_R1, ZERO_R1), !disable_normalization);
         avgt = 0.0;
         for (i = 0; i < ITERATIONS; i++) {
 
