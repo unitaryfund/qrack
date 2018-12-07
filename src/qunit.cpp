@@ -28,20 +28,12 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm)
-    : QInterface(qBitCount)
+    : QInterface(qBitCount, rgp, doNorm)
     , engine(eng)
     , subengine(subEng)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
 {
-    if (rgp == nullptr) {
-        /* Used to control the random seed for all allocated interfaces. */
-        rand_generator = std::make_shared<std::default_random_engine>();
-        rand_generator->seed(std::time(0));
-    } else {
-        rand_generator = rgp;
-    }
-
     shards.resize(qBitCount);
 
     for (bitLenInt i = 0; i < qBitCount; i++) {

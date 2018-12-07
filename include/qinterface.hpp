@@ -98,6 +98,7 @@ protected:
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
+    bool doNormalize;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -120,9 +121,12 @@ protected:
         return pow;
     }
 
+    template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
+
 public:
-    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
+        , doNormalize(doNorm)
     {
         SetQubitCount(n);
 
