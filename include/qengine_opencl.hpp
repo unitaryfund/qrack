@@ -43,6 +43,7 @@ protected:
     BufferPtr cmplxBuffer;
     BufferPtr ulongBuffer;
     BufferPtr nrmBuffer;
+    BufferPtr powersBuffer;
     real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;

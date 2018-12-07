@@ -15,7 +15,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <thread>
 
 #include "catch.hpp"
 #include "qfactory.hpp"
@@ -76,6 +75,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             tClock = clock() - iterClock;
             trialClocks[i] = tClock;
             avgt += tClock;
+
+            // To test how quickly QEngineOCL returns from dispatching asynchronous code, uncomment this section:
+            // if (testEngineType == QINTERFACE_OPENCL) {
+            //    std::dynamic_pointer_cast<QEngineOCL>(qftReg)->clFinish(true);
+            //}
         }
         avgt /= ITERATIONS;
 

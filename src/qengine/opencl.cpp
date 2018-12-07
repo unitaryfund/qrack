@@ -251,6 +251,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
     cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
     ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
+    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 64);
 
     if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = std::make_shared<cl::Buffer>(
@@ -393,7 +394,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(2);
+    device_context->wait_events.resize(3);
 
     bitCapInt maxI = maxQPower >> bitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
@@ -418,8 +419,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     doCalcNorm &= doNormalize && (bitCount == 1);
 
-    cl::Buffer powersBuffer = cl::Buffer(
-        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * bitCount, (void*)qPowersSorted);
+    queue.enqueueWriteBuffer(*powersBuffer, CL_FALSE, 0, sizeof(bitCapInt) * bitCount, qPowersSorted, &waitVec,
+        &(device_context->wait_events[2]));
+    queue.flush();
 
     OCLAPI api_call;
     if (doCalcNorm) {
@@ -435,7 +437,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *cmplxBuffer);
     ocl.call.setArg(2, *ulongBuffer);
-    ocl.call.setArg(3, powersBuffer);
+    ocl.call.setArg(3, *powersBuffer);
     if (doCalcNorm) {
         ocl.call.setArg(4, cl::Local(sizeof(complex) * ngs * 2));
     }
