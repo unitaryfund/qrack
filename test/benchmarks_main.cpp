@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
         Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
                                                               "accurate computation. Usually makes QEngine types "
                                                               "faster.)") |
-        Opt(disable_normalization)["--async-timing"](
+        Opt(async_time)["--async-timing"](
             "Base benchmarks on how quickly (asynchronous) methods return, rather than how long it takes to directly "
             "chain tests. (OpenCL code is asynchronous, and CPU code can run while kernels are dispatched to GPU.)");
 
