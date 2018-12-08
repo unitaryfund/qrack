@@ -13,7 +13,6 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
-#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -77,10 +76,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             trialClocks[i] = tClock;
             avgt += tClock;
 
+#if ENABLE_OPENCL
             // To test how quickly QEngineOCL returns from dispatching asynchronous code, uncomment this section:
             if (async_time && (testEngineType == QINTERFACE_OPENCL)) {
                 std::dynamic_pointer_cast<QEngineOCL>(qftReg)->clFinish(true);
             }
+#endif
         }
         avgt /= ITERATIONS;
 
