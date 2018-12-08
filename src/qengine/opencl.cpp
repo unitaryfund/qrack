@@ -138,9 +138,9 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
     ResetStateVec(nStateVec, nStateBuffer);
 
     QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
-    runningNorm = src->runningNorm;
     src->LockSync(CL_MAP_READ);
     LockSync(CL_MAP_WRITE);
+    runningNorm = src->runningNorm;
     std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
     src->UnlockSync();
     UnlockSync();
@@ -255,7 +255,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * nrmGroupCount, nrmArray);
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
         // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
         cl::Event fillEvent;
         queue.enqueueFillBuffer(*nrmBuffer, ZERO_R1, 0, sizeof(real1) * nrmGroupCount, NULL, &fillEvent);
@@ -439,7 +439,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     ocl.call.setArg(2, *ulongBuffer);
     ocl.call.setArg(3, *powersBuffer);
     if (doCalcNorm) {
-        ocl.call.setArg(4, cl::Local(sizeof(complex) * ngs * 2));
+        ocl.call.setArg(4, cl::Local(sizeof(real1) * ngs));
     }
     if (doCalcNorm) {
         ocl.call.setArg(5, *nrmBuffer);
@@ -456,13 +456,29 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     device_context->wait_events.push_back(kernelEvent);
 
     if (doCalcNorm) {
-        std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
-        queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * ngc / ngs, &waitVec2);
-        runningNorm = ParSum(nrmArray, ngc / ngs);
+        runningNorm = ONE_R1;
+        // This kernel is run on a single work group, but it lets us continue asynchronously.
+        if (ngc / ngs > 1) {
+            OCLDeviceCall ocl2 = device_context->Reserve(OCL_API_NORMSUM);
+            ocl2.call.setArg(0, *nrmBuffer);
+            ocl2.call.setArg(1, cl::Local(sizeof(real1) * ngc / ngs));
 
-        cl::Event unmapEvent;
-        queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
-        device_context->wait_events.push_back(unmapEvent);
+            cl::Event kernelEvent2;
+            std::vector<cl::Event> kernelWaitVec2 = device_context->ResetWaitEvents();
+            queue.enqueueNDRangeKernel(ocl2.call, cl::NullRange, // kernel, offset
+                cl::NDRange(ngc / ngs), // global number of work items
+                cl::NDRange(ngc / ngs), // local number (per group)
+                &kernelWaitVec2, // vector of events to wait for
+                &kernelEvent2); // handle to wait for the kernel
+            queue.flush();
+            device_context->wait_events.push_back(kernelEvent2);
+        }
+
+        cl::Event readEvent;
+        std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+        queue.enqueueReadBuffer(*nrmBuffer, CL_FALSE, 0, sizeof(real1), &runningNorm, &waitVec2, &readEvent);
+        queue.flush();
+        device_context->wait_events.push_back(readEvent);
     }
 }
 
@@ -810,6 +826,9 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         return ProbAll(1);
     }
 
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -863,6 +882,9 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -926,6 +948,9 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         return;
     }
 
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -968,6 +993,9 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -1036,6 +1064,8 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
 
     bitCapInt v = mask; // count the number of bits set in v
     bitCapInt oldV;
@@ -1893,6 +1923,9 @@ void QEngineOCL::SetQuantumState(complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -1906,6 +1939,9 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineOCL::GetQuantumState(complex* outputState)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -1917,6 +1953,9 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
+
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         return false;
@@ -1980,6 +2019,9 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 void QEngineOCL::NormalizeState(real1 nrm)
 {
+    // We might have async execution of gates still happening.
+    clFinish();
+
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
@@ -2032,6 +2074,8 @@ void QEngineOCL::UpdateRunningNorm()
 {
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
+    runningNorm = ONE_R1;
+
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
@@ -2061,13 +2105,28 @@ void QEngineOCL::UpdateRunningNorm()
         size = 1;
     }
 
-    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * size, &waitVec);
-    runningNorm = ParSum(nrmArray, size);
+    // This kernel is run on a single work group, but it lets us continue asynchronously.
+    if (size > 1) {
+        OCLDeviceCall ocl2 = device_context->Reserve(OCL_API_NORMSUM);
+        ocl2.call.setArg(0, *nrmBuffer);
+        ocl2.call.setArg(1, cl::Local(sizeof(real1) * size));
 
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
+        cl::Event kernelEvent2;
+        std::vector<cl::Event> kernelWaitVec2 = device_context->ResetWaitEvents();
+        queue.enqueueNDRangeKernel(ocl2.call, cl::NullRange, // kernel, offset
+            cl::NDRange(size), // global number of work items
+            cl::NDRange(size), // local number (per group)
+            &kernelWaitVec2, // vector of events to wait for
+            &kernelEvent2); // handle to wait for the kernel
+        queue.flush();
+        device_context->wait_events.push_back(kernelEvent2);
+    }
+
+    cl::Event readEvent;
+    std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+    queue.enqueueReadBuffer(*nrmBuffer, CL_FALSE, 0, sizeof(real1), &runningNorm, &waitVec2, &readEvent);
     queue.flush();
-    device_context->wait_events.push_back(unmapEvent);
+    device_context->wait_events.push_back(readEvent);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount)

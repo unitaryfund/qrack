@@ -77,9 +77,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             avgt += tClock;
 
             // To test how quickly QEngineOCL returns from dispatching asynchronous code, uncomment this section:
-            // if (testEngineType == QINTERFACE_OPENCL) {
-            //    std::dynamic_pointer_cast<QEngineOCL>(qftReg)->clFinish(true);
-            //}
+            if (async_time && (testEngineType == QINTERFACE_OPENCL)) {
+                std::dynamic_pointer_cast<QEngineOCL>(qftReg)->clFinish(true);
+            }
         }
         avgt /= ITERATIONS;
 

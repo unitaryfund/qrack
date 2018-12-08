@@ -174,6 +174,27 @@ void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, const
     }
 }
 
+// This kernel is run with one local group, to finish the work of apply2x2norm
+void kernel normsum(global real1* nrmParts, local real1* lProbBuffer)
+{
+    bitCapInt locID, locNthreads, lcv;
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = nrmParts[locID];
+    
+    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0U) {
+        nrmParts[0] = lProbBuffer[0];
+    }
+}
+
 void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, lcv;

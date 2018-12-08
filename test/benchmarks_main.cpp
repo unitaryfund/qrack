@@ -27,6 +27,7 @@ enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 std::shared_ptr<std::default_random_engine> rng;
 bool disable_normalization = false;
+bool async_time = false;
 
 int main(int argc, char* argv[])
 {
@@ -54,7 +55,10 @@ int main(int argc, char* argv[])
         Opt(opencl_multi)["--proc-opencl-multi"]("Multiprocessor OpenCL tests") |
         Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
                                                               "accurate computation. Usually makes QEngine types "
-                                                              "faster and QUnit types slower.)");
+                                                              "faster.)") |
+        Opt(disable_normalization)["--async-timing"](
+            "Base benchmarks on how quickly (asynchronous) methods return, rather than how long it takes to directly "
+            "chain tests. (OpenCL code is asynchronous, and CPU code can run while kernels are dispatched to GPU.)");
 
     session.cli(cli);
 

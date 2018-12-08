@@ -146,6 +146,7 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
         all_device_contexts[i]->calls[OCL_API_APPLY2X2_UNIT] = cl::Kernel(program, "apply2x2unit");
         all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
+        all_device_contexts[i]->calls[OCL_API_NORMSUM] = cl::Kernel(program, "normsum");
         all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
         all_device_contexts[i]->calls[OCL_API_COHERE] = cl::Kernel(program, "cohere");
         all_device_contexts[i]->calls[OCL_API_DECOHEREPROB] = cl::Kernel(program, "decohereprob");

@@ -27,6 +27,7 @@ enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 std::shared_ptr<std::default_random_engine> rng;
 bool disable_normalization = false;
+bool async_time = false;
 
 int main(int argc, char* argv[])
 {
