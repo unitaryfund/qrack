@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "qrack/qinterface.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
