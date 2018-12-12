@@ -324,10 +324,18 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
-     * Time-evolve according to a Hamiltonian operator, for a length of time "t."
+     * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
+     * applied by left-multiplication in low-to-high vector index order on the state vector.
      *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
+     * \warning Hamiltonian components might not commute.
+     *
+     * As a general point of linear algebra, where A and B are linear operators, e^{i * (A + B) * t} = e^{i * A * t} *
+     * e^{i * B * t} might NOT hold, if the operators A and B do not commute. As a rule of thumb, A should commute with
+     * B at least in the case that A and B act on entirely different sets of qubits. However, for defining the intended
+     * Hamiltonian, the programmer can be guaranteed that the exponential factors will be applied right-to-left, by left
+     * multiplication, in the order e^(i * H_(N - 1) * t) * e^(i * H_(N - 2) * t) * ... e^(i * H_0 * t) * |psi>. (For
+     * example, if A and B are single bit gates, form their composition into one gate by the intended right-to-left
+     * fusion and apply them as a single HamiltonianOp.)
      */
     virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
 
