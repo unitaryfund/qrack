@@ -329,7 +329,7 @@ public:
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      */
-    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff) = 0;
+    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
 
     /**
      * Apply a swap with arbitrary control bits.
@@ -630,7 +630,8 @@ public:
     /**
      *  Exponentiation of arbitrary 2x2 gate
      *
-     * Applies \f$ e^{-i*Op*I} \f$, (equivalent to raising e to each of the components of Op respectively,) and applying the resulting 2x2 operator.
+     * Applies \f$ e^{-i*Op*I} \f$, (equivalent to raising e to each of the components of Op respectively,) and applying
+     * the resulting 2x2 operator.
      */
     virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
 

@@ -40,5 +40,4 @@
 namespace Qrack {
 
 typedef std::shared_ptr<complex> BitOp;
-
 }

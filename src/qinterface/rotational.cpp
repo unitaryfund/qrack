@@ -65,9 +65,8 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
 /// Exponentiate of arbitrary single bit gate
 void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
 {
-    complex expOfGate[4] = {
-        // 2x2
-        // Note: For a unitary input gate, this should be a theoretically unitary output transformation.
+    complex expOfGate[4] = { // 2x2
+        // Note: For a hermitian input gate, this should be a theoretically unitary output transformation.
         exp(-imag(matrix2x2[0])) * complex(cos(real(matrix2x2[0])), sin(real(matrix2x2[0]))),
         exp(-imag(matrix2x2[1])) * complex(cos(real(matrix2x2[1])), sin(real(matrix2x2[1]))),
 

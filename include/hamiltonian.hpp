@@ -30,17 +30,22 @@ struct HamiltonianOp {
         : targetBit(target)
         , matrix(mtrx)
         , controls(NULL)
-        , controlLen(0) {}
+        , controlLen(0)
+    {
+    }
 
     HamiltonianOp(bitLenInt* controls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
         , controls(controls)
-        , controlLen(ctrlLen) {}
+        , controlLen(ctrlLen)
+    {
+    }
 };
 
 /**
- * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are applied by left-multiplication in low-to-high vector index order on the state vector.
+ * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are applied by
+ * left-multiplication in low-to-high vector index order on the state vector.
  */
 typedef std::shared_ptr<HamiltonianOp> HamiltonianOpPtr;
 typedef std::vector<HamiltonianOpPtr> Hamiltonian;

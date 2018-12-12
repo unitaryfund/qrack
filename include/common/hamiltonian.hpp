@@ -25,17 +25,23 @@ struct HamiltonianOp {
     HamiltonianOp(bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
-        , controls(0) {}
+        , controls(0)
+    {
+    }
 
     HamiltonianOp(std::vector<bitLenInt> controls, bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
-        , controls(controls) {}
+        , controls(controls)
+    {
+    }
 }
 
 /**
- * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are applied by left-multiplication in low-to-high vector index order on the state vector.
+ * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are applied by
+ * left-multiplication in low-to-high vector index order on the state vector.
  */
-typedef std::vector<HamiltonianOp> Hamiltonian;
+typedef std::vector<HamiltonianOp>
+    Hamiltonian;
 
 } // namespace Qrack
