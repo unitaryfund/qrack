@@ -67,11 +67,19 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 {
     complex expOfGate[4] = { // 2x2
         // Note: For a hermitian input gate, this should be a theoretically unitary output transformation.
-        exp(-imag(matrix2x2[0])) * complex(cos(real(matrix2x2[0])), sin(real(matrix2x2[0]))),
-        exp(-imag(matrix2x2[1])) * complex(cos(real(matrix2x2[1])), sin(real(matrix2x2[1]))),
+        ((real1)exp(-imag(matrix2x2[0]) * (real1)(2 * M_PI))) *
+            complex(
+                (real1)cos(real(matrix2x2[0]) * (real1)(2 * M_PI)), (real1)sin(real(matrix2x2[0]) * (real1)(2 * M_PI))),
+        ((real1)exp(-imag(matrix2x2[1]) * (real1)(2 * M_PI))) *
+            complex(
+                (real1)cos(real(matrix2x2[1]) * (real1)(2 * M_PI)), (real1)sin(real(matrix2x2[1]) * (real1)(2 * M_PI))),
 
-        exp(-imag(matrix2x2[2])) * complex(cos(real(matrix2x2[2])), sin(real(matrix2x2[2]))),
-        exp(-imag(matrix2x2[3])) * complex(cos(real(matrix2x2[3])), sin(real(matrix2x2[3])))
+        ((real1)exp(-imag(matrix2x2[2]) * (real1)(2 * M_PI))) *
+            complex(
+                (real1)cos(real(matrix2x2[2]) * (real1)(2 * M_PI)), (real1)sin(real(matrix2x2[2]) * (real1)(2 * M_PI))),
+        ((real1)exp(-imag(matrix2x2[3]) * (real1)(2 * M_PI))) *
+            complex(
+                (real1)cos(real(matrix2x2[3]) * (real1)(2 * M_PI)), (real1)sin(real(matrix2x2[3]) * (real1)(2 * M_PI)))
     };
     ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
 }

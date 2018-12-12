@@ -327,15 +327,15 @@ public:
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
      * applied by left-multiplication in low-to-high vector index order on the state vector.
      *
-     * \warning Hamiltonian components might not commute.
+     * \warning Hamiltonian components might not commute, and observe the component factor of 2 * pi.
      *
      * As a general point of linear algebra, where A and B are linear operators, e^{i * (A + B) * t} = e^{i * A * t} *
      * e^{i * B * t} might NOT hold, if the operators A and B do not commute. As a rule of thumb, A will commute with B
      * at least in the case that A and B act on entirely different sets of qubits. However, for defining the intended
      * Hamiltonian, the programmer can be guaranteed that the exponential factors will be applied right-to-left, by left
-     * multiplication, in the order e^(i * H_(N - 1) * t) * e^(i * H_(N - 2) * t) * ... e^(i * H_0 * t) * |psi>. (For
-     * example, if A and B are single bit gates acting on the same bit, form their composition into one gate by the
-     * intended right-to-left fusion and apply them as a single HamiltonianOp.)
+     * multiplication, in the order e^(i * 2 * pi * H_(N - 1) * t) * e^(i * 2 * pi * H_(N - 2) * t) * ... e^(i * 2 * pi
+     * * H_0 * t) * |psi>. (For example, if A and B are single bit gates acting on the same bit, form their composition
+     * into one gate by the intended right-to-left fusion and apply them as a single HamiltonianOp.)
      */
     virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
 
@@ -638,8 +638,8 @@ public:
     /**
      *  Exponentiation of arbitrary 2x2 gate
      *
-     * Applies \f$ e^{-i*Op*I} \f$, (equivalent to raising e to each of the components of Op respectively,) and applying
-     * the resulting 2x2 operator.
+     * Applies \f$ e^{-i*2*pi*Op*I} \f$, (equivalent to raising e to the factors of each of the components of Op
+     * respectively,) and applying the resulting 2x2 operator.
      */
     virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
 

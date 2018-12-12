@@ -161,8 +161,8 @@ void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
 
 void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 {
-    // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(i * H * t)
-    // as e^(i * H_(N - 1) * t) * e^(i * H_(N - 2) * t) * ... e^(i * H_0 * t)
+    // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(i * 2 * pi
+    // * H * t) as e^(i * 2 * pi * H_(N - 1) * t) * e^(i * 2 * pi * H_(N - 2) * t) * ... e^(i * 2 * pi * H_0 * t)
 
     for (bitLenInt i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
