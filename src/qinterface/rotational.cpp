@@ -68,11 +68,11 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     complex expOfGate[4] = {
         // 2x2
         // Note: For a unitary input gate, this should be a theoretically unitary output transformation.
-        exp(real(matrix2x2[0])) * complex(cos(imag(matrix2x2[0])), sin(imag(matrix2x2[0]))),
-        exp(real(matrix2x2[1])) * complex(cos(imag(matrix2x2[1])), sin(imag(matrix2x2[1]))),
+        exp(-imag(matrix2x2[0])) * complex(cos(real(matrix2x2[0])), sin(real(matrix2x2[0]))),
+        exp(-imag(matrix2x2[1])) * complex(cos(real(matrix2x2[1])), sin(real(matrix2x2[1]))),
 
-        exp(real(matrix2x2[2])) * complex(cos(imag(matrix2x2[2])), sin(imag(matrix2x2[2]))),
-        exp(real(matrix2x2[3])) * complex(cos(imag(matrix2x2[3])), sin(imag(matrix2x2[3])))
+        exp(-imag(matrix2x2[2])) * complex(cos(real(matrix2x2[2])), sin(real(matrix2x2[2]))),
+        exp(-imag(matrix2x2[3])) * complex(cos(real(matrix2x2[3])), sin(real(matrix2x2[3])))
     };
     ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
 }

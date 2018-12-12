@@ -362,6 +362,8 @@ void QEngine::TimeEvolve(Hamiltonian h, real1 timeDiff) {
         
         optmzr.Exp(op->controls, op->controlLen, op->targetBit, mtrx.get());
     }
+
+    optmzr.ReleaseEngine();
 }
 
 /// Swap values of two bits in register
