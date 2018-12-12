@@ -163,15 +163,18 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 {
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(i * H * t)
 
-    for (bitLenInt i = 0; i < h.size(); i++) {
-        HamiltonianOpPtr op = h[i];
+    HamiltonianOpPtr op;
 
-        BitOp mtrx = op->matrix;
-        for (int j = 0; j < 4; j++) {
-            mtrx.get()[j] *= timeDiff;
-        }
+    BitOp mtrx = op->matrix;
+    for (int j = 0; j < 4; j++) {
+        mtrx.get()[j] *= timeDiff;
+    }
 
-        Exp(op->controls, op->controlLen, op->targetBit, mtrx.get());
+    Exp(op->controls, op->controlLen, op->targetBit, mtrx.get());
+
+    for (bitLenInt i = 1; i < h.size(); i++) {
+        op = h[i];
+        Exp(op->controls, op->controlLen, op->targetBit, op->matrix.get());
     }
 }
 } // namespace Qrack
