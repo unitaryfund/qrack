@@ -16,11 +16,13 @@
 #include <map>
 #include <math.h>
 #include <memory>
+#include <mutex>
 #include <random>
 #include <vector>
 
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
+#include "hamiltonian.hpp"
 
 // The state vector must be an aligned piece of RAM, to be used by OpenCL.
 // We align to an ALIGN_SIZE byte boundary.
@@ -99,6 +101,7 @@ protected:
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
     bool doNormalize;
+    std::recursive_mutex qengine_mutex;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -127,6 +130,7 @@ public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
         , doNormalize(doNorm)
+        , qengine_mutex()
     {
         SetQubitCount(n);
 
@@ -318,6 +322,14 @@ public:
      */
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+
+    /**
+     * Time-evolve according to a Hamiltonian operator, for a length of time "t."
+     *
+     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
+     * set to true.
+     */
+    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff) = 0;
 
     /**
      * Apply a swap with arbitrary control bits.
@@ -614,6 +626,13 @@ public:
      * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
      */
     virtual void Exp(real1 radians, bitLenInt qubitIndex);
+
+    /**
+     *  Exponentiation of arbitrary 2x2 gate
+     *
+     * Applies \f$ e^{-i*Op*I} \f$, (equivalent to raising e to each of the components of Op respectively,) and applying the resulting 2x2 operator.
+     */
+    virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
 
     /**
      * Dyadic fraction (identity) exponentiation gate

@@ -99,6 +99,7 @@ install (FILES
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
     include/common/bitbuffer.hpp
+    include/common/hamiltonian.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 

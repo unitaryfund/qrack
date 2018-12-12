@@ -71,6 +71,8 @@ public:
     using QInterface::ISqrtSwap;
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 
+    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
+
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;

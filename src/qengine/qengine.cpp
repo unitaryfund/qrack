@@ -10,7 +10,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <memory>
+
 #include "qengine.hpp"
+
+// For short-term optimization
+#include "qfusion.hpp"
 
 namespace Qrack {
 
@@ -339,6 +344,24 @@ void QEngine::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt&
     Apply2x2(0, qPowers[controlLen], mtrx, controlLen + 1, qPowersSorted, doCalcNorm);
     delete[] qPowers;
     delete[] qPowersSorted;
+}
+
+void QEngine::TimeEvolve(Hamiltonian h, real1 timeDiff) {
+    // TODO: Use exponentiation of an arbitrary 2x2, each HamiltonianOp component times timeDiff.
+
+    // For short-term optimization
+    QFusion optmzr(std::shared_ptr<QInterface>(this));
+
+    for (bitLenInt i = 0; i < h.size(); i++) {
+        HamiltonianOpPtr op = h[i];
+
+        BitOp mtrx = op->matrix;
+        for (int j = 0; j < 4; j++) {
+            mtrx.get()[j] *= timeDiff;
+        }
+        
+        optmzr.Exp(op->controls, op->controlLen, op->targetBit, mtrx.get());
+    }
 }
 
 /// Swap values of two bits in register

@@ -62,6 +62,21 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
     ApplySingleBit(expIdentity, true, qubit);
 }
 
+/// Exponentiate of arbitrary single bit gate
+void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+{
+    complex expOfGate[4] = {
+        // 2x2
+        // Note: For a unitary input gate, this should be a theoretically unitary output transformation.
+        exp(real(matrix2x2[0])) * complex(cos(imag(matrix2x2[0])), sin(imag(matrix2x2[0]))),
+        exp(real(matrix2x2[1])) * complex(cos(imag(matrix2x2[1])), sin(imag(matrix2x2[1]))),
+
+        exp(real(matrix2x2[2])) * complex(cos(imag(matrix2x2[2])), sin(imag(matrix2x2[2]))),
+        exp(real(matrix2x2[3])) * complex(cos(imag(matrix2x2[3])), sin(imag(matrix2x2[3])))
+    };
+    ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
+}
+
 /// Exponentiate Pauli X operator
 void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {

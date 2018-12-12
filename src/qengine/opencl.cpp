@@ -52,18 +52,25 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , deviceID(-1)
     , nrmArray(NULL)
 {
+    std::lock_guard<std::recursive_mutex> guard(toCopy->qengine_mutex);
+
     CopyState(toCopy);
+
     InitOCL(toCopy->deviceID);
 }
 
 void QEngineOCL::LockSync(cl_int flags)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower, &waitVec);
 }
 
 void QEngineOCL::UnlockSync()
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     cl::Event unmapEvent;
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec, &waitVec, &unmapEvent);
@@ -72,12 +79,16 @@ void QEngineOCL::UnlockSync()
 
 void QEngineOCL::Sync()
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     LockSync(CL_MAP_READ);
     UnlockSync();
 }
 
 void QEngineOCL::clFinish(bool doHard)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     if (device_context == NULL) {
         return;
     }
@@ -129,6 +140,10 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
+    std::lock_guard<std::recursive_mutex> srcGuard(src->qengine_mutex);
+
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
 
@@ -137,7 +152,6 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     ResetStateVec(nStateVec, nStateBuffer);
 
-    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
     src->LockSync(CL_MAP_READ);
     LockSync(CL_MAP_WRITE);
     runningNorm = src->runningNorm;
@@ -148,6 +162,8 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
 
 real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
@@ -160,6 +176,8 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 
 void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool didInit = (nrmArray != NULL);
 
     if (didInit) {
@@ -290,6 +308,8 @@ void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
 
 void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     stateBuffer = nStateBuffer;
     free(stateVec);
     stateVec = nStateVec;
@@ -297,6 +317,8 @@ void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 
 void QEngineOCL::SetPermutation(bitCapInt perm)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     cl::Event fillEvent1;
@@ -324,6 +346,8 @@ void QEngineOCL::DispatchCall(
 void QEngineOCL::CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
     const bitLenInt controlLen, unsigned char* values, bitCapInt valuesPower, bool isParallel)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
@@ -393,6 +417,8 @@ void QEngineOCL::CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(3);
 
@@ -484,6 +510,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt powerTest = result ? qPower : 0;
 
     complex cmplx[CMPLX_NORM_LEN] = { nrm, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
@@ -524,6 +552,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 
 void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
 
     complex cmplx[CMPLX_NORM_LEN] = { nrm, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1) };
@@ -563,6 +592,8 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitLenInt result = qubitCount;
 
     if (doNormalize && (runningNorm != ONE_R1)) {
@@ -636,6 +667,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
 {
     // "Dispose" is basically the same as decohere, except "Dispose" throws the removed bits away.
+    // Don't set up lockguards here, because we don't immediately know whether the destination pointer is non-null.
 
     if (length == 0) {
         return;
@@ -814,14 +846,24 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+    QEngineOCLPtr dest = std::dynamic_pointer_cast<QEngineOCL>(destination);
+    std::lock_guard<std::recursive_mutex> destGuard(dest->qengine_mutex);
+
+    DecohereDispose(start, length, dest);
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
+{
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+    DecohereDispose(start, length, (QEngineOCLPtr) nullptr);
+}
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::Prob(bitLenInt qubit)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     if (qubitCount == 1) {
         return ProbAll(1);
     }
@@ -882,6 +924,8 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -938,6 +982,8 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
 void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt maxJ = maxQPower >> length;
 
@@ -993,6 +1039,8 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -1064,6 +1112,8 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -1163,6 +1213,8 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 // "start"
 void QEngineOCL::X(bitLenInt start, bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     if (length == 1) {
         X(start);
         return;
@@ -1182,6 +1234,8 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt reg1Mask = ((1 << length) - 1) << start1;
     bitCapInt reg2Mask = ((1 << length) - 1) << start2;
     bitCapInt otherMask = maxQPower - 1;
@@ -1193,6 +1247,8 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
@@ -1210,6 +1266,8 @@ void QEngineOCL::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROx(O
 /// Add or Subtract integer (without sign or carry)
 void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & ~(regMask);
@@ -1223,6 +1281,8 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, co
 void QEngineOCL::CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
     const bitLenInt* controls, const bitLenInt controlLen)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
 
@@ -1282,6 +1342,8 @@ void QEngineOCL::CDEC(
 void QEngineOCL::INTC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
@@ -1296,6 +1358,8 @@ void QEngineOCL::INTC(
 /** Increment integer (without sign, with carry) */
 void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1308,6 +1372,8 @@ void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt le
 /** Subtract integer (without sign, with carry) */
 void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1322,6 +1388,7 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
 void QEngineOCL::INTS(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
 
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt lengthPower = 1 << length;
@@ -1350,6 +1417,8 @@ void QEngineOCL::DECS(bitCapInt toSub, const bitLenInt start, const bitLenInt le
 void QEngineOCL::INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
     const bitLenInt overflowIndex, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
@@ -1366,6 +1435,8 @@ void QEngineOCL::INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, 
 void QEngineOCL::INCSC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex,
     const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1379,6 +1450,8 @@ void QEngineOCL::INCSC(bitCapInt toAdd, const bitLenInt start, const bitLenInt l
 void QEngineOCL::DECSC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex,
     const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1393,6 +1466,8 @@ void QEngineOCL::DECSC(bitCapInt toSub, const bitLenInt start, const bitLenInt l
 void QEngineOCL::INTSC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt inOutMask = (lengthPower - 1) << start;
@@ -1407,6 +1482,8 @@ void QEngineOCL::INTSC(
 /** Increment integer (with sign, with carry) */
 void QEngineOCL::INCSC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1419,6 +1496,8 @@ void QEngineOCL::INCSC(bitCapInt toAdd, const bitLenInt start, const bitLenInt l
 /** Subtract integer (with sign, with carry) */
 void QEngineOCL::DECSC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1432,6 +1511,8 @@ void QEngineOCL::DECSC(bitCapInt toSub, const bitLenInt start, const bitLenInt l
 /// Add or Subtract integer (BCD)
 void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
@@ -1447,12 +1528,16 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start,
 /** Increment integer (BCD) */
 void QEngineOCL::INCBCD(bitCapInt toAdd, const bitLenInt start, const bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     INTBCD(OCL_API_INCBCD, toAdd, start, length);
 }
 
 /** Subtract integer (BCD) */
 void QEngineOCL::DECBCD(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     INTBCD(OCL_API_DECBCD, toSub, start, length);
 }
 
@@ -1460,6 +1545,8 @@ void QEngineOCL::DECBCD(bitCapInt toSub, const bitLenInt start, const bitLenInt 
 void QEngineOCL::INTBCDC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
@@ -1477,6 +1564,8 @@ void QEngineOCL::INTBCDC(
 /** Increment integer (BCD, with carry) */
 void QEngineOCL::INCBCDC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1489,6 +1578,8 @@ void QEngineOCL::INCBCDC(bitCapInt toAdd, const bitLenInt start, const bitLenInt
 /** Subtract integer (BCD, with carry) */
 void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -1502,6 +1593,8 @@ void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt
 /** Multiply by integer */
 void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     SetReg(carryStart, length, 0);
 
     bitCapInt lowPower = 1U << length;
@@ -1517,6 +1610,8 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 /** Divide by integer */
 void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lowPower = 1U << length;
     if ((toDiv == 0) || (toDiv >= lowPower)) {
         throw "DIV by zero (or modulo 0 to register size)";
@@ -1529,6 +1624,8 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
 void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     if (controlLen == 0) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
@@ -1554,6 +1651,8 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     if (controlLen == 0) {
         DIV(toDiv, inOutStart, carryStart, length);
         return;
@@ -1574,6 +1673,8 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineOCL::MULx(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart, const bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lowMask = (1U << length) - 1U;
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
@@ -1625,6 +1726,8 @@ void QEngineOCL::MULx(
 void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
     const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bitCapInt lowMask = (1U << length) - 1U;
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
@@ -1696,6 +1799,8 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutSt
 bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, unsigned char* values, bool isParallel)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt inputMask = ((1 << indexLength) - 1) << indexStart;
@@ -1728,6 +1833,8 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     bool carryRes = M(carryIndex);
     // The carry has to first to be measured for its input value.
     if (carryRes) {
@@ -1789,6 +1896,8 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
 void QEngineOCL::PhaseFlip()
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIP);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1817,6 +1926,8 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
@@ -1848,6 +1959,8 @@ void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
@@ -1881,6 +1994,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 
 void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIPIFLESS);
 
     bitCapInt regMask = ((1 << length) - 1) << start;
@@ -1915,6 +2030,8 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(complex* inputState)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     LockSync(CL_MAP_WRITE);
     std::copy(inputState, inputState + maxQPower, stateVec);
     runningNorm = ONE_R1;
@@ -1923,6 +2040,8 @@ void QEngineOCL::SetQuantumState(complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -1939,6 +2058,8 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineOCL::GetQuantumState(complex* outputState)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -1953,6 +2074,8 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -2019,6 +2142,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 void QEngineOCL::NormalizeState(real1 nrm)
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     // We might have async execution of gates still happening.
     clFinish();
 
@@ -2072,6 +2197,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
 void QEngineOCL::UpdateRunningNorm()
 {
+    std::lock_guard<std::recursive_mutex> guard(qengine_mutex);
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
     runningNorm = ONE_R1;

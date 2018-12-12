@@ -129,6 +129,8 @@ public:
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
+    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff) { throw "Do not directly apply TimeEvole through QFusion; call directly on the QInterface(Ptr)"; }
+
     virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QFusion>(orig)); }
     virtual void CopyState(QFusionPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
