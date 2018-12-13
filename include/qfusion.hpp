@@ -32,7 +32,6 @@ protected:
     QInterfacePtr qReg;
     complex phaseFactor;
     bool doNormalize;
-    QInterfaceEngine engine;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;

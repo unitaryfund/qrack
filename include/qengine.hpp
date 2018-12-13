@@ -75,8 +75,6 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
-    virtual void UpdateRunningNorm() = 0;
-
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;

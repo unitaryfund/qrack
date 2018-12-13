@@ -1408,6 +1408,15 @@ public:
 
     virtual bool ApproxCompare(QInterfacePtr toCompare) = 0;
 
+    /**
+     * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability
+     * or measurement operation. (On an actual quantum computer, the state should never require manual normalization.)
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+
+    virtual void UpdateRunningNorm() = 0;
+
     /** @} */
 };
 } // namespace Qrack

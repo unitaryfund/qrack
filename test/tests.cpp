@@ -2547,9 +2547,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     qftReg->SetPermutation(0);
     qftReg->TimeEvolve(h, tDiff);
 
-    //std::cout << qftReg->Prob(0) << std::endl;
-    //std::cout << sin(aParam * tDiff) * sin(aParam * tDiff) << std::endl;
-    //std::cout << abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)) << std::endl;
+    // std::cout << qftReg->Prob(0) << std::endl;
+    // std::cout << sin(aParam * tDiff) * sin(aParam * tDiff) << std::endl;
+    // std::cout << abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)) << std::endl;
 
     REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
     REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);

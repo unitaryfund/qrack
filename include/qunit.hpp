@@ -188,6 +188,7 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
+    virtual void UpdateRunningNorm();
 
     /** @} */
 

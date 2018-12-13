@@ -24,7 +24,6 @@ QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
     : QInterface(qBitCount, rgp)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
-    , engine(eng)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
@@ -33,7 +32,6 @@ QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
 
 QFusion::QFusion(QInterfacePtr target)
     : QInterface(target->GetQubitCount())
-    , engine(QINTERFACE_MAX)
     , bitBuffers(target->GetQubitCount())
     , bitControls(target->GetQubitCount())
 {
@@ -760,12 +758,5 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
     return qReg->ApproxCompare(toCompare->qReg);
 }
 
-void QFusion::UpdateRunningNorm() {
-    if (engine == QINTERFACE_QFUSION) {
-        std::dynamic_pointer_cast<QFusion>(qReg)->UpdateRunningNorm();
-    }
-    else if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
-        std::dynamic_pointer_cast<QEngine>(qReg)->UpdateRunningNorm();
-    }
-}
+void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
 } // namespace Qrack
