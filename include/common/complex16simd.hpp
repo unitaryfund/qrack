@@ -145,8 +145,8 @@ inline Complex16Simd polar(const double rho, const double theta = 0)
 }
 inline Complex16Simd sqrt(const Complex16Simd& cmplx)
 {
-    real1 r = abs(cmplx);
-    real1 theta = arg(cmplx);
+    double r = abs(cmplx);
+    double theta = arg(cmplx);
     return sqrt(r) * complex(cos(theta / 2.0), sin(theta / 2.0));
 }
 } // namespace Qrack
