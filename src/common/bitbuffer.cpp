@@ -87,7 +87,7 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
             if (nrm < min_norm) {
                 outBuffer.get()[0] = complex(ZERO_R1, ZERO_R1);
             } else if ((ONE_R1 - nrm) < min_norm) {
-                outBuffer.get()[0] /= std::sqrt(nrm);
+                outBuffer.get()[0] /= sqrt(nrm);
             }
         });
         futures[1] = std::async(std::launch::async, [&]() {
@@ -96,7 +96,7 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
             if (nrm < min_norm) {
                 outBuffer.get()[1] = complex(ZERO_R1, ZERO_R1);
             } else if ((ONE_R1 - nrm) < min_norm) {
-                outBuffer.get()[1] /= std::sqrt(nrm);
+                outBuffer.get()[1] /= sqrt(nrm);
             }
         });
         futures[2] = std::async(std::launch::async, [&]() {
@@ -105,7 +105,7 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
             if (nrm < min_norm) {
                 outBuffer.get()[2] = complex(ZERO_R1, ZERO_R1);
             } else if ((ONE_R1 - nrm) < min_norm) {
-                outBuffer.get()[2] /= std::sqrt(nrm);
+                outBuffer.get()[2] /= sqrt(nrm);
             }
         });
         futures[3] = std::async(std::launch::async, [&]() {
@@ -114,7 +114,7 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
             if (nrm < min_norm) {
                 outBuffer.get()[3] = complex(ZERO_R1, ZERO_R1);
             } else if ((ONE_R1 - nrm) < min_norm) {
-                outBuffer.get()[3] /= std::sqrt(nrm);
+                outBuffer.get()[3] /= sqrt(nrm);
             }
         });
 

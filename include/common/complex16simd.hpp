@@ -143,10 +143,4 @@ inline Complex16Simd polar(const double rho, const double theta = 0)
 {
     return _mm_set1_pd(rho) * _mm_set_pd(sin(theta), cos(theta));
 }
-inline Complex16Simd sqrt(const Complex16Simd& cmplx)
-{
-    double sqrtR = std::sqrt(abs(cmplx));
-    double theta = arg(cmplx);
-    return Complex16Simd(sqrtR * cos(theta / 2.0), sqrtR * sin(theta / 2.0));
-}
 } // namespace Qrack

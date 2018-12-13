@@ -37,7 +37,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
     if (nrmlzr > min_norm) {
         bitCapInt qPower = 1 << qubit;
         real1 angle = Rand() * 2 * M_PI;
-        ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(std::sqrt(nrmlzr)));
+        ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(sqrt(nrmlzr)));
     } else {
         NormalizeState(ZERO_R1);
     }
@@ -94,7 +94,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
             result |= values[j] ? (1U << bits[j]) : 0U;
         }
         nrmlzr = ProbMask(regMask, result);
-        nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
+        nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
         ApplyM(regMask, result, nrm);
 
         // No need to check against probabilities:
@@ -143,7 +143,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     delete[] qPowers;
 
-    nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
+    nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
 
     ApplyM(regMask, result, nrm);
 
@@ -510,7 +510,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     delete[] probArray;
 
     bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
+    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
 
     ApplyM(regMask, resultPtr, nrm);
 
