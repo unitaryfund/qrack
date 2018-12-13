@@ -2527,3 +2527,28 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC6));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
+{
+    real1 aParam = 0.5f;
+    real1 tDiff = M_PI * 2;
+    real1 e0 = (real1)(M_PI_2 - aParam);
+
+    BitOp o2neg1(new complex[4], std::default_delete<complex[]>());
+    o2neg1.get()[0] = complex(e0, ZERO_R1);
+    o2neg1.get()[1] = complex(-aParam, ZERO_R1);
+    o2neg1.get()[2] = complex(-aParam, ZERO_R1);
+    o2neg1.get()[3] = complex(e0, ZERO_R1);
+
+    HamiltonianOpPtr h0 = std::make_shared<HamiltonianOp>(0, o2neg1);
+    Hamiltonian h(1);
+    h[0] = h0;
+
+    qftReg->SetPermutation(1);
+    qftReg->TimeEvolve(h, tDiff);
+
+    std::cout << qftReg->Prob(0);
+
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs(qftReg->Prob(1) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+}

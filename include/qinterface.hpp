@@ -638,8 +638,7 @@ public:
     /**
      *  Exponentiation of arbitrary 2x2 gate
      *
-     * Applies \f$ e^{-i*Op*I} \f$, (equivalent to raising e to the factors of each of the components of Op
-     * respectively,) and applying the resulting 2x2 operator.
+     * Applies \f$ e^{-i*Op*I} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
     virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
 

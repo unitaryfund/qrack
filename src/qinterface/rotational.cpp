@@ -65,15 +65,74 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
 /// Exponentiate of arbitrary single bit gate
 void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
 {
+    // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
+    // basis, and apply.
+
+    // Diagonal matrices are a special case.
+    bool isDiag = true;
+    if (norm(matrix2x2[0] - complex(ONE_R1, ZERO_R1)) > min_norm) {
+        isDiag = false;
+    } else if (norm(matrix2x2[1]) > min_norm) {
+        isDiag = false;
+    } else if (norm(matrix2x2[2] - complex(ONE_R1, ZERO_R1)) > min_norm) {
+        isDiag = false;
+    } else if (norm(matrix2x2[3]) > min_norm) {
+        isDiag = false;
+    }
+
+    complex jacobian[4];
+    complex invJacobian[4];
+
+    if (!isDiag) {
+        complex eVal1, eVal2;
+
+        real1 nrm;
+
+        complex tr = matrix2x2[0] * matrix2x2[3];
+        complex det = tr - matrix2x2[1] * matrix2x2[2];
+        complex sr = sqrt(tr * tr - 4.0f * det);
+        eVal1 = (tr + sr) / 2.0f;
+        eVal2 = (tr - sr) / 2.0f;
+
+        jacobian[0] = matrix2x2[0] - eVal2;
+        jacobian[2] = matrix2x2[3] - eVal2;
+
+        jacobian[1] = matrix2x2[0] - eVal1;
+        jacobian[3] = matrix2x2[3] - eVal1;
+
+        nrm = norm(jacobian[0]) + norm(jacobian[2]);
+        nrm = sqrt(nrm);
+        jacobian[0] = jacobian[0] / nrm;
+        jacobian[2] = jacobian[2] / nrm;
+
+        nrm = norm(jacobian[1]) + norm(jacobian[3]);
+        nrm = sqrt(nrm);
+        jacobian[1] = jacobian[1] / nrm;
+        jacobian[3] = jacobian[3] / nrm;
+
+        det = (jacobian[0] * jacobian[2]) - (jacobian[1] * jacobian[3]);
+        invJacobian[0] = jacobian[0] / det;
+        invJacobian[1] = jacobian[2] / det;
+        invJacobian[2] = jacobian[1] / det;
+        invJacobian[3] = jacobian[3] / det;
+
+        // TODO: Apply Jacobian and inverse to diagonalize;
+    }
+
     complex expOfGate[4] = {
         // 2x2
         // Note: For a hermitian input gate, this should be a theoretically unitary output transformation.
         ((real1)exp(-imag(matrix2x2[0]))) * complex((real1)cos(real(matrix2x2[0])), (real1)sin(real(matrix2x2[0]))),
-        ((real1)exp(-imag(matrix2x2[1]))) * complex((real1)cos(real(matrix2x2[1])), (real1)sin(real(matrix2x2[1]))),
+        complex(ZERO_R1, ZERO_R1),
 
-        ((real1)exp(-imag(matrix2x2[2]))) * complex((real1)cos(real(matrix2x2[2])), (real1)sin(real(matrix2x2[2]))),
+        complex(ZERO_R1, ZERO_R1),
         ((real1)exp(-imag(matrix2x2[3]))) * complex((real1)cos(real(matrix2x2[3])), (real1)sin(real(matrix2x2[3]))),
     };
+
+    if (!isDiag) {
+        // TODO: Apply Jacobian and inverse to return to original basis.
+    }
+
     ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
 }
 

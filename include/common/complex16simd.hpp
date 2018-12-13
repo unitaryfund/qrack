@@ -18,6 +18,8 @@
 #include <smmintrin.h>
 #endif
 
+#include <math>
+
 namespace Qrack {
 
 /** SIMD implementation of the double precision complex type. */
@@ -140,5 +142,11 @@ inline double abs(const Complex16Simd& cmplx) { return sqrt(norm(cmplx)); }
 inline Complex16Simd polar(const double rho, const double theta = 0)
 {
     return _mm_set1_pd(rho) * _mm_set_pd(sin(theta), cos(theta));
+}
+inline Complex16Simd sqrt(const Complex16Simd& cmplx)
+{
+    real1 r = abs(cmplx);
+    real1 theta = arg(cmplx);
+    return r * complex(cos(theta / 2.0), sin(theta / 2.0));
 }
 } // namespace Qrack
