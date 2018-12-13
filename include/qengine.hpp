@@ -27,7 +27,6 @@ class QEngine : public QInterface {
 protected:
     real1 runningNorm;
 
-    virtual void UpdateRunningNorm() = 0;
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:
@@ -75,6 +74,8 @@ public:
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+
+    virtual void UpdateRunningNorm() = 0;
 
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

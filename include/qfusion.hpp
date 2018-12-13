@@ -32,6 +32,7 @@ protected:
     QInterfacePtr qReg;
     complex phaseFactor;
     bool doNormalize;
+    QInterfaceEngine engine;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;
@@ -150,6 +151,8 @@ public:
         SetQubitCount(0);
         return toRet;
     }
+
+    virtual void UpdateRunningNorm();
 
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
