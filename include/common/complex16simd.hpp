@@ -18,8 +18,6 @@
 #include <smmintrin.h>
 #endif
 
-#include <math.h>
-
 namespace Qrack {
 
 /** SIMD implementation of the double precision complex type. */
