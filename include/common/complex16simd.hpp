@@ -18,7 +18,7 @@
 #include <smmintrin.h>
 #endif
 
-#include <math>
+#include <cmath>
 
 namespace Qrack {
 
