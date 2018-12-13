@@ -2530,7 +2530,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 {
-    real1 aParam = 0.5f;
+    real1 aParam = ZERO_R1;
     real1 tDiff = M_PI * 2;
     real1 e0 = (real1)(M_PI_2 - aParam);
 
@@ -2547,7 +2547,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     qftReg->SetPermutation(1);
     qftReg->TimeEvolve(h, tDiff);
 
-    std::cout << qftReg->Prob(0);
+    std::cout << qftReg->Prob(0) << std::endl;
+    std::cout << qftReg->Prob(1) << std::endl;
 
     REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
     REQUIRE_FLOAT(abs(qftReg->Prob(1) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);

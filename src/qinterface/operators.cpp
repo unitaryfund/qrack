@@ -166,11 +166,11 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
     for (bitLenInt i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
-        BitOp mtrx = op->matrix;
+        complex mtrx[4];
         for (int j = 0; j < 4; j++) {
-            mtrx.get()[j] *= timeDiff;
+            mtrx[j] = op->matrix.get()[j] * timeDiff;
         }
-        Exp(op->controls, op->controlLen, op->targetBit, mtrx.get());
+        Exp(op->controls, op->controlLen, op->targetBit, mtrx);
     }
 }
 } // namespace Qrack

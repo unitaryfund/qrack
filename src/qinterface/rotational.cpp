@@ -62,12 +62,20 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
     ApplySingleBit(expIdentity, true, qubit);
 }
 
-void matrix2x2Mul(complex* left, complex* right, complex* out)
+void matrix2x2Mul(real1 scalar, complex* left, complex* right, complex* out)
 {
-    out[0] = (left[0] * right[0]) + (left[1] * right[2]);
-    out[1] = (left[0] * right[1]) + (left[1] * right[3]);
-    out[2] = (left[2] * right[0]) + (left[3] * right[2]);
-    out[3] = (left[2] * right[1]) + (left[3] * right[3]);
+    out[0] = scalar * ((left[0] * right[0]) + (left[1] * right[2]));
+    out[1] = scalar * ((left[0] * right[1]) + (left[1] * right[3]));
+    out[2] = scalar * ((left[2] * right[0]) + (left[3] * right[2]));
+    out[3] = scalar * ((left[2] * right[1]) + (left[3] * right[3]));
+}
+
+void matrix2x2Add(complex* left, complex* right, complex* out)
+{
+    out[0] = left[0] + right[0];
+    out[1] = left[1] + right[1];
+    out[2] = left[2] + right[2];
+    out[3] = left[3] + right[3];
 }
 
 /// Exponentiate of arbitrary single bit gate
@@ -78,61 +86,40 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 
     // Diagonal matrices are a special case.
     bool isDiag = true;
-    if (norm(matrix2x2[0] - complex(ONE_R1, ZERO_R1)) > min_norm) {
+    if (norm(matrix2x2[1]) > min_norm) {
         isDiag = false;
-    } else if (norm(matrix2x2[1]) > min_norm) {
-        isDiag = false;
-    } else if (norm(matrix2x2[2] - complex(ONE_R1, ZERO_R1)) > min_norm) {
-        isDiag = false;
-    } else if (norm(matrix2x2[3]) > min_norm) {
+    } else if (norm(matrix2x2[2]) > min_norm) {
         isDiag = false;
     }
 
-    complex jacobian[4];
-    complex invJacobian[4];
-    complex tempMatrix[4];
+    // Note: For a (2x2) hermitian input gate, this should be a theoretically unitary output transformation.
+    complex expOfGate[4];
 
     if (isDiag) {
-        std::copy(matrix2x2, matrix2x2 + 4, tempMatrix);
+        expOfGate[0] =
+            ((real1)exp(-imag(matrix2x2[0]))) * complex((real1)cos(real(matrix2x2[0])), (real1)sin(real(matrix2x2[0])));
+        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[3] =
+            ((real1)exp(-imag(matrix2x2[3]))) * complex((real1)cos(real(matrix2x2[3])), (real1)sin(real(matrix2x2[3])));
     } else {
-        complex eVal1, eVal2;
+        real1 factorial = ONE_R1;
+        complex tempPower[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+            complex(ONE_R1, ZERO_R1) };
+        complex tempPower2[4];
 
-        complex tr = matrix2x2[0] * matrix2x2[3];
-        complex det = tr - matrix2x2[1] * matrix2x2[2];
-        complex sr = sqrt(tr * tr - 4.0f * det);
-        eVal1 = (tr + sr) / 2.0f;
-        eVal2 = (tr - sr) / 2.0f;
+        std::copy(tempPower, tempPower + 4, expOfGate);
 
-        jacobian[0] = matrix2x2[0] - eVal2;
-        jacobian[2] = matrix2x2[2];
+        for (int i = 0; i < 4; i++) {
+            tempPower[i] *= complex(ZERO_R1, ONE_R1);
+        }
 
-        jacobian[1] = matrix2x2[0] - eVal1;
-        jacobian[3] = matrix2x2[2];
-
-        det = (jacobian[0] * jacobian[2]) - (jacobian[1] * jacobian[3]);
-        invJacobian[0] = jacobian[0] / det;
-        invJacobian[1] = jacobian[2] / det;
-        invJacobian[2] = jacobian[1] / det;
-        invJacobian[3] = jacobian[3] / det;
-
-        complex tempMatrix2[4];
-        matrix2x2Mul(matrix2x2, jacobian, tempMatrix2);
-        matrix2x2Mul(invJacobian, tempMatrix2, tempMatrix);
-    }
-
-    complex expOfGate[4] = {
-        // 2x2
-        // Note: For a hermitian input gate, this should be a theoretically unitary output transformation.
-        ((real1)exp(-imag(tempMatrix[0]))) * complex((real1)cos(real(tempMatrix[0])), (real1)sin(real(tempMatrix[0]))),
-        complex(ZERO_R1, ZERO_R1),
-
-        complex(ZERO_R1, ZERO_R1),
-        ((real1)exp(-imag(tempMatrix[3]))) * complex((real1)cos(real(tempMatrix[3])), (real1)sin(real(tempMatrix[3]))),
-    };
-
-    if (!isDiag) {
-        matrix2x2Mul(expOfGate, invJacobian, tempMatrix);
-        matrix2x2Mul(jacobian, tempMatrix, expOfGate);
+        for (int fac = 1; factorial > min_norm; fac++) {
+            factorial /= fac;
+            matrix2x2Mul(ONE_R1 / fac, matrix2x2, tempPower, tempPower2);
+            matrix2x2Add(expOfGate, tempPower2, expOfGate);
+            std::copy(tempPower2, tempPower2 + 4, tempPower);
+        }
     }
 
     ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
