@@ -114,7 +114,7 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
             tempPower[i] *= complex(ZERO_R1, ONE_R1);
         }
 
-        for (int fac = 1; factorial > min_norm; fac++) {
+        for (int fac = 1; factorial > (min_norm * min_norm); fac++) {
             factorial /= fac;
             matrix2x2Mul(ONE_R1 / fac, matrix2x2, tempPower, tempPower2);
             matrix2x2Add(expOfGate, tempPower2, expOfGate);

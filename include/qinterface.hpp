@@ -101,7 +101,6 @@ protected:
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
     bool doNormalize;
-    std::recursive_mutex qengine_mutex;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -130,7 +129,6 @@ public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
         , doNormalize(doNorm)
-        , qengine_mutex()
     {
         SetQubitCount(n);
 
