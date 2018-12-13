@@ -147,6 +147,6 @@ inline Complex16Simd sqrt(const Complex16Simd& cmplx)
 {
     double r = abs(cmplx);
     double theta = arg(cmplx);
-    return sqrt(r) * complex(cos(theta / 2.0), sin(theta / 2.0));
+    return sqrt(r) * Complex16Simd(cos(theta / 2.0), sin(theta / 2.0));
 }
 } // namespace Qrack
