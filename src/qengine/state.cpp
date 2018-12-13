@@ -154,7 +154,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    real1 nrm = doNormalize ? (ONE_R1 / sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
@@ -203,7 +203,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
     int numCores = GetConcurrencyLevel();
-    real1 nrm = doNormalize ? (ONE_R1 / sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm && (bitCount == 1)) {
         real1* rngNrm = new real1[numCores];
@@ -396,7 +396,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec[lcv] =
-                (real1)(sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
+                (real1)(std::sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
         });
 
         delete[] partStateProb;
@@ -406,7 +406,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] = (real1)(sqrt(remainderStateProb[lcv])) *
+        stateVec[lcv] = (real1)(std::sqrt(remainderStateProb[lcv])) *
             complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv]));
     });
 
@@ -570,7 +570,7 @@ void QEngineCPU::NormalizeState(real1 nrm)
         return;
     }
 
-    nrm = sqrt(nrm);
+    nrm = std::sqrt(nrm);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec[lcv] /= nrm;

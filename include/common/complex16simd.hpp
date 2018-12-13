@@ -18,7 +18,7 @@
 #include <smmintrin.h>
 #endif
 
-#include <cmath>
+#include <math.h>
 
 namespace Qrack {
 
@@ -145,8 +145,8 @@ inline Complex16Simd polar(const double rho, const double theta = 0)
 }
 inline Complex16Simd sqrt(const Complex16Simd& cmplx)
 {
-    double r = abs(cmplx);
+    double sqrtR = std::sqrt(abs(cmplx));
     double theta = arg(cmplx);
-    return sqrt(r) * Complex16Simd(cos(theta / 2.0), sin(theta / 2.0));
+    return Complex16Simd(sqrtR * cos(theta / 2.0), sqrtR * sin(theta / 2.0));
 }
 } // namespace Qrack
