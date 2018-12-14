@@ -2531,8 +2531,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 {
     real1 aParam = (real1)1e-4;
-    real1 tDiff = 2 * M_PI;
-    real1 e0 = ONE_R1;
+    real1 tDiff = 2.1f;
+    real1 e0 = sqrt(ONE_R1 - aParam * aParam);
 
     BitOp o2neg1(new complex[4], std::default_delete<complex[]>());
     o2neg1.get()[0] = complex(e0, ZERO_R1);

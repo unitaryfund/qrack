@@ -637,7 +637,6 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
 {
     // "Dispose" is basically the same as decohere, except "Dispose" throws the removed bits away.
-    // Don't set up lockguards here, because we don't immediately know whether the destination pointer is non-null.
 
     if (length == 0) {
         return;
