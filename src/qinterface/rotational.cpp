@@ -12,6 +12,8 @@
 
 #include "qinterface.hpp"
 
+#include <future>
+
 namespace Qrack {
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
@@ -64,10 +66,20 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
 
 void matrix2x2Mul(real1 scalar, complex* left, complex* right, complex* out)
 {
-    out[0] = scalar * ((left[0] * right[0]) + (left[1] * right[2]));
-    out[1] = scalar * ((left[0] * right[1]) + (left[1] * right[3]));
-    out[2] = scalar * ((left[2] * right[0]) + (left[3] * right[2]));
-    out[3] = scalar * ((left[2] * right[1]) + (left[3] * right[3]));
+    std::vector<std::future<void>> futures(4);
+
+    futures[0] =
+        std::async(std::launch::async, [&]() { out[0] = scalar * ((left[0] * right[0]) + (left[1] * right[2])); });
+    futures[1] =
+        std::async(std::launch::async, [&]() { out[1] = scalar * ((left[0] * right[1]) + (left[1] * right[3])); });
+    futures[2] =
+        std::async(std::launch::async, [&]() { out[2] = scalar * ((left[2] * right[0]) + (left[3] * right[2])); });
+    futures[3] =
+        std::async(std::launch::async, [&]() { out[3] = scalar * ((left[2] * right[1]) + (left[3] * right[3])); });
+
+    for (int i = 0; i < 4; i++) {
+        futures[i].get();
+    }
 }
 
 void matrix2x2Add(complex* left, complex* right, complex* out)
