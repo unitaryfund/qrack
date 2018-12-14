@@ -59,5 +59,4 @@ struct HamiltonianOp {
  */
 typedef std::shared_ptr<HamiltonianOp> HamiltonianOpPtr;
 typedef std::vector<HamiltonianOpPtr> Hamiltonian;
-
 } // namespace Qrack
