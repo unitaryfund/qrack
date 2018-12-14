@@ -166,9 +166,10 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
     for (bitLenInt i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
+        complex* opMtrx = op->matrix.get();
         complex mtrx[4];
         for (int j = 0; j < 4; j++) {
-            mtrx[j] = op->matrix.get()[j] * timeDiff;
+            mtrx[j] = opMtrx[j] * timeDiff;
         }
         Exp(op->controls, op->controlLen, op->targetBit, mtrx);
     }
