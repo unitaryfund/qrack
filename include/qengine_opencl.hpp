@@ -69,7 +69,6 @@ protected:
     size_t maxAlloc;
     unsigned int procElemCount;
     bool useHostRam;
-    bool usingHostRam;
 
 public:
     /**
