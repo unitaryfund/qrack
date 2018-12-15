@@ -173,7 +173,7 @@ void QEngine::ApplyAntiControlledSingleBit(
 {
     ApplyAntiControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
 
-    if ((controlLen != 0) && doNormalize) {
+    if (doNormalize && controlLen) {
         UpdateRunningNorm();
     }
 }
