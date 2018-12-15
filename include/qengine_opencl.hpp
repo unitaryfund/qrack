@@ -78,7 +78,7 @@ public:
      * object to zero norm.
      *
      * "devID" is the index of an OpenCL device in the OCLEngine singleton, to select the device to run this engine on.
-     * If "useHostMem" is set false, (as by default,) the QEngineOCL will attempt to allocate the state vector object
+     * If "useHostMem" is set false, as by default, the QEngineOCL will attempt to allocate the state vector object
      * only on device memory. If "useHostMem" is set true, general host RAM will be used for the state vector buffers.
      * If the state vector is too large to allocate only on device memory, the QEngineOCL will attempt to fall back to
      * allocating it in general host RAM.
@@ -86,7 +86,7 @@ public:
      * \warning "useHostMem" is not conscious of allocation by other QEngineOCL instances on the same device. Attempting
      * to allocate too much device memory across too many QEngineOCL instances, for which each instance would have
      * sufficient device resources on its own, will probably cause the program to crash (and may lead to general system
-     * instability). For safety, "useHostMem" can be totally turned off.
+     * instability). For safety, "useHostMem" can be turned on.
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
