@@ -53,6 +53,7 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , nrmArray(NULL)
 {
     CopyState(toCopy);
+
     InitOCL(toCopy->deviceID);
 }
 
@@ -129,6 +130,8 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
+    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
+
     /* Set the size and reset the stateVec to the correct size. */
     SetQubitCount(orig->GetQubitCount());
 
@@ -137,7 +140,6 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPower, nStateVec);
     ResetStateVec(nStateVec, nStateBuffer);
 
-    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
     src->LockSync(CL_MAP_READ);
     LockSync(CL_MAP_WRITE);
     runningNorm = src->runningNorm;
@@ -524,7 +526,6 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 
 void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 {
-
     complex cmplx[CMPLX_NORM_LEN] = { nrm, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1) };
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, mask, result, 0, 0, 0, 0, 0, 0, 0 };
@@ -1322,7 +1323,6 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
 void QEngineOCL::INTS(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
 {
-
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;

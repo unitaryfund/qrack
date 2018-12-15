@@ -151,6 +151,8 @@ public:
         return toRet;
     }
 
+    virtual void UpdateRunningNorm();
+
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
      * nonbufferable operations */

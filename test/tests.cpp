@@ -29,7 +29,7 @@ using namespace Qrack;
         real1 __tmp_a = A;                                                                                             \
         real1 __tmp_b = B;                                                                                             \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
-        REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
+        REQUIRE(__tmp_a > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
 void print_bin(int bits, int d);
@@ -2526,4 +2526,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
     qftReg = optimizer.ReleaseEngine();
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC6));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
+{
+    real1 aParam = (real1)1e-4;
+    real1 tDiff = 2.1f;
+    real1 e0 = sqrt(ONE_R1 - aParam * aParam);
+
+    BitOp o2neg1(new complex[4], std::default_delete<complex[]>());
+    o2neg1.get()[0] = complex(e0, ZERO_R1);
+    o2neg1.get()[1] = complex(-aParam, ZERO_R1);
+    o2neg1.get()[2] = complex(-aParam, ZERO_R1);
+    o2neg1.get()[3] = complex(e0, ZERO_R1);
+
+    HamiltonianOpPtr h0 = std::make_shared<HamiltonianOp>(0, o2neg1);
+    Hamiltonian h(1);
+    h[0] = h0;
+
+    qftReg->SetPermutation(0);
+    qftReg->TimeEvolve(h, tDiff);
+
+    // std::cout << qftReg->Prob(0) << std::endl;
+    // std::cout << sin(aParam * tDiff) * sin(aParam * tDiff) << std::endl;
+    // std::cout << abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)) << std::endl;
+
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 }

@@ -169,6 +169,8 @@ public:
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 
+    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
+
     /** @} */
 
     /**
@@ -186,6 +188,7 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
+    virtual void UpdateRunningNorm();
 
     /** @} */
 

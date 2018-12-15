@@ -27,7 +27,6 @@ class QEngine : public QInterface {
 protected:
     real1 runningNorm;
 
-    virtual void UpdateRunningNorm() = 0;
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:

@@ -757,4 +757,6 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
     // Compare the wrapped objects
     return qReg->ApproxCompare(toCompare->qReg);
 }
+
+void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
 } // namespace Qrack

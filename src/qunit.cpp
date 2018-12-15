@@ -1122,6 +1122,24 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         valueLength, shards[carryIndex].mapped, values);
 }
 
+void QUnit::TimeEvolve(Hamiltonian h, real1 timeDiff)
+{
+    QInterface::TimeEvolve(h, timeDiff);
+    UpdateRunningNorm();
+}
+
+void QUnit::UpdateRunningNorm()
+{
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (find(units.begin(), units.end(), toFind) == units.end()) {
+            units.push_back(toFind);
+            toFind->UpdateRunningNorm();
+        }
+    }
+}
+
 bool QUnit::ApproxCompare(QUnitPtr toCompare)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
