@@ -209,7 +209,7 @@ protected:
 
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
-    virtual complex* AllocStateVec(bitCapInt elemCount, bool ovrride = false);
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
