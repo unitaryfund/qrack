@@ -29,8 +29,25 @@ class QEngineOCL;
 
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
-/** OpenCL enhanced QEngineCPU implementation. */
-class QEngineOCL : public QEngine, public ParallelFor {
+/**
+ * OpenCL enhanced QEngineCPU implementation.
+ *
+ * QEngineOCL exposes asynchronous void-return public methods, wherever possible. While QEngine public methods run on a
+ * secondary accelerator, such as a GPU, other code can be executed on the CPU at the same time. If only one (CPU)
+ * OpenCL device is available, this engine type is still compatible with most CPUs, and this implementation will still
+ * usually give a very significant performance boost over the non-OpenCL QEngineCPU implementation.
+ *
+ * Each QEngineOCL queues an independent event list of chained asynchronous methods. Multiple QEngineOCL instances may
+ * share a single device. Any one QEngineOCL instance (or QEngineCPU instance) is NOT safe to access from multiple
+ * threads, but different QEngineOCL instances may be accessed in respective threads. When a public method with a
+ * non-void return type is called, (such as Prob() or M() variants,) the engine wait list of OpenCL events will first be
+ * finished, then the return value will be calculated based on all public method calls dispatched up to that point.
+ * Asynchronous method dispatch is "transparent," in the sense that no explicit consideration for synchronization should
+ * be necessary. The programmer benefits from knowing that void-return methods attempt asynchronous execution, but
+ * asynchronous methods are always joined, in order of dispatch, before any and all non-void-return methods give their
+ * results.
+ */
+class QEngineOCL : public QEngine {
 protected:
     complex* stateVec;
     int deviceID;
@@ -73,13 +90,16 @@ public:
         delete[] nrmArray;
     }
 
+    /**
+     * Finishes the asynchronous wait event list or queue of OpenCL events.
+     *
+     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
+     * device queue is finished, (which might be shared by other QEngineOCL instances).
+     */
+    virtual void clFinish(bool doHard = false);
+
     virtual void SetQubitCount(bitLenInt qb);
 
-    // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
-    virtual void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
-    virtual void UnlockSync();
-    virtual void Sync();
-    virtual void clFinish(bool doHard = false);
     virtual void SetPermutation(bitCapInt perm);
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
@@ -185,6 +205,31 @@ protected:
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);
+
+    // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
+    /**
+     * Locks synchronization between the state vector buffer and general RAM, so the state vector can be directly read
+     * and/or written to.
+     *
+     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
+     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
+     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
+     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
+     * UnlockSync().
+     */
+    void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
+    /**
+     * Unlocks synchronization between the state vector buffer and general RAM, so the state vector can be operated on
+     * with OpenCL kernels and operations.
+     *
+     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
+     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
+     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
+     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
+     * UnlockSync().
+     */
+    void UnlockSync();
+    void Sync();
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,

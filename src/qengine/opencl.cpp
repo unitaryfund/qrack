@@ -273,18 +273,12 @@ void QEngineOCL::SetQubitCount(bitLenInt qb)
 
 real1 QEngineOCL::ParSum(real1* toSum, bitCapInt maxI)
 {
-    int numCores = GetConcurrencyLevel();
-    real1* partNorm = new real1[numCores]();
-
-    par_for(0, maxI, [&](const bitCapInt lcv, const int cpu) { partNorm[cpu] += toSum[lcv]; });
-
+    // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
+    // at as a serial loop.
     real1 totNorm = 0;
-    for (int i = 0; i < numCores; i++) {
-        totNorm += partNorm[i];
+    for (bitCapInt i = 0; i < maxI; i++) {
+        totNorm += toSum[i];
     }
-
-    delete[] partNorm;
-
     return totNorm;
 }
 
@@ -395,19 +389,25 @@ void QEngineOCL::CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(3);
 
+    // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
+
+    // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     queue.enqueueWriteBuffer(
         *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
+    // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
     complex cmplx[CMPLX_NORM_LEN];
     for (int i = 0; i < 4; i++) {
         cmplx[i] = mtrx[i];
     }
+    // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / sqrt(runningNorm)), ZERO_R1);
     size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
@@ -416,15 +416,21 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         *cmplxBuffer, CL_FALSE, 0, sizeof(complex) * cmplxSize, cmplx, &waitVec, &(device_context->wait_events[1]));
     queue.flush();
 
+    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
+    // amount of work in this method call instance.
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
+    // every single permutation amplitude.
     doCalcNorm &= doNormalize && (bitCount == 1);
 
+    // Load a buffer with the powers of 2 of each bit index involved in the operation.
     queue.enqueueWriteBuffer(*powersBuffer, CL_FALSE, 0, sizeof(bitCapInt) * bitCount, qPowersSorted, &waitVec,
         &(device_context->wait_events[2]));
     queue.flush();
 
+    // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     OCLAPI api_call;
     if (doCalcNorm) {
         api_call = OCL_API_APPLY2X2_NORM;
@@ -435,6 +441,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             api_call = OCL_API_APPLY2X2;
         }
     }
+    // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
+    // other QEngineOCL instances, until we're done queueing it.
     OCLDeviceCall ocl = device_context->Reserve(api_call);
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *cmplxBuffer);
@@ -447,6 +455,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         ocl.call.setArg(5, *nrmBuffer);
     }
 
+    // Dispatch the primary kernel, to apply the gate.
     cl::Event kernelEvent;
     std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
@@ -458,6 +467,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     device_context->wait_events.push_back(kernelEvent);
 
     if (doCalcNorm) {
+        // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
+        // values into a single normalization constant. We want to do this in a non-blocking, asynchronous wat.
         runningNorm = ONE_R1;
         // This kernel is run on a single work group, but it lets us continue asynchronously.
         if (ngc / ngs > 1) {
@@ -478,6 +489,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
         cl::Event readEvent;
         std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+        // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
+        // "runningNorm" variable.
         queue.enqueueReadBuffer(*nrmBuffer, CL_FALSE, 0, sizeof(real1), &runningNorm, &waitVec2, &readEvent);
         queue.flush();
         device_context->wait_events.push_back(readEvent);
