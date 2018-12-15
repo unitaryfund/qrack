@@ -168,7 +168,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm) = 0;
 
     /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm) = 0;
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0)) = 0;
 
     /**
      * Combine another QInterface with this one, after the last bit index of

@@ -66,6 +66,7 @@ protected:
     size_t nrmGroupSize;
     size_t maxWorkItems;
     unsigned int procElemCount;
+    bool useHostRam;
 
 public:
     /**
@@ -81,7 +82,7 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, int devID = -1);
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool useHostMem = true, int devID = -1);
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
@@ -100,7 +101,7 @@ public:
 
     virtual void SetQubitCount(bitLenInt qb);
 
-    virtual void SetPermutation(bitCapInt perm);
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
@@ -199,7 +200,8 @@ protected:
 
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
-    virtual complex* AllocStateVec(bitCapInt elemCount);
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool ovrride = false);
+    virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
 

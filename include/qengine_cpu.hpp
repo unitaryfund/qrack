@@ -125,7 +125,7 @@ public:
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
     virtual void PhaseFlip();
-    virtual void SetPermutation(bitCapInt perm);
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -164,7 +164,7 @@ protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();
-    virtual complex* AllocStateVec(bitCapInt elemCount);
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool ovrride = false);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 };
 } // namespace Qrack

@@ -76,11 +76,18 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
     return stateVec[perm];
 }
 
-void QEngineCPU::SetPermutation(bitCapInt perm)
+void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-    real1 angle = Rand() * 2.0 * PI_R1;
-    stateVec[perm] = complex(cos(angle), sin(angle));
+
+    if (phaseFac == complex(-999.0, -999.0)) {
+        real1 angle = Rand() * 2.0 * PI_R1;
+        stateVec[perm] = complex(cos(angle), sin(angle));
+    } else {
+        real1 nrm = abs(phaseFac);
+        stateVec[perm] = phaseFac / nrm;
+    }
+
     runningNorm = ONE_R1;
 }
 
@@ -585,7 +592,7 @@ void QEngineCPU::NormalizeState(real1 nrm)
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
 
-complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
+complex* QEngineCPU::AllocStateVec(bitCapInt elemCount, bool ovrride)
 {
 // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
 #ifdef __APPLE__

@@ -324,10 +324,10 @@ complex QFusion::GetAmplitude(bitCapInt perm)
     return qReg->GetAmplitude(perm);
 }
 
-void QFusion::SetPermutation(bitCapInt perm)
+void QFusion::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     DiscardAll();
-    qReg->SetPermutation(perm);
+    qReg->SetPermutation(perm, phaseFac);
 }
 
 void QFusion::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
