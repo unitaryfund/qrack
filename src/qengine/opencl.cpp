@@ -207,6 +207,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     bitCapInt oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+
     // If the user wants to not use general host RAM, but we can't allocate enough on the device, fall back to host RAM
     // anyway.
     maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
@@ -218,6 +219,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     } else {
         usingHostRam = false;
     }
+
     // constrain to a power of two
     size_t procElemPow = 2;
     while (procElemPow < procElemCount) {
