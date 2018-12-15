@@ -30,7 +30,7 @@ class QEngineOCL;
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
 
 /** OpenCL enhanced QEngineCPU implementation. */
-class QEngineOCL : public QEngine {
+class QEngineOCL : public QEngine, public ParallelFor {
 protected:
     complex* stateVec;
     int deviceID;
@@ -40,9 +40,10 @@ protected:
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
     // QEngineOCL itself, specifically by QEngineOCLMulti.
     BufferPtr stateBuffer;
-    cl::Buffer cmplxBuffer;
-    cl::Buffer ulongBuffer;
-    cl::Buffer nrmBuffer;
+    BufferPtr cmplxBuffer;
+    BufferPtr ulongBuffer;
+    BufferPtr nrmBuffer;
+    BufferPtr powersBuffer;
     real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
@@ -63,11 +64,11 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        int devID = -1, bool partialInit = false, complex phaseFac = complex(-999.0, -999.0));
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, int devID = -1);
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
-        clFinish(true);
+        clFinish();
         delete[] stateVec;
         delete[] nrmArray;
     }
@@ -179,6 +180,8 @@ protected:
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount);
+
+    real1 ParSum(real1* toSum, bitCapInt maxI);
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);

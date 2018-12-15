@@ -19,13 +19,15 @@
 
 namespace Qrack {
 
-QFusion::QFusion(
-    QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp)
+QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
+    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm)
     : QInterface(qBitCount, rgp)
+    , phaseFactor(phaseFac)
+    , doNormalize(doNorm)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
-    qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp);
+    qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize);
 }
 
 QFusion::QFusion(QInterfacePtr target)
@@ -755,4 +757,6 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
     // Compare the wrapped objects
     return qReg->ApproxCompare(toCompare->qReg);
 }
+
+void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
 } // namespace Qrack

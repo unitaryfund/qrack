@@ -158,4 +158,20 @@ void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
         X(outputBit);
     }
 }
+
+void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
+{
+    // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(i * H * t)
+    // as e^(i * H_(N - 1) * t) * e^(i * H_(N - 2) * t) * ... e^(i * H_0 * t)
+
+    for (bitLenInt i = 0; i < h.size(); i++) {
+        HamiltonianOpPtr op = h[i];
+        complex* opMtrx = op->matrix.get();
+        complex mtrx[4];
+        for (int j = 0; j < 4; j++) {
+            mtrx[j] = opMtrx[j] * timeDiff;
+        }
+        Exp(op->controls, op->controlLen, op->targetBit, mtrx);
+    }
+}
 } // namespace Qrack

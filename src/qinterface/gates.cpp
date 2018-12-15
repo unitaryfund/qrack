@@ -10,8 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <algorithm>
-
 #include "qinterface.hpp"
 
 namespace Qrack {

@@ -45,7 +45,7 @@ add_test (NAME qrack_tests
 
 # Declare the benchmark executable
 add_executable (benchmarks
-    test/test_main.cpp
+    test/benchmarks_main.cpp
     test/benchmarks.cpp
     )
 
@@ -104,6 +104,7 @@ install (FILES
 # Install qrack library headers
 install (FILES
     include/bitbuffer.hpp
+    include/hamiltonian.hpp
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp

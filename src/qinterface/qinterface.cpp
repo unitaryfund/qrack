@@ -14,6 +14,20 @@
 
 namespace Qrack {
 
+template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
+{
+    // For length-wise application of controlled gates, there's no point in having normalization on, up to the last
+    // gate. Application of a controlled gate updates the "running norm". The running norm is corrected on the
+    // application of a gate that isn't controlled. We just want one running norm update, for the last gate.
+    bool wasNormOn = doNormalize;
+    doNormalize = false;
+    for (bitLenInt bit = 0; bit < (length - 1); bit++) {
+        gate(bit);
+    }
+    doNormalize = wasNormOn;
+    gate(length - 1);
+}
+
 // Bit-wise apply swap to two registers
 void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
@@ -41,30 +55,22 @@ void QInterface::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 // Bit-wise apply "anti-"controlled-not to three registers
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        AntiCCNOT(control1 + bit, control2 + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { AntiCCNOT(control1 + bit, control2 + bit, target + bit); });
 }
 
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CCNOT(control1 + bit, control2 + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CCNOT(control1 + bit, control2 + bit, target + bit); });
 }
 
 void QInterface::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        AntiCNOT(control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { AntiCNOT(control + bit, target + bit); });
 }
 
 void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CNOT(control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CNOT(control + bit, target + bit); });
 }
 
 // Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
@@ -137,17 +143,13 @@ void QInterface::Z(bitLenInt start, bitLenInt length)
 /// Apply controlled Pauli Y matrix to each bit
 void QInterface::CY(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CY(control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CY(control + bit, target + bit); });
 }
 
 /// Apply controlled Pauli Z matrix to each bit
 void QInterface::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CZ(control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CZ(control + bit, target + bit); });
 }
 
 /// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
@@ -245,12 +247,18 @@ void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 void QInterface::QFT(bitLenInt start, bitLenInt length)
 {
     if (length > 0) {
+        bool wasNormOn = doNormalize;
         bitLenInt end = start + length;
         bitLenInt i, j;
         for (i = start; i < end; i++) {
             H(i);
-            for (j = 1; j < (end - i); j++) {
+            doNormalize = false;
+            for (j = 1; j < ((end - i) - 1); j++) {
                 CRTDyad(1, j, i + j, i);
+            }
+            doNormalize = wasNormOn;
+            if (i != (end - 1)) {
+                CRTDyad(1, (end - i) - 1, end - 1, i);
             }
         }
     }
@@ -260,12 +268,16 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
 void QInterface::IQFT(bitLenInt start, bitLenInt length)
 {
     if (length > 0) {
+        bool wasNormOn = doNormalize;
         int end = start + length - 1;
         int i, j;
         for (i = end; i >= start; i--) {
-            for (j = (end - i); j > 0; j--) {
+            doNormalize = false;
+            for (j = (end - i); j > 1; j--) {
                 CRTDyad(-1, j, i + j, i);
             }
+            doNormalize = wasNormOn;
+            CRTDyad(-1, 1, i + 1, i);
             H(i);
         }
     }
@@ -587,9 +599,7 @@ void QInterface::RZDyad(int numerator, int denominator, bitLenInt start, bitLenI
 /// Controlled "phase shift gate"
 void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRT(radians, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRT(radians, control + bit, target + bit); });
 }
 
 /// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
@@ -608,17 +618,13 @@ void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLe
 /// Controlled dyadic fraction "phase shift gate"
 void QInterface::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRTDyad(numerator, denominator, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRTDyad(numerator, denominator, control + bit, target + bit); });
 }
 
 /// Controlled x axis rotation
 void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRX(radians, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRX(radians, control + bit, target + bit); });
 }
 
 /**
@@ -641,17 +647,13 @@ void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLe
 /// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
 void QInterface::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRXDyad(numerator, denominator, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRXDyad(numerator, denominator, control + bit, target + bit); });
 }
 
 /// Controlled y axis rotation
 void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRY(radians, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRY(radians, control + bit, target + bit); });
 }
 
 /**
@@ -672,17 +674,13 @@ void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLe
 /// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
 void QInterface::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRYDyad(numerator, denominator, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRYDyad(numerator, denominator, control + bit, target + bit); });
 }
 
 /// Controlled z axis rotation
 void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRZ(radians, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRZ(radians, control + bit, target + bit); });
 }
 
 /**
@@ -703,9 +701,7 @@ void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLe
 /// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
 void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        CRZDyad(numerator, denominator, control + bit, target + bit);
-    }
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CRZDyad(numerator, denominator, control + bit, target + bit); });
 }
 
 // Bit-wise apply measurement gate to a register

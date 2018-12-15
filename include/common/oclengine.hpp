@@ -39,7 +39,9 @@ typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
 enum OCLAPI {
     OCL_API_UNKNOWN = 0,
     OCL_API_APPLY2X2,
+    OCL_API_APPLY2X2_UNIT,
     OCL_API_APPLY2X2_NORM,
+    OCL_API_NORMSUM,
     OCL_API_COHERE,
     OCL_API_DECOHEREPROB,
     OCL_API_DECOHEREAMP,
@@ -49,7 +51,6 @@ enum OCLAPI {
     OCL_API_PROBREGALL,
     OCL_API_PROBMASK,
     OCL_API_PROBMASKALL,
-    OCL_API_ISPHASESEPARABLE,
     OCL_API_X,
     OCL_API_SWAP,
     OCL_API_ROL,
@@ -132,7 +133,7 @@ public:
         , context_id(cntxt_id)
         , mutex()
     {
-        queue = cl::CommandQueue(context, d);
+        queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }

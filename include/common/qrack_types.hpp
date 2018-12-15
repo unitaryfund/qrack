@@ -36,3 +36,7 @@
 #define PI_R1 M_PI
 #define min_norm 1e-15
 #endif
+
+namespace Qrack {
+typedef std::shared_ptr<complex> BitOp;
+}
