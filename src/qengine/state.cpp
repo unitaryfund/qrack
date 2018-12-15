@@ -30,11 +30,14 @@ namespace Qrack {
  * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
  * a shared random number generator, with a specific phase.
  *
+ * (Note that "useHostMem" is required as a parameter to normalize constructors for use with the
+ * CreateQuantumInterface() factory, but it serves no function in QEngineCPU.)
+ *
  * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm)
+    complex phaseFac, bool doNorm, bool useHostMem)
     : QEngine(qBitCount, rgp, doNorm)
     , stateVec(NULL)
 {

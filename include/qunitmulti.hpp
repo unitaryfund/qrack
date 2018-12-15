@@ -58,13 +58,13 @@ protected:
 public:
     QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true)
-        : QUnitMulti(qBitCount, initState, rgp, phaseFac, doNorm)
+        bool doNorm = true, bool useHostMem = false)
+        : QUnitMulti(qBitCount, initState, rgp, phaseFac, doNorm, useHostMem)
     {
     }
 
     QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true);
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool useHostMem = false);
 
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length);
