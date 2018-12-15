@@ -26,6 +26,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     , deviceID(devID)
     , nrmArray(NULL)
     , useHostRam(useHostMem)
+    , usingHostRam(useHostMem)
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
@@ -34,23 +35,9 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     runningNorm = ONE_R1;
     SetQubitCount(qBitCount);
 
-    if (useHostRam) {
-        stateVec = AllocStateVec(maxQPower);
-        std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-        if (phaseFac == complex(-999.0, -999.0)) {
-            real1 angle = Rand() * 2.0 * PI_R1;
-            stateVec[initState] = complex(cos(angle), sin(angle));
-        } else {
-            stateVec[initState] = phaseFac;
-        }
-    }
-
     InitOCL(devID);
 
-    if (!useHostRam) {
-        SetPermutation(initState, phaseFac);
-    }
+    SetPermutation(initState, phaseFac);
 }
 
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
@@ -59,6 +46,7 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , deviceID(-1)
     , nrmArray(NULL)
     , useHostRam(toCopy->useHostRam)
+    , usingHostRam(toCopy->usingHostRam)
 {
     CopyState(toCopy);
 
@@ -69,7 +57,7 @@ void QEngineOCL::LockSync(cl_int flags)
 {
     clFinish();
 
-    if (!useHostRam) {
+    if (!usingHostRam) {
         stateVec = AllocStateVec(maxQPower, true);
         BufferPtr nStateBuffer = MakeStateVecBuffer(stateVec);
         cl::Event copyEvent;
@@ -87,7 +75,7 @@ void QEngineOCL::UnlockSync()
     cl::Event unmapEvent;
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec, &waitVec, &unmapEvent);
 
-    if (useHostRam) {
+    if (usingHostRam) {
         device_context->wait_events.push_back(unmapEvent);
     } else {
         BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
@@ -221,9 +209,14 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
     // If the user wants to not use general host RAM, but we can't allocate enough on the device, fall back to host RAM
     // anyway.
-    size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    if (!useHostRam && (maxQPower * sizeof(complex)) > maxAlloc) {
-        useHostRam = true;
+    maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    size_t stateVecSize = maxQPower * sizeof(complex);
+    bool oldUsingHostRam = usingHostRam;
+    if (!useHostRam && (stateVecSize > maxAlloc || (2 * stateVecSize) > maxMem)) {
+        usingHostRam = true;
+    } else {
+        usingHostRam = false;
     }
     // constrain to a power of two
     size_t procElemPow = 2;
@@ -278,7 +271,9 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         std::copy(stateVec, stateVec + maxQPower, nStateVec);
         UnlockSync();
 
-        free(stateVec);
+        if (oldUsingHostRam) {
+            free(stateVec);
+        }
         stateVec = nStateVec;
         stateBuffer = nStateBuffer;
     } else {
@@ -320,7 +315,7 @@ void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
 void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 {
     stateBuffer = nStateBuffer;
-    if (useHostRam) {
+    if (usingHostRam) {
         free(stateVec);
         stateVec = nStateVec;
     }
@@ -634,6 +629,21 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, startMask, endMask, qubitCount, 0, 0, 0, 0, 0, 0 };
 
+    size_t nStateVecSize = nMaxQPower * sizeof(complex);
+    if (!usingHostRam && (nStateVecSize > maxAlloc || (2 * nStateVecSize) > maxMem)) {
+        usingHostRam = true;
+
+        complex* nSV = AllocStateVec(maxQPower);
+        BufferPtr nSB = MakeStateVecBuffer(nSV);
+
+        LockSync(CL_MAP_READ);
+        std::copy(stateVec, stateVec + maxQPower, nSV);
+        UnlockSync();
+
+        stateVec = nSV;
+        stateBuffer = nSB;
+    }
+
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(1);
 
@@ -822,11 +832,29 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
             std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
             destination->UnlockSync();
         }
+
+        size_t oNStateVecSize = maxQPower * sizeof(complex);
+        if (!(destination->useHostRam) && destination->usingHostRam && oNStateVecSize <= destination->maxAlloc &&
+            (2 * oNStateVecSize) <= destination->maxMem) {
+            destination->usingHostRam = false;
+
+            BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
+
+            cl::Event copyEvent;
+            destination->queue.enqueueCopyBuffer(
+                *(destination->stateBuffer), *nSB, 0, 0, sizeof(complex) * destination->maxQPower, NULL, &copyEvent);
+            copyEvent.wait();
+
+            destination->stateBuffer = nSB;
+            free(destination->stateVec);
+            stateVec = NULL;
+        }
     }
 
     // If we either Decohere or Dispose, calculate the state of the bit system that remains.
     std::vector<cl::Event> waitVec3 = device_context->ResetWaitEvents();
     bciArgs[0] = maxQPower;
+
     cl::Event writeEvent;
     queue.enqueueWriteBuffer(*ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt), bciArgs, &waitVec3, &writeEvent);
     queue.flush();
@@ -858,6 +886,21 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     kernelEvent.wait();
     ResetStateVec(nStateVec, nStateBuffer);
+
+    size_t nStateVecSize = maxQPower * sizeof(complex);
+    if (!useHostRam && usingHostRam && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
+        usingHostRam = false;
+
+        BufferPtr nSB = MakeStateVecBuffer(NULL);
+
+        cl::Event copyEvent;
+        queue.enqueueCopyBuffer(*stateBuffer, *nSB, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
+        copyEvent.wait();
+
+        stateBuffer = nStateBuffer;
+        free(stateVec);
+        stateVec = NULL;
+    }
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
@@ -2177,10 +2220,10 @@ void QEngineOCL::UpdateRunningNorm()
     device_context->wait_events.push_back(readEvent);
 }
 
-complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool ovrride)
+complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
 {
     // If we're not using host ram, there's no reason to allocate.
-    if (!ovrride && !useHostRam) {
+    if (!doForceAlloc && !usingHostRam) {
         return NULL;
     }
 

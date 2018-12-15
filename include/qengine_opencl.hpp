@@ -65,8 +65,11 @@ protected:
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
+    size_t maxMem;
+    size_t maxAlloc;
     unsigned int procElemCount;
     bool useHostRam;
+    bool usingHostRam;
 
 public:
     /**
