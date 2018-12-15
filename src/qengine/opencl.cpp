@@ -264,23 +264,27 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
+        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
+        // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
 
         if (!stateVec) {
-            // We did not have host allocation, so we definitely have to copy device-local memory to host memory, then to a new device.
+            // We did not have host allocation, so we definitely have to copy device-local memory to host memory, then
+            // to a new device.
             cl::CommandQueue nQueue = queue;
             queue = oldQueue;
 
             complex* nStateVec = AllocStateVec(maxQPower, true);
             BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
             cl::Event copyEvent;
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
+            oldQueue.enqueueCopyBuffer(
+                *stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
             copyEvent.wait();
 
             // Host RAM should now by synchronized.
             queue = nQueue;
             if (usingHostRam) {
-                // If we're using host RAM from here out, just create the buffer from the array pointer, in the context of the new device/queue.
+                // If we're using host RAM from here out, just create the buffer from the array pointer, in the context
+                // of the new device/queue.
                 stateBuffer = MakeStateVecBuffer(nStateVec);
                 stateVec = nStateVec;
             } else {
@@ -290,17 +294,20 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
                 free(nStateVec);
             }
         } else if (!usingHostRam) {
-            // We had host allocation; we will no longer have it. Just copy the array pointer into a buffer in the new context.
+            // We had host allocation; we will no longer have it. Just copy the array pointer into a buffer in the new
+            // context.
             stateBuffer = MakeStateVecBuffer(NULL);
             queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, stateVec);
             free(stateVec);
             stateVec = NULL;
         } else {
-            // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new context.
+            // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new
+            // context.
             stateBuffer = MakeStateVecBuffer(stateVec);
         }
     } else {
-        // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device contexts.
+        // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
+        // contexts.
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
 
