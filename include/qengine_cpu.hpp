@@ -164,7 +164,7 @@ protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();
-    virtual complex* AllocStateVec(bitCapInt elemCount, bool ovrride = false);
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 };
 } // namespace Qrack
