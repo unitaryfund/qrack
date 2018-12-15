@@ -15,6 +15,8 @@
 #include <memory>
 #include <vector>
 
+#include "common/qrack_types.hpp"
+
 namespace Qrack {
 
 /**

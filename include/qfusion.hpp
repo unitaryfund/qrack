@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "common/bitbuffer.hpp"
+#include "bitbuffer.hpp"
 #include "qinterface.hpp"
 
 // MODLEN returns "arg" modulo the capacity of "len" bits. We use it to check if an arithmetic "arg" is equivalent to
