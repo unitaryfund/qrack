@@ -171,7 +171,9 @@ cl::Event QEngineOCL::QueueCall(
         cl::NDRange(localGroupSize), // local number (per group)
         &kernelWaitVec, // vector of events to wait for
         &kernelEvent); // handle to wait for the kernel
+
     queue.flush();
+
     return kernelEvent;
 }
 
@@ -706,51 +708,37 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     // The "remainder" bits will always be maintained.
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower];
-    cl::Buffer probBuffer1 = cl::Buffer(
+    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb);
-    cl::Buffer angleBuffer1 = cl::Buffer(
+    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
-
-    // These arguments are common to both kernels.
-    prob_call.call.setArg(0, *stateBuffer);
-    prob_call.call.setArg(1, *ulongBuffer);
-    prob_call.call.setArg(2, probBuffer1);
-    prob_call.call.setArg(3, angleBuffer1);
 
     // The removed "part" is only necessary for Decohere.
     real1* partStateProb = nullptr;
     real1* partStateAngle = nullptr;
-    cl::Buffer probBuffer2, angleBuffer2;
+    BufferPtr probBuffer2, angleBuffer2;
     if (destination != nullptr) {
         partStateProb = new real1[partPower]();
         partStateAngle = new real1[partPower];
-        probBuffer2 =
-            cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
-        angleBuffer2 =
-            cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
+        probBuffer2 = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
+        angleBuffer2 = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
-        prob_call.call.setArg(4, probBuffer2);
-        prob_call.call.setArg(5, angleBuffer2);
+        // Call the kernel that calculates bit probability and angle, retaining both parts.
+        device_context->wait_events.push_back(QueueCall(
+            api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 }));
+    } else {
+        // Call the kernel that calculates bit probability and angle, discarding the "disposed" part.
+        device_context->wait_events.push_back(
+            QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1 }));
     }
-
-    // Call the kernel that calculates bit probability and angle.
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(prob_call.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
 
     if ((maxQPower - partPower) <= 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
-
-    // groupSize = amp_call.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
 
     // If we Decohere, calculate the state of the bit system removed.
     if (destination != nullptr) {
@@ -780,20 +768,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
             device_context->wait_events.push_back(fillEvent);
         }
 
-        amp_call.call.setArg(0, probBuffer2);
-        amp_call.call.setArg(1, angleBuffer2);
-        amp_call.call.setArg(2, *ulongBuffer);
-        amp_call.call.setArg(3, *otherStateBuffer);
-
-        std::vector<cl::Event> kernelWaitVec2 = device_context->ResetWaitEvents();
-        queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
-            cl::NDRange(ngc2), // global number of work items
-            cl::NDRange(ngs2), // local number (per group)
-            &kernelWaitVec2, // vector of events to wait for
-            &kernelEvent); // handle to wait for the kernel
-        queue.flush();
-
-        kernelEvent.wait();
+        QueueCall(OCL_API_DECOHEREAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer }).wait();
 
         delete[] partStateProb;
         delete[] partStateAngle;
@@ -836,25 +811,13 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    amp_call.call.setArg(0, probBuffer1);
-    amp_call.call.setArg(1, angleBuffer1);
-    amp_call.call.setArg(2, *ulongBuffer);
-    amp_call.call.setArg(3, *nStateBuffer);
-
-    std::vector<cl::Event> kernelWaitVec3 = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(amp_call.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec3, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
     runningNorm = ONE_R1;
     if (destination != nullptr) {
         destination->runningNorm = ONE_R1;
     }
 
-    kernelEvent.wait();
+    QueueCall(OCL_API_DECOHEREAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer }).wait();
+
     ResetStateVec(nStateVec, nStateBuffer);
 
     size_t nStateVecSize = maxQPower * sizeof(complex);
