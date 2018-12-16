@@ -36,6 +36,7 @@ protected:
     std::vector<QEngineShard> shards;
     complex phaseFactor;
     bool doNormalize;
+    bool useHostRam;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
 
@@ -48,15 +49,18 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true);
+        bool doNorm = true, bool useHostMem = false);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true);
+        bool doNorm = true, bool useHostMem = false);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetPermutation(bitCapInt perm) { SetReg(0, qubitCount, perm); }
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0))
+    {
+        SetReg(0, qubitCount, perm);
+    }
     using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);

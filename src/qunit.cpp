@@ -20,25 +20,26 @@
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm)
-    : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm)
+    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool useHostMem)
+    : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, useHostMem)
 {
     // Intentionally left blank
 }
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm)
+    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool useHostMem)
     : QInterface(qBitCount, rgp, doNorm)
     , engine(eng)
     , subengine(subEng)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
+    , useHostRam(useHostMem)
 {
     shards.resize(qBitCount);
 
     for (bitLenInt i = 0; i < qBitCount; i++) {
-        shards[i].unit =
-            CreateQuantumInterface(engine, subengine, 1, ((1 << i) & initState) >> i, rand_generator, phaseFactor);
+        shards[i].unit = CreateQuantumInterface(
+            engine, subengine, 1, ((1 << i) & initState) >> i, rand_generator, phaseFactor, doNormalize, useHostRam);
         shards[i].mapped = 0;
     }
 }
@@ -57,7 +58,8 @@ void QUnit::CopyState(QUnit* orig)
         QEngineShard shard;
         shard.mapped = otherShard.mapped;
         if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator);
+            otherUnits[otherShard.unit] =
+                CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
             otherUnits[otherShard.unit]->CopyState(otherShard.unit);
         }
         shard.unit = otherUnits[otherShard.unit];
@@ -67,8 +69,8 @@ void QUnit::CopyState(QUnit* orig)
 
 void QUnit::CopyState(QInterfacePtr orig)
 {
-    QInterfacePtr unit =
-        CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator, phaseFactor);
+    QInterfacePtr unit = CreateQuantumInterface(
+        engine, subengine, orig->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->CopyState(orig);
 
     SetQubitCount(orig->GetQubitCount());
@@ -85,7 +87,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(complex* inputState)
 {
-    auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor);
+    auto unit =
+        CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->SetQuantumState(inputState);
 
     int idx = 0;
@@ -362,11 +365,12 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
     for (bitLenInt i = 0; i < (bits.size()); i++) {
         shard = shards[bits[i]];
         if (shard.unit->GetQubitCount() > 1) {
-            QInterfacePtr unitCopy =
-                CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0, rand_generator, phaseFactor);
+            QInterfacePtr unitCopy = CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0,
+                rand_generator, phaseFactor, doNormalize, useHostRam);
             unitCopy->CopyState(shard.unit);
 
-            QInterfacePtr testBit = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor);
+            QInterfacePtr testBit =
+                CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
             unitCopy->Decohere(shard.mapped, 1, testBit);
             unitCopy->Cohere(testBit);
 
@@ -512,7 +516,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor);
+    QInterfacePtr dest = CreateQuantumInterface(
+        engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->Dispose(mapped, 1);
 
     /* Update the mappings. */

@@ -65,7 +65,10 @@ protected:
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
+    size_t maxMem;
+    size_t maxAlloc;
     unsigned int procElemCount;
+    bool useHostRam;
 
 public:
     /**
@@ -75,13 +78,19 @@ public:
      * object to zero norm.
      *
      * "devID" is the index of an OpenCL device in the OCLEngine singleton, to select the device to run this engine on.
-     * "partialInit" is usually only set to true when this object is one of several collected in a
-     * Qrack::QEngineOCLMulti object, in which case this Qrack::QEngineOCL object might not contain the amplitude of the
-     * overall permutation state of the combined object.
+     * If "useHostMem" is set false, as by default, the QEngineOCL will attempt to allocate the state vector object
+     * only on device memory. If "useHostMem" is set true, general host RAM will be used for the state vector buffers.
+     * If the state vector is too large to allocate only on device memory, the QEngineOCL will attempt to fall back to
+     * allocating it in general host RAM.
+     *
+     * \warning "useHostMem" is not conscious of allocation by other QEngineOCL instances on the same device. Attempting
+     * to allocate too much device memory across too many QEngineOCL instances, for which each instance would have
+     * sufficient device resources on its own, will probably cause the program to crash (and may lead to general system
+     * instability). For safety, "useHostMem" can be turned on.
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, int devID = -1);
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool useHostMem = false, int devID = -1);
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
@@ -100,7 +109,7 @@ public:
 
     virtual void SetQubitCount(bitLenInt qb);
 
-    virtual void SetPermutation(bitCapInt perm);
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
@@ -199,7 +208,8 @@ protected:
 
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
-    virtual complex* AllocStateVec(bitCapInt elemCount);
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
 
