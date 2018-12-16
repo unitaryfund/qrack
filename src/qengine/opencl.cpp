@@ -212,7 +212,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     size_t stateVecSize = maxQPower * sizeof(complex);
     bool usingHostRam;
-    if (!useHostRam && (stateVecSize > maxAlloc || (2 * stateVecSize) > maxMem)) {
+    // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
+    if (!useHostRam && (stateVecSize > maxAlloc || (3 * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
         usingHostRam = false;
@@ -518,8 +519,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     ocl.call.setArg(3, *powersBuffer);
     if (doCalcNorm) {
         ocl.call.setArg(4, cl::Local(sizeof(real1) * ngs));
-    }
-    if (doCalcNorm) {
         ocl.call.setArg(5, *nrmBuffer);
     }
 
@@ -1211,7 +1210,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     queue.flush();
 
     cl::Buffer probsBuffer =
-        cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);
