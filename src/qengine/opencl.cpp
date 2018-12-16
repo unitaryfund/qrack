@@ -1878,129 +1878,65 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values, isParallel);
 }
 
-void QEngineOCL::PhaseFlip()
+void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs)
 {
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIP);
-
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     cl::Event writeEvent;
-    queue.enqueueWriteBuffer(*ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 1, bciArgs, &waitVec, &writeEvent);
+    queue.enqueueWriteBuffer(*ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 5, bciArgs, &waitVec, &writeEvent);
     queue.flush();
     device_context->wait_events.push_back(writeEvent);
 
+    bitCapInt maxI = bciArgs[0];
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    OCLDeviceCall ocl = device_context->Reserve(api_call);
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *ulongBuffer);
 
     cl::Event kernelEvent;
     std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize), // local number (per group)
+        cl::NDRange(ngc), // global number of work items
+        cl::NDRange(ngs), // local number (per group)
         &kernelWaitVec, // vector of events to wait for
         &kernelEvent); // handle to wait for the kernel
     queue.flush();
     device_context->wait_events.push_back(kernelEvent);
+}
+
+void QEngineOCL::PhaseFlip()
+{
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    PhaseFlipX(OCL_API_PHASEFLIP, bciArgs);
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_ZEROPHASEFLIP);
-
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
 
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(1);
-
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 3, bciArgs, &waitVec, &(device_context->wait_events[0]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    PhaseFlipX(OCL_API_ZEROPHASEFLIP, bciArgs);
 }
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_CPHASEFLIPIFLESS);
-
     bitCapInt regMask = ((1 << length) - 1) << start;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, regMask, 1U << flagIndex, greaterPerm, start, 0, 0, 0, 0, 0 };
 
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(1);
-
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 5, bciArgs, &waitVec, &(device_context->wait_events[0]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    PhaseFlipX(OCL_API_CPHASEFLIPIFLESS, bciArgs);
 }
 
 void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PHASEFLIPIFLESS);
-
     bitCapInt regMask = ((1 << length) - 1) << start;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, regMask, greaterPerm, start, 0, 0, 0, 0, 0, 0 };
 
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(1);
-
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &(device_context->wait_events[0]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    PhaseFlipX(OCL_API_PHASEFLIPIFLESS, bciArgs);
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis

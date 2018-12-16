@@ -274,6 +274,7 @@ protected:
         const bitLenInt length);
     void CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
+    void PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel);
