@@ -293,17 +293,17 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
                 queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, nStateVec);
                 free(nStateVec);
             }
-        } else if (!usingHostRam) {
+        } else if (usingHostRam) {
+            // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new
+            // context.
+            stateBuffer = MakeStateVecBuffer(stateVec);
+        } else {
             // We had host allocation; we will no longer have it. Just copy the array pointer into a buffer in the new
             // context.
             stateBuffer = MakeStateVecBuffer(NULL);
             queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, stateVec);
             free(stateVec);
             stateVec = NULL;
-        } else {
-            // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new
-            // context.
-            stateBuffer = MakeStateVecBuffer(stateVec);
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
