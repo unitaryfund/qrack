@@ -912,68 +912,7 @@ void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr desti
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
 
-/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-real1 QEngineOCL::Prob(bitLenInt qubit)
-{
-    if (qubitCount == 1) {
-        return ProbAll(1);
-    }
-
-    // We might have async execution of gates still happening.
-    clFinish();
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
-    }
-
-    bitCapInt qPower = 1 << qubit;
-    real1 oneChance = ZERO_R1;
-
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(1);
-
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 2, bciArgs, &waitVec, &(device_context->wait_events[0]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROB);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nrmBuffer);
-    ocl.call.setArg(3, cl::Local(sizeof(real1) * ngs));
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    waitVec.clear();
-    waitVec.push_back(kernelEvent);
-
-    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec);
-    oneChance = ParSum(nrmArray, ngc / ngs);
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
-    device_context->wait_events.push_back(unmapEvent);
-
-    if (oneChance > ONE_R1)
-        oneChance = ONE_R1;
-
-    return oneChance;
-}
-
-// Returns probability of permutation of the register
-real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {
     // We might have async execution of gates still happening.
     clFinish();
@@ -982,23 +921,20 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
         NormalizeState();
     }
 
-    bitCapInt perm = permutation << start;
-    real1 oneChance = ZERO_R1;
-
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, perm, start, length, 0, 0, 0, 0, 0, 0 };
-
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(1);
 
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &(device_context->wait_events[0]));
+    cl::Event writeEvent;
+    queue.enqueueWriteBuffer(*ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &writeEvent);
     queue.flush();
+    device_context->wait_events.push_back(writeEvent);
+
+    real1 oneChance = ZERO_R1;
 
     bitCapInt maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBREG);
+    OCLDeviceCall ocl = device_context->Reserve(api_call);
     clFinish();
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *ulongBuffer);
@@ -1027,6 +963,30 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
         oneChance = ONE_R1;
 
     return oneChance;
+}
+
+/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+real1 QEngineOCL::Prob(bitLenInt qubit)
+{
+    if (qubitCount == 1) {
+        return ProbAll(1);
+    }
+
+    bitCapInt qPower = 1 << qubit;
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    return Probx(OCL_API_PROB, bciArgs);
+}
+
+// Returns probability of permutation of the register
+real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+{
+    bitCapInt perm = permutation << start;
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, perm, start, length, 0, 0, 0, 0, 0, 0 };
+
+    return Probx(OCL_API_PROBREG, bciArgs);
 }
 
 void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
@@ -1209,8 +1169,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
-    cl::Buffer probsBuffer =
-        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+    cl::Buffer probsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);

@@ -255,6 +255,7 @@ protected:
 
     /* Utility functions used by the operations above. */
     void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
+    real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
     void INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
     void CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
