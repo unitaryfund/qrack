@@ -1622,18 +1622,8 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     CMULx(OCL_API_CDIV, toDiv, inOutStart, carryStart, length, controls, controlLen);
 }
 
-void QEngineOCL::MULx(
-    OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart, const bitLenInt length)
+void QEngineOCL::xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuffer)
 {
-    bitCapInt lowMask = (1U << length) - 1U;
-    bitCapInt inOutMask = lowMask << inOutStart;
-    bitCapInt carryMask = lowMask << carryStart;
-    bitCapInt skipMask = (1U << carryStart) - 1U;
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
-
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMod, inOutMask, carryMask, otherMask, length, inOutStart,
-        carryStart, skipMask, 0 };
-
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
@@ -1643,7 +1633,7 @@ void QEngineOCL::MULx(
     device_context->wait_events.resize(2);
 
     queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 9, bciArgs, &waitVec, &(device_context->wait_events[0]));
+        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
     queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
@@ -1658,6 +1648,9 @@ void QEngineOCL::MULx(
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *ulongBuffer);
     ocl.call.setArg(2, *nStateBuffer);
+    if (controlBuffer) {
+        ocl.call.setArg(3, *controlBuffer);
+    }
 
     cl::Event kernelEvent;
     std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
@@ -1670,6 +1663,21 @@ void QEngineOCL::MULx(
 
     kernelEvent.wait();
     ResetStateVec(nStateVec, nStateBuffer);
+}
+
+void QEngineOCL::MULx(
+    OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart, const bitLenInt length)
+{
+    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt inOutMask = lowMask << inOutStart;
+    bitCapInt carryMask = lowMask << carryStart;
+    bitCapInt skipMask = (1U << carryStart) - 1U;
+    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMod, inOutMask, carryMask, otherMask, length, inOutStart,
+        carryStart, skipMask, 0 };
+
+    xMULx(api_call, bciArgs, NULL);
 }
 
 void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
@@ -1697,48 +1705,13 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutSt
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (controlLen + length), toMod, controlLen, controlMask, inOutMask,
         carryMask, otherMask, length, inOutStart, carryStart };
 
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-
-    /* Allocate a temporary nStateVec, or use the one supplied. */
-    complex* nStateVec = AllocStateVec(maxQPower);
-    BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-
-    cl::Buffer controlBuffer = cl::Buffer(
+    BufferPtr controlBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * ((controlLen * 2) + length), skipPowers);
 
-    device_context->wait_events.resize(2);
-
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 10, bciArgs, &waitVec, &(device_context->wait_events[0]));
-    queue.flush();
-
-    queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
-        &(device_context->wait_events[1]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nStateBuffer);
-    ocl.call.setArg(3, controlBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    kernelEvent.wait();
-    ResetStateVec(nStateVec, nStateBuffer);
+    xMULx(api_call, bciArgs, controlBuffer);
 
     delete[] skipPowers;
+    delete[] controlPowers;
 }
 
 /** Set 8 bit register bits based on read from classical memory */

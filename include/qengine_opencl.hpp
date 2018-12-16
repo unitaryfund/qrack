@@ -271,6 +271,7 @@ protected:
     void INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
     void INTBCDC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
+    void xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuffer);
     void MULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length);
     void CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
