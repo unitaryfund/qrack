@@ -565,29 +565,24 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
-void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
+void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
 {
-    bitCapInt powerTest = result ? qPower : 0;
-
-    complex cmplx[CMPLX_NORM_LEN] = { nrm, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1) };
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
-
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     device_context->wait_events.resize(2);
 
-    queue.enqueueWriteBuffer(*cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec,
-        &(device_context->wait_events[0]));
-    queue.flush();
     queue.enqueueWriteBuffer(
         *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 3, bciArgs, &waitVec, &(device_context->wait_events[1]));
+    queue.flush();
+
+    queue.enqueueWriteBuffer(
+        *cmplxBuffer, CL_FALSE, 0, sizeof(complex), &nrm, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
     bitCapInt maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYM);
+    OCLDeviceCall ocl = device_context->Reserve(api_call);
     ocl.call.setArg(0, *stateBuffer);
     ocl.call.setArg(1, *ulongBuffer);
     ocl.call.setArg(2, *cmplxBuffer);
@@ -605,42 +600,20 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
     UpdateRunningNorm();
 }
 
+void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
+{
+    bitCapInt powerTest = result ? qPower : 0;
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
+
+    ApplyMx(OCL_API_APPLYM, bciArgs, nrm);
+}
+
 void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 {
-    complex cmplx[CMPLX_NORM_LEN] = { nrm, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1) };
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, mask, result, 0, 0, 0, 0, 0, 0, 0 };
 
-    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
-    device_context->wait_events.resize(2);
-
-    queue.enqueueWriteBuffer(*cmplxBuffer, CL_FALSE, 0, sizeof(complex) * CMPLX_NORM_LEN, cmplx, &waitVec,
-        &(device_context->wait_events[0]));
-    queue.flush();
-    queue.enqueueWriteBuffer(
-        *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 3, bciArgs, &waitVec, &(device_context->wait_events[1]));
-    queue.flush();
-
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLYMREG);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *cmplxBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
-
-    UpdateRunningNorm();
+    ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
 
 bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
