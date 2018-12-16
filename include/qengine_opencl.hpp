@@ -242,9 +242,9 @@ protected:
     void Sync();
 
     void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void DispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
+    void ArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
         bitCapInt valuesLength = 0, bool isParallel = false);
-    void CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
+    void CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
         const bitLenInt controlLen, unsigned char* values = NULL, bitCapInt valuesLength = 0, bool isParallel = false);
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
@@ -254,6 +254,8 @@ protected:
     void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /* Utility functions used by the operations above. */
+    cl::Event QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+        size_t localBuffSize = 0);
     void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
     real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);

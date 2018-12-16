@@ -146,6 +146,34 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
     }
     return gs;
 }
+cl::Event QEngineOCL::QueueCall(
+    OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
+{
+    // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
+    // other QEngineOCL instances, until we're done queueing it.
+    OCLDeviceCall ocl = device_context->Reserve(api_call);
+
+    // Load the arguments.
+    for (unsigned int i = 0; i < args.size(); i++) {
+        ocl.call.setArg(i, *args[i]);
+    }
+
+    // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
+    if (localBuffSize) {
+        ocl.call.setArg(args.size(), cl::Local(localBuffSize));
+    }
+
+    // Dispatch the primary kernel, to apply the gate.
+    cl::Event kernelEvent;
+    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
+    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(workItemCount), // global number of work items
+        cl::NDRange(localGroupSize), // local number (per group)
+        &kernelWaitVec, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+    queue.flush();
+    return kernelEvent;
+}
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
 {
@@ -381,13 +409,13 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     runningNorm = ONE_R1;
 }
 
-void QEngineOCL::DispatchCall(
+void QEngineOCL::ArithmeticCall(
     OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower, bool isParallel)
 {
-    CDispatchCall(api_call, bciArgs, NULL, 0, values, valuesPower, isParallel);
+    CArithmeticCall(api_call, bciArgs, NULL, 0, values, valuesPower, isParallel);
 }
 
-void QEngineOCL::CDispatchCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
+void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
     const bitLenInt controlLen, unsigned char* values, bitCapInt valuesPower, bool isParallel)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
@@ -510,48 +538,26 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             api_call = OCL_API_APPLY2X2;
         }
     }
-    // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
-    // other QEngineOCL instances, until we're done queueing it.
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *cmplxBuffer);
-    ocl.call.setArg(2, *ulongBuffer);
-    ocl.call.setArg(3, *powersBuffer);
-    if (doCalcNorm) {
-        ocl.call.setArg(4, cl::Local(sizeof(real1) * ngs));
-        ocl.call.setArg(5, *nrmBuffer);
-    }
 
-    // Dispatch the primary kernel, to apply the gate.
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    if (doCalcNorm) {
+        device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs,
+            { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer }, sizeof(real1) * ngs));
+    } else {
+        device_context->wait_events.push_back(
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer }));
+    }
 
     if (doCalcNorm) {
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-        // values into a single normalization constant. We want to do this in a non-blocking, asynchronous wat.
+        // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
+
+        // Until a norm calculation returns, don't change the stateVec length.
         runningNorm = ONE_R1;
+
         // This kernel is run on a single work group, but it lets us continue asynchronously.
         if (ngc / ngs > 1) {
-            OCLDeviceCall ocl2 = device_context->Reserve(OCL_API_NORMSUM);
-            ocl2.call.setArg(0, *nrmBuffer);
-            ocl2.call.setArg(1, cl::Local(sizeof(real1) * ngc / ngs));
-
-            cl::Event kernelEvent2;
-            std::vector<cl::Event> kernelWaitVec2 = device_context->ResetWaitEvents();
-            queue.enqueueNDRangeKernel(ocl2.call, cl::NullRange, // kernel, offset
-                cl::NDRange(ngc / ngs), // global number of work items
-                cl::NDRange(ngc / ngs), // local number (per group)
-                &kernelWaitVec2, // vector of events to wait for
-                &kernelEvent2); // handle to wait for the kernel
-            queue.flush();
-            device_context->wait_events.push_back(kernelEvent2);
+            device_context->wait_events.push_back(
+                QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs));
         }
 
         cl::Event readEvent;
@@ -577,24 +583,10 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
         *cmplxBuffer, CL_FALSE, 0, sizeof(complex), &nrm, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *cmplxBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, cmplxBuffer }));
 
     UpdateRunningNorm();
 }
@@ -676,23 +668,10 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         otherStateBuffer = toCopy->MakeStateVecBuffer(otherStateVec);
     }
 
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *otherStateBuffer);
-    ocl.call.setArg(2, *ulongBuffer);
-    ocl.call.setArg(3, *nStateBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
     runningNorm = ONE_R1;
 
-    kernelEvent.wait();
+    QueueCall(OCL_API_COHERE, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer }).wait();
+
     ResetStateVec(nStateVec, nStateBuffer);
 
     return result;
@@ -928,33 +907,17 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
     queue.flush();
     device_context->wait_events.push_back(writeEvent);
 
-    real1 oneChance = ZERO_R1;
-
     bitCapInt maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    clFinish();
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nrmBuffer);
-    ocl.call.setArg(3, cl::Local(sizeof(real1) * ngs));
+    device_context->wait_events.push_back(
+        QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs));
 
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    device_context->wait_events.push_back(kernelEvent);
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
     queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec2);
 
-    oneChance = ParSum(nrmArray, ngc / ngs);
+    real1 oneChance = ParSum(nrmArray, ngc / ngs);
     cl::Event unmapEvent;
     queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
     device_context->wait_events.push_back(unmapEvent);
@@ -1017,30 +980,18 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
-    cl::Buffer probsBuffer =
-        cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+    BufferPtr probsBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBREGALL);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, probsBuffer);
+    device_context->wait_events.push_back(
+        QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer }));
 
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    device_context->wait_events.push_back(kernelEvent);
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
-    queue.enqueueReadBuffer(probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec2);
+    queue.enqueueReadBuffer(*probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec2);
 }
 
 // Returns probability of permutation of the register
@@ -1076,30 +1027,16 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     bitCapInt* skipPowers = new bitCapInt[length];
     std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
 
-    cl::Buffer qPowersBuffer =
-        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * length, skipPowers);
+    BufferPtr qPowersBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * length, skipPowers);
 
     bitCapInt maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBMASK);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nrmBuffer);
-    ocl.call.setArg(3, qPowersBuffer);
-    ocl.call.setArg(4, cl::Local(sizeof(real1) * ngs));
+    device_context->wait_events.push_back(QueueCall(
+        OCL_API_PROBMASK, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer, qPowersBuffer }, sizeof(real1) * ngs));
 
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    device_context->wait_events.push_back(kernelEvent);
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
     queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec2);
@@ -1169,43 +1106,30 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         *ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * 4, bciArgs, &waitVec, &(device_context->wait_events[0]));
     queue.flush();
 
-    cl::Buffer probsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+    BufferPtr probsBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);
 
-    cl::Buffer qPowersBuffer =
-        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * length, powers);
+    BufferPtr qPowersBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * length, powers);
 
     bitCapInt* skipPowers = new bitCapInt[skipLength];
     std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
 
-    cl::Buffer qSkipPowersBuffer =
-        cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * skipLength, skipPowers);
+    BufferPtr qSkipPowersBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * skipLength, skipPowers);
 
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_PROBMASKALL);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, probsBuffer);
-    ocl.call.setArg(3, qPowersBuffer);
-    ocl.call.setArg(4, qSkipPowersBuffer);
+    device_context->wait_events.push_back(QueueCall(
+        OCL_API_PROBMASKALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer }));
 
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    device_context->wait_events.push_back(kernelEvent);
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
-    queue.enqueueReadBuffer(probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec2);
+    queue.enqueueReadBuffer(*probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, &waitVec2);
 
     delete[] powers;
     delete[] skipPowers;
@@ -1224,7 +1148,7 @@ void QEngineOCL::X(bitLenInt start, bitLenInt length)
     bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
 
-    DispatchCall(OCL_API_X, bciArgs);
+    ArithmeticCall(OCL_API_X, bciArgs);
 }
 
 /// Bitwise swap
@@ -1240,7 +1164,7 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
     otherMask ^= reg1Mask | reg2Mask;
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
 
-    DispatchCall(OCL_API_SWAP, bciArgs);
+    ArithmeticCall(OCL_API_SWAP, bciArgs);
 }
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
@@ -1250,7 +1174,7 @@ void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenIn
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /// "Circular shift left" - shift bits left, and carry last bits.
@@ -1268,7 +1192,7 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, co
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, start, toMod, 0, 0, 0, 0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /// Add or Subtract integer (without sign or carry, with controls)
@@ -1291,7 +1215,7 @@ void QEngineOCL::CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, c
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> controlLen, regMask, otherMask, lengthPower, start, toMod,
         controlLen, controlMask, 0, 0 };
 
-    CDispatchCall(api_call, bciArgs, controlPowers, controlLen);
+    CArithmeticCall(api_call, bciArgs, controlPowers, controlLen);
 
     delete[] controlPowers;
 }
@@ -1342,7 +1266,7 @@ void QEngineOCL::INTC(
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, regMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0,
         0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (without sign, with carry) */
@@ -1382,7 +1306,7 @@ void QEngineOCL::INTS(
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, overflowMask, start, toMod, 0, 0,
         0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (without sign, with carry) */
@@ -1410,7 +1334,7 @@ void QEngineOCL::INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, inOutMask, otherMask, lengthPower, overflowMask, carryMask,
         start, toMod, 0, 0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (with sign, with carry) */
@@ -1452,7 +1376,7 @@ void QEngineOCL::INTSC(
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, inOutMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0,
         0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (with sign, with carry) */
@@ -1492,7 +1416,7 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start,
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, inOutMask, otherMask, start, toMod, nibbleCount, 0, 0, 0, 0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (BCD) */
@@ -1522,7 +1446,7 @@ void QEngineOCL::INTBCDC(
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, inOutMask, otherMask, carryMask, start, toMod, nibbleCount, 0, 0,
         0 };
 
-    DispatchCall(api_call, bciArgs);
+    ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (BCD, with carry) */
@@ -1640,28 +1564,15 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuf
         &(device_context->wait_events[1]));
     queue.flush();
 
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nStateBuffer);
     if (controlBuffer) {
-        ocl.call.setArg(3, *controlBuffer);
+        QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nStateBuffer, controlBuffer }).wait();
+    } else {
+        QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nStateBuffer }).wait();
     }
 
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-
-    kernelEvent.wait();
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
@@ -1725,7 +1636,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0, 0, 0, 0 };
 
-    DispatchCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
+    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
 
     real1 prob;
     real1 average = ZERO_R1;
@@ -1770,7 +1681,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, indexStart, inputMask, valueStart, outputMask, otherMask,
         carryIn, carryMask, lengthPower, valueBytes };
 
-    DispatchCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
+    ArithmeticCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;
@@ -1818,23 +1729,10 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs)
     queue.flush();
     device_context->wait_events.push_back(writeEvent);
 
-    bitCapInt maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer }));
 }
 
 void QEngineOCL::PhaseFlip()
@@ -1938,22 +1836,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     queue.flush();
     device_context->wait_events.push_back(writeEvent);
 
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *(toCompare->stateBuffer));
-    ocl.call.setArg(2, *ulongBuffer);
-    ocl.call.setArg(3, *nrmBuffer);
-    ocl.call.setArg(4, cl::Local(sizeof(real1) * nrmGroupSize));
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    waitVec.clear();
-    waitVec.push_back(kernelEvent);
+    device_context->wait_events.push_back(QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
+        { stateBuffer, toCompare->stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
 
     unsigned int size = (nrmGroupCount / nrmGroupSize);
     if (size == 0) {
@@ -1962,7 +1846,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     bool isSame = true;
     runningNorm = ZERO_R1;
-    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * size, &waitVec);
+    std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * size, &waitVec2);
     real1 sumSqrErr = ParSum(nrmArray, size);
     if (sumSqrErr > 0) {
         isSame = false;
@@ -2000,7 +1885,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
     }
 
     real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
-    cl::Buffer argsBuffer = cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
+    BufferPtr argsBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -2009,21 +1895,11 @@ void QEngineOCL::NormalizeState(real1 nrm)
     queue.flush();
     device_context->wait_events.push_back(writeEvent);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_NORMALIZE);
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, argsBuffer);
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    device_context->wait_events.push_back(kernelEvent);
+    device_context->wait_events.push_back(
+        QueueCall(OCL_API_NORMALIZE, ngc, ngs, { stateBuffer, ulongBuffer, argsBuffer }));
 
     runningNorm = ONE_R1;
 }
@@ -2042,21 +1918,8 @@ void QEngineOCL::UpdateRunningNorm()
     queue.flush();
     device_context->wait_events.push_back(writeEvent);
 
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nrmBuffer);
-    ocl.call.setArg(3, cl::Local(sizeof(real1) * nrmGroupSize));
-
-    cl::Event kernelEvent;
-    std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(nrmGroupCount), // global number of work items
-        cl::NDRange(nrmGroupSize), // local number (per group)
-        &kernelWaitVec, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
-    waitVec.clear();
-    waitVec.push_back(kernelEvent);
+    device_context->wait_events.push_back(QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize,
+        { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
 
     unsigned int size = (nrmGroupCount / nrmGroupSize);
     if (size == 0) {
@@ -2065,19 +1928,8 @@ void QEngineOCL::UpdateRunningNorm()
 
     // This kernel is run on a single work group, but it lets us continue asynchronously.
     if (size > 1) {
-        OCLDeviceCall ocl2 = device_context->Reserve(OCL_API_NORMSUM);
-        ocl2.call.setArg(0, *nrmBuffer);
-        ocl2.call.setArg(1, cl::Local(sizeof(real1) * size));
-
-        cl::Event kernelEvent2;
-        std::vector<cl::Event> kernelWaitVec2 = device_context->ResetWaitEvents();
-        queue.enqueueNDRangeKernel(ocl2.call, cl::NullRange, // kernel, offset
-            cl::NDRange(size), // global number of work items
-            cl::NDRange(size), // local number (per group)
-            &kernelWaitVec2, // vector of events to wait for
-            &kernelEvent2); // handle to wait for the kernel
-        queue.flush();
-        device_context->wait_events.push_back(kernelEvent2);
+        device_context->wait_events.push_back(
+            QueueCall(OCL_API_NORMSUM, size, size, { nrmBuffer }, sizeof(real1) * size));
     }
 
     cl::Event readEvent;

@@ -104,7 +104,7 @@ void kernel apply2x2unit(global cmplx* stateVec, constant real1* cmplxPtr, const
     }
 }
 
-void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, local real1* lProbBuffer, global real1* nrmParts)
+void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
 {
     //Bring everything into private memory as soon and as efficiently as possible.
 
