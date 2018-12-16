@@ -423,10 +423,10 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer;
-    cl::Buffer controlBuffer;
+    BufferPtr controlBuffer;
     if (controlLen > 0) {
-        controlBuffer =
-            cl::Buffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * controlLen, controlPowers);
+        controlBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * controlLen, controlPowers);
     }
 
     device_context->wait_events.resize(2);
@@ -451,35 +451,25 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
-    clFinish();
-    ocl.call.setArg(0, *stateBuffer);
-    ocl.call.setArg(1, *ulongBuffer);
-    ocl.call.setArg(2, *nStateBuffer);
-    cl::Buffer loadBuffer;
+    std::vector<BufferPtr> oclArgs = { stateBuffer, ulongBuffer, nStateBuffer, NULL };
+
+    BufferPtr loadBuffer;
     if (values) {
         if (isParallel) {
-            loadBuffer = cl::Buffer(
+            loadBuffer = std::make_shared<cl::Buffer>(
                 context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         } else {
-            loadBuffer = cl::Buffer(
+            loadBuffer = std::make_shared<cl::Buffer>(
                 context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         }
-        ocl.call.setArg(3, loadBuffer);
+        oclArgs[3] = loadBuffer;
     }
     if (controlLen > 0) {
-        ocl.call.setArg(3, controlBuffer);
+        oclArgs[3] = controlBuffer;
     }
 
-    cl::Event kernelEvent;
-    queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(ngc), // global number of work items
-        cl::NDRange(ngs), // local number (per group)
-        NULL, // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-    queue.flush();
+    QueueCall(api_call, ngc, ngs, oclArgs).wait();
 
-    kernelEvent.wait();
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
