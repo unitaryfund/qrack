@@ -35,9 +35,9 @@ namespace Qrack {
     queue.enqueueFillBuffer(buff, value, 0, size, waitVec, &(device_context->wait_events.back()));                     \
     queue.flush()
 
-#define WAIT_COPY(waitVec, buff1, buff2, size)                                                                         \
+#define WAIT_COPY(buff1, buff2, size)                                                                                  \
     device_context->wait_events.emplace_back();                                                                        \
-    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec, &(device_context->wait_events.back()));                 \
+    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, NULL, &(device_context->wait_events.back()));                    \
     device_context->wait_events.back().wait();                                                                         \
     device_context->wait_events.pop_back()
 
@@ -86,7 +86,7 @@ void QEngineOCL::LockSync(cl_int flags)
     if (!stateVec) {
         stateVec = AllocStateVec(maxQPower, true);
         BufferPtr nStateBuffer = MakeStateVecBuffer(stateVec);
-        WAIT_COPY(NULL, *stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
+        WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
         stateBuffer = nStateBuffer;
     }
 
@@ -107,7 +107,7 @@ void QEngineOCL::UnlockSync()
 
         unmapEvent.wait();
 
-        WAIT_COPY(NULL, *stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
+        WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
         free(stateVec);
@@ -333,7 +333,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             complex* nStateVec = AllocStateVec(maxQPower, true);
             BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-            WAIT_COPY(NULL, *stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
+            WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
             // Host RAM should now by synchronized.
             queue = nQueue;
@@ -809,7 +809,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
         BufferPtr nSB = MakeStateVecBuffer(NULL);
 
-        WAIT_COPY(NULL, *stateBuffer, *nSB, sizeof(complex) * maxQPower);
+        WAIT_COPY(*stateBuffer, *nSB, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
         free(stateVec);
