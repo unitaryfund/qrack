@@ -20,11 +20,20 @@ namespace Qrack {
 #define CMPLX_NORM_LEN 5
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
-    do {                                                                                                               \
-        device_context->wait_events.emplace_back();                                                                    \
-        queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, &waitVec, &(device_context->wait_events.back()));     \
-        queue.flush();                                                                                                 \
-    } while (0)
+    device_context->wait_events.emplace_back();                                                                        \
+    queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, &waitVec, &(device_context->wait_events.back()));         \
+    queue.flush();
+
+#define DISPATCH_READ(waitVec, buff, size, array)                                                                      \
+    device_context->wait_events.emplace_back();                                                                        \
+    queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, &waitVec, &(device_context->wait_events.back()));          \
+    queue.flush();
+
+#define WAIT_REAL1_SUM(waitVec, buff, size, array, sumPtr)                                                             \
+    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size), &waitVec2);                          \
+    *(sumPtr) = ParSum(array, size);                                                                                   \
+    device_context->wait_events.emplace_back();                                                                        \
+    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events.back()))
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
     complex phaseFac, bool doNorm, bool useHostMem, int devID)
@@ -552,10 +561,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
                 QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs));
         }
 
-        cl::Event readEvent;
         std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+
         // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
         // "runningNorm" variable.
+        cl::Event readEvent;
         queue.enqueueReadBuffer(*nrmBuffer, CL_FALSE, 0, sizeof(real1), &runningNorm, &waitVec2, &readEvent);
         queue.flush();
         device_context->wait_events.push_back(readEvent);
@@ -845,12 +855,9 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
         QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs));
 
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
-    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec2);
 
-    real1 oneChance = ParSum(nrmArray, ngc / ngs);
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
-    device_context->wait_events.push_back(unmapEvent);
+    real1 oneChance;
+    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &oneChance);
 
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
@@ -940,7 +947,6 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
         v &= v - 1; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
-    real1 oneChance = ZERO_R1;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, mask, permutation, length, 0, 0, 0, 0, 0, 0 };
 
@@ -963,11 +969,9 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
-    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (ngc / ngs), &waitVec2);
-    oneChance = ParSum(nrmArray, ngc / ngs);
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
-    device_context->wait_events.push_back(unmapEvent);
+    real1 oneChance;
+    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &oneChance);
+
     delete[] skipPowers;
 
     if (oneChance > ONE_R1)
@@ -1759,20 +1763,13 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         size = 1;
     }
 
-    bool isSame = true;
     runningNorm = ZERO_R1;
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
-    queue.enqueueMapBuffer(*nrmBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * size, &waitVec2);
-    real1 sumSqrErr = ParSum(nrmArray, size);
-    if (sumSqrErr > 0) {
-        isSame = false;
-    }
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*nrmBuffer, nrmArray, NULL, &unmapEvent);
-    queue.flush();
-    device_context->wait_events.push_back(unmapEvent);
 
-    return isSame;
+    real1 sumSqrErr;
+    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, size, nrmArray, &sumSqrErr);
+
+    return (sumSqrErr == 0);
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)
