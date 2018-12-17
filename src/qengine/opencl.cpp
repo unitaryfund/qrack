@@ -26,7 +26,7 @@ namespace Qrack {
 
 #define DISPATCH_READ(waitVec, buff, size, array)                                                                      \
     device_context->wait_events.emplace_back();                                                                        \
-    queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, &waitVec, &(device_context->wait_events.back()));          \
+    queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, waitVec, &(device_context->wait_events.back()));           \
     queue.flush()
 
 #define DISPATCH_FILL(waitVec, buff, size, value)                                                                      \
@@ -568,10 +568,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
         // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
         // "runningNorm" variable.
-        cl::Event readEvent;
-        queue.enqueueReadBuffer(*nrmBuffer, CL_FALSE, 0, sizeof(real1), &runningNorm, &waitVec2, &readEvent);
-        queue.flush();
-        device_context->wait_events.push_back(readEvent);
+        DISPATCH_READ(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
     }
 }
 
