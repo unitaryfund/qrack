@@ -684,8 +684,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     } else {
         api_call = OCL_API_DISPOSEPROB;
     }
-    OCLDeviceCall prob_call = device_context->Reserve(api_call);
-    OCLDeviceCall amp_call = device_context->Reserve(OCL_API_DECOHEREAMP);
 
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
