@@ -22,12 +22,12 @@ namespace Qrack {
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
     device_context->wait_events.emplace_back();                                                                        \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, &waitVec, &(device_context->wait_events.back()));         \
-    queue.flush();
+    queue.flush()
 
 #define DISPATCH_READ(waitVec, buff, size, array)                                                                      \
     device_context->wait_events.emplace_back();                                                                        \
     queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, &waitVec, &(device_context->wait_events.back()));          \
-    queue.flush();
+    queue.flush()
 
 #define WAIT_REAL1_SUM(waitVec, buff, size, array, sumPtr)                                                             \
     queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size), &waitVec2);                          \
