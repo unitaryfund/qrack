@@ -647,6 +647,9 @@ void QUnit::ApplyControlledSingleBit(
             unit->ApplyControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
             if (DoesOperatorPhaseShift(mtrx)) {
                 shards[target].isPhaseDirty = true;
+                for (bitLenInt i = 0; i < controlLen; i++) {
+                    shards[controls[i]].isPhaseDirty = true;
+                }
             }
             return TrySeparate({ target });
         },
@@ -661,6 +664,9 @@ void QUnit::ApplyAntiControlledSingleBit(
             unit->ApplyAntiControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
             if (DoesOperatorPhaseShift(mtrx)) {
                 shards[target].isPhaseDirty = true;
+                for (bitLenInt i = 0; i < controlLen; i++) {
+                    shards[controls[i]].isPhaseDirty = true;
+                }
             }
             return TrySeparate({ target });
         },
@@ -697,6 +703,9 @@ void QUnit::CSqrtSwap(
             unit->CSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
             shards[qubit1].isPhaseDirty = true;
             shards[qubit2].isPhaseDirty = true;
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                shards[controls[i]].isPhaseDirty = true;
+            }
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
@@ -710,6 +719,9 @@ void QUnit::AntiCSqrtSwap(
             unit->AntiCSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
             shards[qubit1].isPhaseDirty = true;
             shards[qubit2].isPhaseDirty = true;
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                shards[controls[i]].isPhaseDirty = true;
+            }
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
@@ -723,6 +735,9 @@ void QUnit::CISqrtSwap(
             unit->CISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
             shards[qubit1].isPhaseDirty = true;
             shards[qubit2].isPhaseDirty = true;
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                shards[controls[i]].isPhaseDirty = true;
+            }
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
@@ -736,6 +751,9 @@ void QUnit::AntiCISqrtSwap(
             unit->AntiCISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
             shards[qubit1].isPhaseDirty = true;
             shards[qubit2].isPhaseDirty = true;
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                shards[controls[i]].isPhaseDirty = true;
+            }
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
@@ -760,12 +778,11 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     if (prob <= min_norm) {
         return;
     } else if (min_norm >= (ONE_R1 - prob)) {
-        // The following commented code block should be safe, theoretically but it isn't.
-        // for (i = 0; i < controlLen; i++) {
-        //    if (!shards[controls[i]].isPhaseDirty) {
-        //        ForceM(controls[i], !anti);
-        //    }
-        //}
+        for (i = 0; i < controlLen; i++) {
+            if (!shards[controls[i]].isPhaseDirty) {
+                ForceM(controls[i], !anti);
+            }
+        }
 
         fn();
         return;
