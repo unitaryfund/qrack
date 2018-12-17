@@ -21,6 +21,7 @@
 
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
+#include "hamiltonian.hpp"
 
 // The state vector must be an aligned piece of RAM, to be used by OpenCL.
 // We align to an ALIGN_SIZE byte boundary.
@@ -98,6 +99,7 @@ protected:
     uint32_t randomSeed;
     std::shared_ptr<std::default_random_engine> rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
+    bool doNormalize;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -120,9 +122,12 @@ protected:
         return pow;
     }
 
+    template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
+
 public:
-    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr)
+    QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
+        , doNormalize(doNorm)
     {
         SetQubitCount(n);
 
@@ -163,7 +168,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm) = 0;
 
     /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm) = 0;
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0)) = 0;
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -314,6 +319,23 @@ public:
      */
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+
+    /**
+     * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
+     * applied by left-multiplication in low-to-high vector index order on the state vector.
+     *
+     * \warning Hamiltonian components might not commute.
+     *
+     * As a general point of linear algebra, where A and B are linear operators, \f{equation}{e^{i (A + B) t} = e^{i A
+     * t} e^{i B t} \f} might NOT hold, if the operators A and B do not commute. As a rule of thumb, A will commute
+     * with B at least in the case that A and B act on entirely different sets of qubits. However, for defining the
+     * intended Hamiltonian, the programmer can be guaranteed that the exponential factors will be applied
+     * right-to-left, by left multiplication, in the order \f{equation}{ e^{i H_{N - 1} t} e^{i H_{N - 2} t} \ldots
+     * e^{i H_0 t} \left|\psi \rangle\right. .\f} (For example, if A and B are single bit gates acting on the same
+     * bit, form their composition into one gate by the intended right-to-left fusion and apply them as a single
+     * HamiltonianOp.)
+     */
+    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
 
     /**
      * Apply a swap with arbitrary control bits.
@@ -610,6 +632,13 @@ public:
      * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
      */
     virtual void Exp(real1 radians, bitLenInt qubitIndex);
+
+    /**
+     *  Exponentiation of arbitrary 2x2 gate
+     *
+     * Applies \f$ e^{-i*Op*I} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
+     */
+    virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
@@ -1378,6 +1407,15 @@ public:
      */
 
     virtual bool ApproxCompare(QInterfacePtr toCompare) = 0;
+
+    /**
+     * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability
+     * or measurement operation. (On an actual quantum computer, the state should never require manual normalization.)
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+
+    virtual void UpdateRunningNorm() = 0;
 
     /** @} */
 };

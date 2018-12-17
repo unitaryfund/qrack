@@ -12,6 +12,8 @@
 
 #include "qinterface.hpp"
 
+#include <future>
+
 namespace Qrack {
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
@@ -62,6 +64,69 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
     ApplySingleBit(expIdentity, true, qubit);
 }
 
+void matrix2x2Mul(real1 scalar, complex* left, complex* right, complex* out)
+{
+    out[0] = scalar * ((left[0] * right[0]) + (left[1] * right[2]));
+    out[1] = scalar * ((left[0] * right[1]) + (left[1] * right[3]));
+    out[2] = scalar * ((left[2] * right[0]) + (left[3] * right[2]));
+    out[3] = scalar * ((left[2] * right[1]) + (left[3] * right[3]));
+}
+
+void matrix2x2Add(complex* left, complex* right, complex* out)
+{
+    out[0] = left[0] + right[0];
+    out[1] = left[1] + right[1];
+    out[2] = left[2] + right[2];
+    out[3] = left[3] + right[3];
+}
+
+/// Exponentiate of arbitrary single bit gate
+void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+{
+    // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
+    // basis, and apply.
+
+    // Diagonal matrices are a special case.
+    bool isDiag = true;
+    if (norm(matrix2x2[1]) > min_norm) {
+        isDiag = false;
+    } else if (norm(matrix2x2[2]) > min_norm) {
+        isDiag = false;
+    }
+
+    // Note: For a (2x2) hermitian input gate, this should be a theoretically unitary output transformation.
+    complex expOfGate[4];
+
+    if (isDiag) {
+        expOfGate[0] =
+            ((real1)exp(-imag(matrix2x2[0]))) * complex((real1)cos(real(matrix2x2[0])), (real1)sin(real(matrix2x2[0])));
+        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[3] =
+            ((real1)exp(-imag(matrix2x2[3]))) * complex((real1)cos(real(matrix2x2[3])), (real1)sin(real(matrix2x2[3])));
+    } else {
+        real1 factorial = ONE_R1;
+        complex tempPower[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+            complex(ONE_R1, ZERO_R1) };
+        complex tempPower2[4];
+
+        std::copy(tempPower, tempPower + 4, expOfGate);
+
+        for (int i = 0; i < 4; i++) {
+            tempPower[i] *= complex(ZERO_R1, ONE_R1);
+        }
+
+        for (int fac = 1; factorial > (min_norm * min_norm); fac++) {
+            factorial /= fac;
+            matrix2x2Mul(ONE_R1 / fac, matrix2x2, tempPower, tempPower2);
+            matrix2x2Add(expOfGate, tempPower2, expOfGate);
+            std::copy(tempPower2, tempPower2 + 4, tempPower);
+        }
+    }
+
+    ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
+}
+
 /// Exponentiate Pauli X operator
 void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {
@@ -96,7 +161,7 @@ void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
 
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    const complex mtrx[4] = { complex(ONE_R1, 0), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+    const complex mtrx[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(cosine, sine) };
     bitLenInt controls[1] = { control };
     ApplyControlledSingleBit(controls, 1, target, mtrx);

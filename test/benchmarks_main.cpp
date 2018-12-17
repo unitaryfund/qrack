@@ -55,7 +55,10 @@ int main(int argc, char* argv[])
         Opt(opencl_multi)["--proc-opencl-multi"]("Multiprocessor OpenCL tests") |
         Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
                                                               "accurate computation. Usually makes QEngine types "
-                                                              "faster and QUnit types slower.)");
+                                                              "faster.)") |
+        Opt(async_time)["--async-timing"](
+            "Base benchmarks on how quickly (asynchronous) methods return, rather than how long it takes to directly "
+            "chain tests. (OpenCL code is asynchronous, and CPU code can run while kernels are dispatched to GPU.)");
 
     session.cli(cli);
 
@@ -196,11 +199,4 @@ QInterfaceTestFixture::QInterfaceTestFixture()
 
     std::shared_ptr<std::default_random_engine> rng = std::make_shared<std::default_random_engine>();
     rng->seed(rngSeed);
-
-    if (disable_normalization) {
-        qftReg = CreateQuantumInterface(
-            testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, complex(ONE_R1, ZERO_R1), true);
-    } else {
-        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
-    }
 }

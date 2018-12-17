@@ -30,32 +30,33 @@ namespace Qrack {
  * Initialize a coherent unit with qBitCount number of bits, to initState unsigned integer permutation state, with
  * a shared random number generator, with a specific phase.
  *
+ * (Note that "useHostMem" is required as a parameter to normalize constructors for use with the
+ * CreateQuantumInterface() factory, but it serves no function in QEngineCPU.)
+ *
  * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool partialInit)
-    : QEngine(qBitCount, rgp)
+    complex phaseFac, bool doNorm, bool useHostMem)
+    : QEngine(qBitCount, rgp, doNorm)
     , stateVec(NULL)
 {
-    doNormalize = true;
     SetConcurrencyLevel(std::thread::hardware_concurrency());
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
 
-    runningNorm = partialInit ? ZERO_R1 : ONE_R1;
+    runningNorm = ONE_R1;
     SetQubitCount(qBitCount);
 
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-    if (!partialInit) {
-        if (phaseFac == complex(-999.0, -999.0)) {
-            real1 angle = Rand() * 2.0 * PI_R1;
-            stateVec[initState] = complex(cos(angle), sin(angle));
-        } else {
-            stateVec[initState] = phaseFac;
-        }
+
+    if (phaseFac == complex(-999.0, -999.0)) {
+        real1 angle = Rand() * 2.0 * PI_R1;
+        stateVec[initState] = complex(cos(angle), sin(angle));
+    } else {
+        stateVec[initState] = phaseFac;
     }
 }
 
@@ -78,11 +79,18 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
     return stateVec[perm];
 }
 
-void QEngineCPU::SetPermutation(bitCapInt perm)
+void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-    real1 angle = Rand() * 2.0 * PI_R1;
-    stateVec[perm] = complex(cos(angle), sin(angle));
+
+    if (phaseFac == complex(-999.0, -999.0)) {
+        real1 angle = Rand() * 2.0 * PI_R1;
+        stateVec[perm] = complex(cos(angle), sin(angle));
+    } else {
+        real1 nrm = abs(phaseFac);
+        stateVec[perm] = phaseFac / nrm;
+    }
+
     runningNorm = ONE_R1;
 }
 
@@ -587,7 +595,7 @@ void QEngineCPU::NormalizeState(real1 nrm)
 
 void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
 
-complex* QEngineCPU::AllocStateVec(bitCapInt elemCount)
+complex* QEngineCPU::AllocStateVec(bitCapInt elemCount, bool ovrride)
 {
 // elemCount is always a power of two, but might be smaller than ALIGN_SIZE
 #ifdef __APPLE__

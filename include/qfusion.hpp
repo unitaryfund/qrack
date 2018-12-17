@@ -30,6 +30,8 @@ class QFusion : public QInterface {
 protected:
     static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
+    complex phaseFactor;
+    bool doNormalize;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;
@@ -44,13 +46,14 @@ protected:
 
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr);
+        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
+        bool doNorm = true, bool useHostMem = false);
     QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetPermutation(bitCapInt perm);
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Cohere;
@@ -147,6 +150,8 @@ public:
         SetQubitCount(0);
         return toRet;
     }
+
+    virtual void UpdateRunningNorm();
 
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in

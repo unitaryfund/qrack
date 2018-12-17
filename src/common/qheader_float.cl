@@ -11,6 +11,8 @@
 // for details.
 
 #define cmplx float2
+#define cmplx2 float4
+#define cmplx4 float8
 #define real1 float
 #define ZERO_R1 0.0f
 #define SineShift M_PI_2_F
