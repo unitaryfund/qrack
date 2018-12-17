@@ -19,6 +19,7 @@ namespace Qrack {
 
 #define CMPLX_NORM_LEN 5
 
+// These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
     device_context->wait_events.emplace_back();                                                                        \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec, &(device_context->wait_events.back()));          \
@@ -33,6 +34,12 @@ namespace Qrack {
     device_context->wait_events.emplace_back();                                                                        \
     queue.enqueueFillBuffer(buff, value, 0, size, waitVec, &(device_context->wait_events.back()));                     \
     queue.flush()
+
+#define WAIT_COPY(waitVec, buff1, buff2, size)                                                                         \
+    device_context->wait_events.emplace_back();                                                                        \
+    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec, &(device_context->wait_events.back()));                 \
+    device_context->wait_events.back().wait();                                                                         \
+    device_context->wait_events.pop_back()
 
 #define WAIT_REAL1_SUM(waitVec, buff, size, array, sumPtr)                                                             \
     queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size), waitVec);                            \
@@ -79,9 +86,7 @@ void QEngineOCL::LockSync(cl_int flags)
     if (!stateVec) {
         stateVec = AllocStateVec(maxQPower, true);
         BufferPtr nStateBuffer = MakeStateVecBuffer(stateVec);
-        cl::Event copyEvent;
-        queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
-        copyEvent.wait();
+        WAIT_COPY(NULL, *stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
         stateBuffer = nStateBuffer;
     }
 
@@ -102,8 +107,7 @@ void QEngineOCL::UnlockSync()
 
         unmapEvent.wait();
 
-        queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
-        copyEvent.wait();
+        WAIT_COPY(NULL, *stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
         free(stateVec);
@@ -328,10 +332,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
             complex* nStateVec = AllocStateVec(maxQPower, true);
             BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-            cl::Event copyEvent;
-            oldQueue.enqueueCopyBuffer(
-                *stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
-            copyEvent.wait();
+
+            WAIT_COPY(NULL, *stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
             // Host RAM should now by synchronized.
             queue = nQueue;
@@ -807,9 +809,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
         BufferPtr nSB = MakeStateVecBuffer(NULL);
 
-        cl::Event copyEvent;
-        queue.enqueueCopyBuffer(*stateBuffer, *nSB, 0, 0, sizeof(complex) * maxQPower, NULL, &copyEvent);
-        copyEvent.wait();
+        WAIT_COPY(NULL, *stateBuffer, *nSB, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
         free(stateVec);
