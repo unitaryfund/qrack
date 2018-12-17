@@ -161,7 +161,7 @@ void QEngine::ApplyControlledSingleBit(
     if (controlLen == 0) {
         ApplySingleBit(mtrx, true, target);
     } else {
-        ApplyControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
+        ApplyControlled2x2(controls, controlLen, target, mtrx, false);
         if (doNormalize) {
             UpdateRunningNorm();
         }
@@ -171,10 +171,13 @@ void QEngine::ApplyControlledSingleBit(
 void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    ApplyAntiControlled2x2(controls, controlLen, target, mtrx, controlLen == 0);
-
-    if (doNormalize && controlLen) {
-        UpdateRunningNorm();
+    if (controlLen == 0) {
+        ApplySingleBit(mtrx, true, target);
+    } else {
+        ApplyAntiControlled2x2(controls, controlLen, target, mtrx, false);
+        if (doNormalize) {
+            UpdateRunningNorm();
+        }
     }
 }
 

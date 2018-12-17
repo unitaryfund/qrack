@@ -387,7 +387,25 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                 }
 
                 if (shard.isPhaseDirty) {
-                    real1 phaseDiff = std::abs(arg(testBit->GetAmplitude(0)) - arg(testBit->GetAmplitude(1)));
+                    complex amp0 = testBit->GetAmplitude(0);
+                    complex phase0;
+                    if (norm(amp0) < min_norm) {
+                        shards[bits[i]].isPhaseDirty = false;
+                        continue;
+                    } else {
+                        phase0 = arg(amp0);
+                    }
+
+                    complex amp1 = testBit->GetAmplitude(1);
+                    complex phase1;
+                    if (norm(amp1) < min_norm) {
+                        shards[bits[i]].isPhaseDirty = false;
+                        continue;
+                    } else {
+                        phase1 = arg(amp0);
+                    }
+
+                    real1 phaseDiff = std::abs(phase0 - phase1);
                     if (phaseDiff > M_PI) {
                         phaseDiff = 2 * M_PI - phaseDiff;
                     }
@@ -567,11 +585,21 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 #define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
 #define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
 
-void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2) { EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2); }
+void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isPhaseDirty = true;
+}
 
-void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2) { EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2); }
+void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isPhaseDirty = true;
+}
 
-void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
 {
     bool doesShift = false;
     real1 phase = -M_PI * 2;
@@ -596,9 +624,14 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit
         }
     }
 
+    return doesShift;
+}
+
+void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+{
     // If this operation can induce a superposition of phase, mark the shard "isPhaseDirty." This is necessary to track
     // entanglement.
-    if (doesShift) {
+    if (DoesOperatorPhaseShift(mtrx)) {
         shards[qubit].isPhaseDirty = true;
         // This operation might make a "phase dirty" bit into a "phase clean" bit for entanglement, but we can't detect
         // that, yet.
@@ -612,6 +645,9 @@ void QUnit::ApplyControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, { target }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->ApplyControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
+            if (DoesOperatorPhaseShift(mtrx)) {
+                shards[target].isPhaseDirty = true;
+            }
             return TrySeparate({ target });
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
@@ -623,6 +659,9 @@ void QUnit::ApplyAntiControlledSingleBit(
     ApplyEitherControlled(controls, controlLen, { target }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->ApplyAntiControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
+            if (DoesOperatorPhaseShift(mtrx)) {
+                shards[target].isPhaseDirty = true;
+            }
             return TrySeparate({ target });
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
@@ -656,6 +695,8 @@ void QUnit::CSqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            shards[qubit1].isPhaseDirty = true;
+            shards[qubit2].isPhaseDirty = true;
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
@@ -667,6 +708,8 @@ void QUnit::AntiCSqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            shards[qubit1].isPhaseDirty = true;
+            shards[qubit2].isPhaseDirty = true;
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
@@ -678,6 +721,8 @@ void QUnit::CISqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            shards[qubit1].isPhaseDirty = true;
+            shards[qubit2].isPhaseDirty = true;
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
@@ -689,6 +734,8 @@ void QUnit::AntiCISqrtSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+            shards[qubit1].isPhaseDirty = true;
+            shards[qubit2].isPhaseDirty = true;
             return TrySeparate({ qubit1, qubit2 });
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
@@ -713,11 +760,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     if (prob <= min_norm) {
         return;
     } else if (min_norm >= (ONE_R1 - prob)) {
-        for (i = 0; i < controlLen; i++) {
-            if (!shards[controls[i]].isPhaseDirty) {
-                ForceM(controls[i], !anti);
-            }
-        }
+        // The following commented code block should be safe, theoretically but it isn't.
+        // for (i = 0; i < controlLen; i++) {
+        //    if (!shards[controls[i]].isPhaseDirty) {
+        //        ForceM(controls[i], !anti);
+        //    }
+        //}
 
         fn();
         return;
