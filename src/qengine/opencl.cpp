@@ -167,6 +167,7 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
     }
     return gs;
 }
+
 cl::Event QEngineOCL::QueueCall(
     OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
 {
@@ -450,22 +451,17 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
             context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapInt) * controlLen, controlPowers);
     }
 
-    device_context->wait_events.resize(2);
-
-    queue.enqueueWriteBuffer(*ulongBuffer, CL_FALSE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs, &waitVec,
-        &(device_context->wait_events[0]));
-    queue.flush();
+    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * BCI_ARG_LEN, bciArgs);
 
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen > 0) {
+        device_context->wait_events.emplace_back();
         queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower, &waitVec,
-            &(device_context->wait_events[1]));
+            &(device_context->wait_events.back()));
         queue.flush();
     } else {
-        queue.enqueueFillBuffer(*nStateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPower, &waitVec,
-            &(device_context->wait_events[1]));
-        queue.flush();
+        DISPATCH_FILL(&waitVec, *nStateBuffer, sizeof(complex) * maxQPower, complex(ZERO_R1, ZERO_R1));
     }
 
     bitCapInt maxI = bciArgs[0];
