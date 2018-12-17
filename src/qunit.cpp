@@ -397,7 +397,7 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                     }
 
                     complex amp1 = testBit->GetAmplitude(1);
-                    complex phase1;
+                    real1 phase1;
                     if (norm(amp1) < min_norm) {
                         shards[bits[i]].isPhaseDirty = false;
                         continue;
