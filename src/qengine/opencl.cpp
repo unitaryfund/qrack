@@ -471,7 +471,7 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    std::vector<BufferPtr> oclArgs = { stateBuffer, ulongBuffer, nStateBuffer, NULL };
+    std::vector<BufferPtr> oclArgs = { stateBuffer, ulongBuffer, nStateBuffer };
 
     BufferPtr loadBuffer;
     if (values) {
@@ -482,10 +482,10 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
             loadBuffer = std::make_shared<cl::Buffer>(
                 context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         }
-        oclArgs[3] = loadBuffer;
+        oclArgs.push_back(loadBuffer);
     }
     if (controlLen > 0) {
-        oclArgs[3] = controlBuffer;
+        oclArgs.push_back(controlBuffer);
     }
 
     QueueCall(api_call, ngc, ngs, oclArgs).wait();
