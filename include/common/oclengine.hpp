@@ -133,7 +133,11 @@ public:
         , context_id(cntxt_id)
         , mutex()
     {
-        queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
+        cl_int error;
+        queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
+        if (error != CL_SUCCESS) {
+            queue = cl::CommandQueue(context, d);
+        }
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
