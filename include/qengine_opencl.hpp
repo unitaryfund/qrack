@@ -95,8 +95,12 @@ public:
     ~QEngineOCL()
     {
         clFinish();
-        delete[] stateVec;
-        delete[] nrmArray;
+        if (stateVec) {
+            free(stateVec);
+        }
+        if (nrmArray) {
+            free(nrmArray);
+        }
     }
 
     /**
