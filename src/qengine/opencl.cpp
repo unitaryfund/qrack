@@ -435,13 +435,13 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 }
 
 void QEngineOCL::ArithmeticCall(
-    OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower, bool isParallel)
+    OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values, bitCapInt valuesPower)
 {
-    CArithmeticCall(api_call, bciArgs, NULL, 0, values, valuesPower, isParallel);
+    CArithmeticCall(api_call, bciArgs, NULL, 0, values, valuesPower);
 }
 
 void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
-    const bitLenInt controlLen, unsigned char* values, bitCapInt valuesPower, bool isParallel)
+    const bitLenInt controlLen, unsigned char* values, bitCapInt valuesPower)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
@@ -475,13 +475,8 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
 
     BufferPtr loadBuffer;
     if (values) {
-        if (isParallel) {
-            loadBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
-        } else {
-            loadBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
-        }
+        loadBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(unsigned char) * valuesPower, values);
         oclArgs.push_back(loadBuffer);
     }
     if (controlLen > 0) {
@@ -1538,8 +1533,8 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutSt
 }
 
 /** Set 8 bit register bits based on read from classical memory */
-bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-    bitLenInt valueLength, unsigned char* values, bool isParallel)
+bitCapInt QEngineOCL::IndexedLDA(
+    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
@@ -1548,7 +1543,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0, 0, 0, 0 };
 
-    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
+    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes);
 
     real1 prob;
     real1 average = ZERO_R1;
@@ -1571,7 +1566,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 
 /** Add or Subtract based on an indexed load from classical memory */
 bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
-    bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel)
+    bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
     bool carryRes = M(carryIndex);
     // The carry has to first to be measured for its input value.
@@ -1593,7 +1588,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, indexStart, inputMask, valueStart, outputMask, otherMask,
         carryIn, carryMask, lengthPower, valueBytes };
 
-    ArithmeticCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes, isParallel);
+    ArithmeticCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes);
 
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;
@@ -1618,18 +1613,16 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
 
 /** Add based on an indexed load from classical memory */
 bitCapInt QEngineOCL::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel)
+    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    return OpIndexed(
-        OCL_API_INDEXEDADC, 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values, isParallel);
+    return OpIndexed(OCL_API_INDEXEDADC, 0, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 /** Subtract based on an indexed load from classical memory */
 bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values, bool isParallel)
+    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    return OpIndexed(
-        OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values, isParallel);
+    return OpIndexed(OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
 void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs)
