@@ -363,7 +363,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
         // contexts.
-        stateVec = AllocStateVec(maxQPower);
+        stateVec = AllocStateVec(maxQPower, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
 
