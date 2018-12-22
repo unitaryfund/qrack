@@ -1192,12 +1192,6 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         valueLength, shards[carryIndex].mapped, values);
 }
 
-void QUnit::TimeEvolve(Hamiltonian h, real1 timeDiff)
-{
-    QInterface::TimeEvolve(h, timeDiff);
-    UpdateRunningNorm();
-}
-
 void QUnit::UpdateRunningNorm()
 {
     std::vector<QInterfacePtr> units;

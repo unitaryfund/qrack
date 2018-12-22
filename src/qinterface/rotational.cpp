@@ -123,10 +123,10 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
         jacobian[3] /= nrm;
 
         determinant = (jacobian[0] * jacobian[3]) - (jacobian[1] * jacobian[2]);
-        inverseJacobian[0] = matrix2x2[3] / determinant;
-        inverseJacobian[1] = -matrix2x2[1] / determinant;
-        inverseJacobian[2] = -matrix2x2[2] / determinant;
-        inverseJacobian[3] = matrix2x2[0] / determinant;
+        inverseJacobian[0] = jacobian[3] / determinant;
+        inverseJacobian[1] = -jacobian[1] / determinant;
+        inverseJacobian[2] = -jacobian[2] / determinant;
+        inverseJacobian[3] = jacobian[0] / determinant;
 
         matrix2x2Mul(matrix2x2, jacobian, tempMatrix2x2);
         matrix2x2Mul(inverseJacobian, tempMatrix2x2, expOfGate);
