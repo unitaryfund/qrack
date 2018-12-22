@@ -27,8 +27,8 @@ void QInterface::H(bitLenInt qubit)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
     // bits.");
-    const complex had[4] = { complex(ONE_R1 / M_SQRT2, ZERO_R1), complex(ONE_R1 / M_SQRT2, ZERO_R1),
-        complex(ONE_R1 / M_SQRT2, ZERO_R1), complex(-ONE_R1 / M_SQRT2, ZERO_R1) };
+    const complex had[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
+        complex(M_SQRT1_2, ZERO_R1), complex(-M_SQRT1_2, ZERO_R1) };
     ApplySingleBit(had, true, qubit);
 }
 
@@ -58,7 +58,7 @@ void QInterface::T(bitLenInt qubit)
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     const complex tOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(M_SQRT2, M_SQRT2) };
+        complex(M_SQRT1_2, M_SQRT1_2) };
     ApplySingleBit(tOp, false, qubit);
 }
 
@@ -68,7 +68,7 @@ void QInterface::IT(bitLenInt qubit)
     // if (qubit >= qubitCount)
     //     throw std::invalid_argument("operation on bit index greater than total bits.");
     const complex itOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(M_SQRT2, -M_SQRT2) };
+        complex(M_SQRT1_2, -M_SQRT1_2) };
     ApplySingleBit(itOp, false, qubit);
 }
 

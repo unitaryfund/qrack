@@ -34,7 +34,7 @@ public:
         : QInterface(n, rgp, doNorm)
         , runningNorm(ONE_R1){};
 
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 

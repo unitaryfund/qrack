@@ -89,7 +89,7 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     using QInterface::ForceM;
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, real1 nrmlzr = 1.0);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
 
     /** @} */
 

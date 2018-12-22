@@ -82,7 +82,7 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1);
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 

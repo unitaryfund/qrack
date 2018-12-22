@@ -224,7 +224,7 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
 
 real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -577,8 +577,6 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, cmplxBuffer }));
-
-    UpdateRunningNorm();
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -601,11 +599,11 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 {
     bitLenInt result = qubitCount;
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
-    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+    if (toCopy->doNormalize) {
         toCopy->NormalizeState();
     }
 
@@ -680,7 +678,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         api_call = OCL_API_DISPOSEPROB;
     }
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -825,10 +823,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(st
 
 real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {
-    // We might have async execution of gates still happening.
-    clFinish();
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -883,18 +878,15 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     bitCapInt lengthPower = 1U << length;
     bitCapInt maxJ = maxQPower >> length;
 
+    if (doNormalize) {
+        NormalizeState();
+    }
+
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
         // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
         QEngine::ProbRegAll(start, length, probsArray);
         return;
-    }
-
-    // We might have async execution of gates still happening.
-    clFinish();
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
     }
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, start, length, 0, 0, 0, 0, 0, 0 };
@@ -920,13 +912,6 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    // We might have async execution of gates still happening.
-    clFinish();
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
-    }
-
     bitCapInt v = mask; // count the number of bits set in v
     bitCapInt oldV;
     bitLenInt length; // c accumulates the total bits set in v
@@ -938,6 +923,10 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     }
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, mask, permutation, length, 0, 0, 0, 0, 0, 0 };
+
+    if (doNormalize) {
+        NormalizeState();
+    }
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
@@ -971,9 +960,6 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
-    // We might have async execution of gates still happening.
-    clFinish();
-
     bitCapInt v = mask; // count the number of bits set in v
     bitCapInt oldV;
     bitLenInt length;
@@ -986,6 +972,10 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     bitCapInt lengthPower = 1U << length;
     bitCapInt maxJ = maxQPower >> length;
+
+    if (doNormalize) {
+        NormalizeState();
+    }
 
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
@@ -1008,10 +998,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         } else {
             v = 0;
         }
-    }
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
     }
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, length, skipLength, 0, 0, 0, 0, 0, 0 };
@@ -1681,10 +1667,7 @@ void QEngineOCL::SetQuantumState(complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
-    // We might have async execution of gates still happening.
-    clFinish();
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -1697,10 +1680,7 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineOCL::GetQuantumState(complex* outputState)
 {
-    // We might have async execution of gates still happening.
-    clFinish();
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -1711,19 +1691,16 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 {
-    // We might have async execution of gates still happening.
-    clFinish();
-
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         return false;
     }
 
     // Make sure both engines are normalized
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
-    if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
+    if (toCompare->doNormalize) {
         toCompare->NormalizeState();
     }
 
@@ -1760,7 +1737,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
-    if ((nrm == ONE_R1) || (runningNorm == ZERO_R1)) {
+    if (nrm == ONE_R1) {
         return;
     }
 

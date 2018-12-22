@@ -455,14 +455,14 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false, ONE_R1); };
+    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false); };
 
     /**
      * Act as if is a measurement was applied, except force the (usually random) result
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1) = 0;
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true) = 0;
 
     /**
      * S gate
