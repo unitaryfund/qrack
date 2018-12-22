@@ -1909,7 +1909,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     qftReg->SetPermutation(0x0);
     qftReg->H(0, 4);
 
-    REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0xA), 0.0625);
+    REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0), 0.0625);
+    REQUIRE_FLOAT(qftReg->ProbMask(0x7, 0), 0.125);
 
     bitLenInt bits[3] = { 0, 1, 2 };
     bool results[3] = { 0, 1, 0 };
@@ -1917,7 +1918,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     qftReg->ForceM(bits, 3, results);
 
     REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);
-    REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0xA), 0.5);
+    REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0x2), 0.5);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
