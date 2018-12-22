@@ -95,7 +95,8 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     if (!isDiag) {
         complex trace = matrix2x2[0] + matrix2x2[3];
         complex determinant = (matrix2x2[0] * matrix2x2[3]) - (matrix2x2[1] * matrix2x2[2]);
-        complex quadraticRoot = sqrt(trace * trace - (real1)(4.0) * determinant);
+        complex quadraticRoot =
+            sqrt((matrix2x2[0] - matrix2x2[3]) * (matrix2x2[0] - matrix2x2[3]) - (real1)(4.0) * determinant);
         complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0;
         complex eigenvalue2 = (trace - quadraticRoot) / (real1)2.0;
 
@@ -113,6 +114,14 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
             jacobian[3] = matrix2x2[2];
         }
 
+        real1 nrm = sqrt(norm(jacobian[0]) + norm(jacobian[2]));
+        jacobian[0] /= nrm;
+        jacobian[2] /= nrm;
+
+        nrm = sqrt(norm(jacobian[1]) + norm(jacobian[3]));
+        jacobian[1] /= nrm;
+        jacobian[3] /= nrm;
+
         determinant = (jacobian[0] * jacobian[3]) - (jacobian[1] * jacobian[2]);
         inverseJacobian[0] = matrix2x2[3] / determinant;
         inverseJacobian[1] = -matrix2x2[1] / determinant;
@@ -126,10 +135,12 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     }
 
     // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
-    expOfGate[0] = complex((real1)cos(real(expOfGate[0])), (real1)sin(real(expOfGate[0])));
+    expOfGate[0] =
+        ((real1)exp(-imag(expOfGate[0]))) * complex((real1)cos(real(expOfGate[0])), (real1)sin(real(expOfGate[0])));
     expOfGate[1] = complex(ZERO_R1, ZERO_R1);
     expOfGate[2] = complex(ZERO_R1, ZERO_R1);
-    expOfGate[3] = complex((real1)cos(real(expOfGate[3])), (real1)sin(real(expOfGate[3])));
+    expOfGate[3] =
+        ((real1)exp(-imag(expOfGate[3]))) * complex((real1)cos(real(expOfGate[3])), (real1)sin(real(expOfGate[3])));
 
     if (!isDiag) {
         matrix2x2Mul(expOfGate, inverseJacobian, tempMatrix2x2);
