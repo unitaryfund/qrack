@@ -432,7 +432,9 @@ void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, g
     cmplx amp;
     bitCapInt i, iHigh, iLow, p;
 
-    for (lcv = 0U; lcv < maxI; lcv++) {
+    real1 nrm;
+
+    for (lcv = ID; lcv < maxI; lcv++) {
         iHigh = lcv;
         i = 0U;
         for (p = 0U; p < len; p++) {

@@ -1920,7 +1920,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0xA), 0.5);
 }
 
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
 {
     qftReg->SetPermutation(0x03);

@@ -27,8 +27,8 @@ void QInterface::H(bitLenInt qubit)
 {
     // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
     // bits.");
-    const complex had[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
-        complex(M_SQRT1_2, ZERO_R1), complex(-M_SQRT1_2, ZERO_R1) };
+    const complex had[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
+        complex(-M_SQRT1_2, ZERO_R1) };
     ApplySingleBit(had, true, qubit);
 }
 
