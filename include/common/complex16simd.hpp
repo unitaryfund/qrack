@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <cmath>
+
 #include <emmintrin.h>
 
 #if ENABLE_AVX
