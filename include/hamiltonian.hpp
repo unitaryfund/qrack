@@ -27,6 +27,7 @@ struct HamiltonianOp {
     BitOp matrix;
     bitLenInt* controls;
     bitLenInt controlLen;
+    bool anti;
 
     HamiltonianOp(bitLenInt target, BitOp mtrx)
         : targetBit(target)
@@ -36,11 +37,12 @@ struct HamiltonianOp {
     {
     }
 
-    HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
+    HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bool antiCtrled, bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
         , controls(new bitLenInt[ctrlLen])
         , controlLen(ctrlLen)
+        , anti(antiCtrled)
     {
         std::copy(ctrls, ctrls + ctrlLen, controls);
     }

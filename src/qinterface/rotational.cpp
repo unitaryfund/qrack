@@ -65,7 +65,7 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
 }
 
 /// Imaginary exponentiate of arbitrary single bit gate
-void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
 {
     complex timesI[4];
     complex toApply[4];
@@ -73,15 +73,23 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
         timesI[i] = complex(ZERO_R1, ONE_R1) * matrix2x2[i];
     }
     Qrack::exp(timesI, toApply);
-    ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
+    if (antiCtrled) {
+        ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
+    } else {
+        ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
+    }
 }
 
 /// Logarithm of arbitrary single bit gate
-void QInterface::Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+void QInterface::Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
 {
     complex toApply[4];
     Qrack::log(matrix2x2, toApply);
-    ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
+    if (antiCtrled) {
+        ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
+    } else {
+        ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
+    }
 }
 
 /// Exponentiate Pauli X operator
