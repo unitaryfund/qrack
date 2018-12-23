@@ -39,9 +39,17 @@ struct HamiltonianOp {
     HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
-        , controls(ctrls)
+        , controls(new bitLenInt[ctrlLen])
         , controlLen(ctrlLen)
     {
+        std::copy(ctrls, ctrls + ctrlLen, controls);
+    }
+
+    ~HamiltonianOp()
+    {
+        if (controls) {
+            delete[] controls;
+        }
     }
 };
 
