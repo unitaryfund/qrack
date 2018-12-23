@@ -124,8 +124,6 @@ protected:
 
     template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
 
-    virtual void ExpLog(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool isExp);
-
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
