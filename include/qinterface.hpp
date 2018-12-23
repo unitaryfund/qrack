@@ -330,8 +330,8 @@ public:
      * t} e^{i B t} \f} might NOT hold, if the operators A and B do not commute. As a rule of thumb, A will commute
      * with B at least in the case that A and B act on entirely different sets of qubits. However, for defining the
      * intended Hamiltonian, the programmer can be guaranteed that the exponential factors will be applied
-     * right-to-left, by left multiplication, in the order \f{equation}{ e^{i H_{N - 1} t} e^{i H_{N - 2} t} \ldots
-     * e^{i H_0 t} \left|\psi \rangle\right. .\f} (For example, if A and B are single bit gates acting on the same
+     * right-to-left, by left multiplication, in the order \f{equation}{ e^{-i H_{N - 1} t} e^{-i H_{N - 2} t} \ldots
+     * e^{-i H_0 t} \left|\psi \rangle\right. .\f} (For example, if A and B are single bit gates acting on the same
      * bit, form their composition into one gate by the intended right-to-left fusion and apply them as a single
      * HamiltonianOp.)
      */
@@ -455,14 +455,14 @@ public:
      * assumed to be in a known fixed state, like all |0>, ahead of time to
      * produce unitary logical comparison operations.)
      */
-    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false, ONE_R1); };
+    virtual bool M(bitLenInt qubitIndex) { return ForceM(qubitIndex, false, false); };
 
     /**
      * Act as if is a measurement was applied, except force the (usually random) result
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, real1 nrmlzr = ONE_R1) = 0;
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true) = 0;
 
     /**
      * S gate

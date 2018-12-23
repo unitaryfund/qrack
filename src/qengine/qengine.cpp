@@ -15,30 +15,28 @@
 namespace Qrack {
 
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
-bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
+bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
+    real1 oneChance = Prob(qubit);
     if (!doForce) {
         real1 prob = Rand();
-        real1 oneChance = Prob(qubit);
         result = ((prob < oneChance) && (oneChance > ZERO_R1));
-        nrmlzr = ONE_R1;
-        if (result) {
-            nrmlzr = oneChance;
-        } else {
-            nrmlzr = ONE_R1 - oneChance;
-        }
     }
-    if (nrmlzr > min_norm) {
-        bitCapInt qPower = 1 << qubit;
-        real1 angle = Rand() * 2 * M_PI;
-        ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(sqrt(nrmlzr)));
+
+    real1 nrmlzr;
+    if (result) {
+        nrmlzr = oneChance;
     } else {
-        NormalizeState(ZERO_R1);
+        nrmlzr = ONE_R1 - oneChance;
     }
+
+    bitCapInt qPower = 1 << qubit;
+    real1 angle = Rand() * 2 * M_PI;
+    ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(std::sqrt(nrmlzr)));
 
     return result;
 }
@@ -63,7 +61,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
         }
     }
 
-    if (runningNorm != ONE_R1) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -92,7 +90,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
             result |= values[j] ? (1U << bits[j]) : 0U;
         }
         nrmlzr = ProbMask(regMask, result);
-        nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+        nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
         ApplyM(regMask, result, nrm);
 
         // No need to check against probabilities:
@@ -141,7 +139,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     delete[] qPowers;
 
-    nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+    nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
 
     ApplyM(regMask, result, nrm);
 
@@ -465,7 +463,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         }
     }
 
-    if (runningNorm != ONE_R1) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -511,7 +509,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     delete[] probArray;
 
     bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / (real1)(sqrt(nrmlzr));
+    complex nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
 
     ApplyM(regMask, resultPtr, nrm);
 

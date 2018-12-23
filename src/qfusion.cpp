@@ -420,10 +420,10 @@ void QFusion::AntiCISqrtSwap(
     qReg->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
 }
 
-bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, real1 nrmlzr)
+bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce)
 {
     FlushAll();
-    return qReg->ForceM(qubit, result, doForce, nrmlzr);
+    return qReg->ForceM(qubit, result, doForce);
 }
 
 bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)

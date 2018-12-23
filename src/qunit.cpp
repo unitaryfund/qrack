@@ -520,11 +520,11 @@ real1 QUnit::ProbAll(bitCapInt perm)
     return result;
 }
 
-bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, real1 nrmlzr)
+bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
     shards[qubit].isPhaseDirty = false;
 
-    bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce, nrmlzr);
+    bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
 
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
@@ -1190,12 +1190,6 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
         valueLength, shards[carryIndex].mapped, values);
-}
-
-void QUnit::TimeEvolve(Hamiltonian h, real1 timeDiff)
-{
-    QInterface::TimeEvolve(h, timeDiff);
-    UpdateRunningNorm();
 }
 
 void QUnit::UpdateRunningNorm()

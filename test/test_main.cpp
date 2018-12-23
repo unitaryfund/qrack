@@ -199,7 +199,7 @@ QInterfaceTestFixture::QInterfaceTestFixture()
 
     if (disable_normalization) {
         qftReg = CreateQuantumInterface(
-            testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, complex(ONE_R1, ZERO_R1), true);
+            testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, complex(ONE_R1, ZERO_R1), false);
     } else {
         qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
     }

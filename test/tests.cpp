@@ -1904,6 +1904,23 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
     REQUIRE(qftReg->ProbMask(0xF0, 0x40) < 0.01);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
+{
+    qftReg->SetPermutation(0x0);
+    qftReg->H(0, 4);
+
+    REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0), 0.0625);
+    REQUIRE_FLOAT(qftReg->ProbMask(0x7, 0), 0.125);
+
+    bitLenInt bits[3] = { 0, 1, 2 };
+    bool results[3] = { 0, 1, 0 };
+
+    qftReg->ForceM(bits, 3, results);
+
+    REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);
+    REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0x2), 0.5);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
 {
     qftReg->SetPermutation(0x03);
@@ -2551,6 +2568,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     // std::cout << sin(aParam * tDiff) * sin(aParam * tDiff) << std::endl;
     // std::cout << abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)) << std::endl;
 
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 }
