@@ -124,6 +124,8 @@ protected:
 
     template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
 
+    virtual void ExpLog(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool isExp);
+
 public:
     QInterface(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
@@ -634,11 +636,18 @@ public:
     virtual void Exp(real1 radians, bitLenInt qubitIndex);
 
     /**
-     *  Exponentiation of arbitrary 2x2 gate
+     *  Imaginary exponentiation of arbitrary 2x2 gate
      *
-     * Applies \f$ e^{-i*Op*I} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
+     * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
     virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
+
+    /**
+     *  Logarithm of arbitrary 2x2 gate
+     *
+     * Applies \f$ log(Op) \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
+     */
+    virtual void Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2);
 
     /**
      * Dyadic fraction (identity) exponentiation gate

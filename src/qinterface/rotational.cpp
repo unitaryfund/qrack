@@ -72,8 +72,7 @@ void matrix2x2Mul(complex* left, complex* right, complex* out)
     out[3] = (left[2] * right[1]) + (left[3] * right[3]);
 }
 
-/// Exponentiate of arbitrary single bit gate
-void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+void QInterface::ExpLog(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool isExp)
 {
     // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
     // basis, and apply.
@@ -134,13 +133,23 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
         std::copy(matrix2x2, matrix2x2 + 4, expOfGate);
     }
 
-    // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
-    expOfGate[0] =
-        ((real1)exp(-imag(expOfGate[0]))) * complex((real1)cos(real(expOfGate[0])), (real1)sin(real(expOfGate[0])));
-    expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-    expOfGate[2] = complex(ZERO_R1, ZERO_R1);
-    expOfGate[3] =
-        ((real1)exp(-imag(expOfGate[3]))) * complex((real1)cos(real(expOfGate[3])), (real1)sin(real(expOfGate[3])));
+    if (isExp) {
+        // In this branch, we calculate e^(i * matrix2x2).
+
+        // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
+        expOfGate[0] =
+            ((real1)exp(-imag(expOfGate[0]))) * complex((real1)cos(real(expOfGate[0])), (real1)sin(real(expOfGate[0])));
+        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[3] =
+            ((real1)exp(-imag(expOfGate[3]))) * complex((real1)cos(real(expOfGate[3])), (real1)sin(real(expOfGate[3])));
+    } else {
+        // In this branch, we calculate log(matrix2x2).
+        expOfGate[0] = complex(log(abs(expOfGate[0])), arg(expOfGate[0]));
+        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[3] = complex(log(abs(expOfGate[3])), arg(expOfGate[3]));
+    }
 
     if (!isDiag) {
         matrix2x2Mul(expOfGate, inverseJacobian, tempMatrix2x2);
@@ -148,6 +157,18 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     }
 
     ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
+}
+
+/// Imaginary exponentiate of arbitrary single bit gate
+void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+{
+    ExpLog(controls, controlLen, qubit, matrix2x2, true);
+}
+
+/// Logarithm of arbitrary single bit gate
+void QInterface::Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+{
+    ExpLog(controls, controlLen, qubit, matrix2x2, false);
 }
 
 /// Exponentiate Pauli X operator
