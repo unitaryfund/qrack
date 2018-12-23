@@ -333,7 +333,7 @@ TEST_CASE("test_grover")
 
             qftReg->MReg(0, n);
         },
-        20);
+        16);
 }
 
 TEST_CASE("test_qft_ideal_init")
