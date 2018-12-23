@@ -36,10 +36,10 @@ struct HamiltonianOp {
     {
     }
 
-    HamiltonianOp(bitLenInt* controls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
+    HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
-        , controls(controls)
+        , controls(ctrls)
         , controlLen(ctrlLen)
     {
     }

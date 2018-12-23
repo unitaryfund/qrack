@@ -508,7 +508,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / sqrt(runningNorm)), ZERO_R1);
+    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
     size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
 
     DISPATCH_WRITE(&waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx);
@@ -1749,7 +1749,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
-    real1 r1_args[2] = { min_norm, (real1)sqrt(nrm) };
+    real1 r1_args[2] = { min_norm, (real1)std::sqrt(nrm) };
     BufferPtr argsBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1) * 2, r1_args);
 

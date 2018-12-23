@@ -114,11 +114,11 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
             jacobian[3] = matrix2x2[2];
         }
 
-        real1 nrm = sqrt(norm(jacobian[0]) + norm(jacobian[2]));
+        real1 nrm = std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
         jacobian[0] /= nrm;
         jacobian[2] /= nrm;
 
-        nrm = sqrt(norm(jacobian[1]) + norm(jacobian[3]));
+        nrm = std::sqrt(norm(jacobian[1]) + norm(jacobian[3]));
         jacobian[1] /= nrm;
         jacobian[3] /= nrm;
 
