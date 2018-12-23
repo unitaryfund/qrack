@@ -67,8 +67,12 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
 /// Imaginary exponentiate of arbitrary single bit gate
 void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
 {
+    complex timesI[4];
     complex toApply[4];
-    Qrack::exp(matrix2x2, toApply);
+    for (bitLenInt i = 0; i < 4; i++) {
+        timesI[i] = complex(ZERO_R1, ONE_R1) * matrix2x2[i];
+    }
+    Qrack::exp(timesI, toApply);
     ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
 }
 
