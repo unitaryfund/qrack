@@ -72,7 +72,7 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     for (bitLenInt i = 0; i < 4; i++) {
         timesI[i] = complex(ZERO_R1, ONE_R1) * matrix2x2[i];
     }
-    Qrack::exp(timesI, toApply);
+    Qrack::exp2x2(timesI, toApply);
     if (antiCtrled) {
         ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
     } else {
@@ -84,7 +84,7 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 void QInterface::Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
 {
     complex toApply[4];
-    Qrack::log(matrix2x2, toApply);
+    Qrack::log2x2(matrix2x2, toApply);
     if (antiCtrled) {
         ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
     } else {

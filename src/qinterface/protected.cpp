@@ -36,7 +36,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 
 template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
-void matrix2x2Mul(complex* left, complex* right, complex* out)
+void mul2x2(complex* left, complex* right, complex* out)
 {
     out[0] = (left[0] * right[0]) + (left[1] * right[2]);
     out[1] = (left[0] * right[1]) + (left[1] * right[3]);
@@ -44,7 +44,7 @@ void matrix2x2Mul(complex* left, complex* right, complex* out)
     out[3] = (left[2] * right[1]) + (left[3] * right[3]);
 }
 
-void _expLog(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
+void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 {
     // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
     // basis, and apply.
@@ -99,8 +99,8 @@ void _expLog(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         inverseJacobian[2] = -jacobian[2] / determinant;
         inverseJacobian[3] = jacobian[0] / determinant;
 
-        matrix2x2Mul(matrix2x2, jacobian, tempMatrix2x2);
-        matrix2x2Mul(inverseJacobian, tempMatrix2x2, expOfGate);
+        mul2x2(matrix2x2, jacobian, tempMatrix2x2);
+        mul2x2(inverseJacobian, tempMatrix2x2, expOfGate);
     } else {
         std::copy(matrix2x2, matrix2x2 + 4, expOfGate);
     }
@@ -124,15 +124,15 @@ void _expLog(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     }
 
     if (!isDiag) {
-        matrix2x2Mul(expOfGate, inverseJacobian, tempMatrix2x2);
-        matrix2x2Mul(jacobian, tempMatrix2x2, expOfGate);
+        mul2x2(expOfGate, inverseJacobian, tempMatrix2x2);
+        mul2x2(jacobian, tempMatrix2x2, expOfGate);
     }
 
     std::copy(expOfGate, expOfGate + 4, outMatrix2x2);
 }
 
-void exp(complex* matrix2x2, complex* outMatrix2x2) { _expLog(matrix2x2, outMatrix2x2, true); }
+void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
 
-void log(complex* matrix2x2, complex* outMatrix2x2) { _expLog(matrix2x2, outMatrix2x2, false); }
+void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
 } // namespace Qrack

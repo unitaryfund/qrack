@@ -42,6 +42,7 @@
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
 
-void exp(complex* matrix2x2, complex* outMatrix2x2);
-void log(complex* matrix2x2, complex* outMatrix2x2);
+void mul2x2(complex* left, complex* right, complex* out);
+void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
+void log2x2(complex* matrix2x2, complex* outMatrix2x2);
 } // namespace Qrack

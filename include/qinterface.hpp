@@ -638,14 +638,16 @@ public:
      *
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
-    virtual void Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
+    virtual void Exp(
+        bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
 
     /**
      *  Logarithm of arbitrary 2x2 gate
      *
      * Applies \f$ log(Op) \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
-    virtual void Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
+    virtual void Log(
+        bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
