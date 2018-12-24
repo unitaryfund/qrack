@@ -171,7 +171,23 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
         for (int j = 0; j < 4; j++) {
             mtrx[j] = opMtrx[j] * (-timeDiff);
         }
+        if (op->toggles) {
+            for (bitLenInt j = 0; j < op->controlLen; j++) {
+                if (op->toggles[j]) {
+                    X(op->controls[j]);
+                }
+            }
+        }
+
         Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
+
+        if (op->toggles) {
+            for (bitLenInt j = 0; j < op->controlLen; j++) {
+                if (op->toggles[j]) {
+                    X(op->controls[j]);
+                }
+            }
+        }
     }
 }
 } // namespace Qrack
