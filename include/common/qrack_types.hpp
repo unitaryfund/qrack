@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <memory>
+
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
@@ -39,4 +41,8 @@
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
-}
+
+void mul2x2(complex* left, complex* right, complex* out);
+void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
+void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+} // namespace Qrack

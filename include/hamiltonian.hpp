@@ -27,28 +27,44 @@ struct HamiltonianOp {
     BitOp matrix;
     bitLenInt* controls;
     bitLenInt controlLen;
+    bool anti;
+    bool* toggles;
 
     HamiltonianOp(bitLenInt target, BitOp mtrx)
         : targetBit(target)
         , matrix(mtrx)
         , controls(NULL)
         , controlLen(0)
+        , anti(false)
+        , toggles(NULL)
     {
     }
 
-    HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
+    HamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx, bool antiCtrled = false,
+        bool* ctrlToggles = NULL)
         : targetBit(target)
         , matrix(mtrx)
         , controls(new bitLenInt[ctrlLen])
         , controlLen(ctrlLen)
+        , anti(antiCtrled)
+        , toggles(NULL)
     {
         std::copy(ctrls, ctrls + ctrlLen, controls);
+
+        if (ctrlToggles) {
+            toggles = new bool[ctrlLen];
+            std::copy(ctrlToggles, ctrlToggles + ctrlLen, toggles);
+        }
     }
 
     ~HamiltonianOp()
     {
         if (controls) {
             delete[] controls;
+        }
+
+        if (toggles) {
+            delete[] toggles;
         }
     }
 };
@@ -57,7 +73,19 @@ struct HamiltonianOp {
  * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
  * applied by left-multiplication in low-to-high vector index order on the state vector.
  *
- * \warning Hamiltonian components might not commute, and observe the component factor of 2 * pi.
+ * To specify Hamiltonians with interaction terms, arbitrary sets of control bits may be specified for each term, in
+ * which case the term is acted only if the (superposable) control bits are true. The "antiCtrled" bool flips the
+ * overall convention, such that the term is acted only if all control bits are false. Additionally, for a combination
+ * of control bits and "anti-control" bits, an array of booleans, "ctrlToggles," of length "ctrlLen" may be specified
+ * that flips the activation state for each control bit, (relative the global anti- on/off convention,) without altering
+ * the state of the control bits.
+ *
+ * The point of this "toggle" behavior is to allow enumeration of arbitrary local Hamiltonian terms with permutations of
+ * a set of control bits. For example, a Hamiltonian might represent an array of local electromagnetic potential wells.
+ * If there are 4 wells, each with independent potentials, control "toggles" could be used on two control bits, to
+ * enumerate all four permutations of two control bits with four different local Hamiltonian terms.
+ *
+ * \warning Hamiltonian components might not commute.
  *
  * As a general point of linear algebra, where A and B are linear operators, e^{i * (A + B) * t} = e^{i * A * t} *
  * e^{i * B * t} might NOT hold, if the operators A and B do not commute. As a rule of thumb, A will commute with B

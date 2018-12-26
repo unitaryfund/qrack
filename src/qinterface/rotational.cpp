@@ -64,90 +64,32 @@ void QInterface::Exp(real1 radians, bitLenInt qubit)
     ApplySingleBit(expIdentity, true, qubit);
 }
 
-void matrix2x2Mul(complex* left, complex* right, complex* out)
+/// Imaginary exponentiate of arbitrary single bit gate
+void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
 {
-    out[0] = (left[0] * right[0]) + (left[1] * right[2]);
-    out[1] = (left[0] * right[1]) + (left[1] * right[3]);
-    out[2] = (left[2] * right[0]) + (left[3] * right[2]);
-    out[3] = (left[2] * right[1]) + (left[3] * right[3]);
+    complex timesI[4];
+    complex toApply[4];
+    for (bitLenInt i = 0; i < 4; i++) {
+        timesI[i] = complex(ZERO_R1, ONE_R1) * matrix2x2[i];
+    }
+    Qrack::exp2x2(timesI, toApply);
+    if (antiCtrled) {
+        ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
+    } else {
+        ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
+    }
 }
 
-/// Exponentiate of arbitrary single bit gate
-void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2)
+/// Logarithm of arbitrary single bit gate
+void QInterface::Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
 {
-    // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
-    // basis, and apply.
-
-    // Diagonal matrices are a special case.
-    bool isDiag = true;
-    if (norm(matrix2x2[1]) > min_norm) {
-        isDiag = false;
-    } else if (norm(matrix2x2[2]) > min_norm) {
-        isDiag = false;
-    }
-
-    complex expOfGate[4];
-    complex jacobian[4];
-    complex inverseJacobian[4];
-    complex tempMatrix2x2[4];
-
-    // Diagonalize the matrix, if it is not already diagonal. Otherwise, copy it into the temporary matrix.
-    if (!isDiag) {
-        complex trace = matrix2x2[0] + matrix2x2[3];
-        complex determinant = (matrix2x2[0] * matrix2x2[3]) - (matrix2x2[1] * matrix2x2[2]);
-        complex quadraticRoot =
-            sqrt((matrix2x2[0] - matrix2x2[3]) * (matrix2x2[0] - matrix2x2[3]) - (real1)(4.0) * determinant);
-        complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0;
-        complex eigenvalue2 = (trace - quadraticRoot) / (real1)2.0;
-
-        if (norm(matrix2x2[1]) > min_norm) {
-            jacobian[0] = matrix2x2[1];
-            jacobian[2] = eigenvalue1 - matrix2x2[0];
-
-            jacobian[1] = matrix2x2[1];
-            jacobian[3] = eigenvalue2 - matrix2x2[0];
-        } else {
-            jacobian[0] = eigenvalue1 - matrix2x2[3];
-            jacobian[2] = matrix2x2[2];
-
-            jacobian[1] = eigenvalue2 - matrix2x2[3];
-            jacobian[3] = matrix2x2[2];
-        }
-
-        real1 nrm = std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
-        jacobian[0] /= nrm;
-        jacobian[2] /= nrm;
-
-        nrm = std::sqrt(norm(jacobian[1]) + norm(jacobian[3]));
-        jacobian[1] /= nrm;
-        jacobian[3] /= nrm;
-
-        determinant = (jacobian[0] * jacobian[3]) - (jacobian[1] * jacobian[2]);
-        inverseJacobian[0] = jacobian[3] / determinant;
-        inverseJacobian[1] = -jacobian[1] / determinant;
-        inverseJacobian[2] = -jacobian[2] / determinant;
-        inverseJacobian[3] = jacobian[0] / determinant;
-
-        matrix2x2Mul(matrix2x2, jacobian, tempMatrix2x2);
-        matrix2x2Mul(inverseJacobian, tempMatrix2x2, expOfGate);
+    complex toApply[4];
+    Qrack::log2x2(matrix2x2, toApply);
+    if (antiCtrled) {
+        ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
     } else {
-        std::copy(matrix2x2, matrix2x2 + 4, expOfGate);
+        ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
     }
-
-    // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
-    expOfGate[0] =
-        ((real1)exp(-imag(expOfGate[0]))) * complex((real1)cos(real(expOfGate[0])), (real1)sin(real(expOfGate[0])));
-    expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-    expOfGate[2] = complex(ZERO_R1, ZERO_R1);
-    expOfGate[3] =
-        ((real1)exp(-imag(expOfGate[3]))) * complex((real1)cos(real(expOfGate[3])), (real1)sin(real(expOfGate[3])));
-
-    if (!isDiag) {
-        matrix2x2Mul(expOfGate, inverseJacobian, tempMatrix2x2);
-        matrix2x2Mul(jacobian, tempMatrix2x2, expOfGate);
-    }
-
-    ApplyControlledSingleBit(controls, controlLen, qubit, expOfGate);
 }
 
 /// Exponentiate Pauli X operator
