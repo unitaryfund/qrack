@@ -2573,6 +2573,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     HamiltonianOpPtr h1 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, false, controlToggles);
     h[0] = h1;
 
+    // The point of this "toggle" behavior is to allow enumeration of arbitrary local Hamiltonian terms with
+    // permutations of a set of control bits. For example, a Hamiltonian might represent an array of local
+    // electromagnetic potential wells. If there are 4 wells, each with independent potentials, control "toggles" could
+    // be used on two control bits, to enumerate all four permutations of two control bits with four different local
+    // Hamiltonian terms.
+
     qftReg->SetPermutation(2);
     qftReg->TimeEvolve(h, tDiff);
 

@@ -80,6 +80,11 @@ struct HamiltonianOp {
  * that flips the activation state for each control bit, (relative the global anti- on/off convention,) without altering
  * the state of the control bits.
  *
+ * The point of this "toggle" behavior is to allow enumeration of arbitrary local Hamiltonian terms with permutations of
+ * a set of control bits. For example, a Hamiltonian might represent an array of local electromagnetic potential wells.
+ * If there are 4 wells, each with independent potentials, control "toggles" could be used on two control bits, to
+ * enumerate all four permutations of two control bits with four different local Hamiltonian terms.
+ *
  * \warning Hamiltonian components might not commute.
  *
  * As a general point of linear algebra, where A and B are linear operators, e^{i * (A + B) * t} = e^{i * A * t} *
