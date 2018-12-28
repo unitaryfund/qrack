@@ -103,14 +103,6 @@ public:
         }
     }
 
-    /**
-     * Finishes the asynchronous wait event list or queue of OpenCL events.
-     *
-     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
-     * device queue is finished, (which might be shared by other QEngineOCL instances).
-     */
-    virtual void clFinish(bool doHard = false);
-
     virtual void SetQubitCount(bitLenInt qb);
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
@@ -191,6 +183,7 @@ public:
 
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
+    virtual void Finish() { clFinish(); };
 
 protected:
     static const int BCI_ARG_LEN = 10;
@@ -201,6 +194,14 @@ protected:
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
+
+    /**
+     * Finishes the asynchronous wait event list or queue of OpenCL events.
+     *
+     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
+     * device queue is finished, (which might be shared by other QEngineOCL instances).
+     */
+    virtual void clFinish(bool doHard = false);
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);

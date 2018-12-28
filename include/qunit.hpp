@@ -188,6 +188,7 @@ public:
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
     virtual void UpdateRunningNorm();
+    virtual void Finish();
 
     /** @} */
 

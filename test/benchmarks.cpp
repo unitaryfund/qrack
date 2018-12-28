@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 26;
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts)
 {
@@ -64,31 +64,26 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
             0, rng, complex(ONE_R1, ZERO_R1), !disable_normalization);
         avgt = 0.0;
-        for (i = 0; i < ITERATIONS; i++) {
 
-            //if ((i % 2) == 0) {
-            //    qftReg->SetPermutation(0);
-            //    qftReg->H(0, 2);
-            //    qftReg->CNOT(0, 2, 2);
-            //    qftReg->Z(1);
-            //}
+        for (i = 0; i < ITERATIONS; i++) {
 
             iterClock = clock();
 
             // Run loop body
             fn(qftReg, numBits);
 
+            if (!async_time) {
+                qftReg->Finish();
+            }
+
             // Collect interval data
             tClock = clock() - iterClock;
             trialClocks[i] = tClock;
             avgt += tClock;
 
-#if ENABLE_OPENCL
-            // To test how quickly QEngineOCL returns from dispatching asynchronous code, uncomment this section:
-            if (async_time && (testEngineType == QINTERFACE_OPENCL)) {
-                std::dynamic_pointer_cast<QEngineOCL>(qftReg)->clFinish(true);
+            if (async_time) {
+                qftReg->Finish();
             }
-#endif
         }
         avgt /= ITERATIONS;
 
@@ -129,7 +124,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVariable(fn, MaxQubits); }
-
+#if 0
 TEST_CASE("test_cnot_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -350,7 +345,7 @@ TEST_CASE("test_qft_ideal_init")
         qftReg->MReg(0, qftReg->GetQubitCount());
     });
 }
-
+#endif
 TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });

@@ -45,7 +45,9 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     }
 }
 
-void QUnit::SetPermutation(bitCapInt perm, complex phaseFac) {
+void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
+{
+    Finish();
     for (bitLenInt i = 0; i < qubitCount; i++) {
         shards[i].unit = CreateQuantumInterface(
             engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac, doNormalize, useHostRam);
@@ -59,6 +61,8 @@ void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 // protected method
 void QUnit::CopyState(QUnit* orig)
 {
+    Finish();
+
     SetQubitCount(orig->GetQubitCount());
     shards.clear();
 
@@ -79,6 +83,8 @@ void QUnit::CopyState(QUnit* orig)
 
 void QUnit::CopyState(QInterfacePtr orig)
 {
+    Finish();
+
     QInterfacePtr unit = CreateQuantumInterface(
         engine, subengine, orig->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->CopyState(orig);
@@ -97,6 +103,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(complex* inputState)
 {
+    Finish();
+
     auto unit =
         CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->SetQuantumState(inputState);
@@ -381,8 +389,7 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                 if (prob < min_norm) {
                     didSeparateBit = true;
                     ForceM(bits[i], false);
-                }
-                else if ((ONE_R1 - prob) < min_norm) {
+                } else if ((ONE_R1 - prob) < min_norm) {
                     didSeparateBit = true;
                     ForceM(bits[i], true);
                 }
@@ -1228,6 +1235,18 @@ void QUnit::UpdateRunningNorm()
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
             toFind->UpdateRunningNorm();
+        }
+    }
+}
+
+void QUnit::Finish()
+{
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (find(units.begin(), units.end(), toFind) == units.end()) {
+            units.push_back(toFind);
+            toFind->Finish();
         }
     }
 }

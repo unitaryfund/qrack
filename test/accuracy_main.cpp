@@ -197,10 +197,10 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     std::shared_ptr<std::default_random_engine> rng = std::make_shared<std::default_random_engine>();
     rng->seed(rngSeed);
 
-    //if (disable_normalization) {
+    if (disable_normalization) {
         qftReg = CreateQuantumInterface(
             testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, complex(ONE_R1, ZERO_R1), false);
-    //} else {
-    //    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
-    //}
+    } else {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng);
+    }
 }

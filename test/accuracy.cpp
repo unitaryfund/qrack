@@ -122,5 +122,8 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVa
 
 TEST_CASE("test_h")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->H(0, n); qftReg->H(0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        qftReg->H(0, n);
+        qftReg->H(0, n);
+    });
 }

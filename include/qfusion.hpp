@@ -152,6 +152,7 @@ public:
     }
 
     virtual void UpdateRunningNorm();
+    virtual void Finish() { qReg->Finish(); }
 
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
