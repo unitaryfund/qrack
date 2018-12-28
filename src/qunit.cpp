@@ -41,6 +41,16 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         shards[i].unit = CreateQuantumInterface(
             engine, subengine, 1, ((1 << i) & initState) >> i, rand_generator, phaseFactor, doNormalize, useHostRam);
         shards[i].mapped = 0;
+        shards[i].isPhaseDirty = false;
+    }
+}
+
+void QUnit::SetPermutation(bitCapInt perm, complex phaseFac) {
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        shards[i].unit = CreateQuantumInterface(
+            engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac, doNormalize, useHostRam);
+        shards[i].mapped = 0;
+        shards[i].isPhaseDirty = false;
     }
 }
 
@@ -363,8 +373,23 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
     bool didSeparate = false;
     QEngineShard shard;
     for (bitLenInt i = 0; i < (bits.size()); i++) {
+        bool didSeparateBit = false;
         shard = shards[bits[i]];
         if (shard.unit->GetQubitCount() > 1) {
+            if (!shard.isPhaseDirty) {
+                real1 prob = Prob(bits[i]);
+                if (prob < min_norm) {
+                    didSeparateBit = true;
+                    ForceM(bits[i], false);
+                }
+                else if ((ONE_R1 - prob) < min_norm) {
+                    didSeparateBit = true;
+                    ForceM(bits[i], true);
+                }
+
+                continue;
+            }
+
             QInterfacePtr unitCopy = CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0,
                 rand_generator, phaseFactor, doNormalize, useHostRam);
             unitCopy->CopyState(shard.unit);
@@ -374,8 +399,9 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
             unitCopy->Decohere(shard.mapped, 1, testBit);
             unitCopy->Cohere(testBit);
 
-            didSeparate = unitCopy->ApproxCompare(shard.unit);
-            if (didSeparate) {
+            didSeparateBit = unitCopy->ApproxCompare(shard.unit);
+
+            if (didSeparateBit) {
                 // The bit is separable. Keep the test unit, and update the shard mappings.
                 shards[bits[i]].unit = testBit;
                 shards[bits[i]].mapped = 0;
@@ -415,6 +441,8 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                 }
             }
         }
+
+        didSeparate |= didSeparateBit;
     }
     return didSeparate;
 }
