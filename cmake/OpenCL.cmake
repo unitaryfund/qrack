@@ -37,6 +37,7 @@ if (ENABLE_OPENCL)
     target_compile_options (qrack PUBLIC ${OPENCL_COMPILATION_OPTIONS})
     target_link_libraries (unittest ${LIB_OPENCL})
     target_link_libraries (benchmarks ${LIB_OPENCL})
+    target_link_libraries (accuracy ${LIB_OPENCL})
 
     # Build the OpenCL command files
     find_program (XXD_BIN xxd)

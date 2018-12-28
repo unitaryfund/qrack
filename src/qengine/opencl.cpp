@@ -1726,7 +1726,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     real1 sumSqrErr;
     WAIT_REAL1_SUM(&waitVec2, *nrmBuffer, size, nrmArray, &sumSqrErr);
 
-    return (sumSqrErr == 0);
+    return sumSqrErr < (maxQPower * min_norm);
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)

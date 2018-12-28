@@ -553,22 +553,17 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         real1 elemError = norm(stateVec[lcv] - toCompare->stateVec[lcv]);
-        if (elemError > min_norm) {
-            partError[cpu] += elemError;
-        }
+        partError[cpu] += elemError;
     });
 
-    bool isSame = true;
+    real1 totError = ZERO_R1;
     for (int i = 0; i < numCores; i++) {
-        if (partError[i] > 0) {
-            isSame = false;
-            break;
-        }
+        totError += partError[i];
     }
 
     delete[] partError;
 
-    return isSame;
+    return totError < (maxQPower * min_norm);
 }
 
 void QEngineCPU::NormalizeState(real1 nrm)

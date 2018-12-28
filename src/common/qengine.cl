@@ -1679,16 +1679,12 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
     cmplx amp;
-    real1 nrm;
     real1 partNrm = ZERO_R1;
 
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec1[lcv] - stateVec2[lcv];
-        nrm = dot(amp, amp);
-        if (nrm > min_norm) {
-            partNrm += nrm;
-        }
+        partNrm = dot(amp, amp);
     }
 
     locID = get_local_id(0);
