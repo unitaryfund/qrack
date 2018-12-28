@@ -25,13 +25,18 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
  */
 class QEngine : public QInterface {
 protected:
+    bool randGlobalPhase;
+    bool useHostRam;
     real1 runningNorm;
 
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 public:
-    QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true)
+    QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true,
+        bool randomGlobalPhase = false, bool useHostMem = true)
         : QInterface(n, rgp, doNorm)
+        , randGlobalPhase(randomGlobalPhase)
+        , useHostRam(useHostMem)
         , runningNorm(ONE_R1){};
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);

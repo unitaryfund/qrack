@@ -37,8 +37,8 @@ namespace Qrack {
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm, bool useHostMem)
-    : QEngine(qBitCount, rgp, doNorm)
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -53,15 +53,22 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     if (phaseFac == complex(-999.0, -999.0)) {
-        real1 angle = Rand() * 2.0 * PI_R1;
-        stateVec[initState] = complex(cos(angle), sin(angle));
+        complex phase;
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2.0 * PI_R1;
+            phase = complex(cos(angle), sin(angle));
+        } else {
+            phase = complex(ONE_R1, ZERO_R1);
+        }
+        stateVec[initState] = phase;
     } else {
         stateVec[initState] = phaseFac;
     }
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    : QEngine(
+          toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -84,8 +91,14 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     if (phaseFac == complex(-999.0, -999.0)) {
-        real1 angle = Rand() * 2.0 * PI_R1;
-        stateVec[perm] = complex(cos(angle), sin(angle));
+        complex phase;
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2.0 * PI_R1;
+            phase = complex(cos(angle), sin(angle));
+        } else {
+            phase = complex(ONE_R1, ZERO_R1);
+        }
+        stateVec[perm] = phase;
     } else {
         real1 nrm = abs(phaseFac);
         stateVec[perm] = phaseFac / nrm;

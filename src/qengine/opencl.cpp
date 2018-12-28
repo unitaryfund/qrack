@@ -48,12 +48,11 @@ namespace Qrack {
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events.back()))
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm, bool useHostMem, int devID)
-    : QEngine(qBitCount, rgp, doNorm)
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int devID)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem)
     , stateVec(NULL)
     , deviceID(devID)
     , nrmArray(NULL)
-    , useHostRam(useHostMem)
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
@@ -68,11 +67,11 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 }
 
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
-    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    : QEngine(
+          toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam)
     , stateVec(NULL)
     , deviceID(-1)
     , nrmArray(NULL)
-    , useHostRam(toCopy->useHostRam)
 {
     CopyState(toCopy);
 
@@ -418,8 +417,12 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     complex amp;
     if (phaseFac == complex(-999.0, -999.0)) {
-        real1 angle = Rand() * 2.0 * PI_R1;
-        amp = complex(cos(angle), sin(angle));
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2.0 * PI_R1;
+            amp = complex(cos(angle), sin(angle));
+        } else {
+            amp = complex(ONE_R1, ZERO_R1);
+        }
     } else {
         amp = phaseFac;
     }

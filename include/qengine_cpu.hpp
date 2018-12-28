@@ -38,7 +38,8 @@ protected:
 
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool useHostMem = false);
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = false,
+        bool useHostMem = false);
     QEngineCPU(QEngineCPUPtr toCopy);
     ~QEngineCPU() { delete[] stateVec; }
 

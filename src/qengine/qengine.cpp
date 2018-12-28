@@ -35,8 +35,14 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
     }
 
     bitCapInt qPower = 1 << qubit;
-    real1 angle = Rand() * 2 * M_PI;
-    ApplyM(qPower, result, complex(cos(angle), sin(angle)) / (real1)(std::sqrt(nrmlzr)));
+    complex phase;
+    if (randGlobalPhase) {
+        real1 angle = Rand() * 2 * M_PI;
+        phase = complex(cos(angle), sin(angle));
+    } else {
+        phase = complex(ONE_R1, ZERO_R1);
+    }
+    ApplyM(qPower, result, phase / (real1)(std::sqrt(nrmlzr)));
 
     return result;
 }
@@ -67,9 +73,13 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     bitCapInt i;
 
-    real1 angle = Rand() * 2.0 * M_PI;
-    real1 cosine = cos(angle);
-    real1 sine = sin(angle);
+    complex phase;
+    if (randGlobalPhase) {
+        real1 angle = Rand() * 2.0 * M_PI;
+        phase = complex(cos(angle), sin(angle));
+    } else {
+        phase = complex(ONE_R1, ZERO_R1);
+    }
 
     bitCapInt* qPowers = new bitCapInt[length];
     bitCapInt regMask = 0;
@@ -90,7 +100,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
             result |= values[j] ? (1U << bits[j]) : 0U;
         }
         nrmlzr = ProbMask(regMask, result);
-        nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
+        nrm = phase / (real1)(std::sqrt(nrmlzr));
         ApplyM(regMask, result, nrm);
 
         // No need to check against probabilities:
@@ -139,7 +149,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     delete[] qPowers;
 
-    nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
+    nrm = phase / (real1)(std::sqrt(nrmlzr));
 
     ApplyM(regMask, result, nrm);
 
@@ -468,9 +478,13 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     real1 prob = Rand();
-    real1 angle = Rand() * 2.0 * M_PI;
-    real1 cosine = cos(angle);
-    real1 sine = sin(angle);
+    complex phase;
+    if (randGlobalPhase) {
+        real1 angle = Rand() * 2.0 * M_PI;
+        phase = complex(cos(angle), sin(angle));
+    } else {
+        phase = complex(ONE_R1, ZERO_R1);
+    }
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     real1* probArray = new real1[lengthPower]();
@@ -509,7 +523,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     delete[] probArray;
 
     bitCapInt resultPtr = result << start;
-    complex nrm = complex(cosine, sine) / (real1)(std::sqrt(nrmlzr));
+    complex nrm = phase / (real1)(std::sqrt(nrmlzr));
 
     ApplyM(regMask, resultPtr, nrm);
 
