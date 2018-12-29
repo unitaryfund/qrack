@@ -741,7 +741,7 @@ bool QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
                 for (bitCapInt i = 0; i < partPower; i++) {
                     probDiff -= partStateProb[i];
                 }
-                probDiff = abs(probDiff);
+                probDiff = std::abs(probDiff);
 
                 if (probDiff > (maxQPower * min_norm)) {
                     failFlag = true;
@@ -758,7 +758,7 @@ bool QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
                 for (bitCapInt i = 0; i < remainderPower; i++) {
                     probDiff -= remainderStateProb[i];
                 }
-                probDiff = abs(probDiff);
+                probDiff = std::abs(probDiff);
 
                 if (probDiff > (maxQPower * min_norm)) {
                     failFlag = true;

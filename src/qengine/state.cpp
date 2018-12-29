@@ -399,7 +399,7 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
             remainderStateProb[lcv] += norm(stateVec[l]);
 
             if (checkIfSeparable) {
-                angleDiff = abs(firstAngle - arg(stateVec[l]));
+                angleDiff = std::abs(firstAngle - arg(stateVec[l]));
                 if (angleDiff > M_PI) {
                     angleDiff = 2 * M_PI - angleDiff;
                 }
@@ -418,7 +418,7 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
             for (bitLenInt i = 0; i < numCores; i++) {
                 probDiff -= oneChanceBuff[i];
             }
-            probDiff = abs(probDiff);
+            probDiff = std::abs(probDiff);
             if (probDiff > (maxQPower * min_norm)) {
                 failedFlag = true;
             }
@@ -456,7 +456,7 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
                 partStateProb[lcv] += norm(stateVec[l]);
 
                 if (checkIfSeparable) {
-                    angleDiff = abs(firstAngle - arg(stateVec[l]));
+                    angleDiff = std::abs(firstAngle - arg(stateVec[l]));
                     if (angleDiff > M_PI) {
                         angleDiff = 2 * M_PI - angleDiff;
                     }
@@ -475,7 +475,7 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
                 for (bitLenInt i = 0; i < numCores; i++) {
                     probDiff -= oneChanceBuff[i];
                 }
-                probDiff = abs(probDiff);
+                probDiff = std::abs(probDiff);
                 if (probDiff > (maxQPower * min_norm)) {
                     failedFlag = true;
                 }
