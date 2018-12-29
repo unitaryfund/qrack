@@ -20,18 +20,24 @@
 namespace Qrack {
 
 QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool useHostMem)
+    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
+    bool useHostMem)
     : QInterface(qBitCount, rgp)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
+    , randGlobalPhase(randomGlobalPhase)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
-    qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, useHostMem);
+    qReg =
+        CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, randGlobalPhase, useHostMem);
 }
 
 QFusion::QFusion(QInterfacePtr target)
     : QInterface(target->GetQubitCount())
+    , phaseFactor(complex(-999.0, -999.0))
+    , doNormalize(true)
+    , randGlobalPhase(true)
     , bitBuffers(target->GetQubitCount())
     , bitControls(target->GetQubitCount())
 {
