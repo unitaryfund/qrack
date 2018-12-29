@@ -815,33 +815,48 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 {
     int i, j;
 
-    real1 prob = ONE_R1;
-    real1 bitProb;
+    bool isSeparated = true;
     for (i = 0; i < controlLen; i++) {
-        bitProb = Prob(controls[i]);
-
-        if (!shards[controls[i]].isPhaseDirty || (shards[controls[i]].unit->GetQubitCount() == 1)) {
-            if (bitProb <= min_norm) {
-                ForceM(controls[i], false);
-            } else if ((ONE_R1 - bitProb) <= min_norm) {
-                ForceM(controls[i], true);
+        for (j = 0; j < (int)targets.size(); j++) {
+            if (shards[controls[i]].unit == shards[targets[j]].unit) {
+                isSeparated = false;
+                break;
             }
         }
-
-        if (anti) {
-            prob *= ONE_R1 - bitProb;
-        } else {
-            prob *= bitProb;
-        }
-        if (prob <= min_norm) {
+        if (!isSeparated) {
             break;
         }
     }
-    if (prob <= min_norm) {
-        return;
-    } else if (min_norm >= (ONE_R1 - prob)) {
-        fn();
-        return;
+
+    if (isSeparated) {
+        real1 prob = ONE_R1;
+        real1 bitProb;
+        for (i = 0; i < controlLen; i++) {
+            bitProb = Prob(controls[i]);
+
+            if (!shards[controls[i]].isPhaseDirty || (shards[controls[i]].unit->GetQubitCount() == 1)) {
+                if (bitProb <= min_norm) {
+                    ForceM(controls[i], false);
+                } else if ((ONE_R1 - bitProb) <= min_norm) {
+                    ForceM(controls[i], true);
+                }
+            }
+
+            if (anti) {
+                prob *= ONE_R1 - bitProb;
+            } else {
+                prob *= bitProb;
+            }
+            if (prob <= min_norm) {
+                break;
+            }
+        }
+        if (prob <= min_norm) {
+            return;
+        } else if (min_norm >= (ONE_R1 - prob)) {
+            fn();
+            return;
+        }
     }
 
     std::vector<bitLenInt> allBits(controlLen + targets.size());

@@ -734,37 +734,23 @@ bool QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
             queue.enqueueReadBuffer(*failFlagBuffer, CL_TRUE, 0, sizeof(bitLenInt), &failFlag, &kernelEventVec);
 
             if (!failFlag) {
-                real1 probDiff = ONE_R1;
+                real1 totChance;
+                WAIT_REAL1_SUM(NULL, *probBuffer2, partPower, partStateProb, &totChance);
 
-                queue.enqueueMapBuffer(*probBuffer2, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * partPower);
-
-                for (bitCapInt i = 0; i < partPower; i++) {
-                    probDiff -= partStateProb[i];
-                }
-                probDiff = std::abs(probDiff);
-
-                if (probDiff > (maxQPower * min_norm)) {
+                real1 probDiff = std::abs(ONE_R1 - totChance);
+                if (probDiff > (partPower * min_norm)) {
                     failFlag = true;
                 }
-
-                queue.enqueueUnmapMemObject(*probBuffer2, partStateProb);
             }
 
             if (!failFlag) {
-                real1 probDiff = ONE_R1;
+                real1 totChance;
+                WAIT_REAL1_SUM(NULL, *probBuffer1, remainderPower, remainderStateProb, &totChance);
 
-                queue.enqueueMapBuffer(*probBuffer1, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * remainderPower);
-
-                for (bitCapInt i = 0; i < remainderPower; i++) {
-                    probDiff -= remainderStateProb[i];
-                }
-                probDiff = std::abs(probDiff);
-
-                if (probDiff > (maxQPower * min_norm)) {
+                real1 probDiff = std::abs(ONE_R1 - totChance);
+                if (probDiff > (remainderPower * min_norm)) {
                     failFlag = true;
                 }
-
-                queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb);
             }
 
             if (failFlag) {

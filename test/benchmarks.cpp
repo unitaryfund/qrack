@@ -67,7 +67,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
         for (i = 0; i < ITERATIONS; i++) {
             if ((i % 2) == 0) {
-                qftReg->SetPermutation(0);
+                qftReg->SetPermutation(qftReg->Rand() * qftReg->GetMaxQPower(), complex(ONE_R1, ZERO_R1));
+                // for (bitLenInt j = 0; j < numBits; j++) {
+                //    if (qftReg->Rand() >= (ONE_R1 / 2)) {
+                //    qftReg->H(j);
+                //}
+                qftReg->Finish();
             }
 
             iterClock = clock();

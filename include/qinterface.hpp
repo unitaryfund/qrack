@@ -108,7 +108,6 @@ protected:
     }
 
     /** Generate a random real1 from 0 to 1 */
-    virtual real1 Rand() { return rand_distribution(*rand_generator); }
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     inline bitCapInt log2(bitCapInt n)
@@ -148,6 +147,9 @@ public:
 
     /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
     int GetMaxQPower() { return maxQPower; }
+
+    /** Generate a random real number between 0 and 1 */
+    virtual real1 Rand() { return rand_distribution(*rand_generator); }
 
     /** Set an arbitrary pure quantum state representation
      *
