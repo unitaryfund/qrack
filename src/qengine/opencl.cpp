@@ -665,18 +665,22 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     return result;
 }
 
-void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
+bool QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination, bool checkIfSeparable)
 {
     // "Dispose" is basically the same as decohere, except "Dispose" throws the removed bits away.
 
     if (length == 0) {
-        return;
+        return true;
     }
 
     // Depending on whether we Decohere or Dispose, we have optimized kernels.
     OCLAPI api_call;
     if (destination != nullptr) {
-        api_call = OCL_API_DECOHEREPROB;
+        if (checkIfSeparable) {
+            api_call = OCL_API_TRYDECOHEREPROB;
+        } else {
+            api_call = OCL_API_DECOHEREPROB;
+        }
     } else {
         api_call = OCL_API_DISPOSEPROB;
     }
@@ -717,8 +721,63 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
         // Call the kernel that calculates bit probability and angle, retaining both parts.
-        device_context->wait_events.push_back(QueueCall(
-            api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 }));
+        if (checkIfSeparable) {
+            bitLenInt failFlag = 0;
+            BufferPtr failFlagBuffer = std::make_shared<cl::Buffer>(
+                context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sizeof(bitLenInt), &failFlag);
+
+            std::vector<cl::Event> kernelEventVec(1);
+            kernelEventVec[0] = QueueCall(api_call, ngc, ngs,
+                { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2, failFlagBuffer });
+            queue.flush();
+
+            queue.enqueueReadBuffer(*failFlagBuffer, CL_TRUE, 0, sizeof(bitLenInt), &failFlag, &kernelEventVec);
+
+            if (!failFlag) {
+                real1 probDiff = ONE_R1;
+
+                queue.enqueueMapBuffer(*probBuffer2, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * partPower);
+
+                for (bitCapInt i = 0; i < partPower; i++) {
+                    probDiff -= remainderStateProb[i];
+                }
+                probDiff = abs(probDiff);
+
+                if (probDiff > (maxQPower * min_norm)) {
+                    failFlag = true;
+                }
+
+                queue.enqueueUnmapMemObject(*probBuffer2, partStateProb);
+            }
+
+            if (!failFlag) {
+                real1 probDiff = ONE_R1;
+
+                queue.enqueueMapBuffer(*probBuffer1, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * remainderPower);
+
+                for (bitCapInt i = 0; i < remainderPower; i++) {
+                    probDiff -= remainderStateProb[i];
+                }
+                probDiff = abs(probDiff);
+
+                if (probDiff > (maxQPower * min_norm)) {
+                    failFlag = true;
+                }
+
+                queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb);
+            }
+
+            if (failFlag) {
+                delete[] remainderStateProb;
+                delete[] remainderStateAngle;
+                delete[] partStateProb;
+                delete[] partStateAngle;
+                return false;
+            }
+        } else {
+            device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs,
+                { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 }));
+        }
     } else {
         // Call the kernel that calculates bit probability and angle, discarding the "disposed" part.
         device_context->wait_events.push_back(
@@ -815,14 +874,24 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
+
+    return true;
 }
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
+    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination), false);
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
+{
+    DecohereDispose(start, length, (QEngineOCLPtr) nullptr, false);
+}
+
+bool QEngineOCL::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+{
+    return DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination), true);
+}
 
 real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {

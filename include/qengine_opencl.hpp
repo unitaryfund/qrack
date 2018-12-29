@@ -119,6 +119,7 @@ public:
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -231,7 +232,7 @@ protected:
     void UnlockSync();
     void Sync();
 
-    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
+    bool DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest, bool checkIfSeparable);
     void ArithmeticCall(
         OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
     void CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,

@@ -82,10 +82,11 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
-void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+bool QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable)
 {
-    QUnit::Detach(start, length, dest);
+    bool result = QUnit::Detach(start, length, dest, checkIfSeparable);
     RedistributeQEngines();
+    return result;
 }
 
 QInterfacePtr QUnitMulti::EntangleIterator(

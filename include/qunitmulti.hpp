@@ -162,7 +162,7 @@ protected:
     virtual QInterfacePtr EntangleIterator(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    bool Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable);
     bool TrySeparate(std::vector<bitLenInt> bits);
 
     void RedistributeQEngines();

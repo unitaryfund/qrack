@@ -62,6 +62,7 @@ public:
     virtual bitLenInt Cohere(QInterfacePtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives
@@ -226,7 +227,7 @@ protected:
 
     void OrderContiguous(QInterfacePtr unit);
 
-    virtual void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual bool Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable);
 
     struct QSortEntry {
         bitLenInt bit;

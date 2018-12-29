@@ -290,6 +290,12 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length) = 0;
 
     /**
+     *  Attempt a Decohere() operation, on a state which might not be separable. If the state is not separable, abort
+     * and return false. Otherwise, complete the operation and return true.
+     */
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
+
+    /**
      * \defgroup BasicGates Basic quantum gate primitives
      *@{
      */

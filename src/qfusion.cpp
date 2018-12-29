@@ -288,6 +288,36 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     }
 }
 
+// "TryDecohere" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decohered"
+// qubit, so it's definitely cheaper to maintain our buffers until after the Decohere.
+bool QFusion::TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
+{
+    FlushReg(start, length);
+
+    bool result = qReg->TryDecohere(start, length, dest->qReg);
+
+    if (result == false) {
+        return false;
+    }
+
+    if (length < qubitCount) {
+        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+    }
+    SetQubitCount(qReg->GetQubitCount());
+    dest->SetQubitCount(length);
+
+    // If the Decohere caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
+    // gets:
+    if (qubitCount < MIN_FUSION_BITS) {
+        FlushAll();
+    }
+    if (dest->GetQubitCount() < MIN_FUSION_BITS) {
+        dest->FlushAll();
+    }
+
+    return true;
+}
+
 // "PhaseFlip" can be buffered as a single bit operation to make it cheaper, (equivalent to the application of the gates
 // Z X Z X to any given bit, for example).
 void QFusion::PhaseFlip()

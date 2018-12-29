@@ -173,7 +173,7 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     return oldCount;
 }
 
-void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+bool QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */
 
@@ -187,7 +187,13 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     bitLenInt unitLength = unit->GetQubitCount();
 
     if (dest && unit->GetQubitCount() > length) {
-        unit->Decohere(mapped, length, dest);
+        if (checkIfSeparable) {
+            if (!(unit->TryDecohere(mapped, length, dest))) {
+                return false;
+            }
+        } else {
+            unit->Decohere(mapped, length, dest);
+        }
     } else if (dest) {
         dest->CopyState(unit);
     } else {
@@ -198,7 +204,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     SetQubitCount(qubitCount - length);
 
     if (unitLength == length) {
-        return;
+        return true;
     }
 
     /* Find the rest of the qubits. */
@@ -207,11 +213,18 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
             shard.mapped -= length;
         }
     }
+
+    return true;
 }
 
-void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Detach(start, length, dest); }
+void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Detach(start, length, dest, false); }
 
-void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
+void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr, false); }
+
+bool QUnit::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+{
+    return Detach(start, length, dest, true);
+}
 
 QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
@@ -384,35 +397,15 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
         bool didSeparateBit = false;
         shard = shards[bits[i]];
         if (shard.unit->GetQubitCount() > 1) {
-            if (!shard.isPhaseDirty) {
-                real1 prob = Prob(bits[i]);
-                if (prob < min_norm) {
-                    didSeparateBit = true;
-                    ForceM(bits[i], false);
-                } else if ((ONE_R1 - prob) < min_norm) {
-                    didSeparateBit = true;
-                    ForceM(bits[i], true);
-                }
-
-                continue;
-            }
-
-            QInterfacePtr unitCopy = CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0,
-                rand_generator, phaseFactor, doNormalize, useHostRam);
-            unitCopy->CopyState(shard.unit);
-
             QInterfacePtr testBit =
                 CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
-            unitCopy->Decohere(shard.mapped, 1, testBit);
-            unitCopy->Cohere(testBit);
 
-            didSeparateBit = unitCopy->ApproxCompare(shard.unit);
+            didSeparateBit = shard.unit->TryDecohere(shard.mapped, 1, testBit);
 
             if (didSeparateBit) {
                 // The bit is separable. Keep the test unit, and update the shard mappings.
                 shards[bits[i]].unit = testBit;
                 shards[bits[i]].mapped = 0;
-                shard.unit->Dispose(shard.mapped, 1);
                 for (auto&& shrd : shards) {
                     if ((shrd.unit == shard.unit) && (shrd.mapped > shard.mapped)) {
                         shrd.mapped--;
@@ -448,7 +441,6 @@ bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
                 }
             }
         }
-
         didSeparate |= didSeparateBit;
     }
     return didSeparate;

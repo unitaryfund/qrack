@@ -65,6 +65,11 @@ public:
     }
     virtual void Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        return TryDecohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));
+    }
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
