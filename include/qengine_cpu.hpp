@@ -51,7 +51,6 @@ public:
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
 
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Dispose(bitLenInt start, bitLenInt length);
@@ -157,12 +156,13 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
     }
     virtual bool ApproxCompare(QEngineCPUPtr toCompare);
+    virtual QInterfacePtr Clone();
 
     /** @} */
 
 protected:
     virtual void ResetStateVec(complex* nStateVec);
-    bool DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest, bool checkIfSeparable);
+    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();

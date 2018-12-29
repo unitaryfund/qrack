@@ -23,7 +23,6 @@ namespace Qrack {
 struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
-    bool isPhaseDirty = false;
 };
 
 class QUnit;
@@ -192,6 +191,16 @@ public:
     virtual void UpdateRunningNorm();
     virtual void Finish();
 
+    virtual QInterfacePtr Clone()
+    {
+        QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
+            complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+
+        copyPtr->CopyState(this);
+
+        return copyPtr;
+    }
+
     /** @} */
 
 protected:
@@ -224,7 +233,7 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
-    virtual bool TrySeparate(bitLenInt bit);
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
     void OrderContiguous(QInterfacePtr unit);
 

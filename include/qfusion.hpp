@@ -160,6 +160,15 @@ public:
     virtual void UpdateRunningNorm();
     virtual void Finish() { qReg->Finish(); }
 
+    virtual QInterfacePtr Clone()
+    {
+        FlushAll();
+
+        QInterfacePtr payload = qReg->Clone();
+
+        return std::make_shared<QFusion>(payload);
+    }
+
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
      * nonbufferable operations */

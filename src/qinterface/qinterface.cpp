@@ -808,4 +808,20 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Cohere(std::vector<QInterfacePtr>
     return ret;
 }
 
+bool QInterface::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+{
+    QInterfacePtr unitCopy = Clone();
+
+    unitCopy->Decohere(start, length, dest);
+    unitCopy->Cohere(dest);
+
+    bool didSeparate = ApproxCompare(unitCopy);
+    if (didSeparate) {
+        // The subsystem is separable.
+        Dispose(start, length);
+    }
+
+    return didSeparate;
+}
+
 } // namespace Qrack

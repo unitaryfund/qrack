@@ -12,6 +12,8 @@
 
 #include <thread>
 
+#include <iostream>
+
 #include "qengine_cpu.hpp"
 
 #if ENABLE_COMPLEX_X2
@@ -368,10 +370,10 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
  * destination object must be initialized to the correct number of bits, in 0
  * permutation state.
  */
-bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination, bool checkIfSeparable)
+void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
     if (length == 0) {
-        return true;
+        return;
     }
 
     if (doNormalize && (runningNorm != ONE_R1)) {
@@ -383,54 +385,27 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower];
-    bool failedFlag = false;
-
-    int numCores = GetConcurrencyLevel();
-    real1* oneChanceBuff = new real1[numCores]();
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
         j = lcv % (1 << start);
         j = j | ((lcv ^ j) << length);
-        real1 firstAngle = arg(stateVec[j]);
-        real1 angleDiff;
+
+        real1 angle = -2 * M_PI;
+        real1 nrm;
+
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
-            remainderStateProb[lcv] += norm(stateVec[l]);
 
-            if (checkIfSeparable) {
-                angleDiff = std::abs(firstAngle - arg(stateVec[l]));
-                if (angleDiff > M_PI) {
-                    angleDiff = 2 * M_PI - angleDiff;
-                }
-                if (angleDiff > (2 * M_PI * min_norm)) {
-                    failedFlag = true;
-                }
+            nrm = norm(stateVec[l]);
+            remainderStateProb[lcv] += nrm;
+
+            if ((angle < -M_PI) && (nrm > min_norm)) {
+                angle = arg(stateVec[l]);
             }
         }
-        remainderStateAngle[lcv] = firstAngle;
-        oneChanceBuff[cpu] += remainderStateProb[lcv];
+        remainderStateAngle[lcv] = angle;
     });
-
-    if (checkIfSeparable) {
-        if (!failedFlag) {
-            real1 probDiff = ONE_R1;
-            for (bitLenInt i = 0; i < numCores; i++) {
-                probDiff -= oneChanceBuff[i];
-            }
-            probDiff = std::abs(probDiff);
-            if (probDiff > (maxQPower * min_norm)) {
-                failedFlag = true;
-            }
-        }
-
-        if (failedFlag) {
-            delete[] remainderStateProb;
-            delete[] remainderStateAngle;
-            delete[] oneChanceBuff;
-            return false;
-        }
-    }
 
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
@@ -442,54 +417,27 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
         real1* partStateProb = new real1[partPower]();
         real1* partStateAngle = new real1[partPower];
 
-        std::fill(oneChanceBuff, oneChanceBuff + numCores, ZERO_R1);
-
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt j, k, l;
             j = lcv << start;
-            real1 firstAngle = arg(stateVec[j]);
-            real1 angleDiff;
+
+            real1 angle = -2 * M_PI;
+            real1 nrm;
+
             for (k = 0; k < remainderPower; k++) {
                 l = k % (1 << start);
                 l = l | ((k ^ l) << length);
                 l = j | l;
-                partStateProb[lcv] += norm(stateVec[l]);
 
-                if (checkIfSeparable) {
-                    angleDiff = std::abs(firstAngle - arg(stateVec[l]));
-                    if (angleDiff > M_PI) {
-                        angleDiff = 2 * M_PI - angleDiff;
-                    }
-                    if (angleDiff > (2 * M_PI * min_norm)) {
-                        failedFlag = true;
-                    }
+                nrm = norm(stateVec[l]);
+                partStateProb[lcv] += nrm;
+
+                if ((angle < -M_PI) && (nrm > min_norm)) {
+                    angle = arg(stateVec[l]);
                 }
             }
-            partStateAngle[lcv] = firstAngle;
-            oneChanceBuff[cpu] += partStateProb[lcv];
+            partStateAngle[lcv] = angle;
         });
-
-        if (checkIfSeparable) {
-            if (!failedFlag) {
-                real1 probDiff = ONE_R1;
-                for (bitLenInt i = 0; i < numCores; i++) {
-                    probDiff -= oneChanceBuff[i];
-                }
-                probDiff = std::abs(probDiff);
-                if (probDiff > (maxQPower * min_norm)) {
-                    failedFlag = true;
-                }
-            }
-
-            if (failedFlag) {
-                delete[] remainderStateProb;
-                delete[] remainderStateAngle;
-                delete[] partStateProb;
-                delete[] partStateAngle;
-                delete[] oneChanceBuff;
-                return false;
-            }
-        }
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec[lcv] =
@@ -509,25 +457,14 @@ bool QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
-    delete[] oneChanceBuff;
-
-    return true;
 }
 
 void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination), false);
+    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
-{
-    DecohereDispose(start, length, (QEngineCPUPtr) nullptr, false);
-}
-
-bool QEngineCPU::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
-{
-    return DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination), true);
-}
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)

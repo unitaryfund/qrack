@@ -164,7 +164,7 @@ protected:
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     bool Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable);
-    bool TrySeparate(bitLenInt bit);
+    bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
     void RedistributeQEngines();
 };

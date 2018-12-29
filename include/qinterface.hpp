@@ -295,7 +295,7 @@ public:
      *  Attempt a Decohere() operation, on a state which might not be separable. If the state is not separable, abort
      * and return false. Otherwise, complete the operation and return true.
      */
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives
@@ -1441,6 +1441,19 @@ public:
      */
 
     virtual void Finish(){};
+
+    /**
+     *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
+     * increases gate speed. This method is used to manually attempt internal separation of a QUnit subsytem. We attempt
+     * a Decohere() operation, on a state which might not be separable. If the state is not separable, abort and return
+     * false. Otherwise, complete the operation, add the subsystem back into the QUnit "shards," and return true.
+     */
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1) { return false; }
+
+    /**
+     *  Clone this QInterface
+     */
+    virtual QInterfacePtr Clone() = 0;
 
     /** @} */
 };

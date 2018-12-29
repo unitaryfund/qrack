@@ -228,33 +228,53 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
 
     bitCapInt j, k, l;
     cmplx amp;
-    real1 partProb;
+    real1 partProb, nrm, angle;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv % (1U << start);
         j = j | ((lcv ^ j) << len);
+
         partProb = ZERO_R1;
+        angle = -2 * M_PI;
+
         for (k = 0U; k < partPower; k++) {
             l = j | (k << start);
+
             amp = stateVec[l];
-            partProb += dot(amp, amp);
+            nrm = dot(amp, amp);
+            partProb += nrm;
+
+            if ((angle < -M_PI) && (nrm > min_norm)) {
+                angle = arg(stateVec[l]);
+            }
         }
+
         remainderStateProb[lcv] = partProb;
-        remainderStateAngle[lcv] = arg(amp);
+        remainderStateAngle[lcv] = angle;
     }
 
     for (lcv = ID; lcv < partPower; lcv += Nthreads) {
         j = lcv << start;
+
         partProb = ZERO_R1;
+        angle = -2 * M_PI;
+
         for (k = 0U; k < remainderPower; k++) {
             l = k % (1U << start);
             l = l | ((k ^ l) << len);
             l = j | l;
+            
             amp = stateVec[l];
-            partProb += dot(amp, amp);
+            nrm = dot(amp, amp);
+            partProb += nrm;
+
+            if ((angle < -M_PI) && (nrm > min_norm)) {
+                angle = arg(stateVec[l]);
+            }
         }
+
         partStateProb[lcv] = partProb;
-        partStateAngle[lcv] = arg(amp);
+        partStateAngle[lcv] = angle;
     }
 }
 
@@ -273,19 +293,28 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
 
     bitCapInt j, k, l;
     cmplx amp;
-    real1 partProb;
+    real1 partProb, nrm, angle;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv % (1U << start);
         j = j | ((lcv ^ j) << len);
+
         partProb = ZERO_R1;
+        angle = -2 * M_PI;
+
         for (k = 0U; k < partPower; k++) {
             l = j | (k << start);
+            
             amp = stateVec[l];
-            partProb += dot(amp, amp);
+            nrm = dot(amp, amp);
+            partProb += nrm;
+
+            if ((angle < -M_PI) && (nrm > min_norm)) {
+                angle = arg(stateVec[l]);
+            }
         }
         remainderStateProb[lcv] = partProb;
-        remainderStateAngle[lcv] = arg(amp);
+        remainderStateAngle[lcv] = angle;
     }
 }
 
@@ -300,71 +329,6 @@ void kernel decohereamp(global real1* stateProb, global real1* stateAngle, const
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
         nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
-    }
-}
-
-void kernel trydecohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb, global real1* partStateAngle, global bitLenInt* failFlag)
-{
-    bitCapInt ID, Nthreads, lcv;
-    
-    ID = get_global_id(0);
-    Nthreads = get_global_size(0);
-
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt partPower = args.x;
-    bitCapInt remainderPower = args.y;
-    bitCapInt start = args.z;
-    bitCapInt len = args.w;
-
-    bitCapInt j, k, l;
-    cmplx amp;
-    real1 partProb;
-    real1 firstAngle;
-    real1 angleDiff;
-
-    for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
-        j = lcv % (1U << start);
-        j = j | ((lcv ^ j) << len);
-        partProb = ZERO_R1;
-        firstAngle = arg(stateVec[j]);
-        for (k = 0U; k < partPower; k++) {
-            l = j | (k << start);
-            amp = stateVec[l];
-            partProb += dot(amp, amp);
-
-            angleDiff = fabs(firstAngle - arg(amp));
-            if (angleDiff > M_PI) {
-                angleDiff = 2 * M_PI - angleDiff;
-            }
-            if (angleDiff > min_norm) {
-                failFlag[0] = 1;
-            }
-        }
-        remainderStateProb[lcv] = partProb;
-        remainderStateAngle[lcv] = arg(amp);
-    }
-
-    for (lcv = ID; lcv < partPower; lcv += Nthreads) {
-        j = lcv << start;
-        partProb = ZERO_R1;
-        firstAngle = arg(stateVec[j]);
-        for (k = 0U; k < remainderPower; k++) {
-            l = k % (1U << start);
-            l = l | ((k ^ l) << len);
-            l = j | l;
-            amp = stateVec[l];
-            partProb += dot(amp, amp);
-
-            angleDiff = fabs(firstAngle - arg(amp));
-            if (angleDiff > M_PI) {
-                angleDiff = 2 * M_PI - angleDiff;
-            }
-            if (angleDiff > min_norm) {
-                failFlag[0] = 1;
-            }
-        }
-        partStateProb[lcv] = partProb;
-        partStateAngle[lcv] = arg(amp);
     }
 }
 

@@ -349,3 +349,14 @@ TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
 }
+
+TEST_CASE("test_doulbe_qft_tryseparate")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        qftReg->QFT(0, n);
+        qftReg->QFT(0, n);
+        for (int i = 0; i < n; i++) {
+            qftReg->TrySeparate(i);
+        }
+    });
+}
