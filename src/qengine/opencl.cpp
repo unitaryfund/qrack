@@ -739,7 +739,7 @@ bool QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
                 queue.enqueueMapBuffer(*probBuffer2, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * partPower);
 
                 for (bitCapInt i = 0; i < partPower; i++) {
-                    probDiff -= remainderStateProb[i];
+                    probDiff -= partStateProb[i];
                 }
                 probDiff = abs(probDiff);
 
