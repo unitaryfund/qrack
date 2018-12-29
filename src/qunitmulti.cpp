@@ -97,9 +97,9 @@ QInterfacePtr QUnitMulti::EntangleIterator(
     return toRet;
 }
 
-bool QUnitMulti::TrySeparate(std::vector<bitLenInt> bits)
+bool QUnitMulti::TrySeparate(bitLenInt bit)
 {
-    bool didSeparate = QUnit::TrySeparate(bits);
+    bool didSeparate = QUnit::TrySeparate(bit);
     if (didSeparate) {
         RedistributeQEngines();
     }

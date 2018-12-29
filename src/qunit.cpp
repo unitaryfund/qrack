@@ -64,8 +64,6 @@ void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 // protected method
 void QUnit::CopyState(QUnit* orig)
 {
-    Finish();
-
     SetQubitCount(orig->GetQubitCount());
     shards.clear();
 
@@ -75,8 +73,8 @@ void QUnit::CopyState(QUnit* orig)
         QEngineShard shard;
         shard.mapped = otherShard.mapped;
         if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] = CreateQuantumInterface(
-                engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
+            otherUnits[otherShard.unit] =
+                CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
             otherUnits[otherShard.unit]->CopyState(otherShard.unit);
         }
         shard.unit = otherUnits[otherShard.unit];
@@ -86,10 +84,8 @@ void QUnit::CopyState(QUnit* orig)
 
 void QUnit::CopyState(QInterfacePtr orig)
 {
-    Finish();
-
-    QInterfacePtr unit = CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam);
+    QInterfacePtr unit = CreateQuantumInterface(
+        engine, subengine, orig->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->CopyState(orig);
 
     SetQubitCount(orig->GetQubitCount());
@@ -106,10 +102,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(complex* inputState)
 {
-    Finish();
-
-    auto unit = CreateQuantumInterface(
-        engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
+    auto unit =
+        CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->SetQuantumState(inputState);
 
     int idx = 0;
@@ -119,9 +113,7 @@ void QUnit::SetQuantumState(complex* inputState)
     }
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (!TrySeparate({ i })) {
-            shards[i].isPhaseDirty = true;
-        }
+        shards[i].isPhaseDirty = true;
     }
 }
 
@@ -392,80 +384,60 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
     ((*qbits).*fn)(radians, bits...);
 }
 
-bool QUnit::TrySeparate(std::vector<bitLenInt> bits)
+bool QUnit::TrySeparate(bitLenInt bit)
 {
-    bool didSeparate = true;
-    QEngineShard shard;
-    for (bitLenInt i = 0; i < (bits.size()); i++) {
-        bool didSeparateBit = false;
-        shard = shards[bits[i]];
-        if (shard.unit->GetQubitCount() > 1) {
-            if (!shard.isPhaseDirty) {
-                real1 prob = Prob(bits[i]);
-                if (prob < min_norm) {
-                    didSeparateBit = true;
-                    ForceM(bits[i], false);
-                } else if ((ONE_R1 - prob) < min_norm) {
-                    didSeparateBit = true;
-                    ForceM(bits[i], true);
-                }
+    bool didSeparate = false;
+    QEngineShard shard = shards[bit];
+    if (shard.unit->GetQubitCount() == 1) {
+        return true;
+    }
 
-                continue;
-            }
+    QInterfacePtr testBit =
+        CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
 
-            QInterfacePtr unitCopy = CreateQuantumInterface(engine, subengine, shard.unit->GetQubitCount(), 0,
-                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
-            unitCopy->CopyState(shard.unit);
+    didSeparate = shard.unit->TryDecohere(shard.mapped, 1, testBit);
 
-            QInterfacePtr testBit = CreateQuantumInterface(
-                engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
-            unitCopy->Decohere(shard.mapped, 1, testBit);
-            unitCopy->Cohere(testBit);
-
-            didSeparateBit = unitCopy->ApproxCompare(shard.unit);
-
-            if (didSeparateBit) {
-                // The bit is separable. Keep the test unit, and update the shard mappings.
-                shards[bits[i]].unit = testBit;
-                shards[bits[i]].mapped = 0;
-                shard.unit->Dispose(shard.mapped, 1);
-                for (auto&& shrd : shards) {
-                    if ((shrd.unit == shard.unit) && (shrd.mapped > shard.mapped)) {
-                        shrd.mapped--;
-                    }
-                }
-
-                if (shard.isPhaseDirty) {
-                    complex amp0 = testBit->GetAmplitude(0);
-                    real1 phase0;
-                    if (norm(amp0) < min_norm) {
-                        shards[bits[i]].isPhaseDirty = false;
-                        continue;
-                    } else {
-                        phase0 = arg(amp0);
-                    }
-
-                    complex amp1 = testBit->GetAmplitude(1);
-                    real1 phase1;
-                    if (norm(amp1) < min_norm) {
-                        shards[bits[i]].isPhaseDirty = false;
-                        continue;
-                    } else {
-                        phase1 = arg(amp0);
-                    }
-
-                    real1 phaseDiff = std::abs(phase0 - phase1);
-                    if (phaseDiff > M_PI) {
-                        phaseDiff = 2 * M_PI - phaseDiff;
-                    }
-                    if (phaseDiff < min_norm) {
-                        shards[bits[i]].isPhaseDirty = false;
-                    }
-                }
+    if (didSeparate) {
+        // The bit is separable. Keep the test unit, and update the shard mappings.
+        shards[bit].unit = testBit;
+        shards[bit].mapped = 0;
+        for (auto&& shrd : shards) {
+            if ((shrd.unit == shard.unit) && (shrd.mapped > shard.mapped)) {
+                shrd.mapped--;
             }
         }
-        didSeparate &= didSeparateBit;
+
+        shard = shards[bit];
+
+        if (shard.isPhaseDirty) {
+            complex amp0 = testBit->GetAmplitude(0);
+            real1 phase0;
+            if (norm(amp0) < min_norm) {
+                shards[bit].isPhaseDirty = false;
+                return true;
+            } else {
+                phase0 = arg(amp0);
+            }
+
+            complex amp1 = testBit->GetAmplitude(1);
+            real1 phase1;
+            if (norm(amp1) < min_norm) {
+                shards[bit].isPhaseDirty = false;
+                return true;
+            } else {
+                phase1 = arg(amp0);
+            }
+
+            real1 phaseDiff = std::abs(phase0 - phase1);
+            if (phaseDiff > M_PI) {
+                phaseDiff = 2 * M_PI - phaseDiff;
+            }
+            if (phaseDiff < min_norm) {
+                shards[bit].isPhaseDirty = false;
+            }
+        }
     }
+
     return didSeparate;
 }
 
@@ -585,7 +557,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     }
 
     QInterfacePtr dest = CreateQuantumInterface(
-        engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
+        engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor, doNormalize, useHostRam);
     unit->Dispose(mapped, 1);
 
     /* Update the mappings. */
@@ -679,12 +651,12 @@ bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
-    // If this operation can induce a superposition of phase, mark the shard "isPhaseDirty." This is necessary to track
-    // entanglement.
+    // If this operation can induce a superposition of phase, mark the shard "isPhaseDirty." This is necessary to
+    // track entanglement.
     if (DoesOperatorPhaseShift(mtrx)) {
         shards[qubit].isPhaseDirty = true;
-        // This operation might make a "phase dirty" bit into a "phase clean" bit for entanglement, but we can't detect
-        // that, yet.
+        // This operation might make a "phase dirty" bit into a "phase clean" bit for entanglement, but we can't
+        // detect that, yet.
     }
     shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
 }
@@ -701,7 +673,8 @@ void QUnit::ApplyControlledSingleBit(
                     shards[controls[i]].isPhaseDirty = true;
                 }
             }
-            return TrySeparate({ target });
+            // return TrySeparate({ target });
+            return false;
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -718,7 +691,8 @@ void QUnit::ApplyAntiControlledSingleBit(
                     shards[controls[i]].isPhaseDirty = true;
                 }
             }
-            return TrySeparate({ target });
+            // return TrySeparate({ target });
+            return false;
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -729,7 +703,8 @@ void QUnit::CSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->CSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            return TrySeparate({ qubit1, qubit2 });
+            // return TrySeparate({ qubit1, qubit2 });
+            return false;
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -740,7 +715,8 @@ void QUnit::AntiCSwap(
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
         [&](QInterfacePtr unit, bitLenInt* mappedControls) {
             unit->AntiCSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
-            return TrySeparate({ qubit1, qubit2 });
+            // return TrySeparate({ qubit1, qubit2 });
+            return false;
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -756,7 +732,8 @@ void QUnit::CSqrtSwap(
             for (bitLenInt i = 0; i < controlLen; i++) {
                 shards[controls[i]].isPhaseDirty = true;
             }
-            return TrySeparate({ qubit1, qubit2 });
+            // return TrySeparate({ qubit1, qubit2 });
+            return false;
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -772,7 +749,8 @@ void QUnit::AntiCSqrtSwap(
             for (bitLenInt i = 0; i < controlLen; i++) {
                 shards[controls[i]].isPhaseDirty = true;
             }
-            return TrySeparate({ qubit1, qubit2 });
+            // return TrySeparate({ qubit1, qubit2 });
+            return false;
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -788,7 +766,8 @@ void QUnit::CISqrtSwap(
             for (bitLenInt i = 0; i < controlLen; i++) {
                 shards[controls[i]].isPhaseDirty = true;
             }
-            return TrySeparate({ qubit1, qubit2 });
+            // return TrySeparate({ qubit1, qubit2 });
+            return false;
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -804,7 +783,8 @@ void QUnit::AntiCISqrtSwap(
             for (bitLenInt i = 0; i < controlLen; i++) {
                 shards[controls[i]].isPhaseDirty = true;
             }
-            return TrySeparate({ qubit1, qubit2 });
+            // return TrySeparate({ qubit1, qubit2 });
+            return false;
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }

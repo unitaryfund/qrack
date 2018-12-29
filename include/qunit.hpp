@@ -50,10 +50,10 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool randomGlobalPhase = false, bool useHostMem = false);
+        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool randomGlobalPhase = false, bool useHostMem = false);
+        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -224,7 +224,7 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
-    virtual bool TrySeparate(std::vector<bitLenInt> bits);
+    virtual bool TrySeparate(bitLenInt bit);
 
     void OrderContiguous(QInterfacePtr unit);
 
