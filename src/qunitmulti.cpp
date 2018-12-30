@@ -82,11 +82,10 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
-bool QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable)
+void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
-    bool result = QUnit::Detach(start, length, dest, checkIfSeparable);
+    QUnit::Detach(start, length, dest);
     RedistributeQEngines();
-    return result;
 }
 
 QInterfacePtr QUnitMulti::EntangleIterator(
@@ -95,15 +94,6 @@ QInterfacePtr QUnitMulti::EntangleIterator(
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
     RedistributeQEngines();
     return toRet;
-}
-
-bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
-{
-    bool didSeparate = QUnit::TrySeparate(start, length);
-    if (didSeparate) {
-        RedistributeQEngines();
-    }
-    return didSeparate;
 }
 
 /// Set register bits to given permutation

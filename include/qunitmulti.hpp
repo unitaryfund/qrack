@@ -163,10 +163,10 @@ protected:
     virtual QInterfacePtr EntangleIterator(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    bool Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable);
-    bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+    using QUnit::Detach;
+    virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
 
-    void RedistributeQEngines();
+    virtual void RedistributeQEngines();
 };
 
 } // namespace Qrack

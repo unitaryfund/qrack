@@ -1351,7 +1351,7 @@ public:
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
     {
-        while ((first < last) && (first < (last - 1))) {
+        while (first < (last - 1)) {
             last--;
             Swap(first, last);
             first++;

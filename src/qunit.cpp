@@ -143,7 +143,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 /*
  * Append QInterface to the end of the unit.
  */
-bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
+bitLenInt QUnit::Cohere(QUnitPtr toCopy)
 {
     bitLenInt oldCount = qubitCount;
 
@@ -151,24 +151,32 @@ bitLenInt QUnit::Cohere(QInterfacePtr toCopy)
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
     /* Create a clone of the quantum state in toCopy. */
-    QInterfacePtr clone(toCopy);
+    QUnitPtr clone(toCopy);
 
     /* Update shards to reference the cloned state. */
     for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {
-        shards[i + oldCount].unit = clone;
-        shards[i + oldCount].mapped = i;
+        shards[i + oldCount].unit = clone->shards[i].unit;
+        shards[i + oldCount].mapped = clone->shards[i].mapped;
     }
 
     return oldCount;
 }
 
-bool QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool checkIfSeparable)
+void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */
 
+    QInterfacePtr destEngine;
     if (length > 1) {
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
+
+        if (dest) {
+            dest->EntangleRange(0, length);
+            dest->OrderContiguous(dest->shards[0].unit);
+
+            destEngine = dest->shards[0].unit;
+        }
     }
 
     QInterfacePtr unit = shards[start].unit;
@@ -176,15 +184,9 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool c
     bitLenInt unitLength = unit->GetQubitCount();
 
     if (dest && unit->GetQubitCount() > length) {
-        if (checkIfSeparable) {
-            if (!(unit->TryDecohere(mapped, length, dest))) {
-                return false;
-            }
-        } else {
-            unit->Decohere(mapped, length, dest);
-        }
+        unit->Decohere(mapped, length, destEngine);
     } else if (dest) {
-        dest->CopyState(unit);
+        destEngine->CopyState(unit);
     } else {
         unit->Dispose(mapped, length);
     }
@@ -193,7 +195,7 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool c
     SetQubitCount(qubitCount - length);
 
     if (unitLength == length) {
-        return true;
+        return;
     }
 
     /* Find the rest of the qubits. */
@@ -202,17 +204,37 @@ bool QUnit::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest, bool c
             shard.mapped -= length;
         }
     }
-
-    return true;
 }
 
-void QUnit::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) { Detach(start, length, dest, false); }
+void QUnit::Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach(start, length, dest); }
 
-void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr, false); }
+void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
-bool QUnit::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+bool QUnit::TryDecohere(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
-    return Detach(start, length, dest, true);
+    Finish();
+
+    bool tempDoNorm = doNormalize;
+    doNormalize = false;
+
+    QInterfacePtr unitCopy = Clone();
+
+    unitCopy->Decohere(start, length, dest);
+    unitCopy->Cohere(dest);
+
+    unitCopy->ROL(length, start, qubitCount - start);
+
+    bool didSeparate = ApproxCompare(unitCopy);
+    if (didSeparate) {
+        // The subsystem is separable.
+        Dispose(start, length);
+    }
+
+    Finish();
+
+    doNormalize = tempDoNorm;
+
+    return didSeparate;
 }
 
 QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
@@ -384,8 +406,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         return true;
     }
 
-    QInterfacePtr separatedBits = CreateQuantumInterface(
-        engine, subengine, length, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
+    QInterfacePtr separatedBits = std::make_shared<QUnit>(engine, subengine, length, 0, rand_generator,
+        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
     bool didSeparate = TryDecohere(start, length, separatedBits);
 
@@ -1142,7 +1164,7 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
     thisCopy.CopyState((QUnit*)this);
     thisCopy.EntangleAll();
 
-    QUnit thatCopy(engine, subengine, 1, 0);
+    QUnit thatCopy(toCompare->engine, toCompare->subengine, 1, 0);
     thatCopy.CopyState(toCompare);
     thatCopy.EntangleAll();
 

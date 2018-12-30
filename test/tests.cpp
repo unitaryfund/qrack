@@ -1858,6 +1858,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     free(testPage);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
+{
+    qftReg->SetPermutation(0x2b);
+    QInterfacePtr qftReg2 = qftReg->Clone();
+    qftReg2->X(0, 8);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x2b));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 20, 0xd4));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
     QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
