@@ -380,14 +380,13 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
-    QInterfacePtr separatedBits =
-        CreateQuantumInterface(engine, subengine, length, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
+    QInterfacePtr separatedBits = CreateQuantumInterface(
+        engine, subengine, length, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
 
-    bool didSeparate = Detach(start, length, separatedBits, true);
+    bool didSeparate = TryDecohere(start, length, separatedBits);
 
     if (didSeparate) {
         bitLenInt appendedIndex = Cohere(separatedBits);
-
         for (bitLenInt i = 0; i < length; i++) {
             Swap(start + i, appendedIndex + i);
         }
@@ -537,20 +536,18 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
 void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    QEngineShard tmp;
-
     // Swap the bit mapping.
-    tmp.mapped = shard1.mapped;
-    shard1.mapped = shard2.mapped;
-    shard2.mapped = tmp.mapped;
+    std::swap(shard1.mapped, shard2.mapped);
 
     // Swap the QInterface object.
-    tmp.unit = shard1.unit;
-    shard1.unit = shard2.unit;
-    shard2.unit = tmp.unit;
+    std::swap(shard1.unit, shard2.unit);
 }
 
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */

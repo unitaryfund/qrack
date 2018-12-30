@@ -12,8 +12,6 @@
 
 #include <thread>
 
-#include <iostream>
-
 #include "qengine_cpu.hpp"
 
 #if ENABLE_COMPLEX_X2
@@ -404,7 +402,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
                 angle = arg(stateVec[l]);
             }
         }
-        remainderStateAngle[lcv] = angle;
+        remainderStateAngle[lcv] = angle / 2;
     });
 
     if ((maxQPower - partPower) == 0) {
@@ -436,7 +434,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
                     angle = arg(stateVec[l]);
                 }
             }
-            partStateAngle[lcv] = angle;
+            partStateAngle[lcv] = angle / 2;
         });
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {

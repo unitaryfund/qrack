@@ -250,7 +250,7 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
         }
 
         remainderStateProb[lcv] = partProb;
-        remainderStateAngle[lcv] = angle;
+        remainderStateAngle[lcv] = angle / 2;
     }
 
     for (lcv = ID; lcv < partPower; lcv += Nthreads) {
@@ -274,7 +274,7 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
         }
 
         partStateProb[lcv] = partProb;
-        partStateAngle[lcv] = angle;
+        partStateAngle[lcv] = angle / 2;
     }
 }
 
@@ -1713,7 +1713,7 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec1[lcv] - stateVec2[lcv];
-        partNrm = dot(amp, amp);
+        partNrm += dot(amp, amp);
     }
 
     locID = get_local_id(0);

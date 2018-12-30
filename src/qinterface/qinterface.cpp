@@ -810,16 +810,23 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Cohere(std::vector<QInterfacePtr>
 
 bool QInterface::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
+    bool tempDoNorm = doNormalize;
+    doNormalize = false;
+
     QInterfacePtr unitCopy = Clone();
 
     unitCopy->Decohere(start, length, dest);
     unitCopy->Cohere(dest);
+
+    unitCopy->ROL(length, start, qubitCount - start);
 
     bool didSeparate = ApproxCompare(unitCopy);
     if (didSeparate) {
         // The subsystem is separable.
         Dispose(start, length);
     }
+
+    doNormalize = tempDoNorm;
 
     return didSeparate;
 }

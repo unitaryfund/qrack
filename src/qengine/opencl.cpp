@@ -1735,7 +1735,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
+        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
     LockSync(CL_MAP_READ);
     copyPtr->LockSync(CL_MAP_WRITE);

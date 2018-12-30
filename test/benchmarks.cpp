@@ -123,7 +123,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVariable(fn, MaxQubits); }
-#if 0
+
 TEST_CASE("test_cnot_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -349,13 +349,13 @@ TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
 }
-#endif
+
 TEST_CASE("test_doulbe_qft_tryseparate")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
         qftReg->QFT(0, n);
         qftReg->QFT(0, n);
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n - 1; i++) {
             qftReg->TrySeparate(i);
         }
         qftReg->Finish();

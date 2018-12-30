@@ -1333,8 +1333,8 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
 QInterfacePtr QEngineCPU::Clone()
 {
-    QInterfacePtr clone = CreateQuantumInterface(
-        QINTERFACE_CPU, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, useHostRam);
+    QInterfacePtr clone = CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator,
+        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
     clone->SetQuantumState(stateVec);
     return clone;
 }
