@@ -58,6 +58,7 @@ public:
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    using QInterface::Cohere;
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QUnit>(toCopy)); }
     virtual bitLenInt Cohere(QUnitPtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
@@ -66,11 +67,6 @@ public:
     }
     virtual void Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-    {
-        return TryDecohere(start, length, std::dynamic_pointer_cast<QUnit>(dest));
-    }
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QUnitPtr dest);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives

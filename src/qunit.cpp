@@ -210,33 +210,6 @@ void QUnit::Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach(
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
-bool QUnit::TryDecohere(bitLenInt start, bitLenInt length, QUnitPtr dest)
-{
-    Finish();
-
-    bool tempDoNorm = doNormalize;
-    doNormalize = false;
-
-    QInterfacePtr unitCopy = Clone();
-
-    unitCopy->Decohere(start, length, dest);
-    unitCopy->Cohere(dest);
-
-    unitCopy->ROL(length, start, qubitCount - start);
-
-    bool didSeparate = ApproxCompare(unitCopy);
-    if (didSeparate) {
-        // The subsystem is separable.
-        Dispose(start, length);
-    }
-
-    Finish();
-
-    doNormalize = tempDoNorm;
-
-    return didSeparate;
-}
-
 QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     std::vector<QInterfacePtr> units;
@@ -1160,15 +1133,15 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
         return false;
     }
 
-    QUnit thisCopy(engine, subengine, 1, 0);
-    thisCopy.CopyState((QUnit*)this);
-    thisCopy.EntangleAll();
+    QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Clone());
+    thisCopy->EntangleAll();
+    thisCopy->OrderContiguous(thisCopy->shards[0].unit);
 
-    QUnit thatCopy(toCompare->engine, toCompare->subengine, 1, 0);
-    thatCopy.CopyState(toCompare);
-    thatCopy.EntangleAll();
+    QUnitPtr thatCopy = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
+    thatCopy->EntangleAll();
+    thisCopy->OrderContiguous(thatCopy->shards[0].unit);
 
-    return thisCopy.shards[0].unit->ApproxCompare(thatCopy.shards[0].unit);
+    return thisCopy->shards[0].unit->ApproxCompare(thatCopy->shards[0].unit);
 }
 
 QInterfacePtr QUnit::Clone()
