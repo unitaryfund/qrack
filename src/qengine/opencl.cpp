@@ -1735,15 +1735,17 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
-    QInterfacePtr clone = CreateQuantumInterface(
-        QINTERFACE_OPENCL, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, useHostRam);
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
-    complex* stateVecCopy = new complex[maxQPower];
-    GetQuantumState(stateVecCopy);
-    clone->SetQuantumState(stateVecCopy);
-    delete[] stateVecCopy;
+    LockSync(CL_MAP_READ);
+    copyPtr->LockSync(CL_MAP_WRITE);
 
-    return clone;
+    std::copy(stateVec, stateVec + maxQPower, copyPtr->stateVec);
+
+    copyPtr->UnlockSync();
+    UnlockSync();
+
+    return copyPtr;
 }
 
 void QEngineOCL::NormalizeState(real1 nrm)

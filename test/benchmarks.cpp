@@ -344,12 +344,12 @@ TEST_CASE("test_qft_ideal_init")
         qftReg->MReg(0, qftReg->GetQubitCount());
     });
 }
-#endif
+
 TEST_CASE("test_qft")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
 }
-
+#endif
 TEST_CASE("test_doulbe_qft_tryseparate")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
@@ -358,5 +358,6 @@ TEST_CASE("test_doulbe_qft_tryseparate")
         for (int i = 0; i < n; i++) {
             qftReg->TrySeparate(i);
         }
+        qftReg->Finish();
     });
 }
