@@ -674,13 +674,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         return;
     }
 
-    // Depending on whether we Decohere or Dispose, we have optimized kernels.
-    OCLAPI api_call;
-    if (destination != nullptr) {
-        api_call = OCL_API_DECOHEREPROB;
-    } else {
-        api_call = OCL_API_DISPOSEPROB;
-    }
+    OCLAPI api_call = OCL_API_DECOHEREPROB;
 
     if (doNormalize) {
         NormalizeState();
@@ -699,38 +693,65 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     // The "remainder" bits will always be maintained.
     real1* remainderStateProb = new real1[remainderPower]();
-    real1* remainderStateAngle = new real1[remainderPower];
+    real1* remainderStateAngle = new real1[remainderPower]();
     BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb);
     BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
 
     // The removed "part" is only necessary for Decohere.
-    real1* partStateProb = nullptr;
-    real1* partStateAngle = nullptr;
-    BufferPtr probBuffer2, angleBuffer2;
-    if (destination != nullptr) {
-        partStateProb = new real1[partPower]();
-        partStateAngle = new real1[partPower];
-        probBuffer2 = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
-        angleBuffer2 = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
+    real1* partStateProb = new real1[partPower]();
+    real1* partStateAngle = new real1[partPower]();
+    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
+    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
-        // Call the kernel that calculates bit probability and angle, retaining both parts.
-        device_context->wait_events.push_back(QueueCall(
-            api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 }));
-    } else {
-        // Call the kernel that calculates bit probability and angle, discarding the "disposed" part.
-        device_context->wait_events.push_back(
-            QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1 }));
-    }
+    // Call the kernel that calculates bit probability and angle, retaining both parts.
+    device_context->wait_events.push_back(QueueCall(
+        api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 }));
 
     if ((maxQPower - partPower) <= 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
+
+    std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+
+    queue.enqueueMapBuffer(
+        *probBuffer1, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * remainderPower, &waitVec2);
+    queue.enqueueMapBuffer(*probBuffer2, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * partPower);
+    queue.enqueueMapBuffer(*angleBuffer1, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * remainderPower);
+    queue.enqueueMapBuffer(*angleBuffer2, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * partPower);
+
+    bitCapInt i, j, k;
+    i = 0;
+    j = 0;
+    k = 0;
+    while (remainderStateProb[i] < min_norm) {
+        i++;
+    }
+    k = i % (1U << start);
+    k = k | ((i ^ k) << length);
+
+    while (partStateProb[j] < min_norm) {
+        j++;
+    }
+    k |= j << start;
+
+    real1 refAngle = arg(GetAmplitude(k));
+    real1 angleOffset = refAngle - (remainderStateAngle[i] + partStateAngle[j]);
+
+    for (bitCapInt l = 0; l < partPower; l++) {
+        partStateAngle[l] += angleOffset;
+    }
+
+    device_context->wait_events.resize(4);
+    queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
+    queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &(device_context->wait_events[1]));
+    queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
+    queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
 
     // If we Decohere, calculate the state of the bit system removed.
     if (destination != nullptr) {
