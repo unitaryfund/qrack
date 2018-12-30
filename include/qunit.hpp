@@ -191,15 +191,7 @@ public:
     virtual void UpdateRunningNorm();
     virtual void Finish();
 
-    virtual QInterfacePtr Clone()
-    {
-        QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
-            complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
-
-        copyPtr->CopyState(this);
-
-        return copyPtr;
-    }
+    virtual QInterfacePtr Clone();
 
     /** @} */
 

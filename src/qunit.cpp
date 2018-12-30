@@ -380,16 +380,18 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, 
 
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
+    if (length == qubitCount) {
+        return true;
+    }
+
     QInterfacePtr separatedBits = CreateQuantumInterface(
         engine, subengine, length, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam);
 
     bool didSeparate = TryDecohere(start, length, separatedBits);
 
     if (didSeparate) {
-        bitLenInt appendedIndex = Cohere(separatedBits);
-        for (bitLenInt i = 0; i < length; i++) {
-            Swap(start + i, appendedIndex + i);
-        }
+        Cohere(separatedBits);
+        ROL(length, start, qubitCount - start);
     }
 
     return didSeparate;
@@ -1145,6 +1147,28 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
     thatCopy.EntangleAll();
 
     return thisCopy.shards[0].unit->ApproxCompare(thatCopy.shards[0].unit);
+}
+
+QInterfacePtr QUnit::Clone()
+{
+    QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
+        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+
+    std::vector<QInterfacePtr> shardEngines;
+    std::vector<QInterfacePtr> dupeEngines;
+    bitLenInt engineIndex;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
+            shardEngines.push_back(shards[i].unit);
+            dupeEngines.push_back(shards[i].unit->Clone());
+        }
+
+        engineIndex = find(shardEngines.begin(), shardEngines.end(), shards[i].unit) - shardEngines.begin();
+        copyPtr->shards[i].unit = dupeEngines[engineIndex];
+        copyPtr->shards[i].mapped = shards[i].mapped;
+    }
+
+    return copyPtr;
 }
 
 } // namespace Qrack
