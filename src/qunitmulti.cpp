@@ -82,7 +82,7 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
-void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
+void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 {
     QUnit::Detach(start, length, dest);
     RedistributeQEngines();

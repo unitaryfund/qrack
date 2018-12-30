@@ -795,4 +795,11 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
 }
 
 void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
+
+bool QFusion::TrySeparate(bitLenInt start, bitLenInt length)
+{
+    FlushReg(start, length);
+    return qReg->TrySeparate(start, length);
+}
+
 } // namespace Qrack

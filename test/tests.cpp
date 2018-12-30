@@ -1659,7 +1659,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
 }
 
-/*
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
     qftReg->SetPermutation(85);
@@ -1676,7 +1675,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
 }
-*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 {

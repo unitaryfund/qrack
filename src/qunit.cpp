@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -379,14 +381,40 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         return true;
     }
 
-    QInterfacePtr separatedBits = std::make_shared<QUnit>(engine, subengine, length, 0, rand_generator,
-        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+    QUnitPtr separatedBits;
 
-    bool didSeparate = TryDecohere(start, length, separatedBits);
+    QUnitPtr unitCopy = std::dynamic_pointer_cast<QUnit>(Clone());
 
+    if (length > 1) {
+        unitCopy->EntangleRange(start, length);
+        if (unitCopy->shards[start].unit->GetQubitCount() == length) {
+            // Bits are already separate;
+            return true;
+        }
+        unitCopy->OrderContiguous(unitCopy->shards[start].unit);
+
+        separatedBits = std::make_shared<QUnit>(engine, subengine, length, 0, rand_generator, complex(ONE_R1, ZERO_R1),
+            doNormalize, randGlobalPhase, useHostRam);
+
+        separatedBits->EntangleRange(0, length);
+        separatedBits->OrderContiguous(separatedBits->shards[0].unit);
+    } else if (unitCopy->shards[start].unit->GetQubitCount() == 1) {
+        // Bits are already separate;
+        return true;
+    } else {
+        separatedBits = std::make_shared<QUnit>(engine, subengine, 1, 0, rand_generator, complex(ONE_R1, ZERO_R1),
+            doNormalize, randGlobalPhase, useHostRam);
+    }
+
+    unitCopy->Decohere(start, length, separatedBits);
+    unitCopy->Cohere(separatedBits);
+
+    unitCopy->ROL(length, start, qubitCount - start);
+
+    bool didSeparate = ApproxCompare(unitCopy);
     if (didSeparate) {
-        Cohere(separatedBits);
-        ROL(length, start, qubitCount - start);
+        // The subsystem is separable.
+        std::copy(unitCopy->shards.begin() + start, unitCopy->shards.begin() + start + length, shards.begin() + start);
     }
 
     return didSeparate;

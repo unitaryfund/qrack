@@ -169,6 +169,8 @@ public:
         return std::make_shared<QFusion>(payload);
     }
 
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in
      * nonbufferable operations */

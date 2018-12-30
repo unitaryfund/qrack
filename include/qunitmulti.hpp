@@ -163,8 +163,11 @@ protected:
     virtual QInterfacePtr EntangleIterator(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    using QUnit::Detach;
-    virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
+    {
+        Detach(start, length, std::dynamic_pointer_cast<QUnitMulti>(dest));
+    }
+    virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest);
 
     virtual void RedistributeQEngines();
 };
