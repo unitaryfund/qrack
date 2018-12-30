@@ -382,14 +382,17 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     bitCapInt remainderPower = 1 << (qubitCount - length);
 
     real1* remainderStateProb = new real1[remainderPower]();
-    real1* remainderStateAngle = new real1[remainderPower];
+    real1* remainderStateAngle = new real1[remainderPower]();
+    real1* partStateAngle = new real1[partPower]();
+    real1* partStateProb = new real1[partPower]();
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
-        j = lcv % (1 << start);
+        j = lcv % (1U << start);
         j = j | ((lcv ^ j) << length);
 
-        real1 angle = -2 * M_PI;
+        real1 firstAngle = -2 * M_PI;
+        real1 currentAngle;
         real1 nrm;
 
         for (k = 0; k < partPower; k++) {
@@ -398,12 +401,63 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
             nrm = norm(stateVec[l]);
             remainderStateProb[lcv] += nrm;
 
-            if ((angle < -M_PI) && (nrm > min_norm)) {
-                angle = arg(stateVec[l]);
+            if (nrm > min_norm) {
+                currentAngle = arg(stateVec[l]);
+                if (firstAngle < -M_PI) {
+                    firstAngle = currentAngle;
+                }
+                partStateAngle[k] = currentAngle - firstAngle;
             }
         }
-        remainderStateAngle[lcv] = angle / 2;
     });
+
+    par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt j, k, l;
+        j = lcv << start;
+
+        real1 firstAngle = -2 * M_PI;
+        real1 currentAngle;
+        real1 nrm;
+
+        for (k = 0; k < remainderPower; k++) {
+            l = k % (1 << start);
+            l = l | ((k ^ l) << length);
+            l = j | l;
+
+            nrm = norm(stateVec[l]);
+            partStateProb[lcv] += nrm;
+
+            if (nrm > min_norm) {
+                currentAngle = arg(stateVec[l]);
+                if (firstAngle < -M_PI) {
+                    firstAngle = currentAngle;
+                }
+                remainderStateAngle[k] = currentAngle - firstAngle;
+            }
+        }
+    });
+
+    bitCapInt i, j, k;
+    i = 0;
+    j = 0;
+    k = 0;
+    while (remainderStateProb[i] < min_norm) {
+        i++;
+    }
+    k = i % (1U << start);
+    k = k | ((i ^ k) << length);
+
+    while (partStateProb[j] < min_norm) {
+        j++;
+    }
+    k |= j << start;
+
+    real1 refAngle = arg(stateVec[k]);
+    real1 angleOffset = refAngle - (remainderStateAngle[i] + partStateAngle[j]);
+
+    for (bitCapInt l = 0; l < partPower; l++) {
+        partStateAngle[l] += angleOffset;
+    }
 
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
@@ -412,38 +466,10 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     }
 
     if (destination != nullptr) {
-        real1* partStateProb = new real1[partPower]();
-        real1* partStateAngle = new real1[partPower];
-
-        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-            bitCapInt j, k, l;
-            j = lcv << start;
-
-            real1 angle = -2 * M_PI;
-            real1 nrm;
-
-            for (k = 0; k < remainderPower; k++) {
-                l = k % (1 << start);
-                l = l | ((k ^ l) << length);
-                l = j | l;
-
-                nrm = norm(stateVec[l]);
-                partStateProb[lcv] += nrm;
-
-                if ((angle < -M_PI) && (nrm > min_norm)) {
-                    angle = arg(stateVec[l]);
-                }
-            }
-            partStateAngle[lcv] = angle / 2;
-        });
-
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec[lcv] =
                 (real1)(std::sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
         });
-
-        delete[] partStateProb;
-        delete[] partStateAngle;
     }
 
     ResetStateVec(AllocStateVec(maxQPower));
@@ -455,6 +481,8 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
+    delete[] partStateProb;
+    delete[] partStateAngle;
 }
 
 void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
