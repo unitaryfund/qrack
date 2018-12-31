@@ -34,7 +34,7 @@ using namespace Qrack;
 
 const bitLenInt MaxQubits = 24;
 
-void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts)
+void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true)
 {
 
     const int ITERATIONS = 100;
@@ -66,6 +66,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         avgt = 0.0;
 
         for (i = 0; i < ITERATIONS; i++) {
+            if (resetRandomPerm) {
+                qftReg->SetPermutation(qftReg->Rand() * qftReg->GetMaxQPower());
+                qftReg->Finish();
+            }
+
             iterClock = clock();
 
             // Run loop body
@@ -122,7 +127,10 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     }
 }
 
-void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVariable(fn, MaxQubits); }
+void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true)
+{
+    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm);
+}
 
 TEST_CASE("test_cnot_all")
 {
@@ -339,15 +347,12 @@ TEST_CASE("test_grover")
 
 TEST_CASE("test_qft_ideal_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) {
-        qftReg->QFT(0, n);
-        qftReg->MReg(0, qftReg->GetQubitCount());
-    });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
 }
 
-TEST_CASE("test_qft")
+TEST_CASE("test_qft_entangled")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); }, false);
 }
 
 TEST_CASE("test_doulbe_qft_tryseparate")
