@@ -10,8 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <iostream>
-
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -381,40 +379,39 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         return true;
     }
 
-    QUnitPtr separatedBits;
+    if ((length == 1) && (shards[start].unit->GetQubitCount() == 1)) {
+        return true;
+    }
+
+    QInterfacePtr separatedBits;
 
     QUnitPtr unitCopy = std::dynamic_pointer_cast<QUnit>(Clone());
 
     if (length > 1) {
         unitCopy->EntangleRange(start, length);
-        if (unitCopy->shards[start].unit->GetQubitCount() == length) {
-            // Bits are already separate;
-            return true;
-        }
         unitCopy->OrderContiguous(unitCopy->shards[start].unit);
 
-        separatedBits = std::make_shared<QUnit>(engine, subengine, length, 0, rand_generator, complex(ONE_R1, ZERO_R1),
+        separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator, complex(ONE_R1, ZERO_R1),
             doNormalize, randGlobalPhase, useHostRam);
-
-        separatedBits->EntangleRange(0, length);
-        separatedBits->OrderContiguous(separatedBits->shards[0].unit);
-    } else if (unitCopy->shards[start].unit->GetQubitCount() == 1) {
-        // Bits are already separate;
-        return true;
     } else {
-        separatedBits = std::make_shared<QUnit>(engine, subengine, 1, 0, rand_generator, complex(ONE_R1, ZERO_R1),
+        separatedBits = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, complex(ONE_R1, ZERO_R1),
             doNormalize, randGlobalPhase, useHostRam);
     }
 
-    unitCopy->Decohere(start, length, separatedBits);
-    unitCopy->Cohere(separatedBits);
+    unitCopy->shards[start].unit->Decohere(shards[start].mapped, length, separatedBits);
+    unitCopy->shards[start].unit->Cohere(separatedBits);
 
-    unitCopy->ROL(length, start, qubitCount - start);
+    bitLenInt mappedStart = unitCopy->shards[start].mapped;
+    unitCopy->shards[start].unit->ROL(length, mappedStart, unitCopy->shards[start].unit->GetQubitCount() - mappedStart);
 
     bool didSeparate = ApproxCompare(unitCopy);
     if (didSeparate) {
         // The subsystem is separable.
-        std::copy(unitCopy->shards.begin() + start, unitCopy->shards.begin() + start + length, shards.begin() + start);
+
+        for (bitLenInt i = 0; i < length; i++) {
+            shards[i].unit = separatedBits;
+            shards[i].mapped = i;
+        }
     }
 
     return didSeparate;
@@ -1179,6 +1176,7 @@ QInterfacePtr QUnit::Clone()
 
     std::vector<QInterfacePtr> shardEngines;
     std::vector<QInterfacePtr> dupeEngines;
+    std::vector<QInterfacePtr>::iterator origEngine;
     bitLenInt engineIndex;
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
@@ -1186,7 +1184,9 @@ QInterfacePtr QUnit::Clone()
             dupeEngines.push_back(shards[i].unit->Clone());
         }
 
-        engineIndex = find(shardEngines.begin(), shardEngines.end(), shards[i].unit) - shardEngines.begin();
+        origEngine = find(shardEngines.begin(), shardEngines.end(), shards[i].unit);
+        engineIndex = std::distance(shardEngines.begin(), origEngine);
+
         copyPtr->shards[i].unit = dupeEngines[engineIndex];
         copyPtr->shards[i].mapped = shards[i].mapped;
     }

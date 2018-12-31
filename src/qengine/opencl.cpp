@@ -778,9 +778,6 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
         QueueCall(OCL_API_DECOHEREAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer }).wait();
 
-        delete[] partStateProb;
-        delete[] partStateAngle;
-
         if (destination->deviceID != deviceID) {
             destination->LockSync(CL_MAP_READ | CL_MAP_WRITE);
             std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
@@ -837,6 +834,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
+    delete[] partStateProb;
+    delete[] partStateAngle;
 }
 
 void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)

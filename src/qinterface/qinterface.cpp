@@ -243,7 +243,7 @@ void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 }
 
-/// Quantum Fourier Transform - Apply the quantum Fourier transform to the register
+/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFT(bitLenInt start, bitLenInt length)
 {
     if (length > 0) {
@@ -264,7 +264,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
     }
 }
 
-/// Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register
+/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
 void QInterface::IQFT(bitLenInt start, bitLenInt length)
 {
     if (length > 0) {
@@ -279,6 +279,8 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length)
             doNormalize = wasNormOn;
             CRTDyad(-1, 1, i + 1, i);
             H(i);
+
+            TrySeparate(i);
         }
     }
 }

@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 28;
+const bitLenInt MaxQubits = 24;
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts)
 {
@@ -354,10 +354,6 @@ TEST_CASE("test_doulbe_qft_tryseparate")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
         qftReg->QFT(0, n);
-        qftReg->QFT(0, n);
-        for (int i = 0; i < n - 1; i++) {
-            qftReg->TrySeparate(i);
-        }
-        qftReg->Finish();
+        qftReg->IQFT(0, n);
     });
 }

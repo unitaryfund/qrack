@@ -254,6 +254,7 @@ bitLenInt QFusion::Cohere(QFusionPtr toCopy)
 void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushReg(start, length);
+    dest->FlushReg(0, length);
 
     qReg->Decohere(start, length, dest->qReg);
 
