@@ -200,7 +200,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     /* Find the rest of the qubits. */
     for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped > (mapped + length)) {
+        if (shard.unit == unit && shard.mapped >= (mapped + length)) {
             shard.mapped -= length;
         }
     }
@@ -383,34 +383,37 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         return true;
     }
 
-    QInterfacePtr separatedBits;
-
-    QUnitPtr unitCopy = std::dynamic_pointer_cast<QUnit>(Clone());
-
     if (length > 1) {
-        unitCopy->EntangleRange(start, length);
-        unitCopy->OrderContiguous(unitCopy->shards[start].unit);
-
-        separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator, complex(ONE_R1, ZERO_R1),
-            doNormalize, randGlobalPhase, useHostRam);
-    } else {
-        separatedBits = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, complex(ONE_R1, ZERO_R1),
-            doNormalize, randGlobalPhase, useHostRam);
+        EntangleRange(start, length);
+        OrderContiguous(shards[start].unit);
     }
 
-    unitCopy->shards[start].unit->Decohere(shards[start].mapped, length, separatedBits);
-    unitCopy->shards[start].unit->Cohere(separatedBits);
+    QInterfacePtr separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator,
+        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
-    bitLenInt mappedStart = unitCopy->shards[start].mapped;
-    unitCopy->shards[start].unit->ROL(length, mappedStart, unitCopy->shards[start].unit->GetQubitCount() - mappedStart);
+    QInterfacePtr unitCopy = shards[start].unit->Clone();
 
-    bool didSeparate = ApproxCompare(unitCopy);
+    bitLenInt mappedStart = shards[start].mapped;
+    unitCopy->Decohere(mappedStart, length, separatedBits);
+    unitCopy->Cohere(separatedBits);
+
+    unitCopy->ROL(length, mappedStart, unitCopy->GetQubitCount() - mappedStart);
+
+    bool didSeparate = unitCopy->ApproxCompare(shards[start].unit);
     if (didSeparate) {
         // The subsystem is separable.
+        shards[start].unit->Dispose(mappedStart, length);
+
+        /* Find the rest of the qubits. */
+        for (auto&& shard : shards) {
+            if (shard.unit == shards[start].unit && shard.mapped >= (mappedStart + length)) {
+                shard.mapped -= length;
+            }
+        }
 
         for (bitLenInt i = 0; i < length; i++) {
-            shards[i].unit = separatedBits;
-            shards[i].mapped = i;
+            shards[start + i].unit = separatedBits;
+            shards[start + i].mapped = i;
         }
     }
 

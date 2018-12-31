@@ -269,16 +269,18 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length)
 {
     if (length > 0) {
         bool wasNormOn = doNormalize;
-        int end = start + length - 1;
-        int i, j;
-        for (i = end; i >= start; i--) {
+        bitLenInt end = start + length;
+        bitLenInt i, j;
+        for (i = start; i < end; i++) {
+            H(i);
             doNormalize = false;
-            for (j = (end - i); j > 1; j--) {
-                CRTDyad(-1, j, i + j, i);
+            for (j = 1; j < ((end - i) - 1); j++) {
+                CRTDyad(1, j, i + j, i);
             }
             doNormalize = wasNormOn;
-            CRTDyad(-1, 1, i + 1, i);
-            H(i);
+            if (i != (end - 1)) {
+                CRTDyad(1, (end - i) - 1, end - 1, i);
+            }
 
             TrySeparate(i);
         }
