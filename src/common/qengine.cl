@@ -231,8 +231,8 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
     real1 partProb, nrm, firstAngle, currentAngle;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
-        j = lcv % (1U << start);
-        j = j | ((lcv ^ j) << len);
+        j = lcv & ((1U << start) - 1);
+        j |= (lcv ^ j) << len;
 
         partProb = ZERO_R1;
         firstAngle = -2 * M_PI;
@@ -263,8 +263,8 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
         firstAngle = -2 * M_PI;
 
         for (k = 0U; k < remainderPower; k++) {
-            l = k % (1U << start);
-            l = l | ((k ^ l) << len);
+            l = k & ((1U << start) - 1);
+            l |= (k ^ l) << len;
             l = j | l;
             
             amp = stateVec[l];

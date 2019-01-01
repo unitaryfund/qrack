@@ -732,8 +732,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     while (remainderStateProb[i] < min_norm) {
         i++;
     }
-    k = i % (1U << start);
-    k = k | ((i ^ k) << length);
+    k = i & ((1U << start) - 1);
+    k |= (i ^ k) << (start + length);
 
     while (partStateProb[j] < min_norm) {
         j++;

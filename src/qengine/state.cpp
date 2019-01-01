@@ -388,8 +388,8 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
-        j = lcv % (1U << start);
-        j = j | ((lcv ^ j) << length);
+        j = lcv & ((1U << start) - 1);
+        j |= (lcv ^ j) << length;
 
         real1 firstAngle = -2 * M_PI;
         real1 currentAngle;
@@ -420,8 +420,8 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
         real1 nrm;
 
         for (k = 0; k < remainderPower; k++) {
-            l = k % (1 << start);
-            l = l | ((k ^ l) << length);
+            l = k & ((1 << start) - 1);
+            l |= (k ^ l) << length;
             l = j | l;
 
             nrm = norm(stateVec[l]);
@@ -444,8 +444,8 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     while (remainderStateProb[i] < min_norm) {
         i++;
     }
-    k = i % (1U << start);
-    k = k | ((i ^ k) << length);
+    k = i & ((1U << start) - 1);
+    k |= (i ^ k) << length;
 
     while (partStateProb[j] < min_norm) {
         j++;
