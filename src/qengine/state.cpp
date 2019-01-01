@@ -391,7 +391,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
         j = lcv & ((1U << start) - 1);
         j |= (lcv ^ j) << length;
 
-        real1 firstAngle = -2 * M_PI;
+        real1 firstAngle = -16 * M_PI;
         real1 currentAngle;
         real1 nrm;
 
@@ -403,7 +403,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
             if (nrm > min_norm) {
                 currentAngle = arg(stateVec[l]);
-                if (firstAngle < -M_PI) {
+                if (firstAngle < (-8 * M_PI)) {
                     firstAngle = currentAngle;
                 }
                 partStateAngle[k] = currentAngle - firstAngle;
@@ -415,7 +415,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
         bitCapInt j, k, l;
         j = lcv << start;
 
-        real1 firstAngle = -2 * M_PI;
+        real1 firstAngle = -16 * M_PI;
         real1 currentAngle;
         real1 nrm;
 
@@ -429,7 +429,7 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
             if (nrm > min_norm) {
                 currentAngle = arg(stateVec[l]);
-                if (firstAngle < -M_PI) {
+                if (firstAngle < (-8 * M_PI)) {
                     firstAngle = currentAngle;
                 }
                 remainderStateAngle[k] = currentAngle - firstAngle;
