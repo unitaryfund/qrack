@@ -624,7 +624,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 
     delete[] partError;
 
-    return totError < (maxQPower * min_norm);
+    return totError < approxcompare_error;
 }
 
 void QEngineCPU::NormalizeState(real1 nrm)

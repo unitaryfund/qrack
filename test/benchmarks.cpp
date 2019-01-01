@@ -54,7 +54,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     clock_t tClock, iterClock;
     clock_t trialClocks[ITERATIONS];
 
-    int i, numBits;
+    int i, j, numBits;
 
     real1 avgt, stdet;
 

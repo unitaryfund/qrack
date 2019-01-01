@@ -28,6 +28,7 @@
 #define ONE_R1 1.0f
 #define PI_R1 (real1) M_PI
 #define min_norm 1e-16f
+#define approxcompare_error 1e-11f
 #define polar(A, B) std::polar(A, B)
 #else
 #include "complex16simd.hpp"
@@ -37,6 +38,7 @@
 #define ONE_R1 1.0
 #define PI_R1 M_PI
 #define min_norm 1e-27
+#define approxcompare_error 1e-27
 #endif
 
 namespace Qrack {
