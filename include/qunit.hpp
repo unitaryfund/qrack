@@ -254,6 +254,20 @@ protected:
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
+
+    void DirtyShardRange(bitLenInt start, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            shards[start + i].isProbDirty = true;
+        }
+    }
+
+    void DirtyShardIndexArray(bitLenInt* bitIndices, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            shards[bitIndices[i]].isProbDirty = true;
+        }
+    }
 };
 
 } // namespace Qrack

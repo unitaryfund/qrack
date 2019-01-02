@@ -897,9 +897,7 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
 
     EntangleRange(start, length);
     shards[start].unit->INC(toMod, shards[start].mapped, length);
@@ -908,13 +906,8 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 void QUnit::CINT(
     CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
-    for (i = 0; i < controlLen; i++) {
-        shards[controls[i]].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
+    DirtyShardIndexArray(controls, controlLen);
 
     EntangleRange(start, length);
     std::vector<bitLenInt> bits(controlLen + 1);
@@ -985,9 +978,7 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
     shards[flagIndex].isProbDirty = true;
 }
 
@@ -1022,9 +1013,7 @@ void QUnit::INCxx(
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
     shards[flag1Index].isProbDirty = true;
     shards[flag2Index].isProbDirty = true;
 }
@@ -1051,9 +1040,7 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
 
     EntangleRange(start, length);
     shards[start].unit->INCBCD(toMod, shards[start].mapped, length);
@@ -1066,9 +1053,7 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 
 void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
 
     EntangleRange(start, length);
     shards[start].unit->DEC(toMod, shards[start].mapped, length);
@@ -1096,9 +1081,7 @@ void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
 
     EntangleRange(start, length);
     shards[start].unit->DECBCD(toMod, shards[start].mapped, length);
@@ -1111,10 +1094,8 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 
 void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[inOutStart + i].isProbDirty = true;
-        shards[carryStart + i].isProbDirty = true;
-    }
+    DirtyShardRange(inOutStart, length);
+    DirtyShardRange(carryStart, length);
 
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length);
@@ -1122,10 +1103,8 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[inOutStart + i].isProbDirty = true;
-        shards[carryStart + i].isProbDirty = true;
-    }
+    DirtyShardRange(inOutStart, length);
+    DirtyShardRange(carryStart, length);
 
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
@@ -1160,14 +1139,9 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 
     delete[] controlsMapped;
 
-    bitLenInt i;
-    for (i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-        shards[carryStart + i].isProbDirty = true;
-    }
-    for (i = 0; i < controlLen; i++) {
-        shards[controls[i]].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
+    DirtyShardRange(carryStart, length);
+    DirtyShardIndexArray(controls, controlLen);
 }
 
 void QUnit::CMUL(
@@ -1194,9 +1168,7 @@ void QUnit::CDIV(
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
 
     EntangleRange(start, length);
     shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
@@ -1204,9 +1176,7 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
 
     EntangleRange(start, length);
     shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
@@ -1214,9 +1184,7 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    for (bitLenInt i = 0; i < length; i++) {
-        shards[start + i].isProbDirty = true;
-    }
+    DirtyShardRange(start, length);
     shards[flagIndex].isProbDirty = true;
 
     EntangleRange(start, length);
@@ -1240,13 +1208,8 @@ void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    bitLenInt i;
-    for (i = 0; i < indexLength; i++) {
-        shards[indexStart + i].isProbDirty = true;
-    }
-    for (i = 0; i < valueLength; i++) {
-        shards[valueStart + i].isProbDirty = true;
-    }
+    DirtyShardRange(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
@@ -1257,13 +1220,8 @@ bitCapInt QUnit::IndexedLDA(
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
-    bitLenInt i;
-    for (i = 0; i < indexLength; i++) {
-        shards[indexStart + i].isProbDirty = true;
-    }
-    for (i = 0; i < valueLength; i++) {
-        shards[valueStart + i].isProbDirty = true;
-    }
+    DirtyShardRange(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
     shards[carryIndex].isProbDirty = true;
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
@@ -1275,13 +1233,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
-    bitLenInt i;
-    for (i = 0; i < indexLength; i++) {
-        shards[indexStart + i].isProbDirty = true;
-    }
-    for (i = 0; i < valueLength; i++) {
-        shards[valueStart + i].isProbDirty = true;
-    }
+    DirtyShardRange(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
     shards[carryIndex].isProbDirty = true;
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
