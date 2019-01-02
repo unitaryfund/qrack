@@ -23,6 +23,8 @@ namespace Qrack {
 struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
+    real1 prob;
+    bool isProbDirty;
 };
 
 class QUnit;
