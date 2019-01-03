@@ -1172,10 +1172,20 @@ public:
      * @{
      */
 
-    /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register. */
+    /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
     virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
-    /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register. */
+    /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
     virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
@@ -1445,8 +1455,15 @@ public:
     /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
      * increases gate speed. This method is used to manually attempt internal separation of a QUnit subsytem. We attempt
-     * a Decohere() operation, on a state which might not be separable. If the state is not separable, abort and return
-     * false. Otherwise, complete the operation, add the subsystem back into the QUnit "shards," and return true.
+     * a Decohere() operation, on a state which might not be separable. If the state is not separable, we abort and
+     * return false. Otherwise, we complete the operation, add the separated subsystem back in place into the QUnit
+     * "shards," and return true.
+     *
+     * \warning PSEUDO-QUANTUM
+     *
+     * This should never change the logical/physical state of the QInterface, only possibly its internal representation,
+     * for simulation optimization purposes. This is not a truly quantum computational operation, but it also does not
+     * lead to nonphysical effects.
      */
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1) { return false; }
 
