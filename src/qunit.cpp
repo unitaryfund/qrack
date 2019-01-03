@@ -765,10 +765,13 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     bool isSeparated = true;
     for (i = 0; i < controlLen; i++) {
+        // If the shard's probability is cached, then it's free to check it, so we advance the loop.
+        if (!shards[controls[i]].isProbDirty) {
+            continue;
+        }
         for (j = 0; j < (int)targets.size(); j++) {
-            if (!shards[controls[i]].isProbDirty) {
-                continue;
-            }
+            // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the targets,
+            // it isn't worth trying the next optimization.
             if (shards[controls[i]].unit == shards[targets[j]].unit) {
                 isSeparated = false;
                 break;

@@ -1173,10 +1173,10 @@ public:
      */
 
     /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register. */
-    virtual void QFT(bitLenInt start, bitLenInt length);
+    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
     /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register. */
-    virtual void IQFT(bitLenInt start, bitLenInt length);
+    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length) = 0;

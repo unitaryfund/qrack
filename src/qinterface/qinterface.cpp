@@ -244,7 +244,7 @@ void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 }
 
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
-void QInterface::QFT(bitLenInt start, bitLenInt length)
+void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
     if (length > 0) {
         bool wasNormOn = doNormalize;
@@ -264,12 +264,16 @@ void QInterface::QFT(bitLenInt start, bitLenInt length)
             if (i != (end - 1)) {
                 CRTDyad(1, (end - i) - 1, end - 1, i);
             }
+
+            if (trySeparate) {
+                TrySeparate(i);
+            }
         }
     }
 }
 
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
-void QInterface::IQFT(bitLenInt start, bitLenInt length)
+void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
     if (length > 0) {
         bool wasNormOn = doNormalize;
@@ -286,7 +290,9 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length)
 
             H(i);
 
-            TrySeparate(i);
+            if (trySeparate) {
+                TrySeparate(i);
+            }
         }
     }
 }

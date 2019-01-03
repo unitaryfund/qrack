@@ -34,7 +34,8 @@ using namespace Qrack;
 
 const bitLenInt MaxQubits = 24;
 
-void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true)
+void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true,
+    bool hadamardRandomBits = false)
 {
 
     const int ITERATIONS = 100;
@@ -68,13 +69,17 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         for (i = 0; i < ITERATIONS; i++) {
             if (resetRandomPerm) {
                 qftReg->SetPermutation(qftReg->Rand() * qftReg->GetMaxQPower());
-                // for (j = 0; j < numBits; j++) {
-                //    if (qftReg->Rand() >= ONE_R1 / 2) {
-                //        qftReg->H(j);
-                //    }
-                //}
-                qftReg->Finish();
+            } else {
+                qftReg->SetPermutation(0);
             }
+            if (hadamardRandomBits) {
+                for (j = 0; j < numBits; j++) {
+                    if (qftReg->Rand() >= ONE_R1 / 2) {
+                        qftReg->H(j);
+                    }
+                }
+            }
+            qftReg->Finish();
 
             iterClock = clock();
 
@@ -132,9 +137,10 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     }
 }
 
-void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true)
+void benchmarkLoop(
+    std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true, bool hadamardRandomBits = false)
 {
-    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm);
+    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits);
 }
 
 TEST_CASE("test_cnot_all")
@@ -352,18 +358,30 @@ TEST_CASE("test_grover")
 
 TEST_CASE("test_qft_ideal_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
 }
 
-TEST_CASE("test_qft_entangled")
+TEST_CASE("test_qft_permutation_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n); }, false);
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false);
 }
 
-TEST_CASE("test_doulbe_qft_tryseparate")
+TEST_CASE("test_qft_permutation_round_trip")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) {
-        qftReg->QFT(0, n);
-        qftReg->IQFT(0, n);
-    });
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) {
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, true);
+        },
+        true, false);
+}
+
+TEST_CASE("test_qft_superposition_round_trip")
+{
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) {
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
+        },
+        true, true);
 }
