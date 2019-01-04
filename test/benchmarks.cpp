@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 28;
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true,
     bool hadamardRandomBits = false)
@@ -63,7 +63,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     // Our subroutine returns true only for an input of 100.
     for (numBits = 4; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
-            0, rng, complex(ONE_R1, ZERO_R1), !disable_normalization);
+            0, rng, complex(ONE_R1, ZERO_R1), !disable_normalization, true, false);
         avgt = 0.0;
 
         for (i = 0; i < ITERATIONS; i++) {
@@ -371,7 +371,7 @@ TEST_CASE("test_qft_permutation_round_trip")
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
             qftReg->QFT(0, n, false);
-            qftReg->IQFT(0, n, true);
+            qftReg->IQFT(0, n, false);
         },
         true, false);
 }
