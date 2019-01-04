@@ -244,7 +244,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     /* Find the rest of the qubits. */
     for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped >= (mapped + length)) {
+        if (shard.unit == unit && shard.mapped > (mapped + length)) {
             shard.mapped -= length;
         }
     }
