@@ -249,6 +249,15 @@ bitLenInt QFusion::Cohere(QFusionPtr toCopy)
     return toRet;
 }
 
+bitLenInt QFusion::Cohere(QFusionPtr toCopy, bitLenInt start)
+{
+    FlushAll();
+    toCopy->FlushAll();
+    bitLenInt toRet = qReg->Cohere(toCopy->qReg, start);
+    SetQubitCount(qReg->GetQubitCount());
+    return toRet;
+}
+
 // "Decohere" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decohered"
 // qubit, so it's definitely cheaper to maintain our buffers until after the Decohere.
 void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)

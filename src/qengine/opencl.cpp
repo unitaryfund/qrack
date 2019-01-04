@@ -599,10 +599,8 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
     ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
 
-bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
+void QEngineOCL::Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy)
 {
-    bitLenInt result = qubitCount;
-
     if (doNormalize) {
         NormalizeState();
     }
@@ -611,11 +609,8 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
         toCopy->NormalizeState();
     }
 
-    bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
-    bitCapInt nMaxQPower = 1 << nQubitCount;
-    bitCapInt startMask = (1 << qubitCount) - 1;
-    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, startMask, endMask, qubitCount, 0, 0, 0, 0, 0, 0 };
+    bitCapInt nMaxQPower = bciArgs[0];
+    bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
 
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (!stateVec && (nStateVecSize > maxAlloc || (2 * nStateVecSize) > maxMem)) {
@@ -632,7 +627,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
-    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs);
+    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 7, bciArgs);
 
     SetQubitCount(nQubitCount);
 
@@ -642,7 +637,7 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_COHERE);
+    OCLDeviceCall ocl = device_context->Reserve(apiCall);
 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
@@ -659,9 +654,41 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
 
     runningNorm = ONE_R1;
 
-    QueueCall(OCL_API_COHERE, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer }).wait();
+    QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer }).wait();
 
     ResetStateVec(nStateVec, nStateBuffer);
+}
+
+bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
+{
+    bitLenInt result = qubitCount;
+
+    bitCapInt oQubitCount = toCopy->qubitCount;
+    bitCapInt nQubitCount = qubitCount + oQubitCount;
+    bitCapInt nMaxQPower = 1 << nQubitCount;
+    bitCapInt startMask = (1 << qubitCount) - 1;
+    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0, 0, 0, 0, 0, 0 };
+
+    Cohere(OCL_API_COHERE, bciArgs, toCopy);
+
+    return result;
+}
+
+bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy, bitLenInt start)
+{
+    bitLenInt result = start;
+
+    bitCapInt oQubitCount = toCopy->qubitCount;
+    bitCapInt nQubitCount = qubitCount + oQubitCount;
+    bitCapInt nMaxQPower = 1 << nQubitCount;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt midMask = ((1 << oQubitCount) - 1) << start;
+    bitCapInt endMask = ((1 << (qubitCount + oQubitCount)) - 1) & ~(startMask | midMask);
+    bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start, 0, 0,
+        0 };
+
+    Cohere(OCL_API_COHERE_MID, bciArgs, toCopy);
 
     return result;
 }

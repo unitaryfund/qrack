@@ -157,8 +157,9 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 /*
  * Append QInterface to the end of the unit.
  */
-bitLenInt QUnit::Cohere(QUnitPtr toCopy)
+void QUnit::Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start)
 {
+    bitLenInt oQubitCount = toCopy->GetQubitCount();
     bitLenInt oldCount = qubitCount;
 
     /* Increase the number of bits in this object. */
@@ -177,7 +178,25 @@ bitLenInt QUnit::Cohere(QUnitPtr toCopy)
         shards[j].isProbDirty = clone->shards[i].isProbDirty;
     }
 
+    if (isMid) {
+        ROL(oQubitCount, start, qubitCount - start);
+    }
+}
+
+bitLenInt QUnit::Cohere(QUnitPtr toCopy)
+{
+    bitLenInt oldCount = qubitCount;
+    Cohere(toCopy, false, 0);
     return oldCount;
+}
+
+/*
+ * Append QInterface in the middle of QUnit.
+ */
+bitLenInt QUnit::Cohere(QUnitPtr toCopy, bitLenInt start)
+{
+    Cohere(toCopy, true, start);
+    return start;
 }
 
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
@@ -420,9 +439,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 
     bitLenInt mappedStart = shards[start].mapped;
     unitCopy->Decohere(mappedStart, length, separatedBits);
-    unitCopy->Cohere(separatedBits);
-
-    unitCopy->ROL(length, mappedStart, unitCopy->GetQubitCount() - mappedStart);
+    unitCopy->Cohere(separatedBits, mappedStart);
 
     bool didSeparate = unitCopy->ApproxCompare(shards[start].unit);
     if (didSeparate) {

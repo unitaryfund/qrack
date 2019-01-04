@@ -47,12 +47,17 @@ public:
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
 
+    virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Cohere(QEngineCPUPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
+    }
 
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
-    virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /** @} */

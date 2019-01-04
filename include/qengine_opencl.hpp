@@ -117,6 +117,12 @@ public:
 
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
+    virtual bitLenInt Cohere(QEngineOCLPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start);
+    }
+    virtual void Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 

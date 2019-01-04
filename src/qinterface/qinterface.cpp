@@ -832,9 +832,7 @@ bool QInterface::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr de
     QInterfacePtr unitCopy = Clone();
 
     unitCopy->Decohere(start, length, dest);
-    unitCopy->Cohere(dest);
-
-    unitCopy->ROL(length, start, qubitCount - start);
+    unitCopy->Cohere(dest, start);
 
     bool didSeparate = ApproxCompare(unitCopy);
     if (didSeparate) {

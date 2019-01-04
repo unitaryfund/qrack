@@ -210,6 +210,7 @@ public:
      */
     virtual bitLenInt Cohere(QInterfacePtr toCopy) = 0;
     virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start) = 0;
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,

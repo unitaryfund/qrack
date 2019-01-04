@@ -204,12 +204,33 @@ void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bi
 
     bitCapInt4 args = vload4(0, bitCapIntPtr);
     bitCapInt nMaxQPower = args.x;
-    bitCapInt startMask = args.y;
-    bitCapInt endMask = args.z;
-    bitCapInt qubitCount = args.w;
+    bitCapInt qubitCount = args.y;
+    bitCapInt startMask = args.z;
+    bitCapInt endMask = args.w;
 
     for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[lcv & startMask], stateVec2[(lcv & endMask) >> qubitCount]);
+    }
+}
+
+void kernel coheremid(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt nMaxQPower = args.x;
+    bitCapInt qubitCount = args.y;
+    bitCapInt oQubitCount = args.z;
+    bitCapInt startMask = args.w;
+    bitCapInt midMask = bitCapIntPtr[4];
+    bitCapInt endMask = bitCapIntPtr[5];    
+    bitCapInt start = bitCapIntPtr[6];
+
+    for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
+        nStateVec[lcv] = zmul(stateVec1[(lcv & startMask) | ((lcv & endMask) >> oQubitCount)], stateVec2[(lcv & midMask) >> start]);
     }
 }
 

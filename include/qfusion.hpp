@@ -58,8 +58,13 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Cohere;
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
     virtual bitLenInt Cohere(QFusionPtr toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
+    virtual bitLenInt Cohere(QFusionPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy), start);
+    }
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
         Decohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));

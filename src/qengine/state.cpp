@@ -305,6 +305,41 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 }
 
 /**
+ * Combine (a copy of) another QEngineCPU with this one, inserted at the "start" index. (If the programmer doesn't want
+ * to "cheat," it is left up to them to delete the old coherent unit that was added.
+ */
+bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy, bitLenInt start)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+        toCopy->NormalizeState();
+    }
+
+    bitCapInt oQubitCount = toCopy->qubitCount;
+    bitCapInt nQubitCount = qubitCount + oQubitCount;
+    bitCapInt nMaxQPower = 1 << nQubitCount;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt midMask = ((1 << oQubitCount) - 1) << start;
+    bitCapInt endMask = ((1 << (qubitCount + oQubitCount)) - 1) & ~(startMask | midMask);
+
+    complex* nStateVec = AllocStateVec(nMaxQPower);
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
+        nStateVec[lcv] =
+            stateVec[(lcv & startMask) | ((lcv & endMask) >> oQubitCount)] * toCopy->stateVec[(lcv & midMask) >> start];
+    });
+
+    SetQubitCount(nQubitCount);
+
+    ResetStateVec(nStateVec);
+
+    return start;
+}
+
+/**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
