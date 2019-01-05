@@ -160,6 +160,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 void QUnit::Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start)
 {
     bitLenInt oQubitCount = toCopy->GetQubitCount();
+    bitLenInt oldCount = qubitCount;
 
     /* Increase the number of bits in this object. */
     SetQubitCount(qubitCount + oQubitCount);
@@ -168,7 +169,14 @@ void QUnit::Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start)
     QUnitPtr clone(toCopy);
 
     /* Update shards to reference the cloned state. */
-    std::copy(clone->shards.begin(), clone->shards.begin() + oQubitCount, shards.begin());
+    bitLenInt j;
+    for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {
+        j = i + oldCount;
+        shards[j].unit = clone->shards[i].unit;
+        shards[j].mapped = clone->shards[i].mapped;
+        shards[j].prob = clone->shards[i].prob;
+        shards[j].isProbDirty = clone->shards[i].isProbDirty;
+    }
 
     if (isMid) {
         ROL(oQubitCount, start, qubitCount - start);
