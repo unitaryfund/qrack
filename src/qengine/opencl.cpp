@@ -21,6 +21,10 @@ namespace Qrack {
 #define CMPLX_NORM_LEN 5
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
+#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
+    queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec, clEvent);                                        \
+    queue.flush()
+
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
     device_context->wait_events.emplace_back();                                                                        \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec, &(device_context->wait_events.back()));          \
@@ -503,19 +507,20 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
-    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs);
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, &writeArgsEvent);
 
     // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
     complex cmplx[CMPLX_NORM_LEN];
-    for (int i = 0; i < 4; i++) {
-        cmplx[i] = mtrx[i];
-    }
+    std::copy(mtrx, mtrx + 4, cmplx);
+
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
     size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
 
-    DISPATCH_WRITE(&waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx);
+    cl::Event writeGateEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx, &writeGateEvent);
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -527,11 +532,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     doCalcNorm &= doNormalize && (bitCount == 1);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
-    DISPATCH_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted);
     cl::Event writeControlsEvent;
-    queue.enqueueWriteBuffer(
-        *powersBuffer, CL_FALSE, 0, sizeof(bitCapInt) * bitCount, qPowersSorted, &waitVec, &writeControlsEvent);
-    queue.flush();
+    DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, &writeControlsEvent);
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     OCLAPI api_call;
@@ -573,6 +575,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         DISPATCH_READ(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
     }
 
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    writeGateEvent.wait();
     writeControlsEvent.wait();
 }
 
@@ -580,13 +585,17 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
-    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs);
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs, &writeArgsEvent);
     DISPATCH_WRITE(&waitVec, *cmplxBuffer, sizeof(complex), &nrm);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, cmplxBuffer }));
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -1672,12 +1681,16 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
-    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 5, bciArgs);
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 5, bciArgs, &writeArgsEvent);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer }));
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
 }
 
 void QEngineOCL::PhaseFlip()
@@ -1828,7 +1841,8 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs);
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs, &writeArgsEvent);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1837,6 +1851,9 @@ void QEngineOCL::NormalizeState(real1 nrm)
         QueueCall(OCL_API_NORMALIZE, ngc, ngs, { stateBuffer, ulongBuffer, argsBuffer }));
 
     runningNorm = ONE_R1;
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
 }
 
 void QEngineOCL::UpdateRunningNorm()
@@ -1849,7 +1866,8 @@ void QEngineOCL::UpdateRunningNorm()
 
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
-    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs);
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs, &writeArgsEvent);
 
     device_context->wait_events.push_back(QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize,
         { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
@@ -1868,6 +1886,9 @@ void QEngineOCL::UpdateRunningNorm()
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
     DISPATCH_WRITE(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)

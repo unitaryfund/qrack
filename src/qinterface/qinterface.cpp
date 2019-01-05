@@ -251,9 +251,8 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
         bitLenInt end = start + length;
         int i, j;
         for (i = start; i < end; i++) {
-            H(i);
-
             doNormalize = false;
+            H(i);
 
             for (j = 1; j < ((end - 1) - i); j++) {
                 CRTDyad(1, j, i + j, i);
@@ -261,8 +260,8 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 
             doNormalize = wasNormOn;
 
-            if (i != (end - 1)) {
-                CRTDyad(1, (end - i) - 1, end - 1, i);
+            if (i < (end - 1)) {
+                CRTDyad(1, (end - 1) - i, end - 1, i);
             }
 
             if (trySeparate) {
