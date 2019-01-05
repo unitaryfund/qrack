@@ -24,7 +24,7 @@ namespace Qrack {
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec, &clEvent);                                       \
     queue.flush();                                                                                                     \
-    device_context->wait_events.push_back(clEvent);
+    device_context->wait_events.push_back(clEvent)
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
     device_context->wait_events.emplace_back();                                                                        \
@@ -274,7 +274,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     size_t stateVecSize = maxQPower * sizeof(complex);
     bool usingHostRam;
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
-    if (!useHostRam && (stateVecSize > maxAlloc || (3 * stateVecSize) > maxMem)) {
+    if (useHostRam && !(stateVecSize > maxAlloc || (3 * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
         usingHostRam = false;

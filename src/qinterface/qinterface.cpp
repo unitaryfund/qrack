@@ -261,7 +261,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
             doNormalize = wasNormOn;
 
             if (i < (end - 1)) {
-                CRTDyad(1, (end - 1) - i, end - 1, i);
+                CRTDyad(1, (end - i) - 1, end - 1, i);
             }
 
             if (trySeparate) {

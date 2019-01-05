@@ -48,7 +48,7 @@ protected:
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
+        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = false);
     QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(complex* inputState);

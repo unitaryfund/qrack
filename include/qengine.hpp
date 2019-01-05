@@ -33,7 +33,7 @@ protected:
 
 public:
     QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true,
-        bool randomGlobalPhase = true, bool useHostMem = true)
+        bool randomGlobalPhase = true, bool useHostMem = false)
         : QInterface(n, rgp, doNorm)
         , randGlobalPhase(randomGlobalPhase)
         , useHostRam(useHostMem)

@@ -265,7 +265,7 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
     found[unit1] = true;
 
     /* Walk through all of the supplied bits and create a unique list to cohere. */
-    for (auto bit = first + 1; bit != last; ++bit) {
+    for (auto bit = first + 1; bit < last; bit++) {
         if (found.find(shards[**bit].unit) == found.end()) {
             found[shards[**bit].unit] = true;
             units.push_back(shards[**bit].unit);
@@ -287,7 +287,7 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
     }
 
     /* Change the source parameters to the correct newly mapped bit indexes. */
-    for (auto bit = first; bit != last; ++bit) {
+    for (auto bit = first; bit < last; bit++) {
         **bit = shards[**bit].mapped;
     }
 
@@ -834,13 +834,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     // If we've made it this far, we have to form the entangled representation and apply the gate.
     std::vector<bitLenInt> allBits(controlLen + targets.size());
-    for (i = 0; i < controlLen; i++) {
-        allBits[i] = controls[i];
-    }
-    for (i = 0; i < (int)targets.size(); i++) {
-        allBits[controlLen + i] = targets[i];
-    }
-    std::sort(allBits.begin() + controlLen, allBits.end());
+    std::copy(controls, controls + controlLen, allBits.begin());
+    std::copy(targets.begin(), targets.end(), allBits.begin() + controlLen);
+    std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(controlLen + targets.size());
     for (i = 0; i < (int)(controlLen + targets.size()); i++) {

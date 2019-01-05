@@ -90,7 +90,7 @@ public:
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = true, int devID = -1);
+        bool useHostMem = false, int devID = -1);
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
