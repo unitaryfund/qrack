@@ -630,12 +630,10 @@ void QEngineOCL::Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy
 
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (!stateVec && (nStateVecSize > maxAlloc || (2 * nStateVecSize) > maxMem)) {
-        complex* nSV = AllocStateVec(maxQPower);
+        complex* nSV = AllocStateVec(maxQPower, true);
         BufferPtr nSB = MakeStateVecBuffer(nSV);
 
-        LockSync(CL_MAP_READ);
-        std::copy(stateVec, stateVec + maxQPower, nSV);
-        UnlockSync();
+        WAIT_COPY(*stateBuffer, *nSB, sizeof(complex) * maxQPower);
 
         stateVec = nSV;
         stateBuffer = nSB;
