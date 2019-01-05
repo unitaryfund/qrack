@@ -160,23 +160,15 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 void QUnit::Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start)
 {
     bitLenInt oQubitCount = toCopy->GetQubitCount();
-    bitLenInt oldCount = qubitCount;
 
     /* Increase the number of bits in this object. */
-    SetQubitCount(qubitCount + toCopy->GetQubitCount());
+    SetQubitCount(qubitCount + oQubitCount);
 
     /* Create a clone of the quantum state in toCopy. */
     QUnitPtr clone(toCopy);
 
     /* Update shards to reference the cloned state. */
-    bitLenInt j;
-    for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {
-        j = i + oldCount;
-        shards[j].unit = clone->shards[i].unit;
-        shards[j].mapped = clone->shards[i].mapped;
-        shards[j].prob = clone->shards[i].prob;
-        shards[j].isProbDirty = clone->shards[i].isProbDirty;
-    }
+    std::copy(clone->shards.begin(), clone->shards.begin() + oQubitCount, shards.begin());
 
     if (isMid) {
         ROL(oQubitCount, start, qubitCount - start);
@@ -244,7 +236,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     /* Find the rest of the qubits. */
     for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped > (mapped + length)) {
+        if (shard.unit == unit && shard.mapped >= (mapped + length)) {
             shard.mapped -= length;
         }
     }
@@ -1321,7 +1313,7 @@ QInterfacePtr QUnit::Clone()
         }
 
         origEngine = find(shardEngines.begin(), shardEngines.end(), shards[i].unit);
-        engineIndex = std::distance(shardEngines.begin(), origEngine);
+        engineIndex = origEngine - shardEngines.begin();
 
         copyPtr->shards[i].unit = dupeEngines[engineIndex];
         copyPtr->shards[i].mapped = shards[i].mapped;

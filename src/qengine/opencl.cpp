@@ -528,6 +528,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     DISPATCH_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted);
+    cl::Event writeControlsEvent;
+    queue.enqueueWriteBuffer(*powersBuffer, CL_FALSE, 0, sizeof(bitCapInt) * bitCount, qPowersSorted, &waitVec, &writeControlsEvent);
+    queue.flush();
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     OCLAPI api_call;
@@ -568,6 +571,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // "runningNorm" variable.
         DISPATCH_READ(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
     }
+
+    writeControlsEvent.wait();
 }
 
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
