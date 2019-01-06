@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 28;
+const bitLenInt MaxQubits = 24;
 
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
@@ -114,7 +114,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         std::cout << (int)numBits << ", "; /* # of Qubits */
         std::cout << pow(2.0, avgt) << ","; /* Average Time (ms) */
         std::cout << pow(2.0, stdet) << ","; /* Sample Std. Deviation (ms) */
-        std::cout << pow(2.0, trialClocks[0])<< ","; /* Fastest (ms) */
+        std::cout << pow(2.0, trialClocks[0]) << ","; /* Fastest (ms) */
         if (ITERATIONS % 4 == 0) {
             std::cout << pow(2.0, (trialClocks[ITERATIONS / 4 - 1] + trialClocks[ITERATIONS / 4]) / 2)
                       << ","; /* 1st Quartile (ms) */
@@ -131,8 +131,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             std::cout << pow(2.0, (trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2)
                       << ","; /* 3rd Quartile (ms) */
         } else {
-            std::cout << pow(2.0, trialClocks[(3 * ITERATIONS) / 4 - 1] / 2)
-                      << ","; /* 3rd Quartile (ms) */
+            std::cout << pow(2.0, trialClocks[(3 * ITERATIONS) / 4 - 1] / 2) << ","; /* 3rd Quartile (ms) */
         }
         std::cout << pow(2.0, trialClocks[ITERATIONS - 1]) << std::endl; /* Slowest (ms) */
     }
@@ -143,7 +142,7 @@ void benchmarkLoop(
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits);
 }
-#if 0
+
 TEST_CASE("test_cnot_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -356,7 +355,7 @@ TEST_CASE("test_grover")
         },
         16);
 }
-#endif
+
 TEST_CASE("test_qft_ideal_init")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);

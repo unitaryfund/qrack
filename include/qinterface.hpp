@@ -50,12 +50,6 @@ enum QInterfaceEngine {
     QINTERFACE_OPENCL,
 
     /**
-     * Create a QEngineOCLMUlti, composed from multiple QEngineOCLs, using OpenCL in parallel across 2^N devices, for N
-     * an integer >= 0.
-     */
-    QINTERFACE_OPENCL_MULTI,
-
-    /**
      * Create a QFusion, which is a gate fusion layer between a QEngine and its public interface.
      */
     QINTERFACE_QFUSION,
@@ -214,7 +208,7 @@ public:
 
     /**
      * Minimally decohere a set of contiguous bits from the full coherent unit,
-     * into "destination."
+     * into "destination"
      *
      * Minimally decohere a set of contigious bits from the full coherent unit.
      * The length of this coherent unit is reduced by the length of bits
@@ -231,7 +225,7 @@ public:
      * explicitly interacted in order to describe their permutation basis, and
      * the descriptions of state of <b>separable</b> subsystems, those which
      * are not entangled with other subsystems, are just as easily removed from
-     * the description of state.
+     * the description of state. (This is equivalent to a "Schmidt decomposition.")
      *
      * If we have for example 5 qubits, and we wish to separate into "left" and
      * "right" subsystems of 3 and 2 qubits, we sum probabilities of one
@@ -239,7 +233,7 @@ public:
      * two, for all permutations, and vice versa, like so:
      *
      * \f$
-     *     prob(|(left) 1000>) = prob(|1000 00>) + prob(|1000 10>) + prob(|1000 01>) + prob(|1000 11>).
+     *     P(|1000>|xy>) = P(|1000 00>) + P(|1000 10>) + P(|1000 01>) + P(|1000 11>).
      * \f$
      *
      * If the subsystems are not "separable," i.e. if they are entangled, this
@@ -249,28 +243,31 @@ public:
      * mechanically meaningful.) To ensure that the subsystem is "separable,"
      * i.e. that it has no entanglements to other subsystems in the
      * QInterface, it can be measured with M(), or else all qubits <i>other
-     * than</i> the subsystem can be measured.
+     * than</i> the subsystem can be measured. "TryDecohere" alternatively first tests the state for separability, and
+     * only decomposes the state if it is determined to be separable.
      */
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
 
     /**
-     * Minimally decohere a set of contigious bits from the full coherent unit,
-     * throwing these qubits away.
+     * Minimally decohere a set of contiguous bits from the full coherent unit,
+     * into "destination"
      *
-     * Minimally decohere a set of contigious bits from the full coherent unit,
-     * discarding these bits. The length of this coherent unit is reduced by
-     * the length of bits decohered. For quantum mechanical accuracy, the bit
-     * set removed and the bit set left behind should be quantum mechanically
-     * "separable."
+     * Minimally decohere a set of contigious bits from the full coherent unit.
+     * The length of this coherent unit is reduced by the length of bits
+     * decohered, and the bits removed are output in the destination
+     * QInterface pointer. The destination object must be initialized to the
+     * correct number of bits, in 0 permutation state. For quantum mechanical
+     * accuracy, the bit set removed and the bit set left behind should be
+     * quantum mechanically "separable."
      *
      * Like how "Cohere" is like "just setting another group of qubits down
      * next to the first," <b><i>if two sets of qubits are not
-     * entangled,</i></b> then "Dispose" is like "just moving a few qubits away
-     * from the rest, and throwing them in the trash." Schroedinger's equation
-     * does not require bits to be explicitly interacted in order to describe
-     * their permutation basis, and the descriptions of state of
-     * <b>separable</b> subsystems, those which are not entangled with other
-     * subsystems, are just as easily removed from the description of state.
+     * entangled,</i></b> then "Decohere" is like "just moving a few qubits
+     * away from the rest." Schroedinger's equation does not require bits to be
+     * explicitly interacted in order to describe their permutation basis, and
+     * the descriptions of state of <b>separable</b> subsystems, those which
+     * are not entangled with other subsystems, are just as easily removed from
+     * the description of state. (This is equivalent to a "Schmidt decomposition.")
      *
      * If we have for example 5 qubits, and we wish to separate into "left" and
      * "right" subsystems of 3 and 2 qubits, we sum probabilities of one
@@ -278,7 +275,7 @@ public:
      * two, for all permutations, and vice versa, like so:
      *
      * \f$
-     *      prob(|(left) 1000>) = prob(|1000 00>) + prob(|1000 10>) + prob(|1000 01>) + prob(|1000 11>).
+     *     P(|1000>|xy>) = P(|1000 00>) + P(|1000 10>) + P(|1000 01>) + P(|1000 11>).
      * \f$
      *
      * If the subsystems are not "separable," i.e. if they are entangled, this
@@ -288,7 +285,8 @@ public:
      * mechanically meaningful.) To ensure that the subsystem is "separable,"
      * i.e. that it has no entanglements to other subsystems in the
      * QInterface, it can be measured with M(), or else all qubits <i>other
-     * than</i> the subsystem can be measured.
+     * than</i> the subsystem can be measured. "TryDecohere" alternatively first tests the state for separability, and
+     * only decomposes the state if it is determined to be separable.
      */
     virtual void Dispose(bitLenInt start, bitLenInt length) = 0;
 
@@ -616,7 +614,7 @@ public:
     /**
      * Dyadic fraction phase shift gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around |1>
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around |1>
      * state.
      */
     virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
@@ -631,7 +629,7 @@ public:
     /**
      * Dyadic fraction X axis rotation gate
      *
-     * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
+     * Rotates \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ on Pauli x axis.
      */
     virtual void RXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -661,7 +659,8 @@ public:
     /**
      * Dyadic fraction (identity) exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$, exponentiation of the identity operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * I / 2^{denomPower}\right) \f$, exponentiation of the identity
+     * operator
      */
     virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -675,7 +674,8 @@ public:
     /**
      * Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * \sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
+     * operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -689,7 +689,8 @@ public:
     /**
      * Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * \sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
+     * operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -703,7 +704,8 @@ public:
     /**
      * Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * \sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
+     * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -717,8 +719,7 @@ public:
     /**
      * Controlled dyadic fraction X axis rotation gate
      *
-     * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * 2^denomPower} \f$ around Pauli x axis.
+     * If "control" is 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli x axis.
      */
     virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
@@ -732,8 +733,7 @@ public:
     /**
      * Dyadic fraction Y axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Y
-     * axis.
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y axis.
      */
     virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -748,8 +748,8 @@ public:
     /**
      * Controlled dyadic fraction y axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * 2^denomPower} \f$ around Pauli Y axis.
+     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y
+     * axis.
      */
     virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
@@ -763,8 +763,7 @@ public:
     /**
      * Dyadic fraction Z axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Z
-     * axis.
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z axis.
      */
     virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
@@ -779,8 +778,8 @@ public:
     /**
      * Controlled dyadic fraction Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * 2^denomPower} \f$ around Pauli Z axis.
+     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z
+     * axis.
      */
     virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
@@ -796,8 +795,8 @@ public:
     /**
      * Controlled dyadic fraction "phase shift gate"
      *
-     * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
-     * numerator} / 2^denomPower} \f$ around |1> state.
+     * If control bit is set to 1, rotates target bit as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$
+     * around |1> state.
      */
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
@@ -886,7 +885,7 @@ public:
     /**
      * Bitwise dyadic fraction phase shift gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around |1>
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around |1>
      * state.
      */
     virtual void RTDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -901,7 +900,7 @@ public:
     /**
      * Bitwise dyadic fraction X axis rotation gate
      *
-     * Rotates \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ on Pauli x axis.
+     * Rotates \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ on Pauli x axis.
      */
     virtual void RXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -915,8 +914,7 @@ public:
     /**
      * Bitwise controlled dyadic fraction X axis rotation gate
      *
-     * If "control" is 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * 2^denomPower} \f$ around Pauli x axis.
+     * If "control" is 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli x axis.
      */
     virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -930,7 +928,7 @@ public:
     /**
      * Bitwise dyadic fraction Y axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Y
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y
      * axis.
      */
     virtual void RYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -946,8 +944,8 @@ public:
     /**
      * Bitwise controlled dyadic fraction y axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * 2^denomPower} \f$ around Pauli Y axis.
+     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y
+     * axis.
      */
     virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -961,8 +959,7 @@ public:
     /**
      * Bitwise dyadic fraction Z axis rotation gate
      *
-     * Rotates as \f$ e^{i*{\pi * numerator} / 2^denomPower} \f$ around Pauli Z
-     * axis.
+     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z axis.
      */
     virtual void RZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -977,8 +974,8 @@ public:
     /**
      * Bitwise controlled dyadic fraction Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{i*{\pi * numerator} /
-     * 2^denomPower} \f$ around Pauli Z axis.
+     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z
+     * axis.
      */
     virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -993,8 +990,8 @@ public:
     /**
      * Bitwise controlled dyadic fraction "phase shift gate"
      *
-     * If control bit is set to 1, rotates target bit as \f$ e^{i*{\pi *
-     * numerator} / 2^denomPower} \f$ around |1> state.
+     * If control bit is set to 1, rotates target bit as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$
+     * around |1> state.
      */
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -1008,7 +1005,8 @@ public:
     /**
      * Bitwise Dyadic fraction (identity) exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$, exponentiation of the identity operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * I / 2^{denomPower}\right) \f$, exponentiation of the identity
+     * operator
      */
     virtual void ExpDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -1022,7 +1020,8 @@ public:
     /**
      * Bitwise Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * \sigma_x / 2^denomPower} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
+     * operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -1036,7 +1035,8 @@ public:
     /**
      * Bitwise Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * \sigma_y / 2^denomPower} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
+     * operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
@@ -1050,7 +1050,8 @@ public:
     /**
      * Bitwise Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i * \pi * numerator * \sigma_z / 2^denomPower} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
+     * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
 
