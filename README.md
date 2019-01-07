@@ -89,7 +89,7 @@ Reduce to float accuracy for complex numbers. Requires half as much RAM (1 addit
 
 ## Copyright and License
 
-Copyright (c) Daniel Strano and the Qrack contributors 2017-2018. All rights reserved.
+Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 
 Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept.
 
