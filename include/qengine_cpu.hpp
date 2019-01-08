@@ -38,7 +38,8 @@ protected:
 
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool useHostMem = false);
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
+        bool ignored = false);
     QEngineCPU(QEngineCPUPtr toCopy);
     ~QEngineCPU() { delete[] stateVec; }
 
@@ -46,12 +47,17 @@ public:
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
 
+    virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
     std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Cohere(QEngineCPUPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
+    }
 
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
-    virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /** @} */
@@ -155,12 +161,13 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
     }
     virtual bool ApproxCompare(QEngineCPUPtr toCompare);
+    virtual QInterfacePtr Clone();
 
     /** @} */
 
 protected:
     virtual void ResetStateVec(complex* nStateVec);
-    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
+    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();

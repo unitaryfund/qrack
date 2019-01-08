@@ -149,9 +149,9 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_NORMSUM] = cl::Kernel(program, "normsum");
         all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
         all_device_contexts[i]->calls[OCL_API_COHERE] = cl::Kernel(program, "cohere");
+        all_device_contexts[i]->calls[OCL_API_COHERE_MID] = cl::Kernel(program, "coheremid");
         all_device_contexts[i]->calls[OCL_API_DECOHEREPROB] = cl::Kernel(program, "decohereprob");
         all_device_contexts[i]->calls[OCL_API_DECOHEREAMP] = cl::Kernel(program, "decohereamp");
-        all_device_contexts[i]->calls[OCL_API_DISPOSEPROB] = cl::Kernel(program, "disposeprob");
         all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
         all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
         all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");

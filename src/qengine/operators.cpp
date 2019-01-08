@@ -11,6 +11,7 @@
 // for details.
 
 #include "qengine_cpu.hpp"
+#include "qfactory.hpp"
 
 namespace Qrack {
 
@@ -1328,6 +1329,14 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
     // Return the expectation value.
     return (bitCapInt)(average + 0.5);
+}
+
+QInterfacePtr QEngineCPU::Clone()
+{
+    QInterfacePtr clone = CreateQuantumInterface(
+        QINTERFACE_CPU, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, true);
+    clone->SetQuantumState(stateVec);
+    return clone;
 }
 
 }; // namespace Qrack

@@ -1640,10 +1640,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    real1 qftProbs[20];
     qftReg->SetPermutation(85);
 
-    int i, j;
+    int i;
 
     for (i = 0; i < 8; i += 2) {
         qftReg->H(i);
@@ -1655,6 +1654,23 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
     for (i = 0; i < 8; i += 2) {
         qftReg->H(i);
+    }
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
+{
+    qftReg->SetPermutation(85);
+
+    int i;
+
+    qftReg->QFT(0, 8);
+
+    qftReg->IQFT(0, 8);
+
+    for (i = 0; i < 8; i++) {
+        qftReg->TrySeparate(i);
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
@@ -1842,6 +1858,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     free(testPage);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
+{
+    qftReg->SetPermutation(0x2b);
+    QInterfacePtr qftReg2 = qftReg->Clone();
+    qftReg2->X(0, 8);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x2b));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 20, 0xd4));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
 {
     QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
@@ -1873,6 +1899,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
         CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
     qftReg->Cohere(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecohere")
+{
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
+
+    qftReg->SetPermutation(0x2b);
+    REQUIRE(qftReg->TryDecohere(0, 4, qftReg2) == true);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
+
+    qftReg->SetPermutation(0xb);
+    qftReg->H(0, 4);
+    qftReg->CNOT(0, 4, 4);
+    REQUIRE(qftReg->TryDecohere(0, 4, qftReg2) == false);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")

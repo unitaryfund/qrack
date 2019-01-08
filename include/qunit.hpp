@@ -23,7 +23,8 @@ namespace Qrack {
 struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
-    bool isPhaseDirty = false;
+    real1 prob;
+    bool isProbDirty;
 };
 
 class QUnit;
@@ -36,6 +37,7 @@ protected:
     std::vector<QEngineShard> shards;
     complex phaseFactor;
     bool doNormalize;
+    bool randGlobalPhase;
     bool useHostRam;
 
     std::shared_ptr<std::default_random_engine> rand_generator;
@@ -49,21 +51,29 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool useHostMem = false);
+        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool useHostMem = false);
+        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0))
-    {
-        SetReg(0, qubitCount, perm);
-    }
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     using QInterface::Cohere;
-    virtual bitLenInt Cohere(QInterfacePtr toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual bitLenInt Cohere(QUnitPtr toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QUnit>(toCopy)); }
+    virtual bitLenInt Cohere(QUnitPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QUnit>(toCopy), start);
+    }
+    virtual void Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start);
+    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        Decohere(start, length, std::dynamic_pointer_cast<QUnit>(dest));
+    }
+    virtual void Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /**
@@ -191,6 +201,9 @@ public:
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
     virtual void UpdateRunningNorm();
+    virtual void Finish();
+
+    virtual QInterfacePtr Clone();
 
     /** @} */
 
@@ -224,11 +237,11 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
-    virtual bool TrySeparate(std::vector<bitLenInt> bits);
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
     void OrderContiguous(QInterfacePtr unit);
 
-    virtual void Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
 
     struct QSortEntry {
         bitLenInt bit;
@@ -247,6 +260,20 @@ protected:
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
+
+    void DirtyShardRange(bitLenInt start, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            shards[start + i].isProbDirty = true;
+        }
+    }
+
+    void DirtyShardIndexArray(bitLenInt* bitIndices, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            shards[bitIndices[i]].isProbDirty = true;
+        }
+    }
 };
 
 } // namespace Qrack

@@ -32,6 +32,7 @@ protected:
     QInterfacePtr qReg;
     complex phaseFactor;
     bool doNormalize;
+    bool randGlobalPhase;
 
     std::vector<BitBufferPtr> bitBuffers;
     std::vector<std::vector<bitLenInt>> bitControls;
@@ -47,7 +48,7 @@ protected:
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool useHostMem = false);
+        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = false);
     QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(complex* inputState);
@@ -57,14 +58,24 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Cohere;
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
     virtual bitLenInt Cohere(QFusionPtr toCopy);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
+    virtual bitLenInt Cohere(QFusionPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy), start);
+    }
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
         Decohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));
     }
     virtual void Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        return TryDecohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));
+    }
+    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
@@ -152,6 +163,18 @@ public:
     }
 
     virtual void UpdateRunningNorm();
+    virtual void Finish() { qReg->Finish(); }
+
+    virtual QInterfacePtr Clone()
+    {
+        FlushAll();
+
+        QInterfacePtr payload = qReg->Clone();
+
+        return std::make_shared<QFusion>(payload);
+    }
+
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
 protected:
     /** Buffer flush methods, to apply accumulated buffers when bits are checked for output or become involved in

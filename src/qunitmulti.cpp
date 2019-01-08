@@ -16,8 +16,8 @@
 namespace Qrack {
 
 QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm, bool useHostMem)
-    : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, useHostMem)
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
+    : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem)
 {
     // Notice that this constructor does not take an engine type parameter, and it always passes QINTERFACE_OPENCL to
     // the QUnit constructor. For QUnitMulti, the "shard" engines are therefore guaranteed to always be QEngineOCL
@@ -82,7 +82,7 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
-void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 {
     QUnit::Detach(start, length, dest);
     RedistributeQEngines();
@@ -94,15 +94,6 @@ QInterfacePtr QUnitMulti::EntangleIterator(
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
     RedistributeQEngines();
     return toRet;
-}
-
-bool QUnitMulti::TrySeparate(std::vector<bitLenInt> bits)
-{
-    bool didSeparate = QUnit::TrySeparate(bits);
-    if (didSeparate) {
-        RedistributeQEngines();
-    }
-    return didSeparate;
 }
 
 /// Set register bits to given permutation

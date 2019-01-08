@@ -68,7 +68,6 @@ protected:
     size_t maxMem;
     size_t maxAlloc;
     unsigned int procElemCount;
-    bool useHostRam;
 
 public:
     /**
@@ -90,7 +89,8 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool useHostMem = false, int devID = -1);
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
+        bool useHostMem = false, int devID = -1);
     QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
@@ -102,14 +102,6 @@ public:
             free(nrmArray);
         }
     }
-
-    /**
-     * Finishes the asynchronous wait event list or queue of OpenCL events.
-     *
-     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
-     * device queue is finished, (which might be shared by other QEngineOCL instances).
-     */
-    virtual void clFinish(bool doHard = false);
 
     virtual void SetQubitCount(bitLenInt qb);
 
@@ -125,6 +117,12 @@ public:
 
     virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
     virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
+    virtual bitLenInt Cohere(QEngineOCLPtr toCopy, bitLenInt start);
+    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start);
+    }
+    virtual void Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy);
     virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -191,6 +189,9 @@ public:
 
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
+    virtual void Finish() { clFinish(); };
+
+    virtual QInterfacePtr Clone();
 
 protected:
     static const int BCI_ARG_LEN = 10;
@@ -201,6 +202,14 @@ protected:
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
+
+    /**
+     * Finishes the asynchronous wait event list or queue of OpenCL events.
+     *
+     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
+     * device queue is finished, (which might be shared by other QEngineOCL instances).
+     */
+    virtual void clFinish(bool doHard = false);
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);

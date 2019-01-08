@@ -204,12 +204,33 @@ void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bi
 
     bitCapInt4 args = vload4(0, bitCapIntPtr);
     bitCapInt nMaxQPower = args.x;
-    bitCapInt startMask = args.y;
-    bitCapInt endMask = args.z;
-    bitCapInt qubitCount = args.w;
+    bitCapInt qubitCount = args.y;
+    bitCapInt startMask = args.z;
+    bitCapInt endMask = args.w;
 
     for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[lcv & startMask], stateVec2[(lcv & endMask) >> qubitCount]);
+    }
+}
+
+void kernel coheremid(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt ID, Nthreads, lcv;
+    
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt nMaxQPower = args.x;
+    bitCapInt qubitCount = args.y;
+    bitCapInt oQubitCount = args.z;
+    bitCapInt startMask = args.w;
+    bitCapInt midMask = bitCapIntPtr[4];
+    bitCapInt endMask = bitCapIntPtr[5];    
+    bitCapInt start = bitCapIntPtr[6];
+
+    for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
+        nStateVec[lcv] = zmul(stateVec1[(lcv & startMask) | ((lcv & endMask) >> oQubitCount)], stateVec2[(lcv & midMask) >> start]);
     }
 }
 
@@ -228,64 +249,59 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
 
     bitCapInt j, k, l;
     cmplx amp;
-    real1 partProb;
+    real1 partProb, nrm, firstAngle, currentAngle;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
-        j = lcv % (1U << start);
-        j = j | ((lcv ^ j) << len);
+        j = lcv & ((1U << start) - 1);
+        j |= (lcv ^ j) << len;
+
         partProb = ZERO_R1;
+        firstAngle = -16 * M_PI;
+
         for (k = 0U; k < partPower; k++) {
             l = j | (k << start);
+
             amp = stateVec[l];
-            partProb += dot(amp, amp);
+            nrm = dot(amp, amp);
+            partProb += nrm;
+
+            if (nrm > min_norm) {
+                currentAngle = arg(amp);
+                if (firstAngle < (-8 * M_PI)) {
+                    firstAngle = currentAngle;
+                }
+                partStateAngle[k] = currentAngle - firstAngle;
+            }
         }
+
         remainderStateProb[lcv] = partProb;
-        remainderStateAngle[lcv] = arg(amp);
     }
 
     for (lcv = ID; lcv < partPower; lcv += Nthreads) {
         j = lcv << start;
+
         partProb = ZERO_R1;
+        firstAngle = -16 * M_PI;
+
         for (k = 0U; k < remainderPower; k++) {
-            l = k % (1U << start);
-            l = l | ((k ^ l) << len);
+            l = k & ((1U << start) - 1);
+            l |= (k ^ l) << len;
             l = j | l;
+            
             amp = stateVec[l];
-            partProb += dot(amp, amp);
+            nrm = dot(amp, amp);
+            partProb += nrm;
+
+            if (nrm > min_norm) {
+                currentAngle = arg(stateVec[l]);
+                if (firstAngle < (-8 * M_PI)) {
+                    firstAngle = currentAngle;
+                }
+                remainderStateAngle[k] = currentAngle - firstAngle;
+            }
         }
+
         partStateProb[lcv] = partProb;
-        partStateAngle[lcv] = arg(amp);
-    }
-}
-
-void kernel disposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle)
-{
-    bitCapInt ID, Nthreads, lcv;
-    
-    ID = get_global_id(0);
-    Nthreads = get_global_size(0);
-
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt partPower = args.x;
-    bitCapInt remainderPower = args.y;
-    bitCapInt start = args.z;
-    bitCapInt len = args.w;
-
-    bitCapInt j, k, l;
-    cmplx amp;
-    real1 partProb;
-
-    for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
-        j = lcv % (1U << start);
-        j = j | ((lcv ^ j) << len);
-        partProb = ZERO_R1;
-        for (k = 0U; k < partPower; k++) {
-            l = j | (k << start);
-            amp = stateVec[l];
-            partProb += dot(amp, amp);
-        }
-        remainderStateProb[lcv] = partProb;
-        remainderStateAngle[lcv] = arg(amp);
     }
 }
 
@@ -1679,16 +1695,12 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
     cmplx amp;
-    real1 nrm;
     real1 partNrm = ZERO_R1;
 
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec1[lcv] - stateVec2[lcv];
-        nrm = dot(amp, amp);
-        if (nrm > min_norm) {
-            partNrm += nrm;
-        }
+        partNrm += dot(amp, amp);
     }
 
     locID = get_local_id(0);

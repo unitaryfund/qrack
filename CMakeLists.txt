@@ -58,6 +58,21 @@ add_test (NAME qrack_benchmarks
     COMMAND benchmarks
     )
 
+# Declare the accuracy executable
+add_executable (accuracy
+    test/accuracy_main.cpp
+    test/accuracy.cpp
+    )
+
+target_link_libraries (accuracy
+    qrack
+    pthread
+    )
+
+add_test (NAME qrack_accuracy
+    COMMAND accuracy
+    )
+
 # Included after the library and other modules have been declared
 include ("cmake/OpenCL.cmake" )
 include ("cmake/Complex8.cmake")

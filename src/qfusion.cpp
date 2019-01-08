@@ -20,18 +20,24 @@
 namespace Qrack {
 
 QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool useHostMem)
+    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
+    bool useHostMem)
     : QInterface(qBitCount, rgp)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
+    , randGlobalPhase(randomGlobalPhase)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
-    qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, useHostMem);
+    qReg =
+        CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, randGlobalPhase, useHostMem);
 }
 
 QFusion::QFusion(QInterfacePtr target)
     : QInterface(target->GetQubitCount())
+    , phaseFactor(complex(-999.0, -999.0))
+    , doNormalize(true)
+    , randGlobalPhase(true)
     , bitBuffers(target->GetQubitCount())
     , bitControls(target->GetQubitCount())
 {
@@ -243,11 +249,21 @@ bitLenInt QFusion::Cohere(QFusionPtr toCopy)
     return toRet;
 }
 
+bitLenInt QFusion::Cohere(QFusionPtr toCopy, bitLenInt start)
+{
+    FlushAll();
+    toCopy->FlushAll();
+    bitLenInt toRet = qReg->Cohere(toCopy->qReg, start);
+    SetQubitCount(qReg->GetQubitCount());
+    return toRet;
+}
+
 // "Decohere" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decohered"
 // qubit, so it's definitely cheaper to maintain our buffers until after the Decohere.
 void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushReg(start, length);
+    dest->FlushReg(0, length);
 
     qReg->Decohere(start, length, dest->qReg);
 
@@ -286,6 +302,36 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
     }
+}
+
+// "TryDecohere" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decohered"
+// qubit, so it's definitely cheaper to maintain our buffers until after the Decohere.
+bool QFusion::TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
+{
+    FlushReg(start, length);
+
+    bool result = qReg->TryDecohere(start, length, dest->qReg);
+
+    if (result == false) {
+        return false;
+    }
+
+    if (length < qubitCount) {
+        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+    }
+    SetQubitCount(qReg->GetQubitCount());
+    dest->SetQubitCount(length);
+
+    // If the Decohere caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
+    // gets:
+    if (qubitCount < MIN_FUSION_BITS) {
+        FlushAll();
+    }
+    if (dest->GetQubitCount() < MIN_FUSION_BITS) {
+        dest->FlushAll();
+    }
+
+    return true;
 }
 
 // "PhaseFlip" can be buffered as a single bit operation to make it cheaper, (equivalent to the application of the gates
@@ -759,4 +805,11 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
 }
 
 void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
+
+bool QFusion::TrySeparate(bitLenInt start, bitLenInt length)
+{
+    FlushReg(start, length);
+    return qReg->TrySeparate(start, length);
+}
+
 } // namespace Qrack

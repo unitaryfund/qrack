@@ -37,8 +37,8 @@ namespace Qrack {
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm, bool useHostMem)
-    : QEngine(qBitCount, rgp, doNorm)
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -53,15 +53,21 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     if (phaseFac == complex(-999.0, -999.0)) {
-        real1 angle = Rand() * 2.0 * PI_R1;
-        stateVec[initState] = complex(cos(angle), sin(angle));
+        complex phase;
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2.0 * PI_R1;
+            phase = complex(cos(angle), sin(angle));
+        } else {
+            phase = complex(ONE_R1, ZERO_R1);
+        }
+        stateVec[initState] = phase;
     } else {
         stateVec[initState] = phaseFac;
     }
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize)
+    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, true)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -84,8 +90,14 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     if (phaseFac == complex(-999.0, -999.0)) {
-        real1 angle = Rand() * 2.0 * PI_R1;
-        stateVec[perm] = complex(cos(angle), sin(angle));
+        complex phase;
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2.0 * PI_R1;
+            phase = complex(cos(angle), sin(angle));
+        } else {
+            phase = complex(ONE_R1, ZERO_R1);
+        }
+        stateVec[perm] = phase;
     } else {
         real1 nrm = abs(phaseFac);
         stateVec[perm] = phaseFac / nrm;
@@ -292,6 +304,41 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 }
 
 /**
+ * Combine (a copy of) another QEngineCPU with this one, inserted at the "start" index. (If the programmer doesn't want
+ * to "cheat," it is left up to them to delete the old coherent unit that was added.
+ */
+bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy, bitLenInt start)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+        toCopy->NormalizeState();
+    }
+
+    bitCapInt oQubitCount = toCopy->qubitCount;
+    bitCapInt nQubitCount = qubitCount + oQubitCount;
+    bitCapInt nMaxQPower = 1 << nQubitCount;
+    bitCapInt startMask = (1 << start) - 1;
+    bitCapInt midMask = ((1 << oQubitCount) - 1) << start;
+    bitCapInt endMask = ((1 << (qubitCount + oQubitCount)) - 1) & ~(startMask | midMask);
+
+    complex* nStateVec = AllocStateVec(nMaxQPower);
+
+    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
+        nStateVec[lcv] =
+            stateVec[(lcv & startMask) | ((lcv & endMask) >> oQubitCount)] * toCopy->stateVec[(lcv & midMask) >> start];
+    });
+
+    SetQubitCount(nQubitCount);
+
+    ResetStateVec(nStateVec);
+
+    return start;
+}
+
+/**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old coherent unit that was added.
@@ -369,18 +416,82 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     bitCapInt remainderPower = 1 << (qubitCount - length);
 
     real1* remainderStateProb = new real1[remainderPower]();
-    real1* remainderStateAngle = new real1[remainderPower];
+    real1* remainderStateAngle = new real1[remainderPower]();
+    real1* partStateAngle = new real1[partPower]();
+    real1* partStateProb = new real1[partPower]();
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
-        j = lcv % (1 << start);
-        j = j | ((lcv ^ j) << length);
+        j = lcv & ((1U << start) - 1);
+        j |= (lcv ^ j) << length;
+
+        real1 firstAngle = -16 * M_PI;
+        real1 currentAngle;
+        real1 nrm;
+
         for (k = 0; k < partPower; k++) {
             l = j | (k << start);
-            remainderStateProb[lcv] += norm(stateVec[l]);
+
+            nrm = norm(stateVec[l]);
+            remainderStateProb[lcv] += nrm;
+
+            if (nrm > min_norm) {
+                currentAngle = arg(stateVec[l]);
+                if (firstAngle < (-8 * M_PI)) {
+                    firstAngle = currentAngle;
+                }
+                partStateAngle[k] = currentAngle - firstAngle;
+            }
         }
-        remainderStateAngle[lcv] = arg(stateVec[j]);
     });
+
+    par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt j, k, l;
+        j = lcv << start;
+
+        real1 firstAngle = -16 * M_PI;
+        real1 currentAngle;
+        real1 nrm;
+
+        for (k = 0; k < remainderPower; k++) {
+            l = k & ((1 << start) - 1);
+            l |= (k ^ l) << length;
+            l = j | l;
+
+            nrm = norm(stateVec[l]);
+            partStateProb[lcv] += nrm;
+
+            if (nrm > min_norm) {
+                currentAngle = arg(stateVec[l]);
+                if (firstAngle < (-8 * M_PI)) {
+                    firstAngle = currentAngle;
+                }
+                remainderStateAngle[k] = currentAngle - firstAngle;
+            }
+        }
+    });
+
+    bitCapInt i, j, k;
+    i = 0;
+    j = 0;
+    k = 0;
+    while (remainderStateProb[i] < min_norm) {
+        i++;
+    }
+    k = i & ((1U << start) - 1);
+    k |= (i ^ k) << length;
+
+    while (partStateProb[j] < min_norm) {
+        j++;
+    }
+    k |= j << start;
+
+    real1 refAngle = arg(stateVec[k]);
+    real1 angleOffset = refAngle - (remainderStateAngle[i] + partStateAngle[j]);
+
+    for (bitCapInt l = 0; l < partPower; l++) {
+        partStateAngle[l] += angleOffset;
+    }
 
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
@@ -389,28 +500,10 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     }
 
     if (destination != nullptr) {
-        real1* partStateProb = new real1[partPower]();
-        real1* partStateAngle = new real1[partPower];
-
-        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-            bitCapInt j, k, l;
-            j = lcv << start;
-            for (k = 0; k < remainderPower; k++) {
-                l = k % (1 << start);
-                l = l | ((k ^ l) << length);
-                l = j | l;
-                partStateProb[lcv] += norm(stateVec[l]);
-            }
-            partStateAngle[lcv] = arg(stateVec[j]);
-        });
-
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec[lcv] =
                 (real1)(std::sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv]));
         });
-
-        delete[] partStateProb;
-        delete[] partStateAngle;
     }
 
     ResetStateVec(AllocStateVec(maxQPower));
@@ -422,6 +515,8 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
+    delete[] partStateProb;
+    delete[] partStateAngle;
 }
 
 void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
@@ -553,22 +648,17 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         real1 elemError = norm(stateVec[lcv] - toCompare->stateVec[lcv]);
-        if (elemError > min_norm) {
-            partError[cpu] += elemError;
-        }
+        partError[cpu] += elemError;
     });
 
-    bool isSame = true;
+    real1 totError = ZERO_R1;
     for (int i = 0; i < numCores; i++) {
-        if (partError[i] > 0) {
-            isSame = false;
-            break;
-        }
+        totError += partError[i];
     }
 
     delete[] partError;
 
-    return isSame;
+    return totError < approxcompare_error;
 }
 
 void QEngineCPU::NormalizeState(real1 nrm)
