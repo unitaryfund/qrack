@@ -35,6 +35,10 @@ For more information, compile the doxygen.config in the root folder, and then ch
 
 Live version of the documentation, including API reference, can be obtained at: https://qrack.readthedocs.io/en/latest/
 
+## Community
+
+Qrack has a community home at the Advanced Computing Topics server on Discord, at: https://discordapp.com/invite/Gj3CHDy
+
 ## test/tests.cpp
 
 The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
