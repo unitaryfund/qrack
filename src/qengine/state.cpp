@@ -38,7 +38,7 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
     complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -67,8 +67,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QEngine(
-          toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam)
+    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, true)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());

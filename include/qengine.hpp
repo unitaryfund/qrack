@@ -31,6 +31,16 @@ protected:
 
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
+    complex GetNonunitaryPhase()
+    {
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2 * M_PI;
+            return complex(cos(angle), sin(angle));
+        } else {
+            return complex(ONE_R1, ZERO_R1);
+        }
+    }
+
 public:
     QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true,
         bool randomGlobalPhase = true, bool useHostMem = false)

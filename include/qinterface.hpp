@@ -107,7 +107,6 @@ protected:
         maxQPower = 1 << qubitCount;
     }
 
-    /** Generate a random real1 from 0 to 1 */
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     inline bitCapInt log2(bitCapInt n)
@@ -1362,7 +1361,7 @@ public:
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
     {
-        while (first < (last - 1)) {
+        while ((last > 0) && first < (last - 1)) {
             last--;
             Swap(first, last);
             first++;

@@ -35,14 +35,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
     }
 
     bitCapInt qPower = 1 << qubit;
-    complex phase;
-    if (randGlobalPhase) {
-        real1 angle = Rand() * 2 * M_PI;
-        phase = complex(cos(angle), sin(angle));
-    } else {
-        phase = complex(ONE_R1, ZERO_R1);
-    }
-    ApplyM(qPower, result, phase / (real1)(std::sqrt(nrmlzr)));
+    ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
 
     return result;
 }
@@ -73,13 +66,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     bitCapInt i;
 
-    complex phase;
-    if (randGlobalPhase) {
-        real1 angle = Rand() * 2.0 * M_PI;
-        phase = complex(cos(angle), sin(angle));
-    } else {
-        phase = complex(ONE_R1, ZERO_R1);
-    }
+    complex phase = GetNonunitaryPhase();
 
     bitCapInt* qPowers = new bitCapInt[length];
     bitCapInt regMask = 0;
@@ -478,13 +465,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     real1 prob = Rand();
-    complex phase;
-    if (randGlobalPhase) {
-        real1 angle = Rand() * 2.0 * M_PI;
-        phase = complex(cos(angle), sin(angle));
-    } else {
-        phase = complex(ONE_R1, ZERO_R1);
-    }
+    complex phase = GetNonunitaryPhase();
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     real1* probArray = new real1[lengthPower]();
