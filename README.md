@@ -39,6 +39,8 @@ Live version of the documentation, including API reference, can be obtained at: 
 
 Qrack has a community home at the Advanced Computing Topics server on Discord, at: https://discordapp.com/invite/Gj3CHDy
 
+For help getting started with contributing, see our [CONTRIBUTING.md](https://github.com/vm6502q/qrack/blob/doc_resources/CONTRIBUTING.md).
+
 ## test/tests.cpp
 
 The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
