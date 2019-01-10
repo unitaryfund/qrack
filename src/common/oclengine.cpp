@@ -148,10 +148,10 @@ void OCLEngine::InitOCL()
         all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
         all_device_contexts[i]->calls[OCL_API_NORMSUM] = cl::Kernel(program, "normsum");
         all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
-        all_device_contexts[i]->calls[OCL_API_COHERE] = cl::Kernel(program, "cohere");
-        all_device_contexts[i]->calls[OCL_API_COHERE_MID] = cl::Kernel(program, "coheremid");
-        all_device_contexts[i]->calls[OCL_API_DECOHEREPROB] = cl::Kernel(program, "decohereprob");
-        all_device_contexts[i]->calls[OCL_API_DECOHEREAMP] = cl::Kernel(program, "decohereamp");
+        all_device_contexts[i]->calls[OCL_API_COMPOSE] = cl::Kernel(program, "compose");
+        all_device_contexts[i]->calls[OCL_API_COMPOSE_MID] = cl::Kernel(program, "composemid");
+        all_device_contexts[i]->calls[OCL_API_DECOMPOSEPROB] = cl::Kernel(program, "decomposeprob");
+        all_device_contexts[i]->calls[OCL_API_DECOMPOSEAMP] = cl::Kernel(program, "decomposeamp");
         all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
         all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
         all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");

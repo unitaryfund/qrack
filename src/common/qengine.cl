@@ -195,7 +195,7 @@ void kernel normsum(global real1* nrmParts, local real1* lProbBuffer)
     }
 }
 
-void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel compose(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, lcv;
     
@@ -213,7 +213,7 @@ void kernel cohere(global cmplx* stateVec1, global cmplx* stateVec2, constant bi
     }
 }
 
-void kernel coheremid(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel composemid(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, lcv;
     
@@ -234,7 +234,7 @@ void kernel coheremid(global cmplx* stateVec1, global cmplx* stateVec2, constant
     }
 }
 
-void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb, global real1* partStateAngle)
+void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb, global real1* partStateAngle)
 {
     bitCapInt ID, Nthreads, lcv;
     
@@ -305,7 +305,7 @@ void kernel decohereprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPt
     }
 }
 
-void kernel decohereamp(global real1* stateProb, global real1* stateAngle, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel decomposeamp(global real1* stateProb, global real1* stateAngle, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt ID, Nthreads, lcv;
     

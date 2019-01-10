@@ -60,20 +60,20 @@ public:
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
-    using QInterface::Cohere;
-    virtual bitLenInt Cohere(QUnitPtr toCopy);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QUnit>(toCopy)); }
-    virtual bitLenInt Cohere(QUnitPtr toCopy, bitLenInt start);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    using QInterface::Compose;
+    virtual bitLenInt Compose(QUnitPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
+    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Cohere(std::dynamic_pointer_cast<QUnit>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), start);
     }
-    virtual void Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Compose(QUnitPtr toCopy, bool isMid, bitLenInt start);
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
-        Decohere(start, length, std::dynamic_pointer_cast<QUnit>(dest));
+        Decompose(start, length, std::dynamic_pointer_cast<QUnit>(dest));
     }
-    virtual void Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    virtual void Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     /**

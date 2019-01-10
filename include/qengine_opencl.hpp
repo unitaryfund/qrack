@@ -115,15 +115,15 @@ public:
     using QEngine::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
-    virtual bitLenInt Cohere(QEngineOCLPtr toCopy);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
-    virtual bitLenInt Cohere(QEngineOCLPtr toCopy, bitLenInt start);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QEngineOCLPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
+    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Cohere(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start);
     }
-    virtual void Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy);
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy);
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
@@ -239,7 +239,7 @@ protected:
     void UnlockSync();
     void Sync();
 
-    void DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
+    void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void ArithmeticCall(
         OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
     void CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,

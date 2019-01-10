@@ -238,34 +238,34 @@ void QFusion::ApplyAntiControlledSingleBit(
     bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
-// "Cohere" will increase the cost of application of every currently buffered gate by a factor of 2 per "cohered" qubit,
+// "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed" qubit,
 // so it's most likely cheaper just to FlushAll() immediately.
-bitLenInt QFusion::Cohere(QFusionPtr toCopy)
+bitLenInt QFusion::Compose(QFusionPtr toCopy)
 {
     FlushAll();
     toCopy->FlushAll();
-    bitLenInt toRet = qReg->Cohere(toCopy->qReg);
+    bitLenInt toRet = qReg->Compose(toCopy->qReg);
     SetQubitCount(qReg->GetQubitCount());
     return toRet;
 }
 
-bitLenInt QFusion::Cohere(QFusionPtr toCopy, bitLenInt start)
+bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start)
 {
     FlushAll();
     toCopy->FlushAll();
-    bitLenInt toRet = qReg->Cohere(toCopy->qReg, start);
+    bitLenInt toRet = qReg->Compose(toCopy->qReg, start);
     SetQubitCount(qReg->GetQubitCount());
     return toRet;
 }
 
-// "Decohere" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decohered"
-// qubit, so it's definitely cheaper to maintain our buffers until after the Decohere.
-void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
+// "Decompose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decompose"
+// qubit, so it's definitely cheaper to maintain our buffers until after the Decompose.
+void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushReg(start, length);
     dest->FlushReg(0, length);
 
-    qReg->Decohere(start, length, dest->qReg);
+    qReg->Decompose(start, length, dest->qReg);
 
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
@@ -273,7 +273,7 @@ void QFusion::Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
     SetQubitCount(qReg->GetQubitCount());
     dest->SetQubitCount(length);
 
-    // If the Decohere caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
+    // If the Decompose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
     // gets:
     if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
@@ -304,13 +304,13 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     }
 }
 
-// "TryDecohere" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decohered"
-// qubit, so it's definitely cheaper to maintain our buffers until after the Decohere.
-bool QFusion::TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
+// "TryDecompose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decomposed"
+// qubit, so it's definitely cheaper to maintain our buffers until after the Decomposed.
+bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushReg(start, length);
 
-    bool result = qReg->TryDecohere(start, length, dest->qReg);
+    bool result = qReg->TryDecompose(start, length, dest->qReg);
 
     if (result == false) {
         return false;
@@ -322,7 +322,7 @@ bool QFusion::TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest)
     SetQubitCount(qReg->GetQubitCount());
     dest->SetQubitCount(length);
 
-    // If the Decohere caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
+    // If the Decompose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
     // gets:
     if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();

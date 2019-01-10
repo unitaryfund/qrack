@@ -682,18 +682,18 @@ void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 }
 
-std::map<QInterfacePtr, bitLenInt> QInterface::Cohere(std::vector<QInterfacePtr> toCopy)
+std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
 
     for (auto&& q : toCopy) {
-        ret[q] = Cohere(q);
+        ret[q] = Compose(q);
     }
 
     return ret;
 }
 
-bool QInterface::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+bool QInterface::TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
 {
     Finish();
 
@@ -702,8 +702,8 @@ bool QInterface::TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr de
 
     QInterfacePtr unitCopy = Clone();
 
-    unitCopy->Decohere(start, length, dest);
-    unitCopy->Cohere(dest, start);
+    unitCopy->Decompose(start, length, dest);
+    unitCopy->Compose(dest, start);
 
     bool didSeparate = ApproxCompare(unitCopy);
     if (didSeparate) {
