@@ -1,3 +1,16 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+//
+// This example demonstrates Grover's search, applied for the purpose of finding a value in a lookup table. (This relies
+// on the IndexedLDA/IndexedADC/IndexedSBC methods of Qrack. IndexedADC and IndexedSBC can be shown to be unitary
+// operations, while IndexedLDA is unitary up to the requirement that the "value register" is set to zero before
+// applying the operation.)
+//
+// Licensed under the GNU Lesser General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
+// for details.
+
 #include <iomanip> // For setw
 #include <iostream> // For cout
 

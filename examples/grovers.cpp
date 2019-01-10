@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+//
+// This example demonstrates Grover's search, applied for the purpose of inverting a black box function. (This is
+// probably the most canonical form and application of Grover's search.)
+//
+// Licensed under the GNU Lesser General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
+// for details.
+
 #include <iomanip> // For setw
 #include <iostream> // For cout
 
@@ -21,14 +32,16 @@ void Oracle(QInterfacePtr qReg)
 
 int main()
 {
-// ***Grover's search, to invert a black box function***
 
-// Both CPU and GPU types share the QInterface API.
 #if ENABLE_OPENCL
+    // OpenCL type, if available.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, 0);
 #else
+    // Non-OpenCL type, if OpenCL is not available.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, 0);
 #endif
+
+    // All simulator types share the QInterface API.
 
     int i;
 
