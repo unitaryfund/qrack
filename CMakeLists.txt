@@ -73,29 +73,8 @@ add_test (NAME qrack_accuracy
     COMMAND accuracy
     )
 
-add_executable (grovers
-    examples/grovers.cpp
-    )
-
-set_target_properties(grovers PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
-
-target_link_libraries (grovers
-    qrack
-    pthread
-    )
-
-add_executable (grovers_lookup
-    examples/grovers_lookup.cpp
-    )
-
-set_target_properties(grovers_lookup PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
-
-target_link_libraries (grovers_lookup
-    qrack
-    pthread
-    )
-
 # Included after the library and other modules have been declared
+include ("cmake/Examples.cmake")
 include ("cmake/OpenCL.cmake" )
 include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
@@ -121,9 +100,6 @@ endif (APPLE)
 target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -fPIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (unittest PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (grovers PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (grovers_lookup PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}

@@ -6,6 +6,19 @@
 
 using namespace Qrack;
 
+// Our subroutine returns true only for an input of 100. We are theoretically blind, to this, until the search is
+// finished.
+const int TARGET_INPUT = 100;
+
+void Oracle(QInterfacePtr qReg)
+{
+    // Our "oracle" is true for an input of "TARGET_INPUT" and false for all other inputs.
+    qReg->DEC(TARGET_INPUT, 0, 8);
+    qReg->ZeroPhaseFlip(0, 8);
+    qReg->INC(TARGET_INPUT, 0, 8);
+    // This ends the "oracle."
+}
+
 int main()
 {
 // ***Grover's search, to invert a black box function***
@@ -19,10 +32,6 @@ int main()
 
     int i;
 
-    // Our subroutine returns true only for an input of 100.
-
-    const int TARGET_PROB = 100;
-
     // Our input to the subroutine "oracle" is 8 bits.
     qReg->SetPermutation(0);
     qReg->H(0, 8);
@@ -30,20 +39,18 @@ int main()
     std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
-        // Our "oracle" is true for an input of "100" and false for all other inputs.
-        qReg->DEC(100, 0, 8);
-        qReg->ZeroPhaseFlip(0, 8);
-        qReg->INC(100, 0, 8);
-        // This ends the "oracle."
+        // The "oracle" tags one permutation input, which we theoretically don't know.
+        Oracle(qReg);
+
         qReg->H(0, 8);
         qReg->ZeroPhaseFlip(0, 8);
         qReg->H(0, 8);
         qReg->PhaseFlip();
-        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qReg->ProbAll(TARGET_PROB) << std::endl;
+        std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qReg->ProbAll(TARGET_INPUT) << std::endl;
     }
 
     qReg->MReg(0, 8);
 
     std::cout << "After measurement:" << std::endl;
-    std::cout << "Chance of match:" << qReg->ProbAll(TARGET_PROB) << std::endl;
+    std::cout << "Chance of match:" << qReg->ProbAll(TARGET_INPUT) << std::endl;
 }
