@@ -32,7 +32,6 @@ void Oracle(QInterfacePtr qReg)
 
 int main()
 {
-
 #if ENABLE_OPENCL
     // OpenCL type, if available.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, 0);
