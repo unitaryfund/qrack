@@ -47,16 +47,16 @@ public:
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
 
-    virtual bitLenInt Cohere(QEngineCPUPtr toCopy);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
-    std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
-    virtual bitLenInt Cohere(QEngineCPUPtr toCopy, bitLenInt start);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QEngineCPUPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
+    std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Compose(QEngineCPUPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Cohere(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
     }
 
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
@@ -167,7 +167,7 @@ public:
 
 protected:
     virtual void ResetStateVec(complex* nStateVec);
-    virtual void DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
+    virtual void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();

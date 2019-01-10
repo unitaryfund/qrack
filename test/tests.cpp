@@ -1868,12 +1868,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
     REQUIRE_THAT(qftReg2, HasProbability(0, 20, 0xd4));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_decohere")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 {
     QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
-    qftReg->Decohere(0, 4, qftReg2);
+    qftReg->Decompose(0, 4, qftReg2);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
@@ -1892,21 +1892,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0xb));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cohere")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 {
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
     QInterfacePtr qftReg2 =
         CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
-    qftReg->Cohere(qftReg2);
+    qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecohere")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
     QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
 
     qftReg->SetPermutation(0x2b);
-    REQUIRE(qftReg->TryDecohere(0, 4, qftReg2) == true);
+    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == true);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
@@ -1914,7 +1914,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecohere")
     qftReg->SetPermutation(0xb);
     qftReg->H(0, 4);
     qftReg->CNOT(0, 4, 4);
-    REQUIRE(qftReg->TryDecohere(0, 4, qftReg2) == false);
+    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == false);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
