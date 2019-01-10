@@ -238,8 +238,8 @@ void QFusion::ApplyAntiControlledSingleBit(
     bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
-// "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed" qubit,
-// so it's most likely cheaper just to FlushAll() immediately.
+// "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed"
+// qubit, so it's most likely cheaper just to FlushAll() immediately.
 bitLenInt QFusion::Compose(QFusionPtr toCopy)
 {
     FlushAll();
@@ -304,8 +304,8 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     }
 }
 
-// "TryDecompose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decomposed"
-// qubit, so it's definitely cheaper to maintain our buffers until after the Decomposed.
+// "TryDecompose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per
+// "decomposed" qubit, so it's definitely cheaper to maintain our buffers until after the Decomposed.
 bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushReg(start, length);
