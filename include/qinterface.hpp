@@ -210,10 +210,9 @@ public:
      * into "destination"
      *
      * Minimally decompose a set of contigious bits from the separably composed unit.
-     * The length of this separable unit is reduced by the length of bits decomposed, and the bits removed are output in the destination
-     * QInterface pointer. The destination object must be initialized to the
-     * correct number of bits, in 0 permutation state. For quantum mechanical
-     * accuracy, the bit set removed and the bit set left behind should be
+     * The length of this separable unit is reduced by the length of bits decomposed, and the bits removed are output in
+     * the destination QInterface pointer. The destination object must be initialized to the correct number of bits, in
+     * 0 permutation state. For quantum mechanical accuracy, the bit set removed and the bit set left behind should be
      * quantum mechanically "separable."
      *
      * Like how "Compose" is like "just setting another group of qubits down
@@ -251,10 +250,9 @@ public:
      * and discard the separable bits from index "start" for "length."
      *
      * Minimally decompose a set of contigious bits from the separably composed unit.
-     * The length of this separable unit is reduced by the length of bits decomposed, and the bits removed are output in the destination
-     * QInterface pointer. The destination object must be initialized to the
-     * correct number of bits, in 0 permutation state. For quantum mechanical
-     * accuracy, the bit set removed and the bit set left behind should be
+     * The length of this separable unit is reduced by the length of bits decomposed, and the bits removed are output in
+     * the destination QInterface pointer. The destination object must be initialized to the correct number of bits, in
+     * 0 permutation state. For quantum mechanical accuracy, the bit set removed and the bit set left behind should be
      * quantum mechanically "separable."
      *
      * Like how "Compose" is like "just setting another group of qubits down
