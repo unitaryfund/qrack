@@ -42,15 +42,8 @@ int main()
         std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qReg->ProbAll(TARGET_PROB) << std::endl;
     }
 
-    std::cout << "Before measurement:" << std::endl;
-    std::cout << "Ind Result:     " << std::showbase << qReg << std::endl;
-    std::cout << "Full Result:    " << qReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qReg << std::endl;
-
     qReg->MReg(0, 8);
 
     std::cout << "After measurement:" << std::endl;
-    std::cout << "Ind Result:     " << std::showbase << qReg << std::endl;
-    std::cout << "Full Result:    " << qReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qReg << std::endl;
+    std::cout << "Chance of match:" << qReg->ProbAll(TARGET_PROB) << std::endl;
 }

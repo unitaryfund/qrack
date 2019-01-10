@@ -62,9 +62,10 @@ int main()
                   << "> chance of match:" << qReg->ProbAll(TARGET_VALUE | (TARGET_KEY << valueLength)) << std::endl;
     }
 
-    std::cout << "Ind Result:     " << std::showbase << qReg << std::endl;
-    std::cout << "Full Result:    " << qReg << std::endl;
-    std::cout << "Per Bit Result: " << std::showpoint << qReg << std::endl;
+    qReg->MReg(0, 8);
+
+    std::cout << "After measurement (of value, key, or both):" << std::endl;
+    std::cout << "Chance of match:" << qReg->ProbAll(TARGET_VALUE | (TARGET_KEY << valueLength)) << std::endl;
 
     free(toLoad);
 }
