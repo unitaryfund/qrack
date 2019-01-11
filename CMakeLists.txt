@@ -74,6 +74,7 @@ add_test (NAME qrack_accuracy
     )
 
 # Included after the library and other modules have been declared
+include ("cmake/Examples.cmake")
 include ("cmake/OpenCL.cmake" )
 include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
