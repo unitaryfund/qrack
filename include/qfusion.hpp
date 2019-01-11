@@ -57,25 +57,25 @@ public:
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
-    using QInterface::Cohere;
-    virtual bitLenInt Cohere(QFusionPtr toCopy);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) { return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy)); }
-    virtual bitLenInt Cohere(QFusionPtr toCopy, bitLenInt start);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start)
+    using QInterface::Compose;
+    virtual bitLenInt Compose(QFusionPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QFusion>(toCopy)); }
+    virtual bitLenInt Compose(QFusionPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Cohere(std::dynamic_pointer_cast<QFusion>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), start);
     }
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
-        Decohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));
+        Decompose(start, length, std::dynamic_pointer_cast<QFusion>(dest));
     }
-    virtual void Decohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
+    virtual void Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
-        return TryDecohere(start, length, std::dynamic_pointer_cast<QFusion>(dest));
+        return TryDecompose(start, length, std::dynamic_pointer_cast<QFusion>(dest));
     }
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QFusionPtr dest);
+    virtual bool TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);

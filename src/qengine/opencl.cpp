@@ -615,7 +615,7 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
     ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
 
-void QEngineOCL::Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy)
+void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy)
 {
     if (doNormalize) {
         NormalizeState();
@@ -673,7 +673,7 @@ void QEngineOCL::Cohere(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
-bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
+bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
 {
     bitLenInt result = qubitCount;
 
@@ -684,12 +684,12 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy)
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0, 0, 0, 0, 0, 0 };
 
-    Cohere(OCL_API_COHERE, bciArgs, toCopy);
+    Compose(OCL_API_COMPOSE, bciArgs, toCopy);
 
     return result;
 }
 
-bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy, bitLenInt start)
+bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 {
     bitLenInt result = start;
 
@@ -702,20 +702,20 @@ bitLenInt QEngineOCL::Cohere(QEngineOCLPtr toCopy, bitLenInt start)
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start, 0, 0,
         0 };
 
-    Cohere(OCL_API_COHERE_MID, bciArgs, toCopy);
+    Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy);
 
     return result;
 }
 
-void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
+void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr destination)
 {
-    // "Dispose" is basically the same as decohere, except "Dispose" throws the removed bits away.
+    // "Dispose" is basically the same as decompose, except "Dispose" throws the removed bits away.
 
     if (length == 0) {
         return;
     }
 
-    OCLAPI api_call = OCL_API_DECOHEREPROB;
+    OCLAPI api_call = OCL_API_DECOMPOSEPROB;
 
     if (doNormalize) {
         NormalizeState();
@@ -740,7 +740,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
 
-    // The removed "part" is only necessary for Decohere.
+    // The removed "part" is only necessary for Decompose.
     real1* partStateProb = new real1[partPower]();
     real1* partStateAngle = new real1[partPower]();
     BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(
@@ -794,7 +794,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
     queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
 
-    // If we Decohere, calculate the state of the bit system removed.
+    // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
         bciArgs[0] = partPower;
 
@@ -817,7 +817,8 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
                 &waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPower, complex(ZERO_R1, ZERO_R1));
         }
 
-        QueueCall(OCL_API_DECOHEREAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer }).wait();
+        QueueCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer })
+            .wait();
 
         if (destination->deviceID != deviceID) {
             destination->LockSync(CL_MAP_READ | CL_MAP_WRITE);
@@ -842,7 +843,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         }
     }
 
-    // If we either Decohere or Dispose, calculate the state of the bit system that remains.
+    // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPower;
     std::vector<cl::Event> waitVec3 = device_context->ResetWaitEvents();
     DISPATCH_WRITE(&waitVec3, *ulongBuffer, sizeof(bitCapInt), bciArgs);
@@ -858,7 +859,7 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
         destination->runningNorm = ONE_R1;
     }
 
-    QueueCall(OCL_API_DECOHEREAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer }).wait();
+    QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer }).wait();
 
     ResetStateVec(nStateVec, nStateBuffer);
 
@@ -879,12 +880,15 @@ void QEngineOCL::DecohereDispose(bitLenInt start, bitLenInt length, QEngineOCLPt
     delete[] partStateAngle;
 }
 
-void QEngineOCL::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
+    DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineOCLPtr) nullptr); }
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
+{
+    DecomposeDispose(start, length, (QEngineOCLPtr) nullptr);
+}
 
 real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {

@@ -157,7 +157,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 /*
  * Append QInterface to the end of the unit.
  */
-void QUnit::Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start)
+void QUnit::Compose(QUnitPtr toCopy, bool isMid, bitLenInt start)
 {
     bitLenInt oQubitCount = toCopy->GetQubitCount();
     bitLenInt oldCount = qubitCount;
@@ -183,19 +183,19 @@ void QUnit::Cohere(QUnitPtr toCopy, bool isMid, bitLenInt start)
     }
 }
 
-bitLenInt QUnit::Cohere(QUnitPtr toCopy)
+bitLenInt QUnit::Compose(QUnitPtr toCopy)
 {
     bitLenInt oldCount = qubitCount;
-    Cohere(toCopy, false, 0);
+    Compose(toCopy, false, 0);
     return oldCount;
 }
 
 /*
  * Append QInterface in the middle of QUnit.
  */
-bitLenInt QUnit::Cohere(QUnitPtr toCopy, bitLenInt start)
+bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
-    Cohere(toCopy, true, start);
+    Compose(toCopy, true, start);
     return start;
 }
 
@@ -227,7 +227,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
 
         if (unit->GetQubitCount() > length) {
-            unit->Decohere(mapped, length, destEngine);
+            unit->Decompose(mapped, length, destEngine);
         } else {
             destEngine->CopyState(unit);
         }
@@ -250,7 +250,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 }
 
-void QUnit::Decohere(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach(start, length, dest); }
+void QUnit::Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach(start, length, dest); }
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
@@ -264,7 +264,7 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
 
     found[unit1] = true;
 
-    /* Walk through all of the supplied bits and create a unique list to cohere. */
+    /* Walk through all of the supplied bits and create a unique list to compose. */
     for (auto bit = first + 1; bit < last; bit++) {
         if (found.find(shards[**bit].unit) == found.end()) {
             found[shards[**bit].unit] = true;
@@ -274,7 +274,7 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
 
     /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
     if (units.size() != 0) {
-        auto&& offsets = unit1->Cohere(units);
+        auto&& offsets = unit1->Compose(units);
 
         /* Since each unit will be collapsed in-order, one set of bits at a time. */
         for (auto&& shard : shards) {
@@ -370,7 +370,7 @@ QInterfacePtr QUnit::EntangleAll()
 
     found[unit1] = true;
 
-    /* Walk through all of the supplied bits and create a unique list to cohere. */
+    /* Walk through all of the supplied bits and create a unique list to compose. */
     for (bitLenInt bit = 1; bit < qubitCount; bit++) {
         if (found.find(shards[bit].unit) == found.end()) {
             found[shards[bit].unit] = true;
@@ -380,7 +380,7 @@ QInterfacePtr QUnit::EntangleAll()
 
     /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
     if (units.size() != 0) {
-        auto&& offsets = unit1->QInterface::Cohere(units);
+        auto&& offsets = unit1->QInterface::Compose(units);
 
         /* Since each unit will be collapsed in-order, one set of bits at a time. */
         for (auto&& shard : shards) {
@@ -438,8 +438,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     QInterfacePtr unitCopy = shards[start].unit->Clone();
 
     bitLenInt mappedStart = shards[start].mapped;
-    unitCopy->Decohere(mappedStart, length, separatedBits);
-    unitCopy->Cohere(separatedBits, mappedStart);
+    unitCopy->Decompose(mappedStart, length, separatedBits);
+    unitCopy->Compose(separatedBits, mappedStart);
 
     bool didSeparate = unitCopy->ApproxCompare(shards[start].unit);
     if (didSeparate) {
@@ -465,7 +465,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 void QUnit::OrderContiguous(QInterfacePtr unit)
 {
     /* Before we call OrderContinguous, when we are cohering lists of shards, we should always proactively sort the
-     * order in which we cohere qubits into a single engine. This is a cheap way to reduce the need for costly qubit
+     * order in which we compose qubits into a single engine. This is a cheap way to reduce the need for costly qubit
      * swap gates, later. */
 
     if (unit->GetQubitCount() == 1) {

@@ -169,11 +169,11 @@ public:
      * Combine another QInterface with this one, after the last bit index of
      * this one.
      *
-     * "Cohere" combines the quantum description of state of two independent
+     * "Compose" combines the quantum description of state of two independent
      * QInterface objects into one object, containing the full permutation
      * basis of the full object. The "inputState" bits are added after the last
-     * qubit index of the QInterface to which we "Cohere." Informally,
-     * "Cohere" is equivalent to "just setting another group of qubits down
+     * qubit index of the QInterface to which we "Compose." Informally,
+     * "Compose" is equivalent to "just setting another group of qubits down
      * next to the first" without interacting them. Schroedinger's equation can
      * form a description of state for two independent subsystems at once or
      * "separable quantum subsystems" without interacting them. Once the
@@ -181,9 +181,9 @@ public:
      * interact them, and we can describe their entanglements to each other, in
      * which case they are no longer independent. A full entangled description
      * of quantum state is not possible for two independent quantum subsystems
-     * until we "Cohere" them.
+     * until we "Compose" them.
      *
-     * "Cohere" multiplies the probabilities of the indepedent permutation
+     * "Compose" multiplies the probabilities of the indepedent permutation
      * states of the two subsystems to find the probabilites of the entire set
      * of combined permutations, by simple combinatorial reasoning. If the
      * probablity of the "left-hand" subsystem being in |00> is 1/4, and the
@@ -201,25 +201,23 @@ public:
      * Returns the quantum bit offset that the QInterface was appended at, such
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
-    virtual bitLenInt Cohere(QInterfacePtr toCopy) = 0;
-    virtual std::map<QInterfacePtr, bitLenInt> Cohere(std::vector<QInterfacePtr> toCopy);
-    virtual bitLenInt Cohere(QInterfacePtr toCopy, bitLenInt start) = 0;
+    virtual bitLenInt Compose(QInterfacePtr toCopy) = 0;
+    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) = 0;
 
     /**
-     * Minimally decohere a set of contiguous bits from the full coherent unit,
+     * Minimally decompose a set of contiguous bits from the separably composed unit,
      * into "destination"
      *
-     * Minimally decohere a set of contigious bits from the full coherent unit.
-     * The length of this coherent unit is reduced by the length of bits
-     * decohered, and the bits removed are output in the destination
-     * QInterface pointer. The destination object must be initialized to the
-     * correct number of bits, in 0 permutation state. For quantum mechanical
-     * accuracy, the bit set removed and the bit set left behind should be
+     * Minimally decompose a set of contigious bits from the separably composed unit.
+     * The length of this separable unit is reduced by the length of bits decomposed, and the bits removed are output in
+     * the destination QInterface pointer. The destination object must be initialized to the correct number of bits, in
+     * 0 permutation state. For quantum mechanical accuracy, the bit set removed and the bit set left behind should be
      * quantum mechanically "separable."
      *
-     * Like how "Cohere" is like "just setting another group of qubits down
+     * Like how "Compose" is like "just setting another group of qubits down
      * next to the first," <b><i>if two sets of qubits are not
-     * entangled,</i></b> then "Decohere" is like "just moving a few qubits
+     * entangled,</i></b> then "Decompose" is like "just moving a few qubits
      * away from the rest." Schroedinger's equation does not require bits to be
      * explicitly interacted in order to describe their permutation basis, and
      * the descriptions of state of <b>separable</b> subsystems, those which
@@ -242,26 +240,24 @@ public:
      * mechanically meaningful.) To ensure that the subsystem is "separable,"
      * i.e. that it has no entanglements to other subsystems in the
      * QInterface, it can be measured with M(), or else all qubits <i>other
-     * than</i> the subsystem can be measured. "TryDecohere" alternatively first tests the state for separability, and
+     * than</i> the subsystem can be measured. "TryDecompose" alternatively first tests the state for separability, and
      * only decomposes the state if it is determined to be separable.
      */
-    virtual void Decohere(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
 
     /**
-     * Minimally decohere a set of contiguous bits from the full coherent unit,
-     * into "destination"
+     * Minimally decompose a set of contiguous bits from the separably composed unit,
+     * and discard the separable bits from index "start" for "length."
      *
-     * Minimally decohere a set of contigious bits from the full coherent unit.
-     * The length of this coherent unit is reduced by the length of bits
-     * decohered, and the bits removed are output in the destination
-     * QInterface pointer. The destination object must be initialized to the
-     * correct number of bits, in 0 permutation state. For quantum mechanical
-     * accuracy, the bit set removed and the bit set left behind should be
+     * Minimally decompose a set of contigious bits from the separably composed unit.
+     * The length of this separable unit is reduced by the length of bits decomposed, and the bits removed are output in
+     * the destination QInterface pointer. The destination object must be initialized to the correct number of bits, in
+     * 0 permutation state. For quantum mechanical accuracy, the bit set removed and the bit set left behind should be
      * quantum mechanically "separable."
      *
-     * Like how "Cohere" is like "just setting another group of qubits down
+     * Like how "Compose" is like "just setting another group of qubits down
      * next to the first," <b><i>if two sets of qubits are not
-     * entangled,</i></b> then "Decohere" is like "just moving a few qubits
+     * entangled,</i></b> then "Decompose" is like "just moving a few qubits
      * away from the rest." Schroedinger's equation does not require bits to be
      * explicitly interacted in order to describe their permutation basis, and
      * the descriptions of state of <b>separable</b> subsystems, those which
@@ -284,16 +280,16 @@ public:
      * mechanically meaningful.) To ensure that the subsystem is "separable,"
      * i.e. that it has no entanglements to other subsystems in the
      * QInterface, it can be measured with M(), or else all qubits <i>other
-     * than</i> the subsystem can be measured. "TryDecohere" alternatively first tests the state for separability, and
+     * than</i> the subsystem can be measured. "TryDecompose" alternatively first tests the state for separability, and
      * only decomposes the state if it is determined to be separable.
      */
     virtual void Dispose(bitLenInt start, bitLenInt length) = 0;
 
     /**
-     *  Attempt a Decohere() operation, on a state which might not be separable. If the state is not separable, abort
+     *  Attempt a Decompose() operation, on a state which might not be separable. If the state is not separable, abort
      * and return false. Otherwise, complete the operation and return true.
      */
-    virtual bool TryDecohere(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives
@@ -1076,7 +1072,7 @@ public:
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
      * \todo Many of these have performance that can be improved in QUnit via
-     *       implementations with more intelligently chosen Cohere/Decompose
+     *       implementations with more intelligently chosen Compose/Decompose
      *       patterns.
      * @{
      */
@@ -1456,7 +1452,7 @@ public:
     /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
      * increases gate speed. This method is used to manually attempt internal separation of a QUnit subsytem. We attempt
-     * a Decohere() operation, on a state which might not be separable. If the state is not separable, we abort and
+     * a Decompose() operation, on a state which might not be separable. If the state is not separable, we abort and
      * return false. Otherwise, we complete the operation, add the separated subsystem back in place into the QUnit
      * "shards," and return true.
      *

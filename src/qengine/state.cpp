@@ -271,9 +271,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
- * to them to delete the old coherent unit that was added.
+ * to them to delete the old unit that was added.
  */
-bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
+bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 {
     bitLenInt result = qubitCount;
 
@@ -305,9 +305,9 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy)
 
 /**
  * Combine (a copy of) another QEngineCPU with this one, inserted at the "start" index. (If the programmer doesn't want
- * to "cheat," it is left up to them to delete the old coherent unit that was added.
+ * to "cheat," it is left up to them to delete the old unit that was added.
  */
-bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy, bitLenInt start)
+bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
@@ -341,19 +341,19 @@ bitLenInt QEngineCPU::Cohere(QEngineCPUPtr toCopy, bitLenInt start)
 /**
  * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
- * to them to delete the old coherent unit that was added.
+ * to them to delete the old unit that was added.
  *
  * Returns a mapping of the index into the new QEngine that each old one was mapped to.
  */
-std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr> toCopy)
+std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
 
     bitLenInt i;
-    bitLenInt toCohereCount = toCopy.size();
+    bitLenInt toComposeCount = toCopy.size();
 
-    std::vector<bitLenInt> offset(toCohereCount);
-    std::vector<bitCapInt> mask(toCohereCount);
+    std::vector<bitLenInt> offset(toComposeCount);
+    std::vector<bitCapInt> mask(toComposeCount);
 
     bitCapInt startMask = maxQPower - 1;
     bitCapInt nQubitCount = qubitCount;
@@ -363,7 +363,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
         NormalizeState();
     }
 
-    for (i = 0; i < toCohereCount; i++) {
+    for (i = 0; i < toComposeCount; i++) {
         QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
@@ -381,7 +381,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec[lcv] = stateVec[lcv & startMask];
 
-        for (bitLenInt j = 0; j < toCohereCount; j++) {
+        for (bitLenInt j = 0; j < toComposeCount; j++) {
             QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[j]);
             nStateVec[lcv] *= src->stateVec[(lcv & mask[j]) >> offset[j]];
         }
@@ -396,13 +396,13 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Cohere(std::vector<QInterfacePtr>
 }
 
 /**
- * Minimally decohere a set of contigious bits from the full coherent unit. The
- * length of this coherent unit is reduced by the length of bits decohered, and
+ * Minimally decompose a set of contigious bits from the separable unit. The
+ * length of this separable unit is reduced by the length of bits decomposed, and
  * the bits removed are output in the destination QEngineCPU pointer. The
  * destination object must be initialized to the correct number of bits, in 0
  * permutation state.
  */
-void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
+void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr destination)
 {
     if (length == 0) {
         return;
@@ -519,12 +519,15 @@ void QEngineCPU::DecohereDispose(bitLenInt start, bitLenInt length, QEngineCPUPt
     delete[] partStateAngle;
 }
 
-void QEngineCPU::Decohere(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
 {
-    DecohereDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
+    DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecohereDispose(start, length, (QEngineCPUPtr) nullptr); }
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
+{
+    DecomposeDispose(start, length, (QEngineCPUPtr) nullptr);
+}
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
