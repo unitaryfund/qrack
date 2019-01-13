@@ -861,6 +861,13 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    size_t nStateVecSize = maxQPower * sizeof(complex);
+    if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
+        clFinish();
+        free(stateVec);
+        stateVec = NULL;
+    }
+
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
@@ -872,17 +879,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer }).wait();
 
     ResetStateVec(nStateVec, nStateBuffer);
-
-    size_t nStateVecSize = maxQPower * sizeof(complex);
-    if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
-        BufferPtr nSB = MakeStateVecBuffer(NULL);
-
-        WAIT_COPY(*stateBuffer, *nSB, sizeof(complex) * maxQPower);
-
-        stateBuffer = nStateBuffer;
-        free(stateVec);
-        stateVec = NULL;
-    }
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;

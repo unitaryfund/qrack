@@ -35,7 +35,7 @@
 // "true." When TrySeparate or TryDecohere is applied after the QFT followed by its inverse on a permutation, the sum of
 // square errors of probability is generally less than 10^-11, for float accuracy. (A small number of trials return many
 // orders larger error, but these cases should not be separated, as the code stands.)
-#define approxcompare_error 1e-11f
+#define approxcompare_error 1e-8f
 #define polar(A, B) std::polar(A, B)
 #else
 #include "complex16simd.hpp"
