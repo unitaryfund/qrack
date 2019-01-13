@@ -256,7 +256,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntP
         j |= (lcv ^ j) << len;
 
         partProb = ZERO_R1;
-        firstAngle = -16 * M_PI;
+        firstAngle = -16 * PI_R1;
 
         for (k = 0U; k < partPower; k++) {
             l = j | (k << start);
@@ -267,7 +267,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntP
 
             if (nrm > min_norm) {
                 currentAngle = arg(amp);
-                if (firstAngle < (-8 * M_PI)) {
+                if (firstAngle < (-8 * PI_R1)) {
                     firstAngle = currentAngle;
                 }
                 partStateAngle[k] = currentAngle - firstAngle;
@@ -281,7 +281,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntP
         j = lcv << start;
 
         partProb = ZERO_R1;
-        firstAngle = -16 * M_PI;
+        firstAngle = -16 * PI_R1;
 
         for (k = 0U; k < remainderPower; k++) {
             l = k & ((1U << start) - 1);
@@ -294,7 +294,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntP
 
             if (nrm > min_norm) {
                 currentAngle = arg(stateVec[l]);
-                if (firstAngle < (-8 * M_PI)) {
+                if (firstAngle < (-8 * PI_R1)) {
                     firstAngle = currentAngle;
                 }
                 remainderStateAngle[k] = currentAngle - firstAngle;
