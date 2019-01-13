@@ -1894,9 +1894,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 {
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng, complex(ONE_R1, ZERO_R1), true, true, false, 1);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
     QInterfacePtr qftReg2 =
-        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng, complex(ONE_R1, ZERO_R1), true, true, false, 0);
+        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
