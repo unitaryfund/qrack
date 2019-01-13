@@ -59,6 +59,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr
     , stateVec(NULL)
     , deviceID(devID)
     , nrmArray(NULL)
+    , unlockHostMem(false)
 {
     if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
         throw std::invalid_argument(
@@ -78,6 +79,7 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     , stateVec(NULL)
     , deviceID(-1)
     , nrmArray(NULL)
+    , unlockHostMem(false)
 {
     CopyState(toCopy);
 
@@ -88,7 +90,10 @@ void QEngineOCL::LockSync(cl_int flags)
 {
     clFinish();
 
-    if (!stateVec) {
+    if (stateVec) {
+        unlockHostMem = true;
+    } else {
+        unlockHostMem = false;
         stateVec = AllocStateVec(maxQPower, true);
         BufferPtr nStateBuffer = MakeStateVecBuffer(stateVec);
         WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
@@ -104,7 +109,7 @@ void QEngineOCL::UnlockSync()
     cl::Event unmapEvent;
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec, &waitVec, &unmapEvent);
 
-    if (stateVec) {
+    if (unlockHostMem) {
         device_context->wait_events.push_back(unmapEvent);
     } else {
         BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
