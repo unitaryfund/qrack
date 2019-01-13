@@ -659,7 +659,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     } else {
-        otherStateVec = toCopy->AllocStateVec(toCopy->maxQPower);
+        otherStateVec = toCopy->AllocStateVec(toCopy->maxQPower, true);
         toCopy->LockSync(CL_MAP_READ);
         std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
         toCopy->UnlockSync();
@@ -669,6 +669,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     runningNorm = ONE_R1;
 
     QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer }).wait();
+
+    if (toCopy->deviceID != deviceID) {
+        free(otherStateVec);
+    }
 
     ResetStateVec(nStateVec, nStateBuffer);
 }
@@ -810,7 +814,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateVec = destination->stateVec;
             otherStateBuffer = destination->stateBuffer;
         } else {
-            otherStateVec = destination->AllocStateVec(destination->maxQPower);
+            otherStateVec = destination->AllocStateVec(destination->maxQPower, true);
             otherStateBuffer = destination->MakeStateVecBuffer(otherStateVec);
 
             DISPATCH_FILL(
@@ -820,14 +824,15 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         QueueCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer })
             .wait();
 
+        
+        size_t oNStateVecSize = maxQPower * sizeof(complex);
+
         if (destination->deviceID != deviceID) {
             destination->LockSync(CL_MAP_READ | CL_MAP_WRITE);
             std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
             destination->UnlockSync();
-        }
-
-        size_t oNStateVecSize = maxQPower * sizeof(complex);
-        if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
+            free(otherStateVec);
+        } else if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
             (2 * oNStateVecSize) <= destination->maxMem) {
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
@@ -1785,8 +1790,21 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs);
 
+    BufferPtr otherStateBuffer;
+    complex* otherStateVec;
+    if (toCompare->deviceID == deviceID) {
+        otherStateVec = toCompare->stateVec;
+        otherStateBuffer = toCompare->stateBuffer;
+    } else {
+        otherStateVec = toCompare->AllocStateVec(toCompare->maxQPower, true);
+        toCompare->LockSync(CL_MAP_READ);
+        std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPower, otherStateVec);
+        toCompare->UnlockSync();
+        otherStateBuffer = toCompare->MakeStateVecBuffer(otherStateVec);
+    }
+
     device_context->wait_events.push_back(QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, toCompare->stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
+        { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
 
     unsigned int size = (nrmGroupCount / nrmGroupSize);
     if (size == 0) {
@@ -1798,6 +1816,10 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     real1 sumSqrErr;
     WAIT_REAL1_SUM(&waitVec2, *nrmBuffer, size, nrmArray, &sumSqrErr);
+
+    if (toCompare->deviceID != deviceID) {
+        free(otherStateVec);
+    }
 
     return sumSqrErr < approxcompare_error;
 }
