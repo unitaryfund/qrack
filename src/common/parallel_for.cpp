@@ -117,7 +117,7 @@ void ParallelFor::par_for_skip(
     IncrementFunc incFn;
     if (lowMask == 0) {
         // If we're skipping leading bits, this is much cheaper:
-        incFn = [highMask, maskWidth](bitCapInt i, int cpu) { return (i << maskWidth); };
+        incFn = [maskWidth](bitCapInt i, int cpu) { return (i << maskWidth); };
     } else {
         incFn = [lowMask, highMask, maskWidth](
                     bitCapInt i, int cpu) { return ((i & lowMask) | ((i & highMask) << maskWidth)); };
@@ -207,7 +207,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, maxQPower, stateArray]() {
+            futures[cpu] = std::async(std::launch::async, [&idx, maxQPower, stateArray]() {
                 real1 sqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;

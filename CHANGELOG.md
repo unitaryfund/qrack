@@ -2,6 +2,8 @@
 
 **Thank you to [tbabej and nlewycky](https://github.com/vm6502q/qrack/graphs/contributors) for contributing to the documentation!**
 
+**Thank you to [twobombs](https://github.com/twobombs) for testing the OSX Mojave build!**
+
 ## vm6502q.v3.0: API and performance improvements, gate fusion, and ProjectQ compatibility
 
 This release changes the API to allow arbitrary numbers of control bits, adds a gate fusion layer called Qrack::QFusion, and makes major improvements to speed and memory usage.
