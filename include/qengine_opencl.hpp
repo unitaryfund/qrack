@@ -68,6 +68,7 @@ protected:
     size_t maxMem;
     size_t maxAlloc;
     unsigned int procElemCount;
+    bool unlockHostMem;
 
 public:
     /**
