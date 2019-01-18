@@ -323,6 +323,13 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
+     * Apply a "uniformly controlled" arbitrary single bit unitary transformation. (See https://arxiv.org/abs/quant-ph/0312218)
+     *
+     * A different unitary 2x2 complex matrix is associated with each permutation of the control bits. The first control bit index in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit. "mtrxs" is a flat (1-dimensional) array where each subsequent set of 4 components is an arbitrary 2x2 single bit gate associated with the next permutation of the control bits, starting from 0. All combinations of control bits apply one of the 4 component (flat 2x2) matrices. For k control bits, there are therefore 4 * 2^k complex components in "mtrxs," representing 2^k complex matrices of 2x2 components. (The component ordering in each matrix is the same as all other gates with an arbitrary 2x2 applied to a single bit, such as Qrack::ApplySingleBit.)
+     */
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) = 0;
+
+    /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
      * applied by left-multiplication in low-to-high vector index order on the state vector.
      *

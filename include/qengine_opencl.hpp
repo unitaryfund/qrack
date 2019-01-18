@@ -110,6 +110,8 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
+
     /* Operations that have an improved implementation. */
     using QEngine::X;
     virtual void X(bitLenInt start, bitLenInt length);
@@ -248,6 +250,7 @@ protected:
 
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
+
 
     void ApplyM(bitCapInt mask, bool result, complex nrm);
     void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

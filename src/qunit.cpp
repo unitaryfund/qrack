@@ -685,6 +685,33 @@ bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
     return doesShift;
 }
 
+void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) {
+    bitLenInt i;
+
+    std::vector<bitLenInt> bits(controlLen + 1);
+    for (i = 0; i < controlLen; i++) {
+        bits[i] = controls[i];
+    }
+    bits[controlLen] = qubitIndex;
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(controlLen + 1);
+    for (i = 0; i < bits.size(); i++) {
+        ebits[i] = &bits[i];
+    }
+
+    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+
+    bitLenInt* mappedControls = new bitLenInt[controlLen];
+    for (i = 0; i < controlLen; i++) {
+        mappedControls[i] = shards[controls[i]].mapped;
+    }
+
+    unit->UniformlyControlledSingleBit(mappedControls, controlLen, qubitIndex, mtrxs);
+
+    delete[] mappedControls;
+}
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].isProbDirty = true;

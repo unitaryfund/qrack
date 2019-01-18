@@ -268,6 +268,43 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #endif
 
+void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) {
+    bitCapInt targetPower = 1 << qubitIndex;
+
+    real1 nrm = ONE_R1 / std::sqrt(runningNorm);
+    runningNorm = ONE_R1;
+
+    bitCapInt* qPowers = new bitCapInt[controlLen];
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+    }
+
+    par_for_skip(0, maxQPower, (1 << qubitIndex), 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt offset = 0;
+        for (bitLenInt j = 0; j < controlLen; j++) {
+            if (lcv & qPowers[j]) {
+                offset |= 1 << j;
+            }
+        }
+
+        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of capacity for the unsigned bitCapInt.)
+        offset *= 4;
+
+        complex qubit[2];
+
+        complex Y0 = stateVec[lcv];
+        qubit[1] = stateVec[lcv | targetPower];
+
+        qubit[0] = nrm * (mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]);
+        qubit[1] = nrm * (mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]);
+
+        stateVec[lcv] = qubit[0];
+        stateVec[lcv | targetPower] = qubit[1];
+    });
+
+    delete [] qPowers;
+}
+
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up

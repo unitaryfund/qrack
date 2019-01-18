@@ -587,6 +587,81 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     writeControlsEvent.wait();
 }
 
+void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
+    // TODO:
+    //       1. Change matrix array buffer, to accept one gate per control permutation.
+    //       2. Write kernel and add it to OCLEngine, based off CPU implementation, (which has not been tested).
+
+#if 0
+    // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+
+    // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
+
+    // Load the integer kernel arguments buffer.
+    bitCapInt maxI = maxQPower >> bitCount;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
+
+    // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
+    complex cmplx[CMPLX_NORM_LEN];
+    std::copy(mtrx, mtrx + 4, cmplx);
+
+    // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
+    bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
+    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
+    size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
+
+    cl::Event writeGateEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx, writeGateEvent);
+
+    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
+    // amount of work in this method call instance.
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
+    // every single permutation amplitude.
+    doCalcNorm &= doNormalize && (bitCount == 1);
+
+    // Load a buffer with the powers of 2 of each bit index involved in the operation.
+    cl::Event writeControlsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
+
+    // We load the kernel.
+    OCLAPI api_call = OCL_API_UNIFORMLYCONTROLLED;
+
+    // We call the kernel, with global buffers and one local buffer.
+    device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs,
+        { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer }, sizeof(real1) * ngs));
+
+    // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
+    // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
+
+    // Until a norm calculation returns, don't change the stateVec length.
+    runningNorm = ONE_R1;
+
+    // This kernel is run on a single work group, but it lets us continue asynchronously.
+    if (ngc / ngs > 1) {
+        device_context->wait_events.push_back(
+            QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs));
+    }
+
+    std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+
+    // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
+    // "runningNorm" variable.
+    DISPATCH_READ(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    writeGateEvent.wait();
+    writeControlsEvent.wait();
+#endif
+}
+
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
