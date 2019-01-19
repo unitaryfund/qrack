@@ -590,6 +590,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineOCL::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
+    // If there are no controls, the base case should be the non-controlled single bit gate.
+    if (controlLen == 0) {
+        ApplySingleBit(mtrxs, true, qubitIndex);
+        return;
+    }
+
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 

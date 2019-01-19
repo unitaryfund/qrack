@@ -271,6 +271,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
+    // If there are no controls, the base case should be the non-controlled single bit gate.
+    if (controlLen == 0) {
+        ApplySingleBit(mtrxs, true, qubitIndex);
+        return;
+    }
+
     bitCapInt targetPower = 1 << qubitIndex;
 
     real1 nrm = ONE_R1 / std::sqrt(runningNorm);
