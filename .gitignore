@@ -1,4 +1,5 @@
 /doc/*
+.DS_Store
 *.o
 *.a
 qregistercl.hpp

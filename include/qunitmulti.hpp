@@ -36,7 +36,7 @@ struct QEngineInfo {
         // Intentionally left blank
     }
 
-    bool operator<(const QEngineInfo& other)
+    bool operator<(const QEngineInfo& other) const
     {
         if (size == other.size) {
             return deviceID < other.deviceID;
