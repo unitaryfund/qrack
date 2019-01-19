@@ -238,7 +238,9 @@ void QFusion::ApplyAntiControlledSingleBit(
     bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
-void QFusion::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) {
+void QFusion::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
     FlushAll();
     qReg->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
 }

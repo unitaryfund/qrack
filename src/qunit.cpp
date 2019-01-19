@@ -685,7 +685,9 @@ bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
     return doesShift;
 }
 
-void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) {
+void QUnit::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
     bitLenInt i;
 
     std::vector<bitLenInt> bits(controlLen + 1);
@@ -707,7 +709,8 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
         mappedControls[i] = shards[controls[i]].mapped;
     }
 
-    unit->UniformlyControlledSingleBit(mappedControls, controlLen, qubitIndex, mtrxs);
+    shards[qubitIndex].isProbDirty = true;
+    unit->UniformlyControlledSingleBit(mappedControls, controlLen, shards[qubitIndex].mapped, mtrxs);
 
     delete[] mappedControls;
 }

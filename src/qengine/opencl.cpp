@@ -587,55 +587,46 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     writeControlsEvent.wait();
 }
 
-void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QEngineOCL::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
-    // TODO:
-    //       1. Change matrix array buffer, to accept one gate per control permutation.
-    //       2. Write kernel and add it to OCLEngine, based off CPU implementation, (which has not been tested).
-
-#if 0
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
 
     // Load the integer kernel arguments buffer.
-    bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    bitCapInt maxI = maxQPower >> 1;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, 0, 0, 0, 0, 0, 0, 0 };
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
 
-    // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
-    complex cmplx[CMPLX_NORM_LEN];
-    std::copy(mtrx, mtrx + 4, cmplx);
+    BufferPtr nrmInBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1), &runningNorm);
 
-    // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
-    bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
-    size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
+    BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1 << controlLen), (void*)mtrxs);
 
-    cl::Event writeGateEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx, writeGateEvent);
+    bitCapInt* qPowers = new bitCapInt[controlLen];
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+    }
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
-    // every single permutation amplitude.
-    doCalcNorm &= doNormalize && (bitCount == 1);
-
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
+    DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * controlLen, qPowers, writeControlsEvent);
 
     // We load the kernel.
     OCLAPI api_call = OCL_API_UNIFORMLYCONTROLLED;
 
     // We call the kernel, with global buffers and one local buffer.
     device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs,
-        { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer }, sizeof(real1) * ngs));
+        { stateBuffer, ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer }, sizeof(real1) * ngs));
 
     // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
     // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
@@ -657,9 +648,9 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
-    writeGateEvent.wait();
     writeControlsEvent.wait();
-#endif
+
+    delete[] qPowers;
 }
 
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
@@ -904,7 +895,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         QueueCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer })
             .wait();
 
-        
         size_t oNStateVecSize = maxQPower * sizeof(complex);
 
         if (destination->deviceID != deviceID) {

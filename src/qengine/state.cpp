@@ -268,7 +268,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #endif
 
-void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) {
+void QEngineCPU::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
     bitCapInt targetPower = 1 << qubitIndex;
 
     real1 nrm = ONE_R1 / std::sqrt(runningNorm);
@@ -287,7 +289,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
             }
         }
 
-        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of capacity for the unsigned bitCapInt.)
+        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
+        // capacity for the unsigned bitCapInt.)
         offset *= 4;
 
         complex qubit[2];
@@ -295,14 +298,14 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
         complex Y0 = stateVec[lcv];
         qubit[1] = stateVec[lcv | targetPower];
 
-        qubit[0] = nrm * (mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]);
-        qubit[1] = nrm * (mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]);
+        qubit[0] = nrm * ((mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]));
+        qubit[1] = nrm * ((mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]));
 
         stateVec[lcv] = qubit[0];
         stateVec[lcv | targetPower] = qubit[1];
     });
 
-    delete [] qPowers;
+    delete[] qPowers;
 }
 
 /**
