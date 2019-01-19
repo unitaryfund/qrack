@@ -42,6 +42,10 @@ struct BitBuffer {
     {
         // Intentionally left blank.
     }
+    
+    virtual ~BitBuffer() {
+        // Intentionally left blank.
+    }
 
     virtual void Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers) = 0;
 

@@ -23,6 +23,7 @@
 #include <mutex>
 
 #ifdef __APPLE__
+#define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.hpp>
 #else
 #include <CL/cl.hpp>

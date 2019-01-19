@@ -314,7 +314,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     if (!didInit) {
 #ifdef __APPLE__
-        posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
+        posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
@@ -323,7 +323,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         free(nrmArray);
         nrmArray = NULL;
 #ifdef __APPLE__
-        posix_memalign(&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
+        posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif

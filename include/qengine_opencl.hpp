@@ -116,6 +116,7 @@ public:
     using QEngine::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
+    using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start);
