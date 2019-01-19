@@ -161,7 +161,7 @@ public:
         return true;
     }
 
-    virtual std::string describe() const
+    virtual std::string describe() const override
     {
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
