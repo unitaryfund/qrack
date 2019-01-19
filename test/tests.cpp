@@ -990,14 +990,35 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crydyad_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 {
-    bitLenInt controls[2] = { 2, 3 };
-    real1 angles[4] = { M_PI, M_PI, M_PI, M_PI };
+    bitLenInt controls[2] = { 4, 5 };
+    real1 angles[4] = { M_PI, M_PI, 0, 0 };
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->UniformlyControlledRY(controls, 2, 0, angles);
     qftReg->UniformlyControlledRY(controls, 2, 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetReg(0, 8, 0x12);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
+    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x11));
+
+    qftReg->SetReg(0, 8, 0x22);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
+    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
+
+    controls[0] = 5;
+    controls[1] = 4;
+
+    qftReg->SetReg(0, 8, 0x22);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
+    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
+    qftReg->UniformlyControlledRY(controls, 2, 1, angles);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")
@@ -1088,15 +1109,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crzdyad_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 {
-    bitLenInt controls[2] = { 3, 4 };
-    real1 angles[4] = { M_PI, M_PI, M_PI, M_PI };
+    bitLenInt controls[2] = { 4, 5 };
+    real1 angles[4] = { M_PI, M_PI, 0, 0 };
 
-    qftReg->SetReg(0, 8, 1);
+    qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(1, 2);
     qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetReg(0, 8, 0x11);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x11));
+    qftReg->H(1, 2);
+    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+
+    qftReg->SetReg(0, 8, 0x21);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
+    qftReg->H(1, 2);
+    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
+
+    controls[0] = 5;
+    controls[1] = 4;
+
+    qftReg->SetReg(0, 8, 0x21);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x21));
+    qftReg->H(1, 2);
+    qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x23));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp")
