@@ -144,18 +144,20 @@ void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, const
         Y0 = nrm * (zmul(mtrx.lo.lo, YT) + zmul(mtrx.lo.hi, Y1));
         Y1 = nrm * (zmul(mtrx.hi.lo, YT) + zmul(mtrx.hi.hi, Y1));
 
-        stateVec[i | offset1] = Y0;
-        stateVec[i | offset2] = Y1;
-
         nrm1 = dot(Y0, Y0);
         nrm2 = dot(Y1, Y1);
         if (nrm1 < min_norm) {
             nrm1 = ZERO_R1;
+            Y0 = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        if (nrm2 >= min_norm) {
-            nrm1 += nrm2;
+        if (nrm2 < min_norm) {
+            nrm2 = ZERO_R1;
+            Y1 = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        partNrm += nrm1;
+        partNrm += nrm1 + nrm2;
+
+        stateVec[i | offset1] = Y0;
+        stateVec[i | offset2] = Y1;
     }
 
     locID = get_local_id(0);
@@ -237,10 +239,20 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
         qubit[0] = nrm * ((mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]));
         qubit[1] = nrm * ((mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]));
 
+        nrm1 = dot(qubit[0], qubit[0]);
+        nrm2 = dot(qubit[1], qubit[1]);
+        if (nrm1 < min_norm) {
+            nrm1 = ZERO_R1;
+            qubit[0] = (cmplx)(ZERO_R1, ZERO_R1);
+        }
+        if (nrm2 < min_norm) {
+            nrm2 = ZERO_R1;
+            qubit[1] = (cmplx)(ZERO_R1, ZERO_R1);
+        }
+        partNrm += nrm1 + nrm2;
+
         stateVec[i] = qubit[0];
         stateVec[i | targetPower] = qubit[1];
-
-        partNrm += dot(qubit[0], qubit[0]) + dot(qubit[1], qubit[1]);
     }
 
     locID = get_local_id(0);
