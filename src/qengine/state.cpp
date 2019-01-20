@@ -290,7 +290,7 @@ void QEngineCPU::UniformlyControlledSingleBit(
     real1* rngNrm = new real1[numCores];
     std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
 
-    par_for_skip(0, maxQPower, (1 << qubitIndex), 1, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, targetPower, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt offset = 0;
         for (bitLenInt j = 0; j < controlLen; j++) {
             if (lcv & qPowers[j]) {

@@ -1064,16 +1064,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
         }
     }
 
-    complex* state1 = new complex[qftReg->GetMaxQPower()];
-    qftReg->GetQuantumState(state1);
-    complex* state2 = new complex[qftReg2->GetMaxQPower()];
-    qftReg2->GetQuantumState(state2);
-    for (bitCapInt k = 0; k < (bitCapInt)qftReg->GetMaxQPower(); k++) {
-        REQUIRE_FLOAT(real(state1[k]), real(state2[k]));
-        REQUIRE_FLOAT(imag(state1[k]), imag(state2[k]));
-    }
-    delete[] state1;
-    delete[] state2;
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")

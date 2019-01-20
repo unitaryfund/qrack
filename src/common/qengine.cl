@@ -215,6 +215,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
     real1 partNrm = ZERO_R1;
 
     cmplx qubit[2];
+    cmplx Y0;
 
     bitCapInt i, offset;
     bitLenInt j;
@@ -233,11 +234,11 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
         // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of capacity for the unsigned bitCapInt.)
         offset *= 4;
 
-        cmplx Y0 = stateVec[i];
+        Y0 = stateVec[i];
         qubit[1] = stateVec[i | targetPower];
 
-        qubit[0] = nrm * ((mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]));
-        qubit[1] = nrm * ((mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]));
+        qubit[0] = nrm * (zmul(mtrxs[0 + offset], Y0) + zmul(mtrxs[1 + offset], qubit[1]));
+        qubit[1] = nrm * (zmul(mtrxs[2 + offset], Y0) + zmul(mtrxs[3 + offset], qubit[1]));
 
         nrm1 = dot(qubit[0], qubit[0]);
         nrm2 = dot(qubit[1], qubit[1]);
