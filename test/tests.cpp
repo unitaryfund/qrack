@@ -1161,6 +1161,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
     qftReg->H(1, 2);
+    qftReg->UniformlyControlledRZ(NULL, 0, 1, angles);
+    qftReg->H(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetReg(0, 8, 0x01);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->H(1, 2);
     qftReg->UniformlyControlledRZ(controls, 2, 1, angles);
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));

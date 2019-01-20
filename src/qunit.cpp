@@ -688,6 +688,13 @@ bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
 void QUnit::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
+    // If there are no controls, this is equivalent to the single bit gate.
+    if (controlLen == 0) {
+        ApplySingleBit(mtrxs, true, qubitIndex);
+        return;
+    }
+
+
     bitLenInt i;
 
     std::vector<bitLenInt> bits(controlLen + 1);
