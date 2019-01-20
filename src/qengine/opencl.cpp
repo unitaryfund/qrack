@@ -1763,7 +1763,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    LockSync(CL_MAP_WRITE);
+    LockSync(CL_MAP_READ);
     std::copy(stateVec, stateVec + maxQPower, outputState);
     UnlockSync();
 }
