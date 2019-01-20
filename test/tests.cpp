@@ -1030,6 +1030,50 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     qftReg->UniformlyControlledRY(controls, 2, 1, angles);
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    complex pauliRY[4];
+    real1 cosine, sine;
+    bitLenInt i, j;
+
+    qftReg->SetReg(0, 8, 0x02);
+    QInterfacePtr qftReg2 = qftReg->Clone();
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
+
+    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
+
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 2; j++) {
+            if (!(i & (1U << j))) {
+                qftReg2->X(controls[j]);
+            }
+        }
+
+        cosine = cos(angles[i] / 2);
+        sine = sin(angles[i] / 2);
+        pauliRY[0] = complex(cosine, ZERO_R1);
+        pauliRY[1] = complex(-sine, ZERO_R1);
+        pauliRY[2] = complex(sine, ZERO_R1);
+        pauliRY[3] = complex(cosine, ZERO_R1);
+        qftReg2->ApplyControlledSingleBit(controls, 2, 0, pauliRY);
+
+        for (j = 0; j < 2; j++) {
+            if (!(i & (1U << j))) {
+                qftReg2->X(controls[j]);
+            }
+        }
+    }
+
+    complex* state1 = new complex[qftReg->GetMaxQPower()];
+    qftReg->GetQuantumState(state1);
+    complex* state2 = new complex[qftReg2->GetMaxQPower()];
+    qftReg2->GetQuantumState(state2);
+    for (bitCapInt k = 0; k < (bitCapInt)qftReg->GetMaxQPower(); k++) {
+        REQUIRE_FLOAT(real(state1[k]), real(state2[k]));
+        REQUIRE_FLOAT(imag(state1[k]), imag(state2[k]));
+    }
+    delete[] state1;
+    delete[] state2;
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")

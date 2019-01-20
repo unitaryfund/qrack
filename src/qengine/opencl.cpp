@@ -605,13 +605,19 @@ void QEngineOCL::UniformlyControlledSingleBit(
     bitCapInt maxI = maxQPower >> 1;
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, 0, 0, 0, 0, 0, 0, 0 };
     cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs, writeArgsEvent);
 
     BufferPtr nrmInBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(real1), &runningNorm);
+        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
+
+    cl::Event writeNormEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *nrmInBuffer, sizeof(real1), &runningNorm, writeNormEvent);
 
     BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1 << controlLen), (void*)mtrxs);
+        context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));
+
+    cl::Event writeMatricesEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << controlLen), mtrxs, writeMatricesEvent);
 
     bitCapInt* qPowers = new bitCapInt[controlLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -627,11 +633,8 @@ void QEngineOCL::UniformlyControlledSingleBit(
     cl::Event writeControlsEvent;
     DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * controlLen, qPowers, writeControlsEvent);
 
-    // We load the kernel.
-    OCLAPI api_call = OCL_API_UNIFORMLYCONTROLLED;
-
     // We call the kernel, with global buffers and one local buffer.
-    device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs,
+    device_context->wait_events.push_back(QueueCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
         { stateBuffer, ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer }, sizeof(real1) * ngs));
 
     // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
@@ -653,6 +656,8 @@ void QEngineOCL::UniformlyControlledSingleBit(
     DISPATCH_READ(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
 
     // Wait for buffer write from limited lifetime objects
+    writeNormEvent.wait();
+    writeMatricesEvent.wait();
     writeArgsEvent.wait();
     writeControlsEvent.wait();
 
@@ -1834,7 +1839,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    LockSync(CL_MAP_WRITE);
+    LockSync(CL_MAP_READ);
     std::copy(stateVec, stateVec + maxQPower, outputState);
     UnlockSync();
 }

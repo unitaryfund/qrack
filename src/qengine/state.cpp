@@ -280,12 +280,15 @@ void QEngineCPU::UniformlyControlledSingleBit(
     bitCapInt targetPower = 1 << qubitIndex;
 
     real1 nrm = ONE_R1 / std::sqrt(runningNorm);
-    runningNorm = ONE_R1;
 
     bitCapInt* qPowers = new bitCapInt[controlLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
         qPowers[i] = 1 << controls[i];
     }
+
+    int numCores = GetConcurrencyLevel();
+    real1* rngNrm = new real1[numCores];
+    std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
 
     par_for_skip(0, maxQPower, (1 << qubitIndex), 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt offset = 0;
@@ -307,10 +310,28 @@ void QEngineCPU::UniformlyControlledSingleBit(
         qubit[0] = nrm * ((mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]));
         qubit[1] = nrm * ((mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]));
 
+        real1 nrm1 = std::norm(qubit[0]);
+        real1 nrm2 = std::norm(qubit[1]);
+        if (nrm1 < min_norm) {
+            nrm1 = ZERO_R1;
+            qubit[0] = complex(ZERO_R1, ZERO_R1);
+        }
+        if (nrm2 < min_norm) {
+            nrm2 = ZERO_R1;
+            qubit[1] = complex(ZERO_R1, ZERO_R1);
+        }
+        rngNrm[cpu] += nrm1 + nrm2;
+
         stateVec[lcv] = qubit[0];
         stateVec[lcv | targetPower] = qubit[1];
     });
 
+    runningNorm = ZERO_R1;
+    for (int i = 0; i < numCores; i++) {
+        runningNorm += rngNrm[i];
+    }
+
+    delete[] rngNrm;
     delete[] qPowers;
 }
 
