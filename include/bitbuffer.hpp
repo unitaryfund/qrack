@@ -42,8 +42,9 @@ struct BitBuffer {
     {
         // Intentionally left blank.
     }
-    
-    virtual ~BitBuffer() {
+
+    virtual ~BitBuffer()
+    {
         // Intentionally left blank.
     }
 

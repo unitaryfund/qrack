@@ -144,18 +144,20 @@ void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, const
         Y0 = nrm * (zmul(mtrx.lo.lo, YT) + zmul(mtrx.lo.hi, Y1));
         Y1 = nrm * (zmul(mtrx.hi.lo, YT) + zmul(mtrx.hi.hi, Y1));
 
-        stateVec[i | offset1] = Y0;
-        stateVec[i | offset2] = Y1;
-
         nrm1 = dot(Y0, Y0);
         nrm2 = dot(Y1, Y1);
         if (nrm1 < min_norm) {
             nrm1 = ZERO_R1;
+            Y0 = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        if (nrm2 >= min_norm) {
-            nrm1 += nrm2;
+        if (nrm2 < min_norm) {
+            nrm2 = ZERO_R1;
+            Y1 = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        partNrm += nrm1;
+        partNrm += nrm1 + nrm2;
+
+        stateVec[i | offset1] = Y0;
+        stateVec[i | offset2] = Y1;
     }
 
     locID = get_local_id(0);
@@ -192,6 +194,81 @@ void kernel normsum(global real1* nrmParts, local real1* lProbBuffer)
 
     if (locID == 0U) {
         nrmParts[0] = lProbBuffer[0];
+    }
+}
+
+void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
+{
+    bitCapInt ID, Nthreads, lcv, locID, locNthreads;
+    real1 nrm1, nrm2;
+
+    ID = get_global_id(0);
+    Nthreads = get_global_size(0);
+
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt targetPower = bitCapIntPtr[1];
+    bitCapInt targetMask = targetPower - 1;
+    bitCapInt controlLen = bitCapIntPtr[2];
+
+    real1 nrm = nrmIn[0];
+
+    real1 partNrm = ZERO_R1;
+
+    cmplx qubit[2];
+    cmplx Y0;
+
+    bitCapInt i, offset;
+    bitLenInt j;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        i = lcv & targetMask;
+        i |= (lcv ^ i) << 1;
+
+        offset = 0;
+        for (j = 0; j < controlLen; j++) {
+            if (i & qPowers[j]) {
+                offset |= 1 << j;
+            }
+        }
+
+        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of capacity for the unsigned bitCapInt.)
+        offset *= 4;
+
+        Y0 = stateVec[i];
+        qubit[1] = stateVec[i | targetPower];
+
+        qubit[0] = nrm * (zmul(mtrxs[0 + offset], Y0) + zmul(mtrxs[1 + offset], qubit[1]));
+        qubit[1] = nrm * (zmul(mtrxs[2 + offset], Y0) + zmul(mtrxs[3 + offset], qubit[1]));
+
+        nrm1 = dot(qubit[0], qubit[0]);
+        nrm2 = dot(qubit[1], qubit[1]);
+        if (nrm1 < min_norm) {
+            nrm1 = ZERO_R1;
+            qubit[0] = (cmplx)(ZERO_R1, ZERO_R1);
+        }
+        if (nrm2 < min_norm) {
+            nrm2 = ZERO_R1;
+            qubit[1] = (cmplx)(ZERO_R1, ZERO_R1);
+        }
+        partNrm += nrm1 + nrm2;
+
+        stateVec[i] = qubit[0];
+        stateVec[i | targetPower] = qubit[1];
+    }
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = partNrm;
+    
+    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        } 
+    }
+
+    if (locID == 0U) {
+        nrmParts[get_group_id(0)] = lProbBuffer[0];
     }
 }
 

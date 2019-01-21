@@ -587,6 +587,83 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     writeControlsEvent.wait();
 }
 
+void QEngineOCL::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
+    // If there are no controls, the base case should be the non-controlled single bit gate.
+    if (controlLen == 0) {
+        ApplySingleBit(mtrxs, true, qubitIndex);
+        return;
+    }
+
+    // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
+    std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
+
+    // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
+
+    // Load the integer kernel arguments buffer.
+    bitCapInt maxI = maxQPower >> 1;
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, 0, 0, 0, 0, 0, 0, 0 };
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs, writeArgsEvent);
+
+    BufferPtr nrmInBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
+
+    cl::Event writeNormEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *nrmInBuffer, sizeof(real1), &runningNorm, writeNormEvent);
+
+    BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));
+
+    cl::Event writeMatricesEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << controlLen), mtrxs, writeMatricesEvent);
+
+    bitCapInt* qPowers = new bitCapInt[controlLen];
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+    }
+
+    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
+    // amount of work in this method call instance.
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Load a buffer with the powers of 2 of each bit index involved in the operation.
+    cl::Event writeControlsEvent;
+    DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * controlLen, qPowers, writeControlsEvent);
+
+    // We call the kernel, with global buffers and one local buffer.
+    device_context->wait_events.push_back(QueueCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
+        { stateBuffer, ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer }, sizeof(real1) * ngs));
+
+    // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
+    // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
+
+    // Until a norm calculation returns, don't change the stateVec length.
+    runningNorm = ONE_R1;
+
+    // This kernel is run on a single work group, but it lets us continue asynchronously.
+    if (ngc / ngs > 1) {
+        device_context->wait_events.push_back(
+            QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs));
+    }
+
+    std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
+
+    // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
+    // "runningNorm" variable.
+    DISPATCH_READ(&waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+
+    // Wait for buffer write from limited lifetime objects
+    writeNormEvent.wait();
+    writeMatricesEvent.wait();
+    writeArgsEvent.wait();
+    writeControlsEvent.wait();
+
+    delete[] qPowers;
+}
+
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
@@ -829,7 +906,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         QueueCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, ulongBuffer, otherStateBuffer })
             .wait();
 
-        
         size_t oNStateVecSize = maxQPower * sizeof(complex);
 
         if (destination->deviceID != deviceID) {

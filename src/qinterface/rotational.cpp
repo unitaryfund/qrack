@@ -46,6 +46,30 @@ void QInterface::RY(real1 radians, bitLenInt qubit)
     ApplySingleBit(pauliRY, true, qubit);
 }
 
+/// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
+/// "k" of the control bits.
+void QInterface::UniformlyControlledRY(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
+{
+    bitCapInt permCount = 1U << controlLen;
+    complex* pauliRYs = new complex[4 * permCount];
+
+    real1 cosine, sine;
+    for (bitLenInt i = 0; i < permCount; i++) {
+        cosine = cos(angles[i] / 2);
+        sine = sin(angles[i] / 2);
+
+        pauliRYs[0 + 4 * i] = complex(cosine, ZERO_R1);
+        pauliRYs[1 + 4 * i] = complex(-sine, ZERO_R1);
+        pauliRYs[2 + 4 * i] = complex(sine, ZERO_R1);
+        pauliRYs[3 + 4 * i] = complex(cosine, ZERO_R1);
+    }
+
+    UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRYs);
+
+    delete[] pauliRYs;
+}
+
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
 void QInterface::RZ(real1 radians, bitLenInt qubit)
 {
@@ -54,6 +78,30 @@ void QInterface::RZ(real1 radians, bitLenInt qubit)
     const complex pauliRZ[4] = { complex(cosine, -sine), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(cosine, sine) };
     ApplySingleBit(pauliRZ, true, qubit);
+}
+
+/// Uniformly controlled z axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli z axis for each permutation
+/// "k" of the control bits.
+void QInterface::UniformlyControlledRZ(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
+{
+    bitCapInt permCount = 1U << controlLen;
+    complex* pauliRZs = new complex[4 * permCount];
+
+    real1 cosine, sine;
+    for (bitLenInt i = 0; i < permCount; i++) {
+        cosine = cos(angles[i] / 2);
+        sine = sin(angles[i] / 2);
+
+        pauliRZs[0 + 4 * i] = complex(cosine, -sine);
+        pauliRZs[1 + 4 * i] = complex(ZERO_R1, ZERO_R1);
+        pauliRZs[2 + 4 * i] = complex(ZERO_R1, ZERO_R1);
+        pauliRZs[3 + 4 * i] = complex(cosine, sine);
+    }
+
+    UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRZs);
+
+    delete[] pauliRZs;
 }
 
 /// Exponentiate identity operator

@@ -268,6 +268,73 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #endif
 
+void QEngineCPU::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
+    // If there are no controls, the base case should be the non-controlled single bit gate.
+    if (controlLen == 0) {
+        ApplySingleBit(mtrxs, true, qubitIndex);
+        return;
+    }
+
+    bitCapInt targetPower = 1 << qubitIndex;
+
+    real1 nrm = ONE_R1 / std::sqrt(runningNorm);
+
+    bitCapInt* qPowers = new bitCapInt[controlLen];
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        qPowers[i] = 1 << controls[i];
+    }
+
+    int numCores = GetConcurrencyLevel();
+    real1* rngNrm = new real1[numCores];
+    std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
+
+    par_for_skip(0, maxQPower, targetPower, 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt offset = 0;
+        for (bitLenInt j = 0; j < controlLen; j++) {
+            if (lcv & qPowers[j]) {
+                offset |= 1 << j;
+            }
+        }
+
+        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
+        // capacity for the unsigned bitCapInt.)
+        offset *= 4;
+
+        complex qubit[2];
+
+        complex Y0 = stateVec[lcv];
+        qubit[1] = stateVec[lcv | targetPower];
+
+        qubit[0] = nrm * ((mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]));
+        qubit[1] = nrm * ((mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]));
+
+        real1 nrm1 = norm(qubit[0]);
+        real1 nrm2 = norm(qubit[1]);
+        if (nrm1 < min_norm) {
+            nrm1 = ZERO_R1;
+            qubit[0] = complex(ZERO_R1, ZERO_R1);
+        }
+        if (nrm2 < min_norm) {
+            nrm2 = ZERO_R1;
+            qubit[1] = complex(ZERO_R1, ZERO_R1);
+        }
+        rngNrm[cpu] += nrm1 + nrm2;
+
+        stateVec[lcv] = qubit[0];
+        stateVec[lcv | targetPower] = qubit[1];
+    });
+
+    runningNorm = ZERO_R1;
+    for (int i = 0; i < numCores; i++) {
+        runningNorm += rngNrm[i];
+    }
+
+    delete[] rngNrm;
+    delete[] qPowers;
+}
+
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
