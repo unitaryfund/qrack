@@ -23,9 +23,9 @@
 #if ENABLE_COMPLEX8
 #include <complex>
 namespace Qrack {
-typedef std::complex<float> complex;
+    typedef std::complex<float> complex;
+    typedef float real1;
 }
-#define real1 float
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
 #define PI_R1 (real1) M_PI
@@ -42,7 +42,8 @@ typedef std::complex<float> complex;
 #else
 #include "complex16simd.hpp"
 namespace Qrack {
-typedef Complex16Simd complex;
+    typedef Complex16Simd complex;
+    typedef double real1;
 }
 #define real1 double
 #define ZERO_R1 0.0
