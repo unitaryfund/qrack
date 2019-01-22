@@ -165,7 +165,11 @@ public:
     }
 
     virtual void UpdateRunningNorm();
-    virtual void Finish() { qReg->Finish(); }
+    virtual void Finish()
+    {
+        FlushAll();
+        qReg->Finish();
+    }
 
     virtual QInterfacePtr Clone()
     {

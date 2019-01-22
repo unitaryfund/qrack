@@ -694,7 +694,6 @@ void QUnit::UniformlyControlledSingleBit(
         return;
     }
 
-
     bitLenInt i;
 
     std::vector<bitLenInt> bits(controlLen + 1);
