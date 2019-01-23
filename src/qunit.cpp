@@ -694,6 +694,10 @@ void QUnit::UniformlyControlledSingleBit(
         return;
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
     bitLenInt i;
 
     std::vector<bitLenInt> bits(controlLen + 1);
