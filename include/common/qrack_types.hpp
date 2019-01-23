@@ -45,7 +45,6 @@ namespace Qrack {
     typedef Complex16Simd complex;
     typedef double real1;
 }
-#define real1 double
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI
