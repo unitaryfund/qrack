@@ -15,7 +15,7 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
+QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<qrack_rand_gen> rgp,
     complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
     : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem)
 {

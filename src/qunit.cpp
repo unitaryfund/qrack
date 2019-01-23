@@ -20,7 +20,7 @@
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
+    std::shared_ptr<qrack_rand_gen> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
     bool useHostMem)
     : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem)
 {
@@ -28,7 +28,7 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
 }
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
+    std::shared_ptr<qrack_rand_gen> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
     bool useHostMem)
     : QInterface(qBitCount, rgp, doNorm)
     , engine(eng)

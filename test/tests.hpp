@@ -27,7 +27,7 @@
 extern enum Qrack::QInterfaceEngine testEngineType;
 extern enum Qrack::QInterfaceEngine testSubEngineType;
 extern enum Qrack::QInterfaceEngine testSubSubEngineType;
-extern std::shared_ptr<std::default_random_engine> rng;
+extern std::shared_ptr<qrack_rand_gen> rng;
 extern bool disable_normalization;
 extern bool async_time;
 

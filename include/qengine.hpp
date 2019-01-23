@@ -42,7 +42,7 @@ protected:
     }
 
 public:
-    QEngine(bitLenInt n, std::shared_ptr<std::default_random_engine> rgp = nullptr, bool doNorm = true,
+    QEngine(bitLenInt n, std::shared_ptr<qrack_rand_gen> rgp = nullptr, bool doNorm = true,
         bool randomGlobalPhase = true, bool useHostMem = false)
         : QInterface(n, rgp, doNorm)
         , randGlobalPhase(randomGlobalPhase)

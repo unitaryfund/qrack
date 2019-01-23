@@ -20,7 +20,7 @@
 namespace Qrack {
 
 QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
-    std::shared_ptr<std::default_random_engine> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
+    std::shared_ptr<qrack_rand_gen> rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase,
     bool useHostMem)
     : QInterface(qBitCount, rgp)
     , phaseFactor(phaseFac)

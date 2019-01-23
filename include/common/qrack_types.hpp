@@ -13,10 +13,12 @@
 #pragma once
 
 #include <memory>
+#include <random>
 
 #define bitLenInt uint8_t
 #define bitCapInt uint64_t
 #define bitsInByte 8
+#define qrack_rand_gen std::mt19937_64
 
 #include "config.h"
 
