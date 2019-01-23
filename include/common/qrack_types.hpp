@@ -22,8 +22,10 @@
 
 #if ENABLE_COMPLEX8
 #include <complex>
-#define complex std::complex<float>
-#define real1 float
+namespace Qrack {
+    typedef std::complex<float> complex;
+    typedef float real1;
+}
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
 #define PI_R1 (real1) M_PI
@@ -39,8 +41,10 @@
 #define polar(A, B) std::polar(A, B)
 #else
 #include "complex16simd.hpp"
-#define complex Complex16Simd
-#define real1 double
+namespace Qrack {
+    typedef Complex16Simd complex;
+    typedef double real1;
+}
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI
