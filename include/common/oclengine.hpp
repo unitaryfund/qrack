@@ -26,7 +26,7 @@
 #define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.hpp>
 #else
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 #endif
 
 namespace Qrack {
