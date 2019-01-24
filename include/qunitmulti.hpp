@@ -56,14 +56,14 @@ protected:
     int defaultDeviceID;
 
 public:
-    QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true)
+    QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
+        bool useHostMem = true)
         : QUnitMulti(qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem)
     {
     }
 
-    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, std::shared_ptr<std::default_random_engine> rgp = nullptr,
+    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = true);
 

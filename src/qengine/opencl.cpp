@@ -53,8 +53,8 @@ namespace Qrack {
     device_context->wait_events.emplace_back();                                                                        \
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events.back()))
 
-QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int devID)
+QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
+    bool randomGlobalPhase, bool useHostMem, int devID)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem)
     , stateVec(NULL)
     , deviceID(devID)
@@ -607,14 +607,13 @@ void QEngineOCL::UniformlyControlledSingleBit(
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs, writeArgsEvent);
 
-    BufferPtr nrmInBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
+    BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
 
     cl::Event writeNormEvent;
     DISPATCH_TEMP_WRITE(&waitVec, *nrmInBuffer, sizeof(real1), &runningNorm, writeNormEvent);
 
-    BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));
+    BufferPtr uniformBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));
 
     cl::Event writeMatricesEvent;
     DISPATCH_TEMP_WRITE(&waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << controlLen), mtrxs, writeMatricesEvent);

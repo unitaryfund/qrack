@@ -36,8 +36,8 @@ namespace Qrack {
  * \warning Overall phase is generally arbitrary and unknowable. Setting two QEngineCPU instances to the same
  * phase usually makes sense only if they are initialized at the same time.
  */
-QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<std::default_random_engine> rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
+QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
+    bool randomGlobalPhase, bool useHostMem)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true)
     , stateVec(NULL)
 {

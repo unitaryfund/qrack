@@ -40,7 +40,7 @@ protected:
     bool randGlobalPhase;
     bool useHostRam;
 
-    std::shared_ptr<std::default_random_engine> rand_generator;
+    qrack_rand_gen_ptr rand_generator;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -50,11 +50,11 @@ protected:
 
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
-    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
-        std::shared_ptr<std::default_random_engine> rgp = nullptr, complex phaseFac = complex(-999.0, -999.0),
-        bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true);
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool doNorm = true,
+        bool randomGlobalPhase = true, bool useHostMem = true);
+    QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
+        bool useHostMem = true);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
