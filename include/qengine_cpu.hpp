@@ -37,7 +37,7 @@ protected:
     complex* stateVec;
 
 public:
-    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<qrack_rand_gen> rgp = nullptr,
+    QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool ignored = false);
     QEngineCPU(QEngineCPUPtr toCopy);

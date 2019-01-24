@@ -19,15 +19,16 @@
 #define bitCapInt uint64_t
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
+#define qrack_rand_gen_ptr std::shared_ptr<std::mt19937_64>
 
 #include "config.h"
 
 #if ENABLE_COMPLEX8
 #include <complex>
 namespace Qrack {
-    typedef std::complex<float> complex;
-    typedef float real1;
-}
+typedef std::complex<float> complex;
+typedef float real1;
+} // namespace Qrack
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
 #define PI_R1 (real1) M_PI
@@ -44,9 +45,9 @@ namespace Qrack {
 #else
 #include "complex16simd.hpp"
 namespace Qrack {
-    typedef Complex16Simd complex;
-    typedef double real1;
-}
+typedef Complex16Simd complex;
+typedef double real1;
+} // namespace Qrack
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI

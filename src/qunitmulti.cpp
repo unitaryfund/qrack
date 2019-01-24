@@ -15,8 +15,8 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<qrack_rand_gen> rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
+QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
+    bool randomGlobalPhase, bool useHostMem)
     : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem)
 {
     // Notice that this constructor does not take an engine type parameter, and it always passes QINTERFACE_OPENCL to

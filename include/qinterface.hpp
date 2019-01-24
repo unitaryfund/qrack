@@ -90,7 +90,7 @@ protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
     uint32_t randomSeed;
-    std::shared_ptr<qrack_rand_gen> rand_generator;
+    qrack_rand_gen_ptr rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
     bool doNormalize;
 
@@ -116,7 +116,7 @@ protected:
     template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
 
 public:
-    QInterface(bitLenInt n, std::shared_ptr<qrack_rand_gen> rgp = nullptr, bool doNorm = true)
+    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)
         , doNormalize(doNorm)
     {

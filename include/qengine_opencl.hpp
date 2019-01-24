@@ -89,7 +89,7 @@ public:
      * instability). For safety, "useHostMem" can be turned on.
      */
 
-    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, std::shared_ptr<qrack_rand_gen> rgp = nullptr,
+    QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1);
     QEngineOCL(QEngineOCLPtr toCopy);

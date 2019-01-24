@@ -25,7 +25,7 @@ using namespace Qrack;
 enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
-std::shared_ptr<qrack_rand_gen> rng;
+qrack_rand_gen_ptr rng;
 bool disable_normalization = false;
 bool async_time = false;
 
@@ -196,7 +196,7 @@ QInterfaceTestFixture::QInterfaceTestFixture()
         rngSeed = std::time(0);
     }
 
-    std::shared_ptr<qrack_rand_gen> rng = std::make_shared<qrack_rand_gen>();
+    qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
     if (disable_normalization) {
