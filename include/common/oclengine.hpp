@@ -24,7 +24,7 @@
 
 #ifdef __APPLE__
 #define CL_SILENCE_DEPRECATION
-#include <OpenCL/cl2.hpp>
+#include <OpenCL/cl.hpp>
 #else
 #include <CL/cl2.hpp>
 #endif
