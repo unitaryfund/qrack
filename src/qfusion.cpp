@@ -78,7 +78,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
-    if ((bitControls[qubitIndex].size() > 0) || !(bfr->Combinable(bitBuffers[qubitIndex]))) {
+    if (!(bfr->Combinable(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(qubitIndex);
     }
@@ -176,15 +176,12 @@ void QFusion::ApplyControlledSingleBit(
         return;
     }
 
-    // If we pass the threshold number of qubits for buffering, we track the buffered control bits, and we do 2x2
-    // complex matrix multiplication.
-
     for (bitLenInt i = 0; i < controlLen; i++) {
         FlushBit(controls[i]);
     }
 
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, controls, controlLen, mtrx);
-    if ((bitControls[target].size() > 0) || !(bfr->Combinable(bitBuffers[target]))) {
+    if (!(bfr->Combinable(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
@@ -213,15 +210,12 @@ void QFusion::ApplyAntiControlledSingleBit(
         return;
     }
 
-    // If we pass the threshold number of qubits for buffering, we track the buffered control bits, and we do 2x2
-    // complex matrix multiplication.
-
     for (bitLenInt i = 0; i < controlLen; i++) {
         FlushBit(controls[i]);
     }
 
     GateBufferPtr bfr = std::make_shared<GateBuffer>(true, controls, controlLen, mtrx);
-    if ((bitControls[target].size() > 0) || !(bfr->Combinable(bitBuffers[target]))) {
+    if (!(bfr->Combinable(bitBuffers[target]))) {
         // Flush the old buffer, if the buffered control bits don't match.
         FlushBit(target);
     }
