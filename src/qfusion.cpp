@@ -166,6 +166,8 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
 void QFusion::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    FlushList(controls, controlLen);
+
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
@@ -174,10 +176,6 @@ void QFusion::ApplyControlledSingleBit(
         FlushBit(target);
         qReg->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
         return;
-    }
-
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        FlushBit(controls[i]);
     }
 
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, controls, controlLen, mtrx);
@@ -200,6 +198,8 @@ void QFusion::ApplyControlledSingleBit(
 void QFusion::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    FlushList(controls, controlLen);
+
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
@@ -208,10 +208,6 @@ void QFusion::ApplyAntiControlledSingleBit(
         FlushBit(target);
         qReg->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
         return;
-    }
-
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        FlushBit(controls[i]);
     }
 
     GateBufferPtr bfr = std::make_shared<GateBuffer>(true, controls, controlLen, mtrx);
@@ -492,9 +488,7 @@ void QFusion::BufferArithmetic(
 
     bitLenInt i;
 
-    for (i = 0; i < controlLen; i++) {
-        FlushBit(controls[i]);
-    }
+    FlushList(controls, controlLen);
 
     BitBufferPtr toCheck;
     BitBufferPtr bfr = std::make_shared<ArithmeticBuffer>(false, controls, controlLen, inOutStart, length, toAdd);
@@ -804,7 +798,11 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
     return qReg->ApproxCompare(toCompare->qReg);
 }
 
-void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
+// Avoid calling this, when a QFusion layer is being used:
+void QFusion::UpdateRunningNorm() {
+    FlushAll();
+    qReg->UpdateRunningNorm();
+}
 
 bool QFusion::TrySeparate(bitLenInt start, bitLenInt length)
 {

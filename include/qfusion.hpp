@@ -28,11 +28,7 @@ typedef std::shared_ptr<QFusion> QFusionPtr;
 
 class QFusion : public QInterface {
 protected:
-
-    // This value should reasonably be set to 3, where buffering becomes efficient by complexity order.
-    // However, there is a bug that has not yet been completely isolated around the buffering threshold.
-    // Testing shows it is safe to buffer either everything or nothing.
-    static const bitLenInt MIN_FUSION_BITS = 0U;
+    static const bitLenInt MIN_FUSION_BITS = 3U;
     QInterfacePtr qReg;
     complex phaseFactor;
     bool doNormalize;
