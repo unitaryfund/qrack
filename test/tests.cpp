@@ -2826,11 +2826,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
     bitLenInt controls[2] = { 1, 2 };
     real1 angles[4] = { 3.0, 0.8, 1.2, 0.7 };
 
+    complex amps[8] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1)};
+
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0, rng);
     qftReg->SetPermutation(2);
     QInterfacePtr qftReg2 = qftReg->Clone();
 
     qftReg->UniformlyControlledRY(controls, 2, 0, angles);
     slow_ucry_implementation(qftReg2, angles, controls, 2, 0);
 
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    complex a, b;
+    for (bitCapInt i = 0; i < 8; i++) {
+        a = qftReg->GetAmplitude(i);
+        b = qftReg2->GetAmplitude(i);
+        REQUIRE_FLOAT(real(a), real(b));
+        REQUIRE_FLOAT(imag(a), imag(b));
+    }
 }
