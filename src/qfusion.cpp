@@ -799,10 +799,7 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
 }
 
 // Avoid calling this, when a QFusion layer is being used:
-void QFusion::UpdateRunningNorm() {
-    FlushAll();
-    qReg->UpdateRunningNorm();
-}
+void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
 
 bool QFusion::TrySeparate(bitLenInt start, bitLenInt length)
 {
