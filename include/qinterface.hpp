@@ -22,11 +22,13 @@
 #include "common/qrack_types.hpp"
 #include "hamiltonian.hpp"
 
-// The state vector must be an aligned piece of RAM, to be used by OpenCL.
-// We align to an ALIGN_SIZE byte boundary.
-#define ALIGN_SIZE 64
-
 namespace Qrack {
+
+// These are utility functions defined in qinterface/protected.cpp:
+unsigned char* qrack_alloc(size_t ucharCount);
+void mul2x2(complex* left, complex* right, complex* out);
+void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
+void log2x2(complex* matrix2x2, complex* outMatrix2x2);
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;

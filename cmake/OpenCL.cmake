@@ -40,6 +40,7 @@ if (ENABLE_OPENCL)
     target_link_libraries (accuracy ${LIB_OPENCL})
     target_link_libraries (grovers ${LIB_OPENCL})
     target_link_libraries (grovers_lookup ${LIB_OPENCL})
+    target_link_libraries (ordered_list_search ${LIB_OPENCL})
 
 
     # Build the OpenCL command files

@@ -988,6 +988,36 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crydyad_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
 
+void slow_ucry_implementation(
+    QInterfacePtr qReg, real1* angles, bitLenInt* control_qubits, bitLenInt controlLen, bitLenInt target_qubit)
+{
+    real1 cosine, sine;
+    complex pauliRY[4];
+
+    for (bitLenInt index = 0; index < (1 << controlLen); index++) {
+        for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
+            if (!((index >> bit_pos) & 1)) {
+                qReg->X(control_qubits[bit_pos]);
+            }
+        }
+
+        cosine = cos(angles[index] / 2.0);
+        sine = sin(angles[index] / 2.0);
+        pauliRY[0] = complex(cosine, ZERO_R1);
+        pauliRY[1] = complex(-sine, ZERO_R1);
+        pauliRY[2] = complex(sine, ZERO_R1);
+        pauliRY[3] = complex(cosine, ZERO_R1);
+
+        qReg->ApplyControlledSingleBit(control_qubits, controlLen, target_qubit, pauliRY);
+
+        for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
+            if (!((index >> bit_pos) & 1)) {
+                qReg->X(control_qubits[bit_pos]);
+            }
+        }
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 {
     bitLenInt controls[2] = { 4, 5 };
@@ -1041,28 +1071,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
     qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 2; j++) {
-            if (!(i & (1U << j))) {
-                qftReg2->X(controls[j]);
-            }
-        }
-
-        cosine = cos(angles[i] / 2);
-        sine = sin(angles[i] / 2);
-        pauliRY[0] = complex(cosine, ZERO_R1);
-        pauliRY[1] = complex(-sine, ZERO_R1);
-        pauliRY[2] = complex(sine, ZERO_R1);
-        pauliRY[3] = complex(cosine, ZERO_R1);
-        qftReg2->ApplyControlledSingleBit(controls, 2, 0, pauliRY);
-
-        for (j = 0; j < 2; j++) {
-            if (!(i & (1U << j))) {
-                qftReg2->X(controls[j]);
-            }
-        }
-    }
+    slow_ucry_implementation(qftReg2, angles, controls, 2, 0);
 
     REQUIRE(qftReg->ApproxCompare(qftReg2));
 }
@@ -2789,4 +2798,29 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 
     REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
     REQUIRE_FLOAT(abs(qftReg->Prob(0) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
+{
+    bitLenInt controls[2] = { 1, 2 };
+    real1 angles[4] = { 3.0, 0.8, 1.2, 0.7 };
+
+    complex amps[8] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0, rng);
+    qftReg->SetPermutation(2);
+    QInterfacePtr qftReg2 = qftReg->Clone();
+
+    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
+    slow_ucry_implementation(qftReg2, angles, controls, 2, 0);
+
+    complex a, b;
+    for (bitCapInt i = 0; i < 8; i++) {
+        a = qftReg->GetAmplitude(i);
+        b = qftReg2->GetAmplitude(i);
+        REQUIRE_FLOAT(real(a), real(b));
+        REQUIRE_FLOAT(imag(a), imag(b));
+    }
 }

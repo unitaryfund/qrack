@@ -19,7 +19,8 @@
 #define bitCapInt uint64_t
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
-#define qrack_rand_gen_ptr std::shared_ptr<std::mt19937_64>
+#define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
+#define ALIGN_SIZE 64
 
 #include "config.h"
 
