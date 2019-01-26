@@ -16,6 +16,20 @@
 
 namespace Qrack {
 
+unsigned char* qrack_alloc(size_t ucharCount)
+{
+// ALIGN_SIZE is defined in common/qrack_types.hpp
+#ifdef __APPLE__
+    void* toRet;
+    posix_memalign(&toRet, ALIGN_SIZE,
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+    return (unsigned char*)toRet;
+#else
+    return (unsigned char*)aligned_alloc(ALIGN_SIZE,
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+#endif
+}
+
 template <class BidirectionalIterator>
 void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride)
 {

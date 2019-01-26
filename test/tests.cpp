@@ -2826,7 +2826,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
     bitLenInt controls[2] = { 1, 2 };
     real1 angles[4] = { 3.0, 0.8, 1.2, 0.7 };
 
-    complex amps[8] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1)};
+    complex amps[8] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0, rng);
     qftReg->SetPermutation(2);

@@ -19,21 +19,6 @@
 
 using namespace Qrack;
 
-// We align our "classical" cache to 64 bit boundaries, for optimal OpenCL performance.
-#define ALIGN_SIZE 64
-unsigned char* cl_alloc(size_t ucharCount)
-{
-#ifdef __APPLE__
-    void* toRet;
-    posix_memalign(&toRet, ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
-    return (unsigned char*)toRet;
-#else
-    return (unsigned char*)aligned_alloc(ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
-#endif
-}
-
 int main()
 {
     // *** (Variant of) Grover's search to find a value in an ordered list. ***
@@ -66,15 +51,27 @@ int main()
 
     bool foundPerm = false;
 
-    unsigned char* toLoad = cl_alloc(1 << indexLength);
+    // We align our "classical" cache to 64 bit boundaries, for optimal OpenCL performance.
+    unsigned char* toLoad = qrack_alloc(1 << indexLength);
+
+    // We fill the example ordered list with dummy values. Up to the target index in the list, we fill (ordered) values
+    // lower than the key:
     for (i = 0; i < TARGET_KEY; i++) {
         toLoad[i] = 2;
     }
+
+    // Our example key and value are known, here, but the search algorithm does not depend on knowing this:
     toLoad[TARGET_KEY] = TARGET_VALUE;
+
+    // We fill the rest of the list with (ordered) values higher than the key.
     for (i = (TARGET_KEY + 1); i < (1 << indexLength); i++) {
         toLoad[i] = 7;
     }
 
+    // The algorithm, as written, should handle the cases of multiple target values, no match in the list, and any
+    // general ordered list. Changing the composition of the list, just above, allows you test different cases.
+
+    // This is the theoretical starting point of the algorithm.
     qReg->SetPermutation(0);
     partLength = indexLength;
 
