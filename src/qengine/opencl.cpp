@@ -111,6 +111,7 @@ void QEngineOCL::UnlockSync()
 
     if (unlockHostMem) {
         device_context->wait_events.push_back(unmapEvent);
+        clFinish();
     } else {
         BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
         cl::Event copyEvent;
@@ -118,6 +119,8 @@ void QEngineOCL::UnlockSync()
         unmapEvent.wait();
 
         WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
+
+        clFinish();
 
         stateBuffer = nStateBuffer;
         free(stateVec);
