@@ -108,19 +108,12 @@ void QEngineOCL::UnlockSync()
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
     cl::Event unmapEvent;
     queue.enqueueUnmapMemObject(*stateBuffer, stateVec, &waitVec, &unmapEvent);
+    unmapEvent.wait();
 
-    if (unlockHostMem) {
-        device_context->wait_events.push_back(unmapEvent);
-        clFinish();
-    } else {
+    if (!unlockHostMem) {
         BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-        cl::Event copyEvent;
-
-        unmapEvent.wait();
 
         WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
-
-        clFinish();
 
         stateBuffer = nStateBuffer;
         free(stateVec);
