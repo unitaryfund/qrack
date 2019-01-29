@@ -337,7 +337,7 @@ public:
      * such as Qrack::ApplySingleBit.)
      */
     virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
