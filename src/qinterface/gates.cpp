@@ -195,4 +195,32 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
     ApplyControlledSingleBit(controls, 1, target, pauliZ);
 }
 
+void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+{
+    complex mtrx[4];
+    bitCapInt offset;
+
+    for (bitLenInt index = 0; index < (1 << controlLen); index++) {
+        for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
+            if (!((index >> bit_pos) & 1)) {
+                X(controls[bit_pos]);
+            }
+        }
+
+        offset = index * 4;
+        mtrx[0] = mtrxs[offset];
+        mtrx[1] = mtrxs[1 + offset];
+        mtrx[2] = mtrxs[2 + offset];
+        mtrx[3] = mtrxs[3 + offset];
+
+        ApplyControlledSingleBit(controls, controlLen, qubitIndex, mtrx);
+
+        for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
+            if (!((index >> bit_pos) & 1)) {
+                X(controls[bit_pos]);
+            }
+        }
+    }
+}
+
 } // namespace Qrack
