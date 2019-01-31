@@ -195,7 +195,8 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
     ApplyControlledSingleBit(controls, 1, target, pauliZ);
 }
 
-void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QInterface::UniformlyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
     for (bitLenInt index = 0; index < (1 << controlLen); index++) {
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
