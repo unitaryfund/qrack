@@ -15,7 +15,9 @@
 
 #include "oclengine.hpp"
 
-#if ENABLE_COMPLEX8
+#if ENABLE_PURE32
+#include "qheader32.hpp"
+#elif ENABLE_COMPLEX8
 #include "qheader_floatcl.hpp"
 #else
 #include "qheader_doublecl.hpp"

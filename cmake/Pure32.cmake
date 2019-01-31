@@ -1,0 +1,8 @@
+option (ENABLE_PURE32 "Use only 32-bit types or smaller" OFF)
+if (ENABLE_PURE32)
+    set(ENABLE_COMPLEX_X2 OFF)
+    set(ENABLE_COMPLEX8 ON)
+endif (ENABLE_PURE32)
+message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
+message ("Single accuracy is: ${ENABLE_COMPLEX8}")
+message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")

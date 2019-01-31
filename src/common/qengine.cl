@@ -10,11 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#define bitCapInt ulong
-#define bitCapInt2 ulong2
-#define bitCapInt4 ulong4
-#define bitLenInt unsigned char
-
 inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
     return (cmplx)((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
