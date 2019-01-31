@@ -194,6 +194,10 @@ cl::Event QEngineOCL::QueueCall(
     if (localBuffSize) {
         ocl.call.setArg(args.size(), cl::Local(localBuffSize));
     }
+    
+#if ENABLE_RASPBERRYPI
+    clFinish();
+#endif
 
     // Dispatch the primary kernel, to apply the gate.
     cl::Event kernelEvent;
@@ -205,6 +209,10 @@ cl::Event QEngineOCL::QueueCall(
         &kernelEvent); // handle to wait for the kernel
 
     queue.flush();
+    
+#if ENABLE_RASPBERRYPI
+    clFinish();
+#endif
 
     return kernelEvent;
 }
@@ -1951,6 +1959,10 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
+    
+#if ENABLE_RASPBERRYPI
+    clFinish();
+#endif
 }
 
 void QEngineOCL::UpdateRunningNorm()
@@ -1986,6 +1998,10 @@ void QEngineOCL::UpdateRunningNorm()
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
+    
+#if ENABLE_RASPBERRYPI
+    clFinish();
+#endif
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
