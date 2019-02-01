@@ -880,7 +880,13 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
 #if ENABLE_RASPBERRYPI
         // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
+        // (See https://github.com/doe300/VC4CL/issues/54 )
         // Until this is fixed, we have to shunt the problem with a software implementation.
+
+        // Instead of unmapping to work on OpenCL device side, we keep the probability and phase buffers mapped. Then,
+        // we LockSync() the source and destination state vectors, and we carry out the composition of amplitudes from
+        // probabilities and phases on the host side, instead of in OpenCL. We unmap and discard the probability and
+        // phase buffers/arrays, at the end.
 #else
     device_context->wait_events.resize(4);
     queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));

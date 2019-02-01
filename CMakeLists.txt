@@ -80,6 +80,11 @@ include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 
+message ("Raspberry Pi support is: ${ENABLE_RASPBERRYPI}")
+message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
+message ("Single accuracy is: ${ENABLE_COMPLEX8}")
+message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
+
 if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
     set(QRACK_COMPILE_OPTS -mavx)
 endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
