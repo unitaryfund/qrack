@@ -93,6 +93,20 @@ $ cmake -DENABLE_COMPLEX8=ON ..
 ```
 Reduce to float accuracy for complex numbers. Requires half as much RAM (1 additional qubit). Compatible with SSE 1.0 and single precision accelerator devices.
 
+## Pure 32 bit OpenCL kernels
+
+```
+$ cmake -DENABLE_PURE32=ON ..
+```
+This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware).
+
+## Raspberry Pi 3 support with VC4CL
+
+```
+$ cmake -DENABLE_RASPBERRYPI=ON ..
+```
+This option sets `-DENABLE_PURE32=ON` and additionally branches certain code, in order to support execution on the VideoCore GPU of the Raspberry Pi 3. Currently, only `Qrack::QEngineOCL` (and specifically not `Qrack::QUnit`) has been successfully built and tested on the Raspberry Pi 3, with this option.
+
 ## Copyright and License
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
