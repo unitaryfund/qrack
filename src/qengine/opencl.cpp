@@ -878,14 +878,28 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         partStateAngle[l] += angleOffset;
     }
 
+#if ENABLE_RASPBERRYPI
+    // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
+    // Until this is fixed, we have to shunt the problem with a software implementation.
+#else
     device_context->wait_events.resize(4);
     queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
     queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &(device_context->wait_events[1]));
     queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
     queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
+#endif
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
+#if ENABLE_RASPBERRYPI
+        real1 root;
+        destination->LockSync(CL_MAP_WRITE);
+        for (i = 0; i < destination->maxQPower; i++) {
+            root = std::sqrt(partStateProb[i]);
+            destination->stateVec[i] = complex(root * cos(partStateAngle[i]), root * sin(partStateAngle[i]));
+        }
+        destination->UnlockSync();
+#else
         destination->Finish();
         
         bciArgs[0] = partPower;
@@ -933,8 +947,26 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             free(destination->stateVec);
             destination->stateVec = NULL;
         }
+#endif
     }
 
+#if ENABLE_RASPBERRYPI
+    real1 root;
+    LockSync(CL_MAP_WRITE);
+    for (i = 0; i < maxQPower; i++) {
+        root = std::sqrt(remainderStateProb[i]);
+        stateVec[i] = complex(root * cos(remainderStateAngle[i]), root * sin(remainderStateAngle[i]));
+    }
+    UnlockSync();
+    
+    device_context->wait_events.resize(4);
+    queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
+    queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &(device_context->wait_events[1]));
+    queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
+    queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
+    
+    clFinish();
+#else
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPower;
     std::vector<cl::Event> waitVec3 = device_context->ResetWaitEvents();
@@ -961,6 +993,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer }).wait();
 
     ResetStateVec(nStateVec, nStateBuffer);
+#endif
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
