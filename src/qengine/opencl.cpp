@@ -1197,8 +1197,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     BufferPtr probsBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
-    // DISPATCH_FILL(&waitVec, *probsBuffer, sizeof(real1) * lengthPower, ZERO_R1);
-
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);
 
