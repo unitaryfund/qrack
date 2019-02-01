@@ -112,7 +112,6 @@ void QEngineOCL::UnlockSync()
 
     if (!unlockHostMem) {
         BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-
         WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
@@ -1908,15 +1907,11 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 QInterfacePtr QEngineOCL::Clone()
 {
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
-        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, deviceID);
 
-    LockSync(CL_MAP_READ);
-    copyPtr->LockSync(CL_MAP_WRITE);
+    clFinish();
 
-    std::copy(stateVec, stateVec + maxQPower, copyPtr->stateVec);
-
-    copyPtr->UnlockSync();
-    UnlockSync();
+    WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower); 
 
     return copyPtr;
 }
