@@ -193,7 +193,7 @@ cl::Event QEngineOCL::QueueCall(
     if (localBuffSize) {
         ocl.call.setArg(args.size(), cl::Local(localBuffSize));
     }
-    
+
 #if ENABLE_RASPBERRYPI
     clFinish();
 #endif
@@ -208,7 +208,7 @@ cl::Event QEngineOCL::QueueCall(
         &kernelEvent); // handle to wait for the kernel
 
     queue.flush();
-    
+
 #if ENABLE_RASPBERRYPI
     clFinish();
 #endif
@@ -879,8 +879,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
 #if ENABLE_RASPBERRYPI
-    // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
-    // Until this is fixed, we have to shunt the problem with a software implementation.
+        // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
+        // Until this is fixed, we have to shunt the problem with a software implementation.
 #else
     device_context->wait_events.resize(4);
     queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
@@ -901,7 +901,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         destination->UnlockSync();
 #else
         destination->Finish();
-        
+
         bciArgs[0] = partPower;
 
         std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
@@ -958,13 +958,13 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         stateVec[i] = complex(root * cos(remainderStateAngle[i]), root * sin(remainderStateAngle[i]));
     }
     UnlockSync();
-    
+
     device_context->wait_events.resize(4);
     queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
     queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &(device_context->wait_events[1]));
     queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
     queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
-    
+
     clFinish();
 #else
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
@@ -1195,10 +1195,9 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs);
 
-    BufferPtr probsBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
-        
-    //DISPATCH_FILL(&waitVec, *probsBuffer, sizeof(real1) * lengthPower, ZERO_R1);
+    BufferPtr probsBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+
+    // DISPATCH_FILL(&waitVec, *probsBuffer, sizeof(real1) * lengthPower, ZERO_R1);
 
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);
@@ -1898,7 +1897,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     if (toCompare->doNormalize) {
         toCompare->NormalizeState();
     }
-    
+
     toCompare->Finish();
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPROXCOMPARE);
@@ -1944,7 +1943,7 @@ QInterfacePtr QEngineOCL::Clone()
 
     clFinish();
 
-    WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower); 
+    WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
 
     return copyPtr;
 }
@@ -1988,7 +1987,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
-    
+
 #if ENABLE_RASPBERRYPI
     clFinish();
 #endif
@@ -2027,7 +2026,7 @@ void QEngineOCL::UpdateRunningNorm()
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
-    
+
 #if ENABLE_RASPBERRYPI
     clFinish();
 #endif
