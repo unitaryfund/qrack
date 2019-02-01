@@ -710,6 +710,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->NormalizeState();
     }
 
+    toCopy->Finish();
+
     bitCapInt nMaxQPower = bciArgs[0];
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
 
@@ -885,6 +887,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
+        destination->Finish();
+        
         bciArgs[0] = partPower;
 
         std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
@@ -1140,14 +1144,13 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     v = ~mask; // count the number of bits set in v
     bitCapInt skipPower;
-    bitCapInt maxPower = powersVec[powersVec.size() - 1];
     bitLenInt skipLength = 0; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
     for (skipLength = 0; v; skipLength++) {
         oldV = v;
         v &= v - 1; // clear the least significant bit set
         skipPower = (v ^ oldV) & oldV;
-        if (skipPower < maxPower) {
+        if (skipPower <= mask) {
             skipPowersVec.push_back(skipPower);
         } else {
             v = 0;
@@ -1161,7 +1164,9 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs);
 
     BufferPtr probsBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+        std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+        
+    //DISPATCH_FILL(&waitVec, *probsBuffer, sizeof(real1) * lengthPower, ZERO_R1);
 
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);
@@ -1861,6 +1866,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     if (toCompare->doNormalize) {
         toCompare->NormalizeState();
     }
+    
+    toCompare->Finish();
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPROXCOMPARE);
 
@@ -1886,16 +1893,10 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     device_context->wait_events.push_back(QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
 
-    unsigned int size = (nrmGroupCount / nrmGroupSize);
-    if (size == 0) {
-        size = 1;
-    }
-
-    runningNorm = ZERO_R1;
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
     real1 sumSqrErr;
-    WAIT_REAL1_SUM(&waitVec2, *nrmBuffer, size, nrmArray, &sumSqrErr);
+    WAIT_REAL1_SUM(&waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     if (toCompare->deviceID != deviceID) {
         free(otherStateVec);

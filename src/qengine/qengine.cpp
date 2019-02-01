@@ -420,7 +420,7 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         oldV = v;
         v &= v - 1; // clear the least significant bit set
         power = (v ^ oldV) & oldV;
-        if (power < mask) {
+        if (power <= mask) {
             skipPowersVec.push_back(power);
         } else {
             v = 0;
