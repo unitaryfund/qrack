@@ -80,7 +80,7 @@ include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 
-message ("Raspberry Pi support is: ${ENABLE_RASPBERRYPI}")
+message ("VC4CL (for Raspberry Pi) support is: ${ENABLE_VC4CL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")

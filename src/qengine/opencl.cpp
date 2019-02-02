@@ -194,7 +194,7 @@ cl::Event QEngineOCL::QueueCall(
         ocl.call.setArg(args.size(), cl::Local(localBuffSize));
     }
 
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
     clFinish();
 #endif
 
@@ -209,7 +209,7 @@ cl::Event QEngineOCL::QueueCall(
 
     queue.flush();
 
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
     clFinish();
 #endif
 
@@ -878,7 +878,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         partStateAngle[l] += angleOffset;
     }
 
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
         // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
         // (See https://github.com/doe300/VC4CL/issues/54 )
         // Until this is fixed, we have to shunt the problem with a software implementation.
@@ -897,7 +897,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
         real1 root;
         destination->LockSync(CL_MAP_WRITE);
         for (i = 0; i < destination->maxQPower; i++) {
@@ -956,7 +956,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 #endif
     }
 
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
     real1 root;
     LockSync(CL_MAP_WRITE);
     for (i = 0; i < maxQPower; i++) {
@@ -1988,7 +1988,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
 
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
     clFinish();
 #endif
 }
@@ -2027,7 +2027,7 @@ void QEngineOCL::UpdateRunningNorm()
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
 
-#if ENABLE_RASPBERRYPI
+#if ENABLE_VC4CL
     clFinish();
 #endif
 }

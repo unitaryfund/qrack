@@ -1,10 +1,10 @@
 option (ENABLE_PURE32 "Use only 32-bit types or smaller" OFF)
-option (ENABLE_RASPBERRYPI "Build a library version that's safe for the Raspberry Pi 3" OFF)
+option (ENABLE_VC4CL "Build a library version that's safe for the VC4CL compiler (for the Raspberry Pi 3)" OFF)
 
-if (ENABLE_RASPBERRYPI)
+if (ENABLE_VC4CL)
     set(ENABLE_PURE32 ON)
-    target_compile_definitions(qrack PUBLIC ENABLE_RASPBERRYPI=1)
-endif(ENABLE_RASPBERRYPI)
+    target_compile_definitions(qrack PUBLIC ENABLE_VC4CL=1)
+endif(ENABLE_VC4CL)
 
 if (ENABLE_PURE32)
     set(ENABLE_COMPLEX_X2 OFF)
