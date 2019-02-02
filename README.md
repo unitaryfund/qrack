@@ -105,7 +105,7 @@ This option is needed for certain older or simpler hardware. This removes all us
 ```
 $ cmake -DENABLE_RASPBERRYPI=ON ..
 ```
-This option sets `-DENABLE_PURE32=ON` and additionally branches certain code, in order to support execution on the VideoCore GPU of the Raspberry Pi 3. Currently, only `Qrack::QEngineOCL` (and specifically not `Qrack::QUnit`) has been successfully built and tested on the Raspberry Pi 3, with this option.
+This option sets `-DENABLE_PURE32=ON` and additionally branches certain code, in order to support execution on the VideoCore GPU of the Raspberry Pi 3. Currently, only `Qrack::QEngineOCL` (and specifically not `Qrack::QUnit`) has been successfully built and tested on the Raspberry Pi 3.
 
 ## Copyright and License
 
