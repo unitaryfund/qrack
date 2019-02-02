@@ -195,6 +195,7 @@ cl::Event QEngineOCL::QueueCall(
     }
 
 #if ENABLE_VC4CL
+    // See https://github.com/doe300/VC4CL/issues/55
     clFinish();
 #endif
 
@@ -210,6 +211,7 @@ cl::Event QEngineOCL::QueueCall(
     queue.flush();
 
 #if ENABLE_VC4CL
+    // See https://github.com/doe300/VC4CL/issues/55
     clFinish();
 #endif
 
@@ -898,6 +900,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
 #if ENABLE_VC4CL
+        // See https://github.com/doe300/VC4CL/issues/54
         real1 root;
         destination->LockSync(CL_MAP_WRITE);
         for (i = 0; i < destination->maxQPower; i++) {
@@ -957,6 +960,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
 #if ENABLE_VC4CL
+    // See https://github.com/doe300/VC4CL/issues/54
     real1 root;
     LockSync(CL_MAP_WRITE);
     for (i = 0; i < maxQPower; i++) {
@@ -1989,6 +1993,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     writeArgsEvent.wait();
 
 #if ENABLE_VC4CL
+    // See https://github.com/doe300/VC4CL/issues/55
     clFinish();
 #endif
 }
@@ -2028,6 +2033,7 @@ void QEngineOCL::UpdateRunningNorm()
     writeArgsEvent.wait();
 
 #if ENABLE_VC4CL
+    // See https://github.com/doe300/VC4CL/issues/55
     clFinish();
 #endif
 }
