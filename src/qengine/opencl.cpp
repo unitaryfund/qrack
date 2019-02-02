@@ -1180,7 +1180,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         return;
     }
 
-    v = ~mask; // count the number of bits set in v
+    v = (~mask) & (maxQPower - 1); // count the number of bits set in v
     bitCapInt skipPower;
     bitLenInt skipLength = 0; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
@@ -1188,11 +1188,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         oldV = v;
         v &= v - 1; // clear the least significant bit set
         skipPower = (v ^ oldV) & oldV;
-        if (skipPower <= mask) {
-            skipPowersVec.push_back(skipPower);
-        } else {
-            v = 0;
-        }
+        skipPowersVec.push_back(skipPower);
     }
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, length, skipLength, 0, 0, 0, 0, 0, 0 };
