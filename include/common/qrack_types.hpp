@@ -16,7 +16,11 @@
 #include <random>
 
 #define bitLenInt uint8_t
+#if ENABLE_PURE32
+#define bitCapInt uint32_t
+#else
 #define bitCapInt uint64_t
+#endif
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>

@@ -15,7 +15,9 @@
 
 #include "oclengine.hpp"
 
-#if ENABLE_COMPLEX8
+#if ENABLE_PURE32
+#include "qheader32cl.hpp"
+#elif ENABLE_COMPLEX8
 #include "qheader_floatcl.hpp"
 #else
 #include "qheader_doublecl.hpp"
@@ -102,7 +104,9 @@ void OCLEngine::InitOCL()
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
 
-#if ENABLE_COMPLEX8
+#if ENABLE_PURE32
+    sources.push_back({ (const char*)qheader32_cl, (long unsigned int)qheader32_cl_len });
+#elif ENABLE_COMPLEX8
     sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
 #else
     sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });

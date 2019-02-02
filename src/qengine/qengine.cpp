@@ -403,7 +403,7 @@ void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1*
 
 void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
-    bitCapInt v = mask; // count the number of bits set in v
+    long v = mask; // count the number of bits set in v
     bitCapInt oldV;
     bitLenInt length;
     std::vector<bitCapInt> powersVec;
@@ -412,7 +412,7 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         v &= v - 1; // clear the least significant bit set
     }
 
-    v = ~mask; // count the number of bits set in v
+    v = (~mask) & (maxQPower - 1); // count the number of bits set in v
     bitCapInt power;
     bitLenInt len; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
@@ -420,11 +420,7 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         oldV = v;
         v &= v - 1; // clear the least significant bit set
         power = (v ^ oldV) & oldV;
-        if (power < mask) {
-            skipPowersVec.push_back(power);
-        } else {
-            v = 0;
-        }
+        skipPowersVec.push_back(power);
     }
 
     bitCapInt lengthPower = 1 << length;

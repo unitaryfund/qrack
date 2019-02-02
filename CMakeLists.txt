@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 1.0 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 3.1 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -78,6 +78,12 @@ include ("cmake/Examples.cmake")
 include ("cmake/OpenCL.cmake" )
 include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
+include ("cmake/Pure32.cmake")
+
+message ("VC4CL (for Raspberry Pi) support is: ${ENABLE_VC4CL}")
+message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
+message ("Single accuracy is: ${ENABLE_COMPLEX8}")
+message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
 
 if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
     set(QRACK_COMPILE_OPTS -mavx)

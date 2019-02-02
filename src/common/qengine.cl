@@ -10,11 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#define bitCapInt ulong
-#define bitCapInt2 ulong2
-#define bitCapInt4 ulong4
-#define bitLenInt unsigned char
-
 inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
     return (cmplx)((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
@@ -1185,7 +1180,7 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bitCapInt inOutStart = bitCapIntPtr[3];
     bitCapInt toAdd = bitCapIntPtr[4];
     bitCapInt nibbleCount = bitCapIntPtr[5];
-    bitCapInt otherRes, partToAdd, inOutRes, inOutInt;
+    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes;
     char test1, test2;
     unsigned char j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1194,23 +1189,33 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bool isValid;
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = (lcv & (otherMask));
+        otherRes = lcv & otherMask;
         partToAdd = toAdd;
-        inOutRes = (lcv & (inOutMask));
-        inOutInt = inOutRes >> (inOutStart);
+        inOutRes = lcv & inOutMask;
+        inOutInt = inOutRes >> inOutStart;
         isValid = true;
-        for (j = 0; j < nibbleCount; j++) {
+
+        test1 = inOutInt & 15;
+        test2 = partToAdd % 10;
+        partToAdd /= 10;
+        nibbles[0] = test1 + test2;
+        if ((test1 > 9) || (test2 > 9)) {
+            isValid = false;
+        }
+
+        for (j = 1; j < nibbleCount; j++) {
             test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
-            test2 = (partToAdd % 10);
+            test2 = partToAdd % 10;
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
-            if (test1 > 9) {
+            if ((test1 > 9) || (test2 > 9)) {
                 isValid = false;
             }
         }
         amp = stateVec[lcv];
         if (isValid) {
-            bitCapInt outInt = 0;
+            outInt = 0;
+            outRes = 0;
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
@@ -1220,7 +1225,8 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
                 }
                 outInt |= nibbles[j] << (j * 4);
             }
-            nStateVec[(outInt << (inOutStart)) | otherRes] = amp;
+            outRes = (outInt << (inOutStart)) | otherRes;
+            nStateVec[outRes] = amp;
         } else {
             nStateVec[lcv] = amp;
         }
@@ -1239,7 +1245,7 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bitCapInt inOutStart = bitCapIntPtr[3];
     bitCapInt toSub = bitCapIntPtr[4];
     bitCapInt nibbleCount = bitCapIntPtr[5];
-    bitCapInt otherRes, partToSub, inOutRes, inOutInt;
+    bitCapInt otherRes, partToSub, inOutRes, inOutInt, outInt, outRes;
     char test1, test2;
     unsigned char j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1253,9 +1259,18 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         inOutRes = lcv & inOutMask;
         inOutInt = inOutRes >> inOutStart;
         isValid = true;
-        for (j = 0; j < nibbleCount; j++) {
+
+        test1 = inOutInt & 15;
+        test2 = partToSub % 10;
+        partToSub /= 10;
+        nibbles[0] = test1 - test2;
+        if (test1 > 9) {
+            isValid = false;
+        }
+
+        for (j = 1; j < nibbleCount; j++) {
             test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
-            test2 = (partToSub % 10);
+            test2 = partToSub % 10;
             partToSub /= 10;
             nibbles[j] = test1 - test2;
             if (test1 > 9) {
@@ -1264,7 +1279,8 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         }
         amp = stateVec[lcv];
         if (isValid) {
-            bitCapInt outInt = 0;
+            outInt = 0;
+            outRes = 0;
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] < 0) {
                     nibbles[j] += 10;
@@ -1274,7 +1290,8 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
                 }
                 outInt |= nibbles[j] << (j * 4);
             }
-            nStateVec[(outInt << (inOutStart)) | otherRes] = amp;
+            outRes = (outInt << (inOutStart)) | otherRes;
+            nStateVec[outRes] = amp;
         } else {
             nStateVec[lcv] = amp;
         }

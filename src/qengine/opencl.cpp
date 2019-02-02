@@ -112,7 +112,6 @@ void QEngineOCL::UnlockSync()
 
     if (!unlockHostMem) {
         BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-
         WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
@@ -195,6 +194,11 @@ cl::Event QEngineOCL::QueueCall(
         ocl.call.setArg(args.size(), cl::Local(localBuffSize));
     }
 
+#if ENABLE_VC4CL
+    // See issue VC4CL#55
+    clFinish();
+#endif
+
     // Dispatch the primary kernel, to apply the gate.
     cl::Event kernelEvent;
     std::vector<cl::Event> kernelWaitVec = device_context->ResetWaitEvents();
@@ -205,6 +209,11 @@ cl::Event QEngineOCL::QueueCall(
         &kernelEvent); // handle to wait for the kernel
 
     queue.flush();
+
+#if ENABLE_VC4CL
+    // See issue VC4CL#55
+    clFinish();
+#endif
 
     return kernelEvent;
 }
@@ -702,6 +711,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->NormalizeState();
     }
 
+    toCopy->Finish();
+
     bitCapInt nMaxQPower = bciArgs[0];
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
 
@@ -869,14 +880,37 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         partStateAngle[l] += angleOffset;
     }
 
+#if ENABLE_VC4CL
+        // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
+        // (See https://github.com/doe300/VC4CL/issues/54 )
+        // Until this is fixed, we have to shunt the problem with a software implementation.
+
+        // Instead of unmapping to work on OpenCL device side, we keep the probability and phase buffers mapped. Then,
+        // we LockSync() the source and destination state vectors, and we carry out the composition of amplitudes from
+        // probabilities and phases on the host side, instead of in OpenCL. We unmap and discard the probability and
+        // phase buffers/arrays, at the end.
+#else
     device_context->wait_events.resize(4);
     queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
     queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &(device_context->wait_events[1]));
     queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
     queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
+#endif
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
+#if ENABLE_VC4CL
+        // See https://github.com/doe300/VC4CL/issues/54
+        real1 root;
+        destination->LockSync(CL_MAP_WRITE);
+        for (i = 0; i < destination->maxQPower; i++) {
+            root = std::sqrt(partStateProb[i]);
+            destination->stateVec[i] = complex(root * cos(partStateAngle[i]), root * sin(partStateAngle[i]));
+        }
+        destination->UnlockSync();
+#else
+        destination->Finish();
+
         bciArgs[0] = partPower;
 
         std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
@@ -922,8 +956,27 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             free(destination->stateVec);
             destination->stateVec = NULL;
         }
+#endif
     }
 
+#if ENABLE_VC4CL
+    // See https://github.com/doe300/VC4CL/issues/54
+    real1 root;
+    LockSync(CL_MAP_WRITE);
+    for (i = 0; i < maxQPower; i++) {
+        root = std::sqrt(remainderStateProb[i]);
+        stateVec[i] = complex(root * cos(remainderStateAngle[i]), root * sin(remainderStateAngle[i]));
+    }
+    UnlockSync();
+
+    device_context->wait_events.resize(4);
+    queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &(device_context->wait_events[0]));
+    queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &(device_context->wait_events[1]));
+    queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &(device_context->wait_events[2]));
+    queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &(device_context->wait_events[3]));
+
+    clFinish();
+#else
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPower;
     std::vector<cl::Event> waitVec3 = device_context->ResetWaitEvents();
@@ -950,6 +1003,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer }).wait();
 
     ResetStateVec(nStateVec, nStateBuffer);
+#endif
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
@@ -1130,20 +1184,15 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         return;
     }
 
-    v = ~mask; // count the number of bits set in v
+    v = (~mask) & (maxQPower - 1); // count the number of bits set in v
     bitCapInt skipPower;
-    bitCapInt maxPower = powersVec[powersVec.size() - 1];
     bitLenInt skipLength = 0; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
     for (skipLength = 0; v; skipLength++) {
         oldV = v;
         v &= v - 1; // clear the least significant bit set
         skipPower = (v ^ oldV) & oldV;
-        if (skipPower < maxPower) {
-            skipPowersVec.push_back(skipPower);
-        } else {
-            v = 0;
-        }
+        skipPowersVec.push_back(skipPower);
     }
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, length, skipLength, 0, 0, 0, 0, 0, 0 };
@@ -1152,8 +1201,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs);
 
-    BufferPtr probsBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+    BufferPtr probsBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     bitCapInt* powers = new bitCapInt[length];
     std::copy(powersVec.begin(), powersVec.end(), powers);
@@ -1854,6 +1902,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         toCompare->NormalizeState();
     }
 
+    toCompare->Finish();
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPROXCOMPARE);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1878,16 +1928,10 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     device_context->wait_events.push_back(QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
 
-    unsigned int size = (nrmGroupCount / nrmGroupSize);
-    if (size == 0) {
-        size = 1;
-    }
-
-    runningNorm = ZERO_R1;
     std::vector<cl::Event> waitVec2 = device_context->ResetWaitEvents();
 
     real1 sumSqrErr;
-    WAIT_REAL1_SUM(&waitVec2, *nrmBuffer, size, nrmArray, &sumSqrErr);
+    WAIT_REAL1_SUM(&waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     if (toCompare->deviceID != deviceID) {
         free(otherStateVec);
@@ -1899,15 +1943,11 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 QInterfacePtr QEngineOCL::Clone()
 {
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
-        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, deviceID);
 
-    LockSync(CL_MAP_READ);
-    copyPtr->LockSync(CL_MAP_WRITE);
+    clFinish();
 
-    std::copy(stateVec, stateVec + maxQPower, copyPtr->stateVec);
-
-    copyPtr->UnlockSync();
-    UnlockSync();
+    WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
 
     return copyPtr;
 }
@@ -1951,6 +1991,11 @@ void QEngineOCL::NormalizeState(real1 nrm)
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
+
+#if ENABLE_VC4CL
+    // See issue VC4CL#55
+    clFinish();
+#endif
 }
 
 void QEngineOCL::UpdateRunningNorm()
@@ -1986,6 +2031,11 @@ void QEngineOCL::UpdateRunningNorm()
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
+
+#if ENABLE_VC4CL
+    // See issue VC4CL#55
+    clFinish();
+#endif
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
