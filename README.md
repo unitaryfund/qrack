@@ -107,7 +107,7 @@ $ cmake -DENABLE_VC4CL=ON ..
 ```
 This option sets `-DENABLE_PURE32=ON` and additionally branches certain code, in order to support execution on the VideoCore GPU of the Raspberry Pi 3 with the VC4CL OpenCL compiler. Currently, only `Qrack::QEngineOCL` (and specifically not `Qrack::QUnit`) has been successfully built and tested on the Raspberry Pi 3.
 
-This option is probably temporary, due to issues currently being diagnosed and resolved in cooperation with VC4CL. (See VC4CL issues [#54](https://github.com/doe300/VC4CL/issues/54) and [#55](See https://github.com/doe300/VC4CL/issues/55).) When those are addressed, -DENABLE_PURE32=ON should be necessary and sufficient to support VC4CL with the Raspberry Pi 3.
+This option is probably temporary, due to issues currently being diagnosed and resolved in cooperation with VC4CL. (See VC4CL issues [#54](https://github.com/doe300/VC4CL/issues/54) and [#55](https://github.com/doe300/VC4CL/issues/55).) When those are addressed, -DENABLE_PURE32=ON should be necessary and sufficient to support VC4CL with the Raspberry Pi 3.
 
 ## Copyright and License
 

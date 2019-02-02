@@ -195,7 +195,7 @@ cl::Event QEngineOCL::QueueCall(
     }
 
 #if ENABLE_VC4CL
-    // See https://github.com/doe300/VC4CL/issues/55
+    // See issue VC4CL#55
     clFinish();
 #endif
 
@@ -211,7 +211,7 @@ cl::Event QEngineOCL::QueueCall(
     queue.flush();
 
 #if ENABLE_VC4CL
-    // See https://github.com/doe300/VC4CL/issues/55
+    // See issue VC4CL#55
     clFinish();
 #endif
 
@@ -1993,7 +1993,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     writeArgsEvent.wait();
 
 #if ENABLE_VC4CL
-    // See https://github.com/doe300/VC4CL/issues/55
+    // See issue VC4CL#55
     clFinish();
 #endif
 }
@@ -2033,7 +2033,7 @@ void QEngineOCL::UpdateRunningNorm()
     writeArgsEvent.wait();
 
 #if ENABLE_VC4CL
-    // See https://github.com/doe300/VC4CL/issues/55
+    // See issue VC4CL#55
     clFinish();
 #endif
 }
