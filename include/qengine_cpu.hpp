@@ -41,7 +41,7 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool ignored = false);
     QEngineCPU(QEngineCPUPtr toCopy);
-    ~QEngineCPU() { delete[] stateVec; }
+    ~QEngineCPU() { free(stateVec); }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
