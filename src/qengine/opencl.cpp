@@ -434,10 +434,9 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     fillEvent1.wait();
 
-    cl::Event fillEvent2;
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex), NULL, &fillEvent2);
+    device_context->wait_events.emplace_back();
+    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex), NULL, &(device_context->wait_events.back()));
     queue.flush();
-    device_context->wait_events.push_back(fillEvent2);
 
     runningNorm = ONE_R1;
 }
