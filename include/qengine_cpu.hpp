@@ -41,7 +41,7 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool ignored = false);
     QEngineCPU(QEngineCPUPtr toCopy);
-    ~QEngineCPU() { free(stateVec); }
+    ~QEngineCPU() { FreeStateVec(); }
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -167,13 +167,19 @@ public:
 
 protected:
     virtual void ResetStateVec(complex* nStateVec);
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    virtual void FreeStateVec() {
+        if (stateVec) {
+            free(stateVec);
+        }
+    }
+
     virtual void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UniformlyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
     virtual void UpdateRunningNorm();
-    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 };
 } // namespace Qrack
