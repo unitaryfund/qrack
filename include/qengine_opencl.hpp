@@ -96,9 +96,9 @@ public:
     ~QEngineOCL()
     {
         clFinish();
-        if (stateVec) {
-            free(stateVec);
-        }
+
+        FreeStateVec();
+
         if (nrmArray) {
             free(nrmArray);
         }
@@ -204,6 +204,11 @@ protected:
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    virtual void FreeStateVec() {
+        if (stateVec) {
+            free(stateVec);
+        }
+    }
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
