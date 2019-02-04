@@ -631,9 +631,18 @@ void QEngineOCL::UniformlyControlledSingleBit(
     writeArgsEvent.wait();
     writeControlsEvent.wait();
 
+#if ENABLE_VC4CL
+    // 2^n different parallel gates for n control bits might be too much to queue at once, on a Raspberry Pi.
+    clFinish();
+#endif
+
     // We call the kernel, with global buffers and one local buffer.
     device_context->wait_events.push_back(QueueCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
         { stateBuffer, ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer }, sizeof(real1) * ngs));
+
+#if ENABLE_VC4CL
+    clFinish();
+#endif
 
     // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
     // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
