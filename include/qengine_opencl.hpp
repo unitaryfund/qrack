@@ -58,6 +58,7 @@ protected:
     // QEngineOCL itself, specifically by QEngineOCLMulti.
     BufferPtr stateBuffer;
     BufferPtr cmplxBuffer;
+    BufferPtr realBuffer;
     BufferPtr ulongBuffer;
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
