@@ -599,19 +599,15 @@ void QEngineOCL::UniformlyControlledSingleBit(
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> 1;
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, 0, 0, 0, 0, 0, 0, 0 };
-    cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs, writeArgsEvent);
+    DISPATCH_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
-
-    cl::Event writeNormEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *nrmInBuffer, sizeof(real1), &runningNorm, writeNormEvent);
+    DISPATCH_WRITE(&waitVec, *nrmInBuffer, sizeof(real1), &runningNorm);
 
     BufferPtr uniformBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));
 
-    cl::Event writeMatricesEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << controlLen), mtrxs, writeMatricesEvent);
+    DISPATCH_WRITE(&waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << controlLen), mtrxs);
 
     bitCapInt* qPowers = new bitCapInt[controlLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -624,14 +620,7 @@ void QEngineOCL::UniformlyControlledSingleBit(
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
-    cl::Event writeControlsEvent;
-    DISPATCH_TEMP_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * controlLen, qPowers, writeControlsEvent);
-
-    // Wait for buffer write from limited lifetime objects
-    writeNormEvent.wait();
-    writeMatricesEvent.wait();
-    writeArgsEvent.wait();
-    writeControlsEvent.wait();
+    DISPATCH_WRITE(&waitVec, *powersBuffer, sizeof(bitCapInt) * controlLen, qPowers);
 
     // We call the kernel, with global buffers and one local buffer.
     QueueCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
