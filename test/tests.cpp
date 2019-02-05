@@ -2750,8 +2750,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     qftReg->SetPermutation(0);
     qftReg->TimeEvolve(h, tDiff);
 
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 
     bitLenInt controls[1] = { 1 };
     bool controlToggles[1] = { false };
@@ -2768,8 +2768,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     qftReg->SetPermutation(2);
     qftReg->TimeEvolve(h, tDiff);
 
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 
     controlToggles[0] = true;
     HamiltonianOpPtr h2 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, false, controlToggles);
@@ -2796,8 +2796,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     qftReg->SetPermutation(2);
     qftReg->TimeEvolve(h, tDiff);
 
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")

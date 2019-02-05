@@ -81,23 +81,20 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         complex trace = matrix2x2[0] + matrix2x2[3];
         complex determinant = (matrix2x2[0] * matrix2x2[3]) - (matrix2x2[1] * matrix2x2[2]);
         complex quadraticRoot =
-            sqrt((matrix2x2[0] - matrix2x2[3]) * (matrix2x2[0] - matrix2x2[3]) - (real1)(4.0) * determinant);
+            sqrt(trace * trace - (real1)(4.0) * determinant);
         complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0;
         complex eigenvalue2 = (trace - quadraticRoot) / (real1)2.0;
 
-        if (norm(matrix2x2[1]) > min_norm) {
-            jacobian[0] = matrix2x2[1];
-            jacobian[2] = eigenvalue1 - matrix2x2[0];
+        jacobian[0] = matrix2x2[0] - eigenvalue1;
+        jacobian[2] = matrix2x2[2];
 
-            jacobian[1] = matrix2x2[1];
-            jacobian[3] = eigenvalue2 - matrix2x2[0];
-        } else {
-            jacobian[0] = eigenvalue1 - matrix2x2[3];
-            jacobian[2] = matrix2x2[2];
+        jacobian[1] = matrix2x2[1];
+        jacobian[3] = matrix2x2[3] - eigenvalue2;
 
-            jacobian[1] = eigenvalue2 - matrix2x2[3];
-            jacobian[3] = matrix2x2[2];
-        }
+        expOfGate[0] = eigenvalue1;
+        expOfGate[1] = ZERO_R1;
+        expOfGate[2] = ZERO_R1;
+        expOfGate[3] = eigenvalue2;
 
         real1 nrm = std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
         jacobian[0] /= nrm;
@@ -112,9 +109,6 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         inverseJacobian[1] = -jacobian[1] / determinant;
         inverseJacobian[2] = -jacobian[2] / determinant;
         inverseJacobian[3] = jacobian[0] / determinant;
-
-        mul2x2(matrix2x2, jacobian, tempMatrix2x2);
-        mul2x2(inverseJacobian, tempMatrix2x2, expOfGate);
     } else {
         std::copy(matrix2x2, matrix2x2 + 4, expOfGate);
     }
