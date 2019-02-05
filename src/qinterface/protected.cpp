@@ -92,8 +92,8 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         jacobian[3] = matrix2x2[3] - eigenvalue2;
 
         expOfGate[0] = eigenvalue1;
-        expOfGate[1] = ZERO_R1;
-        expOfGate[2] = ZERO_R1;
+        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
         expOfGate[3] = eigenvalue2;
 
         real1 nrm = std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
