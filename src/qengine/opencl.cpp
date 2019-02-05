@@ -662,15 +662,16 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
 {
     std::vector<cl::Event> waitVec = device_context->ResetWaitEvents();
 
-    cl::Event writeArgsEvent;
+    cl::Event writeArgsEvent, writeNormEvent;
     DISPATCH_TEMP_WRITE(&waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs, writeArgsEvent);
-    DISPATCH_WRITE(&waitVec, *cmplxBuffer, sizeof(complex), &nrm);
+    DISPATCH_TEMP_WRITE(&waitVec, *cmplxBuffer, sizeof(complex), &nrm, writeNormEvent);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
+    writeNormEvent.wait();
 
     device_context->wait_events.push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, cmplxBuffer }));
 }
