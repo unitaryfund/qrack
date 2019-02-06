@@ -52,6 +52,7 @@ protected:
     complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
+    std::vector<EventVecPtr> wait_refs;
     cl::CommandQueue queue;
     cl::Context context;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
