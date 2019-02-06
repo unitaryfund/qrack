@@ -149,9 +149,9 @@ public:
 
     EventVecPtr ResetWaitEvents()
     {
-        EventVecPtr waitVec = wait_events;
+        EventVecPtr waitVec = std::move(wait_events);
         wait_events = std::make_shared<std::vector<cl::Event>>();
-        return waitVec;
+        return std::move(waitVec);
     }
 
     friend class OCLEngine;

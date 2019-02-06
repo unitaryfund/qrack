@@ -151,10 +151,10 @@ public:
             return false;
         }
 
-        for (int j = 0; j < length; j++) {
+        for (uint8_t j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
-            if (bit != !!(mask & (1 << j))) {
+            if (bit != !!(mask & (1U << j))) {
                 return false;
             }
         }
