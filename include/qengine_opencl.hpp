@@ -269,6 +269,7 @@ protected:
         size_t localBuffSize = 0);
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
+    EventVecPtr ResetWaitEvents();
     void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
     real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
