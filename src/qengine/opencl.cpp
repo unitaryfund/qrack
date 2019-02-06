@@ -46,8 +46,7 @@ namespace Qrack {
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, NULL, &(device_context->wait_events->back()));                   \
     device_context->wait_events->back().wait();                                                                        \
-    device_context->wait_events->pop_back();                                                                           \
-    wait_refs.clear()
+    device_context->wait_events->pop_back()
 
 #define WAIT_REAL1_SUM(waitVec, buff, size, array, sumPtr)                                                             \
     queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size), waitVec.get());                      \
