@@ -206,7 +206,8 @@ protected:
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual void FreeStateVec() {
+    virtual void FreeStateVec()
+    {
         if (stateVec) {
             free(stateVec);
         }
@@ -265,6 +266,8 @@ protected:
 
     /* Utility functions used by the operations above. */
     cl::Event QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+        size_t localBuffSize = 0);
+    void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
     void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
     real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
