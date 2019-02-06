@@ -146,7 +146,7 @@ public:
 
     std::vector<cl::Event> ResetWaitEvents()
     {
-        std::vector<cl::Event> waitVec = wait_events;
+        std::vector<cl::Event>& waitVec = wait_events;
         wait_events = std::vector<cl::Event>();
         return waitVec;
     }
