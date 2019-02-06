@@ -34,8 +34,7 @@ namespace Qrack {
 #define DISPATCH_READ(waitVec, buff, size, array)                                                                      \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));    \
-    queue.flush();                                                                                                     \
-    wait_refs.push_back(waitVec)
+    queue.flush()
 
 #define DISPATCH_FILL(waitVec, buff, size, value)                                                                      \
     device_context->wait_events->emplace_back();                                                                       \
@@ -144,6 +143,7 @@ void QEngineOCL::clFinish(bool doHard)
         }
     }
     device_context->wait_events->clear();
+    wait_refs.clear();
 }
 
 size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
