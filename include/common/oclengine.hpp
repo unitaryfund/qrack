@@ -142,7 +142,7 @@ public:
             queue = cl::CommandQueue(context, d);
         }
 
-        wait_events = std::make_shared<std::vector<cl::Event>>();
+        wait_events = std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>, [](std::vector<cl::Event>* vec) { vec->clear(); delete vec; });
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }

@@ -80,6 +80,7 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
           toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam)
     , stateVec(NULL)
     , deviceID(-1)
+    , wait_refs()
     , nrmArray(NULL)
     , unlockHostMem(false)
 {
@@ -2035,7 +2036,6 @@ void QEngineOCL::UpdateRunningNorm()
     EventVecPtr waitVec2 = ResetWaitEvents();
 
     DISPATCH_WRITE(waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
-    wait_refs.push_back(waitVec2);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
