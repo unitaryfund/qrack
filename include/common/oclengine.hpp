@@ -143,11 +143,7 @@ public:
         }
 
         wait_events =
-            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>, [](std::vector<cl::Event>* vec) {
-                for (unsigned int i = 0; i < vec->size(); i++) {
-                    (*vec)[i].wait();
-                }
-
+            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
                 vec->clear();
                 delete vec;
             });
