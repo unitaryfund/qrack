@@ -155,7 +155,7 @@ public:
     {
         EventVecPtr waitVec = std::move(wait_events);
         wait_events = std::make_shared<std::vector<cl::Event>>();
-        return std::move(waitVec);
+        return waitVec;
     }
 
     friend class OCLEngine;

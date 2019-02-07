@@ -191,11 +191,11 @@ EventVecPtr QEngineOCL::ResetWaitEvents()
 void QEngineOCL::WaitCall(
     OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
 {
-    QueueCall(api_call, workItemCount, localGroupSize, args, localBuffSize).wait();
-    wait_refs.clear();
+    QueueCall(api_call, workItemCount, localGroupSize, args, localBuffSize);
+    clFinish();
 }
 
-cl::Event QEngineOCL::QueueCall(
+void QEngineOCL::QueueCall(
     OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
 {
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
@@ -223,7 +223,7 @@ cl::Event QEngineOCL::QueueCall(
 
     queue.flush();
 
-    return kernelEvent;
+    device_context->wait_events->push_back(kernelEvent);
 }
 
 void QEngineOCL::CopyState(QInterfacePtr orig)
@@ -577,11 +577,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     wait_refs.clear();
 
     if (doCalcNorm) {
-        device_context->wait_events->push_back(QueueCall(api_call, ngc, ngs,
-            { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer }, sizeof(real1) * ngs));
+        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer }, sizeof(real1) * ngs);
     } else {
-        device_context->wait_events->push_back(
-            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer }));
+        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
     }
 
     if (doCalcNorm) {
@@ -593,8 +591,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
         // This kernel is run on a single work group, but it lets us continue asynchronously.
         if (ngc / ngs > 1) {
-            device_context->wait_events->push_back(
-                QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs));
+            QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs);
         }
 
         EventVecPtr waitVec2 = ResetWaitEvents();
@@ -657,8 +654,7 @@ void QEngineOCL::UniformlyControlledSingleBit(
 
     // This kernel is run on a single work group, but it lets us continue asynchronously.
     if (ngc / ngs > 1) {
-        device_context->wait_events->push_back(
-            QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs));
+        QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs);
     }
 
     EventVecPtr waitVec2 = ResetWaitEvents();
@@ -686,7 +682,7 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
     writeNormEvent.wait();
     wait_refs.clear();
 
-    device_context->wait_events->push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, cmplxBuffer }));
+    QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, cmplxBuffer });
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -845,8 +841,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
-    device_context->wait_events->push_back(QueueCall(
-        api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 }));
+    QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
 
     if ((maxQPower - partPower) <= 0) {
         SetQubitCount(1);
@@ -1039,8 +1034,7 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    device_context->wait_events->push_back(
-        QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs));
+    QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1105,8 +1099,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    device_context->wait_events->push_back(
-        QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer }));
+    QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer });
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1147,8 +1140,7 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    device_context->wait_events->push_back(QueueCall(
-        OCL_API_PROBMASK, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer, qPowersBuffer }, sizeof(real1) * ngs));
+    QueueCall(OCL_API_PROBMASK, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer, qPowersBuffer }, sizeof(real1) * ngs);
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1223,8 +1215,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    device_context->wait_events->push_back(QueueCall(
-        OCL_API_PROBMASKALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer }));
+    QueueCall(OCL_API_PROBMASKALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1825,7 +1816,7 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs)
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    device_context->wait_events->push_back(QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer }));
+    QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer });
 }
 
 void QEngineOCL::PhaseFlip()
@@ -1933,8 +1924,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         otherStateBuffer = toCompare->MakeStateVecBuffer(otherStateVec);
     }
 
-    device_context->wait_events->push_back(QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
+    QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize, { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1996,8 +1986,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     writeBCIArgsEvent.wait();
     wait_refs.clear();
 
-    device_context->wait_events->push_back(
-        QueueCall(OCL_API_NORMALIZE, ngc, ngs, { stateBuffer, ulongBuffer, realBuffer }));
+    QueueCall(OCL_API_NORMALIZE, ngc, ngs, { stateBuffer, ulongBuffer, realBuffer });
 
     runningNorm = ONE_R1;
 }
@@ -2019,8 +2008,7 @@ void QEngineOCL::UpdateRunningNorm()
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    device_context->wait_events->push_back(QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize));
+    QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
     unsigned int size = (nrmGroupCount / nrmGroupSize);
     if (size == 0) {
@@ -2029,8 +2017,7 @@ void QEngineOCL::UpdateRunningNorm()
 
     // This kernel is run on a single work group, but it lets us continue asynchronously.
     if (size > 1) {
-        device_context->wait_events->push_back(
-            QueueCall(OCL_API_NORMSUM, size, size, { nrmBuffer }, sizeof(real1) * size));
+        QueueCall(OCL_API_NORMSUM, size, size, { nrmBuffer }, sizeof(real1) * size);
     }
 
     EventVecPtr waitVec2 = ResetWaitEvents();
