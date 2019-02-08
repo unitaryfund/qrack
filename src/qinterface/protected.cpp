@@ -80,8 +80,7 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     if (!isDiag) {
         complex trace = matrix2x2[0] + matrix2x2[3];
         complex determinant = (matrix2x2[0] * matrix2x2[3]) - (matrix2x2[1] * matrix2x2[2]);
-        complex quadraticRoot =
-            sqrt(trace * trace - (real1)(4.0) * determinant);
+        complex quadraticRoot = sqrt(trace * trace - (real1)(4.0) * determinant);
         complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0;
         complex eigenvalue2 = (trace - quadraticRoot) / (real1)2.0;
 

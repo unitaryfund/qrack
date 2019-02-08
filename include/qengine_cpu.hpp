@@ -168,7 +168,8 @@ public:
 protected:
     virtual void ResetStateVec(complex* nStateVec);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual void FreeStateVec() {
+    virtual void FreeStateVec()
+    {
         if (stateVec) {
             free(stateVec);
         }

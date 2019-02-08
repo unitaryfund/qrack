@@ -52,6 +52,7 @@ protected:
     complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
+    std::vector<EventVecPtr> wait_refs;
     cl::CommandQueue queue;
     cl::Context context;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
@@ -205,7 +206,8 @@ protected:
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual void FreeStateVec() {
+    virtual void FreeStateVec()
+    {
         if (stateVec) {
             free(stateVec);
         }
@@ -263,8 +265,11 @@ protected:
     void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /* Utility functions used by the operations above. */
-    cl::Event QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+    void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
+    void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+        size_t localBuffSize = 0);
+    EventVecPtr ResetWaitEvents();
     void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
     real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);

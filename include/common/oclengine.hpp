@@ -36,6 +36,7 @@ class OCLDeviceCall;
 class OCLDeviceContext;
 
 typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
+typedef std::shared_ptr<std::vector<cl::Event>> EventVecPtr;
 
 enum OCLAPI {
     OCL_API_UNKNOWN = 0,
@@ -121,7 +122,7 @@ public:
     cl::Context context;
     int context_id;
     cl::CommandQueue queue;
-    std::vector<cl::Event> wait_events;
+    EventVecPtr wait_events;
 
 protected:
     std::recursive_mutex mutex;
@@ -140,14 +141,20 @@ public:
         if (error != CL_SUCCESS) {
             queue = cl::CommandQueue(context, d);
         }
+
+        wait_events =
+            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
+                vec->clear();
+                delete vec;
+            });
     }
 
     OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
 
-    std::vector<cl::Event>& ResetWaitEvents()
+    EventVecPtr ResetWaitEvents()
     {
-        std::vector<cl::Event>& waitVec = wait_events;
-        wait_events = std::vector<cl::Event>();
+        EventVecPtr waitVec = std::move(wait_events);
+        wait_events = std::make_shared<std::vector<cl::Event>>();
         return waitVec;
     }
 
