@@ -4,6 +4,23 @@
 
 **Thank you to [twobombs](https://github.com/twobombs) for testing the OSX Mojave build!**
 
+## vm6502q.v3.1: General hardware support and stack-readiness
+
+This release improves stability across all tested hardware platforms and debugs support for optional integration with the vm6502q fork of ProjectQ.
+
+**What's new in Qrack v3.1**
+
+- Supports building on the Raspberry Pi 3 with VC4CL
+- Optional integration with vm6502q/ProjectQ fork has been completed
+- "Uniformly controlled" gates added to the API
+- Bug fix in TimeEvolve() method
+- General stability improvements across many different platforms
+
+**Known Issues**
+
+ApproxCompare() has a sensitive threshold for state comparison, which causes unit tests based on it to fail sporadically. TryDecompose() and TrySeparate() also use ApproxCompare(). A low threshold means more conservative behavior. TryDecompose() and TrySeparate() are less likely to give false positives for true separability, but they are more likely to give false negatives.
+
+
 ## vm6502q.v3.0: API and performance improvements, gate fusion, and ProjectQ compatibility
 
 This release changes the API to allow arbitrary numbers of control bits, adds a gate fusion layer called Qrack::QFusion, and makes major improvements to speed and memory usage.
