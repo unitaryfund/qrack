@@ -184,7 +184,7 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 
 EventVecPtr QEngineOCL::ResetWaitEvents()
 {
-    wait_refs.emplace_back(std::move(device_context->ResetWaitEvents()));
+    wait_refs.emplace_back(device_context->ResetWaitEvents());
     return wait_refs.back();
 }
 
