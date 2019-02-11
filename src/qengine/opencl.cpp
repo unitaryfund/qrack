@@ -2022,7 +2022,7 @@ void QEngineOCL::UpdateRunningNorm()
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
-    DISPATCH_WRITE(waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+    DISPATCH_READ(waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
