@@ -12,7 +12,11 @@
 
 #pragma once
 
+#if defined(_WIN32)
+#include <intrin.h>
+#else
 #include <xmmintrin.h>
+#endif
 
 namespace Qrack {
 
@@ -55,7 +59,10 @@ struct Complex8x2Simd {
         return _val2;
     }
     inline Complex8x2Simd operator*(const float rhs) const { return _mm_mul_ps(_val2, _mm_set1_ps(rhs)); }
-    inline Complex8x2Simd operator-() const { return -_val2; }
+    inline Complex8x2Simd operator-() const {
+		__m128 negOne = _mm_set1_ps(-1.0f);
+		return _mm_mul_ps(negOne, _val2);
+	}
     inline Complex8x2Simd operator*=(const float& other)
     {
         _val2 = _mm_mul_ps(_val2, _mm_set1_ps(other));
