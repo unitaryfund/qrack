@@ -118,7 +118,7 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
 
 void QEngineCPU::ResetStateVec(complex* nStateVec)
 {
-    free(stateVec);
+    FreeStateVec();
     stateVec = nStateVec;
 }
 

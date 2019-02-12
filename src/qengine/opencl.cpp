@@ -86,11 +86,11 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
 {
     runningNorm = ONE_R1;
     SetQubitCount(toCopy->qubitCount);
-    
+
     toCopy->Finish();
 
     InitOCL(toCopy->deviceID);
-    
+
     CopyState(toCopy);
 }
 
@@ -124,7 +124,7 @@ void QEngineOCL::UnlockSync()
         WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
 
         stateBuffer = nStateBuffer;
-        free(stateVec);
+        FreeStateVec();
         stateVec = NULL;
     }
 }
@@ -335,20 +335,18 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) || !defined(__CYGWIN__)
-        nrmArray = _aligned_malloc(
-            ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+        nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
     } else if ((oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = NULL;
-        free(nrmArray);
+        FreeAligned(nrmArray);
         nrmArray = NULL;
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) || !defined(__CYGWIN__)
-        nrmArray = _aligned_malloc(
-            ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+        nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
@@ -381,7 +379,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
                 // If we're not using host RAM from here, we need to copy into a device memory buffer.
                 stateBuffer = MakeStateVecBuffer(NULL);
                 queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, nStateVec);
-                free(nStateVec);
+                FreeAligned(nStateVec);
             }
         } else if (usingHostRam) {
             // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new
@@ -392,7 +390,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             // context.
             stateBuffer = MakeStateVecBuffer(NULL);
             queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, stateVec);
-            free(stateVec);
+            FreeAligned(stateVec);
             stateVec = NULL;
         }
     } else {
@@ -408,8 +406,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * sizeof(bitCapInt) * 8);
 
     if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
+        nrmBuffer =
+            std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
         EventVecPtr waitVec = ResetWaitEvents();
         // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
         DISPATCH_FILL(waitVec, *nrmBuffer, sizeof(real1) * nrmGroupCount, ZERO_R1);
@@ -439,7 +437,7 @@ void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 {
     stateBuffer = nStateBuffer;
     if (stateVec) {
-        free(stateVec);
+        FreeStateVec();
         stateVec = nStateVec;
     }
 }
@@ -588,7 +586,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     wait_refs.clear();
 
     if (doCalcNorm) {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer }, sizeof(real1) * ngs);
+        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
+            sizeof(real1) * ngs);
     } else {
         QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
     }
@@ -746,7 +745,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer });
 
     if (toCopy->deviceID != deviceID) {
-        free(otherStateVec);
+        FreeAligned(otherStateVec);
     }
 
     ResetStateVec(nStateVec, nStateBuffer);
@@ -926,7 +925,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             destination->LockSync(CL_MAP_READ | CL_MAP_WRITE);
             std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
             destination->UnlockSync();
-            free(otherStateVec);
+            FreeAligned(otherStateVec);
         } else if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
             (2 * oNStateVecSize) <= destination->maxMem) {
 
@@ -939,7 +938,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             wait_refs.clear();
 
             destination->stateBuffer = nSB;
-            free(destination->stateVec);
+            FreeAligned(destination->stateVec);
             destination->stateVec = NULL;
         }
 #endif
@@ -974,8 +973,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     size_t nStateVecSize = maxQPower * sizeof(complex);
     if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
         clFinish();
-        free(stateVec);
-        stateVec = NULL;
+        FreeStateVec();
     }
 
     complex* nStateVec = AllocStateVec(maxQPower);
@@ -1202,7 +1200,8 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    QueueCall(OCL_API_PROBMASKALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
+    QueueCall(
+        OCL_API_PROBMASKALL, ngc, ngs, { stateBuffer, ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1911,7 +1910,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         otherStateBuffer = toCompare->MakeStateVecBuffer(otherStateVec);
     }
 
-    QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize, { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
+    QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
+        { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
@@ -1919,7 +1919,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     if (toCompare->deviceID != deviceID) {
-        free(otherStateVec);
+        FreeAligned(otherStateVec);
     }
 
     return sumSqrErr < approxcompare_error;
@@ -1995,7 +1995,8 @@ void QEngineOCL::UpdateRunningNorm()
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
+    QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer },
+        sizeof(real1) * nrmGroupSize);
 
     EventVecPtr waitVec2 = ResetWaitEvents();
     WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);

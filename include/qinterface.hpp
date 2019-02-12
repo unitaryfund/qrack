@@ -119,6 +119,17 @@ protected:
 
     template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
 
+    void FreeAligned(void* toFree)
+    {
+        if (toFree) {
+#if defined(_WIN32)
+            _aligned_free(toFree);
+#else
+            free(toFree);
+#endif
+		}
+    }
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true)
         : rand_distribution(0.0, 1.0)

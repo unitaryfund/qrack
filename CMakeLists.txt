@@ -34,10 +34,16 @@ add_executable (unittest
     test/tests.cpp
     )
 
-target_link_libraries (unittest
-    qrack
-    pthread
-    )
+if (MSVC)
+    target_link_libraries (unittest
+        qrack
+        )
+else (MSVC)
+    target_link_libraries (unittest
+        qrack
+        pthread
+        )
+endif (MSVC)
 
 add_test (NAME qrack_tests
     COMMAND unittest
@@ -49,10 +55,16 @@ add_executable (benchmarks
     test/benchmarks.cpp
     )
 
-target_link_libraries (benchmarks
-    qrack
-    pthread
-    )
+if (MSVC)
+    target_link_libraries (benchmarks
+        qrack
+        )
+else (MSVC)
+    target_link_libraries (benchmarks
+        qrack
+        pthread
+        )
+endif (MSVC)
 
 add_test (NAME qrack_benchmarks
     COMMAND benchmarks
@@ -64,10 +76,16 @@ add_executable (accuracy
     test/accuracy.cpp
     )
 
-target_link_libraries (accuracy
-    qrack
-    pthread
-    )
+if (MSVC)
+    target_link_libraries (accuracy
+        qrack
+        )
+else (MSVC)
+    target_link_libraries (accuracy
+        qrack
+        pthread
+        )
+endif (MSVC)
 
 add_test (NAME qrack_accuracy
     COMMAND accuracy
