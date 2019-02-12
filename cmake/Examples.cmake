@@ -31,7 +31,12 @@ target_link_libraries (ordered_list_search
     pthread
     )
 
-
-target_compile_options (grovers PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (grovers_lookup PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (ordered_list_search PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+if (MSVC)
+    target_compile_options (grovers PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (grovers_lookup PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (ordered_list_search PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+else (MSVC)
+    target_compile_options (grovers PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (grovers_lookup PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (ordered_list_search PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+endif (MSVC)

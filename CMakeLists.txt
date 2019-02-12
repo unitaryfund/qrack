@@ -103,9 +103,15 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -fPIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (unittest PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (benchmarks PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+if (MSVC)
+    target_compile_options (qrack PUBLIC -std=c++11 -Wall -fPIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (unittest PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (benchmarks PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+else (MSVC)
+    target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -fPIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (unittest PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (benchmarks PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+endif (MSVC)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
