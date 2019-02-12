@@ -763,7 +763,7 @@ complex* QEngineCPU::AllocStateVec(bitCapInt elemCount, bool ovrride)
     posix_memalign(
         &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
-#elif defined(_WIN32) || !defined(__CYGWIN__)
+#elif defined(_WIN32) && !defined(__CYGWIN__)
     return (complex*)_aligned_malloc(
         ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
 #else

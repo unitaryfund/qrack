@@ -24,7 +24,7 @@ unsigned char* qrack_alloc(size_t ucharCount)
     posix_memalign(&toRet, ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
-#elif defined(_WIN32) || !defined(__CYGWIN__)
+#elif defined(_WIN32) && !defined(__CYGWIN__)
     return (unsigned char*)_aligned_malloc(ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
 #else

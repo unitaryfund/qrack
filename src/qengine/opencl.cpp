@@ -334,7 +334,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     if (!didInit) {
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) || !defined(__CYGWIN__)
+#elif defined(_WIN32) && !defined(__CYGWIN__)
         nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
@@ -345,7 +345,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         nrmArray = NULL;
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) || !defined(__CYGWIN__)
+#elif defined(_WIN32) && !defined(__CYGWIN__)
         nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
@@ -2015,7 +2015,7 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
     posix_memalign(
         &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
-#elif defined(_WIN32) || !defined(__CYGWIN__)
+#elif defined(_WIN32) && !defined(__CYGWIN__)
     return (complex*)_aligned_malloc(
         ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
 #else
