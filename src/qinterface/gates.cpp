@@ -198,7 +198,7 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
 void QInterface::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
-    for (bitLenInt index = 0; index < (1 << controlLen); index++) {
+    for (bitCapInt index = 0; index < (1U << controlLen); index++) {
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
             if (!((index >> bit_pos) & 1)) {
                 X(controls[bit_pos]);

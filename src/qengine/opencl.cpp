@@ -79,14 +79,19 @@ QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
     : QEngine(
           toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam)
     , stateVec(NULL)
-    , deviceID(-1)
+    , deviceID(toCopy->deviceID)
     , wait_refs()
     , nrmArray(NULL)
     , unlockHostMem(false)
 {
-    CopyState(toCopy);
+    runningNorm = ONE_R1;
+    SetQubitCount(toCopy->qubitCount);
+    
+    toCopy->Finish();
 
     InitOCL(toCopy->deviceID);
+    
+    CopyState(toCopy);
 }
 
 void QEngineOCL::LockSync(cl_int flags)
@@ -184,7 +189,7 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 
 EventVecPtr QEngineOCL::ResetWaitEvents()
 {
-    wait_refs.emplace_back(std::move(device_context->ResetWaitEvents()));
+    wait_refs.emplace_back(device_context->ResetWaitEvents());
     return wait_refs.back();
 }
 
@@ -398,7 +403,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * nrmGroupCount, nrmArray);
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
         EventVecPtr waitVec = ResetWaitEvents();
         // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
         DISPATCH_FILL(waitVec, *nrmBuffer, sizeof(real1) * nrmGroupCount, ZERO_R1);
@@ -422,7 +427,7 @@ real1 QEngineOCL::ParSum(real1* toSum, bitCapInt maxI)
     return totNorm;
 }
 
-void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
+void QEngineOCL::InitOCL(int devID) { SetDevice(devID, true); }
 
 void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
 {
@@ -584,21 +589,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     if (doCalcNorm) {
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-        // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
-
-        // Until a norm calculation returns, don't change the stateVec length.
-        runningNorm = ONE_R1;
-
-        // This kernel is run on a single work group, but it lets us continue asynchronously.
-        if (ngc / ngs > 1) {
-            QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs);
-        }
-
+        // values into a single normalization constant.
         EventVecPtr waitVec2 = ResetWaitEvents();
-
-        // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
-        // "runningNorm" variable.
-        DISPATCH_READ(waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+        WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
     }
 }
 
@@ -647,21 +640,9 @@ void QEngineOCL::UniformlyControlledSingleBit(
         { stateBuffer, ulongBuffer, powersBuffer, uniformBuffer, nrmInBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
     // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-    // values into a single normalization constant. We want to do this in a non-blocking, asynchronous way.
-
-    // Until a norm calculation returns, don't change the stateVec length.
-    runningNorm = ONE_R1;
-
-    // This kernel is run on a single work group, but it lets us continue asynchronously.
-    if (ngc / ngs > 1) {
-        QueueCall(OCL_API_NORMSUM, ngc / ngs, ngc / ngs, { nrmBuffer }, sizeof(real1) * ngc / ngs);
-    }
-
+    // values into a single normalization constant.
     EventVecPtr waitVec2 = ResetWaitEvents();
-
-    // Asynchronously, whenever the normalization result is ready, it will be placed in this QEngineOCL's
-    // "runningNorm" variable.
-    DISPATCH_READ(waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 
     delete[] qPowers;
 }
@@ -2010,19 +1991,8 @@ void QEngineOCL::UpdateRunningNorm()
 
     QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
-    unsigned int size = (nrmGroupCount / nrmGroupSize);
-    if (size == 0) {
-        size = 1;
-    }
-
-    // This kernel is run on a single work group, but it lets us continue asynchronously.
-    if (size > 1) {
-        QueueCall(OCL_API_NORMSUM, size, size, { nrmBuffer }, sizeof(real1) * size);
-    }
-
     EventVecPtr waitVec2 = ResetWaitEvents();
-
-    DISPATCH_WRITE(waitVec2, *nrmBuffer, sizeof(real1), &runningNorm);
+    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
