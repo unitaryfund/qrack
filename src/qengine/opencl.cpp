@@ -904,7 +904,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateBuffer = destination->stateBuffer;
         } else {
             otherStateVec = AllocStateVec(destination->maxQPower, true);
-            otherStateBuffer = otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * destination->maxQPower, otherStateVec);
+            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * destination->maxQPower, otherStateVec);
 
             DISPATCH_FILL(
                 waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPower, complex(ZERO_R1, ZERO_R1));
@@ -1896,11 +1896,11 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         otherStateVec = toCompare->stateVec;
         otherStateBuffer = toCompare->stateBuffer;
     } else {
-        otherStateVec = toCompare->AllocStateVec(toCompare->maxQPower, true);
+        otherStateVec = AllocStateVec(toCompare->maxQPower, true);
         toCompare->LockSync(CL_MAP_READ);
         std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPower, otherStateVec);
         toCompare->UnlockSync();
-        otherStateBuffer = toCompare->MakeStateVecBuffer(otherStateVec);
+        otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPower, otherStateVec);
     }
 
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
