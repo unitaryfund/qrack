@@ -47,12 +47,12 @@ namespace Qrack {
     device_context->wait_events->back().wait();                                                                        \
     device_context->wait_events->pop_back()
 
-#define WAIT_REAL1_SUM(waitVec, buff, size, array, sumPtr)                                                             \
-    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size), waitVec.get());                      \
+#define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
+    clFinish();                                                                                                        \
+    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size));                                     \
     *(sumPtr) = ParSum(array, size);                                                                                   \
     device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));                            \
-    wait_refs.clear();
+    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int devID)
@@ -590,8 +590,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (doCalcNorm) {
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
-        EventVecPtr waitVec2 = ResetWaitEvents();
-        WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+        WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
     }
 }
 
@@ -641,8 +640,7 @@ void QEngineOCL::UniformlyControlledSingleBit(
 
     // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
     // values into a single normalization constant.
-    EventVecPtr waitVec2 = ResetWaitEvents();
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 
     delete[] qPowers;
 }
@@ -728,11 +726,11 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     } else {
-        otherStateVec = toCopy->AllocStateVec(toCopy->maxQPower, true);
+        otherStateVec = AllocStateVec(toCopy->maxQPower, true);
         toCopy->LockSync(CL_MAP_READ);
         std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
         toCopy->UnlockSync();
-        otherStateBuffer = toCopy->MakeStateVecBuffer(otherStateVec);
+        otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
     }
 
     runningNorm = ONE_R1;
@@ -905,8 +903,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateVec = destination->stateVec;
             otherStateBuffer = destination->stateBuffer;
         } else {
-            otherStateVec = destination->AllocStateVec(destination->maxQPower, true);
-            otherStateBuffer = destination->MakeStateVecBuffer(otherStateVec);
+            otherStateVec = AllocStateVec(destination->maxQPower, true);
+            otherStateBuffer = otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * destination->maxQPower, otherStateVec);
 
             DISPATCH_FILL(
                 waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPower, complex(ZERO_R1, ZERO_R1));
@@ -1016,10 +1014,8 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     real1 oneChance;
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &oneChance);
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance);
 
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
@@ -1122,10 +1118,8 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     QueueCall(OCL_API_PROBMASK, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer, qPowersBuffer }, sizeof(real1) * ngs);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     real1 oneChance;
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &oneChance);
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance);
 
     delete[] skipPowers;
 
@@ -1908,10 +1902,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     real1 sumSqrErr;
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
+    WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     if (toCompare->deviceID != deviceID) {
         FreeAligned(otherStateVec);
@@ -1922,12 +1914,21 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
+    clFinish();
+
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
         qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, deviceID);
 
-    clFinish();
+	copyPtr->clFinish();
 
-    WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+	copyPtr->runningNorm = runningNorm;
+	//WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+
+	LockSync(CL_MAP_READ);
+    copyPtr->LockSync(CL_MAP_WRITE);
+    std::copy(stateVec, stateVec + maxQPower, copyPtr->stateVec);
+    UnlockSync();
+    copyPtr->UnlockSync();
 
     return copyPtr;
 }
@@ -1993,8 +1994,7 @@ void QEngineOCL::UpdateRunningNorm()
     QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer },
         sizeof(real1) * nrmGroupSize);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);
+    WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
