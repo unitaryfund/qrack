@@ -331,22 +331,17 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     size_t nrmVecAlignSize =
         ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
 
-    if (!didInit) {
-#if defined(__APPLE__)
-        posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
-#else
-        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
-#endif
-    } else if ((oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+	if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = NULL;
         FreeAligned(nrmArray);
         nrmArray = NULL;
+	}
+
+    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
+        nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, ALIGN_SIZE);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
@@ -2016,8 +2011,7 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
         &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (complex*)_aligned_malloc(
-        ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+    return (complex*)_aligned_malloc(((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount, ALIGN_SIZE);
 #else
     return (complex*)aligned_alloc(
         ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);

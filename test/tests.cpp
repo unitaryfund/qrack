@@ -54,8 +54,7 @@ unsigned char* cl_alloc(size_t ucharCount)
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (unsigned char*)_aligned_malloc(ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
+    return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount), ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
