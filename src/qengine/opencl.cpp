@@ -47,12 +47,12 @@ namespace Qrack {
     device_context->wait_events->back().wait();                                                                        \
     device_context->wait_events->pop_back()
 
-#define WAIT_REAL1_SUM(waitVec, buff, size, array, sumPtr)                                                             \
-    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size), waitVec.get());                      \
+#define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
+    clFinish();                                                                                                        \
+    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size));                                     \
     *(sumPtr) = ParSum(array, size);                                                                                   \
     device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));                            \
-    wait_refs.clear();
+    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int devID)
@@ -331,22 +331,17 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     size_t nrmVecAlignSize =
         ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
 
-    if (!didInit) {
-#if defined(__APPLE__)
-        posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
-#else
-        nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
-#endif
-    } else if ((oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+	if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = NULL;
         FreeAligned(nrmArray);
         nrmArray = NULL;
+	}
+
+    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(ALIGN_SIZE, nrmVecAlignSize);
+        nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, ALIGN_SIZE);
 #else
         nrmArray = (real1*)aligned_alloc(ALIGN_SIZE, nrmVecAlignSize);
 #endif
@@ -595,8 +590,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (doCalcNorm) {
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
-        EventVecPtr waitVec2 = ResetWaitEvents();
-        WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+        WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
     }
 }
 
@@ -646,8 +640,7 @@ void QEngineOCL::UniformlyControlledSingleBit(
 
     // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
     // values into a single normalization constant.
-    EventVecPtr waitVec2 = ResetWaitEvents();
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 
     delete[] qPowers;
 }
@@ -733,11 +726,11 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     } else {
-        otherStateVec = toCopy->AllocStateVec(toCopy->maxQPower, true);
+        otherStateVec = AllocStateVec(toCopy->maxQPower, true);
         toCopy->LockSync(CL_MAP_READ);
         std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
         toCopy->UnlockSync();
-        otherStateBuffer = toCopy->MakeStateVecBuffer(otherStateVec);
+        otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
     }
 
     runningNorm = ONE_R1;
@@ -910,8 +903,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateVec = destination->stateVec;
             otherStateBuffer = destination->stateBuffer;
         } else {
-            otherStateVec = destination->AllocStateVec(destination->maxQPower, true);
-            otherStateBuffer = destination->MakeStateVecBuffer(otherStateVec);
+            otherStateVec = AllocStateVec(destination->maxQPower, true);
+            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * destination->maxQPower, otherStateVec);
 
             DISPATCH_FILL(
                 waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPower, complex(ZERO_R1, ZERO_R1));
@@ -922,8 +915,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         size_t oNStateVecSize = maxQPower * sizeof(complex);
 
         if (destination->deviceID != deviceID) {
-            destination->LockSync(CL_MAP_READ | CL_MAP_WRITE);
+            queue.enqueueMapBuffer(*otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPower);
+            destination->LockSync(CL_MAP_WRITE);
             std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
+            cl::Event waitUnmap;
+            queue.enqueueUnmapMemObject(*otherStateBuffer, otherStateVec, NULL, &waitUnmap);
+            waitUnmap.wait();
             destination->UnlockSync();
             FreeAligned(otherStateVec);
         } else if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
@@ -1021,10 +1018,8 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     real1 oneChance;
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &oneChance);
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance);
 
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
@@ -1127,10 +1122,8 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     QueueCall(OCL_API_PROBMASK, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer, qPowersBuffer }, sizeof(real1) * ngs);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     real1 oneChance;
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, ngc / ngs, nrmArray, &oneChance);
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance);
 
     delete[] skipPowers;
 
@@ -1903,20 +1896,18 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         otherStateVec = toCompare->stateVec;
         otherStateBuffer = toCompare->stateBuffer;
     } else {
-        otherStateVec = toCompare->AllocStateVec(toCompare->maxQPower, true);
+        otherStateVec = AllocStateVec(toCompare->maxQPower, true);
         toCompare->LockSync(CL_MAP_READ);
         std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPower, otherStateVec);
         toCompare->UnlockSync();
-        otherStateBuffer = toCompare->MakeStateVecBuffer(otherStateVec);
+        otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPower, otherStateVec);
     }
 
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, otherStateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     real1 sumSqrErr;
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
+    WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     if (toCompare->deviceID != deviceID) {
         FreeAligned(otherStateVec);
@@ -1927,12 +1918,21 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
+    clFinish();
+
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
         qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, deviceID);
 
-    clFinish();
+	copyPtr->clFinish();
 
-    WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+	copyPtr->runningNorm = runningNorm;
+	//WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+
+	LockSync(CL_MAP_READ);
+    copyPtr->LockSync(CL_MAP_WRITE);
+    std::copy(stateVec, stateVec + maxQPower, copyPtr->stateVec);
+    UnlockSync();
+    copyPtr->UnlockSync();
 
     return copyPtr;
 }
@@ -1998,8 +1998,7 @@ void QEngineOCL::UpdateRunningNorm()
     QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer },
         sizeof(real1) * nrmGroupSize);
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-    WAIT_REAL1_SUM(waitVec2, *nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);
+    WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
@@ -2016,8 +2015,7 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
         &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (complex*)_aligned_malloc(
-        ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
+    return (complex*)_aligned_malloc(((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount, ALIGN_SIZE);
 #else
     return (complex*)aligned_alloc(
         ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
