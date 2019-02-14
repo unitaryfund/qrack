@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#define _USE_MATH_DEFINES
+
 #include <atomic>
 #include <future>
 #include <math.h>
@@ -136,7 +138,10 @@ void ParallelFor::par_for_mask(
     }
 
     /* Pre-calculate the masks to simplify the increment function later. */
-    bitCapInt masks[maskLen][2];
+    bitCapInt** masks = new bitCapInt*[maskLen];
+    for (int i = 0; i < maskLen; i++) {
+        masks[i] = new bitCapInt[2];
+    }
 
     bool onlyLow = true;
     for (int i = 0; i < maskLen; i++) {
@@ -161,6 +166,11 @@ void ParallelFor::par_for_mask(
 
         par_for_inc(begin, (end - begin) >> maskLen, incFn, fn);
     }
+
+    for (int i = 0; i < maskLen; i++) {
+        delete[] masks[i];
+    }
+    delete[] masks;
 }
 
 real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)

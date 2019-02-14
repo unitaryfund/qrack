@@ -48,15 +48,28 @@ void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std
 
 unsigned char* cl_alloc(size_t ucharCount)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__)
     void* toRet;
     posix_memalign(&toRet, ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
+#elif defined(_WIN32) && !defined(__CYGWIN__)
+    return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount), ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
 #endif
+}
+
+void cl_free(void* toFree)
+{
+    if (toFree) {
+#if defined(_WIN32)
+        _aligned_free(toFree);
+#else
+        free(toFree);
+#endif
+    }
 }
 
 TEST_CASE("test_complex")
@@ -128,7 +141,7 @@ TEST_CASE("test_qengine_cpu_par_for")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    int NUM_ENTRIES = 2000;
+    const int NUM_ENTRIES = 2000;
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
 
@@ -156,8 +169,8 @@ TEST_CASE("test_qengine_cpu_par_for_skip")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    int NUM_ENTRIES = 2000;
-    int NUM_CALLS = 1000;
+    const int NUM_ENTRIES = 2000;
+    const int NUM_CALLS = 1000;
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -186,8 +199,8 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    int NUM_ENTRIES = 2000;
-    int NUM_CALLS = 1000;
+    const int NUM_ENTRIES = 2000;
+    const int NUM_CALLS = 1000;
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -215,8 +228,8 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    int NUM_ENTRIES = 2000;
-    int NUM_CALLS = 512; // 2048 >> 2, masked off so all bits are set.
+    const int NUM_ENTRIES = 2000;
+    const int NUM_CALLS = 512; // 2048 >> 2, masked off so all bits are set.
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -1862,7 +1875,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     }
     qftReg->IndexedLDA(0, 8, 8, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
-    free(testPage);
+    cl_free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
@@ -1886,7 +1899,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
     qftReg->IndexedADC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0xff));
-    free(testPage);
+    cl_free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
@@ -1906,7 +1919,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 1 << 16));
-    free(testPage);
+    cl_free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
@@ -1923,7 +1936,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
     }
     qftReg->IndexedLDA(0, 9, 9, 9, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0x603));
-    free(testPage);
+    cl_free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
@@ -1948,7 +1961,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
     }
     qftReg->IndexedADC(9, 9, 0, 9, 18, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x1ff));
-    free(testPage);
+    cl_free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
@@ -1969,7 +1982,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
     qftReg->H(9, 9);
     REQUIRE_THAT(qftReg, HasProbability(0, 19, 1 << 18));
-    free(testPage);
+    cl_free(testPage);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
@@ -2174,7 +2187,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, indexLength + valueLength, TARGET_VALUE | (TARGET_KEY << valueLength)));
-    free(toLoad);
+    cl_free(toLoad);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
@@ -2372,7 +2385,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         REQUIRE_THAT(qftReg,
             HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
     }
-    free(toLoad);
+    cl_free(toLoad);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
@@ -2552,7 +2565,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
         REQUIRE_THAT(qftReg,
             HasProbability(0, (2 * valueLength) + indexLength, TARGET_VALUE | (TARGET_KEY << (2 * valueLength))));
     }
-    free(toLoad);
+    cl_free(toLoad);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
@@ -2579,7 +2592,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
     qftReg->H(8, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));
-    free(toSearch);
+    cl_free(toSearch);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")

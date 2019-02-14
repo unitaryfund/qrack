@@ -67,6 +67,22 @@ While the OpenCL framework is available by default on most modern Macs, the C++ 
 
 https://www.khronos.org/registry/OpenCL/
 
+## Building and Installing Qrack on Windows
+
+Qrack supports building on Windows, but some special configuration is required. Windows 10 usually comes with default OpenCL libraries for Intel (or AMD) CPUs and their graphics coprocessors, but NVIDIA graphics card support might require the CUDA Toolkit. The CUDA Toolkit also provides an OpenCL development environment, which is generally necessary to build Qrack.
+
+Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadecimal format for building. `xxd` is not natively available on Windows systems, but Windows executables for it are provided by sources including the [Vim editor Windows port](https://www.vim.org/download.php).
+
+CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio). Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
+
+```
+    $ mkdir _build
+	$ cd _build
+	$ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
+```
+
+After CMake, the project must be built in Visual Studio.
+
 ## Performing code coverage
 
 ```

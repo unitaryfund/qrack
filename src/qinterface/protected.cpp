@@ -19,11 +19,13 @@ namespace Qrack {
 unsigned char* qrack_alloc(size_t ucharCount)
 {
 // ALIGN_SIZE is defined in common/qrack_types.hpp
-#ifdef __APPLE__
+#if defined(__APPLE__)
     void* toRet;
     posix_memalign(&toRet, ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
+#elif defined(_WIN32) && !defined(__CYGWIN__)
+    return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount), ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));

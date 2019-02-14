@@ -101,9 +101,7 @@ public:
 
         FreeStateVec();
 
-        if (nrmArray) {
-            free(nrmArray);
-        }
+        FreeAligned(nrmArray);
     }
 
     virtual void SetQubitCount(bitLenInt qb);
@@ -209,8 +207,13 @@ protected:
     virtual void FreeStateVec()
     {
         if (stateVec) {
+#if defined(_WIN32)
+            _aligned_free(stateVec);
+#else
             free(stateVec);
+#endif
         }
+        stateVec = NULL;
     }
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 

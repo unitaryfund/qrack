@@ -171,8 +171,13 @@ protected:
     virtual void FreeStateVec()
     {
         if (stateVec) {
+#if defined(_WIN32)
+            _aligned_free(stateVec);
+#else
             free(stateVec);
+#endif
         }
+        stateVec = NULL;
     }
 
     virtual void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
