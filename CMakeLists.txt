@@ -91,7 +91,7 @@ else (MSVC)
 endif(MSVC)
 
 if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
-    set(QRACK_COMPILE_OPTS "${QRACK_COMPILE_OPTS} -mavx")
+    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
 endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
