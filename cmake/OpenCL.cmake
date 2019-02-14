@@ -1,12 +1,23 @@
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
 
 set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD OpenCL SDK, if used")
-set (OPENCL_NVIDIASDK "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.0" "Installation path for the installed NVIDIA CUDA Toolkit, if used")
 
 # Options used when building the project
 find_package (OpenCL)
 if (NOT OpenCL_FOUND)
-    set (ENABLE_OPENCL OFF)
+    # Attempt with AMD's OpenCL SDK
+    find_library (LIB_OPENCL OpenCL PATHS ${OPENCL_AMDSDK}/lib/x86_64/)
+    if (NOT LIB_OPENCL)
+        set (ENABLE_OPENCL OFF)
+    else ()
+        # Found, set the required include path.
+        set (OpenCL_INCLUDE_DIRS ${OPENCL_AMDSDK}/include CACHE PATH "AMD OpenCL SDK Header include path")
+        set (OpenCL_COMPILATION_OPTIONS
+            -Wno-ignored-attributes
+            -Wno-deprecated-declarations
+            CACHE STRING "AMD OpenCL SDK Compilation Option Requirements")
+        message ("OpenCL support found in the AMD SDK")
+    endif()
 endif ()
 
 message ("OpenCL Support is: ${ENABLE_OPENCL}")
@@ -14,7 +25,7 @@ message ("OpenCL Support is: ${ENABLE_OPENCL}")
 if (ENABLE_OPENCL)
     message ("    libOpenCL: ${OpenCL_LIBRARIES}")
     message ("    Includes:  ${OpenCL_INCLUDE_DIRS}")
-    message ("    Options:   ${OPENCL_COMPILATION_OPTIONS}")
+    message ("    Options:   ${OpenCL_COMPILATION_OPTIONS}")
 endif ()
 
 if (ENABLE_OPENCL)
@@ -23,7 +34,7 @@ if (ENABLE_OPENCL)
 
     # Include the necessary options and libraries to link against
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${OpenCL_INCLUDE_DIRS})
-    target_compile_options (qrack PUBLIC ${OPENCL_COMPILATION_OPTIONS})
+    target_compile_options (qrack PUBLIC ${OpenCL_COMPILATION_OPTIONS})
     target_link_libraries (unittest ${OpenCL_LIBRARIES})
     target_link_libraries (benchmarks ${OpenCL_LIBRARIES})
     target_link_libraries (accuracy ${OpenCL_LIBRARIES})
