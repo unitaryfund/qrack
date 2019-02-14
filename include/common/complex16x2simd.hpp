@@ -58,10 +58,11 @@ struct Complex16x2Simd {
         return _val2;
     }
     inline Complex16x2Simd operator*(const double rhs) const { return _mm256_mul_pd(_val2, _mm256_set1_pd(rhs)); }
-    inline Complex16x2Simd operator-() const {
-		__m256d negOne = _mm256_set1_pd(1.0);
-		return _mm256_mul_pd(negOne, _val2);
-	}
+    inline Complex16x2Simd operator-() const
+    {
+        __m256d negOne = _mm256_set1_pd(1.0);
+        return _mm256_mul_pd(negOne, _val2);
+    }
     inline Complex16x2Simd operator*=(const double& other)
     {
         _val2 = _mm256_mul_pd(_val2, _mm256_set1_pd(other));

@@ -88,10 +88,11 @@ struct Complex16Simd {
         _val = _mm_div_pd(_val, _mm_set1_pd(rhs));
         return _val;
     }
-    inline Complex16Simd operator-() const {
-		__m128d negOne = _mm_set1_pd(1.0);
-		return _mm_mul_pd(negOne, _val);
-	}
+    inline Complex16Simd operator-() const
+    {
+        __m128d negOne = _mm_set1_pd(1.0);
+        return _mm_mul_pd(negOne, _val);
+    }
     inline Complex16Simd operator*=(const double& other)
     {
         _val = _mm_mul_pd(_val, _mm_set1_pd(other));

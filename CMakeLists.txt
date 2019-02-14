@@ -28,22 +28,19 @@ add_library (qrack STATIC
     src/qunit.cpp
     )
 
+if (MSVC)
+    set(QRACK_LIBS qrack)
+else (MSVC)
+    set(QRACK_LIBS qrack pthread)
+endif (MSVC)
+
 # Declare the unittest executable
 add_executable (unittest
     test/test_main.cpp
     test/tests.cpp
     )
 
-if (MSVC)
-    target_link_libraries (unittest
-        qrack
-        )
-else (MSVC)
-    target_link_libraries (unittest
-        qrack
-        pthread
-        )
-endif (MSVC)
+target_link_libraries (unittest ${QRACK_LIBS})
 
 add_test (NAME qrack_tests
     COMMAND unittest
@@ -55,16 +52,7 @@ add_executable (benchmarks
     test/benchmarks.cpp
     )
 
-if (MSVC)
-    target_link_libraries (benchmarks
-        qrack
-        )
-else (MSVC)
-    target_link_libraries (benchmarks
-        qrack
-        pthread
-        )
-endif (MSVC)
+target_link_libraries (benchmarks ${QRACK_LIBS})
 
 add_test (NAME qrack_benchmarks
     COMMAND benchmarks
@@ -76,16 +64,7 @@ add_executable (accuracy
     test/accuracy.cpp
     )
 
-if (MSVC)
-    target_link_libraries (accuracy
-        qrack
-        )
-else (MSVC)
-    target_link_libraries (accuracy
-        qrack
-        pthread
-        )
-endif (MSVC)
+target_link_libraries (accuracy ${QRACK_LIBS})
 
 add_test (NAME qrack_accuracy
     COMMAND accuracy
@@ -103,8 +82,16 @@ message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
 
+if (MSVC)
+    set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
+    set(TEST_COMPILE_OPTS -std=c++11 -Wall)
+else (MSVC)
+    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
+    set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
+endif(MSVC)
+
 if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
-    set(QRACK_COMPILE_OPTS -mavx)
+    set(QRACK_COMPILE_OPTS "${QRACK_COMPILE_OPTS} -mavx")
 endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
@@ -121,15 +108,9 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-if (MSVC)
-    target_compile_options (qrack PUBLIC -std=c++11 -Wall -fPIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (unittest PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (benchmarks PUBLIC -std=c++11 -Wall ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-else (MSVC)
-    target_compile_options (qrack PUBLIC -O3 -std=c++11 -Wall -Werror -fPIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (unittest PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (benchmarks PUBLIC -O3 -std=c++11 -Wall -Werror ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-endif (MSVC)
+target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}

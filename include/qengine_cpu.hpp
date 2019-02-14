@@ -173,7 +173,7 @@ protected:
         if (stateVec) {
 #if defined(_WIN32)
             _aligned_free(stateVec);
-#else 
+#else
             free(stateVec);
 #endif
         }
