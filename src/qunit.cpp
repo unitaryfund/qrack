@@ -1330,7 +1330,7 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
 
     QUnitPtr thatCopy = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
     thatCopy->EntangleAll();
-    thisCopy->OrderContiguous(thatCopy->shards[0].unit);
+    thatCopy->OrderContiguous(thatCopy->shards[0].unit);
 
     return thisCopy->shards[0].unit->ApproxCompare(thatCopy->shards[0].unit);
 }
