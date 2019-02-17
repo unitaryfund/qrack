@@ -4,6 +4,10 @@
 
 **Thank you to [twobombs](https://github.com/twobombs) for testing the OSX Mojave build!**
 
+## vm6502q.v3.2: Windows 10 and Mac support, and ApproxCompare() fix
+
+This build debugs support on Mac Mojave, adds support for building with Visual Studio on Windows 10, and fixes a longstanding bug in the ApproxCompare() method, which had been leading to unit test failures. The changes in code itself are minor, but since they add wide platform support, and stable general platform support was the aim of v3.1, we're tagging this version before any new functionality is added.
+
 ## vm6502q.v3.1: General hardware support and stack-readiness
 
 This release improves stability across all tested hardware platforms and debugs support for optional integration with the vm6502q fork of ProjectQ.
