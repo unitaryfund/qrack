@@ -316,6 +316,13 @@ public:
      *const
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
+     *
+     * \warning Physically, besides measurement, all quantum gates are unitary. This means there is always exactly a
+100% chance
+-    * of finding a qubit in ANY STATE. A nonunitary gate besides measurement is nonphysical, at least because it
+-    * implies that the sum of qubit probability over all possible states could be not exactly 100%. We strongly
+discourage the use of nonunitary gates under all circumstances, because they will likely hinder porting software to
+genuine quantum hardware. If normalization is on, this method will throw an exception if a nonunitary gate is used.
      */
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
 
@@ -1525,26 +1532,6 @@ public:
      *  Clone this QInterface
      */
     virtual QInterfacePtr Clone() = 0;
-
-    /**
-     *  Apply a single bit "nonunitary gate"
-     *
-     *  \warning PSEUDO-QUANTUM
-     *
-     *  Physically, besides measurement, all quantum gates are unitary. This means there is always exactly a 100% chance
-     * of finding a qubit in ANY STATE. A nonunitary gate besides measurement is nonphysical, at least because it
-     * implies that the sum of qubit probability over all possible states could be not exactly 100%. Hence, this
-     * operation should never be used. This method is added to Qrack only due to a demand for it by existing software
-     * Qrack might interface with; we strongly suggest developers of new software never use it. (We do not guarantee
-     * long term support for it.) This method will throw an exception, if normalization is on in this QInterface.
-     */
-    virtual void ApplyNonunitarySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
-    {
-        if (doNormalize) {
-            throw("Nonunitary gates and normalization cannot be used at the same time. (You probably shouldn't use "
-                  "nonunitary gates at all.)");
-        }
-    }
 
     /** @} */
 };
