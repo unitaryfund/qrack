@@ -318,11 +318,10 @@ public:
      * set to true.
      *
      * \warning Physically, besides measurement, all quantum gates are unitary. This means there is always exactly a
-100% chance
--    * of finding a qubit in ANY STATE. A nonunitary gate besides measurement is nonphysical, at least because it
--    * implies that the sum of qubit probability over all possible states could be not exactly 100%. We strongly
-discourage the use of nonunitary gates under all circumstances, because they will likely hinder porting software to
-genuine quantum hardware. If normalization is on, this method will throw an exception if a nonunitary gate is used.
+100% chance of finding a qubit in ANY STATE. A nonunitary gate besides measurement is nonphysical, at least because it
+implies that the sum of qubit probability over all possible states could be not exactly 100%. We strongly discourage the
+use of nonunitary gates under all circumstances, because they will likely hinder porting software to genuine quantum
+hardware. If normalization is on, this method will throw an exception if a nonunitary gate is used.
      */
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
 
