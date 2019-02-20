@@ -313,7 +313,7 @@ public:
 
     /**
      * Apply an arbitrary single bit unitary transformation.
-     *const
+     *
      * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
      * set to true.
      *
