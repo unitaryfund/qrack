@@ -145,6 +145,10 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
 void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
+    if (!isUnitary2x2(mtrx)) {
+        throw "ApplySingleBit gate matrix must be unitary.";
+    }
+
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
@@ -153,6 +157,10 @@ void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (!isUnitary2x2(mtrx)) {
+        throw "ApplyControlledSingleBit gate matrix must be unitary.";
+    }
+
     if (controlLen == 0) {
         ApplySingleBit(mtrx, true, target);
     } else {
@@ -166,6 +174,10 @@ void QEngine::ApplyControlledSingleBit(
 void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (!isUnitary2x2(mtrx)) {
+        throw "ApplyAntiControlledSingleBit gate matrix must be unitary.";
+    }
+
     if (controlLen == 0) {
         ApplySingleBit(mtrx, true, target);
     } else {

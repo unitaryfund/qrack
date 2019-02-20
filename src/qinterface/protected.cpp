@@ -25,7 +25,9 @@ unsigned char* qrack_alloc(size_t ucharCount)
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount), ALIGN_SIZE);
+    return (unsigned char*)_aligned_malloc(
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount),
+        ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
@@ -143,5 +145,42 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
 
 void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
+
+bool isUnitary2x2(const complex* mtrx)
+{
+    const real1 TOL = 1e-5;
+    complex conjTrans[4] = { conj(mtrx[0]), conj(mtrx[2]), conj(mtrx[1]), conj(mtrx[3]) };
+
+    complex testMtrx[4];
+
+    mul2x2(conjTrans, (complex*)mtrx, testMtrx);
+
+    if (!((real(testMtrx[0]) > (ONE_R1 - TOL)) && (real(testMtrx[0]) < (ONE_R1 + TOL)))) {
+        return false;
+    }
+    if (!((imag(testMtrx[0]) > (ZERO_R1 - TOL)) && (imag(testMtrx[0]) < (ZERO_R1 + TOL)))) {
+        return false;
+    }
+    if (!((real(testMtrx[1]) > (ZERO_R1 - TOL)) && (real(testMtrx[1]) < (ZERO_R1 + TOL)))) {
+        return false;
+    }
+    if (!((imag(testMtrx[1]) > (ZERO_R1 - TOL)) && (imag(testMtrx[1]) < (ZERO_R1 + TOL)))) {
+        return false;
+    }
+    if (!((real(testMtrx[2]) > (ZERO_R1 - TOL)) && (real(testMtrx[2]) < (ZERO_R1 + TOL)))) {
+        return false;
+    }
+    if (!((imag(testMtrx[2]) > (ZERO_R1 - TOL)) && (imag(testMtrx[2]) < (ZERO_R1 + TOL)))) {
+        return false;
+    }
+    if (!((real(testMtrx[3]) > (ONE_R1 - TOL)) && (real(testMtrx[3]) < (ONE_R1 + TOL)))) {
+        return false;
+    }
+    if (!((imag(testMtrx[3]) > (ZERO_R1 - TOL)) && (imag(testMtrx[3]) < (ZERO_R1 + TOL)))) {
+        return false;
+    }
+
+    return true;
+}
 
 } // namespace Qrack
