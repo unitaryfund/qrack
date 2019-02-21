@@ -159,9 +159,6 @@ public:
     /** Generate a random real number between 0 and 1 */
     virtual real1 Rand() { return rand_distribution(*rand_generator); }
 
-    virtual void SetDoNormalize(bool doN) { doNormalize = doN; }
-    virtual bool GetDoNormalize() { return doNormalize; }
-
     /** Set an arbitrary pure quantum state representation
      *
      * \warning PSEUDO-QUANTUM
