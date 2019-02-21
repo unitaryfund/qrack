@@ -41,6 +41,7 @@ if (ENABLE_OPENCL)
     target_link_libraries (grovers ${OpenCL_LIBRARIES})
     target_link_libraries (grovers_lookup ${OpenCL_LIBRARIES})
     target_link_libraries (ordered_list_search ${OpenCL_LIBRARIES})
+    target_link_libraries (quantum_perceptron ${OpenCL_LIBRARIES})
 
 
     # Build the OpenCL command files
