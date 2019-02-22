@@ -89,7 +89,7 @@ public:
 
         for (bitCapInt perm = 0; perm < inputPower; perm++)
         {
-            angles[perm] += eta * M_PI_2;
+            angles[perm] += eta * M_PI;
 
             endProb = Predict(expected);
             if (endProb > (ONE_R1 - tolerance)) {
@@ -99,7 +99,7 @@ public:
             if (endProb > startProb) {
                 startProb = endProb;
             } else {
-                angles[perm] -= 2 * eta * M_PI_2;
+                angles[perm] -= 2 * eta * M_PI;
 
                 endProb = Predict(expected);
                 if (endProb > (ONE_R1 - tolerance)) {
@@ -109,7 +109,7 @@ public:
                 if (endProb > startProb) {
                     startProb = endProb;
                 } else {
-                    angles[perm] += eta * M_PI_2;
+                    angles[perm] += eta * M_PI;
                 }
             }
         }

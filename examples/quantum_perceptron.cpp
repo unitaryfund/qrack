@@ -22,7 +22,7 @@ int main()
 {
     const bitLenInt ControlCount = 4;
     const bitCapInt ControlPower = 1U << ControlCount;
-    const real1 eta = 0.5;
+    const real1 eta = 1.0;
 
 #if ENABLE_OPENCL
     // OpenCL type, if available.
@@ -56,4 +56,29 @@ int main()
         qReg->SetPermutation(perm);
         std::cout << "Permutation: " << (int)perm << ", Probability: " << qPerceptron->Predict() << std::endl;
     }
+
+
+    // Now, we prepare a superposition of all available powers of 2, to predict.
+    bitLenInt* powersOf2 = new bitLenInt[ControlCount];
+    for (bitLenInt i = 0; i < ControlCount; i++) {
+        powersOf2[i] = 1U << i;
+    }
+
+#if ENABLE_OPENCL
+    // OpenCL type, if available.
+    QInterfacePtr qReg2 =
+        CreateQuantumInterface(QINTERFACE_OPENCL, ControlCount, 0, nullptr, complex(ONE_R1, ZERO_R1), true, false);
+#else
+    // Non-OpenCL type, if OpenCL is not available.
+    QInterfacePtr qReg2 =
+        CreateQuantumInterface(QINTERFACE_CPU, ControlCount, 0, nullptr, complex(ONE_R1, ZERO_R1), true, false);
+#endif
+    qReg->Compose(qReg2);
+    qReg->SetPermutation(0);
+    qReg->H(ControlCount + 1, ControlCount);
+    qReg->IndexedLDA(ControlCount + 1, ControlCount, 0, ControlCount, powersOf2);
+    qReg->H(ControlCount + 1, ControlCount);
+    qReg->Dispose(ControlCount + 1, ControlCount);
+
+    std::cout << "(Superposition of all powers of 2) Probability: " << qPerceptron->Predict() << std::endl;
 }
