@@ -22,16 +22,17 @@ int main()
 {
     const bitLenInt ControlCount = 4;
     const bitCapInt ControlPower = 1U << ControlCount;
+    const bitLenInt ControlLog = 2;
     const real1 eta = 1.0;
 
 #if ENABLE_OPENCL
     // OpenCL type, if available.
     QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_OPENCL, ControlCount + 1, 0, nullptr, complex(ONE_R1, ZERO_R1), true, false);
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPENCL, ControlCount + 1, 0);
 #else
     // Non-OpenCL type, if OpenCL is not available.
     QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_CPU, ControlCount + 1, 0, nullptr, complex(ONE_R1, ZERO_R1), true, false);
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, ControlCount + 1, 0);
 #endif
 
     bitLenInt inputIndices[ControlCount];
@@ -67,18 +68,19 @@ int main()
 #if ENABLE_OPENCL
     // OpenCL type, if available.
     QInterfacePtr qReg2 =
-        CreateQuantumInterface(QINTERFACE_OPENCL, ControlCount, 0, nullptr, complex(ONE_R1, ZERO_R1), true, false);
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPENCL, ControlLog, 0);
 #else
     // Non-OpenCL type, if OpenCL is not available.
     QInterfacePtr qReg2 =
-        CreateQuantumInterface(QINTERFACE_CPU, ControlCount, 0, nullptr, complex(ONE_R1, ZERO_R1), true, false);
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, ControlLog, 0);
 #endif
+
     qReg->Compose(qReg2);
     qReg->SetPermutation(0);
-    qReg->H(ControlCount + 1, ControlCount);
-    qReg->IndexedLDA(ControlCount + 1, ControlCount, 0, ControlCount, powersOf2);
-    qReg->H(ControlCount + 1, ControlCount);
-    qReg->Dispose(ControlCount + 1, ControlCount);
+    qReg->H(ControlCount + 1, ControlLog);
+    qReg->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
+    qReg->H(ControlCount + 1, ControlLog);
+    qReg->Dispose(ControlCount + 1, ControlLog);
 
     std::cout << "(Superposition of all powers of 2) Probability: " << qPerceptron->Predict() << std::endl;
 }
