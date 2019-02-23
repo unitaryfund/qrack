@@ -331,11 +331,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     size_t nrmVecAlignSize =
         ((sizeof(real1) * nrmGroupCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
 
-	if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
+    if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = NULL;
         FreeAligned(nrmArray);
         nrmArray = NULL;
-	}
+    }
 
     if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
 #if defined(__APPLE__)
@@ -730,7 +730,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->LockSync(CL_MAP_READ);
         std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
         toCopy->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+        otherStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
     }
 
     runningNorm = ONE_R1;
@@ -904,7 +905,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateBuffer = destination->stateBuffer;
         } else {
             otherStateVec = AllocStateVec(destination->maxQPower, true);
-            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * destination->maxQPower, otherStateVec);
+            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+                sizeof(complex) * destination->maxQPower, otherStateVec);
 
             DISPATCH_FILL(
                 waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPower, complex(ZERO_R1, ZERO_R1));
@@ -1900,7 +1902,8 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
         toCompare->LockSync(CL_MAP_READ);
         std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPower, otherStateVec);
         toCompare->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPower, otherStateVec);
+        otherStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPower, otherStateVec);
     }
 
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
@@ -1923,12 +1926,12 @@ QInterfacePtr QEngineOCL::Clone()
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
         qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, deviceID);
 
-	copyPtr->clFinish();
+    copyPtr->clFinish();
 
-	copyPtr->runningNorm = runningNorm;
-	//WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+    copyPtr->runningNorm = runningNorm;
+    // WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
 
-	LockSync(CL_MAP_READ);
+    LockSync(CL_MAP_READ);
     copyPtr->LockSync(CL_MAP_WRITE);
     std::copy(stateVec, stateVec + maxQPower, copyPtr->stateVec);
     UnlockSync();
@@ -2015,7 +2018,8 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
         &toRet, ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (complex*)_aligned_malloc(((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount, ALIGN_SIZE);
+    return (complex*)_aligned_malloc(
+        ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount, ALIGN_SIZE);
 #else
     return (complex*)aligned_alloc(
         ALIGN_SIZE, ((sizeof(complex) * elemCount) < ALIGN_SIZE) ? ALIGN_SIZE : sizeof(complex) * elemCount);

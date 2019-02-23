@@ -45,7 +45,7 @@ int main()
     // Train the network to recognize powers of 2
     bool isPowerOf2;
     bitCapInt perm;
-    std::cout << "Learning..." << std::endl;
+    std::cout << "Learning (to recognize powers of 2)..." << std::endl;
     for (perm = 0; perm < ControlPower; perm++) {
         std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
         qReg->SetPermutation(perm);
@@ -57,7 +57,6 @@ int main()
         qReg->SetPermutation(perm);
         std::cout << "Permutation: " << (int)perm << ", Probability: " << qPerceptron->Predict() << std::endl;
     }
-
 
     // Now, we prepare a superposition of all available powers of 2, to predict.
     bitLenInt* powersOf2 = new bitLenInt[ControlCount];
@@ -71,12 +70,11 @@ int main()
         CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPENCL, ControlLog, 0);
 #else
     // Non-OpenCL type, if OpenCL is not available.
-    QInterfacePtr qReg2 =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, ControlLog, 0);
+    QInterfacePtr qReg2 = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, ControlLog, 0);
 #endif
 
     qReg->Compose(qReg2);
-    qReg->SetPermutation(0);
+    qReg->SetPermutation(1U << (ControlCount + 1));
     qReg->H(ControlCount + 1, ControlLog);
     qReg->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
     qReg->H(ControlCount + 1, ControlLog);

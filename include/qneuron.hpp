@@ -10,7 +10,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-
 #pragma once
 
 #include "qinterface.hpp"
@@ -29,12 +28,15 @@ private:
     bitLenInt outputIndex;
     real1* angles;
 
-    const real1 tolerance = 1e-12;
+    const real1 tolerance = 1e-7;
 
 public:
     /** "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition
-      *
-      * This is a simple "quantum neuron" or "quantum perceptron" class, for use of the Qrack library for machine learning. See https://arxiv.org/abs/1711.11240 for the basis of this class' theoretical concept. (That paper does not use the term "uniformly controlled rotation gate," but "conditioning on all controls" is computationally the same.) */
+     *
+     * This is a simple "quantum neuron" or "quantum perceptron" class, for use of the Qrack library for machine
+     * learning. See https://arxiv.org/abs/1711.11240 for the basis of this class' theoretical concept. (That paper does
+     * not use the term "uniformly controlled rotation gate," but "conditioning on all controls" is computationally the
+     * same.) */
     QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx)
         : inputCount(inputCnt)
         , inputPower(1U << inputCnt)
@@ -44,7 +46,7 @@ public:
 
         inputIndices = new bitLenInt[inputCount];
         std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
-        
+
         angles = new real1[inputPower];
         std::fill(angles, angles + inputPower, ZERO_R1);
     }
@@ -62,7 +64,8 @@ public:
         delete[] angles;
     }
 
-    /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary categories, if false. */
+    /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
+     * categories, if false. */
     real1 Predict(bool expected = true)
     {
         qReg->SetBit(outputIndex, false);
@@ -75,9 +78,10 @@ public:
     }
 
     /** Perform one learning iteration
-      *
-      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
-      */ 
+     *
+     * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
+     * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     */
     void Learn(bool expected, real1 eta)
     {
         real1 startProb, endProb;
@@ -87,8 +91,7 @@ public:
             return;
         }
 
-        for (bitCapInt perm = 0; perm < inputPower; perm++)
-        {
+        for (bitCapInt perm = 0; perm < inputPower; perm++) {
             angles[perm] += eta * M_PI;
 
             endProb = Predict(expected);
