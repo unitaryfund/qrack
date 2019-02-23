@@ -17,6 +17,7 @@
 
 #include "catch.hpp"
 #include "qfactory.hpp"
+#include "qneuron.hpp"
 
 #include "tests.hpp"
 
@@ -54,7 +55,9 @@ unsigned char* cl_alloc(size_t ucharCount)
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount), ALIGN_SIZE);
+    return (unsigned char*)_aligned_malloc(
+        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount),
+        ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
@@ -2805,5 +2808,48 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
         b = qftReg2->GetAmplitude(i);
         REQUIRE_FLOAT(real(a), real(b));
         REQUIRE_FLOAT(imag(a), imag(b));
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
+{
+    const bitLenInt InputCount = 4;
+    const bitLenInt OutputCount = 4;
+    const bitCapInt InputPower = 1U << InputCount;
+    const bitCapInt OutputPower = 1U << OutputCount;
+    const real1 eta = 1.0;
+
+    bitLenInt inputIndices[InputCount];
+    for (bitLenInt i = 0; i < InputCount; i++) {
+        inputIndices[i] = i;
+    }
+
+    std::vector<QNeuronPtr> outputLayer;
+    for (bitLenInt i = 0; i < OutputCount; i++) {
+        outputLayer.push_back(std::make_shared<QNeuron>(qftReg, inputIndices, InputCount, InputCount + i));
+    }
+
+    // Train the network to associate powers of 2 with their log2()
+    bitCapInt perm;
+    bitCapInt comp;
+    bool bit;
+    for (perm = 0; perm < InputPower; perm++) {
+        comp = (~perm) + 1U;
+        for (bitLenInt i = 0; i < OutputCount; i++) {
+            qftReg->SetPermutation(perm);
+            bit = comp & (1U << i);
+            outputLayer[i]->Learn(bit, eta);
+        }
+    }
+
+    bitCapInt test;
+    for (perm = 0; perm < InputPower; perm++) {
+        qftReg->SetPermutation(perm);
+        for (bitLenInt i = 0; i < OutputCount; i++) {
+            outputLayer[i]->Predict();
+        }
+        comp = qftReg->MReg(InputCount, OutputCount);
+        test = ((~perm) + 1U) & (OutputPower - 1);
+        REQUIRE(comp == test);
     }
 }
