@@ -1929,7 +1929,6 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->clFinish();
 
     copyPtr->runningNorm = runningNorm;
-    // WAIT_COPY(*stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
 
     LockSync(CL_MAP_READ);
     copyPtr->LockSync(CL_MAP_WRITE);

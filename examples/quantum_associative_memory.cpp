@@ -27,15 +27,10 @@ int main()
     // const bitCapInt OutputPower = 1U << OutputCount;
     const real1 eta = 1.0;
 
-#if ENABLE_OPENCL
-    // OpenCL type, if available.
+    // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
+    // QEngineCPU.
     QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPENCL, InputCount + OutputCount, 0);
-#else
-    // Non-OpenCL type, if OpenCL is not available.
-    QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, InputCount + OutputCount, 0);
-#endif
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, InputCount + OutputCount, 0);
 
     bitLenInt inputIndices[InputCount];
     for (bitLenInt i = 0; i < InputCount; i++) {
@@ -62,6 +57,7 @@ int main()
         }
     }
 
+    std::cout << "Should associate each input with its two's complement as output..." << std::endl;
     for (perm = 0; perm < InputPower; perm++) {
         qReg->SetPermutation(perm);
         for (bitLenInt i = 0; i < OutputCount; i++) {
