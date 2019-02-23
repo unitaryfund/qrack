@@ -34,7 +34,7 @@ int main()
 #else
     // Non-OpenCL type, if OpenCL is not available.
     QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, InputCount + OutputCount);
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU, InputCount + OutputCount, 0);
 #endif
 
     bitLenInt inputIndices[InputCount];
