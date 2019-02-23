@@ -28,7 +28,7 @@ private:
     bitLenInt outputIndex;
     real1* angles;
 
-    const real1 tolerance = 1e-7;
+    const real1 tolerance = 1e-6;
 
 public:
     /** "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition
