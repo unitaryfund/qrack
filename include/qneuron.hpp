@@ -27,8 +27,7 @@ private:
     bitCapInt inputPower;
     bitLenInt outputIndex;
     real1* angles;
-
-    const real1 tolerance = 1e-6;
+    real1 tolerance;
 
 public:
     /** "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition
@@ -37,10 +36,11 @@ public:
      * learning. See https://arxiv.org/abs/1711.11240 for the basis of this class' theoretical concept. (That paper does
      * not use the term "uniformly controlled rotation gate," but "conditioning on all controls" is computationally the
      * same.) */
-    QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx)
+    QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
         : inputCount(inputCnt)
         , inputPower(1U << inputCnt)
         , outputIndex(outputIndx)
+        , tolerance(tol)
     {
         qReg = reg;
 
@@ -85,6 +85,7 @@ public:
     void Learn(bool expected, real1 eta)
     {
         real1 startProb, endProb;
+        real1 origAngle;
 
         startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
@@ -92,6 +93,7 @@ public:
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
+            origAngle = angles[perm];
             angles[perm] += eta * M_PI;
 
             endProb = Predict(expected);
@@ -112,7 +114,7 @@ public:
                 if (endProb > startProb) {
                     startProb = endProb;
                 } else {
-                    angles[perm] += eta * M_PI;
+                    angles[perm] = origAngle;
                 }
             }
         }
