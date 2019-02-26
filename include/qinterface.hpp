@@ -66,12 +66,6 @@ enum QInterfaceEngine {
      */
     QINTERFACE_QUNIT,
 
-    /**
-     * Create a QUnitMulti, which is an OpenCL multiprocessor variant of QUnit. Separable subsystems of a QUnitMulti are
-     * load-balanced between available devices.
-     */
-    QINTERFACE_QUNITMULTI,
-
     QINTERFACE_FIRST = QINTERFACE_CPU,
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL = QINTERFACE_OPENCL,
