@@ -985,7 +985,7 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
 
-    return oneChance;
+    return ClampProb(oneChance);
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
@@ -1091,7 +1091,7 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
 
-    return oneChance;
+    return ClampProb(oneChance);
 }
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)

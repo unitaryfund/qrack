@@ -117,6 +117,16 @@ protected:
         return pow;
     }
 
+    inline real1 ClampProb(real1 toClamp) {
+        if (toClamp < ZERO_R1) {
+            toClamp = ZERO_R1;
+        }
+        if (toClamp > ONE_R1) {
+            toClamp = ONE_R1;
+        }
+        return toClamp;
+    }
+
     template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
 
     void FreeAligned(void* toFree)

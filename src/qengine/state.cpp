@@ -622,7 +622,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 
     delete[] oneChanceBuff;
 
-    return oneChance;
+    return ClampProb(oneChance);
 }
 
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
@@ -657,7 +657,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
     delete[] probs;
 
-    return prob;
+    return ClampProb(prob);
 }
 
 // Returns probability of permutation of the mask
@@ -695,7 +695,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     delete[] probs;
 
-    return prob;
+    return ClampProb(prob);
 }
 
 bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)

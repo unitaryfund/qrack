@@ -564,7 +564,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    return result;
+    return ClampProb(result);
 }
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
