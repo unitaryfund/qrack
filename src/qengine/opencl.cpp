@@ -859,35 +859,14 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         partStateAngle[l] += angleOffset;
     }
 
-#if ENABLE_VC4CL
-        // The VC4CL implementation of sin() that the next kernel relies on appears to be bugged.
-        // (See https://github.com/doe300/VC4CL/issues/54 )
-        // Until this is fixed, we have to shunt the problem with a software implementation.
-
-        // Instead of unmapping to work on OpenCL device side, we keep the probability and phase buffers mapped. Then,
-        // we LockSync() the source and destination state vectors, and we carry out the composition of amplitudes from
-        // probabilities and phases on the host side, instead of in OpenCL. We unmap and discard the probability and
-        // phase buffers/arrays, at the end.
-#else
     device_context->wait_events->resize(4);
     queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &((*(device_context->wait_events.get()))[0]));
     queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &((*(device_context->wait_events.get()))[1]));
     queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &((*(device_context->wait_events.get()))[2]));
     queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &((*(device_context->wait_events.get()))[3]));
-#endif
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
-#if ENABLE_VC4CL
-        // See https://github.com/doe300/VC4CL/issues/54
-        real1 root;
-        destination->LockSync(CL_MAP_WRITE);
-        for (i = 0; i < destination->maxQPower; i++) {
-            root = std::sqrt(partStateProb[i]);
-            destination->stateVec[i] = complex(root * cos(partStateAngle[i]), root * sin(partStateAngle[i]));
-        }
-        destination->UnlockSync();
-#else
         destination->Finish();
 
         bciArgs[0] = partPower;
@@ -940,27 +919,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             FreeAligned(destination->stateVec);
             destination->stateVec = NULL;
         }
-#endif
     }
 
-#if ENABLE_VC4CL
-    // See https://github.com/doe300/VC4CL/issues/54
-    real1 root;
-    LockSync(CL_MAP_WRITE);
-    for (i = 0; i < maxQPower; i++) {
-        root = std::sqrt(remainderStateProb[i]);
-        stateVec[i] = complex(root * cos(remainderStateAngle[i]), root * sin(remainderStateAngle[i]));
-    }
-    UnlockSync();
-
-    device_context->wait_events->resize(4);
-    queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &((*(device_context->wait_events.get()))[0]));
-    queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &((*(device_context->wait_events.get()))[1]));
-    queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &((*(device_context->wait_events.get()))[2]));
-    queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &((*(device_context->wait_events.get()))[3]));
-
-    clFinish();
-#else
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPower;
     EventVecPtr waitVec3 = ResetWaitEvents();
@@ -986,7 +946,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec, nStateBuffer);
-#endif
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
@@ -1026,7 +985,7 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
 
-    return oneChance;
+    return ClampProb(oneChance);
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
@@ -1132,7 +1091,7 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     if (oneChance > ONE_R1)
         oneChance = ONE_R1;
 
-    return oneChance;
+    return ClampProb(oneChance);
 }
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)

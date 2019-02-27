@@ -77,7 +77,6 @@ include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 
-message ("VC4CL (for Raspberry Pi) support is: ${ENABLE_VC4CL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
@@ -137,7 +136,6 @@ install (FILES
     include/qengine_cpu.hpp
     include/qfusion.hpp
     include/qunit.hpp
-    include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
