@@ -66,12 +66,6 @@ enum QInterfaceEngine {
      */
     QINTERFACE_QUNIT,
 
-    /**
-     * Create a QUnitMulti, which is an OpenCL multiprocessor variant of QUnit. Separable subsystems of a QUnitMulti are
-     * load-balanced between available devices.
-     */
-    QINTERFACE_QUNITMULTI,
-
     QINTERFACE_FIRST = QINTERFACE_CPU,
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL = QINTERFACE_OPENCL,
@@ -115,6 +109,16 @@ protected:
             pow++;
         }
         return pow;
+    }
+
+    inline real1 ClampProb(real1 toClamp) {
+        if (toClamp < ZERO_R1) {
+            toClamp = ZERO_R1;
+        }
+        if (toClamp > ONE_R1) {
+            toClamp = ONE_R1;
+        }
+        return toClamp;
     }
 
     template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
