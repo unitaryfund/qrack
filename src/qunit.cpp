@@ -127,7 +127,8 @@ void QUnit::GetQuantumState(complex* outputState)
 {
     QUnit qUnitCopy(engine, subengine, 1, 0);
     qUnitCopy.CopyState((QUnit*)this);
-    qUnitCopy.EntangleAll()->GetQuantumState(outputState);
+    qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
+    qUnitCopy.shards[0].unit->GetQuantumState(outputState);
 }
 
 complex QUnit::GetAmplitude(bitCapInt perm)

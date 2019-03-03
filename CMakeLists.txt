@@ -119,7 +119,6 @@ set_target_properties (qrack PROPERTIES
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h
     include/common/qrack_types.hpp
-    include/common/complex16simd.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
