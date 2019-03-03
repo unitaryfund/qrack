@@ -28,8 +28,10 @@
 
 #include "config.h"
 
-#if ENABLE_COMPLEX8
 #include <complex>
+#define polar(A, B) std::polar(A, B)
+
+#if ENABLE_COMPLEX8
 namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
@@ -46,11 +48,10 @@ typedef float real1;
 // square errors of probability is generally less than 10^-11, for float accuracy. (A small number of trials return many
 // orders larger error, but these cases should not be separated, as the code stands.)
 #define approxcompare_error 1e-8f
-#define polar(A, B) std::polar(A, B)
 #else
-#include "complex16simd.hpp"
+//#include "complex16simd.hpp"
 namespace Qrack {
-typedef Complex16Simd complex;
+typedef std::complex<double> complex;
 typedef double real1;
 } // namespace Qrack
 #define ZERO_R1 0.0
