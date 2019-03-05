@@ -89,7 +89,7 @@ TEST_CASE("test_complex")
     test = ((real1)abs(cmplx1) > (real1)(sqrt(2.0) - EPSILON)) && ((real1)abs(cmplx1) < (real1)(sqrt(2.0) + EPSILON));
     REQUIRE(test);
 
-    cmplx3 = polar(1.0, M_PI / 2.0);
+    cmplx3 = std::polar(1.0, M_PI / 2.0);
     test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
     test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));

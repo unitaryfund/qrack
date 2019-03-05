@@ -29,7 +29,6 @@
 #include "config.h"
 
 #include <complex>
-#define polar(A, B) std::polar(A, B)
 
 #if ENABLE_COMPLEX8
 namespace Qrack {
