@@ -329,7 +329,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     size_t nrmVecAlignSize =
-        ((sizeof(real1) * nrmGroupCount) < QRACK_STATE_VEC_ALIGN_SIZE) ? QRACK_STATE_VEC_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+        ((sizeof(real1) * nrmGroupCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
 
     if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = NULL;
@@ -339,11 +339,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
 #if defined(__APPLE__)
-        posix_memalign((void**)&nrmArray, QRACK_STATE_VEC_ALIGN_SIZE, nrmVecAlignSize);
+        posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_STATE_VEC_ALIGN_SIZE);
+        nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_ALIGN_SIZE);
 #else
-        nrmArray = (real1*)aligned_alloc(QRACK_STATE_VEC_ALIGN_SIZE, nrmVecAlignSize);
+        nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #endif
     }
 
@@ -1969,18 +1969,18 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
         return NULL;
     }
 
-        // elemCount is always a power of two, but might be smaller than QRACK_STATE_VEC_ALIGN_SIZE
+        // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
 #if defined(__APPLE__)
     void* toRet;
     posix_memalign(
-        &toRet, QRACK_STATE_VEC_ALIGN_SIZE, ((sizeof(complex) * elemCount) < QRACK_STATE_VEC_ALIGN_SIZE) ? QRACK_STATE_VEC_ALIGN_SIZE : sizeof(complex) * elemCount);
+        &toRet, QRACK_ALIGN_SIZE, ((sizeof(complex) * elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : sizeof(complex) * elemCount);
     return (complex*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
     return (complex*)_aligned_malloc(
-        ((sizeof(complex) * elemCount) < QRACK_STATE_VEC_ALIGN_SIZE) ? QRACK_STATE_VEC_ALIGN_SIZE : sizeof(complex) * elemCount, QRACK_STATE_VEC_ALIGN_SIZE);
+        ((sizeof(complex) * elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : sizeof(complex) * elemCount, QRACK_ALIGN_SIZE);
 #else
     return (complex*)aligned_alloc(
-        QRACK_STATE_VEC_ALIGN_SIZE, ((sizeof(complex) * elemCount) < QRACK_STATE_VEC_ALIGN_SIZE) ? QRACK_STATE_VEC_ALIGN_SIZE : sizeof(complex) * elemCount);
+        QRACK_ALIGN_SIZE, ((sizeof(complex) * elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : sizeof(complex) * elemCount);
 #endif
 }
 
