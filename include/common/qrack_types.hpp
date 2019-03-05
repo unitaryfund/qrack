@@ -24,7 +24,7 @@
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
-#define ALIGN_SIZE 64
+#define QRACK_STATE_VEC_ALIGN_SIZE 64
 
 #include "config.h"
 
