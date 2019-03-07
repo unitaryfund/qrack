@@ -25,6 +25,7 @@ private:
     bitLenInt* inputIndices;
     bitLenInt inputCount;
     bitCapInt inputPower;
+    bitCapInt inputMask;
     bitLenInt outputIndex;
     real1* angles;
     real1 tolerance;
@@ -46,6 +47,11 @@ public:
 
         inputIndices = new bitLenInt[inputCount];
         std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
+
+        inputMask = 0;
+        for (bitLenInt i = 0; i < inputCount; i++) {
+            inputMask |= 1U << inputIndices[i];
+        }
 
         angles = new real1[inputPower];
         std::fill(angles, angles + inputPower, ZERO_R1);
@@ -135,7 +141,7 @@ public:
             return;
         }
 
-        bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount());
+        bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
 
         origAngle = angles[perm];
         angles[perm] += eta * M_PI;
