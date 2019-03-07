@@ -55,7 +55,7 @@ void QInterface::UniformlyControlledRY(
     complex* pauliRYs = new complex[4 * permCount];
 
     real1 cosine, sine;
-    for (bitLenInt i = 0; i < permCount; i++) {
+    for (bitCapInt i = 0; i < permCount; i++) {
         cosine = cos(angles[i] / 2);
         sine = sin(angles[i] / 2);
 
@@ -89,7 +89,7 @@ void QInterface::UniformlyControlledRZ(
     complex* pauliRZs = new complex[4 * permCount];
 
     real1 cosine, sine;
-    for (bitLenInt i = 0; i < permCount; i++) {
+    for (bitCapInt i = 0; i < permCount; i++) {
         cosine = cos(angles[i] / 2);
         sine = sin(angles[i] / 2);
 
