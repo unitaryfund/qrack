@@ -77,7 +77,7 @@ public:
         return prob;
     }
 
-    /** Perform one learning iteration
+    /** Perform one learning iteration, training all parameters
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
@@ -116,6 +116,49 @@ public:
                 } else {
                     angles[perm] = origAngle;
                 }
+            }
+        }
+    }
+
+    /** Perform one learning iteration, measuring the entire QInterface and training the resulting permutation
+     *
+     * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
+     * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     */
+    void LearnPermutation(bool expected, real1 eta)
+    {
+        real1 startProb, endProb;
+        real1 origAngle;
+
+        startProb = Predict(expected);
+        if (startProb > (ONE_R1 - tolerance)) {
+            return;
+        }
+
+        bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount());
+
+        origAngle = angles[perm];
+        angles[perm] += eta * M_PI;
+
+        endProb = Predict(expected);
+        if (endProb > (ONE_R1 - tolerance)) {
+            return;
+        }
+
+        if (endProb > startProb) {
+            startProb = endProb;
+        } else {
+            angles[perm] -= 2 * eta * M_PI;
+
+            endProb = Predict(expected);
+            if (endProb > (ONE_R1 - tolerance)) {
+                return;
+            }
+
+            if (endProb > startProb) {
+                startProb = endProb;
+            } else {
+                angles[perm] = origAngle;
             }
         }
     }
