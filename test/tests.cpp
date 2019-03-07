@@ -2838,7 +2838,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qftReg->SetPermutation(perm);
             bit = comp & (1U << i);
-            outputLayer[i]->LearnPermutation(bit, eta);
+            outputLayer[i]->Learn(bit, eta);
         }
     }
 
