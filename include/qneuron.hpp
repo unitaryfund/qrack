@@ -25,6 +25,7 @@ private:
     bitLenInt* inputIndices;
     bitLenInt inputCount;
     bitCapInt inputPower;
+    bitCapInt inputMask;
     bitLenInt outputIndex;
     real1* angles;
     real1 tolerance;
@@ -46,6 +47,11 @@ public:
 
         inputIndices = new bitLenInt[inputCount];
         std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
+
+        inputMask = 0;
+        for (bitLenInt i = 0; i < inputCount; i++) {
+            inputMask |= 1U << inputIndices[i];
+        }
 
         angles = new real1[inputPower];
         std::fill(angles, angles + inputPower, ZERO_R1);
@@ -77,47 +83,72 @@ public:
         return prob;
     }
 
-    /** Perform one learning iteration
+    /** Perform one learning iteration, training all parameters
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
      */
     void Learn(bool expected, real1 eta)
     {
-        real1 startProb, endProb;
-        real1 origAngle;
-
-        startProb = Predict(expected);
+        real1 startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            origAngle = angles[perm];
-            angles[perm] += eta * M_PI;
+            if (0 > LearnInternal(expected, eta, perm, startProb)) {
+                break;
+            }
+        }
+    }
+
+    /** Perform one learning iteration, measuring the entire QInterface and training the resulting permutation
+     *
+     * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
+     * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     */
+    void LearnPermutation(bool expected, real1 eta)
+    {
+        real1 startProb = Predict(expected);
+        if (startProb > (ONE_R1 - tolerance)) {
+            return;
+        }
+
+        bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
+
+        LearnInternal(expected, eta, perm, startProb);
+    }
+protected:
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb) {
+        real1 endProb;
+        real1 origAngle;
+
+        origAngle = angles[perm];
+        angles[perm] += eta * M_PI;
+
+        endProb = Predict(expected);
+        if (endProb > (ONE_R1 - tolerance)) {
+            return -ONE_R1;
+        }
+
+        if (endProb > startProb) {
+            startProb = endProb;
+        } else {
+            angles[perm] -= 2 * eta * M_PI;
 
             endProb = Predict(expected);
             if (endProb > (ONE_R1 - tolerance)) {
-                return;
+                return -ONE_R1;
             }
 
             if (endProb > startProb) {
                 startProb = endProb;
             } else {
-                angles[perm] -= 2 * eta * M_PI;
-
-                endProb = Predict(expected);
-                if (endProb > (ONE_R1 - tolerance)) {
-                    return;
-                }
-
-                if (endProb > startProb) {
-                    startProb = endProb;
-                } else {
-                    angles[perm] = origAngle;
-                }
+                angles[perm] = origAngle;
             }
         }
+
+        return startProb;
     }
 };
 } // namespace Qrack
