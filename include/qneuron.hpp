@@ -90,38 +90,14 @@ public:
      */
     void Learn(bool expected, real1 eta)
     {
-        real1 startProb, endProb;
-        real1 origAngle;
-
-        startProb = Predict(expected);
+        real1 startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            origAngle = angles[perm];
-            angles[perm] += eta * M_PI;
-
-            endProb = Predict(expected);
-            if (endProb > (ONE_R1 - tolerance)) {
-                return;
-            }
-
-            if (endProb > startProb) {
-                startProb = endProb;
-            } else {
-                angles[perm] -= 2 * eta * M_PI;
-
-                endProb = Predict(expected);
-                if (endProb > (ONE_R1 - tolerance)) {
-                    return;
-                }
-
-                if (endProb > startProb) {
-                    startProb = endProb;
-                } else {
-                    angles[perm] = origAngle;
-                }
+            if (0 > LearnInternal(expected, eta, perm, startProb)) {
+                break;
             }
         }
     }
@@ -133,22 +109,26 @@ public:
      */
     void LearnPermutation(bool expected, real1 eta)
     {
-        real1 startProb, endProb;
-        real1 origAngle;
-
-        startProb = Predict(expected);
+        real1 startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
         bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
 
+        LearnInternal(expected, eta, perm, startProb);
+    }
+protected:
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb) {
+        real1 endProb;
+        real1 origAngle;
+
         origAngle = angles[perm];
         angles[perm] += eta * M_PI;
 
         endProb = Predict(expected);
         if (endProb > (ONE_R1 - tolerance)) {
-            return;
+            return -ONE_R1;
         }
 
         if (endProb > startProb) {
@@ -158,7 +138,7 @@ public:
 
             endProb = Predict(expected);
             if (endProb > (ONE_R1 - tolerance)) {
-                return;
+                return -ONE_R1;
             }
 
             if (endProb > startProb) {
@@ -167,6 +147,8 @@ public:
                 angles[perm] = origAngle;
             }
         }
+
+        return startProb;
     }
 };
 } // namespace Qrack
