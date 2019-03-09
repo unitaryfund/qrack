@@ -111,7 +111,8 @@ protected:
         return pow;
     }
 
-    inline real1 ClampProb(real1 toClamp) {
+    inline real1 ClampProb(real1 toClamp)
+    {
         if (toClamp < ZERO_R1) {
             toClamp = ZERO_R1;
         }

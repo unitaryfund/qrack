@@ -53,8 +53,7 @@ public:
             inputMask |= 1U << inputIndices[i];
         }
 
-        angles = new real1[inputPower];
-        std::fill(angles, angles + inputPower, ZERO_R1);
+        angles = new real1[inputPower]();
     }
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
@@ -85,6 +84,7 @@ public:
     real1 Predict(bool expected = true)
     {
         qReg->SetBit(outputIndex, false);
+        qReg->RY(M_PI / 2, outputIndex);
         qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
         real1 prob = qReg->Prob(outputIndex);
         if (!expected) {

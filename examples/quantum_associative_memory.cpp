@@ -25,7 +25,7 @@ int main()
     const bitLenInt OutputCount = 4;
     const bitCapInt InputPower = 1U << InputCount;
     // const bitCapInt OutputPower = 1U << OutputCount;
-    const real1 eta = 1.0;
+    const real1 eta = 0.5;
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
@@ -53,7 +53,7 @@ int main()
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qReg->SetPermutation(perm);
             bit = comp & (1U << i);
-            outputLayer[i]->Learn(bit, eta);
+            outputLayer[i]->LearnPermutation(bit, eta);
         }
     }
 
