@@ -23,7 +23,7 @@ int main()
     const bitLenInt ControlCount = 4;
     const bitCapInt ControlPower = 1U << ControlCount;
     const bitLenInt ControlLog = 2;
-    const real1 eta = 1.0;
+    const real1 eta = 0.5;
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
@@ -45,7 +45,7 @@ int main()
         std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
         qReg->SetPermutation(perm);
         isPowerOf2 = ((perm != 0) && ((perm & (perm - 1U)) == 0));
-        qPerceptron->Learn(isPowerOf2, eta);
+        qPerceptron->LearnPermutation(isPowerOf2, eta);
     }
 
     std::cout << "Should be close to 1 for powers of two, and close to 0 for all else..." << std::endl;

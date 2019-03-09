@@ -2817,7 +2817,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
     const bitLenInt OutputCount = 4;
     const bitCapInt InputPower = 1U << InputCount;
     const bitCapInt OutputPower = 1U << OutputCount;
-    const real1 eta = 1.0;
+    const real1 eta = 0.5;
+
+    qftReg->Dispose(0, qftReg->GetQubitCount() - (InputCount + OutputCount));
 
     bitLenInt inputIndices[InputCount];
     for (bitLenInt i = 0; i < InputCount; i++) {
@@ -2830,19 +2832,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
     }
 
     // Train the network to associate powers of 2 with their log2()
-    bitCapInt perm;
-    bitCapInt comp;
+    bitCapInt perm, comp, test;
     bool bit;
     for (perm = 0; perm < InputPower; perm++) {
         comp = (~perm) + 1U;
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qftReg->SetPermutation(perm);
             bit = comp & (1U << i);
-            outputLayer[i]->Learn(bit, eta);
+            outputLayer[i]->LearnPermutation(bit, eta);
         }
     }
 
-    bitCapInt test;
     for (perm = 0; perm < InputPower; perm++) {
         qftReg->SetPermutation(perm);
         for (bitLenInt i = 0; i < OutputCount; i++) {
@@ -2852,4 +2852,5 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
         test = ((~perm) + 1U) & (OutputPower - 1);
         REQUIRE(comp == test);
     }
+
 }

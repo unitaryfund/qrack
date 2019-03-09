@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     bool qunit = false;
     bool qunit_qfusion = false;
     bool cpu = false;
-    bool opencl_single = false; 
+    bool opencl_single = false;
 
     using namespace Catch::clara;
 
