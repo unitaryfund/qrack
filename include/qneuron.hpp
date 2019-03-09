@@ -70,14 +70,10 @@ public:
     }
 
     /** Set the angles of this QNeuron */
-    void SetAngles(real1* nAngles) {
-        std::copy(nAngles, nAngles + inputPower, angles);
-    }
+    void SetAngles(real1* nAngles) { std::copy(nAngles, nAngles + inputPower, angles); }
 
     /** Get the angles of this QNeuron */
-    void GetAngles(real1* oAngles) {
-        std::copy(angles, angles + inputPower, oAngles);
-    }
+    void GetAngles(real1* oAngles) { std::copy(angles, angles + inputPower, oAngles); }
 
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
      * categories, if false. */
@@ -128,8 +124,10 @@ public:
 
         LearnInternal(expected, eta, perm, startProb);
     }
+
 protected:
-    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb) {
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb)
+    {
         real1 endProb;
         real1 origAngle;
 
