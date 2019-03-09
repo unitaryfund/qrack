@@ -76,7 +76,7 @@ public:
     }
 
     /** Get the angles of this QNeuron */
-    void GetAngle(real1* oAngles) {
+    void GetAngles(real1* oAngles) {
         std::copy(angles, angles + inputPower, oAngles);
     }
 
