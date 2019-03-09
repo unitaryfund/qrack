@@ -70,6 +70,16 @@ public:
         delete[] angles;
     }
 
+    /** Set the angles of this QNeuron */
+    void SetAngles(real1* nAngles) {
+        std::copy(nAngles, nAngles + inputPower, angles);
+    }
+
+    /** Get the angles of this QNeuron */
+    void GetAngle(real1* oAngles) {
+        std::copy(angles, angles + inputPower, oAngles);
+    }
+
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
      * categories, if false. */
     real1 Predict(bool expected = true)
