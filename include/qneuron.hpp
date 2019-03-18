@@ -49,8 +49,10 @@ public:
     {
         qReg = reg;
 
-        inputIndices = new bitLenInt[inputCount];
-        std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
+        if (inputCount > 0) {
+            inputIndices = new bitLenInt[inputCount];
+            std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
+        }
 
         inputMask = 0;
         for (bitLenInt i = 0; i < inputCount; i++) {
@@ -86,9 +88,16 @@ public:
     {
         if (resetInit) {
             qReg->SetBit(outputIndex, false);
-            qReg->RY(M_PI / 2, outputIndex);
+            qReg->RY(M_PI, outputIndex);
         }
-        qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
+
+        if (inputCount == 0) {
+            // If there are no controls, this "neuron" is actually just a bias.
+            qReg->RY(M_PI + 2 * M_PI * angles[0], outputIndex);
+        } else {
+            // Otherwise, the action can always be represented as a uniformly controlled gate.
+            qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
+        }
         real1 prob = qReg->Prob(outputIndex);
         if (!expected) {
             prob = ONE_R1 - prob;
