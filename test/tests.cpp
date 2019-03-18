@@ -2852,5 +2852,4 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
         test = ((~perm) + 1U) & (OutputPower - 1);
         REQUIRE(comp == test);
     }
-
 }

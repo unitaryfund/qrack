@@ -38,7 +38,9 @@ public:
      * not use the term "uniformly controlled rotation gate," but "conditioning on all controls" is computationally the
      * same.)
      *
-     * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5 will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
+     * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The
+     * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
+     * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
     QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
         : inputCount(inputCnt)
         , inputPower(1U << inputCnt)
@@ -78,13 +80,14 @@ public:
     void GetAngles(real1* oAngles) { std::copy(angles, angles + inputPower, oAngles); }
 
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
-     * categories, if false. "resetInit," if true, resets the result qubit to 0 before proceeding to predict. */
+     * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
+     * proceeding to predict. */
     real1 Predict(bool expected = true, bool resetInit = true)
     {
         if (resetInit) {
             qReg->SetBit(outputIndex, false);
+            qReg->RY(M_PI / 2, outputIndex);
         }
-        qReg->RY(M_PI / 2, outputIndex);
         qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
         real1 prob = qReg->Prob(outputIndex);
         if (!expected) {
