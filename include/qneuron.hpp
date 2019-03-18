@@ -93,7 +93,7 @@ public:
 
         if (inputCount == 0) {
             // If there are no controls, this "neuron" is actually just a bias.
-            qReg->RY(M_PI + 2 * M_PI * angles[0], outputIndex);
+            qReg->RY(angles[0], outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
