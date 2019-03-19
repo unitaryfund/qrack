@@ -64,14 +64,16 @@ public:
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
     QNeuron(const QNeuron& toCopy)
-        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex)
+        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex, toCopy.tolerance)
     {
-        std::copy(toCopy.angles, toCopy.angles + inputPower, angles);
+        std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
     }
 
     ~QNeuron()
     {
-        delete[] inputIndices;
+        if (inputCount > 0) {
+            delete[] inputIndices;
+        }
         delete[] angles;
     }
 
@@ -112,7 +114,7 @@ public:
      */
     void Learn(bool expected, real1 eta)
     {
-        real1 startProb = Predict(expected, false);
+        real1 startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
@@ -131,7 +133,7 @@ public:
      */
     void LearnPermutation(bool expected, real1 eta)
     {
-        real1 startProb = Predict(expected, false);
+        real1 startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
@@ -150,7 +152,7 @@ protected:
         origAngle = angles[perm];
         angles[perm] += eta * M_PI;
 
-        endProb = Predict(expected, false);
+        endProb = Predict(expected);
         if (endProb > (ONE_R1 - tolerance)) {
             return -ONE_R1;
         }
@@ -160,7 +162,7 @@ protected:
         } else {
             angles[perm] -= 2 * eta * M_PI;
 
-            endProb = Predict(expected, false);
+            endProb = Predict(expected);
             if (endProb > (ONE_R1 - tolerance)) {
                 return -ONE_R1;
             }
