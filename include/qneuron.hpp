@@ -112,7 +112,7 @@ public:
      */
     void Learn(bool expected, real1 eta)
     {
-        real1 startProb = Predict(expected);
+        real1 startProb = Predict(expected, false);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
@@ -131,7 +131,7 @@ public:
      */
     void LearnPermutation(bool expected, real1 eta)
     {
-        real1 startProb = Predict(expected);
+        real1 startProb = Predict(expected, false);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
@@ -150,7 +150,7 @@ protected:
         origAngle = angles[perm];
         angles[perm] += eta * M_PI;
 
-        endProb = Predict(expected);
+        endProb = Predict(expected, false);
         if (endProb > (ONE_R1 - tolerance)) {
             return -ONE_R1;
         }
@@ -160,7 +160,7 @@ protected:
         } else {
             angles[perm] -= 2 * eta * M_PI;
 
-            endProb = Predict(expected);
+            endProb = Predict(expected, false);
             if (endProb > (ONE_R1 - tolerance)) {
                 return -ONE_R1;
             }
