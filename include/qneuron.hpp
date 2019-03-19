@@ -25,7 +25,6 @@ private:
     bitLenInt* inputIndices;
     bitLenInt inputCount;
     bitCapInt inputPower;
-    bitCapInt inputMask;
     bitLenInt outputIndex;
     real1* angles;
     real1 tolerance;
@@ -52,11 +51,6 @@ public:
         if (inputCount > 0) {
             inputIndices = new bitLenInt[inputCount];
             std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
-        }
-
-        inputMask = 0;
-        for (bitLenInt i = 0; i < inputCount; i++) {
-            inputMask |= 1U << inputIndices[i];
         }
 
         angles = new real1[inputPower]();
@@ -112,15 +106,15 @@ public:
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
      */
-    void Learn(bool expected, real1 eta)
+    void Learn(bool expected, real1 eta, bool resetInit = true)
     {
-        real1 startProb = Predict(expected);
+        real1 startProb = Predict(expected, resetInit);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            if (0 > LearnInternal(expected, eta, perm, startProb)) {
+            if (0 > LearnInternal(expected, eta, perm, startProb, resetInit)) {
                 break;
             }
         }
@@ -131,37 +125,26 @@ public:
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
      */
-    void LearnPermutation(bool expected, real1 eta)
+    void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
         //WARNING: LearnPermutation() is only correct when fitting parameters are loaded into lowest bits.
         //TODO: Convert MReg() & inputMask to permutation.
 
-        real1 startProb = Predict(expected);
+        real1 startProb = Predict(expected, resetInit);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
-        bitCapInt mask = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
-
         bitCapInt perm = 0;
-        bitCapInt v = inputMask; // count the number of bits set in v
-        bitCapInt oldV;
-        bitLenInt length; // c accumulates the total bits set in v
-        bitCapInt power;
-        std::vector<bitLenInt> bits;
-        std::vector<bool> bitsSet;
-        for (length = 0; v; length++) {
-            oldV = v;
-            v &= v - 1; // clear the least significant bit set
-            power = (v ^ oldV) & oldV;
-            perm |= (!(!(power & mask))) ? (1U << length) : 0;
+        for (bitLenInt i = 0; i < inputCount; i++) {
+            perm |= qReg->M(inputIndices[i]) ? (1U << i) : 0;
         }
 
-        LearnInternal(expected, eta, perm, startProb);
+        LearnInternal(expected, eta, perm, startProb, resetInit);
     }
 
 protected:
-    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb)
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb, bool resetInit)
     {
         real1 endProb;
         real1 origAngle;
@@ -169,7 +152,7 @@ protected:
         origAngle = angles[perm];
         angles[perm] += eta * M_PI;
 
-        endProb = Predict(expected);
+        endProb = Predict(expected, resetInit);
         if (endProb > (ONE_R1 - tolerance)) {
             return -ONE_R1;
         }
@@ -179,7 +162,7 @@ protected:
         } else {
             angles[perm] -= 2 * eta * M_PI;
 
-            endProb = Predict(expected);
+            endProb = Predict(expected, resetInit);
             if (endProb > (ONE_R1 - tolerance)) {
                 return -ONE_R1;
             }
