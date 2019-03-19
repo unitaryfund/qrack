@@ -127,9 +127,6 @@ public:
      */
     void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
-        //WARNING: LearnPermutation() is only correct when fitting parameters are loaded into lowest bits.
-        //TODO: Convert MReg() & inputMask to permutation.
-
         real1 startProb = Predict(expected, resetInit);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
