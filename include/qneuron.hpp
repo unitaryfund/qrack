@@ -133,12 +133,29 @@ public:
      */
     void LearnPermutation(bool expected, real1 eta)
     {
+        //WARNING: LearnPermutation() is only correct when fitting parameters are loaded into lowest bits.
+        //TODO: Convert MReg() & inputMask to permutation.
+
         real1 startProb = Predict(expected);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
-        bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
+        bitCapInt mask = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
+
+        bitCapInt perm = 0;
+        bitCapInt v = inputMask; // count the number of bits set in v
+        bitCapInt oldV;
+        bitLenInt length; // c accumulates the total bits set in v
+        bitCapInt power;
+        std::vector<bitLenInt> bits;
+        std::vector<bool> bitsSet;
+        for (length = 0; v; length++) {
+            oldV = v;
+            v &= v - 1; // clear the least significant bit set
+            power = (v ^ oldV) & oldV;
+            perm |= (!(!(power & mask))) ? (1U << length) : 0;
+        }
 
         LearnInternal(expected, eta, perm, startProb);
     }
