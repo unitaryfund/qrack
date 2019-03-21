@@ -25,7 +25,6 @@ private:
     bitLenInt* inputIndices;
     bitLenInt inputCount;
     bitCapInt inputPower;
-    bitCapInt inputMask;
     bitLenInt outputIndex;
     real1* angles;
     real1 tolerance;
@@ -36,7 +35,11 @@ public:
      * This is a simple "quantum neuron" or "quantum perceptron" class, for use of the Qrack library for machine
      * learning. See https://arxiv.org/abs/1711.11240 for the basis of this class' theoretical concept. (That paper does
      * not use the term "uniformly controlled rotation gate," but "conditioning on all controls" is computationally the
-     * same.) */
+     * same.)
+     *
+     * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The
+     * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
+     * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
     QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
         : inputCount(inputCnt)
         , inputPower(1U << inputCnt)
@@ -45,12 +48,9 @@ public:
     {
         qReg = reg;
 
-        inputIndices = new bitLenInt[inputCount];
-        std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
-
-        inputMask = 0;
-        for (bitLenInt i = 0; i < inputCount; i++) {
-            inputMask |= 1U << inputIndices[i];
+        if (inputCount > 0) {
+            inputIndices = new bitLenInt[inputCount];
+            std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
         }
 
         angles = new real1[inputPower]();
@@ -58,14 +58,16 @@ public:
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
     QNeuron(const QNeuron& toCopy)
-        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex)
+        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex, toCopy.tolerance)
     {
-        std::copy(toCopy.angles, toCopy.angles + inputPower, angles);
+        std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
     }
 
     ~QNeuron()
     {
-        delete[] inputIndices;
+        if (inputCount > 0) {
+            delete[] inputIndices;
+        }
         delete[] angles;
     }
 
@@ -76,12 +78,22 @@ public:
     void GetAngles(real1* oAngles) { std::copy(angles, angles + inputPower, oAngles); }
 
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
-     * categories, if false. */
-    real1 Predict(bool expected = true)
+     * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
+     * proceeding to predict. */
+    real1 Predict(bool expected = true, bool resetInit = true)
     {
-        qReg->SetBit(outputIndex, false);
-        qReg->RY(M_PI / 2, outputIndex);
-        qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
+        if (resetInit) {
+            qReg->SetBit(outputIndex, false);
+            qReg->RY(M_PI_2, outputIndex);
+        }
+
+        if (inputCount == 0) {
+            // If there are no controls, this "neuron" is actually just a bias.
+            qReg->RY(angles[0], outputIndex);
+        } else {
+            // Otherwise, the action can always be represented as a uniformly controlled gate.
+            qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
+        }
         real1 prob = qReg->Prob(outputIndex);
         if (!expected) {
             prob = ONE_R1 - prob;
@@ -93,16 +105,19 @@ public:
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     *
+     * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
+     * + |1>) for the output bit. If you want to initialize other conditions before "Learn()," set "resetInit" to false.
      */
-    void Learn(bool expected, real1 eta)
+    void Learn(bool expected, real1 eta, bool resetInit = true)
     {
-        real1 startProb = Predict(expected);
+        real1 startProb = Predict(expected, resetInit);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            if (0 > LearnInternal(expected, eta, perm, startProb)) {
+            if (0 > LearnInternal(expected, eta, perm, startProb, resetInit)) {
                 break;
             }
         }
@@ -112,21 +127,28 @@ public:
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     *
+     * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
+     * + |1>) for the output bit. If you want to initialize other conditions before "LearnPermutation()," set
+     * "resetInit" to false.
      */
-    void LearnPermutation(bool expected, real1 eta)
+    void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
-        real1 startProb = Predict(expected);
+        real1 startProb = Predict(expected, resetInit);
         if (startProb > (ONE_R1 - tolerance)) {
             return;
         }
 
-        bitCapInt perm = qReg->MReg(0, qReg->GetQubitCount()) & inputMask;
+        bitCapInt perm = 0;
+        for (bitLenInt i = 0; i < inputCount; i++) {
+            perm |= qReg->M(inputIndices[i]) ? (1U << i) : 0;
+        }
 
-        LearnInternal(expected, eta, perm, startProb);
+        LearnInternal(expected, eta, perm, startProb, resetInit);
     }
 
 protected:
-    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb)
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb, bool resetInit)
     {
         real1 endProb;
         real1 origAngle;
@@ -134,7 +156,7 @@ protected:
         origAngle = angles[perm];
         angles[perm] += eta * M_PI;
 
-        endProb = Predict(expected);
+        endProb = Predict(expected, resetInit);
         if (endProb > (ONE_R1 - tolerance)) {
             return -ONE_R1;
         }
@@ -144,7 +166,7 @@ protected:
         } else {
             angles[perm] -= 2 * eta * M_PI;
 
-            endProb = Predict(expected);
+            endProb = Predict(expected, resetInit);
             if (endProb > (ONE_R1 - tolerance)) {
                 return -ONE_R1;
             }
