@@ -105,6 +105,9 @@ public:
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     *
+     * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
+     * + |1>) for the output bit. If you want to initialize other conditions before "Learn()," set "resetInit" to false.
      */
     void Learn(bool expected, real1 eta, bool resetInit = true)
     {
@@ -124,6 +127,10 @@ public:
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
      * category, for training. "eta" is a volatility or "learning rate" parameter with a maximum value of 1.
+     *
+     * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
+     * + |1>) for the output bit. If you want to initialize other conditions before "LearnPermutation()," set
+     * "resetInit" to false.
      */
     void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
