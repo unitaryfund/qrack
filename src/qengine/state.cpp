@@ -67,7 +67,8 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 }
 
 QEngineCPU::QEngineCPU(QEngineCPUPtr toCopy)
-    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, true, toCopy->hardware_rand_generator != NULL)
+    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, true,
+          toCopy->hardware_rand_generator != NULL)
     , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());

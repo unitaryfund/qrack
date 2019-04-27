@@ -76,8 +76,8 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 }
 
 QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
-    : QEngine(
-          toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase, toCopy->useHostRam, toCopy->hardware_rand_generator != NULL)
+    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase,
+          toCopy->useHostRam, toCopy->hardware_rand_generator != NULL)
     , stateVec(NULL)
     , deviceID(toCopy->deviceID)
     , wait_refs()

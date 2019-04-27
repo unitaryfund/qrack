@@ -55,7 +55,9 @@ int main(int argc, char* argv[])
         Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
                                                               "accurate computation. Usually makes QEngine types "
                                                               "faster and QUnit types slower.)") |
-        Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware random number generation, which this option turns off. (Hardware generation is on by default, if available.)");
+        Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
+                                                            "random number generation, which this option turns off. "
+                                                            "(Hardware generation is on by default, if available.)");
 
     session.cli(cli);
 
@@ -192,5 +194,6 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, complex(ONE_R1, ZERO_R1), !disable_normalization, true, true, -1, !disable_hardware_rng);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
+        complex(ONE_R1, ZERO_R1), !disable_normalization, true, true, -1, !disable_hardware_rng);
 }

@@ -22,8 +22,8 @@
 
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
-#include "rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
+#include "rdrandwrapper.hpp"
 
 namespace Qrack {
 
@@ -171,7 +171,8 @@ public:
     int GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
-    virtual real1 Rand() {
+    virtual real1 Rand()
+    {
         if (hardware_rand_generator != NULL) {
             return hardware_rand_generator->Next();
         } else {

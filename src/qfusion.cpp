@@ -28,8 +28,8 @@ QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
-    qReg =
-        CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, randGlobalPhase, useHostMem, deviceID, useHardwareRNG);
+    qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, randGlobalPhase, useHostMem,
+        deviceID, useHardwareRNG);
 }
 
 QFusion::QFusion(QInterfacePtr target)
