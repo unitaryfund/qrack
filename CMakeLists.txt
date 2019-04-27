@@ -14,6 +14,7 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
+    src/common/rdrandwrapper.cpp
     src/qinterface/qinterface.cpp
     src/qinterface/protected.cpp
     src/qinterface/operators.cpp
@@ -82,11 +83,11 @@ message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
 
 if (MSVC)
-    set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
-    set(TEST_COMPILE_OPTS -std=c++11 -Wall)
+    set(QRACK_COMPILE_OPTS -std=c++11 -mrdrnd -Wall)
+    set(TEST_COMPILE_OPTS -std=c++11 -mrdrnd -Wall)
 else (MSVC)
-    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
-    set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
+    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -mrdrnd -fPIC)
+    set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -mrdrnd -Werror)
 endif(MSVC)
 
 if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
@@ -123,6 +124,7 @@ install (FILES
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
+    include/common/rdrandwrapper.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 

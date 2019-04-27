@@ -39,7 +39,7 @@ protected:
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool ignored = false);
+        bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true);
     QEngineCPU(QEngineCPUPtr toCopy);
     ~QEngineCPU() { FreeStateVec(); }
 

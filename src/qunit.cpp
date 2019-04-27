@@ -20,21 +20,23 @@
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool doNorm, bool randomGlobalPhase, bool useHostMem)
-    : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem)
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG)
+    : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID, useHardwareRNG)
 {
     // Intentionally left blank
 }
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem)
-    : QInterface(qBitCount, rgp, doNorm)
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
     , engine(eng)
     , subengine(subEng)
+    , devID(deviceID)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
     , randGlobalPhase(randomGlobalPhase)
     , useHostRam(useHostMem)
+    , useRDRAND(useHardwareRNG)
 {
     shards.resize(qBitCount);
 
@@ -42,7 +44,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     for (bitLenInt i = 0; i < qBitCount; i++) {
         bitState = ((1 << i) & initState) >> i;
         shards[i].unit = CreateQuantumInterface(engine, subengine, 1, bitState ? 1 : 0, rand_generator, phaseFactor,
-            doNormalize, randGlobalPhase, useHostRam);
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
         shards[i].mapped = 0;
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
@@ -58,7 +60,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
         shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac,
-            doNormalize, randGlobalPhase, useHostRam);
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
         shards[i].mapped = 0;
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
@@ -82,7 +84,7 @@ void QUnit::CopyState(QUnit* orig)
         shard.isProbDirty = otherShard.isProbDirty;
         if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
             otherUnits[otherShard.unit] =
-                CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
+                CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
             otherUnits[otherShard.unit]->CopyState(otherShard.unit);
         }
         shard.unit = otherUnits[otherShard.unit];
@@ -93,7 +95,7 @@ void QUnit::CopyState(QUnit* orig)
 void QUnit::CopyState(QInterfacePtr orig)
 {
     QInterfacePtr unit = CreateQuantumInterface(
-        engine, subengine, orig->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize, useHostRam);
+        engine, subengine, orig->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
     unit->CopyState(orig);
 
     SetQubitCount(orig->GetQubitCount());
@@ -112,7 +114,7 @@ void QUnit::CopyState(QInterfacePtr orig)
 void QUnit::SetQuantumState(complex* inputState)
 {
     auto unit =
-        CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, useHostRam);
+        CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
     unit->SetQuantumState(inputState);
 
     int idx = 0;
@@ -432,7 +434,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     }
 
     QInterfacePtr separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator,
-        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
 
     QInterfacePtr unitCopy = shards[start].unit->Clone();
 
@@ -584,7 +586,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     }
 
     QInterfacePtr dest = CreateQuantumInterface(
-        engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor, doNormalize, useHostRam);
+        engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
     unit->Dispose(mapped, 1);
 
     /* Update the mappings. */
