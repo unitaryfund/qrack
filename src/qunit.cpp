@@ -85,8 +85,8 @@ void QUnit::CopyState(QUnit* orig)
         shard.prob = otherShard.prob;
         shard.isProbDirty = otherShard.isProbDirty;
         if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] = CreateQuantumInterface(
-                engine, subengine, 1, 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
+            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor,
+                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
             otherUnits[otherShard.unit]->CopyState(otherShard.unit);
         }
         shard.unit = otherUnits[otherShard.unit];
@@ -97,7 +97,7 @@ void QUnit::CopyState(QUnit* orig)
 void QUnit::CopyState(QInterfacePtr orig)
 {
     QInterfacePtr unit = CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator,
-        phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->CopyState(orig);
 
     SetQubitCount(orig->GetQubitCount());
@@ -115,8 +115,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(complex* inputState)
 {
-    auto unit = CreateQuantumInterface(
-        engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
+    auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->SetQuantumState(inputState);
 
     int idx = 0;
@@ -587,8 +587,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(
-        engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor, doNormalize, useHostRam, devID, useRDRAND);
+    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->Dispose(mapped, 1);
 
     /* Update the mappings. */
