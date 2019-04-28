@@ -125,7 +125,7 @@ There is little or no obvious benefit or detriment, in choosing between determin
 ```
 $ cmake -DENABLE_PURE32=ON ..
 ```
-This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware). `-DENABLE_PURE32=ON` should be necessary but sufficient to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3.
+This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware). `-DENABLE_PURE32=ON` should be necessary but sufficient to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3.
 
 ## Copyright and License
 
