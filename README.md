@@ -112,7 +112,7 @@ Reduce to float accuracy for complex numbers. Requires half as much RAM (1 addit
 ## On-Chip Hardware Random Number Generation 
 
 ```
-$ cmake -DENABLE_MDRAND=OFF ..
+$ cmake -DENABLE_RDRAND=OFF ..
 ```
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
 
