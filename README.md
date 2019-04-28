@@ -77,8 +77,8 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 
 ```
     $ mkdir _build
-	$ cd _build
-	$ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
+    $ cd _build
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
 ```
 
 After CMake, the project must be built in Visual Studio.
@@ -108,6 +108,17 @@ Multiply complex numbers two at a time instead of one at a time. Requires AVX fo
 $ cmake -DENABLE_COMPLEX8=ON ..
 ```
 Reduce to float accuracy for complex numbers. Requires half as much RAM (1 additional qubit). Compatible with SSE 1.0 and single precision accelerator devices.
+
+## On-Chip Hardware Random Number Generation 
+
+```
+$ cmake -DENABLE_MDRAND=OFF ..
+```
+Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
+
+Relatively recent Intel processors may provide the RDRAND (and RDSEED) processor operation codes, for hardware random number generation. The authors of Qrack cannot promise anything about the security or quality of these random numbers. (It is not hard to modify Qrack to use an entropy source you personally trust.) However, there is reason to suspect based on descriptions of the on-chip generator that the conditioned hardware entropy stream typically has a high von Neumann entropy content, (depending partly on load,) that this is "quantum" or "true" random entropy.
+
+There is little or no obvious benefit or detriment, in choosing between deterministic and nondeterminstic sources of high quality random numbers, for quantum computation simulation. However, it is the opinion of one of the authors of Qrack, that seemingly the one aspect of a quantum computer that cannot be simulated even in principle by a deterministic machine is "unitarity breaking," "true random numbers," whether this makes any measurable or falsifiable difference.
 
 ## Pure 32 bit OpenCL kernels (including Raspberry Pi 3)
 
