@@ -16,16 +16,19 @@ namespace RdRandWrapper {
 
 bool getRdRand(unsigned int* pv)
 {
+#if ENABLE_RDRAND
     const int max_rdrand_tries = 10;
     for (int i = 0; i < max_rdrand_tries; ++i) {
         if (_rdrand32_step(pv))
             return true;
     }
+#endif
     return false;
 }
 
 bool RdRandom::SupportsRDRAND()
 {
+#if ENABLE_RDRAND
     const unsigned int flag_RDRAND = (1 << 30);
 
     unsigned int eax, ebx, ecx, edx;
@@ -33,6 +36,9 @@ bool RdRandom::SupportsRDRAND()
     __get_cpuid(1, &eax, &ebx, &ecx, &edx);
 
     return ((ecx & flag_RDRAND) == flag_RDRAND);
+#else
+    return false;
+#endif
 }
 
 double RdRandom::Next()

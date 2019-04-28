@@ -83,16 +83,18 @@ message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
 
 if (MSVC)
-    set(QRACK_COMPILE_OPTS -std=c++11 -mrdrnd -Wall)
-    set(TEST_COMPILE_OPTS -std=c++11 -mrdrnd -Wall)
+    set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
+    set(TEST_COMPILE_OPTS -std=c++11 -Wall)
 else (MSVC)
-    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -mrdrnd -fPIC)
-    set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -mrdrnd -Werror)
+    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
+    set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
 endif(MSVC)
 
 if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
 endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
+
+include ("cmake/RDRand.cmake")
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
