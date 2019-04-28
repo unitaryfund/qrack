@@ -82,7 +82,11 @@ cl::Program OCLEngine::MakeProgram(
         lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
         fclose(clBinFile);
 
+#if defined(__APPLE__)
+        program = cl::Program(devCntxt->context, { devCntxt->device }, { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
+#else
         program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
+#endif
 
         if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
             std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
@@ -103,12 +107,20 @@ cl::Program OCLEngine::MakeProgram(
 
 void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fileName)
 {
-    size_t clBinSizes;
-    program.getInfo(CL_PROGRAM_BINARY_SIZES, &clBinSizes);
-    std::cout << "Binary size:" << clBinSizes << std::endl;
+    std::vector<size_t> clBinSizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
+    size_t clBinSize = 0;
+    int clBinIndex = 0;
+    for (int i = 0; i < clBinSizes.size(); i++) {
+        if (clBinSizes[i] > 0) {
+            clBinSize = clBinSizes[i];
+            clBinIndex = i;
+            break;
+        }
+    }
+    std::cout << "Binary size:" << clBinSize << std::endl;
 
-    unsigned char* clBinary = new unsigned char[clBinSizes];
-    program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
+    std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
+    char* clBinary = clBinaries[clBinIndex];
 
     int err = mkdir(path.c_str(), 0700);
     if (err != -1) {
@@ -116,9 +128,8 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-    fwrite(clBinary, clBinSizes, sizeof(unsigned char), clBinFile);
+    fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
     fclose(clBinFile);
-    delete[] clBinary;
 }
 
 OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
