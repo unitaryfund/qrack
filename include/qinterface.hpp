@@ -20,10 +20,10 @@
 #include <memory>
 #include <vector>
 
+#include "common/rdrandwrapper.hpp"
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 #include "hamiltonian.hpp"
-#include "rdrandwrapper.hpp"
 
 namespace Qrack {
 
