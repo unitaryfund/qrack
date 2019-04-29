@@ -11,7 +11,13 @@
 // for details.
 
 #if ENABLE_RDRAND
+
+#if _MSC_VER
+#include <intrin.h>
+#else
 #include <cpuid.h>
+#endif
+
 #include <immintrin.h>
 #endif
 
