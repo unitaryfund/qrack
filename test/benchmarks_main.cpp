@@ -27,6 +27,7 @@ enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool disable_normalization = false;
+bool disable_hardware_rng = false;
 bool async_time = false;
 
 int main(int argc, char* argv[])
@@ -53,10 +54,10 @@ int main(int argc, char* argv[])
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
         Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
                                                               "accurate computation. Usually makes QEngine types "
-                                                              "faster.)") |
-        Opt(async_time)["--async-timing"](
-            "Base benchmarks on how quickly (asynchronous) methods return, rather than how long it takes to directly "
-            "chain tests. (OpenCL code is asynchronous, and CPU code can run while kernels are dispatched to GPU.)");
+                                                              "faster and QUnit types slower.)") |
+        Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
+                                                            "random number generation, which this option turns off. "
+                                                            "(Hardware generation is on by default, if available.)");
 
     session.cli(cli);
 
@@ -73,7 +74,13 @@ int main(int argc, char* argv[])
         return returnCode;
     }
 
-    session.config().stream() << "Random Seed: " << session.configData().rngSeed << std::endl;
+    session.config().stream() << "Random Seed: " << session.configData().rngSeed;
+
+    if (disable_hardware_rng) {
+        session.config().stream() << std::endl;
+    } else {
+        session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
+    }
 
     if (!qengine && !qfusion && !qunit && !qunit_qfusion) {
         qfusion = true;
@@ -186,4 +193,7 @@ QInterfaceTestFixture::QInterfaceTestFixture()
 
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
+
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
+        complex(ONE_R1, ZERO_R1), !disable_normalization, true, true, -1, !disable_hardware_rng);
 }

@@ -23,6 +23,7 @@
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 #include "hamiltonian.hpp"
+#include "rdrandwrapper.hpp"
 
 namespace Qrack {
 
@@ -90,6 +91,7 @@ protected:
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
+    std::shared_ptr<RdRandWrapper::RdRandom> hardware_rand_generator;
     bool doNormalize;
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -136,11 +138,19 @@ protected:
     }
 
 public:
-    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true)
+    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true, bool useHardwareRNG = true)
         : rand_distribution(0.0, 1.0)
+        , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
     {
         SetQubitCount(n);
+
+        if (useHardwareRNG) {
+            hardware_rand_generator = std::make_shared<RdRandWrapper::RdRandom>();
+            if (!(hardware_rand_generator->SupportsRDRAND())) {
+                hardware_rand_generator = NULL;
+            }
+        }
 
         if (rgp == NULL) {
             rand_generator = std::make_shared<qrack_rand_gen>();
@@ -161,7 +171,14 @@ public:
     int GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
-    virtual real1 Rand() { return rand_distribution(*rand_generator); }
+    virtual real1 Rand()
+    {
+        if (hardware_rand_generator != NULL) {
+            return hardware_rand_generator->Next();
+        } else {
+            return rand_distribution(*rand_generator);
+        }
+    }
 
     /** Set an arbitrary pure quantum state representation
      *

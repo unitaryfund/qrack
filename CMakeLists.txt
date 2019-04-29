@@ -14,6 +14,7 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
+    src/common/rdrandwrapper.cpp
     src/qinterface/qinterface.cpp
     src/qinterface/protected.cpp
     src/qinterface/operators.cpp
@@ -93,6 +94,8 @@ if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
 endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
 
+include ("cmake/RDRand.cmake")
+
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
@@ -123,6 +126,7 @@ install (FILES
     include/common/complex8x2simd.hpp
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
+    include/common/rdrandwrapper.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 

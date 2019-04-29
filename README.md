@@ -77,8 +77,8 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 
 ```
     $ mkdir _build
-	$ cd _build
-	$ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
+    $ cd _build
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
 ```
 
 After CMake, the project must be built in Visual Studio.
@@ -109,12 +109,19 @@ $ cmake -DENABLE_COMPLEX8=ON ..
 ```
 Reduce to float accuracy for complex numbers. Requires half as much RAM (1 additional qubit). Compatible with SSE 1.0 and single precision accelerator devices.
 
+## On-Chip Hardware Random Number Generation 
+
+```
+$ cmake -DENABLE_RDRAND=OFF ..
+```
+Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
+
 ## Pure 32 bit OpenCL kernels (including Raspberry Pi 3)
 
 ```
 $ cmake -DENABLE_PURE32=ON ..
 ```
-This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware). `-DENABLE_PURE32=ON` should be necessary but sufficient to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3.
+This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware). `-DENABLE_PURE32=ON` should be necessary but sufficient to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3.
 
 ## Copyright and License
 

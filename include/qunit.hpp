@@ -34,11 +34,13 @@ class QUnit : public QInterface {
 protected:
     QInterfaceEngine engine;
     QInterfaceEngine subengine;
+    int devID;
     std::vector<QEngineShard> shards;
     complex phaseFactor;
     bool doNormalize;
     bool randGlobalPhase;
     bool useHostRam;
+    bool useRDRAND;
 
     qrack_rand_gen_ptr rand_generator;
 
@@ -51,10 +53,10 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool doNorm = true,
-        bool randomGlobalPhase = true, bool useHostMem = true);
+        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = true);
+        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true);
 
     virtual void SetQuantumState(complex* inputState);
     virtual void GetQuantumState(complex* outputState);

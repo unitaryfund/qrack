@@ -43,8 +43,8 @@ protected:
 
 public:
     QEngine(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = false)
-        : QInterface(n, rgp, doNorm)
+        bool useHostMem = false, bool useHardwareRNG = true)
+        : QInterface(n, rgp, doNorm, useHardwareRNG)
         , randGlobalPhase(randomGlobalPhase)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1){};
