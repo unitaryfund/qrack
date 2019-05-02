@@ -29,6 +29,7 @@ struct HamiltonianOp {
     bitLenInt controlLen;
     bool anti;
     bool* toggles;
+    bool uniform;
 
     HamiltonianOp(bitLenInt target, BitOp mtrx)
         : targetBit(target)
@@ -37,6 +38,7 @@ struct HamiltonianOp {
         , controlLen(0)
         , anti(false)
         , toggles(NULL)
+        , uniform(false)
     {
     }
 
@@ -48,6 +50,7 @@ struct HamiltonianOp {
         , controlLen(ctrlLen)
         , anti(antiCtrled)
         , toggles(NULL)
+        , uniform(false)
     {
         std::copy(ctrls, ctrls + ctrlLen, controls);
 
@@ -66,6 +69,16 @@ struct HamiltonianOp {
         if (toggles) {
             delete[] toggles;
         }
+    }
+};
+
+struct UniformHamiltonianOp : HamiltonianOp {
+    UniformHamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
+        : HamiltonianOp(ctrls, ctrlLen, target, mtrx)
+    {
+        std::copy(ctrls, ctrls + ctrlLen, controls);
+
+        uniform = true;
     }
 };
 

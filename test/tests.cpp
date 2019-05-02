@@ -2786,6 +2786,37 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
+{
+    real1 aParam = (real1)1e-4;
+    real1 tDiff = 2.1f;
+    real1 e0 = sqrt(ONE_R1 - aParam * aParam);
+
+    BitOp o2neg1(new complex[8], std::default_delete<complex[]>());
+    o2neg1.get()[0] = complex(ONE_R1, ZERO_R1);
+    o2neg1.get()[1] = complex(ZERO_R1, ZERO_R1);
+    o2neg1.get()[2] = complex(ZERO_R1, ZERO_R1);
+    o2neg1.get()[3] = complex(ONE_R1, ZERO_R1);
+    o2neg1.get()[4] = complex(e0, ZERO_R1);
+    o2neg1.get()[5] = complex(-aParam, ZERO_R1);
+    o2neg1.get()[6] = complex(-aParam, ZERO_R1);
+    o2neg1.get()[7] = complex(e0, ZERO_R1);
+
+    bitLenInt controls[1] = { 1 };
+
+    HamiltonianOpPtr h0 = std::make_shared<UniformHamiltonianOp>(controls, 1, 0, o2neg1);
+    Hamiltonian h(1);
+    h[0] = h0;
+
+    REQUIRE(h0->uniform);
+
+    qftReg->SetPermutation(2);
+    qftReg->TimeEvolve(h, tDiff);
+
+    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
 {
     bitLenInt controls[2] = { 1, 2 };

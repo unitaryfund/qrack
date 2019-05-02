@@ -167,19 +167,17 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
     for (bitLenInt i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
-        complex mtrx[4];
-        for (int j = 0; j < 4; j++) {
+        complex* mtrx;
+        
+        bitCapInt maxJ = 4;
+        if (op->uniform) {
+            maxJ *= 1U<<op->controlLen;
+        }
+        mtrx = new complex[maxJ];
+
+        for (bitCapInt j = 0; j < maxJ; j++) {
             mtrx[j] = opMtrx[j] * (-timeDiff);
         }
-        if (op->toggles) {
-            for (bitLenInt j = 0; j < op->controlLen; j++) {
-                if (op->toggles[j]) {
-                    X(op->controls[j]);
-                }
-            }
-        }
-
-        Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
 
         if (op->toggles) {
             for (bitLenInt j = 0; j < op->controlLen; j++) {
@@ -188,6 +186,27 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
                 }
             }
         }
+
+        if (op->uniform) {
+            complex* expMtrx = new complex[maxJ];
+            for (bitCapInt j = 0; j < (1U<<op->controlLen); j++) {
+                exp2x2(mtrx + (j * 4), expMtrx + (j * 4));
+            }
+            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);
+            delete[] expMtrx; 
+        } else {
+            Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
+        }
+
+        if (op->toggles) {
+            for (bitLenInt j = 0; j < op->controlLen; j++) {
+                if (op->toggles[j]) {
+                    X(op->controls[j]);
+                }
+            }
+        }
+
+        delete[] mtrx;
     }
 }
 } // namespace Qrack
