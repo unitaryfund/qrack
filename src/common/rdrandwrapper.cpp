@@ -32,10 +32,10 @@ bool RdRandom::SupportsRDRAND()
     const unsigned int flag_RDRAND = (1 << 30);
 
 #if _MSC_VER
-	int ex[4];
-	__cpuid(ex, 1);
+    int ex[4];
+    __cpuid(ex, 1);
 
-	return ((ex[2] & flag_RDRAND) == flag_RDRAND);
+    return ((ex[2] & flag_RDRAND) == flag_RDRAND);
 #else
     unsigned int eax, ebx, ecx, edx;
     ecx = 0;

@@ -168,10 +168,10 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
         complex* mtrx;
-        
+
         bitCapInt maxJ = 4;
         if (op->uniform) {
-            maxJ *= 1U<<op->controlLen;
+            maxJ *= 1U << op->controlLen;
         }
         mtrx = new complex[maxJ];
 
@@ -189,11 +189,11 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
         if (op->uniform) {
             complex* expMtrx = new complex[maxJ];
-            for (bitCapInt j = 0; j < (1U<<op->controlLen); j++) {
+            for (bitCapInt j = 0; j < (1U << op->controlLen); j++) {
                 exp2x2(mtrx + (j * 4), expMtrx + (j * 4));
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);
-            delete[] expMtrx; 
+            delete[] expMtrx;
         } else {
             Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
         }

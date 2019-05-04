@@ -94,6 +94,11 @@ enum OCLAPI {
     OCL_API_CDIV
 };
 
+struct OCLInitResult {
+    std::vector<DeviceContextPtr> all_device_contexts;
+    DeviceContextPtr default_device_context;
+};
+
 class OCLDeviceCall {
 protected:
     std::lock_guard<std::recursive_mutex> guard;
@@ -183,6 +188,8 @@ public:
     int GetDefaultDeviceID() { return default_device_context->context_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
+    /// Initialize the OCL environment, with the option to save the generated binaries.
+    static OCLInitResult InitOCL(bool saveBinaries = false);
 
 private:
     std::vector<DeviceContextPtr> all_device_contexts;
@@ -192,8 +199,6 @@ private:
     OCLEngine(OCLEngine const&); // copy constructor is private
     OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
     static OCLEngine* m_pInstance;
-
-    void InitOCL();
 
     unsigned long PowerOf2LessThan(unsigned long number);
 };

@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 #include "oclengine.hpp"
 
@@ -52,12 +53,18 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
-OCLEngine::OCLEngine() { InitOCL(); }
+OCLEngine::OCLEngine()
+{
+    OCLInitResult res = InitOCL(false);
+    all_device_contexts = res.all_device_contexts;
+    default_device_context = res.default_device_context;
+}
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
-void OCLEngine::InitOCL()
+OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
 {
+    OCLInitResult toRet;
     int i;
     // get all platforms (drivers), e.g. NVIDIA
 
@@ -115,6 +122,8 @@ void OCLEngine::InitOCL()
 
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
+    std::vector<int> binaryStatus;
+    cl_int buildError;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
@@ -125,19 +134,40 @@ void OCLEngine::InitOCL()
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
-        cl::Program program = cl::Program(devCntxt->context, sources);
+        FILE* clBinFile;
+        std::string clBinName = "qrack_ocl_dev_" + std::to_string(i) + ".ir";
+        cl::Program program;
+        if (!saveBinaries && (clBinFile = fopen(clBinName.c_str(), "r"))) {
+            long lSize;
 
-        cl_int buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
+            fseek(clBinFile, 0L, SEEK_END);
+            lSize = ftell(clBinFile);
+            rewind(clBinFile);
+
+            std::vector<unsigned char> buffer(lSize);
+            lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
+            fclose(clBinFile);
+
+            program = cl::Program(devCntxt->context, { all_devices[i] }, { buffer }, &binaryStatus, &buildError);
+
+            if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
+                std::cout << "Binary error for device #" << i << ": " << buildError << ", " << binaryStatus[0] << std::endl;
+            }
+        } else {
+            program = cl::Program(devCntxt->context, sources);
+        }
+
+        buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
                       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(all_devices[i]) << std::endl;
 
-            // The default device was set above to be the last device in the list. If we can't compile for it, we use
-            // the first device. If the default is the first device, and we can't compile for it, then we don't have any
-            // devices that can compile at all, and the environment needs to be fixed by the user.
+            // The default device was set above to be the last device in the list. If we can't compile for it, we
+            // use the first device. If the default is the first device, and we can't compile for it, then we don't
+            // have any devices that can compile at all, and the environment needs to be fixed by the user.
             if (i == dev) {
-                default_device_context = all_device_contexts[0];
+                toRet.default_device_context = toRet.all_device_contexts[0];
                 default_platform = all_platforms[0];
                 default_device = all_devices[0];
             }
@@ -145,61 +175,75 @@ void OCLEngine::InitOCL()
             continue;
         }
 
-        all_device_contexts.push_back(devCntxt);
+        toRet.all_device_contexts.push_back(devCntxt);
 
-        all_device_contexts[i]->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
-        all_device_contexts[i]->calls[OCL_API_APPLY2X2_UNIT] = cl::Kernel(program, "apply2x2unit");
-        all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
-        all_device_contexts[i]->calls[OCL_API_NORMSUM] = cl::Kernel(program, "normsum");
-        all_device_contexts[i]->calls[OCL_API_UNIFORMLYCONTROLLED] = cl::Kernel(program, "uniformlycontrolled");
-        all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
-        all_device_contexts[i]->calls[OCL_API_COMPOSE] = cl::Kernel(program, "compose");
-        all_device_contexts[i]->calls[OCL_API_COMPOSE_MID] = cl::Kernel(program, "composemid");
-        all_device_contexts[i]->calls[OCL_API_DECOMPOSEPROB] = cl::Kernel(program, "decomposeprob");
-        all_device_contexts[i]->calls[OCL_API_DECOMPOSEAMP] = cl::Kernel(program, "decomposeamp");
-        all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
-        all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
-        all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");
-        all_device_contexts[i]->calls[OCL_API_PROBMASK] = cl::Kernel(program, "probmask");
-        all_device_contexts[i]->calls[OCL_API_PROBMASKALL] = cl::Kernel(program, "probmaskall");
-        all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
-        all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
-        all_device_contexts[i]->calls[OCL_API_ROR] = cl::Kernel(program, "ror");
-        all_device_contexts[i]->calls[OCL_API_INC] = cl::Kernel(program, "inc");
-        all_device_contexts[i]->calls[OCL_API_CINC] = cl::Kernel(program, "cinc");
-        all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
-        all_device_contexts[i]->calls[OCL_API_CDEC] = cl::Kernel(program, "cdec");
-        all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
-        all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
-        all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
-        all_device_contexts[i]->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
-        all_device_contexts[i]->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
-        all_device_contexts[i]->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
-        all_device_contexts[i]->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
-        all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
-        all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
-        all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
-        all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
-        all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
-        all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
-        all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
-        all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
-        all_device_contexts[i]->calls[OCL_API_APPROXCOMPARE] = cl::Kernel(program, "approxcompare");
-        all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
-        all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
-        all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
-        all_device_contexts[i]->calls[OCL_API_APPLYMREG] = cl::Kernel(program, "applymreg");
-        all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
-        all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
-        all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
-        all_device_contexts[i]->calls[OCL_API_PHASEFLIPIFLESS] = cl::Kernel(program, "phaseflipifless");
-        all_device_contexts[i]->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
-        all_device_contexts[i]->calls[OCL_API_DIV] = cl::Kernel(program, "div");
-        all_device_contexts[i]->calls[OCL_API_CMUL] = cl::Kernel(program, "cmul");
-        all_device_contexts[i]->calls[OCL_API_CDIV] = cl::Kernel(program, "cdiv");
+        toRet.all_device_contexts[i]->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
+        toRet.all_device_contexts[i]->calls[OCL_API_APPLY2X2_UNIT] = cl::Kernel(program, "apply2x2unit");
+        toRet.all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
+        toRet.all_device_contexts[i]->calls[OCL_API_NORMSUM] = cl::Kernel(program, "normsum");
+        toRet.all_device_contexts[i]->calls[OCL_API_UNIFORMLYCONTROLLED] = cl::Kernel(program, "uniformlycontrolled");
+        toRet.all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
+        toRet.all_device_contexts[i]->calls[OCL_API_COMPOSE] = cl::Kernel(program, "compose");
+        toRet.all_device_contexts[i]->calls[OCL_API_COMPOSE_MID] = cl::Kernel(program, "composemid");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECOMPOSEPROB] = cl::Kernel(program, "decomposeprob");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECOMPOSEAMP] = cl::Kernel(program, "decomposeamp");
+        toRet.all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
+        toRet.all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
+        toRet.all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");
+        toRet.all_device_contexts[i]->calls[OCL_API_PROBMASK] = cl::Kernel(program, "probmask");
+        toRet.all_device_contexts[i]->calls[OCL_API_PROBMASKALL] = cl::Kernel(program, "probmaskall");
+        toRet.all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
+        toRet.all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
+        toRet.all_device_contexts[i]->calls[OCL_API_ROR] = cl::Kernel(program, "ror");
+        toRet.all_device_contexts[i]->calls[OCL_API_INC] = cl::Kernel(program, "inc");
+        toRet.all_device_contexts[i]->calls[OCL_API_CINC] = cl::Kernel(program, "cinc");
+        toRet.all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
+        toRet.all_device_contexts[i]->calls[OCL_API_CDEC] = cl::Kernel(program, "cdec");
+        toRet.all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
+        toRet.all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
+        toRet.all_device_contexts[i]->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
+        toRet.all_device_contexts[i]->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
+        toRet.all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
+        toRet.all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
+        toRet.all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
+        toRet.all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
+        toRet.all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
+        toRet.all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
+        toRet.all_device_contexts[i]->calls[OCL_API_APPROXCOMPARE] = cl::Kernel(program, "approxcompare");
+        toRet.all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
+        toRet.all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
+        toRet.all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
+        toRet.all_device_contexts[i]->calls[OCL_API_APPLYMREG] = cl::Kernel(program, "applymreg");
+        toRet.all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
+        toRet.all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
+        toRet.all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
+        toRet.all_device_contexts[i]->calls[OCL_API_PHASEFLIPIFLESS] = cl::Kernel(program, "phaseflipifless");
+        toRet.all_device_contexts[i]->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
+        toRet.all_device_contexts[i]->calls[OCL_API_DIV] = cl::Kernel(program, "div");
+        toRet.all_device_contexts[i]->calls[OCL_API_CMUL] = cl::Kernel(program, "cmul");
+        toRet.all_device_contexts[i]->calls[OCL_API_CDIV] = cl::Kernel(program, "cdiv");
+
+        if (saveBinaries) {
+            size_t clBinSizes;
+            program.getInfo(CL_PROGRAM_BINARY_SIZES, &clBinSizes);
+            std::cout << "OpenCL #" << i << " Binary size:" << clBinSizes << std::endl;
+
+            unsigned char* clBinary = new unsigned char[clBinSizes];
+            program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
+
+            FILE* clBinFile = fopen(clBinName.c_str(), "w");
+            fwrite(clBinary, clBinSizes, sizeof (unsigned char), clBinFile);
+            fclose(clBinFile);
+            delete[] clBinary;
+        }
 
         if (i == dev) {
-            default_device_context = all_device_contexts[i];
+            toRet.default_device_context = toRet.all_device_contexts[i];
             default_platform = all_platforms[plat_id];
             default_device = all_devices[i];
         }
@@ -211,6 +255,8 @@ void OCLEngine::InitOCL()
     for (i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
+
+    return toRet;
 }
 
 OCLEngine* OCLEngine::m_pInstance = NULL;
