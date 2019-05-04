@@ -13,6 +13,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "oclengine.hpp"
 
@@ -64,6 +66,22 @@ OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
 OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
 {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    char* homeDrive = getenv("HOMEDRIVE");
+    char* homePath = getenv("HOMEPATH");
+    int newSize = strlen(homeDrive) + strlen(homePath) + 1;
+    char* home = new char[newSize];
+    strcpy(home, homeDrive);
+    strcat(home, homePath);
+    std::string homeStr(home);
+    homeStr += "\\.qrack\\";
+    delete[] home;
+#else
+    char* home = getenv("HOME");
+    std::string homeStr(home);
+    homeStr += "/.qrack/";
+#endif
+
     OCLInitResult toRet;
     int i;
     // get all platforms (drivers), e.g. NVIDIA
@@ -135,7 +153,7 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
         FILE* clBinFile;
-        std::string clBinName = "qrack_ocl_dev_" + std::to_string(i) + ".ir";
+        std::string clBinName = homeStr + "qrack_ocl_dev_" + std::to_string(i) + ".ir";
         cl::Program program;
         if (!saveBinaries && (clBinFile = fopen(clBinName.c_str(), "r"))) {
             long lSize;
@@ -236,6 +254,8 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
 
             unsigned char* clBinary = new unsigned char[clBinSizes];
             program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
+
+            buildError = mkdir(homeStr.c_str(), 0700);
 
             FILE* clBinFile = fopen(clBinName.c_str(), "w");
             fwrite(clBinary, clBinSizes, sizeof(unsigned char), clBinFile);
