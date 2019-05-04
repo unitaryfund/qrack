@@ -59,7 +59,6 @@ add_test (NAME qrack_benchmarks
     COMMAND benchmarks
     )
 
-
 # Declare the accuracy executable
 add_executable (accuracy
     test/accuracy_main.cpp

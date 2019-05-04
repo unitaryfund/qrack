@@ -10,16 +10,16 @@
 
 #include <iostream>
 
+#if ENABLE_OPENCL
 #include "oclengine.hpp"
-
-using namespace Qrack;
+#endif
 
 int main()
 {
 #if ENABLE_OPENCL
     // OpenCL type, if available.
     std::cout << "Precompiling OCL kernels..." << std::endl;
-    OCLEngine::InitOCL(true);
+    Qrack::OCLEngine::InitOCL(true);
     std::cout << "Done precompiling OCL kernels." << std::endl;
 #else
     std::cout << "OCL not available; nothing to precompile." << std::endl;
