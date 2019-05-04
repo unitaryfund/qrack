@@ -151,7 +151,8 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
             program = cl::Program(devCntxt->context, { all_devices[i] }, { buffer }, &binaryStatus, &buildError);
 
             if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
-                std::cout << "Binary error for device #" << i << ": " << buildError << ", " << binaryStatus[0] << std::endl;
+                std::cout << "Binary error for device #" << i << ": " << buildError << ", " << binaryStatus[0]
+                          << std::endl;
             }
         } else {
             program = cl::Program(devCntxt->context, sources);
@@ -237,7 +238,7 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
             program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
 
             FILE* clBinFile = fopen(clBinName.c_str(), "w");
-            fwrite(clBinary, clBinSizes, sizeof (unsigned char), clBinFile);
+            fwrite(clBinary, clBinSizes, sizeof(unsigned char), clBinFile);
             fclose(clBinFile);
             delete[] clBinary;
         }
