@@ -193,6 +193,11 @@ public:
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Initialize the OCL environment, with the option to save the generated binaries.
     static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+    /// Make the program, from either source or binary
+    static cl::Program MakeProgram(bool buildFromSource, cl::Program::Sources sources, std::string path,
+        std::shared_ptr<OCLDeviceContext> devCntxt);
+    /// Save the program binary:
+    static void SaveBinary(cl::Program program, std::string path, std::string fileName);
     /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {

@@ -64,6 +64,63 @@ OCLEngine::OCLEngine()
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
+cl::Program OCLEngine::MakeProgram(
+    bool buildFromSource, cl::Program::Sources sources, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
+{
+    FILE* clBinFile;
+    cl::Program program;
+    cl_int buildError = -1;
+    std::vector<int> binaryStatus;
+    if (!buildFromSource && (clBinFile = fopen(path.c_str(), "r"))) {
+        long lSize;
+
+        fseek(clBinFile, 0L, SEEK_END);
+        lSize = ftell(clBinFile);
+        rewind(clBinFile);
+
+        std::vector<unsigned char> buffer(lSize);
+        lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
+        fclose(clBinFile);
+
+        program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
+
+        if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
+            std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
+                      << std::endl;
+        } else {
+            std::cout << "Loaded binary." << std::endl;
+        }
+    }
+
+    // If, either, there are no cached binaries, or binary loading failed, then fall back to JIT.
+    if (buildError != CL_SUCCESS) {
+        program = cl::Program(devCntxt->context, sources);
+        std::cout << "Built JIT." << std::endl;
+    }
+
+    return program;
+}
+
+void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fileName)
+{
+    size_t clBinSizes;
+    program.getInfo(CL_PROGRAM_BINARY_SIZES, &clBinSizes);
+    std::cout << "Binary size:" << clBinSizes << std::endl;
+
+    unsigned char* clBinary = new unsigned char[clBinSizes];
+    program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
+
+    int err = mkdir(path.c_str(), 0700);
+    if (err != -1) {
+        std::cout << "Making directory: " << path << std::endl;
+    }
+
+    FILE* clBinFile = fopen((path + fileName).c_str(), "w");
+    fwrite(clBinary, clBinSizes, sizeof(unsigned char), clBinFile);
+    fclose(clBinFile);
+    delete[] clBinary;
+}
+
 OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
 {
 
@@ -129,7 +186,6 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
-    std::vector<int> binaryStatus;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
@@ -140,35 +196,13 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
-        FILE* clBinFile;
-        std::string clBinName = home + "qrack_ocl_dev_" + std::to_string(i) + ".ir";
-        cl::Program program;
-        cl_int buildError = -1;
-        if (!buildFromSource && (clBinFile = fopen(clBinName.c_str(), "r"))) {
-            long lSize;
+        std::string fileName = "qrack_ocl_dev_" + std::to_string(i) + ".ir";
+        std::string clBinName = home + fileName;
 
-            fseek(clBinFile, 0L, SEEK_END);
-            lSize = ftell(clBinFile);
-            rewind(clBinFile);
+        std::cout << "Device #" << i << ", ";
+        cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
 
-            std::vector<unsigned char> buffer(lSize);
-            lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
-            fclose(clBinFile);
-
-            program = cl::Program(devCntxt->context, { all_devices[i] }, { buffer }, &binaryStatus, &buildError);
-
-            if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
-                std::cout << "Binary error for device #" << i << ": " << buildError << ", " << binaryStatus[0]
-                          << " (Falling back to JIT)" << std::endl;
-            }
-        }
-
-        // If, either, there are no cached binaries, or binary loading failed, then fall back to JIT.
-        if (buildError != CL_SUCCESS) {
-            program = cl::Program(devCntxt->context, sources);
-        }
-
-        buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
+        cl_int buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
@@ -240,19 +274,8 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         OCL_CREATE_CALL(OCL_API_CDIV, "cdiv");
 
         if (saveBinaries) {
-            size_t clBinSizes;
-            program.getInfo(CL_PROGRAM_BINARY_SIZES, &clBinSizes);
-            std::cout << "OpenCL #" << i << " Binary size:" << clBinSizes << std::endl;
-
-            unsigned char* clBinary = new unsigned char[clBinSizes];
-            program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
-
-            buildError = mkdir(home.c_str(), 0700);
-
-            FILE* clBinFile = fopen(clBinName.c_str(), "w");
-            fwrite(clBinary, clBinSizes, sizeof(unsigned char), clBinFile);
-            fclose(clBinFile);
-            delete[] clBinary;
+            std::cout << "OpenCL program #" << i << ", ";
+            SaveBinary(program, home, fileName);
         }
 
         if (i == dev) {
