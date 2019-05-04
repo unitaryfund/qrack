@@ -12,9 +12,6 @@
 
 #include <iostream>
 #include <memory>
-#include <string>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "oclengine.hpp"
 
@@ -27,6 +24,9 @@
 #endif
 
 #include "qenginecl.hpp"
+
+#define OCL_CREATE_CALL(ENUMNAME, FUNCNAMESTR)                                                                         \
+    toRet.all_device_contexts[i]->calls[ENUMNAME] = cl::Kernel(program, FUNCNAMESTR)
 
 namespace Qrack {
 
@@ -64,23 +64,12 @@ OCLEngine::OCLEngine()
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
-OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
+OCLInitResult OCLEngine::InitOCL(bool saveBinaries, std::string home)
 {
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    char* homeDrive = getenv("HOMEDRIVE");
-    char* homePath = getenv("HOMEPATH");
-    int newSize = strlen(homeDrive) + strlen(homePath) + 1;
-    char* home = new char[newSize];
-    strcpy(home, homeDrive);
-    strcat(home, homePath);
-    std::string homeStr(home);
-    homeStr += "\\.qrack\\";
-    delete[] home;
-#else
-    char* home = getenv("HOME");
-    std::string homeStr(home);
-    homeStr += "/.qrack/";
-#endif
+
+    if (home == "*") {
+        home = GetDefaultBinaryPath();
+    }
 
     OCLInitResult toRet;
     int i;
@@ -153,7 +142,7 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
         FILE* clBinFile;
-        std::string clBinName = homeStr + "qrack_ocl_dev_" + std::to_string(i) + ".ir";
+        std::string clBinName = home + "qrack_ocl_dev_" + std::to_string(i) + ".ir";
         cl::Program program;
         if (!saveBinaries && (clBinFile = fopen(clBinName.c_str(), "r"))) {
             long lSize;
@@ -199,56 +188,56 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
 
         toRet.all_device_contexts.push_back(devCntxt);
 
-        toRet.all_device_contexts[i]->calls[OCL_API_APPLY2X2] = cl::Kernel(program, "apply2x2");
-        toRet.all_device_contexts[i]->calls[OCL_API_APPLY2X2_UNIT] = cl::Kernel(program, "apply2x2unit");
-        toRet.all_device_contexts[i]->calls[OCL_API_APPLY2X2_NORM] = cl::Kernel(program, "apply2x2norm");
-        toRet.all_device_contexts[i]->calls[OCL_API_NORMSUM] = cl::Kernel(program, "normsum");
-        toRet.all_device_contexts[i]->calls[OCL_API_UNIFORMLYCONTROLLED] = cl::Kernel(program, "uniformlycontrolled");
-        toRet.all_device_contexts[i]->calls[OCL_API_X] = cl::Kernel(program, "x");
-        toRet.all_device_contexts[i]->calls[OCL_API_COMPOSE] = cl::Kernel(program, "compose");
-        toRet.all_device_contexts[i]->calls[OCL_API_COMPOSE_MID] = cl::Kernel(program, "composemid");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECOMPOSEPROB] = cl::Kernel(program, "decomposeprob");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECOMPOSEAMP] = cl::Kernel(program, "decomposeamp");
-        toRet.all_device_contexts[i]->calls[OCL_API_PROB] = cl::Kernel(program, "prob");
-        toRet.all_device_contexts[i]->calls[OCL_API_PROBREG] = cl::Kernel(program, "probreg");
-        toRet.all_device_contexts[i]->calls[OCL_API_PROBREGALL] = cl::Kernel(program, "probregall");
-        toRet.all_device_contexts[i]->calls[OCL_API_PROBMASK] = cl::Kernel(program, "probmask");
-        toRet.all_device_contexts[i]->calls[OCL_API_PROBMASKALL] = cl::Kernel(program, "probmaskall");
-        toRet.all_device_contexts[i]->calls[OCL_API_SWAP] = cl::Kernel(program, "swap");
-        toRet.all_device_contexts[i]->calls[OCL_API_ROL] = cl::Kernel(program, "rol");
-        toRet.all_device_contexts[i]->calls[OCL_API_ROR] = cl::Kernel(program, "ror");
-        toRet.all_device_contexts[i]->calls[OCL_API_INC] = cl::Kernel(program, "inc");
-        toRet.all_device_contexts[i]->calls[OCL_API_CINC] = cl::Kernel(program, "cinc");
-        toRet.all_device_contexts[i]->calls[OCL_API_DEC] = cl::Kernel(program, "dec");
-        toRet.all_device_contexts[i]->calls[OCL_API_CDEC] = cl::Kernel(program, "cdec");
-        toRet.all_device_contexts[i]->calls[OCL_API_INCC] = cl::Kernel(program, "incc");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECC] = cl::Kernel(program, "decc");
-        toRet.all_device_contexts[i]->calls[OCL_API_INCS] = cl::Kernel(program, "incs");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECS] = cl::Kernel(program, "decs");
-        toRet.all_device_contexts[i]->calls[OCL_API_INCSC_1] = cl::Kernel(program, "incsc1");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECSC_1] = cl::Kernel(program, "decsc1");
-        toRet.all_device_contexts[i]->calls[OCL_API_INCSC_2] = cl::Kernel(program, "incsc2");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECSC_2] = cl::Kernel(program, "decsc2");
-        toRet.all_device_contexts[i]->calls[OCL_API_INCBCD] = cl::Kernel(program, "incbcd");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECBCD] = cl::Kernel(program, "decbcd");
-        toRet.all_device_contexts[i]->calls[OCL_API_INCBCDC] = cl::Kernel(program, "incbcdc");
-        toRet.all_device_contexts[i]->calls[OCL_API_DECBCDC] = cl::Kernel(program, "decbcdc");
-        toRet.all_device_contexts[i]->calls[OCL_API_INDEXEDLDA] = cl::Kernel(program, "indexedLda");
-        toRet.all_device_contexts[i]->calls[OCL_API_INDEXEDADC] = cl::Kernel(program, "indexedAdc");
-        toRet.all_device_contexts[i]->calls[OCL_API_INDEXEDSBC] = cl::Kernel(program, "indexedSbc");
-        toRet.all_device_contexts[i]->calls[OCL_API_APPROXCOMPARE] = cl::Kernel(program, "approxcompare");
-        toRet.all_device_contexts[i]->calls[OCL_API_NORMALIZE] = cl::Kernel(program, "nrmlze");
-        toRet.all_device_contexts[i]->calls[OCL_API_UPDATENORM] = cl::Kernel(program, "updatenorm");
-        toRet.all_device_contexts[i]->calls[OCL_API_APPLYM] = cl::Kernel(program, "applym");
-        toRet.all_device_contexts[i]->calls[OCL_API_APPLYMREG] = cl::Kernel(program, "applymreg");
-        toRet.all_device_contexts[i]->calls[OCL_API_PHASEFLIP] = cl::Kernel(program, "phaseflip");
-        toRet.all_device_contexts[i]->calls[OCL_API_ZEROPHASEFLIP] = cl::Kernel(program, "zerophaseflip");
-        toRet.all_device_contexts[i]->calls[OCL_API_CPHASEFLIPIFLESS] = cl::Kernel(program, "cphaseflipifless");
-        toRet.all_device_contexts[i]->calls[OCL_API_PHASEFLIPIFLESS] = cl::Kernel(program, "phaseflipifless");
-        toRet.all_device_contexts[i]->calls[OCL_API_MUL] = cl::Kernel(program, "mul");
-        toRet.all_device_contexts[i]->calls[OCL_API_DIV] = cl::Kernel(program, "div");
-        toRet.all_device_contexts[i]->calls[OCL_API_CMUL] = cl::Kernel(program, "cmul");
-        toRet.all_device_contexts[i]->calls[OCL_API_CDIV] = cl::Kernel(program, "cdiv");
+        OCL_CREATE_CALL(OCL_API_APPLY2X2, "apply2x2");
+        OCL_CREATE_CALL(OCL_API_APPLY2X2_UNIT, "apply2x2unit");
+        OCL_CREATE_CALL(OCL_API_APPLY2X2_NORM, "apply2x2norm");
+        OCL_CREATE_CALL(OCL_API_NORMSUM, "normsum");
+        OCL_CREATE_CALL(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled");
+        OCL_CREATE_CALL(OCL_API_X, "x");
+        OCL_CREATE_CALL(OCL_API_COMPOSE, "compose");
+        OCL_CREATE_CALL(OCL_API_COMPOSE_MID, "composemid");
+        OCL_CREATE_CALL(OCL_API_DECOMPOSEPROB, "decomposeprob");
+        OCL_CREATE_CALL(OCL_API_DECOMPOSEAMP, "decomposeamp");
+        OCL_CREATE_CALL(OCL_API_PROB, "prob");
+        OCL_CREATE_CALL(OCL_API_PROBREG, "probreg");
+        OCL_CREATE_CALL(OCL_API_PROBREGALL, "probregall");
+        OCL_CREATE_CALL(OCL_API_PROBMASK, "probmask");
+        OCL_CREATE_CALL(OCL_API_PROBMASKALL, "probmaskall");
+        OCL_CREATE_CALL(OCL_API_SWAP, "swap");
+        OCL_CREATE_CALL(OCL_API_ROL, "rol");
+        OCL_CREATE_CALL(OCL_API_ROR, "ror");
+        OCL_CREATE_CALL(OCL_API_INC, "inc");
+        OCL_CREATE_CALL(OCL_API_CINC, "cinc");
+        OCL_CREATE_CALL(OCL_API_DEC, "dec");
+        OCL_CREATE_CALL(OCL_API_CDEC, "cdec");
+        OCL_CREATE_CALL(OCL_API_INCC, "incc");
+        OCL_CREATE_CALL(OCL_API_DECC, "decc");
+        OCL_CREATE_CALL(OCL_API_INCS, "incs");
+        OCL_CREATE_CALL(OCL_API_DECS, "decs");
+        OCL_CREATE_CALL(OCL_API_INCSC_1, "incsc1");
+        OCL_CREATE_CALL(OCL_API_DECSC_1, "decsc1");
+        OCL_CREATE_CALL(OCL_API_INCSC_2, "incsc2");
+        OCL_CREATE_CALL(OCL_API_DECSC_2, "decsc2");
+        OCL_CREATE_CALL(OCL_API_INCBCD, "incbcd");
+        OCL_CREATE_CALL(OCL_API_DECBCD, "decbcd");
+        OCL_CREATE_CALL(OCL_API_INCBCDC, "incbcdc");
+        OCL_CREATE_CALL(OCL_API_DECBCDC, "decbcdc");
+        OCL_CREATE_CALL(OCL_API_INDEXEDLDA, "indexedLda");
+        OCL_CREATE_CALL(OCL_API_INDEXEDADC, "indexedAdc");
+        OCL_CREATE_CALL(OCL_API_INDEXEDSBC, "indexedSbc");
+        OCL_CREATE_CALL(OCL_API_APPROXCOMPARE, "approxcompare");
+        OCL_CREATE_CALL(OCL_API_NORMALIZE, "nrmlze");
+        OCL_CREATE_CALL(OCL_API_UPDATENORM, "updatenorm");
+        OCL_CREATE_CALL(OCL_API_APPLYM, "applym");
+        OCL_CREATE_CALL(OCL_API_APPLYMREG, "applymreg");
+        OCL_CREATE_CALL(OCL_API_PHASEFLIP, "phaseflip");
+        OCL_CREATE_CALL(OCL_API_ZEROPHASEFLIP, "zerophaseflip");
+        OCL_CREATE_CALL(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless");
+        OCL_CREATE_CALL(OCL_API_PHASEFLIPIFLESS, "phaseflipifless");
+        OCL_CREATE_CALL(OCL_API_MUL, "mul");
+        OCL_CREATE_CALL(OCL_API_DIV, "div");
+        OCL_CREATE_CALL(OCL_API_CMUL, "cmul");
+        OCL_CREATE_CALL(OCL_API_CDIV, "cdiv");
 
         if (saveBinaries) {
             size_t clBinSizes;
@@ -258,7 +247,7 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
             unsigned char* clBinary = new unsigned char[clBinSizes];
             program.getInfo(CL_PROGRAM_BINARIES, &clBinary);
 
-            buildError = mkdir(homeStr.c_str(), 0700);
+            buildError = mkdir(home.c_str(), 0700);
 
             FILE* clBinFile = fopen(clBinName.c_str(), "w");
             fwrite(clBinary, clBinSizes, sizeof(unsigned char), clBinFile);

@@ -21,6 +21,9 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
@@ -189,7 +192,16 @@ public:
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Initialize the OCL environment, with the option to save the generated binaries.
-    static OCLInitResult InitOCL(bool saveBinaries = false);
+    static OCLInitResult InitOCL(bool saveBinaries = false, std::string home = "*");
+    /// Get default location for precompiled binaries:
+    static std::string GetDefaultBinaryPath()
+    {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        return std::string(getenv("HOMEDRIVE")) + std::string(getenv("HOMEPATH")) + "\\.qrack\\";
+#else
+        return std::string(getenv("HOME")) + "/.qrack/";
+#endif
+    }
 
 private:
     std::vector<DeviceContextPtr> all_device_contexts;
