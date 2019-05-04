@@ -83,7 +83,8 @@ cl::Program OCLEngine::MakeProgram(
         fclose(clBinFile);
 
 #if defined(__APPLE__)
-        program = cl::Program(devCntxt->context, { devCntxt->device }, { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
+        program = cl::Program(devCntxt->context, { devCntxt->device },
+            { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
 #else
         program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
 #endif
@@ -110,7 +111,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     std::vector<size_t> clBinSizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
     size_t clBinSize = 0;
     int clBinIndex = 0;
-    for (int i = 0; i < clBinSizes.size(); i++) {
+    for (unsigned int i = 0; i < clBinSizes.size(); i++) {
         if (clBinSizes[i] > 0) {
             clBinSize = clBinSizes[i];
             clBinIndex = i;
@@ -119,16 +120,21 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
     std::cout << "Binary size:" << clBinSize << std::endl;
 
-    std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
-    char* clBinary = clBinaries[clBinIndex];
-
     int err = mkdir(path.c_str(), 0700);
     if (err != -1) {
         std::cout << "Making directory: " << path << std::endl;
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
+#if defined(__APPLE__)
+    std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
+    char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
+#else
+    std::vector<std::vector<unsigned char>> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
+    std::vector<unsigned char> clBinary = clBinaries[clBinIndex];
+    fwrite(&clBinary[0], clBinSize, sizeof(unsigned char), clBinFile);
+#endif
     fclose(clBinFile);
 }
 
