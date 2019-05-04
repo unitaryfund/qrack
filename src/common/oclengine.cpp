@@ -141,7 +141,7 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<int> binaryStatus;
-    cl_int buildError;
+    cl_int buildError = -1;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
@@ -170,9 +170,12 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries)
 
             if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
                 std::cout << "Binary error for device #" << i << ": " << buildError << ", " << binaryStatus[0]
-                          << std::endl;
+                          << " (Falling back to JIT)" << std::endl;
             }
-        } else {
+        }
+
+        // If, either, there are no cached binaries, or binary loading failed, then fall back to JIT.
+        if (buildError != CL_SUCCESS) {
             program = cl::Program(devCntxt->context, sources);
         }
 
