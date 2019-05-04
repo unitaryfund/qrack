@@ -64,7 +64,7 @@ OCLEngine::OCLEngine()
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
-OCLInitResult OCLEngine::InitOCL(bool saveBinaries, std::string home)
+OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
 {
 
     if (home == "*") {
@@ -130,7 +130,6 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries, std::string home)
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<int> binaryStatus;
-    cl_int buildError = -1;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
@@ -144,7 +143,8 @@ OCLInitResult OCLEngine::InitOCL(bool saveBinaries, std::string home)
         FILE* clBinFile;
         std::string clBinName = home + "qrack_ocl_dev_" + std::to_string(i) + ".ir";
         cl::Program program;
-        if (!saveBinaries && (clBinFile = fopen(clBinName.c_str(), "r"))) {
+        cl_int buildError = -1;
+        if (!buildFromSource && (clBinFile = fopen(clBinName.c_str(), "r"))) {
             long lSize;
 
             fseek(clBinFile, 0L, SEEK_END);

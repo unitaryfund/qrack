@@ -9,17 +9,22 @@
 // for details.
 
 #include <iostream>
+#include <string>
 
-#if ENABLE_OPENCL
-#include "oclengine.hpp"
-#endif
+#include "qfactory.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
 #if ENABLE_OPENCL
-    // OpenCL type, if available.
+    // Precompile, if OpenCL is available.
     std::cout << "Precompiling OCL kernels..." << std::endl;
-    Qrack::OCLEngine::InitOCL(true);
+    if (argc < 2) {
+        std::cout << "Will save to: " << Qrack::OCLEngine::GetDefaultBinaryPath() << std::endl;
+        Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
+    } else {
+        std::cout << "Will save to: " << std::string(argv[1]) << std::endl;
+        Qrack::OCLEngine::InitOCL(true, true, std::string(argv[1]) + "/");
+    }
     std::cout << "Done precompiling OCL kernels." << std::endl;
 #else
     std::cout << "OCL not available; nothing to precompile." << std::endl;

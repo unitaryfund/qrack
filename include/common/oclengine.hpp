@@ -192,7 +192,7 @@ public:
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Initialize the OCL environment, with the option to save the generated binaries.
-    static OCLInitResult InitOCL(bool saveBinaries = false, std::string home = "*");
+    static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
     /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {
