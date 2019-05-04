@@ -13,7 +13,7 @@
 
 #include "qfactory.hpp"
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 #if ENABLE_OPENCL
     // Precompile, if OpenCL is available.
