@@ -26,7 +26,7 @@
 #include "qenginecl.hpp"
 
 #define OCL_CREATE_CALL(ENUMNAME, FUNCNAMESTR)                                                                         \
-    toRet.all_device_contexts[i]->calls[ENUMNAME] = cl::Kernel(program, FUNCNAMESTR)
+    toRet.all_device_contexts[i]->calls[ENUMNAME] = cl::Kernel(program, FUNCNAMESTR.c_str())
 
 namespace Qrack {
 
@@ -43,6 +43,31 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
         return all_device_contexts[dev];
     }
 }
+
+const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = { OCLKernelHandle(OCL_API_APPLY2X2, "apply2x2"),
+    OCLKernelHandle(OCL_API_APPLY2X2_UNIT, "apply2x2unit"), OCLKernelHandle(OCL_API_APPLY2X2_NORM, "apply2x2norm"),
+    OCLKernelHandle(OCL_API_NORMSUM, "normsum"), OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
+    OCLKernelHandle(OCL_API_X, "x"), OCLKernelHandle(OCL_API_COMPOSE, "compose"),
+    OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"), OCLKernelHandle(OCL_API_DECOMPOSEPROB, "decomposeprob"),
+    OCLKernelHandle(OCL_API_DECOMPOSEAMP, "decomposeamp"), OCLKernelHandle(OCL_API_PROB, "prob"),
+    OCLKernelHandle(OCL_API_PROBREG, "probreg"), OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
+    OCLKernelHandle(OCL_API_PROBMASK, "probmask"), OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
+    OCLKernelHandle(OCL_API_SWAP, "swap"), OCLKernelHandle(OCL_API_ROL, "rol"), OCLKernelHandle(OCL_API_ROR, "ror"),
+    OCLKernelHandle(OCL_API_INC, "inc"), OCLKernelHandle(OCL_API_CINC, "cinc"), OCLKernelHandle(OCL_API_DEC, "dec"),
+    OCLKernelHandle(OCL_API_CDEC, "cdec"), OCLKernelHandle(OCL_API_INCC, "incc"), OCLKernelHandle(OCL_API_DECC, "decc"),
+    OCLKernelHandle(OCL_API_INCS, "incs"), OCLKernelHandle(OCL_API_DECS, "decs"),
+    OCLKernelHandle(OCL_API_INCSC_1, "incsc1"), OCLKernelHandle(OCL_API_DECSC_1, "decsc1"),
+    OCLKernelHandle(OCL_API_INCSC_2, "incsc2"), OCLKernelHandle(OCL_API_DECSC_2, "decsc2"),
+    OCLKernelHandle(OCL_API_INCBCD, "incbcd"), OCLKernelHandle(OCL_API_DECBCD, "decbcd"),
+    OCLKernelHandle(OCL_API_INCBCDC, "incbcdc"), OCLKernelHandle(OCL_API_DECBCDC, "decbcdc"),
+    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"), OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
+    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"), OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
+    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"), OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
+    OCLKernelHandle(OCL_API_APPLYM, "applym"), OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
+    OCLKernelHandle(OCL_API_PHASEFLIP, "phaseflip"), OCLKernelHandle(OCL_API_ZEROPHASEFLIP, "zerophaseflip"),
+    OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
+    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"), OCLKernelHandle(OCL_API_MUL, "mul"),
+    OCLKernelHandle(OCL_API_DIV, "div"), OCLKernelHandle(OCL_API_CMUL, "cmul"), OCLKernelHandle(OCL_API_CDIV, "cdiv") };
 
 std::vector<DeviceContextPtr> OCLEngine::GetDeviceContextPtrVector() { return all_device_contexts; }
 void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp)
@@ -239,56 +264,9 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
         toRet.all_device_contexts.push_back(devCntxt);
 
-        OCL_CREATE_CALL(OCL_API_APPLY2X2, "apply2x2");
-        OCL_CREATE_CALL(OCL_API_APPLY2X2_UNIT, "apply2x2unit");
-        OCL_CREATE_CALL(OCL_API_APPLY2X2_NORM, "apply2x2norm");
-        OCL_CREATE_CALL(OCL_API_NORMSUM, "normsum");
-        OCL_CREATE_CALL(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled");
-        OCL_CREATE_CALL(OCL_API_X, "x");
-        OCL_CREATE_CALL(OCL_API_COMPOSE, "compose");
-        OCL_CREATE_CALL(OCL_API_COMPOSE_MID, "composemid");
-        OCL_CREATE_CALL(OCL_API_DECOMPOSEPROB, "decomposeprob");
-        OCL_CREATE_CALL(OCL_API_DECOMPOSEAMP, "decomposeamp");
-        OCL_CREATE_CALL(OCL_API_PROB, "prob");
-        OCL_CREATE_CALL(OCL_API_PROBREG, "probreg");
-        OCL_CREATE_CALL(OCL_API_PROBREGALL, "probregall");
-        OCL_CREATE_CALL(OCL_API_PROBMASK, "probmask");
-        OCL_CREATE_CALL(OCL_API_PROBMASKALL, "probmaskall");
-        OCL_CREATE_CALL(OCL_API_SWAP, "swap");
-        OCL_CREATE_CALL(OCL_API_ROL, "rol");
-        OCL_CREATE_CALL(OCL_API_ROR, "ror");
-        OCL_CREATE_CALL(OCL_API_INC, "inc");
-        OCL_CREATE_CALL(OCL_API_CINC, "cinc");
-        OCL_CREATE_CALL(OCL_API_DEC, "dec");
-        OCL_CREATE_CALL(OCL_API_CDEC, "cdec");
-        OCL_CREATE_CALL(OCL_API_INCC, "incc");
-        OCL_CREATE_CALL(OCL_API_DECC, "decc");
-        OCL_CREATE_CALL(OCL_API_INCS, "incs");
-        OCL_CREATE_CALL(OCL_API_DECS, "decs");
-        OCL_CREATE_CALL(OCL_API_INCSC_1, "incsc1");
-        OCL_CREATE_CALL(OCL_API_DECSC_1, "decsc1");
-        OCL_CREATE_CALL(OCL_API_INCSC_2, "incsc2");
-        OCL_CREATE_CALL(OCL_API_DECSC_2, "decsc2");
-        OCL_CREATE_CALL(OCL_API_INCBCD, "incbcd");
-        OCL_CREATE_CALL(OCL_API_DECBCD, "decbcd");
-        OCL_CREATE_CALL(OCL_API_INCBCDC, "incbcdc");
-        OCL_CREATE_CALL(OCL_API_DECBCDC, "decbcdc");
-        OCL_CREATE_CALL(OCL_API_INDEXEDLDA, "indexedLda");
-        OCL_CREATE_CALL(OCL_API_INDEXEDADC, "indexedAdc");
-        OCL_CREATE_CALL(OCL_API_INDEXEDSBC, "indexedSbc");
-        OCL_CREATE_CALL(OCL_API_APPROXCOMPARE, "approxcompare");
-        OCL_CREATE_CALL(OCL_API_NORMALIZE, "nrmlze");
-        OCL_CREATE_CALL(OCL_API_UPDATENORM, "updatenorm");
-        OCL_CREATE_CALL(OCL_API_APPLYM, "applym");
-        OCL_CREATE_CALL(OCL_API_APPLYMREG, "applymreg");
-        OCL_CREATE_CALL(OCL_API_PHASEFLIP, "phaseflip");
-        OCL_CREATE_CALL(OCL_API_ZEROPHASEFLIP, "zerophaseflip");
-        OCL_CREATE_CALL(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless");
-        OCL_CREATE_CALL(OCL_API_PHASEFLIPIFLESS, "phaseflipifless");
-        OCL_CREATE_CALL(OCL_API_MUL, "mul");
-        OCL_CREATE_CALL(OCL_API_DIV, "div");
-        OCL_CREATE_CALL(OCL_API_CMUL, "cmul");
-        OCL_CREATE_CALL(OCL_API_CDIV, "cdiv");
+        for (unsigned int j = 0; j < kernelHandles.size(); j++) {
+            OCL_CREATE_CALL(kernelHandles[j].oclapi, kernelHandles[j].kernelname);
+        }
 
         if (saveBinaries) {
             std::cout << "OpenCL program #" << i << ", ";

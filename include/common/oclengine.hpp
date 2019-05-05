@@ -97,6 +97,17 @@ enum OCLAPI {
     OCL_API_CDIV
 };
 
+struct OCLKernelHandle {
+    OCLAPI oclapi;
+    std::string kernelname;
+
+    OCLKernelHandle(OCLAPI o, std::string kn)
+        : oclapi(o)
+        , kernelname(kn)
+    {
+    }
+};
+
 struct OCLInitResult {
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
@@ -209,6 +220,7 @@ public:
     }
 
 private:
+    static const std::vector<OCLKernelHandle> kernelHandles;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 
