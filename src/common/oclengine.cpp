@@ -25,9 +25,6 @@
 
 #include "qenginecl.hpp"
 
-#define OCL_CREATE_CALL(ENUMNAME, FUNCNAMESTR)                                                                         \
-    toRet.all_device_contexts[i]->calls[ENUMNAME] = cl::Kernel(program, FUNCNAMESTR.c_str())
-
 namespace Qrack {
 
 /// "Qrack::OCLEngine" manages the single OpenCL context
@@ -265,7 +262,8 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         toRet.all_device_contexts.push_back(devCntxt);
 
         for (unsigned int j = 0; j < kernelHandles.size(); j++) {
-            OCL_CREATE_CALL(kernelHandles[j].oclapi, kernelHandles[j].kernelname);
+            toRet.all_device_contexts[i]->calls[kernelHandles[j].oclapi] =
+                cl::Kernel(program, kernelHandles[j].kernelname.c_str());
         }
 
         if (saveBinaries) {
