@@ -202,7 +202,7 @@ public:
     int GetDefaultDeviceID() { return default_device_context->context_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    /// Initialize the OCL environment, with the option to save the generated binaries.
+    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
     static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
     /// Make the program, from either source or binary
     static cl::Program MakeProgram(bool buildFromSource, cl::Program::Sources sources, std::string path,

@@ -123,6 +123,25 @@ $ cmake -DENABLE_PURE32=ON ..
 ```
 This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware). `-DENABLE_PURE32=ON` should be necessary but sufficient to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3.
 
+## Precompiled OpenCL kernels
+
+```
+$ qrack_cl_compile [path]
+```
+Precompile the OpenCL programs for all available devices, and save them to the optional "path" parameter location. By default, programs will be saved to a folder in the "home" directory, such as `~/.qrack/` on most Linux systems. Also by default, Qrack will attempt to load precompiled binaries from the same path, but the library will fall back to JIT compilation if program binaries are not available or are corrupt. To turn off default loading of binaries, one can simply delete the programs from this folder.
+
+The option to load and save precompiled binaries, and where to load them from, can be controlled with the initializing method of `Qrack::OCLEngine`:
+```
+;
+Qrack::OCLInitResult oir = Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath())
+Qrack::OCLEngine::Instance()->SetDeviceContextPtrVector(oir.all_device_contexts, oir.default_device_context);
+```
+The initialization method prototype is as follows:
+```
+/// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
+    static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+```
+
 ## Copyright and License
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
