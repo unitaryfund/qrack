@@ -202,11 +202,18 @@ public:
     int GetDefaultDeviceID() { return default_device_context->context_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to SetDeviceContextPtrVector().
+    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
+    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
+    /// SetDeviceContextPtrVector().
     static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
     /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {
+        std::string test1("*");
+        std::string test2(PRECOMPILED_OCL_PATH);
+        if (test1.compare(test2)) {
+            return PRECOMPILED_OCL_PATH;
+        }
 #if defined(_WIN32) && !defined(__CYGWIN__)
         return std::string(getenv("HOMEDRIVE")) + std::string(getenv("HOMEPATH")) + "\\.qrack\\";
 #else
@@ -216,6 +223,8 @@ public:
 
 private:
     static const std::vector<OCLKernelHandle> kernelHandles;
+    static const std::string binary_file_prefix;
+    static const std::string binary_file_ext;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 

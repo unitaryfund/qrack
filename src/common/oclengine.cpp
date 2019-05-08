@@ -41,30 +41,63 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
     }
 }
 
-const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = { OCLKernelHandle(OCL_API_APPLY2X2, "apply2x2"),
-    OCLKernelHandle(OCL_API_APPLY2X2_UNIT, "apply2x2unit"), OCLKernelHandle(OCL_API_APPLY2X2_NORM, "apply2x2norm"),
-    OCLKernelHandle(OCL_API_NORMSUM, "normsum"), OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
-    OCLKernelHandle(OCL_API_X, "x"), OCLKernelHandle(OCL_API_COMPOSE, "compose"),
-    OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"), OCLKernelHandle(OCL_API_DECOMPOSEPROB, "decomposeprob"),
-    OCLKernelHandle(OCL_API_DECOMPOSEAMP, "decomposeamp"), OCLKernelHandle(OCL_API_PROB, "prob"),
-    OCLKernelHandle(OCL_API_PROBREG, "probreg"), OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
-    OCLKernelHandle(OCL_API_PROBMASK, "probmask"), OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
-    OCLKernelHandle(OCL_API_SWAP, "swap"), OCLKernelHandle(OCL_API_ROL, "rol"), OCLKernelHandle(OCL_API_ROR, "ror"),
-    OCLKernelHandle(OCL_API_INC, "inc"), OCLKernelHandle(OCL_API_CINC, "cinc"), OCLKernelHandle(OCL_API_DEC, "dec"),
-    OCLKernelHandle(OCL_API_CDEC, "cdec"), OCLKernelHandle(OCL_API_INCC, "incc"), OCLKernelHandle(OCL_API_DECC, "decc"),
-    OCLKernelHandle(OCL_API_INCS, "incs"), OCLKernelHandle(OCL_API_DECS, "decs"),
-    OCLKernelHandle(OCL_API_INCSC_1, "incsc1"), OCLKernelHandle(OCL_API_DECSC_1, "decsc1"),
-    OCLKernelHandle(OCL_API_INCSC_2, "incsc2"), OCLKernelHandle(OCL_API_DECSC_2, "decsc2"),
-    OCLKernelHandle(OCL_API_INCBCD, "incbcd"), OCLKernelHandle(OCL_API_DECBCD, "decbcd"),
-    OCLKernelHandle(OCL_API_INCBCDC, "incbcdc"), OCLKernelHandle(OCL_API_DECBCDC, "decbcdc"),
-    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"), OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
-    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"), OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
-    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"), OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
-    OCLKernelHandle(OCL_API_APPLYM, "applym"), OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
-    OCLKernelHandle(OCL_API_PHASEFLIP, "phaseflip"), OCLKernelHandle(OCL_API_ZEROPHASEFLIP, "zerophaseflip"),
+// clang-format off
+const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
+    OCLKernelHandle(OCL_API_APPLY2X2, "apply2x2"),
+    OCLKernelHandle(OCL_API_APPLY2X2_UNIT, "apply2x2unit"),
+    OCLKernelHandle(OCL_API_APPLY2X2_NORM, "apply2x2norm"),
+    OCLKernelHandle(OCL_API_NORMSUM, "normsum"),
+    OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
+    OCLKernelHandle(OCL_API_X, "x"),
+    OCLKernelHandle(OCL_API_COMPOSE, "compose"),
+    OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),
+    OCLKernelHandle(OCL_API_DECOMPOSEPROB, "decomposeprob"),
+    OCLKernelHandle(OCL_API_DECOMPOSEAMP, "decomposeamp"),
+    OCLKernelHandle(OCL_API_PROB, "prob"),
+    OCLKernelHandle(OCL_API_PROBREG, "probreg"),
+    OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
+    OCLKernelHandle(OCL_API_PROBMASK, "probmask"),
+    OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
+    OCLKernelHandle(OCL_API_SWAP, "swap"),
+    OCLKernelHandle(OCL_API_ROL, "rol"),
+    OCLKernelHandle(OCL_API_ROR, "ror"),
+    OCLKernelHandle(OCL_API_INC, "inc"),
+    OCLKernelHandle(OCL_API_CINC, "cinc"),
+    OCLKernelHandle(OCL_API_DEC, "dec"),
+    OCLKernelHandle(OCL_API_CDEC, "cdec"),
+    OCLKernelHandle(OCL_API_INCC, "incc"),
+    OCLKernelHandle(OCL_API_DECC, "decc"),
+    OCLKernelHandle(OCL_API_INCS, "incs"),
+    OCLKernelHandle(OCL_API_DECS, "decs"),
+    OCLKernelHandle(OCL_API_INCSC_1, "incsc1"),
+    OCLKernelHandle(OCL_API_DECSC_1, "decsc1"),
+    OCLKernelHandle(OCL_API_INCSC_2, "incsc2"),
+    OCLKernelHandle(OCL_API_DECSC_2, "decsc2"),
+    OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
+    OCLKernelHandle(OCL_API_DECBCD, "decbcd"),
+    OCLKernelHandle(OCL_API_INCBCDC, "incbcdc"),
+    OCLKernelHandle(OCL_API_DECBCDC, "decbcdc"),
+    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
+    OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
+    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
+    OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
+    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"),
+    OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
+    OCLKernelHandle(OCL_API_APPLYM, "applym"),
+    OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
+    OCLKernelHandle(OCL_API_PHASEFLIP, "phaseflip"),
+    OCLKernelHandle(OCL_API_ZEROPHASEFLIP, "zerophaseflip"),
     OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
-    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"), OCLKernelHandle(OCL_API_MUL, "mul"),
-    OCLKernelHandle(OCL_API_DIV, "div"), OCLKernelHandle(OCL_API_CMUL, "cmul"), OCLKernelHandle(OCL_API_CDIV, "cdiv") };
+    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
+    OCLKernelHandle(OCL_API_MUL, "mul"),
+    OCLKernelHandle(OCL_API_DIV, "div"),
+    OCLKernelHandle(OCL_API_CMUL, "cmul"),
+    OCLKernelHandle(OCL_API_CDIV, "cdiv")
+};
+// clang-format on
+
+const std::string OCLEngine::binary_file_prefix("qrack_ocl_dev_");
+const std::string OCLEngine::binary_file_ext(".ir");
 
 std::vector<DeviceContextPtr> OCLEngine::GetDeviceContextPtrVector() { return all_device_contexts; }
 void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp)
@@ -83,6 +116,7 @@ OCLEngine::OCLEngine()
     all_device_contexts = res.all_device_contexts;
     default_device_context = res.default_device_context;
 }
+
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
@@ -115,7 +149,7 @@ cl::Program OCLEngine::MakeProgram(
             std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
                       << std::endl;
         } else {
-            std::cout << "Loaded binary." << std::endl;
+            std::cout << "Loaded binary from: " << path << std::endl;
         }
     }
 
@@ -133,6 +167,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     std::vector<size_t> clBinSizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
     size_t clBinSize = 0;
     int clBinIndex = 0;
+
     for (unsigned int i = 0; i < clBinSizes.size(); i++) {
         if (clBinSizes[i] > 0) {
             clBinSize = clBinSizes[i];
@@ -140,6 +175,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
             break;
         }
     }
+
     std::cout << "Binary size:" << clBinSize << std::endl;
 
     int err = mkdir(path.c_str(), 0700);
@@ -235,7 +271,7 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
 
-        std::string fileName = "qrack_ocl_dev_" + std::to_string(i) + ".ir";
+        std::string fileName = binary_file_prefix + std::to_string(i) + binary_file_ext;
         std::string clBinName = home + fileName;
 
         std::cout << "Device #" << i << ", ";

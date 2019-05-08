@@ -2,3 +2,4 @@
 #cmakedefine ENABLE_COMPLEX_X2 1
 #cmakedefine ENABLE_COMPLEX8 1
 #cmakedefine PSTRIDE @PSTRIDE@
+#cmakedefine PRECOMPILED_OCL_PATH "@PRECOMPILED_OCL_PATH@/"

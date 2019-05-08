@@ -1,4 +1,5 @@
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
+set(PRECOMPILED_OCL_PATH * CACHE PATH "Path where precompiled OpenCL programs are saved to and loaded from, by default")
 
 set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD OpenCL SDK, if used")
 
@@ -31,6 +32,9 @@ endif ()
 if (ENABLE_OPENCL)
     target_compile_definitions (qrack PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
     target_compile_definitions (qrack PUBLIC CL_HPP_MINIMUM_OPENCL_VERSION=100)
+    if (NOT PRECOMPILED_OCL_PATH STREQUAL *)
+        message ("    Precompiled OCL Path:   ${PRECOMPILED_OCL_PATH}")
+    endif ()
 
     # Include the necessary options and libraries to link against
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${OpenCL_INCLUDE_DIRS})
