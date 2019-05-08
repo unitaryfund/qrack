@@ -133,10 +133,15 @@ cl::Program OCLEngine::MakeProgram(
             std::cout << "Binary error: Invalid file fstat result. (Falling back to JIT.)" << std::endl;
         } else {
             unsigned long lSize = statSize.st_size;
+            unsigned long lSizeResult;
 
             std::vector<unsigned char> buffer(lSize);
-            lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
+            lSizeResult = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
             fclose(clBinFile);
+
+            if (lSizeResult != lSize) {
+                std::cout << "Binary warning: Binary file size and read result length do not match. (Attempting to build anyway.)" << std::endl;
+            }
 
 #if defined(__APPLE__)
             program = cl::Program(devCntxt->context, { devCntxt->device },
