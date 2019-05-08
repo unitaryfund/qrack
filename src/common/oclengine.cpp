@@ -129,25 +129,28 @@ cl::Program OCLEngine::MakeProgram(
     std::vector<int> binaryStatus;
     if (!buildFromSource && (clBinFile = fopen(path.c_str(), "r"))) {
         struct stat statSize;
-        fstat(fileno(clBinFile), &statSize);
-        unsigned long lSize = statSize.st_size;
+        if (fstat(fileno(clBinFile), &statSize)) {
+            std::cout << "Binary error: Invalid file fstat result. (Falling back to JIT.)" << std::endl;
+        } else {
+            unsigned long lSize = statSize.st_size;
 
-        std::vector<unsigned char> buffer(lSize);
-        lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
-        fclose(clBinFile);
+            std::vector<unsigned char> buffer(lSize);
+            lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
+            fclose(clBinFile);
 
 #if defined(__APPLE__)
-        program = cl::Program(devCntxt->context, { devCntxt->device },
-            { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
+            program = cl::Program(devCntxt->context, { devCntxt->device },
+                { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
 #else
-        program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
+            program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
 #endif
 
-        if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
-            std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
-                      << std::endl;
-        } else {
-            std::cout << "Loaded binary from: " << path << std::endl;
+            if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
+                std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
+                          << std::endl;
+            } else {
+                std::cout << "Loaded binary from: " << path << std::endl;
+            }
         }
     }
 
