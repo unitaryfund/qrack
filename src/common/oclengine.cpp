@@ -140,7 +140,9 @@ cl::Program OCLEngine::MakeProgram(
             fclose(clBinFile);
 
             if (lSizeResult != lSize) {
-                std::cout << "Binary warning: Binary file size and read result length do not match. (Attempting to build anyway.)" << std::endl;
+                std::cout << "Binary warning: Binary file size and read result length do not match. (Attempting to "
+                             "build anyway.)"
+                          << std::endl;
             }
 
 #if defined(__APPLE__)
