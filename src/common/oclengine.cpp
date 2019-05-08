@@ -128,11 +128,9 @@ cl::Program OCLEngine::MakeProgram(
     cl_int buildError = -1;
     std::vector<int> binaryStatus;
     if (!buildFromSource && (clBinFile = fopen(path.c_str(), "r"))) {
-        long lSize;
-
-        fseek(clBinFile, 0L, SEEK_END);
-        lSize = ftell(clBinFile);
-        rewind(clBinFile);
+        struct stat statSize;
+        fstat(fileno(clBinFile), &statSize);
+        unsigned long lSize = statSize.st_size;
 
         std::vector<unsigned char> buffer(lSize);
         lSize = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);

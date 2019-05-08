@@ -209,9 +209,9 @@ public:
     /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {
-        std::string test1("*");
+        std::string test1("*/");
         std::string test2(PRECOMPILED_OCL_PATH);
-        if (test1.compare(test2)) {
+        if (test1.compare(test2) != 0) {
             return PRECOMPILED_OCL_PATH;
         }
 #if defined(_WIN32) && !defined(__CYGWIN__)
