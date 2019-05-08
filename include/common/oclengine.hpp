@@ -108,11 +108,6 @@ struct OCLKernelHandle {
     }
 };
 
-struct OCLInitResult {
-    std::vector<DeviceContextPtr> all_device_contexts;
-    DeviceContextPtr default_device_context;
-};
-
 class OCLDeviceCall {
 protected:
     std::lock_guard<std::recursive_mutex> guard;
@@ -205,14 +200,12 @@ public:
     /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
     /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
     /// SetDeviceContextPtrVector().
-    static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+    static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
     /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {
-        std::string test1("*/");
-        std::string test2(PRECOMPILED_OCL_PATH);
-        if (test1.compare(test2) != 0) {
-            return PRECOMPILED_OCL_PATH;
+        if (getenv("QRACK_OCL_PATH")) {
+            return std::string(getenv("QRACK_OCL_PATH")) + "/";
         }
 #if defined(_WIN32) && !defined(__CYGWIN__)
         return std::string(getenv("HOMEDRIVE")) + std::string(getenv("HOMEPATH")) + "\\.qrack\\";
@@ -225,7 +218,6 @@ private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
-    static bool hasInitialized;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 

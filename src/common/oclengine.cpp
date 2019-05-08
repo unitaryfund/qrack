@@ -41,8 +41,6 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
     }
 }
 
-bool OCLEngine::hasInitialized = false;
-
 // clang-format off
 const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_APPLY2X2, "apply2x2"),
@@ -199,14 +197,13 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     fclose(clBinFile);
 }
 
-OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
+void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
 {
 
     if (home == "*") {
         home = GetDefaultBinaryPath();
     }
 
-    OCLInitResult toRet;
     int i;
     // get all platforms (drivers), e.g. NVIDIA
 
@@ -215,6 +212,8 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     std::vector<int> device_platform_id;
     cl::Platform default_platform;
     cl::Device default_device;
+    std::vector<DeviceContextPtr> all_dev_contexts;
+    DeviceContextPtr default_dev_context;
 
     cl::Platform::get(&all_platforms);
 
@@ -290,7 +289,7 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
             // use the first device. If the default is the first device, and we can't compile for it, then we don't
             // have any devices that can compile at all, and the environment needs to be fixed by the user.
             if (i == dev) {
-                toRet.default_device_context = toRet.all_device_contexts[0];
+                default_dev_context = all_dev_contexts[0];
                 default_platform = all_platforms[0];
                 default_device = all_devices[0];
             }
@@ -298,10 +297,10 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
             continue;
         }
 
-        toRet.all_device_contexts.push_back(devCntxt);
+        all_dev_contexts.push_back(devCntxt);
 
         for (unsigned int j = 0; j < kernelHandles.size(); j++) {
-            toRet.all_device_contexts[i]->calls[kernelHandles[j].oclapi] =
+            all_dev_contexts[i]->calls[kernelHandles[j].oclapi] =
                 cl::Kernel(program, kernelHandles[j].kernelname.c_str());
         }
 
@@ -311,7 +310,7 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         }
 
         if (i == dev) {
-            toRet.default_device_context = toRet.all_device_contexts[i];
+            default_dev_context = all_dev_contexts[i];
             default_platform = all_platforms[plat_id];
             default_device = all_devices[i];
         }
@@ -320,7 +319,7 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     if (!m_pInstance) {
         m_pInstance = new OCLEngine();
     }
-    m_pInstance->SetDeviceContextPtrVector(toRet.all_device_contexts, toRet.default_device_context);
+    m_pInstance->SetDeviceContextPtrVector(all_dev_contexts, default_dev_context);
 
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
@@ -328,10 +327,6 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     for (i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
-
-    hasInitialized = true;
-
-    return toRet;
 }
 
 OCLEngine::OCLEngine()
@@ -343,10 +338,7 @@ OCLEngine* OCLEngine::Instance()
 {
     if (!m_pInstance) {
         m_pInstance = new OCLEngine();
-    }
-    if (!hasInitialized) {
-        OCLInitResult res = InitOCL(false);
-        m_pInstance->SetDeviceContextPtrVector(res.all_device_contexts, res.default_device_context);
+        InitOCL(false);
     }
     return m_pInstance;
 }

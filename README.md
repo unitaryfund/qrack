@@ -128,19 +128,18 @@ This option is needed for certain older or simpler hardware. This removes all us
 ```
 $ qrack_cl_compile [path]
 ```
-Precompile the OpenCL programs for all available devices, and save them to the optional "path" parameter location. By default, programs will be saved to a folder in the "home" directory, such as `~/.qrack/` on most Linux systems. (The default path can also be specified at compile time, by passing `-DPRECOMPILED_OCL_PATH=...` to CMake.) Also by default, Qrack will attempt to load precompiled binaries from the same path, but the library will fall back to JIT compilation if program binaries are not available or are corrupt. To turn off default loading of binaries, one can simply delete the programs from this folder.
+Precompile the OpenCL programs for all available devices, and save them to the optional "path" parameter location. By default, programs will be saved to a folder in the "home" directory, such as `~/.qrack/` on most Linux systems. (The default path can also be specified as an environment variable, `QRACK_OCL_PATH`.) Also by default, Qrack will attempt to load precompiled binaries from the same path, but the library will fall back to JIT compilation if program binaries are not available or are corrupt. To turn off default loading of binaries, one can simply delete the programs from this folder.
 
 The option to load and save precompiled binaries, and where to load them from, can be controlled with the initializing method of `Qrack::OCLEngine`:
 ```
-;
-Qrack::OCLInitResult oir = Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath())
-Qrack::OCLEngine::Instance()->SetDeviceContextPtrVector(oir.all_device_contexts, oir.default_device_context);
+Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
 ```
-The initialization method prototype is as follows:
+Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
 ```
 /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
-    static OCLInitResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
 ```
+The `home` argument default indicates that the default home directory path should be used. 
 
 ## Copyright and License
 
