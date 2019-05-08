@@ -205,7 +205,15 @@ public:
     static std::string GetDefaultBinaryPath()
     {
         if (getenv("QRACK_OCL_PATH")) {
-            return std::string(getenv("QRACK_OCL_PATH")) + "/";
+            std::string toRet = std::string(getenv("QRACK_OCL_PATH"));
+            if ((toRet.back() != '/') && (toRet.back() != '\\')) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+                toRet += "\\";
+#else
+                toRet += "/";
+#endif
+            }
+            return toRet;
         }
 #if defined(_WIN32) && !defined(__CYGWIN__)
         return std::string(getenv("HOMEDRIVE")) + std::string(getenv("HOMEPATH")) + "\\.qrack\\";
