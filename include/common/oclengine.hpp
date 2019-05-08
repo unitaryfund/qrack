@@ -18,6 +18,10 @@
 #error OpenCL has not been enabled
 #endif
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <direct.h>
+#endif
+
 #include <map>
 #include <memory>
 #include <mutex>

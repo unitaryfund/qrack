@@ -138,7 +138,7 @@ cl::Program OCLEngine::MakeProgram(
                           << std::endl;
             }
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
 #else
@@ -179,13 +179,17 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
 
     std::cout << "Binary size:" << clBinSize << std::endl;
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+	int err = _mkdir(path.c_str());
+#else
     int err = mkdir(path.c_str(), 0700);
+#endif
     if (err != -1) {
         std::cout << "Making directory: " << path << std::endl;
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-#if defined(__APPLE__)
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
     std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
