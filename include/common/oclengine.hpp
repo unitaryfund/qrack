@@ -225,6 +225,7 @@ private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
+    static bool hasInitialized;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 

@@ -41,6 +41,8 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
     }
 }
 
+bool OCLEngine::hasInitialized = false;
+
 // clang-format off
 const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_APPLY2X2, "apply2x2"),
@@ -109,13 +111,6 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 }
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
-
-OCLEngine::OCLEngine()
-{
-    OCLInitResult res = InitOCL(false);
-    all_device_contexts = res.all_device_contexts;
-    default_device_context = res.default_device_context;
-}
 
 OCLEngine::OCLEngine(OCLEngine const&) {}
 OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
@@ -322,6 +317,11 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         }
     }
 
+    if (!m_pInstance) {
+        m_pInstance = new OCLEngine();
+    }
+    m_pInstance->SetDeviceContextPtrVector(toRet.all_device_contexts, toRet.default_device_context);
+
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
     std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
@@ -329,14 +329,25 @@ OCLInitResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
 
+    hasInitialized = true;
+
     return toRet;
 }
 
+OCLEngine::OCLEngine()
+{
+    // Intentionally left blank;
+}
 OCLEngine* OCLEngine::m_pInstance = NULL;
 OCLEngine* OCLEngine::Instance()
 {
-    if (!m_pInstance)
+    if (!m_pInstance) {
         m_pInstance = new OCLEngine();
+    }
+    if (!hasInitialized) {
+        OCLInitResult res = InitOCL(false);
+        m_pInstance->SetDeviceContextPtrVector(res.all_device_contexts, res.default_device_context);
+    }
     return m_pInstance;
 }
 
