@@ -71,6 +71,17 @@ add_test (NAME qrack_accuracy
     COMMAND accuracy
     )
 
+# Declare the OCL precompilation executable
+add_executable (qrack_cl_precompile
+    src/qrack_cl_precompile.cpp
+    )
+
+target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+
+add_test (NAME qrack_cl_precompile
+    COMMAND qrack_cl_precompile
+    )
+
 # Included after the library and other modules have been declared
 include ("cmake/Examples.cmake")
 include ("cmake/OpenCL.cmake" )
@@ -113,6 +124,7 @@ endif (APPLE)
 target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -154,3 +166,4 @@ install (TARGETS qrack
 # Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
+install(TARGETS qrack_cl_precompile DESTINATION bin)

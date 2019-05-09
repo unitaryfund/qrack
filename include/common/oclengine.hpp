@@ -18,9 +18,16 @@
 #error OpenCL has not been enabled
 #endif
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <direct.h>
+#endif
+
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
@@ -92,6 +99,17 @@ enum OCLAPI {
     OCL_API_DIV,
     OCL_API_CMUL,
     OCL_API_CDIV
+};
+
+struct OCLKernelHandle {
+    OCLAPI oclapi;
+    std::string kernelname;
+
+    OCLKernelHandle(OCLAPI o, std::string kn)
+        : oclapi(o)
+        , kernelname(kn)
+    {
+    }
 };
 
 class OCLDeviceCall {
@@ -183,8 +201,36 @@ public:
     int GetDefaultDeviceID() { return default_device_context->context_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
+    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
+    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
+    /// SetDeviceContextPtrVector().
+    static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+    /// Get default location for precompiled binaries:
+    static std::string GetDefaultBinaryPath()
+    {
+        if (getenv("QRACK_OCL_PATH")) {
+            std::string toRet = std::string(getenv("QRACK_OCL_PATH"));
+            if ((toRet.back() != '/') && (toRet.back() != '\\')) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+                toRet += "\\";
+#else
+                toRet += "/";
+#endif
+            }
+            return toRet;
+        }
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
+            std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\";
+#else
+        return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
+#endif
+    }
 
 private:
+    static const std::vector<OCLKernelHandle> kernelHandles;
+    static const std::string binary_file_prefix;
+    static const std::string binary_file_ext;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 
@@ -193,7 +239,11 @@ private:
     OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
     static OCLEngine* m_pInstance;
 
-    void InitOCL();
+    /// Make the program, from either source or binary
+    static cl::Program MakeProgram(bool buildFromSource, cl::Program::Sources sources, std::string path,
+        std::shared_ptr<OCLDeviceContext> devCntxt);
+    /// Save the program binary:
+    static void SaveBinary(cl::Program program, std::string path, std::string fileName);
 
     unsigned long PowerOf2LessThan(unsigned long number);
 };
