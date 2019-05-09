@@ -180,7 +180,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     std::cout << "Binary size:" << clBinSize << std::endl;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-	int err = _mkdir(path.c_str());
+    int err = _mkdir(path.c_str());
 #else
     int err = mkdir(path.c_str(), 0700);
 #endif

@@ -117,7 +117,6 @@ enable_testing()
 target_include_directories (unittest PUBLIC test)
 target_include_directories (benchmarks PUBLIC test)
 
-
 if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)

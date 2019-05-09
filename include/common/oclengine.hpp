@@ -220,9 +220,10 @@ public:
             return toRet;
         }
 #if defined(_WIN32) && !defined(__CYGWIN__)
-        return std::string(getenv("HOMEDRIVE")) + std::string(getenv("HOMEPATH")) + "\\.qrack\\";
+        return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
+            std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\";
 #else
-        return std::string(getenv("HOME")) + "/.qrack/";
+        return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
 #endif
     }
 
