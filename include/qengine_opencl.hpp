@@ -182,7 +182,7 @@ public:
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
     virtual int GetDeviceID() { return deviceID; }
 
-    virtual void SetQuantumState(complex* inputState);
+    virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
 

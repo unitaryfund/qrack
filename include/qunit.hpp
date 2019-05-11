@@ -58,7 +58,7 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true);
 
-    virtual void SetQuantumState(complex* inputState);
+    virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));

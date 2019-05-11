@@ -43,7 +43,7 @@ public:
     QEngineCPU(QEngineCPUPtr toCopy);
     ~QEngineCPU() { FreeStateVec(); }
 
-    virtual void SetQuantumState(complex* inputState);
+    virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     complex GetAmplitude(bitCapInt perm);
 

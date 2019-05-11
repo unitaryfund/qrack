@@ -124,7 +124,7 @@ void QEngineCPU::ResetStateVec(complex* nStateVec)
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineCPU::SetQuantumState(complex* inputState)
+void QEngineCPU::SetQuantumState(const complex* inputState)
 {
     std::copy(inputState, inputState + maxQPower, stateVec);
     runningNorm = ONE_R1;

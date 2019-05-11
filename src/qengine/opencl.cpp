@@ -1793,7 +1793,7 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineOCL::SetQuantumState(complex* inputState)
+void QEngineOCL::SetQuantumState(const complex* inputState)
 {
     LockSync(CL_MAP_WRITE);
     std::copy(inputState, inputState + maxQPower, stateVec);
