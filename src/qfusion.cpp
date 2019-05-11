@@ -348,7 +348,7 @@ void QFusion::PhaseFlip()
 }
 
 // Every other operation just wraps the QEngine with the appropriate buffer flushes.
-void QFusion::SetQuantumState(complex* inputState)
+void QFusion::SetQuantumState(const complex* inputState)
 {
     DiscardAll();
     qReg->SetQuantumState(inputState);

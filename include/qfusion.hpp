@@ -51,7 +51,7 @@ public:
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true);
     QFusion(QInterfacePtr target);
 
-    virtual void SetQuantumState(complex* inputState);
+    virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));

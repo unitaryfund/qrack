@@ -113,7 +113,7 @@ void QUnit::CopyState(QInterfacePtr orig)
     }
 }
 
-void QUnit::SetQuantumState(complex* inputState)
+void QUnit::SetQuantumState(const complex* inputState)
 {
     auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND);

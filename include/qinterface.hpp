@@ -184,7 +184,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetQuantumState(complex* inputState) = 0;
+    virtual void SetQuantumState(const complex* inputState) = 0;
 
     /** Get the pure quantum state representation
      *
