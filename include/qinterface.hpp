@@ -113,7 +113,7 @@ protected:
         return pow;
     }
 
-    static inline real1 norm_helper(complex c) { return norm(c); }
+    static inline real1 normHelper(complex c) { return norm(c); }
 
     static inline real1 ClampProb(real1 toClamp)
     {
