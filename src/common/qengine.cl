@@ -55,9 +55,14 @@ inline real1 arg(const cmplx cmp)
     i |= (lcv ^ i) << 1U
 
 #define PUSH_APART_2()                                                           \
-    iLow = lcv & qMask1;                                                         \
-    iHigh = (lcv ^ iLow) << 1U;                                                  \
-    i = iLow | (iHigh & qMask2) | iHigh
+    iHigh = lcv;                                                                 \
+    i = 0U;                                                                      \
+    for (p = 0U; p < bitCount; p++) {                                            \
+        iLow = iHigh & (qPowersSorted[p] - 1U);                                  \
+        i |= iLow;                                                               \
+        iHigh = (iHigh ^ iLow) << 1U;                                            \
+    }                                                                            \
+    i |= iHigh
 
 #define APPLY_AND_OUT()                                                          \
     Y0 = stateVec[i | offset1];                                                  \
