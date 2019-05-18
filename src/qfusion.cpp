@@ -105,7 +105,9 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
     // If the bit needs to be flushed again, before buffering as a target bit, everything that depends on it as a
     // control needs to be flushed.
     for (i = 0; i < bitControls[qubitIndex].size(); i++) {
-        FlushBit(bitControls[qubitIndex][i]);
+        if (bitControls[qubitIndex][i] != qubitIndex) {
+            FlushBit(bitControls[qubitIndex][i]);
+        }
     }
     bitControls[qubitIndex].resize(0);
 
@@ -358,6 +360,12 @@ void QFusion::GetQuantumState(complex* outputState)
 {
     FlushAll();
     qReg->GetQuantumState(outputState);
+}
+
+void QFusion::GetProbs(real1* outputProbs)
+{
+    FlushAll();
+    qReg->GetProbs(outputProbs);
 }
 
 complex QFusion::GetAmplitude(bitCapInt perm)

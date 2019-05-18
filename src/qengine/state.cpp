@@ -140,6 +140,16 @@ void QEngineCPU::GetQuantumState(complex* outputState)
     std::copy(stateVec, stateVec + maxQPower, outputState);
 }
 
+/// Get all probabilities, in unsigned int permutation basis
+void QEngineCPU::GetProbs(real1* outputProbs)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    std::transform(stateVec, stateVec + maxQPower, outputProbs, _norm_helper);
+}
+
     /**
      * Apply a 2x2 matrix to the state vector
      *

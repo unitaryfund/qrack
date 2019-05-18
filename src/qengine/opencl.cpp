@@ -535,6 +535,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt maxI = maxQPower >> bitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     cl::Event writeArgsEvent;
+    
     DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
 
     // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
@@ -564,13 +565,25 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     OCLAPI api_call;
-    if (doCalcNorm) {
-        api_call = OCL_API_APPLY2X2_NORM;
-    } else {
-        if (isUnitLength) {
-            api_call = OCL_API_APPLY2X2_UNIT;
+    if (bitCount > 1) {
+        if (doCalcNorm) {
+            api_call = OCL_API_APPLY2X2_NORM;
         } else {
-            api_call = OCL_API_APPLY2X2;
+            if (isUnitLength) {
+                api_call = OCL_API_APPLY2X2_UNIT;
+            } else {
+                api_call = OCL_API_APPLY2X2;
+            }
+        }
+    } else {
+        if (doCalcNorm) {
+            api_call = OCL_API_APPLY2X2_NORM_SINGLE;
+        } else {
+            if (isUnitLength) {
+                api_call = OCL_API_APPLY2X2_UNIT_SINGLE;
+            } else {
+                api_call = OCL_API_APPLY2X2_SINGLE;
+            }
         }
     }
 
@@ -582,7 +595,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     if (doCalcNorm) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
-            sizeof(real1) * ngs);
+                sizeof(real1) * ngs);
     } else {
         QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
     }
@@ -1823,6 +1836,18 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 
     LockSync(CL_MAP_READ);
     std::copy(stateVec, stateVec + maxQPower, outputState);
+    UnlockSync();
+}
+
+/// Get all probabilities, in unsigned int permutation basis
+void QEngineOCL::GetProbs(real1* outputProbs)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    LockSync(CL_MAP_READ);
+    std::transform(stateVec, stateVec + maxQPower, outputProbs, _norm_helper);
     UnlockSync();
 }
 

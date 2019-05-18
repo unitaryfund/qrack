@@ -32,6 +32,7 @@ unsigned char* qrack_alloc(size_t ucharCount);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+real1 _norm_helper(complex c);
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
@@ -191,6 +192,12 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void GetQuantumState(complex* outputState) = 0;
+
+    /** Get the pure quantum state representation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void GetProbs(real1* outputProbs) = 0;
 
     /** Get the representational amplitude of a full permutation
      *
