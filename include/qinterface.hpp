@@ -113,6 +113,8 @@ protected:
         return pow;
     }
 
+    // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
+    // you need a safe pointer to norm(), try this:
     static inline real1 normHelper(complex c) { return norm(c); }
 
     static inline real1 clampProb(real1 toClamp)
