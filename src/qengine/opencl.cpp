@@ -564,17 +564,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     OCLAPI api_call;
-    if (bitCount > 1) {
-        if (doCalcNorm) {
-            api_call = OCL_API_APPLY2X2_NORM;
-        } else {
-            if (isUnitLength) {
-                api_call = OCL_API_APPLY2X2_UNIT;
-            } else {
-                api_call = OCL_API_APPLY2X2;
-            }
-        }
-    } else {
+    if (bitCount == 1) {
         if (doCalcNorm) {
             api_call = OCL_API_APPLY2X2_NORM_SINGLE;
         } else {
@@ -582,6 +572,26 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
                 api_call = OCL_API_APPLY2X2_UNIT_SINGLE;
             } else {
                 api_call = OCL_API_APPLY2X2_SINGLE;
+            }
+        }
+    } else if (bitCount == 2) {
+        if (doCalcNorm) {
+            api_call = OCL_API_APPLY2X2_NORM_DOUBLE;
+        } else {
+            if (isUnitLength) {
+                api_call = OCL_API_APPLY2X2_UNIT_DOUBLE;
+            } else {
+                api_call = OCL_API_APPLY2X2_DOUBLE;
+            }
+        }
+    } else {
+        if (doCalcNorm) {
+            api_call = OCL_API_APPLY2X2_NORM;
+        } else {
+            if (isUnitLength) {
+                api_call = OCL_API_APPLY2X2_UNIT;
+            } else {
+                api_call = OCL_API_APPLY2X2;
             }
         }
     }
