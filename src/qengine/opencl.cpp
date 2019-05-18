@@ -535,7 +535,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt maxI = maxQPower >> bitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
     cl::Event writeArgsEvent;
-    
     DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
 
     // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
@@ -595,7 +594,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     if (doCalcNorm) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
-                sizeof(real1) * ngs);
+            sizeof(real1) * ngs);
     } else {
         QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
     }

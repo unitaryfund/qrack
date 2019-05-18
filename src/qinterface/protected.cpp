@@ -16,9 +16,7 @@
 
 namespace Qrack {
 
-real1 _norm_helper(complex c) {
-    return norm(c);
-}
+real1 _norm_helper(complex c) { return norm(c); }
 
 unsigned char* qrack_alloc(size_t ucharCount)
 {
