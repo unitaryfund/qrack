@@ -115,7 +115,7 @@ protected:
 
     static inline real1 normHelper(complex c) { return norm(c); }
 
-    static inline real1 ClampProb(real1 toClamp)
+    static inline real1 clampProb(real1 toClamp)
     {
         if (toClamp < ZERO_R1) {
             toClamp = ZERO_R1;
