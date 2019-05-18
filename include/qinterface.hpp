@@ -32,7 +32,6 @@ unsigned char* qrack_alloc(size_t ucharCount);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
-real1 _norm_helper(complex c);
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
@@ -103,7 +102,7 @@ protected:
 
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    inline bitCapInt log2(bitCapInt n)
+    static inline bitCapInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
         bitLenInt p = n >> 1;
@@ -114,7 +113,9 @@ protected:
         return pow;
     }
 
-    inline real1 ClampProb(real1 toClamp)
+    static inline real1 norm_helper(complex c) { return norm(c); }
+
+    static inline real1 ClampProb(real1 toClamp)
     {
         if (toClamp < ZERO_R1) {
             toClamp = ZERO_R1;

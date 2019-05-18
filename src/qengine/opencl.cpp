@@ -1856,7 +1856,7 @@ void QEngineOCL::GetProbs(real1* outputProbs)
     }
 
     LockSync(CL_MAP_READ);
-    std::transform(stateVec, stateVec + maxQPower, outputProbs, _norm_helper);
+    std::transform(stateVec, stateVec + maxQPower, outputProbs, norm_helper);
     UnlockSync();
 }
 

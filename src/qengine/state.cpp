@@ -147,7 +147,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
         NormalizeState();
     }
 
-    std::transform(stateVec, stateVec + maxQPower, outputProbs, _norm_helper);
+    std::transform(stateVec, stateVec + maxQPower, outputProbs, norm_helper);
 }
 
     /**
