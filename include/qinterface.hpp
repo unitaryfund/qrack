@@ -102,7 +102,7 @@ protected:
 
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    inline bitCapInt log2(bitCapInt n)
+    static inline bitCapInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
         bitLenInt p = n >> 1;
@@ -113,7 +113,11 @@ protected:
         return pow;
     }
 
-    inline real1 ClampProb(real1 toClamp)
+    // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
+    // you need a safe pointer to norm(), try this:
+    static inline real1 normHelper(complex c) { return norm(c); }
+
+    static inline real1 clampProb(real1 toClamp)
     {
         if (toClamp < ZERO_R1) {
             toClamp = ZERO_R1;
@@ -191,6 +195,12 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void GetQuantumState(complex* outputState) = 0;
+
+    /** Get the pure quantum state representation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void GetProbs(real1* outputProbs) = 0;
 
     /** Get the representational amplitude of a full permutation
      *

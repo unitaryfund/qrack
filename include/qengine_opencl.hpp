@@ -184,6 +184,7 @@ public:
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
+    virtual void GetProbs(real1* outputProbs);
     complex GetAmplitude(bitCapInt perm);
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)

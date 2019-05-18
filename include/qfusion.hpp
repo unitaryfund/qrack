@@ -53,6 +53,7 @@ public:
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
+    virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);

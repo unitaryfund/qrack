@@ -143,6 +143,21 @@ void benchmarkLoop(
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits);
 }
 
+TEST_CASE("test_cnot_single")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
+}
+
+TEST_CASE("test_x_single")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, 1); });
+}
+
+TEST_CASE("test_swap_single")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, 1); });
+}
+
 TEST_CASE("test_cnot_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -303,21 +318,6 @@ TEST_CASE("test_proball")
 TEST_CASE("test_set_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetReg(0, n, 1); });
-}
-
-TEST_CASE("test_cnot_single")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
-}
-
-TEST_CASE("test_x_single")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, 1); });
-}
-
-TEST_CASE("test_swap_single")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, 1); });
 }
 
 TEST_CASE("test_grover")

@@ -140,6 +140,16 @@ void QEngineCPU::GetQuantumState(complex* outputState)
     std::copy(stateVec, stateVec + maxQPower, outputState);
 }
 
+/// Get all probabilities, in unsigned int permutation basis
+void QEngineCPU::GetProbs(real1* outputProbs)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
+}
+
     /**
      * Apply a 2x2 matrix to the state vector
      *
@@ -623,7 +633,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 
     delete[] oneChanceBuff;
 
-    return ClampProb(oneChance);
+    return clampProb(oneChance);
 }
 
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
@@ -658,7 +668,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
     delete[] probs;
 
-    return ClampProb(prob);
+    return clampProb(prob);
 }
 
 // Returns probability of permutation of the mask
@@ -696,7 +706,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     delete[] probs;
 
-    return ClampProb(prob);
+    return clampProb(prob);
 }
 
 bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
