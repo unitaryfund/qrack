@@ -292,7 +292,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     cl::CommandQueue oldQueue = queue;
     queue = device_context->queue;
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM);
+    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
     clFinish(true);
 
     bitCapInt oldNrmGroupCount = nrmGroupCount;
@@ -568,15 +568,16 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     char kernelMask = APPLY2X2_DEFAULT;
-    if (doCalcNorm) {
-        kernelMask |= APPLY2X2_NORM;
-    } else if (isUnitLength) {
-        kernelMask |= APPLY2X2_UNIT;
-    }
     if (bitCount == 1) {
         kernelMask |= APPLY2X2_SINGLE;
+        if (doCalcNorm) {
+            kernelMask |= APPLY2X2_NORM;
+        }
     } else if (bitCount == 2) {
         kernelMask |= APPLY2X2_DOUBLE;
+    }
+    if (!doCalcNorm && isUnitLength) {
+        kernelMask |= APPLY2X2_UNIT;
     }
     if (ngc == maxI) {
         kernelMask |= APPLY2X2_WIDE;
@@ -589,9 +590,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         break;
     case APPLY2X2_UNIT:
         api_call = OCL_API_APPLY2X2_UNIT;
-        break;
-    case APPLY2X2_NORM:
-        api_call = OCL_API_APPLY2X2_NORM;
         break;
     case APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_SINGLE;
@@ -608,17 +606,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_UNIT | APPLY2X2_DOUBLE:
         api_call = OCL_API_APPLY2X2_UNIT_DOUBLE;
         break;
-    case APPLY2X2_NORM | APPLY2X2_DOUBLE:
-        api_call = OCL_API_APPLY2X2_NORM_DOUBLE;
-        break;
     case APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_WIDE;
         break;
     case APPLY2X2_UNIT | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_UNIT_WIDE;
-        break;
-    case APPLY2X2_NORM | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_NORM_WIDE;
         break;
     case APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_SINGLE_WIDE;
@@ -634,9 +626,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         break;
     case APPLY2X2_UNIT | APPLY2X2_DOUBLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_UNIT_DOUBLE_WIDE;
-        break;
-    case APPLY2X2_NORM | APPLY2X2_DOUBLE | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_NORM_DOUBLE_WIDE;
         break;
     default:
         throw("Invalid APPLY2X2 kernel selected!");

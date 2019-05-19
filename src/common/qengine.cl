@@ -121,7 +121,7 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         PUSH_APART_GEN();
-        APPLY_AND_OUT_NORM();
+        APPLY_AND_OUT();
     }
 }
 
@@ -149,7 +149,7 @@ void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, con
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         PUSH_APART_2();
-        APPLY_AND_OUT_NORM();
+        APPLY_AND_OUT();
     }
 }
 
@@ -162,7 +162,7 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
     
     lcv = ID;
     PUSH_APART_GEN();
-    APPLY_AND_OUT_NORM();
+    APPLY_AND_OUT();
 }
 
 void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
@@ -188,7 +188,7 @@ void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr,
 
     lcv = ID;
     PUSH_APART_2();
-    APPLY_AND_OUT_NORM();
+    APPLY_AND_OUT();
 }
 
 void kernel apply2x2unit(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
@@ -264,26 +264,6 @@ void kernel apply2x2unitdoublewide(global cmplx* stateVec, constant real1* cmplx
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2norm(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
-{
-    PREP_2X2();
-
-    real1 nrm = cmplxPtr[8];
-    bitCapInt iLow, iHigh;
-
-    bitCapInt locID, locNthreads;
-    real1 nrm1, nrm2;
-    cmplx YT;
-    real1 partNrm = ZERO_R1;
-
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        PUSH_APART_GEN();
-        NORM_BODY_2X2();
-    }
-
-    SUM_2X2();
-}
-
 void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
@@ -304,47 +284,6 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     SUM_2X2();
 }
 
-void kernel apply2x2normdouble(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
-{
-    PREP_2X2();
-
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
-    bitCapInt iLow, iHigh;
-
-    bitCapInt locID, locNthreads;
-    real1 nrm1, nrm2;
-    cmplx YT;
-    real1 partNrm = ZERO_R1;
-
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        PUSH_APART_2();
-        NORM_BODY_2X2();
-    }
-
-    SUM_2X2();
-}
-
-void kernel apply2x2normwide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
-{
-    PREP_2X2();
-
-    real1 nrm = cmplxPtr[8];
-    bitCapInt iLow, iHigh;
-
-    bitCapInt locID, locNthreads;
-    real1 nrm1, nrm2;
-    cmplx YT;
-    real1 partNrm = ZERO_R1;
-
-    lcv = ID;
-    PUSH_APART_GEN();
-    NORM_BODY_2X2();
-
-    SUM_2X2();
-}
-
 void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
@@ -359,27 +298,6 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
 
     lcv = ID;
     PUSH_APART_1();
-    NORM_BODY_2X2();
-
-    SUM_2X2();
-}
-
-void kernel apply2x2normdoublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
-{
-    PREP_2X2();
-
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
-    bitCapInt iLow, iHigh;
-
-    bitCapInt locID, locNthreads;
-    real1 nrm1, nrm2;
-    cmplx YT;
-    real1 partNrm = ZERO_R1;
-
-    lcv = ID;
-    PUSH_APART_2();
     NORM_BODY_2X2();
 
     SUM_2X2();
