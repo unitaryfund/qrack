@@ -21,6 +21,14 @@ namespace Qrack {
 #define CMPLX_NORM_LEN 5
 #define REAL_ARG_LEN 2
 
+// Mask definition for Apply2x2()
+#define APPLY2X2_DEFAULT 0x00
+#define APPLY2X2_NORM 0x01
+#define APPLY2X2_UNIT 0x02
+#define APPLY2X2_SINGLE 0x04
+#define APPLY2X2_DOUBLE 0x08
+#define APPLY2X2_WIDE 0x10
+
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &clEvent);                                 \
@@ -310,12 +318,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= 1U;
     }
     procElemCount = procElemPow;
-    nrmGroupCount = procElemCount * 2 * nrmGroupSize;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
-    if (nrmGroupCount > maxWorkItems) {
-        nrmGroupCount = maxWorkItems;
-    }
-    nrmGroupCount = FixWorkItemCount(nrmGroupCount, nrmGroupCount);
+    nrmGroupCount = maxWorkItems;
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
@@ -563,37 +567,79 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
-    OCLAPI api_call;
+    char kernelMask = APPLY2X2_DEFAULT;
+    if (doCalcNorm) {
+        kernelMask |= APPLY2X2_NORM;
+    } else if (isUnitLength) {
+        kernelMask |= APPLY2X2_UNIT;
+    }
     if (bitCount == 1) {
-        if (doCalcNorm) {
-            api_call = OCL_API_APPLY2X2_NORM_SINGLE;
-        } else {
-            if (isUnitLength) {
-                api_call = OCL_API_APPLY2X2_UNIT_SINGLE;
-            } else {
-                api_call = OCL_API_APPLY2X2_SINGLE;
-            }
-        }
+        kernelMask |= APPLY2X2_SINGLE;
     } else if (bitCount == 2) {
-        if (doCalcNorm) {
-            api_call = OCL_API_APPLY2X2_NORM_DOUBLE;
-        } else {
-            if (isUnitLength) {
-                api_call = OCL_API_APPLY2X2_UNIT_DOUBLE;
-            } else {
-                api_call = OCL_API_APPLY2X2_DOUBLE;
-            }
-        }
-    } else {
-        if (doCalcNorm) {
-            api_call = OCL_API_APPLY2X2_NORM;
-        } else {
-            if (isUnitLength) {
-                api_call = OCL_API_APPLY2X2_UNIT;
-            } else {
-                api_call = OCL_API_APPLY2X2;
-            }
-        }
+        kernelMask |= APPLY2X2_DOUBLE;
+    }
+    if (ngc == maxI) {
+        kernelMask |= APPLY2X2_WIDE;
+    }
+
+    OCLAPI api_call;
+    switch (kernelMask) {
+    case APPLY2X2_DEFAULT:
+        api_call = OCL_API_APPLY2X2;
+        break;
+    case APPLY2X2_UNIT:
+        api_call = OCL_API_APPLY2X2_UNIT;
+        break;
+    case APPLY2X2_NORM:
+        api_call = OCL_API_APPLY2X2_NORM;
+        break;
+    case APPLY2X2_SINGLE:
+        api_call = OCL_API_APPLY2X2_SINGLE;
+        break;
+    case APPLY2X2_UNIT | APPLY2X2_SINGLE:
+        api_call = OCL_API_APPLY2X2_UNIT_SINGLE;
+        break;
+    case APPLY2X2_NORM | APPLY2X2_SINGLE:
+        api_call = OCL_API_APPLY2X2_NORM_SINGLE;
+        break;
+    case APPLY2X2_DOUBLE:
+        api_call = OCL_API_APPLY2X2_DOUBLE;
+        break;
+    case APPLY2X2_UNIT | APPLY2X2_DOUBLE:
+        api_call = OCL_API_APPLY2X2_UNIT_DOUBLE;
+        break;
+    case APPLY2X2_NORM | APPLY2X2_DOUBLE:
+        api_call = OCL_API_APPLY2X2_NORM_DOUBLE;
+        break;
+    case APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_WIDE;
+        break;
+    case APPLY2X2_UNIT | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_UNIT_WIDE;
+        break;
+    case APPLY2X2_NORM | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_NORM_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_SINGLE_WIDE;
+        break;
+    case APPLY2X2_UNIT | APPLY2X2_SINGLE | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_UNIT_SINGLE_WIDE;
+        break;
+    case APPLY2X2_NORM | APPLY2X2_SINGLE | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_NORM_SINGLE_WIDE;
+        break;
+    case APPLY2X2_DOUBLE | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_DOUBLE_WIDE;
+        break;
+    case APPLY2X2_UNIT | APPLY2X2_DOUBLE | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_UNIT_DOUBLE_WIDE;
+        break;
+    case APPLY2X2_NORM | APPLY2X2_DOUBLE | APPLY2X2_WIDE:
+        api_call = OCL_API_APPLY2X2_NORM_DOUBLE_WIDE;
+        break;
+    default:
+        throw("Invalid APPLY2X2 kernel selected!");
     }
 
     // Wait for buffer write from limited lifetime objects
