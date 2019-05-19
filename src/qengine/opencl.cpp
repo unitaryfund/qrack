@@ -567,7 +567,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
-    char kernelMask = APPLY2X2_DEFAULT;
+    unsigned char kernelMask = APPLY2X2_DEFAULT;
     if (bitCount == 1) {
         kernelMask |= APPLY2X2_SINGLE;
         if (doCalcNorm) {
