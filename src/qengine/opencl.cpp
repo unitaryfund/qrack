@@ -769,7 +769,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     SetQubitCount(nQubitCount);
 
-    size_t ngc = FixWorkItemCount(nMaxQPower, nrmGroupCount);
+    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     complex* nStateVec = AllocStateVec(maxQPower);
