@@ -152,20 +152,15 @@ TEST_CASE("test_x_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, 1); });
 }
-#if 0
+
 TEST_CASE("test_swap_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, 1); });
 }
-#endif
+
 TEST_CASE("test_cnot_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
-}
-
-TEST_CASE("test_x_all")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
 
 TEST_CASE("test_ccnot_all")
@@ -177,7 +172,12 @@ TEST_CASE("test_swap_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
-#if 0
+
+TEST_CASE("test_x_all")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
+}
+
 TEST_CASE("test_and_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->AND(0, n / 3, (2 * n) / 3, n / 3); });
@@ -319,7 +319,7 @@ TEST_CASE("test_set_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetReg(0, n, 1); });
 }
-#endif
+
 TEST_CASE("test_grover")
 {
 
