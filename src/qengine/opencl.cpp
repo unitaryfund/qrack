@@ -813,7 +813,14 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0, 0, 0, 0, 0, 0 };
 
-    Compose(OCL_API_COMPOSE, bciArgs, toCopy);
+    OCLAPI api_call;
+    if (maxQPower <= nrmGroupCount) {
+        api_call = OCL_API_COMPOSE_WIDE;
+    } else {
+        api_call = OCL_API_COMPOSE;
+    }
+
+    Compose(api_call, bciArgs, toCopy);
 
     return result;
 }

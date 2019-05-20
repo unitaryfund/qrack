@@ -61,6 +61,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
     OCLKernelHandle(OCL_API_X, "x"),
     OCLKernelHandle(OCL_API_COMPOSE, "compose"),
+    OCLKernelHandle(OCL_API_COMPOSE_WIDE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),
     OCLKernelHandle(OCL_API_DECOMPOSEPROB, "decomposeprob"),
     OCLKernelHandle(OCL_API_DECOMPOSEAMP, "decomposeamp"),
