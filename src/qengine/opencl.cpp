@@ -769,7 +769,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     SetQubitCount(nQubitCount);
 
-    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    size_t ngc = FixWorkItemCount(nMaxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     complex* nStateVec = AllocStateVec(maxQPower);
@@ -814,7 +814,7 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0, 0, 0, 0, 0, 0 };
 
     OCLAPI api_call;
-    if (maxQPower <= nrmGroupCount) {
+    if (nMaxQPower <= nrmGroupCount) {
         api_call = OCL_API_COMPOSE_WIDE;
     } else {
         api_call = OCL_API_COMPOSE;
