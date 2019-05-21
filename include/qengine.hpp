@@ -27,7 +27,8 @@ class QEngine : public QInterface {
 protected:
     bool randGlobalPhase;
     bool useHostRam;
-    /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes, summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
+    /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
+    /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
     virtual void NormalizeState(real1 nrm = -999.0) = 0;

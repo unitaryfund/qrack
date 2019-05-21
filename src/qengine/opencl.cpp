@@ -2043,8 +2043,7 @@ void QEngineOCL::UpdateRunningNorm()
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer },
-        sizeof(real1) * ngs);
+    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 }

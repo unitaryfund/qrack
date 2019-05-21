@@ -95,14 +95,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         std::cout << stdee << ","; /* Sample Std. Deviation */
         std::cout << trialErrors[0] << ","; /* Best */
         if (ITERATIONS % 4 == 0) {
-            std::cout << (trialErrors[ITERATIONS / 4 - 1] + trialErrors[ITERATIONS / 4])
-                      << ","; /* 1st Quartile */
+            std::cout << (trialErrors[ITERATIONS / 4 - 1] + trialErrors[ITERATIONS / 4]) << ","; /* 1st Quartile */
         } else {
             std::cout << trialErrors[ITERATIONS / 4 - 1] << ","; /* 1st Quartile */
         }
         if (ITERATIONS % 2 == 0) {
-            std::cout << (trialErrors[ITERATIONS / 2 - 1] + trialErrors[ITERATIONS / 2])
-                      << ","; /* Median */
+            std::cout << (trialErrors[ITERATIONS / 2 - 1] + trialErrors[ITERATIONS / 2]) << ","; /* Median */
         } else {
             std::cout << trialErrors[ITERATIONS / 2 - 1] << ","; /* Median */
         }
@@ -110,8 +108,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             std::cout << (trialErrors[(3 * ITERATIONS) / 4 - 1] + trialErrors[(3 * ITERATIONS) / 4])
                       << ","; /* 3rd Quartile */
         } else {
-            std::cout << trialErrors[(3 * ITERATIONS) / 4 - 1]
-                      << ","; /* 3rd Quartile */
+            std::cout << trialErrors[(3 * ITERATIONS) / 4 - 1] << ","; /* 3rd Quartile */
         }
         std::cout << trialErrors[ITERATIONS - 1] << std::endl; /* Worst */
     }

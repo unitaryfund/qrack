@@ -741,11 +741,9 @@ void QEngineCPU::NormalizeState(real1 nrm)
         return;
     }
 
-    nrm = std::sqrt(nrm);
+    nrm = ONE_R1 / std::sqrt(nrm);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] *= nrm;
-    });
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] *= nrm; });
 
     runningNorm = ONE_R1;
 }
