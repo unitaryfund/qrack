@@ -57,7 +57,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
     int i, numBits;
 
-    real1 avge, stdee;
+    double avge, stdee;
 
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
@@ -91,30 +91,29 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         std::sort(trialErrors, trialErrors + ITERATIONS);
 
         std::cout << (int)numBits << ", "; /* # of Qubits */
-        std::cout << (avge * 1000.0 / CLOCKS_PER_SEC) << ","; /* Average Time (ms) */
-        std::cout << (stdee * 1000.0 / CLOCKS_PER_SEC) << ","; /* Sample Std. Deviation (ms) */
-        std::cout << (trialErrors[0] * 1000.0 / CLOCKS_PER_SEC) << ","; /* Fastest (ms) */
+        std::cout << avge << ","; /* Average */
+        std::cout << stdee << ","; /* Sample Std. Deviation */
+        std::cout << trialErrors[0] << ","; /* Best */
         if (ITERATIONS % 4 == 0) {
-            std::cout << ((trialErrors[ITERATIONS / 4 - 1] + trialErrors[ITERATIONS / 4]) * 500.0 / CLOCKS_PER_SEC)
-                      << ","; /* 1st Quartile (ms) */
+            std::cout << (trialErrors[ITERATIONS / 4 - 1] + trialErrors[ITERATIONS / 4])
+                      << ","; /* 1st Quartile */
         } else {
-            std::cout << (trialErrors[ITERATIONS / 4 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* 1st Quartile (ms) */
+            std::cout << trialErrors[ITERATIONS / 4 - 1] << ","; /* 1st Quartile */
         }
         if (ITERATIONS % 2 == 0) {
-            std::cout << ((trialErrors[ITERATIONS / 2 - 1] + trialErrors[ITERATIONS / 2]) * 500.0 / CLOCKS_PER_SEC)
-                      << ","; /* Median (ms) */
+            std::cout << (trialErrors[ITERATIONS / 2 - 1] + trialErrors[ITERATIONS / 2])
+                      << ","; /* Median */
         } else {
-            std::cout << (trialErrors[ITERATIONS / 2 - 1] * 1000.0 / CLOCKS_PER_SEC) << ","; /* Median (ms) */
+            std::cout << trialErrors[ITERATIONS / 2 - 1] << ","; /* Median */
         }
         if (ITERATIONS % 4 == 0) {
-            std::cout << ((trialErrors[(3 * ITERATIONS) / 4 - 1] + trialErrors[(3 * ITERATIONS) / 4]) * 500.0 /
-                             CLOCKS_PER_SEC)
-                      << ","; /* 3rd Quartile (ms) */
+            std::cout << (trialErrors[(3 * ITERATIONS) / 4 - 1] + trialErrors[(3 * ITERATIONS) / 4])
+                      << ","; /* 3rd Quartile */
         } else {
-            std::cout << (trialErrors[(3 * ITERATIONS) / 4 - 1] * 1000.0 / CLOCKS_PER_SEC)
-                      << ","; /* 3rd Quartile (ms) */
+            std::cout << trialErrors[(3 * ITERATIONS) / 4 - 1]
+                      << ","; /* 3rd Quartile */
         }
-        std::cout << (trialErrors[ITERATIONS - 1] * 1000.0 / CLOCKS_PER_SEC) << std::endl; /* Slowest (ms) */
+        std::cout << trialErrors[ITERATIONS - 1] << std::endl; /* Worst */
     }
 }
 

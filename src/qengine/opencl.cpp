@@ -671,7 +671,8 @@ void QEngineOCL::UniformlyControlledSingleBit(
     DISPATCH_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
-    DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &runningNorm);
+    real1 nrm = (real1)std::sqrt(runningNorm);
+    DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
     BufferPtr uniformBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));

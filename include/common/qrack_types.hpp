@@ -40,8 +40,8 @@ typedef float real1;
 #define PI_R1 (real1) M_PI
 // min_norm is the minimum probability an amplitude can have before normalization floors it to identically zero. Values
 // were chosen based on the results of the tests in accuracy.cpp. Successive application of Hadamard gates returns
-// permutations that should be ideally 0 to less than the 10^-16 scale, for float accuracy.
-#define min_norm 1e-16f
+// permutations that should be ideally 0 to less than the 10^-16 scale for QEngineOCL and 10^-14 scale for QUnit -> QFusion, for float accuracy.
+#define min_norm 0
 // approxcompare_error is the maximum acceptable sum of probability amplitude difference for ApproxCompare to return
 // "true." When TrySeparate or TryDecohere is applied after the QFT followed by its inverse on a permutation, the sum of
 // square errors of probability is generally less than 10^-11, for float accuracy. (A small number of trials return many
