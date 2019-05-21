@@ -58,7 +58,7 @@ inline real1 arg(const cmplx cmp)
     i = lcv & qMask1;                                                                \
     iHigh = (lcv ^ i) << 1U;                                                         \
     iLow = iHigh & qMask2;                                                           \
-    i = i | iLow | ((iHigh ^ iLow) << 1U)
+    i |= iLow | ((iHigh ^ iLow) << 1U)
 
 #define APPLY_AND_OUT()                                                              \
     Y0 = stateVec[i | OFFSET1_ARG];                                                  \
@@ -305,27 +305,6 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
     NORM_BODY_2X2();
 
     SUM_2X2();
-}
-
-// This kernel is run with one local group, to finish the work of apply2x2norm
-void kernel normsum(global real1* nrmParts, local real1* lProbBuffer)
-{
-    bitCapInt locID, locNthreads, lcv;
-
-    locID = get_local_id(0);
-    locNthreads = get_local_size(0);
-    lProbBuffer[locID] = nrmParts[locID];
-    
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        } 
-    }
-
-    if (locID == 0U) {
-        nrmParts[0] = lProbBuffer[0];
-    }
 }
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
@@ -1857,6 +1836,18 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
         }
         stateVec[lcv] = amp;
     }
+}
+
+void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+    bitCapInt lcv = ID;
+    cmplx amp;
+    
+    amp = stateVec[lcv] / args_ptr[1];
+    //"min_norm" is defined in qinterface.hpp
+    if (dot(amp, amp) < min_norm) {
+        amp = (cmplx)(ZERO_R1, ZERO_R1);
+    }
+    stateVec[lcv] = amp;
 }
 
 void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
