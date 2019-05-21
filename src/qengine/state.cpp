@@ -321,17 +321,7 @@ void QEngineCPU::UniformlyControlledSingleBit(
         qubit[0] = nrm * ((mtrxs[0 + offset] * Y0) + (mtrxs[1 + offset] * qubit[1]));
         qubit[1] = nrm * ((mtrxs[2 + offset] * Y0) + (mtrxs[3 + offset] * qubit[1]));
 
-        real1 nrm1 = norm(qubit[0]);
-        real1 nrm2 = norm(qubit[1]);
-        if (nrm1 < min_norm) {
-            nrm1 = ZERO_R1;
-            qubit[0] = complex(ZERO_R1, ZERO_R1);
-        }
-        if (nrm2 < min_norm) {
-            nrm2 = ZERO_R1;
-            qubit[1] = complex(ZERO_R1, ZERO_R1);
-        }
-        rngNrm[cpu] += nrm1 + nrm2;
+        rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
         stateVec[lcv] = qubit[0];
         stateVec[lcv | targetPower] = qubit[1];
@@ -754,11 +744,7 @@ void QEngineCPU::NormalizeState(real1 nrm)
     nrm = std::sqrt(nrm);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        stateVec[lcv] /= nrm;
-        //"min_norm" is defined in qinterface.hpp
-        if (norm(stateVec[lcv]) < min_norm) {
-            stateVec[lcv] = complex(ZERO_R1, ZERO_R1);
-        }
+        stateVec[lcv] *= nrm;
     });
 
     runningNorm = ONE_R1;

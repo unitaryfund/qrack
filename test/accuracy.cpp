@@ -51,7 +51,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     std::cout << "3rd Quartile, ";
     std::cout << "Worst" << std::endl;
 
-    complex testAmp1, testAmp2;
+    std::complex<double> testAmp1, testAmp2;
     double err;
     double trialErrors[ITERATIONS];
 
@@ -122,7 +122,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn) { benchmarkLoopVa
 TEST_CASE("test_h")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
-        qftReg->H(0, n);
-        qftReg->H(0, n);
+        qftReg->H(0);
+        qftReg->H(0);
     });
 }

@@ -97,17 +97,7 @@ inline real1 arg(const cmplx cmp)
     Y0 = nrm * (zmul(mtrx.lo.lo, YT) + zmul(mtrx.lo.hi, Y1));                        \
     Y1 = nrm * (zmul(mtrx.hi.lo, YT) + zmul(mtrx.hi.hi, Y1));                        \
                                                                                      \
-    nrm1 = dot(Y0, Y0);                                                              \
-    nrm2 = dot(Y1, Y1);                                                              \
-    if (nrm1 < min_norm) {                                                           \
-        nrm1 = ZERO_R1;                                                              \
-        Y0 = (cmplx)(ZERO_R1, ZERO_R1);                                              \
-    }                                                                                \
-    if (nrm2 < min_norm) {                                                           \
-        nrm2 = ZERO_R1;                                                              \
-        Y1 = (cmplx)(ZERO_R1, ZERO_R1);                                              \
-    }                                                                                \
-    partNrm += nrm1 + nrm2;                                                          \
+    partNrm += dot(Y0, Y0) + dot(Y1, Y1);                                            \
                                                                                      \
     stateVec[i | OFFSET1_ARG] = Y0;                                                  \
     stateVec[i | OFFSET2_ARG] = Y1
@@ -276,7 +266,6 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     bitCapInt qMask = qPowersSorted[0] - 1U;
 
     bitCapInt locID, locNthreads;
-    real1 nrm1, nrm2;
     cmplx YT;
     real1 partNrm = ZERO_R1;
 
@@ -296,7 +285,6 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
     bitCapInt qMask = qPowersSorted[0] - 1U;
 
     bitCapInt locID, locNthreads;
-    real1 nrm1, nrm2;
     cmplx YT;
     real1 partNrm = ZERO_R1;
 
@@ -310,7 +298,6 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
 {
     bitCapInt Nthreads, lcv, locID, locNthreads;
-    real1 nrm1, nrm2;
 
     Nthreads = get_global_size(0);
 
@@ -349,17 +336,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
         qubit[0] = nrm * (zmul(mtrxs[0 + offset], Y0) + zmul(mtrxs[1 + offset], qubit[1]));
         qubit[1] = nrm * (zmul(mtrxs[2 + offset], Y0) + zmul(mtrxs[3 + offset], qubit[1]));
 
-        nrm1 = dot(qubit[0], qubit[0]);
-        nrm2 = dot(qubit[1], qubit[1]);
-        if (nrm1 < min_norm) {
-            nrm1 = ZERO_R1;
-            qubit[0] = (cmplx)(ZERO_R1, ZERO_R1);
-        }
-        if (nrm2 < min_norm) {
-            nrm2 = ZERO_R1;
-            qubit[1] = (cmplx)(ZERO_R1, ZERO_R1);
-        }
-        partNrm += nrm1 + nrm2;
+        partNrm += dot(qubit[0], qubit[0]) + dot(qubit[1], qubit[1]);
 
         stateVec[i] = qubit[0];
         stateVec[i | targetPower] = qubit[1];
@@ -1826,28 +1803,15 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
     real1 nrm = args_ptr[1];
-    cmplx amp;
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = stateVec[lcv];
-        //"min_norm" is defined in qinterface.hpp
-        if (dot(amp, amp) < min_norm) {
-            amp = (cmplx)(ZERO_R1, ZERO_R1);
-        }
-        stateVec[lcv] = amp / nrm;
+        stateVec[lcv] = nrm * stateVec[lcv];
     }
 }
 
 void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
     bitCapInt lcv = ID;
-    cmplx amp;
-    
-    amp = stateVec[lcv];
-    //"min_norm" is defined in qinterface.hpp
-    if (dot(amp, amp) < min_norm) {
-        amp = (cmplx)(ZERO_R1, ZERO_R1);
-    }
-    stateVec[lcv] = amp / args_ptr[1];
+    stateVec[lcv] = args_ptr[1] * stateVec[lcv];
 }
 
 void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
@@ -1863,9 +1827,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
-        if (nrm >= min_norm) {
-            partNrm += nrm;
-        }
+        partNrm += nrm;
     }
 
     locID = get_local_id(0);

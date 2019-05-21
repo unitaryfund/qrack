@@ -671,7 +671,7 @@ void QEngineOCL::UniformlyControlledSingleBit(
     DISPATCH_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 3, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
-    real1 nrm = (real1)std::sqrt(runningNorm);
+    real1 nrm = (real1)(ONE_R1 / std::sqrt(runningNorm));
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
     BufferPtr uniformBuffer =
@@ -1995,7 +1995,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
-    real1 r1_args[2] = { min_norm, (real1)std::sqrt(nrm) };
+    real1 r1_args[2] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *realBuffer, sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
 
