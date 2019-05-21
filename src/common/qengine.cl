@@ -1829,12 +1829,12 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     cmplx amp;
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = stateVec[lcv] / nrm;
+        amp = stateVec[lcv];
         //"min_norm" is defined in qinterface.hpp
         if (dot(amp, amp) < min_norm) {
             amp = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        stateVec[lcv] = amp;
+        stateVec[lcv] = amp / nrm;
     }
 }
 
@@ -1842,12 +1842,12 @@ void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt lcv = ID;
     cmplx amp;
     
-    amp = stateVec[lcv] / args_ptr[1];
+    amp = stateVec[lcv];
     //"min_norm" is defined in qinterface.hpp
     if (dot(amp, amp) < min_norm) {
         amp = (cmplx)(ZERO_R1, ZERO_R1);
     }
-    stateVec[lcv] = amp;
+    stateVec[lcv] = amp / args_ptr[1];
 }
 
 void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
@@ -1863,7 +1863,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
-        if (nrm > min_norm) {
+        if (nrm >= min_norm) {
             partNrm += nrm;
         }
     }
