@@ -813,7 +813,14 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
     bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0, 0, 0, 0, 0, 0 };
 
-    Compose(OCL_API_COMPOSE, bciArgs, toCopy);
+    OCLAPI api_call;
+    if (nMaxQPower <= nrmGroupCount) {
+        api_call = OCL_API_COMPOSE_WIDE;
+    } else {
+        api_call = OCL_API_COMPOSE;
+    }
+
+    Compose(api_call, bciArgs, toCopy);
 
     return result;
 }
@@ -1995,7 +2002,7 @@ void QEngineOCL::NormalizeState(real1 nrm)
     cl::Event writeBCIArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
@@ -2003,7 +2010,14 @@ void QEngineOCL::NormalizeState(real1 nrm)
     writeBCIArgsEvent.wait();
     wait_refs.clear();
 
-    QueueCall(OCL_API_NORMALIZE, ngc, ngs, { stateBuffer, ulongBuffer, realBuffer });
+    OCLAPI api_call;
+    if (maxQPower == ngc) {
+        api_call = OCL_API_NORMALIZE_WIDE;
+    } else {
+        api_call = OCL_API_NORMALIZE;
+    }
+
+    QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer, realBuffer });
 
     runningNorm = ONE_R1;
 }
@@ -2025,10 +2039,13 @@ void QEngineOCL::UpdateRunningNorm()
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    QueueCall(OCL_API_UPDATENORM, nrmGroupCount, nrmGroupSize, { stateBuffer, ulongBuffer, nrmBuffer },
-        sizeof(real1) * nrmGroupSize);
+    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &runningNorm);
+    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, ulongBuffer, nrmBuffer },
+        sizeof(real1) * ngs);
+
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)

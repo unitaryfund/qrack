@@ -195,5 +195,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), !disable_normalization, true, true, -1, !disable_hardware_rng);
+        complex(ONE_R1, ZERO_R1), !disable_normalization, true, false, -1, !disable_hardware_rng);
 }
