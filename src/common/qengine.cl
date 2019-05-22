@@ -1807,7 +1807,6 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         stateVec[lcv] = nrm * stateVec[lcv];
     }
-    stateVec[lcv] = amp / args_ptr[1];
 }
 
 void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
