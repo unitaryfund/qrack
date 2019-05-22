@@ -28,7 +28,7 @@ extern enum Qrack::QInterfaceEngine testEngineType;
 extern enum Qrack::QInterfaceEngine testSubEngineType;
 extern enum Qrack::QInterfaceEngine testSubSubEngineType;
 extern qrack_rand_gen_ptr rng;
-extern bool disable_normalization;
+extern bool enable_normalization;
 extern bool async_time;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */

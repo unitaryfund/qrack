@@ -26,7 +26,7 @@ enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
-bool disable_normalization = false;
+bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
 
@@ -52,9 +52,9 @@ int main(int argc, char* argv[])
         Opt(qunit_qfusion)["--layer-qunit-qfusion"]("Enable gate fusion tests under the QUnit layer") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
-        Opt(disable_normalization)["--disable-normalization"]("Disable state vector normalization. (Usually less "
-                                                              "accurate computation. Usually makes QEngine types "
-                                                              "faster and QUnit types slower.)") |
+        Opt(enable_normalization)["--enable-normalization"](
+            "Enable state vector normalization. (Usually not "
+            "necessary, though might benefit accuracy at very high circuit depth.)") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)");
@@ -195,5 +195,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), !disable_normalization, true, true, -1, !disable_hardware_rng);
+        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, -1, !disable_hardware_rng);
 }

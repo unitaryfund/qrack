@@ -63,7 +63,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     // Our subroutine returns true only for an input of 100.
     for (numBits = 1; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
-            0, rng, complex(ONE_R1, ZERO_R1), !disable_normalization);
+            0, rng, complex(ONE_R1, ZERO_R1), enable_normalization);
         avge = 0;
         for (i = 0; i < ITERATIONS; i++) {
             qftReg->SetPermutation(0);

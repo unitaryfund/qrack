@@ -142,7 +142,7 @@ protected:
     }
 
 public:
-    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true, bool useHardwareRNG = true)
+    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
