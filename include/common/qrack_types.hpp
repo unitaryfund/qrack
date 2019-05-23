@@ -38,7 +38,8 @@ typedef float real1;
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
 #define PI_R1 (real1) M_PI
-// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on the results of the tests in accuracy.cpp.
+// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
+// the results of the tests in accuracy.cpp.
 #define min_norm 1e-13f
 #else
 //#include "complex16simd.hpp"
@@ -49,7 +50,8 @@ typedef double real1;
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI
-// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on the results of the tests in accuracy.cpp.
+// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
+// the results of the tests in accuracy.cpp.
 #define min_norm 1e-30
 #endif
 
