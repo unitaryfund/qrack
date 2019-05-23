@@ -27,6 +27,8 @@ class QEngine : public QInterface {
 protected:
     bool randGlobalPhase;
     bool useHostRam;
+    /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
+    /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
@@ -42,7 +44,7 @@ protected:
     }
 
 public:
-    QEngine(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = true, bool randomGlobalPhase = true,
+    QEngine(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true)
         : QInterface(n, rgp, doNorm, useHardwareRNG)
         , randGlobalPhase(randomGlobalPhase)
