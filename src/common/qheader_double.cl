@@ -18,7 +18,7 @@
 #define ZERO_R1 0.0
 #define SineShift M_PI_2
 #define PI_R1 M_PI
-#define min_norm 1e-24
+#define min_norm 1e-31
 #define bitCapInt ulong
 #define bitCapInt2 ulong2
 #define bitCapInt4 ulong4
