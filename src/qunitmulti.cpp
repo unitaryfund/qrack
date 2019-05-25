@@ -83,6 +83,114 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
+void QUnitMulti::ParFor1(const bitLenInt start, const bitLenInt length, ParallelFunc1 fn)
+{
+    bitLenInt end = start + length;
+
+    std::map<int, int> devMap;
+    std::vector<std::vector<bitLenInt>> devGroups;
+    int devID;
+
+    for (bitLenInt i = start; i < end; i++) {
+        devID = dynamic_cast<QEngineOCL*>(shards[i].unit.get())->GetDeviceID();
+        if (devMap.find(devID) == devMap.end()) {
+            devMap[devID] = devGroups.size();
+            devGroups.push_back(std::vector<bitLenInt>());
+        }
+        devGroups[devMap[devID]].push_back(i);
+    }
+
+    par_for(0, devMap.size(), [&](bitLenInt dev, bitLenInt cpu) {
+        std::vector<bitLenInt> devGroup = devGroups[dev];
+        for (bitLenInt b = 0; b < devGroup.size(); b++) {
+            fn(devGroup[b], cpu);
+        }
+    });
+}
+
+void QUnitMulti::ParFor2(const bitLenInt start1, const bitLenInt start2, const bitLenInt length, ParallelFunc2 fn)
+{
+    int d1, d2;
+    for (bitLenInt i = 0; i < length; i++) {
+        d1 = dynamic_cast<QEngineOCL*>(shards[start1 + i].unit.get())->GetDeviceID();
+        d2 = dynamic_cast<QEngineOCL*>(shards[start2 + i].unit.get())->GetDeviceID();
+        if (d1 != d2) {
+            dynamic_cast<QEngineOCL*>(shards[start2 + i].unit.get())->SetDevice(d1);
+        }
+    }
+
+    std::map<int, int> devMap;
+    std::vector<std::vector<bitLenInt>> devGroups1;
+    std::vector<std::vector<bitLenInt>> devGroups2;
+    int devID;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        devID = dynamic_cast<QEngineOCL*>(shards[start1 + i].unit.get())->GetDeviceID();
+        if (devMap.find(devID) == devMap.end()) {
+            devMap[devID] = devGroups1.size();
+            devGroups1.push_back(std::vector<bitLenInt>());
+            devGroups2.push_back(std::vector<bitLenInt>());
+        }
+        devGroups1[devMap[devID]].push_back(start1 + i);
+        devGroups2[devMap[devID]].push_back(start2 + i);
+    }
+
+    par_for(0, devMap.size(), [&](bitLenInt dev, bitLenInt cpu) {
+        std::vector<bitLenInt> devGroup1 = devGroups1[dev];
+        std::vector<bitLenInt> devGroup2 = devGroups2[dev];
+        for (bitLenInt b = 0; b < devGroup1.size(); b++) {
+            fn(devGroup1[b], devGroup2[b], cpu);
+        }
+    });
+}
+
+void QUnitMulti::ParFor3(
+    const bitLenInt start1, const bitLenInt start2, const bitLenInt start3, const bitLenInt length, ParallelFunc3 fn)
+{
+    int d1, d2, d3;
+    for (bitLenInt i = 0; i < length; i++) {
+        d1 = dynamic_cast<QEngineOCL*>(shards[start1 + i].unit.get())->GetDeviceID();
+
+        d2 = dynamic_cast<QEngineOCL*>(shards[start2 + i].unit.get())->GetDeviceID();
+        if (d1 != d2) {
+            dynamic_cast<QEngineOCL*>(shards[start2 + i].unit.get())->SetDevice(d1);
+        }
+
+        d3 = dynamic_cast<QEngineOCL*>(shards[start3 + i].unit.get())->GetDeviceID();
+        if (d1 != d3) {
+            dynamic_cast<QEngineOCL*>(shards[start3 + i].unit.get())->SetDevice(d1);
+        }
+    }
+
+    std::map<int, int> devMap;
+    std::vector<std::vector<bitLenInt>> devGroups1;
+    std::vector<std::vector<bitLenInt>> devGroups2;
+    std::vector<std::vector<bitLenInt>> devGroups3;
+    int devID;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        devID = dynamic_cast<QEngineOCL*>(shards[start1 + i].unit.get())->GetDeviceID();
+        if (devMap.find(devID) == devMap.end()) {
+            devMap[devID] = devGroups1.size();
+            devGroups1.push_back(std::vector<bitLenInt>());
+            devGroups2.push_back(std::vector<bitLenInt>());
+            devGroups3.push_back(std::vector<bitLenInt>());
+        }
+        devGroups1[devMap[devID]].push_back(start1 + i);
+        devGroups2[devMap[devID]].push_back(start2 + i);
+        devGroups3[devMap[devID]].push_back(start3 + i);
+    }
+
+    par_for(0, devMap.size(), [&](bitLenInt dev, bitLenInt cpu) {
+        std::vector<bitLenInt> devGroup1 = devGroups1[dev];
+        std::vector<bitLenInt> devGroup2 = devGroups2[dev];
+        std::vector<bitLenInt> devGroup3 = devGroups3[dev];
+        for (bitLenInt b = 0; b < devGroup1.size(); b++) {
+            fn(devGroup1[b], devGroup2[b], devGroup3[b], cpu);
+        }
+    });
+}
+
 void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 {
     QUnit::Detach(start, length, dest);
