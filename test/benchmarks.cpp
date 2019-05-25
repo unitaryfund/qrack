@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 20;
 
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
@@ -65,7 +65,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     // Our subroutine returns true only for an input of 100.
     for (numBits = 4; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
-            0, rng, complex(ONE_R1, ZERO_R1), enable_normalization);
+            0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
         avgt = 0.0;
 
         for (i = 0; i < ITERATIONS; i++) {
@@ -142,7 +142,7 @@ void benchmarkLoop(
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits);
 }
-
+#if 0
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
@@ -360,7 +360,7 @@ TEST_CASE("test_qft_ideal_init")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
 }
-
+#endif
 TEST_CASE("test_qft_permutation_init")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false);

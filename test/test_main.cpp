@@ -29,6 +29,7 @@ qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
+int device_id = -1;
 
 int main(int argc, char* argv[])
 {
