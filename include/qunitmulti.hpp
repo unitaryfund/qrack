@@ -287,60 +287,50 @@ protected:
 
     virtual void RedistributeQEngines();
 
-    typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc1;
-    void ParFor1(const bitLenInt start, const bitLenInt length, ParallelFunc1 fn);
-    typedef std::function<void(const bitLenInt, const bitLenInt, const int cpu)> ParallelFunc2;
-    void ParFor2(const bitLenInt start1, const bitLenInt start2, const bitLenInt length, ParallelFunc2 fn);
-    typedef std::function<void(const bitLenInt, const bitLenInt, const bitLenInt, const int cpu)> ParallelFunc3;
-    void ParFor3(const bitLenInt start1, const bitLenInt start2, const bitLenInt start3, const bitLenInt length,
-        ParallelFunc3 fn);
-
     typedef void (QUnit::*Bit1Fn)(bitLenInt);
     virtual void OneBitGate(bitLenInt start, bitLenInt length, Bit1Fn fn)
     {
-        ParFor1(start, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(bit); });
+        par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(start + bit); });
     }
 
     typedef void (QUnit::*Bit2Fn)(bitLenInt, bitLenInt);
     virtual void TwoBitGate(bitLenInt start1, bitLenInt start2, bitLenInt length, Bit2Fn fn)
     {
-        ParFor2(
-            start1, start2, length, [&](bitLenInt bit1, bitLenInt bit2, bitLenInt cpu) { (this->*fn)(bit1, bit2); });
+        par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(start1 + bit, start2 + bit); });
     }
 
     typedef void (QUnit::*Bit3Fn)(bitLenInt, bitLenInt, bitLenInt);
     virtual void ThreeBitGate(bitLenInt start1, bitLenInt start2, bitLenInt start3, bitLenInt length, Bit3Fn fn)
     {
-        ParFor3(start1, start2, start3, length,
-            [&](bitLenInt bit1, bitLenInt bit2, bitLenInt bit3, bitLenInt cpu) { (this->*fn)(bit1, bit2, bit3); });
+        par_for(
+            0, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(start1 + bit, start2 + bit, start3 + bit); });
     }
 
     typedef void (QUnit::*Bit1RFn)(real1, bitLenInt);
     virtual void OneBitRGate(real1 angle, bitLenInt start, bitLenInt length, Bit1RFn fn)
     {
-        ParFor1(start, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(angle, bit); });
+        par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(angle, start + bit); });
     }
 
     typedef void (QUnit::*Bit1RDyadFn)(int, int, bitLenInt);
     virtual void OneBitRDyadGate(int numerator, int denomPower, bitLenInt start, bitLenInt length, Bit1RDyadFn fn)
     {
-        ParFor1(start, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(numerator, denomPower, bit); });
+        par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(numerator, denomPower, start + bit); });
     }
 
     typedef void (QUnit::*Bit2RFn)(real1, bitLenInt, bitLenInt);
     virtual void TwoBitRGate(real1 angle, bitLenInt start1, bitLenInt start2, bitLenInt length, Bit2RFn fn)
     {
-        ParFor2(start1, start2, length,
-            [&](bitLenInt bit1, bitLenInt bit2, bitLenInt cpu) { (this->*fn)(angle, bit1, bit2); });
+        par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(angle, start1 + bit, start2 + bit); });
     }
 
     typedef void (QUnit::*Bit2RDyadFn)(int, int, bitLenInt, bitLenInt);
     virtual void TwoBitRDyadGate(
         int numerator, int denomPower, bitLenInt start1, bitLenInt start2, bitLenInt length, Bit2RDyadFn fn)
     {
-        ParFor2(start1, start2, length,
-            [&](bitLenInt bit1, bitLenInt bit2, bitLenInt cpu) { (this->*fn)(numerator, denomPower, bit1, bit2); });
-    }
+        par_for(0, length,
+            [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(numerator, denomPower, start1 + bit, start2 + bit); });
+}
 };
 
 } // namespace Qrack

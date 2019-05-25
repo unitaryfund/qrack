@@ -27,7 +27,6 @@ add_library (qrack STATIC
     src/bitbuffer.cpp
     src/qfusion.cpp
     src/qunit.cpp
-    src/qunitmulti.cpp
     )
 
 if (MSVC)
