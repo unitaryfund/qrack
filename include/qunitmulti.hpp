@@ -330,7 +330,7 @@ protected:
     {
         par_for(0, length,
             [&](bitLenInt bit, bitLenInt cpu) { (this->*fn)(numerator, denomPower, start1 + bit, start2 + bit); });
-}
+    }
 };
 
 } // namespace Qrack

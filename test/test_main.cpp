@@ -175,31 +175,29 @@ int main(int argc, char* argv[])
 
     if (num_failed == 0 && qunit_qfusion) {
         testEngineType = QINTERFACE_QUNIT;
-        if (num_failed == 0 && qunit_qfusion) {
-            testSubEngineType = QINTERFACE_QFUSION;
-            if (num_failed == 0 && cpu) {
-                session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
-                testSubSubEngineType = QINTERFACE_CPU;
-                num_failed = session.run();
-            }
+        testSubEngineType = QINTERFACE_QFUSION;
+        if (num_failed == 0 && cpu) {
+            session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+        }
 
 #if ENABLE_OPENCL
-            if (num_failed == 0 && opencl_single) {
-                session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
-                testSubSubEngineType = QINTERFACE_OPENCL;
-                CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-                num_failed = session.run();
-            }
-
-            if (num_failed == 0 && opencl_single) {
-                session.config().stream() << "############ QUnitMulti (OpenCL) -> QFusion ############" << std::endl;
-                testEngineType = QINTERFACE_QUNIT_MULTI;
-                testSubSubEngineType = QINTERFACE_OPENCL;
-                CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-                num_failed = session.run();
-            }
-#endif
+        if (num_failed == 0 && opencl_single) {
+            session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
         }
+
+        if (num_failed == 0 && opencl_multi) {
+            session.config().stream() << "############ QUnitMulti (OpenCL) -> QFusion ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+#endif
     }
 
     return num_failed;
@@ -217,5 +215,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng);
+        complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
 }

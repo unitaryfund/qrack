@@ -784,12 +784,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     } else {
-        otherStateVec = AllocStateVec(toCopy->maxQPower, true);
         toCopy->LockSync(CL_MAP_READ);
-        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
-        toCopy->UnlockSync();
+        otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
     }
 
     runningNorm = ONE_R1;
@@ -797,7 +795,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer });
 
     if (toCopy->deviceID != deviceID) {
-        FreeAligned(otherStateVec);
+        toCopy->UnlockSync();
     }
 
     ResetStateVec(nStateVec, nStateBuffer);
