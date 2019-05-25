@@ -58,7 +58,8 @@ int main(int argc, char* argv[])
             "necessary, though might benefit accuracy at very high circuit depth.)") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
-                                                            "(Hardware generation is on by default, if available.)");
+                                                            "(Hardware generation is on by default, if available.)") |
+        Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)");
 
     session.cli(cli);
 
@@ -196,5 +197,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, -1, !disable_hardware_rng);
+        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng);
 }
