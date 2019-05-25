@@ -27,6 +27,7 @@ add_library (qrack STATIC
     src/bitbuffer.cpp
     src/qfusion.cpp
     src/qunit.cpp
+    src/qunitmulti.cpp
     )
 
 if (MSVC)
@@ -151,6 +152,7 @@ install (FILES
     include/qengine_cpu.hpp
     include/qfusion.hpp
     include/qunit.hpp
+    include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
