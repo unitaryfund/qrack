@@ -10,6 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
 #include <memory>
 
 #include "oclengine.hpp"
@@ -275,13 +276,22 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
     bool didInit = (nrmArray != NULL);
 
+    complex* nStateVec = NULL;
+
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if ((!forceReInit) && (dID == deviceID)) {
             return;
         }
 
-        // Otherwise, we're about to switch to a new device, so finish the queue, first.
+        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
+        // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
+        nStateVec = AllocStateVec(maxQPower, true);
+        LockSync(CL_MAP_READ);
+        std::copy(stateVec, stateVec + maxQPower, nStateVec);
+        UnlockSync();
+
+        // We're about to switch to a new device, so finish the queue, first.
         clFinish(true);
     }
 
@@ -355,42 +365,15 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     if (didInit) {
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-
         if (!stateVec) {
-            // We did not have host allocation, so we definitely have to copy device-local memory to host memory, then
-            // to a new device.
-            cl::CommandQueue nQueue = queue;
-            queue = oldQueue;
-
-            complex* nStateVec = AllocStateVec(maxQPower, true);
-            BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-
-            WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
-
-            // Host RAM should now by synchronized.
-            queue = nQueue;
-            if (usingHostRam) {
-                // If we're using host RAM from here out, just create the buffer from the array pointer, in the context
-                // of the new device/queue.
-                stateBuffer = MakeStateVecBuffer(nStateVec);
-                stateVec = nStateVec;
-            } else {
-                // If we're not using host RAM from here, we need to copy into a device memory buffer.
-                stateBuffer = MakeStateVecBuffer(NULL);
-                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, nStateVec);
-                FreeAligned(nStateVec);
-            }
-        } else if (usingHostRam) {
-            // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new
-            // context.
-            stateBuffer = MakeStateVecBuffer(stateVec);
-        } else {
-            // We had host allocation; we will no longer have it. Just copy the array pointer into a buffer in the new
-            // context.
+            // We did not have host allocation, so we copied from device-local memory to host memory, above.
+            // Now, we copy to the new device's memory.
             stateBuffer = MakeStateVecBuffer(NULL);
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, stateVec);
-            FreeAligned(stateVec);
-            stateVec = NULL;
+            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, nStateVec);
+            FreeAligned(nStateVec);
+        } else {
+            // We had host allocation; we will continue to have it.
+            ResetStateVec(nStateVec, MakeStateVecBuffer(nStateVec));
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device

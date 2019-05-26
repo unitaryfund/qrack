@@ -259,6 +259,24 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     });
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_copy")
+{
+    qftReg->SetPermutation(0x55F00);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    QInterfacePtr qftReg2(qftReg);
+    REQUIRE_THAT(qftReg2, HasProbability(0x55F00));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
+{
+    if (testEngineType == QINTERFACE_OPENCL) {
+        qftReg->SetPermutation(0x55F00);
+        REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+        std::dynamic_pointer_cast<QEngineOCL>(qftReg)->SetDevice(0);
+        REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x55F00);
@@ -597,6 +615,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
     qftReg->X(1, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+    qftReg->X(4, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_y")
