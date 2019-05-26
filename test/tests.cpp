@@ -259,6 +259,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     });
 }
 
+#if ENABLE_OPENCL
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
 {
     if (testEngineType == QINTERFACE_OPENCL) {
@@ -268,6 +269,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
         REQUIRE_THAT(qftReg, HasProbability(0x55F00));
     }
 }
+#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
