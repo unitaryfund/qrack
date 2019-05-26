@@ -59,9 +59,9 @@ void QUnitMulti::RedistributeQEngines()
         devID = i;
         // If a given device has 0 load, or if the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
-        if (qinfos[i].size <= 2U) {
-            break;
-        }
+        //if (qinfos[i].size <= 2U) {
+        //    break;
+        //}
         if (devSizes[qinfos[i].deviceID] != 0U) {
             // If two devices have identical load, we prefer the default OpenCL device.
             sz = devSizes[defaultDeviceID];
