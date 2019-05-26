@@ -259,14 +259,6 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     });
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_copy")
-{
-    qftReg->SetPermutation(0x55F00);
-    REQUIRE_THAT(qftReg, HasProbability(0x55F00));
-    QInterfacePtr qftReg2(qftReg);
-    REQUIRE_THAT(qftReg2, HasProbability(0x55F00));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
 {
     if (testEngineType == QINTERFACE_OPENCL) {

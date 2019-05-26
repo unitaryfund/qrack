@@ -94,7 +94,6 @@ public:
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true);
-    QEngineOCL(QEngineOCLPtr toCopy);
     ~QEngineOCL()
     {
         clFinish();
@@ -254,7 +253,6 @@ protected:
      * UnlockSync().
      */
     void UnlockSync();
-    void Sync();
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void ArithmeticCall(

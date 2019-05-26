@@ -84,25 +84,6 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     SetPermutation(initState, phaseFac);
 }
 
-QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
-    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase,
-          toCopy->useHostRam, toCopy->hardware_rand_generator != NULL)
-    , stateVec(NULL)
-    , deviceID(toCopy->deviceID)
-    , wait_refs()
-    , nrmArray(NULL)
-    , unlockHostMem(false)
-{
-    runningNorm = ONE_R1;
-    SetQubitCount(toCopy->qubitCount);
-
-    toCopy->Finish();
-
-    InitOCL(toCopy->deviceID);
-
-    CopyState(toCopy);
-}
-
 void QEngineOCL::LockSync(cl_int flags)
 {
     clFinish();
@@ -136,12 +117,6 @@ void QEngineOCL::UnlockSync()
         FreeStateVec();
         stateVec = NULL;
     }
-}
-
-void QEngineOCL::Sync()
-{
-    LockSync(CL_MAP_READ);
-    UnlockSync();
 }
 
 void QEngineOCL::clFinish(bool doHard)
@@ -1971,12 +1946,6 @@ void QEngineOCL::NormalizeState(real1 nrm)
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-
-    if (nrm < min_norm) {
-        DISPATCH_FILL(waitVec, *stateBuffer, sizeof(complex) * maxQPower, complex(ZERO_R1, ZERO_R1));
-        runningNorm = ZERO_R1;
-        return;
-    }
 
     real1 r1_args[2] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
