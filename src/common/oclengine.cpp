@@ -295,7 +295,12 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         std::cout << "Device #" << i << ", ";
         cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
 
-        cl_int buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
+        cl_int buildError =
+            program.build({ all_devices[i] }, "-cl-uniform-work-group-size -cl-denorms-are-zero -cl-fast-relaxed-math");
+        if (buildError != CL_SUCCESS) {
+            program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
+            buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
+        }
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
