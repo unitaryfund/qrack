@@ -303,10 +303,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     nrmGroupCount = maxWorkItems;
     size_t nrmGroupPow = 2;
-    while (nrmGroupPow < (nrmGroupCount / 2)) {
+    while (nrmGroupPow <= nrmGroupCount) {
         nrmGroupPow <<= 1U;
     }
-    nrmGroupCount = nrmGroupPow;
+    nrmGroupCount = nrmGroupPow >> 1U;
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
