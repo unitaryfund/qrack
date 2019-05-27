@@ -160,6 +160,12 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         result *= qi.first->GetAmplitude(qi.second);
     }
 
+    if (shards[0].unit->GetQubitCount() > 1) {
+        if (norm(result) > (ONE_R1 - min_norm)) {
+            SetPermutation(perm);
+        }
+    }
+
     return result;
 }
 
@@ -552,10 +558,12 @@ real1 QUnit::Prob(bitLenInt qubit)
         shard.prob = (shard.unit->Prob)(shard.mapped);
         shard.isProbDirty = false;
 
-        if (shard.prob < min_norm) {
-            SetBit(qubit, false);
-        } else if (shard.prob > (ONE_R1 - min_norm)) {
-            SetBit(qubit, true);
+        if (shard.unit->GetQubitCount() > 1) {
+            if (shard.prob < min_norm) {
+                SetBit(qubit, false);
+            } else if (shard.prob > (ONE_R1 - min_norm)) {
+                SetBit(qubit, true);
+            }
         }
     }
 
@@ -581,9 +589,11 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if (result > (ONE_R1 - min_norm)) {
-        SetPermutation(perm);
-        return ONE_R1;
+    if (shards[0].unit->GetQubitCount() > 1) {
+        if (result > (ONE_R1 - min_norm)) {
+            SetPermutation(perm);
+            return ONE_R1;
+        }
     }
 
     return clampProb(result);
