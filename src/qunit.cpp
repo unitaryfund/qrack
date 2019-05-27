@@ -551,6 +551,12 @@ real1 QUnit::Prob(bitLenInt qubit)
     if (shard.isProbDirty) {
         shard.prob = (shard.unit->Prob)(shard.mapped);
         shard.isProbDirty = false;
+
+        if (shard.prob < min_norm) {
+            SetBit(qubit, false);
+        } else if (shard.prob > (ONE_R1 - min_norm)) {
+            SetBit(qubit, true);
+        }
     }
 
     return shard.prob;
@@ -573,6 +579,11 @@ real1 QUnit::ProbAll(bitCapInt perm)
 
     for (auto&& qi : perms) {
         result *= qi.first->ProbAll(qi.second);
+    }
+
+    if (result > (ONE_R1 - min_norm)) {
+        SetPermutation(perm);
+        return ONE_R1;
     }
 
     return clampProb(result);

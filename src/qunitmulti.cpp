@@ -140,6 +140,7 @@ QInterfacePtr QUnitMulti::EntangleAll()
     return QUnit::EntangleAll();
 }
 
+
 void QUnitMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     complex mtrxLocal[4];
