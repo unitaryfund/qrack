@@ -93,9 +93,10 @@ int main(int argc, char* argv[])
         qengine = true;
     }
 
-    if (!cpu && !opencl_single) {
+    if (!cpu && !opencl_single && !opencl_multi) {
         cpu = true;
         opencl_single = true;
+        opencl_multi = true;
     }
 
     int num_failed = 0;
