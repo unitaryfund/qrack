@@ -59,13 +59,17 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
-        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac,
-            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-        shards[i].mapped = 0;
+        if (shards[i].unit->GetQubitCount() != 1) {
+            shards[i].unit = CreateQuantumInterface(engine, subengine, 1, bitState ? 1 : 0, rand_generator,
+                phaseFac, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+            shards[i].mapped = 0;
+        } else {
+            shards[i].unit->SetPermutation(bitState ? 1 : 0);
+        }
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
     }
-}
+} // namespace Qrack
 
 void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 
@@ -589,11 +593,9 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if (shards[0].unit->GetQubitCount() > 1) {
-        if (result > (ONE_R1 - min_norm)) {
-            SetPermutation(perm);
-            return ONE_R1;
-        }
+    if (result > (ONE_R1 - min_norm)) {
+        SetPermutation(perm);
+        return ONE_R1;
     }
 
     return clampProb(result);
