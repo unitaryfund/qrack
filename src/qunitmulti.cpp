@@ -26,23 +26,27 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     // class.
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
+    RedistributeQEngines();
 }
 
 void QUnitMulti::RedistributeQEngines()
 {
+    // TODO: Remove:
+    WaitAllBits();
+
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
     std::vector<QEngineInfo> qinfos;
     bitCapInt totSize = 0;
     bitCapInt sz;
-    QEngineOCL* qOCL;
+    QEngineOCLPtr qOCL;
 
     for (auto&& shard : shards) {
         if (std::find(qips.begin(), qips.end(), shard.unit) == qips.end()) {
             sz = 1U << ((shard.unit)->GetQubitCount());
             totSize += sz;
             qips.push_back(shard.unit);
-            qOCL = dynamic_cast<QEngineOCL*>(shard.unit.get());
+            qOCL = std::static_pointer_cast<QEngineOCL>(shard.unit);
             qinfos.push_back(QEngineInfo(sz, qOCL->GetDeviceID(), qOCL));
         }
     }
@@ -55,11 +59,13 @@ void QUnitMulti::RedistributeQEngines()
     // We distribute in descending size order:
     std::sort(qinfos.rbegin(), qinfos.rend());
 
+    WaitAllBits();
+
     for (i = 0; i < qinfos.size(); i++) {
         devID = i;
         // If a given device has 0 load, or if the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
-        //if (qinfos[i].size <= 2U) {
+        // if (qinfos[i].size <= 2U) {
         //    break;
         //}
         if (devSizes[qinfos[i].deviceID] != 0U) {
@@ -76,6 +82,7 @@ void QUnitMulti::RedistributeQEngines()
             }
 
             // Add this unit to the device with the lowest load.
+            WaitUnit(qinfos[i].unit);
             qinfos[i].unit->SetDevice(devID);
         }
         // Update the size of buffers handles by this device.
@@ -83,8 +90,27 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
+void QUnitMulti::WaitUnit(const QInterfacePtr& unit)
+{
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if ((shards[i].unit == unit) && shards[i].future.valid()) {
+            shards[i].future.get();
+        }
+    }
+}
+
+void QUnitMulti::WaitAllBits()
+{
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].future.valid()) {
+            shards[i].future.get();
+        }
+    }
+}
+
 void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 {
+    WaitAllBits();
     QUnit::Detach(start, length, dest);
     RedistributeQEngines();
 }
@@ -92,70 +118,174 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleIterator(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    WaitAllBits();
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
     RedistributeQEngines();
     return toRet;
 }
 
-/// Set register bits to given permutationParFor
-void QUnitMulti::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
+QInterfacePtr QUnitMulti::EntangleRange(bitLenInt start, bitLenInt length)
 {
-    QUnit::SetReg(start, length, value);
-    MReg(start, length);
-
-    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) {
-        shards[bit + start].unit->SetBit(shards[bit + start].mapped, !(!(value & (1 << bit))));
-    });
-}
-
-// Bit-wise apply measurement gate to a register
-bitCapInt QUnitMulti::MReg(bitLenInt start, bitLenInt length)
-{
-    int numCores = GetConcurrencyLevel();
-
-    bitCapInt* partResults = new bitCapInt[numCores]();
-
-    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) { partResults[cpu] |= (M(start + bit) ? (1 << bit) : 0); });
-
-    bitCapInt result = 0;
-    for (int i = 0; i < numCores; i++) {
-        result |= partResults[i];
+    if (length == 1) {
+        WaitBit(start);
+        return shards[start].unit;
     }
 
-    return result;
+    return QUnit::EntangleRange(start, length);
 }
 
-/// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
-/// output
-void QUnitMulti::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+QInterfacePtr QUnitMulti::EntangleAll()
 {
-    bool cBit;
-    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) {
-        cBit = (1 << bit) & classicalInput;
-        CLAND(qInputStart + bit, cBit, outputStart + bit);
-    });
+    WaitAllBits();
+    return QUnit::EntangleAll();
 }
 
-/// "OR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
-/// output
-void QUnitMulti::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+void QUnitMulti::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
-    bool cBit;
-    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) {
-        cBit = (1 << bit) & classicalInput;
-        CLOR(qInputStart + bit, cBit, outputStart + bit);
-    });
+    complex mtrxLocal[4];
+    std::copy(mtrx, mtrx + 4, mtrxLocal);
+    QEngineShard shard = shards[qubit];
+
+    shards[qubit].isProbDirty = true;
+
+    WaitBit(qubit);
+    shards[qubit].future = std::async(std::launch::async,
+        [shard, mtrxLocal, doCalcNorm]() { shard.unit->ApplySingleBit(mtrxLocal, doCalcNorm, shard.mapped); });
 }
 
-/// "XOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
-/// output
-void QUnitMulti::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 {
-    bool cBit;
-    par_for(0, length, [&](bitLenInt bit, bitLenInt cpu) {
-        cBit = (1 << bit) & classicalInput;
-        CLXOR(qInputStart + bit, cBit, outputStart + bit);
-    });
+    WaitAllBits();
+    QUnit::SetPermutation(perm, phaseFac);
+}
+
+void QUnitMulti::CopyState(QUnitMultiPtr orig) { CopyState(orig.get()); }
+
+// protected method
+void QUnitMulti::CopyState(QUnitMulti* orig)
+{
+    WaitAllBits();
+    orig->WaitAllBits();
+
+    QUnit::CopyState((QUnit*)orig);
+}
+
+void QUnitMulti::CopyState(QInterfacePtr orig)
+{
+    WaitAllBits();
+    QUnit::CopyState(orig);
+}
+
+void QUnitMulti::SetQuantumState(const complex* inputState)
+{
+    WaitAllBits();
+    QUnit::SetQuantumState(inputState);
+}
+
+void QUnitMulti::GetQuantumState(complex* outputState)
+{
+    WaitAllBits();
+    QUnit::GetQuantumState(outputState);
+}
+
+void QUnitMulti::GetProbs(real1* outputProbs)
+{
+    WaitAllBits();
+    QUnit::GetProbs(outputProbs);
+}
+
+complex QUnitMulti::GetAmplitude(bitCapInt perm)
+{
+    WaitAllBits();
+    return QUnit::GetAmplitude(perm);
+}
+
+/*
+ * Append QInterface to the end of the unit.
+ */
+void QUnitMulti::Compose(QUnitMultiPtr toCopy, bool isMid, bitLenInt start)
+{
+    WaitAllBits();
+    toCopy->WaitAllBits();
+
+    QUnit::Compose(std::static_pointer_cast<QUnit>(toCopy), isMid, start);
+}
+
+bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
+{
+    if (length == qubitCount) {
+        return true;
+    }
+
+    if ((length == 1) && (shards[start].unit->GetQubitCount() == 1)) {
+        return true;
+    }
+
+    if (length <= 1) {
+        WaitAllBits();
+    }
+
+    return QUnit::TrySeparate(start, length);
+}
+
+void QUnitMulti::DumpShards()
+{
+    WaitAllBits();
+    QUnit::DumpShards();
+}
+
+real1 QUnitMulti::Prob(bitLenInt qubit)
+{
+    WaitBit(qubit);
+    return QUnit::Prob(qubit);
+}
+
+real1 QUnitMulti::ProbAll(bitCapInt perm)
+{
+    WaitAllBits();
+    return QUnit::ProbAll(perm);
+}
+
+bool QUnitMulti::ForceM(bitLenInt qubit, bool res, bool doForce)
+{
+    WaitBit(qubit);
+    return QUnit::ForceM(qubit, res, doForce);
+}
+
+void QUnitMulti::PhaseFlip()
+{
+    WaitBit(0);
+    shards[0].unit->PhaseFlip();
+}
+
+void QUnitMulti::UpdateRunningNorm()
+{
+    WaitAllBits();
+    QUnit::UpdateRunningNorm();
+}
+
+void QUnitMulti::Finish()
+{
+    WaitAllBits();
+    QUnit::Finish();
+}
+
+bool QUnitMulti::ApproxCompare(QUnitMultiPtr toCompare)
+{
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    WaitAllBits();
+
+    return QUnit::ApproxCompare(std::static_pointer_cast<QUnit>(toCompare));
+}
+
+QInterfacePtr QUnitMulti::Clone()
+{
+    WaitAllBits();
+    return QUnit::Clone();
 }
 
 } // namespace Qrack

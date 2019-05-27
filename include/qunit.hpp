@@ -13,6 +13,7 @@
 #pragma once
 
 #include <cfloat>
+#include <future>
 #include <random>
 
 #include "qinterface.hpp"
@@ -25,6 +26,7 @@ struct QEngineShard {
     bitLenInt mapped;
     real1 prob;
     bool isProbDirty;
+    std::shared_future<void> future;
 };
 
 class QUnit;
@@ -263,7 +265,7 @@ protected:
     bool DoesOperatorPhaseShift(const complex* mtrx);
 
     /* Debugging and diagnostic routines. */
-    void DumpShards();
+    virtual void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)

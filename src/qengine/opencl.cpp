@@ -128,11 +128,8 @@ void QEngineOCL::clFinish(bool doHard)
     if (doHard) {
         queue.finish();
     } else {
-        for (unsigned int i = 0; i < (device_context->wait_events->size()); i++) {
-            (*(device_context->wait_events.get()))[i].wait();
-        }
+        device_context->WaitOnAllEvents();
     }
-    device_context->wait_events->clear();
     wait_refs.clear();
 }
 
