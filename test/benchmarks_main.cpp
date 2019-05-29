@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
         Opt(opencl_multi)["--proc-opencl-multi"]("Multiple processor OpenCL tests") |
+        Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
             "necessary, though might benefit accuracy at very high circuit depth.)") |
