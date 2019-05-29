@@ -34,6 +34,10 @@ namespace Qrack {
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &clEvent);                                 \
     queue.flush();
 
+#define DISPATCH_LOC_WRITE(buff, size, array, clEvent)                                                                 \
+    queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, NULL, &clEvent);                                          \
+    queue.flush();
+
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));   \
@@ -127,11 +131,8 @@ void QEngineOCL::clFinish(bool doHard)
     if (doHard) {
         queue.finish();
     } else {
-        for (unsigned int i = 0; i < (device_context->wait_events->size()); i++) {
-            (*(device_context->wait_events.get()))[i].wait();
-        }
+        device_context->WaitOnAllEvents();
     }
-    device_context->wait_events->clear();
     wait_refs.clear();
 }
 
@@ -304,6 +305,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     procElemCount = procElemPow;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     nrmGroupCount = maxWorkItems;
+    size_t nrmGroupPow = 2;
+    while (nrmGroupPow <= nrmGroupCount) {
+        nrmGroupPow <<= 1U;
+    }
+    nrmGroupCount = nrmGroupPow >> 1U;
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
@@ -487,6 +493,10 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
+    // every single permutation amplitude.
+    doCalcNorm &= doNormalize && (bitCount == 1);
+
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec = ResetWaitEvents();
 
@@ -494,7 +504,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[4] = { bitCount, maxI, offset1, offset2 };
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
 
@@ -514,10 +524,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // amount of work in this method call instance.
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
-    // every single permutation amplitude.
-    doCalcNorm &= doNormalize && (bitCount == 1);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
@@ -741,12 +747,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     } else {
-        otherStateVec = AllocStateVec(toCopy->maxQPower, true);
         toCopy->LockSync(CL_MAP_READ);
-        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
-        toCopy->UnlockSync();
+        otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
     }
 
     runningNorm = ONE_R1;
@@ -754,7 +758,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer });
 
     if (toCopy->deviceID != deviceID) {
-        FreeAligned(otherStateVec);
+        toCopy->UnlockSync();
     }
 
     ResetStateVec(nStateVec, nStateBuffer);
@@ -1027,6 +1031,10 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
+    if (start == 0 && qubitCount == length) {
+        return ProbAll(permutation);
+    }
+
     bitCapInt perm = permutation << start;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, perm, start, length, 0, 0, 0, 0, 0, 0 };
@@ -1944,15 +1952,13 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-
-    real1 r1_args[2] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
+    real1 r1_args[REAL_ARG_LEN] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *realBuffer, sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
+    DISPATCH_LOC_WRITE(*realBuffer, sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[1] = { maxQPower };
     cl::Event writeBCIArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
+    DISPATCH_LOC_WRITE(*ulongBuffer, sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);

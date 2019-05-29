@@ -185,9 +185,19 @@ public:
 
     EventVecPtr ResetWaitEvents()
     {
+        std::lock_guard<std::recursive_mutex> guard(mutex);
         EventVecPtr waitVec = std::move(wait_events);
         wait_events = std::make_shared<std::vector<cl::Event>>();
         return waitVec;
+    }
+
+    void WaitOnAllEvents()
+    {
+        std::lock_guard<std::recursive_mutex> guard(mutex);
+        for (unsigned int i = 0; i < (wait_events.get())->size(); i++) {
+            (*wait_events.get())[i].wait();
+        }
+        wait_events->clear();
     }
 
     friend class OCLEngine;
