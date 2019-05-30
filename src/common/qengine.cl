@@ -22,9 +22,9 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-#define OFFSET2_ARG bitCapIntPtr[0]
-#define MAXI_ARG bitCapIntPtr[1]
-#define OFFSET1_ARG bitCapIntPtr[2]
+#define OFFSET1_ARG bitCapIntPtr[0]
+#define OFFSET2_ARG bitCapIntPtr[1]
+#define MAXI_ARG bitCapIntPtr[2]
 #define BITCOUNT_ARG bitCapIntPtr[3]
 #define ID get_global_id(0)
 
@@ -33,6 +33,7 @@ inline real1 arg(const cmplx cmp)
     bitCapInt Nthreads = get_global_size(0);                                         \
                                                                                      \
     cmplx4 mtrx = vload8(0, cmplxPtr);                                               \
+    real1 nrm = cmplxPtr[8];                                                         \
                                                                                      \
     cmplx Y0, Y1
 
@@ -60,28 +61,7 @@ inline real1 arg(const cmplx cmp)
     Y0 = stateVec[i | OFFSET1_ARG];                                                  \
     Y1 = stateVec[i | OFFSET2_ARG];                                                  \
                                                                                      \
-    stateVec[i | OFFSET1_ARG] = zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1);         \
-    stateVec[i | OFFSET2_ARG] = zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1)
-
-#define APPLY_AND_OUT_1()                                                            \
-    Y0 = stateVec[i];                                                                \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
-                                                                                     \
-    stateVec[i] = zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1);                       \
-    stateVec[i | OFFSET2_ARG] = zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1)  
-
-#define APPLY_AND_OUT_NORM()                                                         \
-    Y0 = stateVec[i | OFFSET1_ARG];                                                  \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
-                                                                                     \
     stateVec[i | OFFSET1_ARG] = nrm * (zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1)); \
-    stateVec[i | OFFSET2_ARG] = nrm * (zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1))
-
-#define APPLY_AND_OUT_NORM_1()                                                       \
-    Y0 = stateVec[i];                                                                \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
-                                                                                     \
-    stateVec[i] = nrm * (zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1));               \
     stateVec[i | OFFSET2_ARG] = nrm * (zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1))
 
 #define SUM_2X2()                                                                    \
@@ -112,23 +92,10 @@ inline real1 arg(const cmplx cmp)
     stateVec[i | OFFSET1_ARG] = Y0;                                                  \
     stateVec[i | OFFSET2_ARG] = Y1
 
-#define NORM_BODY_2X2_1()                                                            \
-    YT = stateVec[i];                                                                \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
-                                                                                     \
-    Y0 = nrm * (zmul(mtrx.lo.lo, YT) + zmul(mtrx.lo.hi, Y1));                        \
-    Y1 = nrm * (zmul(mtrx.hi.lo, YT) + zmul(mtrx.hi.hi, Y1));                        \
-                                                                                     \
-    partNrm += dot(Y0, Y0) + dot(Y1, Y1);                                            \
-                                                                                     \
-    stateVec[i] = Y0;                                                                \
-    stateVec[i | OFFSET2_ARG] = Y1
-
 void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
     PREP_2X2();
     
-    real1 nrm = cmplxPtr[8];
     bitCapInt iLow, iHigh;
     bitLenInt p;
     
@@ -142,12 +109,11 @@ void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, con
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = bitCapIntPtr[2];
+    bitCapInt qMask = bitCapIntPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
-        APPLY_AND_OUT_NORM_1();
+        APPLY_AND_OUT();
     }
 }
 
@@ -155,7 +121,6 @@ void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, con
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
     bitCapInt qMask1 = bitCapIntPtr[3];
     bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
@@ -170,7 +135,6 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
 {
     PREP_2X2();
     
-    real1 nrm = cmplxPtr[8];
     bitCapInt iLow, iHigh;
     bitLenInt p;
     
@@ -183,91 +147,14 @@ void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr,
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = bitCapIntPtr[1];
+    bitCapInt qMask = bitCapIntPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
-    APPLY_AND_OUT_NORM_1();
+    APPLY_AND_OUT();
 }
 
 void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
-{
-    PREP_2X2();
-
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = bitCapIntPtr[3];
-    bitCapInt qMask2 = bitCapIntPtr[4];
-    bitCapInt iLow, iHigh;
-
-    lcv = ID;
-    PUSH_APART_2();
-    APPLY_AND_OUT();
-}
-
-void kernel apply2x2unit(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt iLow, iHigh;
-    bitLenInt p;
-
-    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_GEN();
-        APPLY_AND_OUT();
-    }
-}
-
-void kernel apply2x2unitsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
-{
-    PREP_2X2();
-
-    bitCapInt qMask = bitCapIntPtr[2];
-
-    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_AND_OUT_1();
-    }
-}
-
-void kernel apply2x2unitdouble(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
-{
-    PREP_2X2();
-
-    bitCapInt qMask1 = bitCapIntPtr[3];
-    bitCapInt qMask2 = bitCapIntPtr[4];
-    bitCapInt iLow, iHigh;
-
-    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_2();
-        APPLY_AND_OUT();
-    }
-}
-
-void kernel apply2x2unitwide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt iLow, iHigh;
-    bitLenInt p;
-
-    lcv = ID;
-    PUSH_APART_GEN();
-    APPLY_AND_OUT();
-}
-
-void kernel apply2x2unitsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
-{
-    PREP_2X2();
-
-    bitCapInt qMask = bitCapIntPtr[1];
-
-    lcv = ID;
-    PUSH_APART_1();
-    APPLY_AND_OUT_1();
-}
-
-void kernel apply2x2unitdoublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
@@ -284,8 +171,7 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = bitCapIntPtr[2];
+    bitCapInt qMask = bitCapIntPtr[3];
 
     bitCapInt locID, locNthreads;
     cmplx YT;
@@ -293,7 +179,7 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
-        NORM_BODY_2X2_1();
+        NORM_BODY_2X2();
     }
 
     SUM_2X2();
@@ -303,8 +189,7 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = bitCapIntPtr[1];
+    bitCapInt qMask = bitCapIntPtr[2];
 
     bitCapInt locID, locNthreads;
     cmplx YT;
@@ -312,7 +197,7 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
 
     lcv = ID;
     PUSH_APART_1();
-    NORM_BODY_2X2_1();
+    NORM_BODY_2X2();
 
     SUM_2X2();
 }

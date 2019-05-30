@@ -22,12 +22,11 @@ namespace Qrack {
 #define REAL_ARG_LEN 2
 
 // Mask definition for Apply2x2()
-#define APPLY2X2_DEFAULT 0x00
-#define APPLY2X2_NORM 0x01
-#define APPLY2X2_UNIT 0x02
-#define APPLY2X2_SINGLE 0x04
-#define APPLY2X2_DOUBLE 0x08
-#define APPLY2X2_WIDE 0x10
+#define APPLY2X2_DEFAULT 0x0
+#define APPLY2X2_NORM 0x1
+#define APPLY2X2_SINGLE 0x2
+#define APPLY2X2_DOUBLE 0x4
+#define APPLY2X2_WIDE 0x8
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
@@ -504,7 +503,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[5] = { offset2, maxI, offset1, bitCount, 0 };
+    bitCapInt bciArgs[5] = { offset1, offset2, maxI, bitCount, 0 };
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -521,11 +520,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // Single bit gates offsets are always 0 and target bit power. Hence, we overwrite one of the bit offset
         // arguments.
         if (ngc == maxI) {
-            bciArgsSize = 2;
-            bciArgs[1] = qPowersSorted[0] - 1;
-        } else {
             bciArgsSize = 3;
             bciArgs[2] = qPowersSorted[0] - 1;
+        } else {
+            bciArgsSize = 4;
+            bciArgs[3] = qPowersSorted[0] - 1;
         }
     } else if (bitCount == 2) {
         // Double bit gates include both controlled and swap gates. To reuse the code for both cases, we need two offset
@@ -544,10 +543,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
-    size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
 
     cl::Event writeGateEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx, writeGateEvent);
+    DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * 5, cmplx, writeGateEvent);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
@@ -565,9 +563,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     } else if (bitCount == 2) {
         kernelMask |= APPLY2X2_DOUBLE;
     }
-    if (!doCalcNorm && isUnitLength) {
-        kernelMask |= APPLY2X2_UNIT;
-    }
     if (ngc == maxI) {
         kernelMask |= APPLY2X2_WIDE;
     }
@@ -577,14 +572,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_DEFAULT:
         api_call = OCL_API_APPLY2X2;
         break;
-    case APPLY2X2_UNIT:
-        api_call = OCL_API_APPLY2X2_UNIT;
-        break;
     case APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_SINGLE;
-        break;
-    case APPLY2X2_UNIT | APPLY2X2_SINGLE:
-        api_call = OCL_API_APPLY2X2_UNIT_SINGLE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE;
@@ -592,29 +581,17 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_DOUBLE:
         api_call = OCL_API_APPLY2X2_DOUBLE;
         break;
-    case APPLY2X2_UNIT | APPLY2X2_DOUBLE:
-        api_call = OCL_API_APPLY2X2_UNIT_DOUBLE;
-        break;
     case APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_WIDE;
         break;
-    case APPLY2X2_UNIT | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_UNIT_WIDE;
-        break;
     case APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_SINGLE_WIDE;
-        break;
-    case APPLY2X2_UNIT | APPLY2X2_SINGLE | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_UNIT_SINGLE_WIDE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE_WIDE;
         break;
     case APPLY2X2_DOUBLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_DOUBLE_WIDE;
-        break;
-    case APPLY2X2_UNIT | APPLY2X2_DOUBLE | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_UNIT_DOUBLE_WIDE;
         break;
     default:
         throw("Invalid APPLY2X2 kernel selected!");
