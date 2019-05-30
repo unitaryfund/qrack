@@ -504,9 +504,29 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[4] = { offset2, maxI, offset1, bitCount };
+    bitCapInt bciArgs[5] = { offset2, maxI, offset1, bitCount, 0 };
+
+    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
+    // amount of work in this method call instance.
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    size_t bciArgsSize = 4;
+    if (bitCount == 1) {
+        if (ngc == maxI) {
+            bciArgsSize = 2;
+            bciArgs[1] = qPowersSorted[0] - 1;
+        } else {
+            bciArgsSize = 3;
+            bciArgs[2] = qPowersSorted[0] - 1;
+        }
+    } else if (bitCount == 2) {
+        bciArgsSize = 5;
+        bciArgs[3] = qPowersSorted[0] - 1;
+        bciArgs[4] = qPowersSorted[1] - 1;
+    }
     cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * bciArgsSize, bciArgs, writeArgsEvent);
 
     // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
     complex cmplx[CMPLX_NORM_LEN];
@@ -520,14 +540,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     cl::Event writeGateEvent;
     DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx, writeGateEvent);
 
-    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
-    // amount of work in this method call instance.
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
+    if (bitCount != 1 && bitCount != 2) {
+        DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
+    }
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     unsigned char kernelMask = APPLY2X2_DEFAULT;
@@ -597,14 +614,25 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
     writeGateEvent.wait();
-    writeControlsEvent.wait();
+    if (bitCount == 1) {
+        writeControlsEvent.wait();
+    }
     wait_refs.clear();
 
     if (doCalcNorm) {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
-            sizeof(real1) * ngs);
+        if (bitCount == 1 || bitCount == 2) {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer },
+                sizeof(real1) * ngs);
+        } else {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
+                sizeof(real1) * ngs);
+        }
     } else {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
+        if (bitCount == 1 || bitCount == 2) {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer });
+        } else {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
+        }
     }
 
     if (doCalcNorm) {

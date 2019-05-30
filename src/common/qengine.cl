@@ -138,12 +138,12 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
     }
 }
 
-void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
     real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[2];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -151,13 +151,13 @@ void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, con
     }
 }
 
-void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
     real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
@@ -179,25 +179,25 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
     real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[1];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_AND_OUT_NORM_1();
 }
 
-void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
     real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
 
     lcv = ID;
@@ -218,11 +218,11 @@ void kernel apply2x2unit(global cmplx* stateVec, constant real1* cmplxPtr, const
     }
 }
 
-void kernel apply2x2unitsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2unitsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[2];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -230,12 +230,12 @@ void kernel apply2x2unitsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     }
 }
 
-void kernel apply2x2unitdouble(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2unitdouble(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
@@ -256,23 +256,23 @@ void kernel apply2x2unitwide(global cmplx* stateVec, constant real1* cmplxPtr, c
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2unitsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2unitsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[1];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_AND_OUT_1();
 }
 
-void kernel apply2x2unitdoublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2unitdoublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
 
     lcv = ID;
@@ -280,12 +280,12 @@ void kernel apply2x2unitdoublewide(global cmplx* stateVec, constant real1* cmplx
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
+void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
 
     real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[2];
 
     bitCapInt locID, locNthreads;
     cmplx YT;
@@ -299,12 +299,12 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     SUM_2X2();
 }
 
-void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
+void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
 
     real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[1];
 
     bitCapInt locID, locNthreads;
     cmplx YT;
