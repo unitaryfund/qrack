@@ -84,6 +84,10 @@ public:
      *@{
      */
 
+    using QInterface::X;
+    virtual void X(bitLenInt target);
+    using QInterface::Z;
+    virtual void Z(bitLenInt target);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);

@@ -753,6 +753,15 @@ void QUnit::UniformlyControlledSingleBit(
     delete[] mappedControls;
 }
 
+void QUnit::X(bitLenInt qubit) {
+    shards[qubit].prob = ONE_R1 - shards[qubit].prob;
+    shards[qubit].unit->X(shards[qubit].mapped);
+}
+
+void QUnit::Z(bitLenInt qubit) {
+    shards[qubit].unit->Z(shards[qubit].mapped);
+}
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].isProbDirty = true;
