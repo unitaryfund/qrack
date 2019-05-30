@@ -518,6 +518,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // savings.
     size_t bciArgsSize = 4;
     if (bitCount == 1) {
+        // Single bit gates offsets are always 0 and target bit power. Hence, we overwrite one of the bit offset
+        // arguments.
         if (ngc == maxI) {
             bciArgsSize = 2;
             bciArgs[1] = qPowersSorted[0] - 1;
@@ -526,6 +528,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             bciArgs[2] = qPowersSorted[0] - 1;
         }
     } else if (bitCount == 2) {
+        // Double bit gates include both controlled and swap gates. To reuse the code for both cases, we need two offset
+        // arguments. Hence, we cannot easily overwrite either of the bit offset arguments.
         bciArgsSize = 5;
         bciArgs[3] = qPowersSorted[0] - 1;
         bciArgs[4] = qPowersSorted[1] - 1;
