@@ -504,7 +504,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[4] = { bitCount, maxI, offset1, offset2 };
+    bitCapInt bciArgs[4] = { offset2, maxI, offset1, bitCount };
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
 
