@@ -42,6 +42,10 @@ inline real1 arg(const cmplx cmp)
     bitCapInt Nthreads = get_global_size(0);                                         \
     cmplx Y0
 
+#define PREP_Z_2X2()                                                                 \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0)
+
 #define PUSH_APART_GEN()                                                             \
     iHigh = lcv;                                                                     \
     i = 0U;                                                                          \
@@ -73,6 +77,9 @@ inline real1 arg(const cmplx cmp)
     Y0 = stateVec[i];                                                                \
     stateVec[i] = stateVec[i | OFFSET2_ARG];                                         \
     stateVec[i | OFFSET2_ARG] = Y0
+
+#define APPLY_Z()                                                                    \
+    stateVec[i | OFFSET2_ARG] = -stateVec[i | OFFSET2_ARG]
 
 #define SUM_2X2()                                                                    \
     locID = get_local_id(0);                                                         \
@@ -233,6 +240,29 @@ void kernel xsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     lcv = ID;
     PUSH_APART_1();
     APPLY_X();
+}
+
+void kernel zsingle(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_Z_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[3];
+
+    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
+        PUSH_APART_1();
+        APPLY_Z();
+    }
+}
+
+void kernel zsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_Z_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[2];
+
+    lcv = ID;
+    PUSH_APART_1();
+    APPLY_Z();
 }
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)

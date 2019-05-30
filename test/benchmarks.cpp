@@ -151,6 +151,11 @@ TEST_CASE("test_x_single")
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
 }
 
+TEST_CASE("test_z_single")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0); });
+}
+
 TEST_CASE("test_swap_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, 1); });
@@ -174,6 +179,11 @@ TEST_CASE("test_swap_all")
 TEST_CASE("test_x_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
+}
+
+TEST_CASE("test_z_all")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0, n); });
 }
 
 TEST_CASE("test_and_all")

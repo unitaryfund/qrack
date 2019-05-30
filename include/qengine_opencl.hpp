@@ -201,7 +201,8 @@ public:
 protected:
     static const int BCI_ARG_LEN = 10;
 
-    bool IsNotGate(const complex* mtrx);
+    bool IsXGate(const complex* mtrx);
+    bool IsZGate(const complex* mtrx);
 
     void InitOCL(int devID);
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
