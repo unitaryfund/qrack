@@ -511,6 +511,11 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    // In an efficient OpenCL kernel, every single byte loaded comes at a significant execution time premium.
+    // We handle single and double bit gates as special cases, for many reasons. Given that we have already separated
+    // these out as special cases, since we know the bit count, we can eliminate the qPowersSorted buffer, by loading
+    // its one or two values into the bciArgs buffer, of the same type. This gives us a significant execution time
+    // savings.
     size_t bciArgsSize = 4;
     if (bitCount == 1) {
         if (ngc == maxI) {
@@ -621,8 +626,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     if (doCalcNorm) {
         if (bitCount == 1 || bitCount == 2) {
-            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer },
-                sizeof(real1) * ngs);
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
         } else {
             QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
                 sizeof(real1) * ngs);
