@@ -298,7 +298,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // constrain to a power of two
-    size_t procElemPow = 2;
+    size_t procElemPow = 1;
     while (procElemPow < procElemCount) {
         procElemPow <<= 1U;
     }
