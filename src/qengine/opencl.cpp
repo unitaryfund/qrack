@@ -491,61 +491,34 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
-bool QEngineOCL::IsXGate(const complex* mtrx)
+/// NOT gate, which is also Pauli x matrix
+void QEngineOCL::X(bitLenInt qubit)
 {
-    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
-    // then we can discard this buffer without applying it.
-    complex toTest = mtrx[0];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[1];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[2];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[3];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-
-    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
-    return true;
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitCapInt qPowers[1];
+    qPowers[0] = 1 << qubit;
+    Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, true, false);
 }
 
-bool QEngineOCL::IsZGate(const complex* mtrx)
+/// Apply Pauli Z matrix to bit
+void QEngineOCL::Z(bitLenInt qubit)
 {
-    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
-    // then we can discard this buffer without applying it.
-    complex toTest = mtrx[0];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[1];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[2];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[3];
-    if ((-real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-
-    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
-    return true;
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(-ONE_R1, ZERO_R1) };
+    bitCapInt qPowers[1];
+    qPowers[0] = 1 << qubit;
+    Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, false, true);
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, bool isXGate, bool isZGate)
 {
-    bool isXGate = (bitCount == 1) && (!doNormalize || (runningNorm == ONE_R1)) && IsXGate(mtrx);
-    bool isZGate = !isXGate && (bitCount == 1) && (!doNormalize || (runningNorm == ONE_R1)) && IsZGate(mtrx);
+    isXGate &= (!doNormalize || (runningNorm == ONE_R1));
+    isZGate &= (!doNormalize || (runningNorm == ONE_R1));
+
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
     doCalcNorm &= doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
