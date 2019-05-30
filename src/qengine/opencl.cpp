@@ -518,7 +518,7 @@ bool QEngineOCL::IsNotGate(const complex* mtrx)
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
-    bool isXGate = (bitCount == 1) && IsNotGate(mtrx);
+    bool isXGate = (bitCount == 1) && (!doNormalize || (runningNorm == ONE_R1)) && IsNotGate(mtrx);
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
     doCalcNorm &= doNormalize && (!isXGate) && (bitCount == 1);
