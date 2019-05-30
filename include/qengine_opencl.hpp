@@ -21,6 +21,8 @@
 
 namespace Qrack {
 
+enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
+
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class OCLEngine;
@@ -265,11 +267,12 @@ protected:
 
     using QEngine::Apply2x2;
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) {
-        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, false, false);
+        const bitCapInt* qPowersSorted, bool doCalcNorm)
+    {
+        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE);
     }
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, bool isXGate, bool isZGate = false);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special);
 
     void ApplyM(bitCapInt mask, bool result, complex nrm);
     void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

@@ -498,7 +498,7 @@ void QEngineOCL::X(bitLenInt qubit)
         complex(ZERO_R1, ZERO_R1) };
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
-    Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, true, false);
+    Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, SPECIAL_2X2::PAULIX);
 }
 
 /// Apply Pauli Z matrix to bit
@@ -510,14 +510,14 @@ void QEngineOCL::Z(bitLenInt qubit)
         complex(-ONE_R1, ZERO_R1) };
     bitCapInt qPowers[1];
     qPowers[0] = 1 << qubit;
-    Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, false, true);
+    Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, SPECIAL_2X2::PAULIZ);
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, bool isXGate, bool isZGate)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special)
 {
-    isXGate &= (!doNormalize || (runningNorm == ONE_R1));
-    isZGate &= (!doNormalize || (runningNorm == ONE_R1));
+    bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
+    bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
