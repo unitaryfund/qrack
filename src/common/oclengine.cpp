@@ -53,6 +53,8 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_APPLY2X2_DOUBLE_WIDE, "apply2x2doublewide"),
     OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
     OCLKernelHandle(OCL_API_X, "x"),
+    OCLKernelHandle(OCL_API_X_SINGLE, "xsingle"),
+    OCLKernelHandle(OCL_API_X_SINGLE_WIDE, "xsinglewide"),
     OCLKernelHandle(OCL_API_COMPOSE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_WIDE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),

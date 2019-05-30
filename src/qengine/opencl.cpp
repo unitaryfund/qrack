@@ -22,11 +22,12 @@ namespace Qrack {
 #define REAL_ARG_LEN 2
 
 // Mask definition for Apply2x2()
-#define APPLY2X2_DEFAULT 0x0
-#define APPLY2X2_NORM 0x1
-#define APPLY2X2_SINGLE 0x2
-#define APPLY2X2_DOUBLE 0x4
-#define APPLY2X2_WIDE 0x8
+#define APPLY2X2_DEFAULT 0x00
+#define APPLY2X2_NORM    0x01
+#define APPLY2X2_SINGLE  0x02
+#define APPLY2X2_DOUBLE  0x04
+#define APPLY2X2_WIDE    0x08
+#define APPLY2X2_NOT     0x10
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
@@ -489,12 +490,38 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
+bool QEngineOCL::IsNotGate(const complex* mtrx)
+{
+    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
+    // then we can discard this buffer without applying it.
+    complex toTest = mtrx[0];
+    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+    toTest = mtrx[1];
+    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+    toTest = mtrx[2];
+    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+    toTest = mtrx[3];
+    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
+        return false;
+    }
+
+    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
+    return true;
+}
+
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    bool isXGate = (bitCount == 1) && IsNotGate(mtrx);
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm &= doNormalize && (bitCount == 1);
+    doCalcNorm &= doNormalize && (!isXGate) && (bitCount == 1);
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec = ResetWaitEvents();
@@ -503,7 +530,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[5] = { offset1, offset2, maxI, bitCount, 0 };
+    bitCapInt bciArgs[5] = { offset2, offset1, maxI, bitCount, 0 };
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -545,7 +572,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
 
     cl::Event writeGateEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * 5, cmplx, writeGateEvent);
+    if (!isXGate) {
+        DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * 5, cmplx, writeGateEvent);
+    }
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
@@ -557,7 +586,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     unsigned char kernelMask = APPLY2X2_DEFAULT;
     if (bitCount == 1) {
         kernelMask |= APPLY2X2_SINGLE;
-        if (doCalcNorm) {
+        if (isXGate) {
+            kernelMask |= APPLY2X2_NOT;
+        } else if (doCalcNorm) {
             kernelMask |= APPLY2X2_NORM;
         }
     } else if (bitCount == 2) {
@@ -575,6 +606,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_SINGLE;
         break;
+    case APPLY2X2_SINGLE | APPLY2X2_NOT:
+        api_call = OCL_API_X_SINGLE;
+        break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE;
         break;
@@ -586,6 +620,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         break;
     case APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_SINGLE_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_NOT:
+        api_call = OCL_API_X_SINGLE_WIDE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE_WIDE;
@@ -599,13 +636,17 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
-    writeGateEvent.wait();
+    if (!isXGate) {
+        writeGateEvent.wait();
+    }
     if (bitCount == 1) {
         writeControlsEvent.wait();
     }
     wait_refs.clear();
 
-    if (doCalcNorm) {
+    if (isXGate) {
+        QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer });
+    } else if (doCalcNorm) {
         if (bitCount == 1 || bitCount == 2) {
             QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
         } else {
@@ -624,6 +665,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    } else if ((bitCount == 1) && !isXGate) {
+        runningNorm = ONE_R1;
     }
 }
 

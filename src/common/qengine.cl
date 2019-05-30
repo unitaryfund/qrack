@@ -22,8 +22,8 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-#define OFFSET1_ARG bitCapIntPtr[0]
-#define OFFSET2_ARG bitCapIntPtr[1]
+#define OFFSET2_ARG bitCapIntPtr[0]
+#define OFFSET1_ARG bitCapIntPtr[1]
 #define MAXI_ARG bitCapIntPtr[2]
 #define BITCOUNT_ARG bitCapIntPtr[3]
 #define ID get_global_id(0)
@@ -36,6 +36,11 @@ inline real1 arg(const cmplx cmp)
     real1 nrm = cmplxPtr[8];                                                         \
                                                                                      \
     cmplx Y0, Y1
+
+#define PREP_SPECIAL_2X2()                                                           \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0);                                         \
+    cmplx Y0
 
 #define PUSH_APART_GEN()                                                             \
     iHigh = lcv;                                                                     \
@@ -63,6 +68,11 @@ inline real1 arg(const cmplx cmp)
                                                                                      \
     stateVec[i | OFFSET1_ARG] = nrm * (zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1)); \
     stateVec[i | OFFSET2_ARG] = nrm * (zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1))
+
+#define APPLY_X()                                                                    \
+    Y0 = stateVec[i];                                                                \
+    stateVec[i] = stateVec[i | OFFSET2_ARG];                                         \
+    stateVec[i | OFFSET2_ARG] = Y0
 
 #define SUM_2X2()                                                                    \
     locID = get_local_id(0);                                                         \
@@ -200,6 +210,29 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
     NORM_BODY_2X2();
 
     SUM_2X2();
+}
+
+void kernel xsingle(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_SPECIAL_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[3];
+
+    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
+        PUSH_APART_1();
+        APPLY_X();
+    }
+}
+
+void kernel xsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_SPECIAL_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[2];
+
+    lcv = ID;
+    PUSH_APART_1();
+    APPLY_X();
 }
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)

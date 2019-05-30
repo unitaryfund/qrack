@@ -143,12 +143,12 @@ void benchmarkLoop(
 
 TEST_CASE("test_cnot_single")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
 }
 
 TEST_CASE("test_x_single")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
 }
 
 TEST_CASE("test_swap_single")
