@@ -23,11 +23,11 @@ namespace Qrack {
 
 // Mask definition for Apply2x2()
 #define APPLY2X2_DEFAULT 0x00
-#define APPLY2X2_NORM    0x01
-#define APPLY2X2_SINGLE  0x02
-#define APPLY2X2_DOUBLE  0x04
-#define APPLY2X2_WIDE    0x08
-#define APPLY2X2_NOT     0x10
+#define APPLY2X2_NORM 0x01
+#define APPLY2X2_SINGLE 0x02
+#define APPLY2X2_DOUBLE 0x04
+#define APPLY2X2_WIDE 0x08
+#define APPLY2X2_NOT 0x10
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
