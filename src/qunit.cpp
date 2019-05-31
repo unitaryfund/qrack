@@ -573,8 +573,8 @@ real1 QUnit::Prob(bitLenInt qubit)
             }
 
             if (isEdge) {
-                QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor,
-                    doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+                QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator,
+                    phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
                 unit->Dispose(mapped, 1);
 
                 /* Update the mappings. */
@@ -771,14 +771,13 @@ void QUnit::UniformlyControlledSingleBit(
     delete[] mappedControls;
 }
 
-void QUnit::X(bitLenInt qubit) {
+void QUnit::X(bitLenInt qubit)
+{
     shards[qubit].prob = ONE_R1 - shards[qubit].prob;
     shards[qubit].unit->X(shards[qubit].mapped);
 }
 
-void QUnit::Z(bitLenInt qubit) {
-    shards[qubit].unit->Z(shards[qubit].mapped);
-}
+void QUnit::Z(bitLenInt qubit) { shards[qubit].unit->Z(shards[qubit].mapped); }
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {

@@ -1365,7 +1365,7 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     // fast private memory.
     char nibbles[16];
     bool isValid;
-    cmplx amp;
+    cmplx amp1, amp2;
     bitCapInt i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1386,6 +1386,8 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
             isValid = false;
         }
 
+        amp1 = stateVec[i];
+        amp2 = stateVec[i | carryMask];
         for (j = 1; j < nibbleCount; j++) {
             test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
             test2 = partToAdd % 10;
@@ -1395,7 +1397,6 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                 isValid = false;
             }
         }
-        amp = stateVec[i];
         if (isValid) {
             outInt = 0;
             outRes = 0;
@@ -1412,9 +1413,12 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                 outInt |= nibbles[j] << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = amp;
+            nStateVec[outRes] = amp1;
+            outRes ^= carryMask;
+            nStateVec[outRes] = amp2;
         } else {
-            nStateVec[i] = amp;
+            nStateVec[i] = amp1;
+            nStateVec[i | carryMask] = amp2;
         }
     }
 }
@@ -1438,7 +1442,7 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     // fast private memory.
     char nibbles[16];
     bool isValid;
-    cmplx amp;
+    cmplx amp1, amp2;
     bitCapInt i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1459,6 +1463,8 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
             isValid = false;
         }
 
+        amp1 = stateVec[i];
+        amp2 = stateVec[i | carryMask];
         for (j = 1; j < nibbleCount; j++) {
             test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
             test2 = partToSub % 10;
@@ -1468,7 +1474,6 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                 isValid = false;
             }
         }
-        amp = stateVec[i];
         if (isValid) {
             outInt = 0;
             outRes = 0;
@@ -1485,9 +1490,12 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                 outInt |= nibbles[j] << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = amp;
+            nStateVec[outRes] = amp1;
+            outRes ^= carryMask;
+            nStateVec[outRes] = amp2;
         } else {
-            nStateVec[i] = amp;
+            nStateVec[i] = amp1;
+            nStateVec[i | carryMask] = amp2;
         }
     }
 }

@@ -323,8 +323,11 @@ void QEngineCPU::INCBCDC(
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
+            outRes ^= carryMask;
+            nStateVec[outRes] = stateVec[lcv | carryMask];
         } else {
             nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
         }
         delete[] nibbles;
     });
@@ -854,8 +857,11 @@ void QEngineCPU::DECBCDC(
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
+            outRes ^= carryMask;
+            nStateVec[outRes] = stateVec[lcv | carryMask];
         } else {
             nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
         }
         delete[] nibbles;
     });
