@@ -78,11 +78,12 @@ int main(int argc, char* argv[])
 
     session.config().stream() << "Random Seed: " << session.configData().rngSeed;
 
-    if (disable_hardware_rng) {
-        session.config().stream() << std::endl;
-    } else {
-        session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
+#if ENABLE_RDRAND
+    if (!disable_hardware_rng) {
+        session.config().stream() << " (Overridden by hardware generation!)";
     }
+#endif
+    session.config().stream() << std::endl;
 
     if (!qengine && !qfusion && !qunit && !qunit_qfusion) {
         qfusion = true;
