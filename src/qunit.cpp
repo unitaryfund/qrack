@@ -563,10 +563,32 @@ real1 QUnit::Prob(bitLenInt qubit)
         shard.isProbDirty = false;
 
         if (shard.unit->GetQubitCount() > 1) {
+            QInterfacePtr unit = shards[qubit].unit;
+            bitLenInt mapped = shards[qubit].mapped;
+
+            bool isZero = false;
+            bool isOne = false;
+            bool result = false;
             if (shard.prob < min_norm) {
-                SetBit(qubit, false);
+                isZero = true;
+                result = false;
             } else if (shard.prob > (ONE_R1 - min_norm)) {
-                SetBit(qubit, true);
+                isOne = true;
+                result = true;
+            }
+            if (isZero || isOne) {
+                QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor,
+                    doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+                unit->Dispose(mapped, 1);
+
+                /* Update the mappings. */
+                shards[qubit].unit = dest;
+                shards[qubit].mapped = 0;
+                for (auto&& shard : shards) {
+                    if (shard.unit == unit && shard.mapped > mapped) {
+                        shard.mapped--;
+                    }
+                }
             }
         }
     }
