@@ -59,13 +59,9 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
-        if (shards[i].unit->GetQubitCount() != 1) {
-            shards[i].unit = CreateQuantumInterface(engine, subengine, 1, bitState ? 1 : 0, rand_generator, phaseFac,
-                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-            shards[i].mapped = 0;
-        } else {
-            shards[i].unit->SetPermutation(bitState ? 1 : 0);
-        }
+        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+        shards[i].mapped = 0;
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
     }
@@ -563,20 +559,20 @@ real1 QUnit::Prob(bitLenInt qubit)
         shard.isProbDirty = false;
 
         if (shard.unit->GetQubitCount() > 1) {
-            QInterfacePtr unit = shards[qubit].unit;
-            bitLenInt mapped = shards[qubit].mapped;
+            QInterfacePtr unit = shard.unit;
+            bitLenInt mapped = shard.mapped;
 
-            bool isZero = false;
-            bool isOne = false;
+            bool isEdge = false;
             bool result = false;
             if (shard.prob < min_norm) {
-                isZero = true;
+                isEdge = true;
                 result = false;
             } else if (shard.prob > (ONE_R1 - min_norm)) {
-                isOne = true;
+                isEdge = true;
                 result = true;
             }
-            if (isZero || isOne) {
+
+            if (isEdge) {
                 QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor,
                     doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
                 unit->Dispose(mapped, 1);
@@ -584,9 +580,9 @@ real1 QUnit::Prob(bitLenInt qubit)
                 /* Update the mappings. */
                 shards[qubit].unit = dest;
                 shards[qubit].mapped = 0;
-                for (auto&& shard : shards) {
-                    if (shard.unit == unit && shard.mapped > mapped) {
-                        shard.mapped--;
+                for (auto&& s : shards) {
+                    if (s.unit == unit && s.mapped > mapped) {
+                        s.mapped--;
                     }
                 }
             }
