@@ -57,6 +57,8 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     bool bitState;
 
+    Finish();
+
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
         shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac,
