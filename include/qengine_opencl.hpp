@@ -21,6 +21,8 @@
 
 namespace Qrack {
 
+enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
+
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class OCLEngine;
@@ -114,7 +116,10 @@ public:
 
     /* Operations that have an improved implementation. */
     using QEngine::X;
+    virtual void X(bitLenInt target);
     virtual void X(bitLenInt start, bitLenInt length);
+    using QEngine::Z;
+    virtual void Z(bitLenInt target);
     using QEngine::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
@@ -260,8 +265,14 @@ protected:
     void CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
         const bitLenInt controlLen, unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
+    using QEngine::Apply2x2;
     void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm);
+        const bitCapInt* qPowersSorted, bool doCalcNorm)
+    {
+        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE);
+    }
+    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special);
 
     void ApplyM(bitCapInt mask, bool result, complex nrm);
     void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

@@ -209,7 +209,7 @@ void QEngineCPU::CINC(
 /// Add BCD integer (without sign)
 void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
-    bitCapInt nibbleCount = length / 4;
+    int nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -220,16 +220,17 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        char test1, test2;
-        unsigned char j;
-        char* nibbles = new char[nibbleCount];
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
         bool isValid = true;
         for (j = 0; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = (partToAdd % 10);
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
@@ -242,11 +243,11 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
-                    if ((unsigned char)(j + 1) < nibbleCount) {
+                    if ((j + 1) < nibbleCount) {
                         nibbles[j + 1]++;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
         } else {
@@ -266,7 +267,7 @@ void QEngineCPU::INCBCDC(
         X(carryIndex);
         toAdd++;
     }
-    bitCapInt nibbleCount = length / 4;
+    int nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -280,16 +281,17 @@ void QEngineCPU::INCBCDC(
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        char test1, test2;
-        unsigned char j;
-        char* nibbles = new char[nibbleCount];
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
         bool isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToAdd % 10;
         partToAdd /= 10;
         nibbles[0] = test1 + test2;
@@ -298,7 +300,8 @@ void QEngineCPU::INCBCDC(
         }
 
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToAdd % 10;
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
@@ -313,18 +316,21 @@ void QEngineCPU::INCBCDC(
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
-                    if ((unsigned char)(j + 1) < nibbleCount) {
+                    if ((j + 1) < nibbleCount) {
                         nibbles[j + 1]++;
                     } else {
                         carryRes = carryMask;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
+            outRes ^= carryMask;
+            nStateVec[outRes] = stateVec[lcv | carryMask];
         } else {
             nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
         }
         delete[] nibbles;
     });
@@ -568,7 +574,7 @@ void QEngineCPU::CDEC(
 /// Subtract BCD integer (without sign)
 void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
-    bitCapInt nibbleCount = length / 4;
+    int nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -580,37 +586,39 @@ void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToSub = toAdd;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        char test1, test2;
-        unsigned char j;
-        char* nibbles = new char[nibbleCount];
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
         bool isValid = true;
         for (j = 0; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            if (test1 > 9) {
+                isValid = false;
+                break;
+            }
+            inOutInt >>= 4U;
             test2 = (partToSub % 10);
             partToSub /= 10;
             nibbles[j] = test1 - test2;
-            if (test1 > 9) {
-                isValid = false;
-            }
         }
         if (isValid) {
             bitCapInt outInt = 0;
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] < 0) {
                     nibbles[j] += 10;
-                    if ((unsigned char)(j + 1) < nibbleCount) {
-                        nibbles[j + 1]--;
+                    if ((j + 1) < nibbleCount) {
+                        nibbles[j + 1U]--;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
-            nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
+            nStateVec[(outInt << (inOutStart)) | otherRes] += stateVec[lcv];
         } else {
-            nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv] += stateVec[lcv];
         }
         delete[] nibbles;
     });
@@ -798,7 +806,7 @@ void QEngineCPU::DECBCDC(
     } else {
         toSub++;
     }
-    bitCapInt nibbleCount = length / 4;
+    int nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -811,16 +819,17 @@ void QEngineCPU::DECBCDC(
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToSub = toSub;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        char test1, test2;
-        unsigned char j;
-        char* nibbles = new char[nibbleCount];
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
         bool isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToSub % 10;
         partToSub /= 10;
         nibbles[0] = test1 - test2;
@@ -829,7 +838,8 @@ void QEngineCPU::DECBCDC(
         }
 
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToSub % 10;
             partToSub /= 10;
             nibbles[j] = test1 - test2;
@@ -844,18 +854,21 @@ void QEngineCPU::DECBCDC(
             for (j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] < 0) {
                     nibbles[j] += 10;
-                    if ((unsigned char)(j + 1) < nibbleCount) {
+                    if ((j + 1) < nibbleCount) {
                         nibbles[j + 1]--;
                     } else {
                         carryRes = 0;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
+            outRes ^= carryMask;
+            nStateVec[outRes] = stateVec[lcv | carryMask];
         } else {
             nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
         }
         delete[] nibbles;
     });

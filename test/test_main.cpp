@@ -78,11 +78,12 @@ int main(int argc, char* argv[])
 
     session.config().stream() << "Random Seed: " << session.configData().rngSeed;
 
-    if (disable_hardware_rng) {
-        session.config().stream() << std::endl;
-    } else {
-        session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
+#if ENABLE_RDRAND
+    if (!disable_hardware_rng) {
+        session.config().stream() << " (Overridden by hardware generation!)";
     }
+#endif
+    session.config().stream() << std::endl;
 
     if (!qengine && !qfusion && !qunit && !qunit_qfusion) {
         qfusion = true;
@@ -163,23 +164,21 @@ int main(int argc, char* argv[])
 
     if (num_failed == 0 && qunit_qfusion) {
         testEngineType = QINTERFACE_QUNIT;
-        if (num_failed == 0 && qunit_qfusion) {
-            testSubEngineType = QINTERFACE_QFUSION;
-            if (num_failed == 0 && cpu) {
-                session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
-                testSubSubEngineType = QINTERFACE_CPU;
-                num_failed = session.run();
-            }
+        testSubEngineType = QINTERFACE_QFUSION;
+        if (num_failed == 0 && cpu) {
+            session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+        }
 
 #if ENABLE_OPENCL
-            if (num_failed == 0 && opencl_single) {
-                session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
-                testSubSubEngineType = QINTERFACE_OPENCL;
-                CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-                num_failed = session.run();
-            }
-#endif
+        if (num_failed == 0 && opencl_single) {
+            session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
         }
+#endif
     }
 
     return num_failed;

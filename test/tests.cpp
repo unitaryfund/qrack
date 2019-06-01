@@ -1025,6 +1025,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->UniformlyControlledRY(NULL, 0, 0, angles);
+    qftReg->UniformlyControlledRY(NULL, 0, 1, angles);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->UniformlyControlledRY(controls, 2, 0, angles);
     qftReg->UniformlyControlledRY(controls, 2, 1, angles);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
