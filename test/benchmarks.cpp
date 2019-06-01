@@ -61,11 +61,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
     real1 avgt, stdet;
 
-    // Grover's search inverts the function of a black box subroutine.
-    // Our subroutine returns true only for an input of 100.
     for (numBits = 4; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
-            0, rng, complex(ONE_R1, ZERO_R1), enable_normalization);
+            0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
         avgt = 0.0;
 
         for (i = 0; i < ITERATIONS; i++) {
@@ -145,12 +143,17 @@ void benchmarkLoop(
 
 TEST_CASE("test_cnot_single")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
 }
 
 TEST_CASE("test_x_single")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
+}
+
+TEST_CASE("test_z_single")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0); });
 }
 
 TEST_CASE("test_swap_single")
@@ -176,6 +179,11 @@ TEST_CASE("test_swap_all")
 TEST_CASE("test_x_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
+}
+
+TEST_CASE("test_z_all")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0, n); });
 }
 
 TEST_CASE("test_and_all")

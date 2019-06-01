@@ -50,19 +50,13 @@ typedef std::shared_ptr<std::vector<cl::Event>> EventVecPtr;
 enum OCLAPI {
     OCL_API_UNKNOWN = 0,
     OCL_API_APPLY2X2,
-    OCL_API_APPLY2X2_UNIT,
     OCL_API_APPLY2X2_SINGLE,
-    OCL_API_APPLY2X2_UNIT_SINGLE,
     OCL_API_APPLY2X2_NORM_SINGLE,
     OCL_API_APPLY2X2_DOUBLE,
-    OCL_API_APPLY2X2_UNIT_DOUBLE,
     OCL_API_APPLY2X2_WIDE,
-    OCL_API_APPLY2X2_UNIT_WIDE,
     OCL_API_APPLY2X2_SINGLE_WIDE,
-    OCL_API_APPLY2X2_UNIT_SINGLE_WIDE,
     OCL_API_APPLY2X2_NORM_SINGLE_WIDE,
     OCL_API_APPLY2X2_DOUBLE_WIDE,
-    OCL_API_APPLY2X2_UNIT_DOUBLE_WIDE,
     OCL_API_UNIFORMLYCONTROLLED,
     OCL_API_COMPOSE,
     OCL_API_COMPOSE_WIDE,
@@ -75,6 +69,10 @@ enum OCLAPI {
     OCL_API_PROBMASK,
     OCL_API_PROBMASKALL,
     OCL_API_X,
+    OCL_API_X_SINGLE,
+    OCL_API_X_SINGLE_WIDE,
+    OCL_API_Z_SINGLE,
+    OCL_API_Z_SINGLE_WIDE,
     OCL_API_SWAP,
     OCL_API_ROL,
     OCL_API_ROR,
@@ -185,9 +183,19 @@ public:
 
     EventVecPtr ResetWaitEvents()
     {
+        std::lock_guard<std::recursive_mutex> guard(mutex);
         EventVecPtr waitVec = std::move(wait_events);
         wait_events = std::make_shared<std::vector<cl::Event>>();
         return waitVec;
+    }
+
+    void WaitOnAllEvents()
+    {
+        std::lock_guard<std::recursive_mutex> guard(mutex);
+        for (unsigned int i = 0; i < (wait_events.get())->size(); i++) {
+            (*wait_events.get())[i].wait();
+        }
+        wait_events->clear();
     }
 
     friend class OCLEngine;

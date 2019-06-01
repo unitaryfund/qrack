@@ -22,23 +22,29 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-#define BITCOUNT_ARG args.x
-#define MAXI_ARG args.y
-#define OFFSET1_ARG args.z
-#define OFFSET2_ARG args.w
+#define OFFSET2_ARG bitCapIntPtr[0]
+#define OFFSET1_ARG bitCapIntPtr[1]
+#define MAXI_ARG bitCapIntPtr[2]
+#define BITCOUNT_ARG bitCapIntPtr[3]
 #define ID get_global_id(0)
 
 #define PREP_2X2()                                                                   \
-    bitCapInt lcv, Nthreads;                                                         \
-                                                                                     \
-    Nthreads = get_global_size(0);                                                   \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0);                                         \
                                                                                      \
     cmplx4 mtrx = vload8(0, cmplxPtr);                                               \
+    real1 nrm = cmplxPtr[8];                                                         \
                                                                                      \
-    bitCapInt4 args = vload4(0, bitCapIntPtr);                                       \
-                                                                                     \
-    cmplx Y0, Y1;                                                                    \
-    bitCapInt i
+    cmplx Y0, Y1
+
+#define PREP_SPECIAL_2X2()                                                           \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0);                                         \
+    cmplx Y0
+
+#define PREP_Z_2X2()                                                                 \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0)
 
 #define PUSH_APART_GEN()                                                             \
     iHigh = lcv;                                                                     \
@@ -64,15 +70,16 @@ inline real1 arg(const cmplx cmp)
     Y0 = stateVec[i | OFFSET1_ARG];                                                  \
     Y1 = stateVec[i | OFFSET2_ARG];                                                  \
                                                                                      \
-    stateVec[i | OFFSET1_ARG] = zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1);         \
-    stateVec[i | OFFSET2_ARG] = zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1) 
-
-#define APPLY_AND_OUT_NORM()                                                         \
-    Y0 = stateVec[i | OFFSET1_ARG];                                                  \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
-                                                                                     \
     stateVec[i | OFFSET1_ARG] = nrm * (zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1)); \
     stateVec[i | OFFSET2_ARG] = nrm * (zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1))
+
+#define APPLY_X()                                                                    \
+    Y0 = stateVec[i];                                                                \
+    stateVec[i] = stateVec[i | OFFSET2_ARG];                                         \
+    stateVec[i | OFFSET2_ARG] = Y0
+
+#define APPLY_Z()                                                                    \
+    stateVec[i | OFFSET2_ARG] = -stateVec[i | OFFSET2_ARG]
 
 #define SUM_2X2()                                                                    \
     locID = get_local_id(0);                                                         \
@@ -106,7 +113,6 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
 {
     PREP_2X2();
     
-    real1 nrm = cmplxPtr[8];
     bitCapInt iLow, iHigh;
     bitLenInt p;
     
@@ -116,26 +122,24 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
     }
 }
 
-void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
-        APPLY_AND_OUT_NORM();
+        APPLY_AND_OUT();
     }
 }
 
-void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
@@ -148,7 +152,6 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
 {
     PREP_2X2();
     
-    real1 nrm = cmplxPtr[8];
     bitCapInt iLow, iHigh;
     bitLenInt p;
     
@@ -157,25 +160,23 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
-    APPLY_AND_OUT_NORM();
+    APPLY_AND_OUT();
 }
 
-void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
     bitCapInt iLow, iHigh;
 
     lcv = ID;
@@ -183,87 +184,11 @@ void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr,
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2unit(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
+void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
 
-    bitCapInt iLow, iHigh;
-    bitLenInt p;
-
-    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_GEN();
-        APPLY_AND_OUT();
-    }
-}
-
-void kernel apply2x2unitsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt qMask = qPowersSorted[0] - 1U;
-
-    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_1();
-        APPLY_AND_OUT();
-    }
-}
-
-void kernel apply2x2unitdouble(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
-    bitCapInt iLow, iHigh;
-
-    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
-        PUSH_APART_2();
-        APPLY_AND_OUT();
-    }
-}
-
-void kernel apply2x2unitwide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt iLow, iHigh;
-    bitLenInt p;
-
-    lcv = ID;
-    PUSH_APART_GEN();
-    APPLY_AND_OUT();
-}
-
-void kernel apply2x2unitsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt qMask = qPowersSorted[0] - 1U;
-
-    lcv = ID;
-    PUSH_APART_1();
-    APPLY_AND_OUT();
-}
-
-void kernel apply2x2unitdoublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
-{
-    PREP_2X2();
-
-    bitCapInt qMask1 = qPowersSorted[0] - 1U;
-    bitCapInt qMask2 = qPowersSorted[1] - 1U;
-    bitCapInt iLow, iHigh;
-
-    lcv = ID;
-    PUSH_APART_2();
-    APPLY_AND_OUT();
-}
-
-void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
-{
-    PREP_2X2();
-
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[3];
 
     bitCapInt locID, locNthreads;
     cmplx YT;
@@ -277,12 +202,11 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     SUM_2X2();
 }
 
-void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted, global real1* nrmParts, local real1* lProbBuffer)
+void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
 
-    real1 nrm = cmplxPtr[8];
-    bitCapInt qMask = qPowersSorted[0] - 1U;
+    bitCapInt qMask = bitCapIntPtr[2];
 
     bitCapInt locID, locNthreads;
     cmplx YT;
@@ -293,6 +217,52 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
     NORM_BODY_2X2();
 
     SUM_2X2();
+}
+
+void kernel xsingle(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_SPECIAL_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[3];
+
+    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
+        PUSH_APART_1();
+        APPLY_X();
+    }
+}
+
+void kernel xsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_SPECIAL_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[2];
+
+    lcv = ID;
+    PUSH_APART_1();
+    APPLY_X();
+}
+
+void kernel zsingle(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_Z_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[3];
+
+    for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
+        PUSH_APART_1();
+        APPLY_Z();
+    }
+}
+
+void kernel zsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    PREP_Z_2X2();
+
+    bitCapInt qMask = bitCapIntPtr[2];
+
+    lcv = ID;
+    PUSH_APART_1();
+    APPLY_Z();
 }
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
@@ -1258,13 +1228,13 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bitCapInt otherMask = bitCapIntPtr[2];
     bitCapInt inOutStart = bitCapIntPtr[3];
     bitCapInt toAdd = bitCapIntPtr[4];
-    bitCapInt nibbleCount = bitCapIntPtr[5];
+    int nibbleCount = bitCapIntPtr[5];
     bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes;
-    char test1, test2;
-    unsigned char j;
+    int test1, test2;
+    int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
     // fast private memory.
-    char nibbles[16];
+    int nibbles[16];
     bool isValid;
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1274,7 +1244,8 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         inOutInt = inOutRes >> inOutStart;
         isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToAdd % 10;
         partToAdd /= 10;
         nibbles[0] = test1 + test2;
@@ -1283,7 +1254,8 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         }
 
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToAdd % 10;
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
@@ -1302,7 +1274,7 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
                         nibbles[j + 1]++;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes;
             nStateVec[outRes] = amp;
@@ -1322,13 +1294,13 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bitCapInt otherMask = bitCapIntPtr[2];
     bitCapInt inOutStart = bitCapIntPtr[3];
     bitCapInt toSub = bitCapIntPtr[4];
-    bitCapInt nibbleCount = bitCapIntPtr[5];
+    int nibbleCount = bitCapIntPtr[5];
     bitCapInt otherRes, partToSub, inOutRes, inOutInt, outInt, outRes;
-    char test1, test2;
-    unsigned char j;
+    int test1, test2;
+    int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
     // fast private memory.
-    char nibbles[16];
+    int nibbles[16];
     bool isValid;
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1338,7 +1310,8 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         inOutInt = inOutRes >> inOutStart;
         isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToSub % 10;
         partToSub /= 10;
         nibbles[0] = test1 - test2;
@@ -1347,7 +1320,8 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         }
 
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToSub % 10;
             partToSub /= 10;
             nibbles[j] = test1 - test2;
@@ -1366,7 +1340,7 @@ void kernel decbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
                         nibbles[j + 1]--;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes;
             nStateVec[outRes] = amp;
@@ -1387,15 +1361,15 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     bitCapInt carryMask = bitCapIntPtr[3];
     bitCapInt inOutStart = bitCapIntPtr[4];
     bitCapInt toAdd = bitCapIntPtr[5];
-    bitCapInt nibbleCount = bitCapIntPtr[6];
+    int nibbleCount = bitCapIntPtr[6];
     bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes;
     char test1, test2;
-    unsigned char j;
+    int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
     // fast private memory.
-    char nibbles[16];
+    int nibbles[16];
     bool isValid;
-    cmplx amp;
+    cmplx amp1, amp2;
     bitCapInt i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1408,7 +1382,8 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
         inOutInt = inOutRes >> inOutStart;
         isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToAdd % 10;
         partToAdd /= 10;
         nibbles[0] = test1 + test2;
@@ -1416,8 +1391,11 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
             isValid = false;
         }
 
+        amp1 = stateVec[i];
+        amp2 = stateVec[i | carryMask];
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToAdd % 10;
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
@@ -1425,7 +1403,6 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                 isValid = false;
             }
         }
-        amp = stateVec[i];
         if (isValid) {
             outInt = 0;
             outRes = 0;
@@ -1439,12 +1416,15 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                         carryRes = carryMask;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = amp;
+            nStateVec[outRes] = amp1;
+            outRes ^= carryMask;
+            nStateVec[outRes] = amp2;
         } else {
-            nStateVec[i] = amp;
+            nStateVec[i] = amp1;
+            nStateVec[i | carryMask] = amp2;
         }
     }
 }
@@ -1460,15 +1440,15 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     bitCapInt carryMask = bitCapIntPtr[3];
     bitCapInt inOutStart = bitCapIntPtr[4];
     bitCapInt toSub = bitCapIntPtr[5];
-    bitCapInt nibbleCount = bitCapIntPtr[6];
+    int nibbleCount = bitCapIntPtr[6];
     bitCapInt otherRes, partToSub, inOutRes, inOutInt, outInt, outRes, carryRes;
-    char test1, test2;
-    unsigned char j;
+    int test1, test2;
+    int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
     // fast private memory.
-    char nibbles[16];
+    int nibbles[16];
     bool isValid;
-    cmplx amp;
+    cmplx amp1, amp2;
     bitCapInt i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1481,7 +1461,8 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
         inOutInt = inOutRes >> inOutStart;
         isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToSub % 10;
         partToSub /= 10;
         nibbles[0] = test1 - test2;
@@ -1489,8 +1470,11 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
             isValid = false;
         }
 
+        amp1 = stateVec[i];
+        amp2 = stateVec[i | carryMask];
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToSub % 10;
             partToSub /= 10;
             nibbles[j] = test1 - test2;
@@ -1498,7 +1482,6 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                 isValid = false;
             }
         }
-        amp = stateVec[i];
         if (isValid) {
             outInt = 0;
             outRes = 0;
@@ -1512,12 +1495,15 @@ void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                         carryRes = 0;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = amp;
+            nStateVec[outRes] = amp1;
+            outRes ^= carryMask;
+            nStateVec[outRes] = amp2;
         } else {
-            nStateVec[i] = amp;
+            nStateVec[i] = amp1;
+            nStateVec[i | carryMask] = amp2;
         }
     }
 }

@@ -29,6 +29,7 @@ qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
+int device_id = -1;
 
 int main(int argc, char* argv[])
 {
@@ -52,12 +53,14 @@ int main(int argc, char* argv[])
         Opt(qunit_qfusion)["--layer-qunit-qfusion"]("Enable gate fusion tests under the QUnit layer") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
+        Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
             "necessary, though might benefit accuracy at very high circuit depth.)") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
-                                                            "(Hardware generation is on by default, if available.)");
+                                                            "(Hardware generation is on by default, if available.)") |
+        Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)");
 
     session.cli(cli);
 
@@ -161,23 +164,21 @@ int main(int argc, char* argv[])
 
     if (num_failed == 0 && qunit_qfusion) {
         testEngineType = QINTERFACE_QUNIT;
-        if (num_failed == 0 && qunit_qfusion) {
-            testSubEngineType = QINTERFACE_QFUSION;
-            if (num_failed == 0 && cpu) {
-                session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
-                testSubSubEngineType = QINTERFACE_CPU;
-                num_failed = session.run();
-            }
+        testSubEngineType = QINTERFACE_QFUSION;
+        if (num_failed == 0 && cpu) {
+            session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+        }
 
 #if ENABLE_OPENCL
-            if (num_failed == 0 && opencl_single) {
-                session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
-                testSubSubEngineType = QINTERFACE_OPENCL;
-                CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-                num_failed = session.run();
-            }
-#endif
+        if (num_failed == 0 && opencl_single) {
+            session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
         }
+#endif
     }
 
     return num_failed;
@@ -194,6 +195,6 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1, 0, rng,
         complex(ONE_R1, ZERO_R1), enable_normalization, true, false, -1, !disable_hardware_rng);
 }

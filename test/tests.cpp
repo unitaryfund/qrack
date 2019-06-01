@@ -259,6 +259,18 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     });
 }
 
+#if ENABLE_OPENCL
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
+{
+    if (testEngineType == QINTERFACE_OPENCL) {
+        qftReg->SetPermutation(0x55F00);
+        REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+        std::dynamic_pointer_cast<QEngineOCL>(qftReg)->SetDevice(0);
+        REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    }
+}
+#endif
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x55F00);
@@ -597,6 +609,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
     qftReg->X(1, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+    qftReg->X(4, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_y")
@@ -1008,6 +1022,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 {
     bitLenInt controls[2] = { 4, 5 };
     real1 angles[4] = { M_PI, M_PI, 0, 0 };
+
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->UniformlyControlledRY(NULL, 0, 0, angles);
+    qftReg->UniformlyControlledRY(NULL, 0, 1, angles);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
