@@ -220,16 +220,17 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
         char test1, test2;
         unsigned char j;
         char* nibbles = new char[nibbleCount];
         bool isValid = true;
         for (j = 0; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = (partToAdd % 10);
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
@@ -246,7 +247,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                         nibbles[j + 1]++;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
         } else {
@@ -280,16 +281,17 @@ void QEngineCPU::INCBCDC(
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
         char test1, test2;
         unsigned char j;
         char* nibbles = new char[nibbleCount];
         bool isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToAdd % 10;
         partToAdd /= 10;
         nibbles[0] = test1 + test2;
@@ -298,7 +300,8 @@ void QEngineCPU::INCBCDC(
         }
 
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToAdd % 10;
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
@@ -319,7 +322,7 @@ void QEngineCPU::INCBCDC(
                         carryRes = carryMask;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
@@ -583,16 +586,17 @@ void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToSub = toAdd;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
         char test1, test2;
         unsigned char j;
         char* nibbles = new char[nibbleCount];
         bool isValid = true;
         for (j = 0; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = (partToSub % 10);
             partToSub /= 10;
             nibbles[j] = test1 - test2;
@@ -609,7 +613,7 @@ void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                         nibbles[j + 1]--;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
         } else {
@@ -814,16 +818,17 @@ void QEngineCPU::DECBCDC(
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToSub = toSub;
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
         char test1, test2;
         unsigned char j;
         char* nibbles = new char[nibbleCount];
         bool isValid = true;
 
-        test1 = inOutInt & 15;
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
         test2 = partToSub % 10;
         partToSub /= 10;
         nibbles[0] = test1 - test2;
@@ -832,7 +837,8 @@ void QEngineCPU::DECBCDC(
         }
 
         for (j = 1; j < nibbleCount; j++) {
-            test1 = (inOutInt & (15 << (j * 4))) >> (j * 4);
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
             test2 = partToSub % 10;
             partToSub /= 10;
             nibbles[j] = test1 - test2;
@@ -853,7 +859,7 @@ void QEngineCPU::DECBCDC(
                         carryRes = 0;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             outRes = (outInt << (inOutStart)) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
