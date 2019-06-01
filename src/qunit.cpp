@@ -67,7 +67,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
     }
-}
+} // namespace Qrack
 
 void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 
@@ -160,6 +160,12 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 
     for (auto&& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
+    }
+
+    if (shards[0].unit->GetQubitCount() > 1) {
+        if (norm(result) > (ONE_R1 - min_norm)) {
+            SetPermutation(perm);
+        }
     }
 
     return result;
@@ -553,6 +559,14 @@ real1 QUnit::Prob(bitLenInt qubit)
     if (shard.isProbDirty) {
         shard.prob = (shard.unit->Prob)(shard.mapped);
         shard.isProbDirty = false;
+
+        if (shard.unit->GetQubitCount() > 1) {
+            if (shard.prob < min_norm) {
+                SeparateBit(false, qubit);
+            } else if (shard.prob > (ONE_R1 - min_norm)) {
+                SeparateBit(true, qubit);
+            }
+        }
     }
 
     return shard.prob;
@@ -577,7 +591,31 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
+    if (result > (ONE_R1 - min_norm)) {
+        SetPermutation(perm);
+        return ONE_R1;
+    }
+
     return clampProb(result);
+}
+
+void QUnit::SeparateBit(bool value, bitLenInt qubit)
+{
+    QEngineShard origShard = shards[qubit];
+
+    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, value ? 1 : 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+
+    origShard.unit->Dispose(origShard.mapped, 1);
+
+    /* Update the mappings. */
+    shards[qubit].unit = dest;
+    shards[qubit].mapped = 0;
+    for (auto&& shard : shards) {
+        if (shard.unit == origShard.unit && shard.mapped > origShard.mapped) {
+            shard.mapped--;
+        }
+    }
 }
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
@@ -587,26 +625,12 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
     shards[qubit].isProbDirty = false;
 
-    QInterfacePtr unit = shards[qubit].unit;
-    bitLenInt mapped = shards[qubit].mapped;
-
-    if (unit->GetQubitCount() == 1) {
+    if (shards[qubit].unit->GetQubitCount() == 1) {
         /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-    unit->Dispose(mapped, 1);
-
-    /* Update the mappings. */
-    shards[qubit].unit = dest;
-    shards[qubit].mapped = 0;
-    for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped > mapped) {
-            shard.mapped--;
-        }
-    }
+    SeparateBit(result, qubit);
 
     return result;
 }
@@ -732,6 +756,14 @@ void QUnit::UniformlyControlledSingleBit(
     delete[] mappedControls;
 }
 
+void QUnit::X(bitLenInt qubit)
+{
+    shards[qubit].prob = ONE_R1 - shards[qubit].prob;
+    shards[qubit].unit->X(shards[qubit].mapped);
+}
+
+void QUnit::Z(bitLenInt qubit) { shards[qubit].unit->Z(shards[qubit].mapped); }
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].isProbDirty = true;
@@ -742,8 +774,8 @@ void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     ApplyEitherControlled(controls, controlLen, { target }, false,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->ApplyControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->ApplyControlledSingleBit(&(mappedControls[0]), controlLen, shards[target].mapped, mtrx);
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -752,8 +784,8 @@ void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     ApplyEitherControlled(controls, controlLen, { target }, true,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->ApplyAntiControlledSingleBit(mappedControls, controlLen, shards[target].mapped, mtrx);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->ApplyAntiControlledSingleBit(&(mappedControls[0]), controlLen, shards[target].mapped, mtrx);
         },
         [&]() { ApplySingleBit(mtrx, true, target); });
 }
@@ -762,8 +794,8 @@ void QUnit::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->CSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CSwap(&(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -772,8 +804,8 @@ void QUnit::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->AntiCSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->AntiCSwap(&(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
         },
         [&]() { Swap(qubit1, qubit2); });
 }
@@ -782,8 +814,8 @@ void QUnit::CSqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->CSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CSqrtSwap(&(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -792,8 +824,8 @@ void QUnit::AntiCSqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->AntiCSqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->AntiCSqrtSwap(&(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
         },
         [&]() { SqrtSwap(qubit1, qubit2); });
 }
@@ -802,8 +834,8 @@ void QUnit::CISqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, false,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->CISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CISqrtSwap(&(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -812,8 +844,8 @@ void QUnit::AntiCISqrtSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, true,
-        [&](QInterfacePtr unit, bitLenInt* mappedControls) {
-            unit->AntiCISqrtSwap(mappedControls, controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->AntiCISqrtSwap(&(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped);
         },
         [&]() { ISqrtSwap(qubit1, qubit2); });
 }
@@ -892,18 +924,16 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    bitLenInt* controlsMapped = new bitLenInt[controlLen];
+    std::vector<bitLenInt> controlsMapped(controlLen);
     for (i = 0; i < controlLen; i++) {
         controlsMapped[i] = shards[controls[i]].mapped;
     }
 
-    cfn(unit, controlsMapped);
+    cfn(shards[targets[0]].unit, controlsMapped);
 
     for (i = 0; i < (bitLenInt)targets.size(); i++) {
         shards[targets[i]].isProbDirty = true;
     }
-
-    delete[] controlsMapped;
 }
 
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)

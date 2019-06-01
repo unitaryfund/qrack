@@ -84,6 +84,10 @@ public:
      *@{
      */
 
+    using QInterface::X;
+    virtual void X(bitLenInt target);
+    using QInterface::Z;
+    virtual void Z(bitLenInt target);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
@@ -241,6 +245,8 @@ protected:
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
+
+    virtual void SeparateBit(bool value, bitLenInt qubit);
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 

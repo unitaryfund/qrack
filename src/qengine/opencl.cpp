@@ -24,14 +24,19 @@ namespace Qrack {
 // Mask definition for Apply2x2()
 #define APPLY2X2_DEFAULT 0x00
 #define APPLY2X2_NORM 0x01
-#define APPLY2X2_UNIT 0x02
-#define APPLY2X2_SINGLE 0x04
-#define APPLY2X2_DOUBLE 0x08
-#define APPLY2X2_WIDE 0x10
+#define APPLY2X2_SINGLE 0x02
+#define APPLY2X2_DOUBLE 0x04
+#define APPLY2X2_WIDE 0x08
+#define APPLY2X2_X 0x10
+#define APPLY2X2_Z 0x20
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &clEvent);                                 \
+    queue.flush();
+
+#define DISPATCH_LOC_WRITE(buff, size, array, clEvent)                                                                 \
+    queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, NULL, &clEvent);                                          \
     queue.flush();
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
@@ -83,25 +88,6 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     SetPermutation(initState, phaseFac);
 }
 
-QEngineOCL::QEngineOCL(QEngineOCLPtr toCopy)
-    : QEngine(toCopy->qubitCount, toCopy->rand_generator, toCopy->doNormalize, toCopy->randGlobalPhase,
-          toCopy->useHostRam, toCopy->hardware_rand_generator != NULL)
-    , stateVec(NULL)
-    , deviceID(toCopy->deviceID)
-    , wait_refs()
-    , nrmArray(NULL)
-    , unlockHostMem(false)
-{
-    runningNorm = ONE_R1;
-    SetQubitCount(toCopy->qubitCount);
-
-    toCopy->Finish();
-
-    InitOCL(toCopy->deviceID);
-
-    CopyState(toCopy);
-}
-
 void QEngineOCL::LockSync(cl_int flags)
 {
     clFinish();
@@ -137,12 +123,6 @@ void QEngineOCL::UnlockSync()
     }
 }
 
-void QEngineOCL::Sync()
-{
-    LockSync(CL_MAP_READ);
-    UnlockSync();
-}
-
 void QEngineOCL::clFinish(bool doHard)
 {
     if (device_context == NULL) {
@@ -152,11 +132,8 @@ void QEngineOCL::clFinish(bool doHard)
     if (doHard) {
         queue.finish();
     } else {
-        for (unsigned int i = 0; i < (device_context->wait_events->size()); i++) {
-            (*(device_context->wait_events.get()))[i].wait();
-        }
+        device_context->WaitOnAllEvents();
     }
-    device_context->wait_events->clear();
     wait_refs.clear();
 }
 
@@ -275,13 +252,22 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
     bool didInit = (nrmArray != NULL);
 
+    complex* nStateVec = NULL;
+
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if ((!forceReInit) && (dID == deviceID)) {
             return;
         }
 
-        // Otherwise, we're about to switch to a new device, so finish the queue, first.
+        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
+        // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
+        nStateVec = AllocStateVec(maxQPower, true);
+        LockSync(CL_MAP_READ);
+        std::copy(stateVec, stateVec + maxQPower, nStateVec);
+        UnlockSync();
+
+        // We're about to switch to a new device, so finish the queue, first.
         clFinish(true);
     }
 
@@ -313,13 +299,18 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // constrain to a power of two
-    size_t procElemPow = 2;
+    size_t procElemPow = 1;
     while (procElemPow < procElemCount) {
         procElemPow <<= 1U;
     }
     procElemCount = procElemPow;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     nrmGroupCount = maxWorkItems;
+    size_t nrmGroupPow = 2;
+    while (nrmGroupPow <= nrmGroupCount) {
+        nrmGroupPow <<= 1U;
+    }
+    nrmGroupCount = nrmGroupPow >> 1U;
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
@@ -355,42 +346,15 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     if (didInit) {
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-
         if (!stateVec) {
-            // We did not have host allocation, so we definitely have to copy device-local memory to host memory, then
-            // to a new device.
-            cl::CommandQueue nQueue = queue;
-            queue = oldQueue;
-
-            complex* nStateVec = AllocStateVec(maxQPower, true);
-            BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-
-            WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
-
-            // Host RAM should now by synchronized.
-            queue = nQueue;
-            if (usingHostRam) {
-                // If we're using host RAM from here out, just create the buffer from the array pointer, in the context
-                // of the new device/queue.
-                stateBuffer = MakeStateVecBuffer(nStateVec);
-                stateVec = nStateVec;
-            } else {
-                // If we're not using host RAM from here, we need to copy into a device memory buffer.
-                stateBuffer = MakeStateVecBuffer(NULL);
-                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, nStateVec);
-                FreeAligned(nStateVec);
-            }
-        } else if (usingHostRam) {
-            // We had host allocation; we will continue to have it. Just make the array pointer a buffer in the new
-            // context.
-            stateBuffer = MakeStateVecBuffer(stateVec);
-        } else {
-            // We had host allocation; we will no longer have it. Just copy the array pointer into a buffer in the new
-            // context.
+            // We did not have host allocation, so we copied from device-local memory to host memory, above.
+            // Now, we copy to the new device's memory.
             stateBuffer = MakeStateVecBuffer(NULL);
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(bitCapInt) * BCI_ARG_LEN, stateVec);
-            FreeAligned(stateVec);
-            stateVec = NULL;
+            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, nStateVec);
+            FreeAligned(nStateVec);
+        } else {
+            // We had host allocation; we will continue to have it.
+            ResetStateVec(nStateVec, MakeStateVecBuffer(nStateVec));
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -527,9 +491,38 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
     ResetStateVec(nStateVec, nStateBuffer);
 }
 
-void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm)
+/// NOT gate, which is also Pauli x matrix
+void QEngineOCL::X(bitLenInt qubit)
 {
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitCapInt qPowers[1];
+    qPowers[0] = 1 << qubit;
+    Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, SPECIAL_2X2::PAULIX);
+}
+
+/// Apply Pauli Z matrix to bit
+void QEngineOCL::Z(bitLenInt qubit)
+{
+    // if (qubit >= qubitCount)
+    //     throw std::invalid_argument("operation on bit index greater than total bits.");
+    const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
+        complex(-ONE_R1, ZERO_R1) };
+    bitCapInt qPowers[1];
+    qPowers[0] = 1 << qubit;
+    Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, SPECIAL_2X2::PAULIZ);
+}
+
+void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special)
+{
+    bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
+    bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
+
+    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
+    // every single permutation amplitude.
+    doCalcNorm &= doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
+
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec = ResetWaitEvents();
 
@@ -537,9 +530,38 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> bitCount;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { bitCount, maxI, offset1, offset2, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[5] = { offset2, offset1, maxI, bitCount, 0 };
+
+    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
+    // amount of work in this method call instance.
+    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // In an efficient OpenCL kernel, every single byte loaded comes at a significant execution time premium.
+    // We handle single and double bit gates as special cases, for many reasons. Given that we have already separated
+    // these out as special cases, since we know the bit count, we can eliminate the qPowersSorted buffer, by loading
+    // its one or two values into the bciArgs buffer, of the same type. This gives us a significant execution time
+    // savings.
+    size_t bciArgsSize = 4;
+    if (bitCount == 1) {
+        // Single bit gates offsets are always 0 and target bit power. Hence, we overwrite one of the bit offset
+        // arguments.
+        if (ngc == maxI) {
+            bciArgsSize = 3;
+            bciArgs[2] = qPowersSorted[0] - 1;
+        } else {
+            bciArgsSize = 4;
+            bciArgs[3] = qPowersSorted[0] - 1;
+        }
+    } else if (bitCount == 2) {
+        // Double bit gates include both controlled and swap gates. To reuse the code for both cases, we need two offset
+        // arguments. Hence, we cannot easily overwrite either of the bit offset arguments.
+        bciArgsSize = 5;
+        bciArgs[3] = qPowersSorted[0] - 1;
+        bciArgs[4] = qPowersSorted[1] - 1;
+    }
     cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * 4, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt) * bciArgsSize, bciArgs, writeArgsEvent);
 
     // Load the 2x2 complex matrix and the normalization factor into the complex arguments buffer.
     complex cmplx[CMPLX_NORM_LEN];
@@ -548,36 +570,31 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
-    size_t cmplxSize = ((isUnitLength && !doCalcNorm) ? 4 : 5);
 
     cl::Event writeGateEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * cmplxSize, cmplx, writeGateEvent);
-
-    // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
-    // amount of work in this method call instance.
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
-    // every single permutation amplitude.
-    doCalcNorm &= doNormalize && (bitCount == 1);
+    if (!isXGate && !isZGate) {
+        DISPATCH_TEMP_WRITE(waitVec, *cmplxBuffer, sizeof(complex) * 5, cmplx, writeGateEvent);
+    }
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
+    if (bitCount != 1 && bitCount != 2) {
+        DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
+    }
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
     unsigned char kernelMask = APPLY2X2_DEFAULT;
     if (bitCount == 1) {
         kernelMask |= APPLY2X2_SINGLE;
-        if (doCalcNorm) {
+        if (isXGate) {
+            kernelMask |= APPLY2X2_X;
+        } else if (isZGate) {
+            kernelMask |= APPLY2X2_Z;
+        } else if (doCalcNorm) {
             kernelMask |= APPLY2X2_NORM;
         }
     } else if (bitCount == 2) {
         kernelMask |= APPLY2X2_DOUBLE;
-    }
-    if (!doCalcNorm && isUnitLength) {
-        kernelMask |= APPLY2X2_UNIT;
     }
     if (ngc == maxI) {
         kernelMask |= APPLY2X2_WIDE;
@@ -588,14 +605,14 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_DEFAULT:
         api_call = OCL_API_APPLY2X2;
         break;
-    case APPLY2X2_UNIT:
-        api_call = OCL_API_APPLY2X2_UNIT;
-        break;
     case APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_SINGLE;
         break;
-    case APPLY2X2_UNIT | APPLY2X2_SINGLE:
-        api_call = OCL_API_APPLY2X2_UNIT_SINGLE;
+    case APPLY2X2_SINGLE | APPLY2X2_X:
+        api_call = OCL_API_X_SINGLE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_Z:
+        api_call = OCL_API_Z_SINGLE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE;
@@ -603,20 +620,17 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_DOUBLE:
         api_call = OCL_API_APPLY2X2_DOUBLE;
         break;
-    case APPLY2X2_UNIT | APPLY2X2_DOUBLE:
-        api_call = OCL_API_APPLY2X2_UNIT_DOUBLE;
-        break;
     case APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_WIDE;
-        break;
-    case APPLY2X2_UNIT | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_UNIT_WIDE;
         break;
     case APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_SINGLE_WIDE;
         break;
-    case APPLY2X2_UNIT | APPLY2X2_SINGLE | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_UNIT_SINGLE_WIDE;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_X:
+        api_call = OCL_API_X_SINGLE_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_Z:
+        api_call = OCL_API_Z_SINGLE_WIDE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE_WIDE;
@@ -624,30 +638,43 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_DOUBLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_DOUBLE_WIDE;
         break;
-    case APPLY2X2_UNIT | APPLY2X2_DOUBLE | APPLY2X2_WIDE:
-        api_call = OCL_API_APPLY2X2_UNIT_DOUBLE_WIDE;
-        break;
     default:
         throw("Invalid APPLY2X2 kernel selected!");
     }
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
-    writeGateEvent.wait();
-    writeControlsEvent.wait();
+    if (!isXGate && !isZGate) {
+        writeGateEvent.wait();
+    }
+    if (bitCount == 1) {
+        writeControlsEvent.wait();
+    }
     wait_refs.clear();
 
-    if (doCalcNorm) {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
-            sizeof(real1) * ngs);
+    if (isXGate || isZGate) {
+        QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer });
+    } else if (doCalcNorm) {
+        if (bitCount == 1 || bitCount == 2) {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
+        } else {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
+                sizeof(real1) * ngs);
+        }
     } else {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
+        if (bitCount == 1 || bitCount == 2) {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer });
+        } else {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
+        }
     }
 
     if (doCalcNorm) {
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    } else if ((bitCount == 1) && !isXGate) {
+        runningNorm = ONE_R1;
     }
 }
 
@@ -784,12 +811,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     } else {
-        otherStateVec = AllocStateVec(toCopy->maxQPower, true);
         toCopy->LockSync(CL_MAP_READ);
-        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPower, otherStateVec);
-        toCopy->UnlockSync();
+        otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
     }
 
     runningNorm = ONE_R1;
@@ -797,7 +822,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, ulongBuffer, nStateBuffer });
 
     if (toCopy->deviceID != deviceID) {
-        FreeAligned(otherStateVec);
+        toCopy->UnlockSync();
     }
 
     ResetStateVec(nStateVec, nStateBuffer);
@@ -906,19 +931,25 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     i = 0;
     j = 0;
     k = 0;
-    while (remainderStateProb[i] < min_norm) {
+    while ((i < remainderPower) && (remainderStateProb[i] < min_norm)) {
         i++;
     }
     k = i & ((1U << start) - 1);
     k |= (i ^ k) << (start + length);
 
-    while (partStateProb[j] < min_norm) {
+    while ((j < partPower) && (partStateProb[j] < min_norm)) {
         j++;
     }
     k |= j << start;
 
     real1 refAngle = arg(GetAmplitude(k));
-    real1 angleOffset = refAngle - (remainderStateAngle[i] + partStateAngle[j]);
+    real1 angleOffset = refAngle;
+    if (i < remainderPower) {
+        angleOffset -= remainderStateAngle[i];
+    }
+    if (j < partPower) {
+        angleOffset -= partStateAngle[j];
+    }
 
     for (bitCapInt l = 0; l < partPower; l++) {
         partStateAngle[l] += angleOffset;
@@ -1070,6 +1101,10 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
+    if (start == 0 && qubitCount == length) {
+        return ProbAll(permutation);
+    }
+
     bitCapInt perm = permutation << start;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, perm, start, length, 0, 0, 0, 0, 0, 0 };
@@ -1987,21 +2022,13 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
-
-    if (nrm < min_norm) {
-        DISPATCH_FILL(waitVec, *stateBuffer, sizeof(complex) * maxQPower, complex(ZERO_R1, ZERO_R1));
-        runningNorm = ZERO_R1;
-        return;
-    }
-
-    real1 r1_args[2] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
+    real1 r1_args[REAL_ARG_LEN] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *realBuffer, sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
+    DISPATCH_LOC_WRITE(*realBuffer, sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[1] = { maxQPower };
     cl::Event writeBCIArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *ulongBuffer, sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
+    DISPATCH_LOC_WRITE(*ulongBuffer, sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
