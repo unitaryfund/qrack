@@ -561,32 +561,10 @@ real1 QUnit::Prob(bitLenInt qubit)
         shard.isProbDirty = false;
 
         if (shard.unit->GetQubitCount() > 1) {
-            QInterfacePtr unit = shard.unit;
-            bitLenInt mapped = shard.mapped;
-
-            bool isEdge = false;
-            bool result = false;
             if (shard.prob < min_norm) {
-                isEdge = true;
-                result = false;
+                SeparateBit(false, qubit);
             } else if (shard.prob > (ONE_R1 - min_norm)) {
-                isEdge = true;
-                result = true;
-            }
-
-            if (isEdge) {
-                QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator,
-                    phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-                unit->Dispose(mapped, 1);
-
-                /* Update the mappings. */
-                shards[qubit].unit = dest;
-                shards[qubit].mapped = 0;
-                for (auto&& s : shards) {
-                    if (s.unit == unit && s.mapped > mapped) {
-                        s.mapped--;
-                    }
-                }
+                SeparateBit(true, qubit);
             }
         }
     }
@@ -621,6 +599,25 @@ real1 QUnit::ProbAll(bitCapInt perm)
     return clampProb(result);
 }
 
+void QUnit::SeparateBit(bool value, bitLenInt qubit)
+{
+    QEngineShard origShard = shards[qubit];
+
+    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, value ? 1 : 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+
+    origShard.unit->Dispose(origShard.mapped, 1);
+
+    /* Update the mappings. */
+    shards[qubit].unit = dest;
+    shards[qubit].mapped = 0;
+    for (auto&& shard : shards) {
+        if (shard.unit == origShard.unit && shard.mapped > origShard.mapped) {
+            shard.mapped--;
+        }
+    }
+}
+
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
     bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
@@ -628,26 +625,12 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
     shards[qubit].isProbDirty = false;
 
-    QInterfacePtr unit = shards[qubit].unit;
-    bitLenInt mapped = shards[qubit].mapped;
-
-    if (unit->GetQubitCount() == 1) {
+    if (shards[qubit].unit->GetQubitCount() == 1) {
         /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
         return result;
     }
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, result ? 1 : 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-    unit->Dispose(mapped, 1);
-
-    /* Update the mappings. */
-    shards[qubit].unit = dest;
-    shards[qubit].mapped = 0;
-    for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped > mapped) {
-            shard.mapped--;
-        }
-    }
+    SeparateBit(result, qubit);
 
     return result;
 }
@@ -918,7 +901,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         } else if ((ONE_R1 - prob) < min_norm) {
             // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
             // avoiding an entangled representation.
-
             fn();
 
             for (i = 0; i < (bitLenInt)targets.size(); i++) {

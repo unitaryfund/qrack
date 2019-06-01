@@ -1517,7 +1517,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
         } else if (i == 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
         } else {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, (0x02 + i) - 5));
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02 + i - 5));
         }
     }
 }
