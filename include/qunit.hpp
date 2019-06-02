@@ -86,8 +86,26 @@ public:
 
     using QInterface::X;
     virtual void X(bitLenInt target);
+    using QInterface::Y;
+    virtual void Y(bitLenInt target);
     using QInterface::Z;
     virtual void Z(bitLenInt target);
+    using QInterface::CNOT;
+    virtual void CNOT(bitLenInt control, bitLenInt target);
+    using QInterface::AntiCNOT;
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
+    using QInterface::CCNOT;
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    using QInterface::AntiCCNOT;
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    using QInterface::CY;
+    virtual void CY(bitLenInt control, bitLenInt target);
+    using QInterface::CZ;
+    virtual void CZ(bitLenInt control, bitLenInt target);
+
+    using QInterface::RT;
+    virtual void RT(real1 radians, bitLenInt target);
+
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
