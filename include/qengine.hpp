@@ -93,6 +93,8 @@ public:
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
 protected:
+    virtual bool IsIdentity(const complex* mtrx);
+
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
