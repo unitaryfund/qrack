@@ -84,34 +84,18 @@ public:
      *@{
      */
 
-    using QInterface::X;
-    virtual void X(bitLenInt target);
-    using QInterface::Y;
-    virtual void Y(bitLenInt target);
-    using QInterface::Z;
-    virtual void Z(bitLenInt target);
-    using QInterface::CNOT;
-    virtual void CNOT(bitLenInt control, bitLenInt target);
-    using QInterface::AntiCNOT;
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
-    using QInterface::CCNOT;
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    using QInterface::AntiCCNOT;
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    using QInterface::CY;
-    virtual void CY(bitLenInt control, bitLenInt target);
-    using QInterface::CZ;
-    virtual void CZ(bitLenInt control, bitLenInt target);
-
-    using QInterface::RT;
-    virtual void RT(real1 radians, bitLenInt target);
-    using QInterface::RZ;
-    virtual void RZ(real1 radians, bitLenInt target);
-    using QInterface::CRT;
-    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
-    using QInterface::CRZ;
-    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
-
+    virtual void ApplySinglePhase(
+        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySingleInvert(
+        const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
+    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft);
+    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
+    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);

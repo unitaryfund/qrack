@@ -22,11 +22,58 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
     }
 }
 
+/// Apply a single bit transformation that only effects phase.
+void QInterface::ApplySinglePhase(
+    const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex)
+{
+    const complex mtrx[4] = { topLeft, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), bottomRight };
+    ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
+}
+
+/// Apply a single bit transformation that reverses bit probability and might effect phase.
+void QInterface::ApplySingleInvert(
+    const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex)
+{
+    const complex mtrx[4] = { complex(ZERO_R1, ZERO_R1), topRight, bottomLeft, complex(ZERO_R1, ZERO_R1) };
+    ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
+}
+
+/// Apply a single bit transformation that only effects phase, with arbitrary control bits.
+void QInterface::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+{
+    const complex mtrx[4] = { topLeft, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), bottomRight };
+    ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+}
+
+/// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control bits.
+void QInterface::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+{
+    const complex mtrx[4] = { complex(ZERO_R1, ZERO_R1), topRight, bottomLeft, complex(ZERO_R1, ZERO_R1) };
+    ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+}
+
+/// Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
+void QInterface::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+{
+    const complex mtrx[4] = { topLeft, complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), bottomRight };
+    ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+}
+
+/// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
+/// (anti-)control bits.
+void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+{
+    const complex mtrx[4] = { complex(ZERO_R1, ZERO_R1), topRight, bottomLeft, complex(ZERO_R1, ZERO_R1) };
+    ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+}
+
 /// Hadamard gate
 void QInterface::H(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount) throw std::invalid_argument("operation on bit index greater than total
-    // bits.");
     const complex had[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
         complex(-M_SQRT1_2, ZERO_R1) };
     ApplySingleBit(had, true, qubit);
@@ -35,164 +82,85 @@ void QInterface::H(bitLenInt qubit)
 /// Apply 1/4 phase rotation
 void QInterface::S(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex sOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ZERO_R1, ONE_R1) };
-    ApplySingleBit(sOp, false, qubit);
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ONE_R1), false, qubit);
 }
 
 /// Apply inverse 1/4 phase rotation
 void QInterface::IS(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex isOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ZERO_R1, -ONE_R1) };
-    ApplySingleBit(isOp, false, qubit);
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), false, qubit);
 }
 
 /// Apply 1/8 phase rotation
 void QInterface::T(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex tOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(M_SQRT1_2, M_SQRT1_2) };
-    ApplySingleBit(tOp, false, qubit);
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, M_SQRT1_2), true, qubit);
 }
 
 /// Apply inverse 1/8 phase rotation
 void QInterface::IT(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex itOp[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(M_SQRT1_2, -M_SQRT1_2) };
-    ApplySingleBit(itOp, false, qubit);
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, -M_SQRT1_2), true, qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix
 void QInterface::X(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    ApplySingleBit(pauliX, false, qubit);
+    ApplySingleInvert(complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), false, qubit);
 }
 
 /// Apply Pauli Y matrix to bit
 void QInterface::Y(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex pauliY[4] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1),
-        complex(ZERO_R1, ZERO_R1) };
-    ApplySingleBit(pauliY, false, qubit);
+    ApplySingleInvert(complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1), false, qubit);
 }
 
 /// Apply Pauli Z matrix to bit
 void QInterface::Z(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(-ONE_R1, ZERO_R1) };
-    ApplySingleBit(pauliZ, false, qubit);
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1), false, qubit);
 }
 
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
-    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-    if (control1 == control2) {
-        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
-    }
-
-    if (control1 == target || control2 == target) {
-        throw std::invalid_argument("CCNOT control bits cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
     bitLenInt controls[2] = { control1, control2 };
-    ApplyControlledSingleBit(controls, 2, target, pauliX);
+    ApplyControlledSingleInvert(controls, 2, target, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    // if ((control1 >= qubitCount) || (control2 >= qubitCount))
-    //	throw std::invalid_argument("CCNOT tried to operate on bit index greater than total bits.");
-    if (control1 == control2) {
-        throw std::invalid_argument("CCNOT control bits cannot be same bit.");
-    }
-    if (control1 == target || control2 == target) {
-        throw std::invalid_argument("CCNOT control bits cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
     bitLenInt controls[2] = { control1, control2 };
-    ApplyAntiControlledSingleBit(controls, 2, target, pauliX);
+    ApplyAntiControlledSingleInvert(controls, 2, target, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
 }
 
 /// Controlled not
 void QInterface::CNOT(bitLenInt control, bitLenInt target)
 {
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-    if (control == target) {
-        throw std::invalid_argument("CNOT control bit cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
     bitLenInt controls[1] = { control };
-    ApplyControlledSingleBit(controls, 1, target, pauliX);
+    ApplyControlledSingleInvert(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    // if ((control >= qubitCount) || (target >= qubitCount))
-    //	throw std::invalid_argument("CNOT tried to operate on bit index greater than total bits.");
-    if (control == target) {
-        throw std::invalid_argument("CNOT control bit cannot also be target.");
-    }
-
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
     bitLenInt controls[1] = { control };
-    ApplyAntiControlledSingleBit(controls, 1, target, pauliX);
+    ApplyAntiControlledSingleInvert(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
 }
 
 /// Apply controlled Pauli Y matrix to bit
 void QInterface::CY(bitLenInt control, bitLenInt target)
 {
-    // if (qubit >= qubitCount) throw std::invalid_argument("Y tried to operate on bit index greater than total
-    // bits.");
-    if (control == target)
-        throw std::invalid_argument("CY control bit cannot also be target.");
-    const complex pauliY[4] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1),
-        complex(ZERO_R1, ZERO_R1) };
     bitLenInt controls[1] = { control };
-    ApplyControlledSingleBit(controls, 1, target, pauliY);
+    ApplyControlledSingleInvert(controls, 1, target, complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1));
 }
 
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {
-    // if (qubit >= qubitCount) throw std::invalid_argument("Z tried to operate on bit index greater than total
-    // bits.");
-    if (control == target)
-        throw std::invalid_argument("CZ control bit cannot also be target.");
-    const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(-ONE_R1, ZERO_R1) };
     bitLenInt controls[1] = { control };
-    ApplyControlledSingleBit(controls, 1, target, pauliZ);
+    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
 }
 
 void QInterface::UniformlyControlledSingleBit(

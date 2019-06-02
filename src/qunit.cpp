@@ -756,102 +756,59 @@ void QUnit::UniformlyControlledSingleBit(
     delete[] mappedControls;
 }
 
-void QUnit::X(bitLenInt target)
+void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
+{
+    shards[target].unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shards[target].mapped);
+}
+
+void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
     shards[target].prob = ONE_R1 - shards[target].prob;
-    shards[target].unit->X(shards[target].mapped);
+    shards[target].unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shards[target].mapped);
 }
 
-void QUnit::Y(bitLenInt target)
+void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex topLeft, const complex bottomRight)
 {
-    shards[target].prob = ONE_R1 - shards[target].prob;
-    shards[target].unit->Y(shards[target].mapped);
-}
-
-void QUnit::Z(bitLenInt target) { shards[target].unit->Z(shards[target].mapped); }
-
-void QUnit::CNOT(bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    ApplyEitherControlled(controls, 1, { target }, false,
+    ApplyEitherControlled(controls, controlLen, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->CNOT(mappedControls[0], shards[target].mapped);
+            unit->ApplyControlledSinglePhase(
+                &(mappedControls[0]), controlLen, shards[target].mapped, topLeft, bottomRight);
         },
-        [&]() { X(target); });
+        [&]() { ApplySinglePhase(topLeft, bottomRight, true, target); });
 }
 
-void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
+void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex topRight, const complex bottomLeft)
 {
-    bitLenInt controls[1] = { control };
-    ApplyEitherControlled(controls, 1, { target }, true,
+    ApplyEitherControlled(controls, controlLen, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->AntiCNOT(mappedControls[0], shards[target].mapped);
+            unit->ApplyControlledSingleInvert(
+                &(mappedControls[0]), controlLen, shards[target].mapped, topRight, bottomLeft);
         },
-        [&]() { X(target); });
+        [&]() { ApplySingleInvert(topRight, bottomLeft, true, target); });
 }
 
-void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
-    bitLenInt controls[2] = { control1, control2 };
-    ApplyEitherControlled(controls, 2, { target }, false,
+    ApplyEitherControlled(controls, controlLen, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->CCNOT(mappedControls[0], mappedControls[1], shards[target].mapped);
+            unit->ApplyAntiControlledSinglePhase(
+                &(mappedControls[0]), controlLen, shards[target].mapped, topLeft, bottomRight);
         },
-        [&]() { X(target); });
+        [&]() { ApplySinglePhase(topLeft, bottomRight, true, target); });
 }
 
-void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    bitLenInt controls[2] = { control1, control2 };
-    ApplyEitherControlled(controls, 2, { target }, true,
+    ApplyEitherControlled(controls, controlLen, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->AntiCCNOT(mappedControls[0], mappedControls[1], shards[target].mapped);
+            unit->ApplyAntiControlledSingleInvert(
+                &(mappedControls[0]), controlLen, shards[target].mapped, topRight, bottomLeft);
         },
-        [&]() { X(target); });
-}
-
-void QUnit::CY(bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    ApplyEitherControlled(controls, 1, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->CY(mappedControls[0], shards[target].mapped);
-        },
-        [&]() { Y(target); });
-}
-
-void QUnit::CZ(bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    ApplyEitherControlled(controls, 1, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->CZ(mappedControls[0], shards[target].mapped);
-        },
-        [&]() { Z(target); });
-}
-
-void QUnit::RT(real1 radians, bitLenInt target) { shards[target].unit->RT(radians, shards[target].mapped); }
-
-void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    ApplyEitherControlled(controls, 1, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->CRT(radians, mappedControls[0], shards[target].mapped);
-        },
-        [&]() { RT(radians, target); });
-}
-
-void QUnit::RZ(real1 radians, bitLenInt target) { shards[target].unit->RZ(radians, shards[target].mapped); }
-
-void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    ApplyEitherControlled(controls, 1, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            unit->CRZ(radians, mappedControls[0], shards[target].mapped);
-        },
-        [&]() { RZ(radians, target); });
+        [&]() { ApplySingleInvert(topRight, bottomLeft, true, target); });
 }
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
