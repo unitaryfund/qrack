@@ -145,23 +145,41 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
 bool QEngine::IsIdentity(const complex* mtrx)
 {
-    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
-    // then we can discard this buffer without applying it.
-    complex toTest = mtrx[0];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
+    // operator, then we can discard this buffer without applying it.
+    if ((real(mtrx[1]) > min_norm) || (imag(mtrx[1]) > min_norm)) {
         return false;
     }
-    toTest = mtrx[1];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
+    if ((real(mtrx[2]) > min_norm) || (imag(mtrx[2]) > min_norm)) {
         return false;
     }
-    toTest = mtrx[2];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = mtrx[3];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-        return false;
+
+    if (randGlobalPhase) {
+        // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
+        // the user's purposes.
+        real1 toTest = norm(mtrx[0]);
+        if (toTest < (ONE_R1 - min_norm)) {
+            return false;
+        }
+        toTest = abs(real(mtrx[0]) - real(mtrx[3]));
+        if (toTest > min_norm) {
+            return false;
+        }
+        toTest = abs(imag(mtrx[0]) - imag(mtrx[3]));
+        if (toTest > min_norm) {
+            return false;
+        }
+    } else {
+        // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
+        // offset (but shouldn't).
+        complex toTest = mtrx[0];
+        if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+            return false;
+        }
+        toTest = mtrx[3];
+        if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+            return false;
+        }
     }
 
     // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
