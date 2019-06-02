@@ -105,6 +105,12 @@ public:
 
     using QInterface::RT;
     virtual void RT(real1 radians, bitLenInt target);
+    using QInterface::RZ;
+    virtual void RZ(real1 radians, bitLenInt target);
+    using QInterface::CRT;
+    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
+    using QInterface::CRZ;
+    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
 
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(

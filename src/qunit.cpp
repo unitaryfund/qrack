@@ -832,6 +832,28 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::RT(real1 radians, bitLenInt target) { shards[target].unit->RT(radians, shards[target].mapped); }
 
+void QUnit::CRT(real1 radians, bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyEitherControlled(controls, 1, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CRT(radians, mappedControls[0], shards[target].mapped);
+        },
+        [&]() { RT(radians, target); });
+}
+
+void QUnit::RZ(real1 radians, bitLenInt target) { shards[target].unit->RZ(radians, shards[target].mapped); }
+
+void QUnit::CRZ(real1 radians, bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyEitherControlled(controls, 1, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CRZ(radians, mappedControls[0], shards[target].mapped);
+        },
+        [&]() { RZ(radians, target); });
+}
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     shards[qubit].isProbDirty = true;
