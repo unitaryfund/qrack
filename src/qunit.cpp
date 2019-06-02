@@ -756,6 +756,64 @@ void QUnit::UniformlyControlledSingleBit(
     delete[] mappedControls;
 }
 
+void QUnit::X(bitLenInt target)
+{
+    shards[target].prob = ONE_R1 - shards[target].prob;
+    shards[target].unit->X(shards[target].mapped);
+}
+
+void QUnit::Z(bitLenInt target) { shards[target].unit->Z(shards[target].mapped); }
+
+void QUnit::CNOT(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyEitherControlled(controls, 1, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CNOT(mappedControls[0], shards[target].mapped);
+        },
+        [&]() { X(target); });
+}
+
+void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyEitherControlled(controls, 1, { target }, true,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->AntiCNOT(mappedControls[0], shards[target].mapped);
+        },
+        [&]() { X(target); });
+}
+
+void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyEitherControlled(controls, 2, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CCNOT(mappedControls[0], mappedControls[1], shards[target].mapped);
+        },
+        [&]() { X(target); });
+}
+
+void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyEitherControlled(controls, 2, { target }, true,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->AntiCCNOT(mappedControls[0], mappedControls[1], shards[target].mapped);
+        },
+        [&]() { X(target); });
+}
+
+void QUnit::CZ(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyEitherControlled(controls, 1, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            unit->CZ(mappedControls[0], shards[target].mapped);
+        },
+        [&]() { Z(target); });
+}
+
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     shards[target].unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shards[target].mapped);
