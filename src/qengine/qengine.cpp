@@ -161,11 +161,7 @@ bool QEngine::IsIdentity(const complex* mtrx)
         if (toTest < (ONE_R1 - min_norm)) {
             return false;
         }
-        toTest = abs(real(mtrx[0]) - real(mtrx[3]));
-        if (toTest > min_norm) {
-            return false;
-        }
-        toTest = abs(imag(mtrx[0]) - imag(mtrx[3]));
+        toTest = norm(mtrx[0] - mtrx[3]);
         if (toTest > min_norm) {
             return false;
         }
