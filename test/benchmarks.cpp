@@ -36,7 +36,8 @@ const bitLenInt MaxQubits = 24;
 
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
-double formatTime(double t, bool logNormal) {
+double formatTime(double t, bool logNormal)
+{
     if (logNormal) {
         return pow(2.0, t);
     } else {
@@ -138,17 +139,19 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             std::cout << formatTime(trialClocks[ITERATIONS / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
         }
         if (ITERATIONS % 4 == 0) {
-            std::cout << formatTime((trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2, logNormal)
+            std::cout << formatTime(
+                             (trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2, logNormal)
                       << ","; /* 3rd Quartile (ms) */
         } else {
-            std::cout << formatTime(trialClocks[(3 * ITERATIONS) / 4 - 1] / 2, logNormal) << ","; /* 3rd Quartile (ms) */
+            std::cout << formatTime(trialClocks[(3 * ITERATIONS) / 4 - 1] / 2, logNormal)
+                      << ","; /* 3rd Quartile (ms) */
         }
         std::cout << formatTime(trialClocks[ITERATIONS - 1], logNormal) << std::endl; /* Slowest (ms) */
     }
 }
 
-void benchmarkLoop(
-    std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true, bool hadamardRandomBits = false, bool logNormal = false)
+void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true,
+    bool hadamardRandomBits = false, bool logNormal = false)
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
@@ -393,7 +396,8 @@ TEST_CASE("test_qft_ideal_init")
 
 TEST_CASE("test_qft_permutation_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
 TEST_CASE("test_qft_permutation_round_trip_entangled")
