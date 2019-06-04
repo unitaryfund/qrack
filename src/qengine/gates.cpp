@@ -218,7 +218,11 @@ void QEngineCPU::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
 void QEngineCPU::PhaseFlip()
 {
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
+    // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
+    // phase offsets.
+    if (!randGlobalPhase) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
+    }
 }
 
 } // namespace Qrack

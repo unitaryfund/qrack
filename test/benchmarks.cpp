@@ -36,8 +36,16 @@ const bitLenInt MaxQubits = 24;
 
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
+double formatTime(double t, bool logNormal) {
+    if (logNormal) {
+        return pow(2.0, t);
+    } else {
+        return t;
+    }
+}
+
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true,
-    bool hadamardRandomBits = false)
+    bool hadamardRandomBits = false, bool logNormal = false)
 {
 
     const int ITERATIONS = 100;
@@ -59,7 +67,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
     int i, j, numBits;
 
-    real1 avgt, stdet;
+    double avgt, stdet;
 
     for (numBits = 4; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
@@ -92,7 +100,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
             // Collect interval data
             tClock = clock() - iterClock;
-            trialClocks[i] = log2(tClock * clockFactor);
+            if (logNormal) {
+                trialClocks[i] = log2(tClock * clockFactor);
+            } else {
+                trialClocks[i] = tClock * clockFactor;
+            }
             avgt += trialClocks[i];
 
             if (async_time) {
@@ -110,35 +122,35 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         std::sort(trialClocks, trialClocks + ITERATIONS);
 
         std::cout << (int)numBits << ", "; /* # of Qubits */
-        std::cout << pow(2.0, avgt) << ","; /* Average Time (ms) */
-        std::cout << pow(2.0, stdet) << ","; /* Sample Std. Deviation (ms) */
-        std::cout << pow(2.0, trialClocks[0]) << ","; /* Fastest (ms) */
+        std::cout << formatTime(avgt, logNormal) << ","; /* Average Time (ms) */
+        std::cout << formatTime(stdet, logNormal) << ","; /* Sample Std. Deviation (ms) */
+        std::cout << formatTime(trialClocks[0], logNormal) << ","; /* Fastest (ms) */
         if (ITERATIONS % 4 == 0) {
-            std::cout << pow(2.0, (trialClocks[ITERATIONS / 4 - 1] + trialClocks[ITERATIONS / 4]) / 2)
+            std::cout << formatTime((trialClocks[ITERATIONS / 4 - 1] + trialClocks[ITERATIONS / 4]) / 2, logNormal)
                       << ","; /* 1st Quartile (ms) */
         } else {
-            std::cout << pow(2.0, trialClocks[ITERATIONS / 4 - 1] / 2) << ","; /* 1st Quartile (ms) */
+            std::cout << formatTime(trialClocks[ITERATIONS / 4 - 1] / 2, logNormal) << ","; /* 1st Quartile (ms) */
         }
         if (ITERATIONS % 2 == 0) {
-            std::cout << pow(2.0, (trialClocks[ITERATIONS / 2 - 1] + trialClocks[ITERATIONS / 2]) / 2)
+            std::cout << formatTime((trialClocks[ITERATIONS / 2 - 1] + trialClocks[ITERATIONS / 2]) / 2, logNormal)
                       << ","; /* Median (ms) */
         } else {
-            std::cout << pow(2.0, trialClocks[ITERATIONS / 2 - 1] / 2) << ","; /* Median (ms) */
+            std::cout << formatTime(trialClocks[ITERATIONS / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
         }
         if (ITERATIONS % 4 == 0) {
-            std::cout << pow(2.0, (trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2)
+            std::cout << formatTime((trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2, logNormal)
                       << ","; /* 3rd Quartile (ms) */
         } else {
-            std::cout << pow(2.0, trialClocks[(3 * ITERATIONS) / 4 - 1] / 2) << ","; /* 3rd Quartile (ms) */
+            std::cout << formatTime(trialClocks[(3 * ITERATIONS) / 4 - 1] / 2, logNormal) << ","; /* 3rd Quartile (ms) */
         }
-        std::cout << pow(2.0, trialClocks[ITERATIONS - 1]) << std::endl; /* Slowest (ms) */
+        std::cout << formatTime(trialClocks[ITERATIONS - 1], logNormal) << std::endl; /* Slowest (ms) */
     }
 }
 
 void benchmarkLoop(
-    std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true, bool hadamardRandomBits = false)
+    std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true, bool hadamardRandomBits = false, bool logNormal = false)
 {
-    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits);
+    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
 
 TEST_CASE("test_cnot_single")
@@ -149,6 +161,11 @@ TEST_CASE("test_cnot_single")
 TEST_CASE("test_x_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
+}
+
+TEST_CASE("test_y_single")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0); });
 }
 
 TEST_CASE("test_z_single")
@@ -166,9 +183,19 @@ TEST_CASE("test_cnot_all")
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
 }
 
-TEST_CASE("test_ccnot_all")
+TEST_CASE("test_x_all")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CCNOT(0, n / 3, (2 * n) / 3, n / 3); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
+}
+
+TEST_CASE("test_y_all")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0, n); });
+}
+
+TEST_CASE("test_z_all")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0, n); });
 }
 
 TEST_CASE("test_swap_all")
@@ -176,14 +203,9 @@ TEST_CASE("test_swap_all")
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
 
-TEST_CASE("test_x_all")
+TEST_CASE("test_ccnot_all")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
-}
-
-TEST_CASE("test_z_all")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CCNOT(0, n / 3, (2 * n) / 3, n / 3); });
 }
 
 TEST_CASE("test_and_all")
@@ -371,7 +393,7 @@ TEST_CASE("test_qft_ideal_init")
 
 TEST_CASE("test_qft_permutation_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false);
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
 TEST_CASE("test_qft_permutation_round_trip_entangled")
@@ -381,19 +403,8 @@ TEST_CASE("test_qft_permutation_round_trip_entangled")
             qftReg->QFT(0, n, false);
             qftReg->IQFT(0, n, false);
         },
-        true, false);
+        true, false, testEngineType == QINTERFACE_QUNIT);
 }
-
-TEST_CASE("test_qft_permutation_round_trip_separated")
-{
-    benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) {
-            qftReg->QFT(0, n, false);
-            qftReg->IQFT(0, n, true);
-        },
-        true, false);
-}
-
 TEST_CASE("test_qft_superposition_round_trip")
 {
     benchmarkLoop(
@@ -401,5 +412,5 @@ TEST_CASE("test_qft_superposition_round_trip")
             qftReg->QFT(0, n, false);
             qftReg->IQFT(0, n, false);
         },
-        true, true);
+        true, true, testEngineType == QINTERFACE_QUNIT);
 }
