@@ -1585,6 +1585,15 @@ public:
     virtual void UpdateRunningNorm() = 0;
 
     /**
+     * Apply the normalization factor found by UpdateRunningNorm() or on the fly by a single bit gate. (On an actual
+     * quantum computer, the state should never require manual normalization.)
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+
+    virtual void NormalizeState(real1 nrm = -999.0) = 0;
+
+    /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,
      * timely return values. QEngines and other layers will always internally "Finish" when necessary for correct return
      * values. This is primarily for debugging and benchmarking.
