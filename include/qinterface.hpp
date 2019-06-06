@@ -521,6 +521,20 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
+     * General unitary gate
+     *
+     * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit unitary gates.
+     */
+    virtual void U(bitLenInt target, real1 theta, real1 phi, real1 lambda);
+
+    /**
+     * 2-parameter unitary gate
+     *
+     * Applies a gate guaranteed to be unitary, from two angles, as commonly defined.
+     */
+    virtual void U2(bitLenInt target, real1 phi, real1 lambda) { U(target, M_PI / 2, phi, lambda); }
+
+    /**
      * Hadamard gate
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
@@ -948,6 +962,12 @@ public:
      *
      * @{
      */
+
+    /** Bitwise general unitary */
+    virtual void U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda);
+
+    /** Bitwise 2-paramter unitary */
+    virtual void U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda);
 
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);

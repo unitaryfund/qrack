@@ -116,6 +116,22 @@ void QInterface::X(bitLenInt start, bitLenInt length)
 
 // Single register instructions:
 
+/// Apply general unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U(start + bit, theta, phi, lambda);
+    }
+}
+
+/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U2(start + bit, phi, lambda);
+    }
+}
+
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 void QInterface::H(bitLenInt start, bitLenInt length)
 {
