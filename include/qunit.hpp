@@ -233,6 +233,7 @@ public:
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
     virtual void UpdateRunningNorm();
+    virtual void NormalizeState(real1 nrm = -999.0);
     virtual void Finish();
 
     virtual QInterfacePtr Clone();

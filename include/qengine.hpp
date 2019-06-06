@@ -31,8 +31,6 @@ protected:
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
-
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
@@ -91,6 +89,8 @@ public:
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+
+    virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 protected:
     virtual bool IsIdentity(const complex* mtrx);

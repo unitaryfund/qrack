@@ -1403,6 +1403,18 @@ void QUnit::UpdateRunningNorm()
     }
 }
 
+void QUnit::NormalizeState(real1 nrm)
+{
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (find(units.begin(), units.end(), toFind) == units.end()) {
+            units.push_back(toFind);
+            toFind->NormalizeState(nrm);
+        }
+    }
+}
+
 void QUnit::Finish()
 {
     std::vector<QInterfacePtr> units;
