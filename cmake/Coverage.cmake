@@ -22,8 +22,8 @@ if ( ENABLE_CODECOVERAGE )
         set( CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} --coverage )
 
         # Use 'make coverage' to build coverage report after running a test
-        add_custom_target( coverage_init ALL ${CODECOV_LCOV} --base-directory .  --directory ${CMAKE_BINARY_DIR} --output-file ${CODECOV_OUTPUTFILE} --capture --initial )
-        add_custom_target( coverage ${CODECOV_LCOV} --base-directory .  --directory ${CMAKE_BINARY_DIR} --output-file ${CODECOV_OUTPUTFILE} --capture COMMAND genhtml -o ${CODECOV_HTMLOUTPUTDIR} ${CODECOV_OUTPUTFILE} )
+        add_custom_target( coverage_init ALL ${CODECOV_LCOV} --base-directory .  --directory ${CMAKE_SOURCE_DIR} --no-external --output-file ${CODECOV_OUTPUTFILE} --capture --initial )
+        add_custom_target( coverage ${CODECOV_LCOV} --base-directory .  --directory ${CMAKE_SOURCE_DIR} --no-external --output-file ${CODECOV_OUTPUTFILE} --capture COMMAND ${CODECOV_LCOV} --remove ${CODECOV_OUTPUTFILE} '${CMAKE_SOURCE_DIR}/test/*' -o ${CODECOV_OUTPUTFILE} COMMAND genhtml -o ${CODECOV_HTMLOUTPUTDIR} ${CODECOV_OUTPUTFILE} )
     endif ( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCXX )
 
 else ( ENABLE_CODECOVERAGE )
