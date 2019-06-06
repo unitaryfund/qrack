@@ -52,7 +52,7 @@ int main()
     bool foundPerm = false;
 
     // We align our "classical" cache to 64 bit boundaries, for optimal OpenCL performance.
-    unsigned char* toLoad = qrack_alloc(1 << indexLength);
+    unsigned char* toLoad = cl_alloc(1 << indexLength);
 
     // We fill the example ordered list with dummy values. Up to the target index in the list, we fill (ordered) values
     // lower than the key:
@@ -232,7 +232,7 @@ int main()
         // returned. This could be done by only requiring a match to the value register, but we want to show here that
         // the index is correct.)
     }
-    free(toLoad);
+    cl_free(toLoad);
 
     std::cout << "Full index/value pair:";
     bitCapInt endState = qReg->MReg(0, 20);

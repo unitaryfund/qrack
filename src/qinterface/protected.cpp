@@ -16,25 +16,32 @@
 
 namespace Qrack {
 
-unsigned char* qrack_alloc(size_t ucharCount)
+unsigned char* cl_alloc(size_t ucharCount)
 {
-// QRACK_ALIGN_SIZE is defined in common/qrack_types.hpp
 #if defined(__APPLE__)
     void* toRet;
     posix_memalign(&toRet, QRACK_ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE
-                                                                  : (sizeof(unsigned char) * ucharCount));
+        ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
     return (unsigned char*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE)
-            ? QRACK_ALIGN_SIZE
-            : (sizeof(unsigned char) * ucharCount),
-        QRACK_ALIGN_SIZE);
+    return (unsigned char*)_aligned_malloc(
+        ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(unsigned char) * ucharCount),
+        ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(QRACK_ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE
-                                                                  : (sizeof(unsigned char) * ucharCount));
+        ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
 #endif
+}
+
+void cl_free(void* toFree)
+{
+    if (toFree) {
+#if defined(_WIN32)
+        _aligned_free(toFree);
+#else
+        free(toFree);
+#endif
+    }
 }
 
 template <class BidirectionalIterator>
