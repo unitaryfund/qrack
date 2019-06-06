@@ -370,8 +370,6 @@ void QInterface::ExpX(real1 radians, bitLenInt start, bitLenInt length)
 /// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
 void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     ExpX((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
 }
 
@@ -440,8 +438,6 @@ void QInterface::RX(real1 radians, bitLenInt start, bitLenInt length)
 /// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
 void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     RX((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
 }
 
@@ -464,8 +460,6 @@ void QInterface::RY(real1 radians, bitLenInt start, bitLenInt length)
 /// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
 void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     RY((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
 }
 
@@ -509,12 +503,6 @@ void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenI
 /// 2^denomPower) around |1> state
 void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
 {
-    // if (control >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    // if (target >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    if (control == target)
-        throw std::invalid_argument("CRTDyad control bit cannot also be target.");
     CRT((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
 }
 
@@ -533,10 +521,6 @@ void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target, bitLenI
 /// Controlled dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
 void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
 {
-    // if (control >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    if (control == target)
-        throw std::invalid_argument("CRXDyad control bit cannot also be target.");
     CRX((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
 }
 
@@ -556,8 +540,6 @@ void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target, bitLenI
 /// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
 void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
 {
-    if (control == target)
-        throw std::invalid_argument("CRYDyad control bit cannot also be target.");
     CRY((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
 }
 
@@ -577,8 +559,6 @@ void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target, bitLenI
 /// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
 void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
 {
-    if (control == target)
-        throw std::invalid_argument("CRZDyad control bit cannot also be target.");
     CRZ((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
 }
 

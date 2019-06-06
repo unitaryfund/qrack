@@ -23,7 +23,6 @@
 
 using namespace Qrack;
 
-#define ALIGN_SIZE 64
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
@@ -46,34 +45,6 @@ void print_bin(int bits, int d)
 }
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
-
-unsigned char* cl_alloc(size_t ucharCount)
-{
-#if defined(__APPLE__)
-    void* toRet;
-    posix_memalign(&toRet, ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
-    return (unsigned char*)toRet;
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (unsigned char*)_aligned_malloc(
-        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount),
-        ALIGN_SIZE);
-#else
-    return (unsigned char*)aligned_alloc(ALIGN_SIZE,
-        ((sizeof(unsigned char) * ucharCount) < ALIGN_SIZE) ? ALIGN_SIZE : (sizeof(unsigned char) * ucharCount));
-#endif
-}
-
-void cl_free(void* toFree)
-{
-    if (toFree) {
-#if defined(_WIN32)
-        _aligned_free(toFree);
-#else
-        free(toFree);
-#endif
-    }
-}
 
 TEST_CASE("test_complex")
 {
@@ -2156,6 +2127,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
+
+    qftReg->Compose(qftReg2);
+
+    // Try across device/heap allocation case:
+    qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng, complex(ONE_R1, ZERO_R1), false, true, true);
+
+    qftReg->SetPermutation(0x2b);
+    qftReg->Decompose(0, 4, qftReg2);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
@@ -2176,6 +2158,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
     QInterfacePtr qftReg2 =
         CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
+    qftReg->Compose(qftReg2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
+
+    // Try across device/heap allocation case:
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
+    qftReg2 =
+        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng, complex(ONE_R1, ZERO_R1), false, true, true);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
@@ -2248,6 +2237,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     qftReg->ForceM(bits, 1, results);
     qftReg->ForceM(bits, 3, results);
     qftReg->ForceM(bits, 1, NULL);
+    qftReg->ForceMReg(0, 1, results[0], false);
 
     REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);
     REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0x2), 0.5);
@@ -2879,6 +2869,49 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtswap_reg")
     qftReg->H(1);
 
     REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_shunts")
+{
+    qftReg->H(0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->Swap(0, 0, 1);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->SqrtSwap(0, 0, 1);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->ISqrtSwap(0, 0, 1);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->CSwap(NULL, 0, 0, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->CSqrtSwap(NULL, 0, 0, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->CISqrtSwap(NULL, 0, 0, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->AntiCSwap(NULL, 0, 0, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->AntiCSqrtSwap(NULL, 0, 0, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0);
+
+    qftReg->AntiCISqrtSwap(NULL, 0, 0, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
 

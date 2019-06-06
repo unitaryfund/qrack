@@ -121,18 +121,6 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     }
 }
 
-/// Logarithm of arbitrary single bit gate
-void QInterface::Log(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
-{
-    complex toApply[4];
-    Qrack::log2x2(matrix2x2, toApply);
-    if (antiCtrled) {
-        ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
-    } else {
-        ApplyControlledSingleBit(controls, controlLen, qubit, toApply);
-    }
-}
-
 /// Exponentiate Pauli X operator
 void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {
