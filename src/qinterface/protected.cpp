@@ -35,13 +35,11 @@ unsigned char* cl_alloc(size_t ucharCount)
 
 void cl_free(void* toFree)
 {
-    if (toFree) {
 #if defined(_WIN32)
-        _aligned_free(toFree);
+    _aligned_free(toFree);
 #else
-        free(toFree);
+    free(toFree);
 #endif
-    }
 }
 
 template <class BidirectionalIterator>
