@@ -28,7 +28,8 @@
 namespace Qrack {
 
 // These are utility functions defined in qinterface/protected.cpp:
-unsigned char* qrack_alloc(size_t ucharCount);
+unsigned char* cl_alloc(size_t ucharCount);
+void cl_free(void* toFree);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
@@ -772,14 +773,6 @@ public:
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
     virtual void Exp(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
-
-    /**
-     *  Logarithm of arbitrary 2x2 gate
-     *
-     * Applies \f$ log(Op) \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
-     */
-    virtual void Log(
         bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
 
     /**
@@ -1603,6 +1596,15 @@ public:
      */
 
     virtual void UpdateRunningNorm() = 0;
+
+    /**
+     * Apply the normalization factor found by UpdateRunningNorm() or on the fly by a single bit gate. (On an actual
+     * quantum computer, the state should never require manual normalization.)
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+
+    virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,
