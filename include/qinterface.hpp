@@ -966,7 +966,7 @@ public:
     /** Bitwise general unitary */
     virtual void U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda);
 
-    /** Bitwise 2-paramter unitary */
+    /** Bitwise 2-parameter unitary */
     virtual void U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda);
 
     /** Bitwise Hadamard */
