@@ -228,6 +228,7 @@ CL_CALLBACK void _PopQueue(cl_event event, cl_int type, void* user_data)
 void QEngineOCL::PopQueue(cl_event event, cl_int type)
 {
     wait_queue_items.pop_front();
+    rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
     DispatchQueue(event, type);
 }
 
