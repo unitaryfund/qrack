@@ -68,6 +68,12 @@ enum QInterfaceEngine {
      */
     QINTERFACE_QUNIT,
 
+    /**
+     * Create a QUnitMulti, which distributes the explicitly separated "shards" of a QUnit across available OpenCL
+     * devices.
+     */
+    QINTERFACE_QUNIT_MULTI,
+
     QINTERFACE_FIRST = QINTERFACE_CPU,
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL = QINTERFACE_OPENCL,

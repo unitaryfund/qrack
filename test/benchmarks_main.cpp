@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
     bool qunit_qfusion = false;
     bool cpu = false;
     bool opencl_single = false;
+    bool opencl_multi = false;
 
     using namespace Catch::clara;
 
@@ -53,6 +54,7 @@ int main(int argc, char* argv[])
         Opt(qunit_qfusion)["--layer-qunit-qfusion"]("Enable gate fusion tests under the QUnit layer") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
+        Opt(opencl_multi)["--proc-opencl-multi"]("Multiple processor OpenCL tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
@@ -92,9 +94,10 @@ int main(int argc, char* argv[])
         qengine = true;
     }
 
-    if (!cpu && !opencl_single) {
+    if (!cpu && !opencl_single && !opencl_multi) {
         cpu = true;
         opencl_single = true;
+        opencl_multi = true;
     }
 
     int num_failed = 0;
@@ -159,6 +162,15 @@ int main(int argc, char* argv[])
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
+
+        if (num_failed == 0 && opencl_multi) {
+            session.config().stream() << "############ QUnitMulti (OpenCL) ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubEngineType = QINTERFACE_OPENCL;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
 #endif
     }
 
@@ -174,6 +186,14 @@ int main(int argc, char* argv[])
 #if ENABLE_OPENCL
         if (num_failed == 0 && opencl_single) {
             session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && opencl_multi) {
+            session.config().stream() << "############ QUnitMulti (OpenCL) -> QFusion ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();

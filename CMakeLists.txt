@@ -151,6 +151,7 @@ install (FILES
     include/qengine_cpu.hpp
     include/qfusion.hpp
     include/qunit.hpp
+    include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
