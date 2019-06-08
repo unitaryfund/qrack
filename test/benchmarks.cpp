@@ -190,7 +190,7 @@ TEST_CASE("test_x_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
-#endif
+
 TEST_CASE("test_y_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0, n); });
@@ -388,7 +388,7 @@ TEST_CASE("test_grover")
         },
         16);
 }
-
+#endif
 TEST_CASE("test_qft_ideal_init")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);

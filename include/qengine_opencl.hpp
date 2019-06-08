@@ -22,6 +22,10 @@
 #include "common/oclengine.hpp"
 #include "qengine.hpp"
 
+#define BCI_ARG_LEN 10
+#define CMPLX_NORM_LEN 5
+#define REAL_ARG_LEN 2
+
 namespace Qrack {
 
 enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
@@ -46,8 +50,25 @@ struct QueueItem {
         , workItemCount(wic)
         , localGroupSize(lgs)
         , buffers(b)
-        , localBuffSize(lbs) {}
+        , localBuffSize(lbs)
+    {
+    }
 };
+
+struct PoolItem {
+    BufferPtr cmplxBuffer;
+    BufferPtr realBuffer;
+    BufferPtr ulongBuffer;
+
+    PoolItem(cl::Context& context)
+    {
+        cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
+        realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
+        ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
+    }
+};
+
+typedef std::shared_ptr<PoolItem> PoolItemPtr;
 
 /**
  * OpenCL enhanced QEngineCPU implementation.
@@ -80,11 +101,9 @@ protected:
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
     // QEngineOCL itself, specifically by QEngineOCLMulti.
     BufferPtr stateBuffer;
-    BufferPtr cmplxBuffer;
-    BufferPtr realBuffer;
-    BufferPtr ulongBuffer;
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
+    std::vector<PoolItemPtr> poolItems;
     real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
@@ -227,9 +246,8 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
-    static const int BCI_ARG_LEN = 10;
-
     void InitOCL(int devID);
+    PoolItemPtr GetFreePoolItem();
     void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual void FreeStateVec()
