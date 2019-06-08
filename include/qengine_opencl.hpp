@@ -16,6 +16,9 @@
 #error OpenCL has not been enabled
 #endif
 
+#include <list>
+#include <mutex>
+
 #include "common/oclengine.hpp"
 #include "qengine.hpp"
 
@@ -30,6 +33,21 @@ class OCLEngine;
 class QEngineOCL;
 
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
+
+struct QueueItem {
+    OCLAPI api_call;
+    size_t workItemCount;
+    size_t localGroupSize;
+    std::vector<BufferPtr> buffers;
+    size_t localBuffSize;
+
+    QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
+        : api_call(ac)
+        , workItemCount(wic)
+        , localGroupSize(lgs)
+        , buffers(b)
+        , localBuffSize(lbs) {}
+};
 
 /**
  * OpenCL enhanced QEngineCPU implementation.
@@ -55,6 +73,8 @@ protected:
     int deviceID;
     DeviceContextPtr device_context;
     std::vector<EventVecPtr> wait_refs;
+    std::list<QueueItem> wait_queue_items;
+    std::mutex queue_mutex;
     cl::CommandQueue queue;
     cl::Context context;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
@@ -203,6 +223,9 @@ public:
 
     virtual QInterfacePtr Clone();
 
+    void PopQueue(cl_event event, cl_int type);
+    void DispatchQueue(cl_event event, cl_int type);
+
 protected:
     static const int BCI_ARG_LEN = 10;
 
@@ -282,7 +305,7 @@ protected:
         size_t localBuffSize = 0);
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
-    EventVecPtr ResetWaitEvents();
+    EventVecPtr ResetWaitEvents(bool waitQueue = true);
     void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
     real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);

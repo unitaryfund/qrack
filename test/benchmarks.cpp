@@ -155,7 +155,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomP
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
-
+#if 0
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
@@ -190,7 +190,7 @@ TEST_CASE("test_x_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
-
+#endif
 TEST_CASE("test_y_all")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0, n); });
