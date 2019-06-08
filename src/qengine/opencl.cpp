@@ -578,7 +578,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     cl::Event writeControlsEvent;
-    if (bitCount != 1 && bitCount != 2) {
+    if (bitCount > 2) {
         DISPATCH_TEMP_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * bitCount, qPowersSorted, writeControlsEvent);
     }
 
@@ -647,7 +647,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (!isXGate && !isZGate) {
         writeGateEvent.wait();
     }
-    if (bitCount == 1) {
+    if (bitCount > 2) {
         writeControlsEvent.wait();
     }
     wait_refs.clear();
@@ -655,17 +655,17 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (isXGate || isZGate) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, ulongBuffer });
     } else if (doCalcNorm) {
-        if (bitCount == 1 || bitCount == 2) {
-            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
-        } else {
+        if (bitCount > 2) {
             QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer, nrmBuffer },
                 sizeof(real1) * ngs);
+        } else {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
         }
     } else {
-        if (bitCount == 1 || bitCount == 2) {
-            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer });
-        } else {
+        if (bitCount > 2) {
             QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer, powersBuffer });
+        } else {
+            QueueCall(api_call, ngc, ngs, { stateBuffer, cmplxBuffer, ulongBuffer });
         }
     }
 
