@@ -228,7 +228,9 @@ CL_CALLBACK void _PopQueue(cl_event event, cl_int type, void* user_data)
 void QEngineOCL::PopQueue(cl_event event, cl_int type)
 {
     wait_queue_items.pop_front();
-    rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
+    if (poolItems.size() > 1) {
+        rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
+    }
     DispatchQueue(event, type);
 }
 
@@ -424,6 +426,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     poolItems.clear();
+    poolItems.push_back(std::make_shared<PoolItem>(context));
     powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * sizeof(bitCapInt) * 8);
 
     if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
