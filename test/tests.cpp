@@ -1940,7 +1940,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isFinished")
 {
     qftReg->QFT(0, 20);
-    while(!(qftReg->isFinished()) {
+    while(!(qftReg->isFinished())) {
        std::cout<<"(QFT Not finished. Sleep for 10 ms.)"<<std::endl;
        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
