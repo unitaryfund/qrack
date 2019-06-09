@@ -11,11 +11,9 @@
 // for details.
 
 #include <atomic>
-#include <chrono>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <thread>
 
 #include "catch.hpp"
 #include "qfactory.hpp"
@@ -1939,11 +1937,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 {
-    qftReg->QFT(0, 20);
-    while(!(qftReg->isFinished())) {
-       std::cout<<"(QFT Not finished. Sleep for 10 ms.)"<<std::endl;
-       std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    REQUIRE(qftReg->isFinished());
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
