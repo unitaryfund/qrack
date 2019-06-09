@@ -31,6 +31,11 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 void QUnitMulti::RedistributeQEngines()
 {
+    // No need to redistribute, if there is only 1 device
+    if (deviceCount == 1) {
+        return;
+    }
+
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
     std::vector<QEngineInfo> qinfos;
