@@ -72,7 +72,12 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = true, int ignored = -1, bool useHardwareRNG = true);
 
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+
 protected:
+    virtual void SeparateBit(bool value, bitLenInt qubit);
+
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {
         Detach(start, length, std::dynamic_pointer_cast<QUnitMulti>(dest));

@@ -12,6 +12,7 @@
 // for details.
 
 #include "qunitmulti.hpp"
+#include "qfactory.hpp"
 
 namespace Qrack {
 
@@ -26,7 +27,22 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     // class.
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
-    RedistributeQEngines();
+
+    bool bitState;
+    bitLenInt currentDevID = 0;
+    for (bitLenInt i = 0; i < qBitCount; i++) {
+        bitState = ((1 << i) & initState) >> i;
+        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, bitState ? 1 : 0, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, currentDevID, useRDRAND);
+        shards[i].mapped = 0;
+        shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
+        shards[i].isProbDirty = false;
+
+        currentDevID++;
+        if (currentDevID >= deviceCount) {
+            currentDevID = 0;
+        }
+    }
 }
 
 void QUnitMulti::RedistributeQEngines()
@@ -63,15 +79,15 @@ void QUnitMulti::RedistributeQEngines()
 
     for (i = 0; i < qinfos.size(); i++) {
         devID = i;
-        // If a given device has 0 load, or if the engine adds negligible load, we can let any given unit keep its
+        // If the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
         // if (qinfos[i].size <= 2U) {
-        //    break;
+        //    continue;
         //}
         if (devSizes[qinfos[i].deviceID] != 0U) {
-            // If two devices have identical load, we prefer the default OpenCL device.
-            sz = devSizes[defaultDeviceID];
-            devID = defaultDeviceID;
+            // If two devices have identical load, we prefer the original OpenCL device.
+            sz = devSizes[qinfos[i].deviceID];
+            devID = qinfos[i].deviceID;
 
             // Find the device with the lowest load.
             for (j = 0; j < deviceCount; j++) {
@@ -101,6 +117,26 @@ QInterfacePtr QUnitMulti::EntangleIterator(
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
     RedistributeQEngines();
     return toRet;
+}
+
+void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
+{
+    QUnit::SetPermutation(perm, phaseFac);
+    RedistributeQEngines();
+}
+
+bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
+{
+    bool toRet = QUnit::TrySeparate(start, length);
+    RedistributeQEngines();
+
+    return toRet;
+}
+
+void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
+{
+    QUnit::SeparateBit(value, qubit);
+    RedistributeQEngines();
 }
 
 } // namespace Qrack
