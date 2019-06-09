@@ -1427,6 +1427,22 @@ void QUnit::Finish()
     }
 }
 
+bool QUnit::isFinished()
+{
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (find(units.begin(), units.end(), toFind) == units.end()) {
+            units.push_back(toFind);
+            if (!(toFind->isFinished())) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 bool QUnit::ApproxCompare(QUnitPtr toCompare)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.

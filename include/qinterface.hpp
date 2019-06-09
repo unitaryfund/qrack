@@ -524,7 +524,8 @@ public:
     /**
      * General unitary gate
      *
-     * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit unitary gates.
+     * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit
+     * unitary gates.
      */
     virtual void U(bitLenInt target, real1 theta, real1 phi, real1 lambda);
 
@@ -1613,6 +1614,13 @@ public:
      */
 
     virtual void Finish(){};
+
+    /**
+     * Returns "false" if asynchronous work is still running, and "true" if all previously dispatched asynchronous work
+     * is done.
+     */
+
+    virtual bool isFinished() { return true; };
 
     /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
