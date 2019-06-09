@@ -258,7 +258,7 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
-    if (localBuffSize) {
+    if (item.localBuffSize) {
         ocl.call.setArg(args.size(), cl::Local(item.localBuffSize));
     }
 
