@@ -239,6 +239,7 @@ public:
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void UpdateRunningNorm();
     virtual void Finish() { clFinish(); };
+    virtual bool isFinished() { return (wait_queue_items.size() == 0); };
 
     virtual QInterfacePtr Clone();
 

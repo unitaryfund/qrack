@@ -235,6 +235,7 @@ public:
     virtual void UpdateRunningNorm();
     virtual void NormalizeState(real1 nrm = -999.0);
     virtual void Finish();
+    virtual bool isFinished();
 
     virtual QInterfacePtr Clone();
 
