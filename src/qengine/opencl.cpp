@@ -227,10 +227,13 @@ CL_CALLBACK void _PopQueue(cl_event event, cl_int type, void* user_data)
 
 void QEngineOCL::PopQueue(cl_event event, cl_int type)
 {
+    queue_mutex.lock();
     wait_queue_items.pop_front();
     if (poolItems.size() > 1) {
         rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
     }
+    queue_mutex.unlock();
+
     DispatchQueue(event, type);
 }
 
@@ -243,15 +246,11 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     QueueItem item = wait_queue_items.front();
-    OCLAPI api_call = item.api_call;
-    size_t workItemCount = item.workItemCount;
-    size_t localGroupSize = item.localGroupSize;
     std::vector<BufferPtr> args = item.buffers;
-    size_t localBuffSize = item.localBuffSize;
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
     // other QEngineOCL instances, until we're done queueing it.
-    OCLDeviceCall ocl = device_context->Reserve(api_call);
+    OCLDeviceCall ocl = device_context->Reserve(item.api_call);
 
     // Load the arguments.
     for (unsigned int i = 0; i < args.size(); i++) {
@@ -259,8 +258,8 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
-    if (localBuffSize) {
-        ocl.call.setArg(args.size(), cl::Local(localBuffSize));
+    if (item.localBuffSize) {
+        ocl.call.setArg(args.size(), cl::Local(item.localBuffSize));
     }
 
     // Dispatch the primary kernel, to apply the gate.
@@ -268,8 +267,8 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-        cl::NDRange(workItemCount), // global number of work items
-        cl::NDRange(localGroupSize), // local number (per group)
+        cl::NDRange(item.workItemCount), // global number of work items
+        cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
         &kernelEvent); // handle to wait for the kernel
 

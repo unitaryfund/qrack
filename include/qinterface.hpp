@@ -1622,6 +1622,13 @@ public:
     virtual void Finish(){};
 
     /**
+     * Returns "false" if asynchronous work is still running, and "true" if all previously dispatched asynchronous work
+     * is done.
+     */
+
+    virtual bool isFinished() { return true; };
+
+    /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
      * increases gate speed. This method is used to manually attempt internal separation of a QUnit subsytem. We attempt
      * a Decompose() operation, on a state which might not be separable. If the state is not separable, we abort and
