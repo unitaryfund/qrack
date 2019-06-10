@@ -111,8 +111,24 @@ QInterfacePtr QUnitMulti::EntangleIterator(
 
 void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 {
-    QUnit::SetPermutation(perm, phaseFac);
-    RedistributeQEngines();
+    bool bitState;
+
+    Finish();
+
+    bitLenInt currentDevID = defaultDeviceID;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        bitState = ((1 << i) & perm) >> i;
+        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac,
+            doNormalize, randGlobalPhase, useHostRam, currentDevID, useRDRAND);
+        shards[i].mapped = 0;
+        shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
+        shards[i].isProbDirty = false;
+
+        currentDevID++;
+        if (currentDevID >= deviceCount) {
+            currentDevID = 0;
+        }
+    }
 }
 
 bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
