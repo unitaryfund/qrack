@@ -53,8 +53,6 @@ struct QEngineInfo {
     }
 };
 
-typedef std::shared_ptr<QEngineInfo> QEngineInfoPtr;
-
 class QUnitMulti;
 typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 
@@ -63,7 +61,6 @@ class QUnitMulti : public QUnit, public ParallelFor {
 protected:
     int deviceCount;
     int defaultDeviceID;
-    std::vector<QEngineInfoPtr> qinfos;
 
 public:
     QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -87,9 +84,6 @@ public:
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
 protected:
-    void UpdateEngineInfos();
-    QEngineInfoPtr FindEngineInfo(QInterfacePtr unit);
-
     virtual void SeparateBit(bool value, bitLenInt qubit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
