@@ -134,7 +134,9 @@ void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
 {
     bool toRet = QUnit::TrySeparate(start, length);
-    RedistributeQEngines();
+    if (toRet) {
+        RedistributeQEngines();
+    }
 
     return toRet;
 }
