@@ -84,6 +84,10 @@ public:
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
 protected:
+    virtual std::vector<QEngineInfo> GetQInfos();
+
+    virtual void SetDefaultDevice();
+
     virtual void SeparateBit(bool value, bitLenInt qubit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)

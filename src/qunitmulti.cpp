@@ -27,18 +27,11 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     // class.
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
-
-    RedistributeQEngines();
+    SetDefaultDevice();
 }
 
-void QUnitMulti::RedistributeQEngines()
+std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 {
-    // No need to redistribute, if there is only 1 device
-    if (deviceCount == 1) {
-        return;
-    }
-
-    // Get shard sizes and devices
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
     bitCapInt sz;
@@ -53,11 +46,26 @@ void QUnitMulti::RedistributeQEngines()
             qinfos.push_back(QEngineInfo(sz, qOCL->GetDeviceID(), qOCL));
         }
     }
+
     // We distribute in descending size order:
     std::sort(qinfos.rbegin(), qinfos.rend());
 
+    return qinfos;
+}
+
+void QUnitMulti::RedistributeQEngines()
+{
+    // No need to redistribute, if there is only 1 device
+    if (deviceCount == 1) {
+        return;
+    }
+
+    // Get shard sizes and devices
+    std::vector<QEngineInfo> qinfos = GetQInfos();
+
     std::vector<bitCapInt> devSizes(deviceCount);
     std::fill(devSizes.begin(), devSizes.end(), 0U);
+    bitCapInt sz;
     bitLenInt devID;
     bitLenInt i, j;
 
@@ -95,17 +103,48 @@ void QUnitMulti::RedistributeQEngines()
     }
 }
 
+void QUnitMulti::SetDefaultDevice()
+{
+    // No need to redistribute, if there is only 1 device
+    if (deviceCount == 1) {
+        return;
+    }
+
+    // Get shard sizes and devices
+    std::vector<QEngineInfo> qinfos = GetQInfos();
+
+    std::vector<bitCapInt> devSizes(deviceCount);
+    std::fill(devSizes.begin(), devSizes.end(), 0U);
+    bitLenInt i;
+
+    for (i = 0; i < qinfos.size(); i++) {
+        devSizes[qinfos[i].deviceID] += qinfos[i].size;
+    }
+
+    int lowLoadDevID = defaultDeviceID;
+    bitCapInt sz = qinfos[defaultDeviceID].size;
+
+    for (i = 0; i < qinfos.size(); i++) {
+        if (qinfos[i].size < sz) {
+            lowLoadDevID = i;
+        }
+    }
+
+    devID = lowLoadDevID;
+}
+
 void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 {
+    SetDefaultDevice();
     QUnit::Detach(start, length, dest);
-    RedistributeQEngines();
+    // RedistributeQEngines();
 }
 
 QInterfacePtr QUnitMulti::EntangleIterator(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     QInterfacePtr toRet = QUnit::EntangleIterator(first, last);
-    RedistributeQEngines();
+    // RedistributeQEngines();
     return toRet;
 }
 
@@ -113,7 +152,9 @@ void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     bool bitState;
 
-    Finish();
+    if (shards.size() > 0) {
+        Finish();
+    }
 
     bitLenInt currentDevID = defaultDeviceID;
     for (bitLenInt i = 0; i < qubitCount; i++) {
@@ -133,18 +174,20 @@ void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 
 bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
 {
+    SetDefaultDevice();
     bool toRet = QUnit::TrySeparate(start, length);
-    if (toRet) {
-        RedistributeQEngines();
-    }
+    // if (toRet) {
+    //    RedistributeQEngines();
+    //}
 
     return toRet;
 }
 
 void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
+    SetDefaultDevice();
     QUnit::SeparateBit(value, qubit);
-    RedistributeQEngines();
+    // RedistributeQEngines();
 }
 
 } // namespace Qrack
