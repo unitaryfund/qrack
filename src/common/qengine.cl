@@ -15,7 +15,7 @@ inline cmplx zmul(const cmplx lhs, const cmplx rhs)
     return (cmplx)((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
 }
 
-inline cmplx2 zmad(const real1 nrm, const cmplx4 lhs, const cmplx2 rhs)
+inline cmplx2 zmatrixmul(const real1 nrm, const cmplx4 lhs, const cmplx2 rhs)
 {
     return nrm * ((cmplx2)(
         (lhs.lo.x * rhs.x) - (lhs.lo.y * rhs.y) + (lhs.lo.z * rhs.z) - (lhs.lo.w * rhs.w),
@@ -80,7 +80,7 @@ inline real1 arg(const cmplx cmp)
     mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
     mulRes.hi = stateVec[i | OFFSET2_ARG];                                           \
                                                                                      \
-    mulRes = zmad(nrm, mtrx, mulRes);                                                \
+    mulRes = zmatrixmul(nrm, mtrx, mulRes);                                                \
                                                                                      \
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
     stateVec[i | OFFSET2_ARG] = mulRes.hi
@@ -113,7 +113,7 @@ inline real1 arg(const cmplx cmp)
     mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
     mulRes.hi = stateVec[i | OFFSET2_ARG];                                           \
                                                                                      \
-    mulRes = zmad(nrm, mtrx, mulRes);                                                \
+    mulRes = zmatrixmul(nrm, mtrx, mulRes);                                                \
                                                                                      \
     partNrm += dot(mulRes, mulRes);                                                  \
                                                                                      \
@@ -311,7 +311,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
         qubit.lo = stateVec[i];
         qubit.hi = stateVec[i | targetPower];
 
-        qubit = zmad(nrm, mtrxs[offset], qubit);
+        qubit = zmatrixmul(nrm, mtrxs[offset], qubit);
 
         partNrm += dot(qubit, qubit);
 
