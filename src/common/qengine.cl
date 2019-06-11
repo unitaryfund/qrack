@@ -80,7 +80,7 @@ inline real1 arg(const cmplx cmp)
     mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
     mulRes.hi = stateVec[i | OFFSET2_ARG];                                           \
                                                                                      \
-    mulRes = zmatrixmul(nrm, mtrx, mulRes);                                                \
+    mulRes = zmatrixmul(nrm, mtrx, mulRes);                                          \
                                                                                      \
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
     stateVec[i | OFFSET2_ARG] = mulRes.hi
@@ -113,7 +113,7 @@ inline real1 arg(const cmplx cmp)
     mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
     mulRes.hi = stateVec[i | OFFSET2_ARG];                                           \
                                                                                      \
-    mulRes = zmatrixmul(nrm, mtrx, mulRes);                                                \
+    mulRes = zmatrixmul(nrm, mtrx, mulRes);                                          \
                                                                                      \
     partNrm += dot(mulRes, mulRes);                                                  \
                                                                                      \
