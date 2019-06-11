@@ -15,6 +15,16 @@ inline cmplx zmul(const cmplx lhs, const cmplx rhs)
     return (cmplx)((lhs.x * rhs.x) - (lhs.y * rhs.y), (lhs.x * rhs.y) + (lhs.y * rhs.x));
 }
 
+inline cmplx2 zmad(const real1 nrm, const cmplx4 lhs, const cmplx2 rhs)
+{
+    return nrm * ((cmplx2)(
+        (lhs.lo.x * rhs.x) - (lhs.lo.y * rhs.y) + (lhs.lo.z * rhs.z) - (lhs.lo.w * rhs.w),
+        (lhs.lo.x * rhs.y) + (lhs.lo.y * rhs.x) + (lhs.lo.z * rhs.w) + (lhs.lo.w * rhs.z),
+        (lhs.hi.x * rhs.x) - (lhs.hi.y * rhs.y) + (lhs.hi.z * rhs.z) - (lhs.hi.w * rhs.w),
+        (lhs.hi.x * rhs.y) + (lhs.hi.y * rhs.x) + (lhs.hi.z * rhs.w) + (lhs.hi.w * rhs.z)
+    ));
+}
+
 inline real1 arg(const cmplx cmp)
 {
     if (cmp.x == ZERO_R1 && cmp.y == ZERO_R1)
@@ -35,7 +45,7 @@ inline real1 arg(const cmplx cmp)
     cmplx4 mtrx = vload8(0, cmplxPtr);                                               \
     real1 nrm = cmplxPtr[8];                                                         \
                                                                                      \
-    cmplx Y0, Y1
+    cmplx2 mulRes
 
 #define PREP_SPECIAL_2X2()                                                           \
     bitCapInt lcv, i;                                                                \
@@ -67,11 +77,13 @@ inline real1 arg(const cmplx cmp)
     i |= iLow | ((iHigh ^ iLow) << 1U)
 
 #define APPLY_AND_OUT()                                                              \
-    Y0 = stateVec[i | OFFSET1_ARG];                                                  \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
+    mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
+    mulRes.hi = stateVec[i | OFFSET2_ARG];                                           \
                                                                                      \
-    stateVec[i | OFFSET1_ARG] = nrm * (zmul(mtrx.lo.lo, Y0) + zmul(mtrx.lo.hi, Y1)); \
-    stateVec[i | OFFSET2_ARG] = nrm * (zmul(mtrx.hi.lo, Y0) + zmul(mtrx.hi.hi, Y1))
+    mulRes = zmad(nrm, mtrx, mulRes);                                                \
+                                                                                     \
+    stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
+    stateVec[i | OFFSET2_ARG] = mulRes.hi
 
 #define APPLY_X()                                                                    \
     Y0 = stateVec[i];                                                                \
@@ -98,16 +110,15 @@ inline real1 arg(const cmplx cmp)
     }
 
 #define NORM_BODY_2X2()                                                              \
-    YT = stateVec[i | OFFSET1_ARG];                                                  \
-    Y1 = stateVec[i | OFFSET2_ARG];                                                  \
+    mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
+    mulRes.hi = stateVec[i | OFFSET2_ARG];                                           \
                                                                                      \
-    Y0 = nrm * (zmul(mtrx.lo.lo, YT) + zmul(mtrx.lo.hi, Y1));                        \
-    Y1 = nrm * (zmul(mtrx.hi.lo, YT) + zmul(mtrx.hi.hi, Y1));                        \
+    mulRes = zmad(nrm, mtrx, mulRes);                                                \
                                                                                      \
-    partNrm += dot(Y0, Y0) + dot(Y1, Y1);                                            \
+    partNrm += dot(mulRes, mulRes);                                                  \
                                                                                      \
-    stateVec[i | OFFSET1_ARG] = Y0;                                                  \
-    stateVec[i | OFFSET2_ARG] = Y1
+    stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
+    stateVec[i | OFFSET2_ARG] = mulRes.hi
 
 void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
@@ -265,7 +276,7 @@ void kernel zsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     APPLY_Z();
 }
 
-void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
+void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
 {
     bitCapInt Nthreads, lcv, locID, locNthreads;
 
@@ -280,7 +291,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
 
     real1 partNrm = ZERO_R1;
 
-    cmplx qubit[2];
+    cmplx2 qubit;
     cmplx Y0;
 
     bitCapInt i, offset;
@@ -297,19 +308,15 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
             }
         }
 
-        // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of capacity for the unsigned bitCapInt.)
-        offset *= 4;
+        qubit.lo = stateVec[i];
+        qubit.hi = stateVec[i | targetPower];
 
-        Y0 = stateVec[i];
-        qubit[1] = stateVec[i | targetPower];
+        qubit = zmad(nrm, mtrxs[offset], qubit);
 
-        qubit[0] = nrm * (zmul(mtrxs[0 + offset], Y0) + zmul(mtrxs[1 + offset], qubit[1]));
-        qubit[1] = nrm * (zmul(mtrxs[2 + offset], Y0) + zmul(mtrxs[3 + offset], qubit[1]));
+        partNrm += dot(qubit, qubit);
 
-        partNrm += dot(qubit[0], qubit[0]) + dot(qubit[1], qubit[1]);
-
-        stateVec[i] = qubit[0];
-        stateVec[i | targetPower] = qubit[1];
+        stateVec[i] = qubit.lo;
+        stateVec[i | targetPower] = qubit.hi;
     }
 
     locID = get_local_id(0);
