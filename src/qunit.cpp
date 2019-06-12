@@ -1055,9 +1055,20 @@ void QUnit::CINT(
     CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     DirtyShardRange(start, length);
-    DirtyShardIndexArray(controls, controlLen);
-
     EntangleRange(start, length);
+
+    for (auto i = 0; i < controlLen; i++) {
+        if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
+            continue;
+        }
+
+        real1 prob = Prob(controls[i]);
+        if (prob < min_norm) {
+            // If any control has zero probability, this gate will do nothing.
+            return;
+        }
+    }
+
     std::vector<bitLenInt> bits(controlLen + 1);
     for (auto i = 0; i < controlLen; i++) {
         bits[i] = controls[i];
@@ -1259,8 +1270,24 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    DirtyShardRange(start, length);
     EntangleRange(start, length);
+
+    for (auto i = 0; i < controlLen; i++) {
+        if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
+            continue;
+        }
+
+        real1 prob = Prob(controls[i]);
+        if (prob < min_norm) {
+            // If any control has zero probability, this gate will do nothing.
+            return;
+        }
+    }
+
+    DirtyShardRange(carryStart, length);
     EntangleRange(carryStart, length);
+
     std::vector<bitLenInt> bits(controlLen + 2);
     for (auto i = 0; i < controlLen; i++) {
         bits[i] = controls[i];
@@ -1282,10 +1309,6 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     }
 
     ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlLen);
-
-    DirtyShardRange(start, length);
-    DirtyShardRange(carryStart, length);
-    DirtyShardIndexArray(controls, controlLen);
 }
 
 void QUnit::CMUL(
