@@ -1060,6 +1060,15 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 void QUnit::CINT(
     CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    for (auto i = 0; i < controlLen; i++) {
+        // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
+        // overhead.
+        if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
+            return;
+        }
+    }
+
+    // Otherwise, we have to entangle and dirty the register.
     DirtyShardRange(start, length);
     EntangleRange(start, length);
 
@@ -1276,6 +1285,15 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    for (auto i = 0; i < controlLen; i++) {
+        // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
+        // overhead.
+        if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
+            return;
+        }
+    }
+
+    // Otherwise, we have to entangle and dirty the register.
     DirtyShardRange(start, length);
     EntangleRange(start, length);
 
