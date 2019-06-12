@@ -989,13 +989,13 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(controlVec.size() + targets.size());
-    for (i = 0; i < (int)(controlVec.size() + targets.size()); i++) {
+    for (i = 0; i < (controlVec.size() + targets.size()); i++) {
         ebits[i] = &allBits[i];
     }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlVec.size());
+    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlsVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
     }
