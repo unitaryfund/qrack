@@ -918,6 +918,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
+            // Since it's cached, check whether the bit probability is 0, (or 1, if "anti").
+            real1 checkZero = Prob(controls[0]);
+            if ((anti && ((ONE_R1 - checkZero) < min_norm)) || (!anti && (checkZero < min_norm))) {
+                // If it is, this gate does nothing.
+                return;
+            }
             continue;
         }
         for (j = 0; j < (int)targets.size(); j++) {
