@@ -1068,8 +1068,7 @@ void QUnit::CINT(
         }
     }
 
-    // Otherwise, we have to entangle and dirty the register.
-    DirtyShardRange(start, length);
+    // Otherwise, we have to entangle the register.
     EntangleRange(start, length);
 
     for (auto i = 0; i < controlLen; i++) {
@@ -1083,6 +1082,9 @@ void QUnit::CINT(
             return;
         }
     }
+
+    // Otherwise, we have to "dirty" the register.
+    DirtyShardRange(start, length);
 
     std::vector<bitLenInt> bits(controlLen + 1);
     for (auto i = 0; i < controlLen; i++) {
@@ -1293,8 +1295,7 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
         }
     }
 
-    // Otherwise, we have to entangle and dirty the register.
-    DirtyShardRange(start, length);
+    // Otherwise, we have to entangle the register.
     EntangleRange(start, length);
 
     for (auto i = 0; i < controlLen; i++) {
@@ -1308,6 +1309,9 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
             return;
         }
     }
+
+    // Otherwise, we have to "dirty" the register.
+    DirtyShardRange(start, length);
 
     DirtyShardRange(carryStart, length);
     EntangleRange(carryStart, length);
