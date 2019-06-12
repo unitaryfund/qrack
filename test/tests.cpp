@@ -1935,10 +1935,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
-{
-    REQUIRE(qftReg->isFinished());
-}
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished") { REQUIRE(qftReg->isFinished()); }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
