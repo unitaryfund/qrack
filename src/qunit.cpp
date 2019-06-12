@@ -1109,7 +1109,7 @@ void QUnit::CINT(
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
     if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire
+        // We've determined we can skip the entire gate.
         return;
     }
 
