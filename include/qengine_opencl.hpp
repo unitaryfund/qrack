@@ -32,8 +32,6 @@ enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
 
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
-class OCLEngine;
-
 class QEngineOCL;
 
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
