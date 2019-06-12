@@ -1072,19 +1072,12 @@ void QUnit::CINT(
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    bitLenInt* controlsMapped = NULL;
-    if (controlLen > 0) {
-        controlsMapped = new bitLenInt[controlLen];
-        for (auto i = 0; i < controlLen; i++) {
-            controlsMapped[i] = shards[controls[i]].mapped;
-        }
+    std::vector<bitLenInt> controlsMapped(controlLen == 0 ? 1 : controlLen);
+    for (auto i = 0; i < controlLen; i++) {
+        controlsMapped[i] = shards[controls[i]].mapped;
     }
 
-    ((*unit).*fn)(toMod, shards[start].mapped, length, controlsMapped, controlLen);
-
-    if (controlsMapped) {
-        delete[] controlsMapped;
-    }
+    ((*unit).*fn)(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlLen);
 }
 
 void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
@@ -1283,19 +1276,12 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    bitLenInt* controlsMapped = NULL;
-    if (controlLen > 0) {
-        bitLenInt* controlsMapped = new bitLenInt[controlLen];
-        for (auto i = 0; i < controlLen; i++) {
-            controlsMapped[i] = shards[controls[i]].mapped;
-        }
+    std::vector<bitLenInt> controlsMapped(controlLen == 0 ? 1 : controlLen);
+    for (auto i = 0; i < controlLen; i++) {
+        controlsMapped[i] = shards[controls[i]].mapped;
     }
 
-    ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length, controlsMapped, controlLen);
-
-    if (controlsMapped) {
-        delete[] controlsMapped;
-    }
+    ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlLen);
 
     DirtyShardRange(start, length);
     DirtyShardRange(carryStart, length);
