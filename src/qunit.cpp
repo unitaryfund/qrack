@@ -1067,22 +1067,20 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     shards[start].unit->INC(toMod, shards[start].mapped, length);
 }
 
-void QUnit::CINT(
-    CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
+bool QUnit::CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec) {
     for (auto i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
         if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
-            return;
+            return true;
         }
     }
 
     // Otherwise, we have to entangle the register.
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> controlVec(controlLen);
-    std::copy(controls, controls + controlLen, controlVec.begin());
+    controlVec->resize(controlLen);
+    std::copy(controls, controls + controlLen, controlVec->begin());
     bitLenInt controlIndex = 0;
 
     for (auto i = 0; i < controlLen; i++) {
@@ -1093,13 +1091,26 @@ void QUnit::CINT(
         real1 prob = Prob(controls[i]);
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
-            return;
+            return true;
         } else if (((ONE_R1 - prob) < min_norm) && (shards[controls[i]].unit != shards[start].unit)) {
             // If any control has full probability, we can avoid entangling it.
-            controlVec.erase(controlVec.begin() + controlIndex);
+            controlVec->erase(controlVec->begin() + controlIndex);
         } else {
             controlIndex++;
         }
+    }
+
+    return false;
+}
+
+void QUnit::CINT(
+    CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire
+        return;
     }
 
     // Otherwise, we have to "dirty" the register.
@@ -1306,36 +1317,11 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    for (auto i = 0; i < controlLen; i++) {
-        // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
-        // overhead.
-        if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
-            return;
-        }
-    }
-
-    // Otherwise, we have to entangle the register.
-    EntangleRange(start, length);
-
-    std::vector<bitLenInt> controlVec(controlLen);
-    std::copy(controls, controls + controlLen, controlVec.begin());
-    bitLenInt controlIndex = 0;
-
-    for (auto i = 0; i < controlLen; i++) {
-        if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
-            continue;
-        }
-
-        real1 prob = Prob(controls[i]);
-        if (prob < min_norm) {
-            // If any control has zero probability, this gate will do nothing.
-            return;
-        } else if (((ONE_R1 - prob) < min_norm) && (shards[controls[i]].unit != shards[start].unit)) {
-            // If any control has full probability, we can avoid entangling it.
-            controlVec.erase(controlVec.begin() + controlIndex);
-        } else {
-            controlIndex++;
-        }
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
     }
 
     // Otherwise, we have to "dirty" the register.
