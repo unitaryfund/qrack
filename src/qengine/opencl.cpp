@@ -723,7 +723,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     if (bitCount > 2) {
         writeControlsEvent.wait();
     }
-    wait_refs.clear();
+    if (doCalcNorm) {
+        wait_refs.clear();
+    }
 
     if (isXGate || isZGate) {
         QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
