@@ -995,14 +995,14 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlsVec.size());
+    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
     }
 
     cfn(shards[targets[0]].unit, controlsMapped);
 
-    for (i = 0; i < (bitLenInt)targets.size(); i++) {
+    for (i = 0; i < targets.size(); i++) {
         shards[targets[i]].isProbDirty = true;
     }
 }
@@ -1094,7 +1094,7 @@ void QUnit::CINT(
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
             return;
-        } else if ((ONE_R1 - prob) < min_norm) {
+        } else if (((ONE_R1 - prob) < min_norm) && (shards[controls[i]].unit != shards[start].unit)) {
             // If any control has full probability, we can avoid entangling it.
             controlVec.erase(controlVec.begin() + controlIndex);
         } else {
@@ -1330,7 +1330,7 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
             return;
-        } else if ((ONE_R1 - prob) < min_norm) {
+        } else if (((ONE_R1 - prob) < min_norm) && (shards[controls[i]].unit != shards[start].unit)) {
             // If any control has full probability, we can avoid entangling it.
             controlVec.erase(controlVec.begin() + controlIndex);
         } else {
