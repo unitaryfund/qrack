@@ -909,7 +909,7 @@ template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
     const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
 {
-    int i, j;
+    bitLenInt i, j;
 
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have total
     // or no probability of altering the targets, such that we can still keep them separate.
@@ -926,7 +926,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             }
             continue;
         }
-        for (j = 0; j < (int)targets.size(); j++) {
+        for (j = 0; j < targets.size(); j++) {
             // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the targets,
             // it isn't worth trying the next optimization.
             if (shards[controls[i]].unit == shards[targets[j]].unit) {
@@ -939,11 +939,15 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
     }
 
+    std::vector<bitLenInt> controlVec(controlLen);
+    std::copy(controls, controls + controlLen, controlVec.begin());
+
     if (isSeparated) {
         // The controls are entirely separated from the targets already, in this branch. If the probability of a change
         // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
         real1 prob = ONE_R1;
         real1 bitProb;
+        bitLenInt controlIndex = 0;
         for (i = 0; i < controlLen; i++) {
             bitProb = Prob(controls[i]);
 
@@ -952,8 +956,14 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             } else {
                 prob *= bitProb;
             }
+
             if (prob < min_norm) {
                 break;
+            } else if ((ONE_R1 - prob) < min_norm) {
+                // We can avoid entangling the control, if it is guaranteed to activate.
+                controlVec.erase(controlVec.begin() + controlIndex);
+            } else {
+                controlIndex++;
             }
         }
         if (prob < min_norm) {
@@ -973,21 +983,21 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     // If we've made it this far, we have to form the entangled representation and apply the gate.
-    std::vector<bitLenInt> allBits(controlLen + targets.size());
-    std::copy(controls, controls + controlLen, allBits.begin());
-    std::copy(targets.begin(), targets.end(), allBits.begin() + controlLen);
+    std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
+    std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
+    std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
     std::sort(allBits.begin(), allBits.end());
 
-    std::vector<bitLenInt*> ebits(controlLen + targets.size());
-    for (i = 0; i < (int)(controlLen + targets.size()); i++) {
+    std::vector<bitLenInt*> ebits(controlVec.size() + targets.size());
+    for (i = 0; i < (int)(controlVec.size() + targets.size()); i++) {
         ebits[i] = &allBits[i];
     }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlLen);
-    for (i = 0; i < controlLen; i++) {
-        controlsMapped[i] = shards[controls[i]].mapped;
+    std::vector<bitLenInt> controlsMapped(controlVec.size());
+    for (i = 0; i < controlVec.size(); i++) {
+        controlsMapped[i] = shards[controlVec[i]].mapped;
     }
 
     cfn(shards[targets[0]].unit, controlsMapped);
@@ -1071,6 +1081,10 @@ void QUnit::CINT(
     // Otherwise, we have to entangle the register.
     EntangleRange(start, length);
 
+    std::vector<bitLenInt> controlVec(controlLen);
+    std::copy(controls, controls + controlLen, controlVec.begin());
+    bitLenInt controlIndex = 0;
+
     for (auto i = 0; i < controlLen; i++) {
         if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
             continue;
@@ -1080,32 +1094,37 @@ void QUnit::CINT(
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
             return;
+        } else if ((ONE_R1 - prob) < min_norm) {
+            // If any control has full probability, we can avoid entangling it.
+            controlVec.erase(controlVec.begin() + controlIndex);
+        } else {
+            controlIndex++;
         }
     }
 
     // Otherwise, we have to "dirty" the register.
     DirtyShardRange(start, length);
 
-    std::vector<bitLenInt> bits(controlLen + 1);
-    for (auto i = 0; i < controlLen; i++) {
-        bits[i] = controls[i];
+    std::vector<bitLenInt> bits(controlVec.size() + 1);
+    for (bitLenInt i = 0; i < controlVec.size(); i++) {
+        bits[i] = controlVec[i];
     }
-    bits[controlLen] = start;
+    bits[controlVec.size()] = start;
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(controlLen + 1);
-    for (auto i = 0; i < (controlLen + 1); i++) {
+    std::vector<bitLenInt*> ebits(controlVec.size() + 1);
+    for (bitLenInt i = 0; i < (controlVec.size() + 1); i++) {
         ebits[i] = &bits[i];
     }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlLen == 0 ? 1 : controlLen);
-    for (auto i = 0; i < controlLen; i++) {
-        controlsMapped[i] = shards[controls[i]].mapped;
+    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
+    for (bitLenInt i = 0; i < controlVec.size(); i++) {
+        controlsMapped[i] = shards[controlVec[i]].mapped;
     }
 
-    ((*unit).*fn)(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlLen);
+    ((*unit).*fn)(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
 }
 
 void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
@@ -1298,6 +1317,10 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     // Otherwise, we have to entangle the register.
     EntangleRange(start, length);
 
+    std::vector<bitLenInt> controlVec(controlLen);
+    std::copy(controls, controls + controlLen, controlVec.begin());
+    bitLenInt controlIndex = 0;
+
     for (auto i = 0; i < controlLen; i++) {
         if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
             continue;
@@ -1307,6 +1330,11 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
             return;
+        } else if ((ONE_R1 - prob) < min_norm) {
+            // If any control has full probability, we can avoid entangling it.
+            controlVec.erase(controlVec.begin() + controlIndex);
+        } else {
+            controlIndex++;
         }
     }
 
@@ -1316,27 +1344,28 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     DirtyShardRange(carryStart, length);
     EntangleRange(carryStart, length);
 
-    std::vector<bitLenInt> bits(controlLen + 2);
-    for (auto i = 0; i < controlLen; i++) {
-        bits[i] = controls[i];
+    std::vector<bitLenInt> bits(controlVec.size() + 2);
+    for (bitLenInt i = 0; i < controlVec.size(); i++) {
+        bits[i] = controlVec[i];
     }
-    bits[controlLen] = start;
-    bits[controlLen + 1] = carryStart;
+    bits[controlVec.size()] = start;
+    bits[controlVec.size() + 1] = carryStart;
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(controlLen + 2);
-    for (auto i = 0; i < (controlLen + 2); i++) {
+    std::vector<bitLenInt*> ebits(controlVec.size() + 2);
+    for (bitLenInt i = 0; i < (controlVec.size() + 2); i++) {
         ebits[i] = &bits[i];
     }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlLen == 0 ? 1 : controlLen);
-    for (auto i = 0; i < controlLen; i++) {
-        controlsMapped[i] = shards[controls[i]].mapped;
+    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
+    for (bitLenInt i = 0; i < controlVec.size(); i++) {
+        controlsMapped[i] = shards[controlVec[i]].mapped;
     }
 
-    ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlLen);
+    ((*unit).*fn)(
+        toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
 }
 
 void QUnit::CMUL(
