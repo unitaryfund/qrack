@@ -1310,12 +1310,19 @@ public:
     /** Divide by integer */
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
 
+    /** Multiplication modulo N by integer, (out of place) */
+    virtual void MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+
     /** Controlled multiplication by integer */
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled division by power of integer */
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
+
+    /** Controlled multiplication modulo N by integer, (out of place) */
+    virtual void CMULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** @} */

@@ -101,8 +101,10 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
     OCLKernelHandle(OCL_API_MUL, "mul"),
     OCLKernelHandle(OCL_API_DIV, "div"),
+    OCLKernelHandle(OCL_API_MULMODN_OUT, "mulmodnout"),
     OCLKernelHandle(OCL_API_CMUL, "cmul"),
-    OCLKernelHandle(OCL_API_CDIV, "cdiv")
+    OCLKernelHandle(OCL_API_CDIV, "cdiv"),
+    OCLKernelHandle(OCL_API_CMULMODN_OUT, "cmulmodnout")
 };
 // clang-format on
 

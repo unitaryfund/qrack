@@ -931,6 +931,34 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
     }
 }
 
+void QEngineCPU::MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    bitCapInt lowMask = (1U << length) - 1U;
+    toMul &= lowMask;
+    if (toMul == 0) {
+        SetReg(inStart, length, 0);
+        SetReg(outStart, length, 0);
+        return;
+    }
+    if (length > 0U) {
+        bitCapInt inMask = lowMask << inStart;
+        bitCapInt outMask = lowMask << outStart;
+        bitCapInt otherMask = (maxQPower - 1U) ^ (inMask | outMask);
+
+        complex* nStateVec = AllocStateVec(maxQPower);
+        std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+        par_for_skip(0, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt inRes = lcv & inMask;
+            bitCapInt outRes = (((inRes >> inStart) * toMul) & lowMask) << outStart;
+            nStateVec[inRes | outRes | otherRes] = stateVec[lcv];
+        });
+
+        ResetStateVec(nStateVec);
+    }
+}
+
 void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
@@ -1040,6 +1068,72 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
             nStateVec[lcv | controlMask] = stateVec[((outInt & lowMask) << inOutStart) |
                 (((outInt & highMask) >> length) << carryStart) | otherRes | controlMask];
 
+            nStateVec[lcv] = stateVec[lcv];
+
+            bitCapInt partControlMask;
+            for (bitCapInt j = 1; j < ((1U << controlLen) - 1U); j++) {
+                partControlMask = 0;
+                for (bitLenInt k = 0; k < controlLen; k++) {
+                    if (j & (1U << k)) {
+                        partControlMask |= controlPowers[k];
+                    }
+                }
+                nStateVec[lcv | partControlMask] = stateVec[lcv | partControlMask];
+            }
+        });
+
+        delete[] skipPowers;
+        delete[] controlPowers;
+
+        ResetStateVec(nStateVec);
+    }
+}
+
+void QEngineCPU::CMULModNOut(
+    bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        MULModNOut(toMul, inStart, outStart, length);
+        return;
+    }
+
+    SetReg(outStart, length, 0);
+
+    bitCapInt lowPower = 1U << length;
+    toMul %= lowPower;
+    if (toMul == 0) {
+        SetReg(inStart, length, 0);
+        return;
+    }
+    if (length > 0U) {
+        bitCapInt lowMask = lowPower - 1U;
+        bitCapInt inMask = lowMask << inStart;
+        bitCapInt outMask = lowMask << outStart;
+
+        bitCapInt* skipPowers = new bitCapInt[controlLen + length];
+        bitCapInt* controlPowers = new bitCapInt[controlLen];
+        bitCapInt controlMask = 0U;
+        for (bitLenInt i = 0U; i < controlLen; i++) {
+            controlPowers[i] = 1U << controls[i];
+            skipPowers[i] = controlPowers[i];
+            controlMask |= controlPowers[i];
+        }
+        for (bitLenInt i = 0U; i < length; i++) {
+            skipPowers[i + controlLen] = 1U << (outStart + i);
+        }
+        std::sort(skipPowers, skipPowers + controlLen + length);
+
+        bitCapInt otherMask = (maxQPower - 1U) ^ (inMask | outMask | controlMask);
+
+        complex* nStateVec = AllocStateVec(maxQPower);
+        std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+        par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt inRes = lcv & inMask;
+            bitCapInt outRes = (((inRes >> inStart) * toMul) & lowMask) << outStart;
+
+            nStateVec[inRes | outRes | otherRes] = stateVec[lcv | controlMask];
             nStateVec[lcv] = stateVec[lcv];
 
             bitCapInt partControlMask;

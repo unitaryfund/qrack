@@ -1726,6 +1726,21 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
     MULx(OCL_API_DIV, toDiv, inOutStart, carryStart, length);
 }
 
+/** Multiplication modulo N by integer, (out of place) */
+void QEngineOCL::MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    SetReg(outStart, length, 0);
+
+    bitCapInt lowPower = 1U << length;
+    toMul %= lowPower;
+    if (toMul == 0) {
+        SetReg(inStart, length, 0);
+        return;
+    }
+
+    MULx(OCL_API_MULMODN_OUT, toMul, inStart, outStart, length);
+}
+
 /** Controlled multiplication by integer */
 void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
@@ -1749,6 +1764,27 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     CMULx(OCL_API_CMUL, toMul, inOutStart, carryStart, length, controls, controlLen);
+}
+
+/** Controlled multiplication modulo N by integer, (out of place) */
+void QEngineOCL::CMULModNOut(
+    bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        MULModNOut(toMul, inStart, outStart, length);
+        return;
+    }
+
+    SetReg(outStart, length, 0);
+
+    bitCapInt lowPower = 1U << length;
+    toMul %= lowPower;
+    if (toMul == 0) {
+        SetReg(inStart, length, 0);
+        return;
+    }
+
+    CMULx(OCL_API_CMULMODN_OUT, toMul, inStart, outStart, length, controls, controlLen);
 }
 
 /** Controlled division by integer */

@@ -1067,7 +1067,9 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     shards[start].unit->INC(toMod, shards[start].mapped, length);
 }
 
-bool QUnit::CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec) {
+bool QUnit::CArithmeticOptimize(
+    bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
+{
     for (auto i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
@@ -1314,6 +1316,15 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
+void QUnit::MULModNOut(bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    DirtyShardRange(inStart, length);
+    DirtyShardRange(outStart, length);
+
+    EntangleRange(inStart, length, outStart, length);
+    shards[inStart].unit->MULModNOut(toMod, shards[inStart].mapped, shards[outStart].mapped, length);
+}
+
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
@@ -1374,6 +1385,17 @@ void QUnit::CDIV(
     }
 
     CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controls, controlLen);
+}
+
+void QUnit::CMULModNOut(
+    bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        MULModNOut(toMod, inStart, outStart, length);
+        return;
+    }
+
+    CMULx(&QInterface::CMULModNOut, toMod, inStart, outStart, length, controls, controlLen);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
