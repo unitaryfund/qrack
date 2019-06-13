@@ -931,7 +931,7 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
     }
 }
 
-void QEngineCPU::MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QEngineCPU::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     SetReg(outStart, length, 0);
 
@@ -952,7 +952,7 @@ void QEngineCPU::MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outSta
         par_for_skip(0, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt inRes = lcv & inMask;
-            bitCapInt outRes = (((inRes >> inStart) * toMul) & lowMask) << outStart;
+            bitCapInt outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
             nStateVec[inRes | outRes | otherRes] = stateVec[lcv];
         });
 
@@ -960,7 +960,7 @@ void QEngineCPU::MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outSta
     }
 }
 
-void QEngineCPU::POWModNOut(bitCapInt base, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QEngineCPU::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     SetReg(outStart, length, 0);
 
@@ -979,7 +979,7 @@ void QEngineCPU::POWModNOut(bitCapInt base, bitLenInt inStart, bitLenInt outStar
         par_for_skip(0, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt inRes = lcv & inMask;
-            bitCapInt outRes = (intPow(base, inRes >> inStart) & lowMask) << outStart;
+            bitCapInt outRes = (intPow(base, inRes >> inStart) % modN) << outStart;
             nStateVec[inRes | outRes | otherRes] = stateVec[lcv];
         });
 
@@ -1117,11 +1117,11 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 }
 
-void QEngineCPU::CMULModNOut(
-    bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QEngineCPU::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
-        MULModNOut(toMul, inStart, outStart, length);
+        MULModNOut(toMul, modN, inStart, outStart, length);
         return;
     }
 
@@ -1158,7 +1158,7 @@ void QEngineCPU::CMULModNOut(
         par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt inRes = lcv & inMask;
-            bitCapInt outRes = (((inRes >> inStart) * toMul) & lowMask) << outStart;
+            bitCapInt outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
 
             nStateVec[inRes | outRes | otherRes] = stateVec[lcv | controlMask];
             nStateVec[lcv] = stateVec[lcv];
@@ -1182,11 +1182,11 @@ void QEngineCPU::CMULModNOut(
     }
 }
 
-void QEngineCPU::CPOWModNOut(
-    bitCapInt base, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QEngineCPU::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
-        POWModNOut(base, inStart, outStart, length);
+        POWModNOut(base, modN, inStart, outStart, length);
         return;
     }
 
@@ -1222,7 +1222,7 @@ void QEngineCPU::CPOWModNOut(
         par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt inRes = lcv & inMask;
-            bitCapInt outRes = (intPow(base, inRes >> inStart) & lowMask) << outStart;
+            bitCapInt outRes = (intPow(base, inRes >> inStart) % modN) << outStart;
 
             nStateVec[inRes | outRes | otherRes] = stateVec[lcv | controlMask];
             nStateVec[lcv] = stateVec[lcv];

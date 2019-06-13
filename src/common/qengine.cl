@@ -1588,6 +1588,7 @@ void kernel mulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt inStart = bitCapIntPtr[6];
     bitCapInt outStart = bitCapIntPtr[7];
     bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt modN = bitCapIntPtr[9];
     bitCapInt otherRes, inRes, outRes;
     bitCapInt i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1597,7 +1598,7 @@ void kernel mulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
 
         otherRes = i & otherMask;
         inRes = i & inMask;
-        outRes = (((inRes >> inStart) * toMul) & lowMask) << outStart;
+        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
         nStateVec[inRes | outRes | otherRes] = stateVec[i];
     }
 }
@@ -1617,6 +1618,7 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt inStart = bitCapIntPtr[6];
     bitCapInt outStart = bitCapIntPtr[7];
     bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt modN = bitCapIntPtr[9];
     bitCapInt otherRes, inRes, outRes, inInt;
     bitCapInt i, iHigh, iLow, powRes, pw;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1636,7 +1638,7 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
             powRes = 1;
         }
 
-        outRes = (powRes & lowMask) << outStart;
+        outRes = (powRes % modN) << outStart;
 
         nStateVec[inRes | outRes | otherRes] = stateVec[i];
     }
@@ -1751,15 +1753,20 @@ void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     bitCapInt controlMask = bitCapIntPtr[3];
     bitCapInt inMask = bitCapIntPtr[4];
     bitCapInt outMask = bitCapIntPtr[5];
-    bitCapInt otherMask = bitCapIntPtr[6];
+    bitCapInt modN = bitCapIntPtr[6];
     bitCapInt len = bitCapIntPtr[7];
     bitCapInt lowMask = (1U << len) - 1U;
     bitCapInt inStart = bitCapIntPtr[8];
     bitCapInt outStart = bitCapIntPtr[9];
+
+    bitCapInt otherMask = (maxI - 1U) ^ (inMask | outMask | controlMask);
+    maxI >>= (controlLen + len);
+
     bitCapInt otherRes, outRes, inRes;
     bitCapInt i, iHigh, iLow, j;
     bitLenInt p, k;
     bitCapInt partControlMask;
+
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         i = 0U;
@@ -1772,7 +1779,7 @@ void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
 
         otherRes = i & otherMask;
         inRes = i & inMask;
-        outRes = (((inRes >> inStart) * toMul) & lowMask) << outStart;
+        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
 
         nStateVec[inRes | outRes | otherRes] = stateVec[i | controlMask];
         nStateVec[i] = stateVec[i];
@@ -1800,11 +1807,15 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     bitCapInt controlMask = bitCapIntPtr[3];
     bitCapInt inMask = bitCapIntPtr[4];
     bitCapInt outMask = bitCapIntPtr[5];
-    bitCapInt otherMask = bitCapIntPtr[6];
+    bitCapInt modN = bitCapIntPtr[6];
     bitCapInt len = bitCapIntPtr[7];
     bitCapInt lowMask = (1U << len) - 1U;
     bitCapInt inStart = bitCapIntPtr[8];
     bitCapInt outStart = bitCapIntPtr[9];
+
+    bitCapInt otherMask = (maxI - 1U) ^ (inMask | outMask | controlMask);
+    maxI >>= (controlLen + len);
+
     bitCapInt otherRes, outRes, inRes, inInt;
     bitCapInt i, iHigh, iLow, j, powRes, pw;
     bitLenInt p, k;
@@ -1831,7 +1842,7 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
             powRes = 1;
         }
 
-        outRes = (powRes & lowMask) << outStart;
+        outRes = (powRes % modN) << outStart;
 
         nStateVec[inRes | outRes | otherRes] = stateVec[i | controlMask];
         nStateVec[i] = stateVec[i];

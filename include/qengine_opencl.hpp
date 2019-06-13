@@ -197,15 +197,15 @@ public:
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
-    virtual void MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    virtual void POWModNOut(bitCapInt base, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
-    virtual void CMULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
-    virtual void CPOWModNOut(bitCapInt base, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -349,8 +349,12 @@ protected:
     void xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuffer);
     void MULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length);
+    void MULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inOutStart,
+        const bitLenInt carryStart, const bitLenInt length);
     void CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
+    void CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inOutStart,
+        const bitLenInt carryStart, const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
     void PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,

@@ -1316,37 +1316,25 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
-void QUnit::MULModNOut(bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
-    shards[inStart].unit->MULModNOut(toMod, shards[inStart].mapped, shards[outStart].mapped, length);
+    shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
 }
 
-void QUnit::POWModNOut(bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
-    shards[inStart].unit->POWModNOut(toMod, shards[inStart].mapped, shards[outStart].mapped, length);
+    shards[inStart].unit->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
 }
 
-void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen, bool dirtyOrig)
+QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitCapInt carryStart,
+    bitLenInt length, std::vector<bitLenInt>* controlsMapped)
 {
-    // Try to optimize away the whole gate, or as many controls as is opportune.
-    std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
-        return;
-    }
-
-    // Otherwise, we have to "dirty" the register.
-    if (dirtyOrig) {
-        DirtyShardRange(start, length);
-    }
-
     DirtyShardRange(carryStart, length);
     EntangleRange(carryStart, length);
 
@@ -1365,13 +1353,49 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
+    controlsMapped->resize(controlVec.size() == 0 ? 1 : controlVec.size());
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        controlsMapped[i] = shards[controlVec[i]].mapped;
+        (*controlsMapped)[i] = shards[controlVec[i]].mapped;
     }
+
+    return unit;
+}
+
+void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
+    }
+
+    // Otherwise, we have to "dirty" the register.
+    DirtyShardRange(start, length);
+
+    std::vector<bitLenInt> controlsMapped;
+    QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
     ((*unit).*fn)(
         toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
+}
+
+void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
+    bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
+    }
+
+    std::vector<bitLenInt> controlsMapped;
+    QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
+
+    ((*unit).*fn)(
+        toMod, modN, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
 }
 
 void QUnit::CMUL(
@@ -1396,26 +1420,26 @@ void QUnit::CDIV(
     CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controls, controlLen);
 }
 
-void QUnit::CMULModNOut(
-    bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
-        MULModNOut(toMod, inStart, outStart, length);
+        MULModNOut(toMod, modN, inStart, outStart, length);
         return;
     }
 
-    CMULx(&QInterface::CMULModNOut, toMod, inStart, outStart, length, controls, controlLen, false);
+    CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controls, controlLen);
 }
 
-void QUnit::CPOWModNOut(
-    bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
-        POWModNOut(toMod, inStart, outStart, length);
+        POWModNOut(toMod, modN, inStart, outStart, length);
         return;
     }
 
-    CMULx(&QInterface::CPOWModNOut, toMod, inStart, outStart, length, controls, controlLen, false);
+    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controls, controlLen);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
