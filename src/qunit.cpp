@@ -1318,15 +1318,22 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::MULModNOut(bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    DirtyShardRange(inStart, length);
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
     shards[inStart].unit->MULModNOut(toMod, shards[inStart].mapped, shards[outStart].mapped, length);
 }
 
+void QUnit::POWModNOut(bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    DirtyShardRange(outStart, length);
+
+    EntangleRange(inStart, length, outStart, length);
+    shards[inStart].unit->POWModNOut(toMod, shards[inStart].mapped, shards[outStart].mapped, length);
+}
+
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt* controls, bitLenInt controlLen, bool dirtyOrig)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
@@ -1336,7 +1343,9 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     }
 
     // Otherwise, we have to "dirty" the register.
-    DirtyShardRange(start, length);
+    if (dirtyOrig) {
+        DirtyShardRange(start, length);
+    }
 
     DirtyShardRange(carryStart, length);
     EntangleRange(carryStart, length);
@@ -1395,7 +1404,18 @@ void QUnit::CMULModNOut(
         return;
     }
 
-    CMULx(&QInterface::CMULModNOut, toMod, inStart, outStart, length, controls, controlLen);
+    CMULx(&QInterface::CMULModNOut, toMod, inStart, outStart, length, controls, controlLen, false);
+}
+
+void QUnit::CPOWModNOut(
+    bitCapInt toMod, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        POWModNOut(toMod, inStart, outStart, length);
+        return;
+    }
+
+    CMULx(&QInterface::CPOWModNOut, toMod, inStart, outStart, length, controls, controlLen, false);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)

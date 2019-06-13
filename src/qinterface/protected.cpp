@@ -65,6 +65,17 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 
 template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
 
+bitCapInt intPow(bitCapInt base, bitCapInt power)
+{
+    if (power == 0U) {
+        return 1U;
+    }
+    if (power == 1U) {
+        return base;
+    }
+    return base * intPow(base, power - 1);
+}
+
 void mul2x2(complex* left, complex* right, complex* out)
 {
     out[0] = (left[0] * right[0]) + (left[1] * right[2]);

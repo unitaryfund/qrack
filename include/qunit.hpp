@@ -188,11 +188,14 @@ public:
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void MULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    virtual void POWModNOut(bitCapInt base, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CMULModNOut(bitCapInt toMul, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen);
+    virtual void CPOWModNOut(bitCapInt base, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
 
     /** @} */
@@ -258,7 +261,7 @@ protected:
         INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
     void CINT(CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     void CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
-        bitLenInt controlLen);
+        bitLenInt controlLen, bool dirtyOrig = true);
     bool CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen,
         std::vector<bitLenInt>* controlVec);
 

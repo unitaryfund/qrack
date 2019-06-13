@@ -1874,8 +1874,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
     int i;
 
     qftReg->SetPermutation(65);
-    qftReg->CMULModNOut(5, 0, 8, 8, NULL, 0);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 65 | (69 << 8)));
+    qftReg->MULModNOut(5, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (69 << 8)));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
+{
+    int i;
+
+    qftReg->SetPermutation(6);
+    qftReg->POWModNOut(3, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 6 | (217 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
@@ -1931,11 +1940,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
 
     qftReg->SetPermutation(1);
     qftReg->CMULModNOut(2, 0, 8, 8, NULL, 0);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1 | (2 << 8)));
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
 
     qftReg->SetPermutation(3 | (1 << 16));
     qftReg->CMULModNOut(3, 0, 8, 8, controls, 1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 3 | (9 << 8)));
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (9 << 8)));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
+{
+    int i;
+
+    bitLenInt controls[1] = { 16 };
+
+    qftReg->SetPermutation(1);
+    qftReg->CPOWModNOut(2, 0, 8, 8, NULL, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
+
+    qftReg->SetPermutation(3 | (1 << 16));
+    qftReg->CPOWModNOut(3, 0, 8, 8, controls, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (27 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
