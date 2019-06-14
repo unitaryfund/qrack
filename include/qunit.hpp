@@ -274,6 +274,8 @@ protected:
         std::vector<bitLenInt>* controlVec);
     bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd);
     bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bool isAdd);
+    bool INTSCOptimize(
+        bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool isAdd);
     bool IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
     bool IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
 

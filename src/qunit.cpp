@@ -1324,6 +1324,50 @@ bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bit
     return false;
 }
 
+bool QUnit::INTSCOptimize(
+    bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool isAdd)
+{
+    if (CheckBitsPermutation(start, length)) {
+        bool carryIn = M(carryIndex);
+        if (carryIn == isAdd) {
+            toMod++;
+        }
+
+        bitCapInt lengthPower = 1U << length;
+        bitCapInt signMask = 1U << (length - 1U);
+        bitCapInt inOutInt = GetCachedPermutation(start, length);
+        bitCapInt inInt = toMod;
+
+        bool isOverflow;
+        bitCapInt outInt;
+        if (isAdd) {
+            isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+            outInt = inOutInt + toMod;
+        } else {
+            isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
+            outInt = (inOutInt + lengthPower) - toMod;
+        }
+
+        bool carryOut = (outInt >= lengthPower);
+        if (carryOut) {
+            outInt &= (lengthPower - 1U);
+        }
+        if (carryIn != carryOut) {
+            X(carryIndex);
+        }
+
+        SetReg(start, length, outInt);
+
+        if (isOverflow) {
+            Z(overflowIndex);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 bool QUnit::IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
 {
     // Both negative:
@@ -1386,6 +1430,12 @@ void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
 
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (INTSCOptimize(toMod, start, length, overflowIndex, carryIndex, true)) {
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
 }
 
@@ -1446,6 +1496,12 @@ void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
 
 void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (INTSCOptimize(toMod, start, length, overflowIndex, carryIndex, false)) {
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCxx(&QInterface::DECSC, toMod, start, length, overflowIndex, carryIndex);
 }
 
