@@ -544,7 +544,8 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
     }
 }
 
-bool QUnit::CheckBitPermutation(bitLenInt qubitIndex) {
+bool QUnit::CheckBitPermutation(bitLenInt qubitIndex)
+{
     if (!shards[qubitIndex].isProbDirty &&
         ((Prob(qubitIndex) < min_norm) || ((ONE_R1 - Prob(qubitIndex)) < min_norm))) {
         return true;
@@ -553,7 +554,8 @@ bool QUnit::CheckBitPermutation(bitLenInt qubitIndex) {
     }
 }
 
-bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length) {
+bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length)
+{
     for (bitLenInt i = 0; i < length; i++) {
         if (!CheckBitPermutation(start + i)) {
             return false;
@@ -562,7 +564,8 @@ bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length) {
     return true;
 }
 
-bitCapInt QUnit::GetCachedPermutation(bitLenInt start, bitLenInt length) {
+bitCapInt QUnit::GetCachedPermutation(bitLenInt start, bitLenInt length)
+{
     bitCapInt res = 0U;
     for (bitLenInt i = 0; i < length; i++) {
         if (shards[start + i].prob >= (ONE_R1 / 2)) {
@@ -1259,7 +1262,8 @@ void QUnit::INCxx(
     shards[flag2Index].isProbDirty = true;
 }
 
-bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd) {
+bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd)
+{
     if (CheckBitsPermutation(start, length)) {
         bool carryIn = M(carryIndex);
         if (carryIn == isAdd) {
@@ -1300,6 +1304,38 @@ void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt c
 
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        bitCapInt lengthPower = 1U << length;
+        bitCapInt signMask = 1U << (length - 1U);
+        bitCapInt inOutInt = GetCachedPermutation(start, length);
+        bitCapInt inInt = toMod;
+        SetReg(start, length, inOutInt + toMod);
+
+        bool isOverflow = false;
+        // Both negative:
+        if (inOutInt & inInt & signMask) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
+            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+            if ((inOutInt + inInt) > signMask) {
+                isOverflow = true;
+            }
+        }
+        // Both positive:
+        else if ((~inOutInt) & (~inInt) & signMask) {
+            if ((inOutInt + inInt) >= signMask) {
+                isOverflow = true;
+            }
+        }
+
+        if (isOverflow) {
+            Z(overflowIndex);
+        }
+
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
 }
 
@@ -1348,11 +1384,46 @@ void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt c
         return;
     }
 
+    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::DECC, toMod, start, length, carryIndex);
 }
 
 void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
+    if (CheckBitsPermutation(start, length)) {
+        bitCapInt lengthPower = 1U << length;
+        bitCapInt signMask = 1U << (length - 1U);
+        bitCapInt inOutInt = GetCachedPermutation(start, length);
+        bitCapInt inInt = toMod;
+
+        bitCapInt outInt = (inOutInt + lengthPower) - toMod;
+        if (outInt >= lengthPower) {
+            outInt &= (lengthPower - 1U);
+        }
+        SetReg(start, length, outInt);
+
+        bool isOverflow = false;
+        // First negative:
+        if (inOutInt & (~inInt) & (signMask)) {
+            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) > signMask)
+                isOverflow = true;
+        }
+        // First positive:
+        else if (inOutInt & (~inInt) & (signMask)) {
+            inInt = ((~inInt) & (lengthPower - 1)) + 1;
+            if ((inOutInt + inInt) >= signMask)
+                isOverflow = true;
+        }
+
+        if (isOverflow) {
+            Z(overflowIndex);
+        }
+
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::DECS, toMod, start, length, overflowIndex);
 }
 
