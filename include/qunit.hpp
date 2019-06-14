@@ -273,6 +273,9 @@ protected:
     bool CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen,
         std::vector<bitLenInt>* controlVec);
     bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd);
+    bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bool isAdd);
+    bool IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
+    bool IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);

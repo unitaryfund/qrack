@@ -1291,6 +1291,77 @@ bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bit
     return false;
 }
 
+bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bool isAdd)
+{
+    if (CheckBitsPermutation(start, length)) {
+        bitCapInt lengthPower = 1U << length;
+        bitCapInt signMask = 1U << (length - 1U);
+        bitCapInt inOutInt = GetCachedPermutation(start, length);
+        bitCapInt inInt = toMod;
+
+        bool isOverflow;
+        bitCapInt outInt;
+        if (isAdd) {
+            isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+            outInt = inOutInt + toMod;
+        } else {
+            isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
+            outInt = (inOutInt + lengthPower) - toMod;
+            if (outInt >= lengthPower) {
+                outInt &= (lengthPower - 1U);
+            }
+        }
+
+        SetReg(start, length, outInt);
+
+        if (isOverflow) {
+            Z(overflowIndex);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool QUnit::IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
+{
+    // Both negative:
+    if (inOutInt & inInt & signMask) {
+        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
+        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+        if ((inOutInt + inInt) > signMask) {
+            return true;
+        }
+    }
+    // Both positive:
+    else if ((~inOutInt) & (~inInt) & signMask) {
+        if ((inOutInt + inInt) >= signMask) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool QUnit::IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
+{
+    // First negative:
+    if (inOutInt & (~inInt) & (signMask)) {
+        inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
+        if ((inOutInt + inInt) > signMask)
+            return true;
+    }
+    // First positive:
+    else if (inOutInt & (~inInt) & (signMask)) {
+        inInt = ((~inInt) & (lengthPower - 1)) + 1;
+        if ((inOutInt + inInt) >= signMask)
+            return true;
+    }
+
+    return false;
+}
+
 void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:
@@ -1305,33 +1376,7 @@ void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt c
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        bitCapInt lengthPower = 1U << length;
-        bitCapInt signMask = 1U << (length - 1U);
-        bitCapInt inOutInt = GetCachedPermutation(start, length);
-        bitCapInt inInt = toMod;
-        SetReg(start, length, inOutInt + toMod);
-
-        bool isOverflow = false;
-        // Both negative:
-        if (inOutInt & inInt & signMask) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) > signMask) {
-                isOverflow = true;
-            }
-        }
-        // Both positive:
-        else if ((~inOutInt) & (~inInt) & signMask) {
-            if ((inOutInt + inInt) >= signMask) {
-                isOverflow = true;
-            }
-        }
-
-        if (isOverflow) {
-            Z(overflowIndex);
-        }
-
+    if (INTSOptimize(toMod, start, length, overflowIndex, true)) {
         return;
     }
 
@@ -1390,36 +1435,8 @@ void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt c
 
 void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    if (CheckBitsPermutation(start, length)) {
-        bitCapInt lengthPower = 1U << length;
-        bitCapInt signMask = 1U << (length - 1U);
-        bitCapInt inOutInt = GetCachedPermutation(start, length);
-        bitCapInt inInt = toMod;
-
-        bitCapInt outInt = (inOutInt + lengthPower) - toMod;
-        if (outInt >= lengthPower) {
-            outInt &= (lengthPower - 1U);
-        }
-        SetReg(start, length, outInt);
-
-        bool isOverflow = false;
-        // First negative:
-        if (inOutInt & (~inInt) & (signMask)) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) > signMask)
-                isOverflow = true;
-        }
-        // First positive:
-        else if (inOutInt & (~inInt) & (signMask)) {
-            inInt = ((~inInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) >= signMask)
-                isOverflow = true;
-        }
-
-        if (isOverflow) {
-            Z(overflowIndex);
-        }
-
+    // Keep the bits separate, if cheap to do so:
+    if (INTSOptimize(toMod, start, length, overflowIndex, false)) {
         return;
     }
 
