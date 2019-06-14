@@ -1144,9 +1144,6 @@ void QEngineCPU::CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenI
 
     par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        CModNOut([&inStart, &outStart, &toMod, &modN](
-                     const bitCapInt& inRes) { return (((inRes >> inStart) * toMod) % modN) << outStart; },
-            toMod, modN, inStart, outStart, length, controls, controlLen);
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = kernelFn(inRes);
 
