@@ -1390,6 +1390,12 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    // The phase effect is the overflow is undetectable, if this check passes:
+    if (INTCOptimize(toMod, start, length, true, carryIndex)) {
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::INCSC, toMod, start, length, carryIndex);
 }
 
@@ -1456,6 +1462,12 @@ void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    // The phase effect is the overflow is undetectable, if this check passes:
+    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::DECSC, toMod, start, length, carryIndex);
 }
 
