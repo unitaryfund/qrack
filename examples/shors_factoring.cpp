@@ -44,8 +44,8 @@ int main()
     base = (bitCapInt)(rand_dist(rand_gen));
 
     bitCapInt testFactor = gcd(toFactor, base);
-    if (testFactor == 1) {
-        std::cout << "Chose non- relative prime: " << base << std::endl;
+    if (testFactor != 1) {
+        std::cout << "Chose non- relative prime: " << testFactor << std::endl;
         return 0;
     }
 
