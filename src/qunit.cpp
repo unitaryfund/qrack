@@ -1318,6 +1318,11 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (toMod == 0) {
+        SetReg(outStart, length, 0);
+        return;
+    }
+
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);

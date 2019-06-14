@@ -940,10 +940,6 @@ void QEngineCPU::ModNOut(
 {
     SetReg(outStart, length, 0);
 
-    if (toMod == 0) {
-        return;
-    }
-
     bitCapInt lowMask = (1U << length) - 1U;
     bitCapInt inMask = lowMask << inStart;
     bitCapInt outMask = lowMask << outStart;
@@ -964,6 +960,11 @@ void QEngineCPU::ModNOut(
 
 void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (toMod == 0) {
+        SetReg(outStart, length, 0);
+        return;
+    }
+
     ModNOut([&inStart, &outStart, &toMod, &modN](
                 const bitCapInt& inRes) { return (((inRes >> inStart) * toMod) % modN) << outStart; },
         toMod, modN, inStart, outStart, length);
@@ -1114,10 +1115,6 @@ void QEngineCPU::CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenI
     bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     SetReg(outStart, length, 0);
-
-    if (toMod == 0) {
-        return;
-    }
 
     bitCapInt lowPower = 1U << length;
     bitCapInt lowMask = lowPower - 1U;

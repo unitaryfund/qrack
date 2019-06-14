@@ -1729,11 +1729,8 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
 /** Multiplication modulo N by integer, (out of place) */
 void QEngineOCL::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    SetReg(outStart, length, 0);
-
-    bitCapInt lowPower = 1U << length;
-    toMul %= lowPower;
     if (toMul == 0) {
+        SetReg(outStart, length, 0);
         return;
     }
 
@@ -1743,12 +1740,6 @@ void QEngineOCL::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
 /** Raise a classical base to a quantum power, modulo N, (out of place) */
 void QEngineOCL::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    SetReg(outStart, length, 0);
-
-    if (base == 0) {
-        return;
-    }
-
     MULModx(OCL_API_POWMODN_OUT, base, modN, inStart, outStart, length);
 }
 
@@ -1878,6 +1869,8 @@ void QEngineOCL::MULx(
 void QEngineOCL::MULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inStart,
     const bitLenInt outStart, const bitLenInt length)
 {
+    SetReg(outStart, length, 0);
+
     bitCapInt lowMask = (1U << length) - 1U;
     bitCapInt inMask = lowMask << inStart;
     bitCapInt outMask = lowMask << outStart;
