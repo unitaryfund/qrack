@@ -544,6 +544,34 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
     }
 }
 
+bool QUnit::CheckBitPermutation(bitLenInt qubitIndex) {
+    if (!shards[qubitIndex].isProbDirty &&
+        ((Prob(qubitIndex) < min_norm) || ((ONE_R1 - Prob(qubitIndex)) < min_norm))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length) {
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!CheckBitPermutation(start + i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bitCapInt QUnit::GetCachedPermutation(bitLenInt start, bitLenInt length) {
+    bitCapInt res = 0U;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (shards[start + i].prob >= (ONE_R1 / 2)) {
+            res |= 1U << i;
+        }
+    }
+    return res;
+}
+
 void QUnit::DumpShards()
 {
     int i = 0;
@@ -1061,6 +1089,13 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        SetReg(start, length, GetCachedPermutation(start, length) + toMod);
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(start, length);
 
     EntangleRange(start, length);
@@ -1224,8 +1259,42 @@ void QUnit::INCxx(
     shards[flag2Index].isProbDirty = true;
 }
 
+bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd) {
+    if (CheckBitsPermutation(start, length)) {
+        bool carryIn = M(carryIndex);
+        if (carryIn == isAdd) {
+            toMod++;
+        }
+        bitCapInt lengthPower = 1U << length;
+        bitCapInt res;
+        if (isAdd) {
+            res = GetCachedPermutation(start, length) + toMod;
+        } else {
+            res = (lengthPower + GetCachedPermutation(start, length)) - toMod;
+        }
+        bool carryOut = (res >= lengthPower);
+        if (carryOut) {
+            res &= (lengthPower - 1U);
+        }
+        if (carryIn != carryOut) {
+            X(carryIndex);
+        }
+        SetReg(start, length, res);
+
+        return true;
+    }
+
+    return false;
+}
+
 void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (INTCOptimize(toMod, start, length, carryIndex, true)) {
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::INCC, toMod, start, length, carryIndex);
 }
 
@@ -1259,6 +1328,13 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 
 void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        SetReg(start, length, GetCachedPermutation(start, length) - toMod);
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(start, length);
 
     EntangleRange(start, length);
@@ -1267,6 +1343,11 @@ void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 
 void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (INTCOptimize(toMod, start, length, carryIndex, false)) {
+        return;
+    }
+
     INCx(&QInterface::DECC, toMod, start, length, carryIndex);
 }
 

@@ -272,6 +272,7 @@ protected:
         bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     bool CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen,
         std::vector<bitLenInt>* controlVec);
+    bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd);
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
@@ -279,6 +280,10 @@ protected:
     virtual QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
     virtual QInterfacePtr EntangleAll();
+
+    virtual bool CheckBitPermutation(bitLenInt qubitIndex);
+    virtual bool CheckBitsPermutation(bitLenInt start, bitLenInt length);
+    virtual bitCapInt GetCachedPermutation(bitLenInt start, bitLenInt length);
 
     virtual QInterfacePtr EntangleIterator(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
