@@ -38,8 +38,17 @@ set_target_properties(quantum_associative_memory PROPERTIES RUNTIME_OUTPUT_DIREC
 
 target_link_libraries (quantum_associative_memory ${QRACK_LIBS})
 
+add_executable (shors_factoring
+    examples/shors_factoring.cpp
+    )
+
+set_target_properties(shors_factoring PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
+
+target_link_libraries (shors_factoring ${QRACK_LIBS})
+
 target_compile_options (grovers PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (grovers_lookup PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (ordered_list_search PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (quantum_perceptron PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (quantum_associative_memory PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (shors_factoring PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
