@@ -1390,7 +1390,7 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    // The phase effect is the overflow is undetectable, if this check passes:
+    // The phase effect of the overflow is undetectable, if this check passes:
     if (INTCOptimize(toMod, start, length, true, carryIndex)) {
         return;
     }
@@ -1462,7 +1462,7 @@ void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    // The phase effect is the overflow is undetectable, if this check passes:
+    // The phase effect of the overflow is undetectable, if this check passes:
     if (INTCOptimize(toMod, start, length, false, carryIndex)) {
         return;
     }
