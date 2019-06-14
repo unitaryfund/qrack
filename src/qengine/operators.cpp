@@ -935,38 +935,45 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
     ResetStateVec(nStateVec);
 }
 
-#define ModNOut(outExpression)                                                                                         \
-    SetReg(outStart, length, 0);                                                                                       \
-                                                                                                                       \
-    if (toMod == 0) {                                                                                                  \
-        return;                                                                                                        \
-    }                                                                                                                  \
-                                                                                                                       \
-    bitCapInt lowMask = (1U << length) - 1U;                                                                           \
-    bitCapInt inMask = lowMask << inStart;                                                                             \
-    bitCapInt outMask = lowMask << outStart;                                                                           \
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inMask | outMask);                                                       \
-                                                                                                                       \
-    complex* nStateVec = AllocStateVec(maxQPower);                                                                     \
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));                                            \
-                                                                                                                       \
-    par_for_skip(0, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {                       \
-        bitCapInt otherRes = lcv & otherMask;                                                                          \
-        bitCapInt inRes = lcv & inMask;                                                                                \
-        bitCapInt outRes = outExpression;                                                                              \
-        nStateVec[inRes | outRes | otherRes] = stateVec[lcv];                                                          \
-    });                                                                                                                \
-                                                                                                                       \
-    ResetStateVec(nStateVec)
+void QEngineCPU::ModNOut(
+    MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    SetReg(outStart, length, 0);
+
+    if (toMod == 0) {
+        return;
+    }
+
+    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt inMask = lowMask << inStart;
+    bitCapInt outMask = lowMask << outStart;
+    bitCapInt otherMask = (maxQPower - 1U) ^ (inMask | outMask);
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for_skip(0, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt inRes = lcv & inMask;
+        bitCapInt outRes = kernelFn(inRes);
+        nStateVec[inRes | outRes | otherRes] = stateVec[lcv];
+    });
+
+    ResetStateVec(nStateVec);
+}
 
 void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    ModNOut((((inRes >> inStart) * toMod) % modN) << outStart);
+    ModNOut([&inStart, &outStart, &toMod, &modN](
+                const bitCapInt& inRes) { return (((inRes >> inStart) * toMod) % modN) << outStart; },
+        toMod, modN, inStart, outStart, length);
 }
 
 void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    ModNOut((intPow(toMod, inRes >> inStart) % modN) << outStart);
+    ModNOut([&inStart, &outStart, &toMod, &modN](
+                const bitCapInt& inRes) { return (intPow(toMod, inRes >> inStart) % modN) << outStart; },
+        toMod, modN, inStart, outStart, length);
 }
 
 void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
@@ -1103,8 +1110,7 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     ResetStateVec(nStateVec);
 }
 
-template <typename TFn>
-void QEngineCPU::CModNOut(TFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
+void QEngineCPU::CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
     bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     SetReg(outStart, length, 0);
@@ -1138,6 +1144,9 @@ void QEngineCPU::CModNOut(TFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenI
 
     par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
+        CModNOut([&inStart, &outStart, &toMod, &modN](
+                     const bitCapInt& inRes) { return (((inRes >> inStart) * toMod) % modN) << outStart; },
+            toMod, modN, inStart, outStart, length, controls, controlLen);
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = kernelFn(inRes);
 

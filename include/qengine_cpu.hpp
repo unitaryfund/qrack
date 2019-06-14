@@ -194,8 +194,10 @@ protected:
     virtual void UpdateRunningNorm();
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
-    template <typename TFn>
-    void CModNOut(TFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
+    typedef std::function<bitCapInt(const bitCapInt&)> MFn;
+    void ModNOut(
+        MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+    void CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
         bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
 };
 } // namespace Qrack
