@@ -667,6 +667,20 @@ void QFusion::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, b
     }
 }
 
+void QFusion::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    FlushReg(inStart, length);
+    FlushReg(outStart, length);
+    qReg->MULModNOut(toMul, modN, inStart, outStart, length);
+}
+
+void QFusion::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    FlushReg(inStart, length);
+    FlushReg(outStart, length);
+    qReg->POWModNOut(base, modN, inStart, outStart, length);
+}
+
 void QFusion::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
@@ -687,6 +701,24 @@ void QFusion::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, 
         FlushReg(carryStart, length);
         qReg->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
+}
+
+void QFusion::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    FlushList(controls, controlLen);
+    FlushReg(inStart, length);
+    FlushReg(outStart, length);
+    qReg->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+}
+
+void QFusion::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    FlushList(controls, controlLen);
+    FlushReg(inStart, length);
+    FlushReg(outStart, length);
+    qReg->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
 }
 
 void QFusion::ZeroPhaseFlip(bitLenInt start, bitLenInt length)

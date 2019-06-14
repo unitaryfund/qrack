@@ -1573,6 +1573,99 @@ void kernel div(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     }
 }
 
+void kernel mulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toMul = bitCapIntPtr[1];
+    bitCapInt inMask = bitCapIntPtr[2];
+    bitCapInt outMask = bitCapIntPtr[3];
+    bitCapInt otherMask = bitCapIntPtr[4];
+    bitCapInt len = bitCapIntPtr[5];
+    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt inStart = bitCapIntPtr[6];
+    bitCapInt outStart = bitCapIntPtr[7];
+    bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt modN = bitCapIntPtr[9];
+    bitCapInt otherRes, inRes, outRes;
+    bitCapInt i, iHigh, iLow;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & skipMask;
+        i = iLow | (iHigh ^ iLow) << len;
+
+        otherRes = i & otherMask;
+        inRes = i & inMask;
+        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
+        nStateVec[inRes | outRes | otherRes] = stateVec[i];
+    }
+}
+
+void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt base = bitCapIntPtr[1];
+    bitCapInt inMask = bitCapIntPtr[2];
+    bitCapInt outMask = bitCapIntPtr[3];
+    bitCapInt otherMask = bitCapIntPtr[4];
+    bitCapInt len = bitCapIntPtr[5];
+    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt inStart = bitCapIntPtr[6];
+    bitCapInt outStart = bitCapIntPtr[7];
+    bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt modN = bitCapIntPtr[9];
+    bitCapInt otherRes, inRes, outRes, inInt;
+    bitCapInt i, iHigh, iLow, powRes, pw;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & skipMask;
+        i = iLow | (iHigh ^ iLow) << len;
+
+        otherRes = i & otherMask;
+        inRes = i & inMask;
+        inInt = inRes >> inStart;
+
+        powRes = base;
+        for (pw = 1; pw < inInt; pw++) {
+            powRes *= base;
+        }
+        if (inInt == 0) {
+            powRes = 1;
+        }
+
+        outRes = (powRes % modN) << outStart;
+
+        nStateVec[inRes | outRes | otherRes] = stateVec[i];
+    }
+}
+
+#define CMOD_START()                                                                 \
+    iHigh = lcv;                                                                     \
+    i = 0U;                                                                          \
+    for (p = 0U; p < (controlLen + len); p++) {                                      \
+        iLow = iHigh & (controlPowers[p] - 1U);                                      \
+        i |= iLow;                                                                   \
+        iHigh = (iHigh ^ iLow) << 1U;                                                \
+    }                                                                                \
+    i |= iHigh;                                                                      \
+
+#define CMOD_FINISH()                                                                \
+    nStateVec[i] = stateVec[i];                                                      \
+    for (j = 1U; j < ((1U << controlLen) - 1U); j++) {                               \
+        partControlMask = 0U;                                                        \
+        for (k = 0U; k < controlLen; k++) {                                          \
+            if (j & (1U << k)) {                                                     \
+                partControlMask |= controlPowers[controlLen + len + k];              \
+            }                                                                        \
+        }                                                                            \
+        nStateVec[i | partControlMask] = stateVec[i | partControlMask];              \
+    }
+
 void kernel cmul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
     bitCapInt Nthreads, lcv;
@@ -1595,30 +1688,13 @@ void kernel cmul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitLenInt p, k;
     bitCapInt partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        i = 0U;
-        for (p = 0U; p < (controlLen + len); p++) {
-            iLow = iHigh & (controlPowers[p] - 1U);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1U;
-        }
-        i |= iHigh;
+        CMOD_START();
 
         otherRes = i & otherMask;
         outInt = ((i & inOutMask) >> inOutStart) * toMul;
         nStateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> len) << carryStart) | otherRes | controlMask] = stateVec[i | controlMask];
 
-        nStateVec[i] = stateVec[i];
-
-        for (j = 1U; j < ((1U << controlLen) - 1U); j++) {
-            partControlMask = 0U;
-            for (k = 0U; k < controlLen; k++) {
-                if (j & (1U << k)) {
-                    partControlMask |= controlPowers[controlLen + len + k];
-                }
-            }
-            nStateVec[i | partControlMask] = stateVec[i | partControlMask];
-        }
+        CMOD_FINISH();
     }
 }
 
@@ -1644,30 +1720,97 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitLenInt p, k;
     bitCapInt partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        i = 0U;
-        for (p = 0U; p < (controlLen + len); p++) {
-            iLow = iHigh & (controlPowers[p] - 1U);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1U;
-        }
-        i |= iHigh;
+        CMOD_START();
 
         otherRes = i & otherMask;
         outInt = (((i & inOutMask) >> inOutStart) * toDiv);
         nStateVec[i | controlMask] = stateVec[((outInt & lowMask) << inOutStart) | (((outInt & highMask) >> len) << carryStart) | otherRes | controlMask];
 
-        nStateVec[i] = stateVec[i];
+        CMOD_FINISH();
+    }
+}
 
-        for (j = 1U; j < ((1U << controlLen) - 1U); j++) {
-            partControlMask = 0U;
-            for (k = 0U; k < controlLen; k++) {
-                if (j & (1U << k)) {
-                    partControlMask |= controlPowers[controlLen + len + k];
-                }
-            }
-            nStateVec[i | partControlMask] = stateVec[i | partControlMask];
+void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toMul = bitCapIntPtr[1];
+    bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt controlMask = bitCapIntPtr[3];
+    bitCapInt inMask = bitCapIntPtr[4];
+    bitCapInt outMask = bitCapIntPtr[5];
+    bitCapInt modN = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt inStart = bitCapIntPtr[8];
+    bitCapInt outStart = bitCapIntPtr[9];
+
+    bitCapInt otherMask = (maxI - 1U) ^ (inMask | outMask | controlMask);
+    maxI >>= (controlLen + len);
+
+    bitCapInt otherRes, outRes, inRes;
+    bitCapInt i, iHigh, iLow, j;
+    bitLenInt p, k;
+    bitCapInt partControlMask;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        CMOD_START();
+
+        otherRes = i & otherMask;
+        inRes = i & inMask;
+        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
+        nStateVec[inRes | outRes | otherRes] = stateVec[i | controlMask];
+
+        CMOD_FINISH();
+    }
+}
+
+void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt base = bitCapIntPtr[1];
+    bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt controlMask = bitCapIntPtr[3];
+    bitCapInt inMask = bitCapIntPtr[4];
+    bitCapInt outMask = bitCapIntPtr[5];
+    bitCapInt modN = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt inStart = bitCapIntPtr[8];
+    bitCapInt outStart = bitCapIntPtr[9];
+
+    bitCapInt otherMask = (maxI - 1U) ^ (inMask | outMask | controlMask);
+    maxI >>= (controlLen + len);
+
+    bitCapInt otherRes, outRes, inRes, inInt;
+    bitCapInt i, iHigh, iLow, j, powRes, pw;
+    bitLenInt p, k;
+    bitCapInt partControlMask;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        CMOD_START();
+
+        otherRes = i & otherMask;
+        inRes = i & inMask;
+        inInt = inRes >> inStart;
+
+        powRes = base;
+        for (pw = 1; pw < inInt; pw++) {
+            powRes *= base;
         }
+        if (inInt == 0) {
+            powRes = 1;
+        }
+
+        outRes = (powRes % modN) << outStart;
+
+        nStateVec[inRes | outRes | otherRes] = stateVec[i | controlMask];
+
+        CMOD_FINISH();
     }
 }
 

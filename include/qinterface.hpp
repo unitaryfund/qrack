@@ -33,6 +33,7 @@ void cl_free(void* toFree);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+bitCapInt intPow(bitCapInt base, bitCapInt power);
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
@@ -1310,12 +1311,28 @@ public:
     /** Divide by integer */
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;
 
+    /** Multiplication modulo N by integer, (out of place) */
+    virtual void MULModNOut(
+        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+
+    /** Raise a classical base to a quantum power, modulo N, (out of place) */
+    virtual void POWModNOut(
+        bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+
     /** Controlled multiplication by integer */
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled division by power of integer */
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
+
+    /** Controlled multiplication modulo N by integer, (out of place) */
+    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
+
+    /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */
+    virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** @} */
