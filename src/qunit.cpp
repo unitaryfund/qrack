@@ -1090,21 +1090,6 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
     }
 }
 
-void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        SetReg(start, length, GetCachedPermutation(start, length) + toMod);
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    DirtyShardRange(start, length);
-
-    EntangleRange(start, length);
-    shards[start].unit->INC(toMod, shards[start].mapped, length);
-}
-
 bool QUnit::CArithmeticOptimize(
     bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
@@ -1355,6 +1340,21 @@ bool QUnit::IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMas
     return false;
 }
 
+void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
+{
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        SetReg(start, length, GetCachedPermutation(start, length) + toMod);
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
+    DirtyShardRange(start, length);
+
+    EntangleRange(start, length);
+    shards[start].unit->INC(toMod, shards[start].mapped, length);
+}
+
 void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:
@@ -1486,6 +1486,24 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 
 void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (toMul == 0) {
+        SetReg(inOutStart, length, 0U);
+        SetReg(carryStart, length, 0U);
+        return;
+    } else if (toMul == 1) {
+        SetReg(carryStart, length, 0U);
+        return;
+    }
+
+    if (CheckBitsPermutation(inOutStart, length)) {
+        bitCapInt lengthMask = (1U << length) - 1U;
+        bitCapInt res = GetCachedPermutation(inOutStart, length) * toMul;
+        SetReg(inOutStart, length, res & lengthMask);
+        SetReg(carryStart, length, (res >> length) & lengthMask);
+        return;
+    }
+
     DirtyShardRange(inOutStart, length);
     DirtyShardRange(carryStart, length);
 
@@ -1495,6 +1513,24 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
+
+    if (toDiv == 1) {
+        return;
+    }
+
+    if (CheckBitsPermutation(inOutStart, length) && CheckBitsPermutation(carryStart, length)) {
+        bitCapInt lengthMask = (1U << length) - 1U;
+        bitCapInt origRes =
+            GetCachedPermutation(inOutStart, length) | (GetCachedPermutation(carryStart, length) << length);
+        bitCapInt res = origRes / toDiv;
+        if (origRes == (res * toDiv)) {
+            SetReg(inOutStart, length, res & lengthMask);
+            SetReg(carryStart, length, (res >> length) & lengthMask);
+        }
+        return;
+    }
+
     DirtyShardRange(inOutStart, length);
     DirtyShardRange(carryStart, length);
 
