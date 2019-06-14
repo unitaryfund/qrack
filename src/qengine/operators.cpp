@@ -884,7 +884,7 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
         SetReg(carryStart, length, 0);
         return;
     }
-    if (toMul != 1U) {
+    if (toMul == 1U) {
         return;
     }
 
