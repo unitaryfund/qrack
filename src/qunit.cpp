@@ -1262,77 +1262,26 @@ void QUnit::INCxx(
     shards[flag2Index].isProbDirty = true;
 }
 
-bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd)
+bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex)
 {
-    if (!CheckBitsPermutation(start, length)) {
-        return false;
-    }
-
-    bool carryIn = M(carryIndex);
-    if (carryIn == isAdd) {
-        toMod++;
-    }
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt res;
-    if (isAdd) {
-        res = GetCachedPermutation(start, length) + toMod;
-    } else {
-        res = (lengthPower + GetCachedPermutation(start, length)) - toMod;
-    }
-    bool carryOut = (res >= lengthPower);
-    if (carryOut) {
-        res &= (lengthPower - 1U);
-    }
-    if (carryIn != carryOut) {
-        X(carryIndex);
-    }
-    SetReg(start, length, res);
-
-    return true;
+    return INTSCOptimize(toMod, start, length, isAdd, 0xFF, overflowIndex);
 }
 
-bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bool isAdd)
+bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex)
 {
-    if (!CheckBitsPermutation(start, length)) {
-        return false;
-    }
-
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt signMask = 1U << (length - 1U);
-    bitCapInt inOutInt = GetCachedPermutation(start, length);
-    bitCapInt inInt = toMod;
-
-    bool isOverflow;
-    bitCapInt outInt;
-    if (isAdd) {
-        isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
-        outInt = inOutInt + toMod;
-    } else {
-        isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
-        outInt = (inOutInt + lengthPower) - toMod;
-        if (outInt >= lengthPower) {
-            outInt &= (lengthPower - 1U);
-        }
-    }
-
-    SetReg(start, length, outInt);
-
-    if (isOverflow) {
-        Z(overflowIndex);
-    }
-
-    return true;
+    return INTSCOptimize(toMod, start, length, isAdd, carryIndex, 0xFF);
 }
 
 bool QUnit::INTSCOptimize(
-    bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool isAdd)
+    bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex)
 {
     if (!CheckBitsPermutation(start, length)) {
         return false;
     }
 
-    bool carryIn = M(carryIndex);
-    if (carryIn == isAdd) {
+    bool carry = (carryIndex < 0xFF);
+    bool carryIn = carry && M(carryIndex);
+    if (carry && (carryIn == isAdd)) {
         toMod++;
     }
 
@@ -1344,10 +1293,10 @@ bool QUnit::INTSCOptimize(
     bool isOverflow;
     bitCapInt outInt;
     if (isAdd) {
-        isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex < 0xFF) && IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
         outInt = inOutInt + toMod;
     } else {
-        isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex < 0xFF) && IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
         outInt = (inOutInt + lengthPower) - toMod;
     }
 
@@ -1355,7 +1304,7 @@ bool QUnit::INTSCOptimize(
     if (carryOut) {
         outInt &= (lengthPower - 1U);
     }
-    if (carryIn != carryOut) {
+    if (carry && (carryIn != carryOut)) {
         X(carryIndex);
     }
 
@@ -1409,7 +1358,7 @@ bool QUnit::IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMas
 void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (INTCOptimize(toMod, start, length, carryIndex, true)) {
+    if (INTCOptimize(toMod, start, length, true, carryIndex)) {
         return;
     }
 
@@ -1420,7 +1369,7 @@ void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt c
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (INTSOptimize(toMod, start, length, overflowIndex, true)) {
+    if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
         return;
     }
 
@@ -1431,7 +1380,7 @@ void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (INTSCOptimize(toMod, start, length, overflowIndex, carryIndex, true)) {
+    if (INTSCOptimize(toMod, start, length, true, carryIndex, overflowIndex)) {
         return;
     }
 
@@ -1475,7 +1424,7 @@ void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (INTCOptimize(toMod, start, length, carryIndex, false)) {
+    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
         return;
     }
 
@@ -1486,7 +1435,7 @@ void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt c
 void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (INTSOptimize(toMod, start, length, overflowIndex, false)) {
+    if (INTSOptimize(toMod, start, length, false, overflowIndex)) {
         return;
     }
 
@@ -1497,7 +1446,7 @@ void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
 void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:
-    if (INTSCOptimize(toMod, start, length, overflowIndex, carryIndex, false)) {
+    if (INTSCOptimize(toMod, start, length, false, carryIndex, overflowIndex)) {
         return;
     }
 

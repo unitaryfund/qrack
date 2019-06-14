@@ -272,10 +272,10 @@ protected:
         bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     bool CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen,
         std::vector<bitLenInt>* controlVec);
-    bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd);
-    bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bool isAdd);
+    bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex);
+    bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
     bool INTSCOptimize(
-        bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool isAdd);
+        bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
     bool IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
     bool IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
 
