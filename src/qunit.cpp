@@ -1264,108 +1264,108 @@ void QUnit::INCxx(
 
 bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool isAdd)
 {
-    if (CheckBitsPermutation(start, length)) {
-        bool carryIn = M(carryIndex);
-        if (carryIn == isAdd) {
-            toMod++;
-        }
-        bitCapInt lengthPower = 1U << length;
-        bitCapInt res;
-        if (isAdd) {
-            res = GetCachedPermutation(start, length) + toMod;
-        } else {
-            res = (lengthPower + GetCachedPermutation(start, length)) - toMod;
-        }
-        bool carryOut = (res >= lengthPower);
-        if (carryOut) {
-            res &= (lengthPower - 1U);
-        }
-        if (carryIn != carryOut) {
-            X(carryIndex);
-        }
-        SetReg(start, length, res);
-
-        return true;
+    if (!CheckBitsPermutation(start, length)) {
+        return false;
     }
 
-    return false;
+    bool carryIn = M(carryIndex);
+    if (carryIn == isAdd) {
+        toMod++;
+    }
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt res;
+    if (isAdd) {
+        res = GetCachedPermutation(start, length) + toMod;
+    } else {
+        res = (lengthPower + GetCachedPermutation(start, length)) - toMod;
+    }
+    bool carryOut = (res >= lengthPower);
+    if (carryOut) {
+        res &= (lengthPower - 1U);
+    }
+    if (carryIn != carryOut) {
+        X(carryIndex);
+    }
+    SetReg(start, length, res);
+
+    return true;
 }
 
 bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bool isAdd)
 {
-    if (CheckBitsPermutation(start, length)) {
-        bitCapInt lengthPower = 1U << length;
-        bitCapInt signMask = 1U << (length - 1U);
-        bitCapInt inOutInt = GetCachedPermutation(start, length);
-        bitCapInt inInt = toMod;
-
-        bool isOverflow;
-        bitCapInt outInt;
-        if (isAdd) {
-            isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
-            outInt = inOutInt + toMod;
-        } else {
-            isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
-            outInt = (inOutInt + lengthPower) - toMod;
-            if (outInt >= lengthPower) {
-                outInt &= (lengthPower - 1U);
-            }
-        }
-
-        SetReg(start, length, outInt);
-
-        if (isOverflow) {
-            Z(overflowIndex);
-        }
-
-        return true;
+    if (!CheckBitsPermutation(start, length)) {
+        return false;
     }
 
-    return false;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt signMask = 1U << (length - 1U);
+    bitCapInt inOutInt = GetCachedPermutation(start, length);
+    bitCapInt inInt = toMod;
+
+    bool isOverflow;
+    bitCapInt outInt;
+    if (isAdd) {
+        isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        outInt = inOutInt + toMod;
+    } else {
+        isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
+        outInt = (inOutInt + lengthPower) - toMod;
+        if (outInt >= lengthPower) {
+            outInt &= (lengthPower - 1U);
+        }
+    }
+
+    SetReg(start, length, outInt);
+
+    if (isOverflow) {
+        Z(overflowIndex);
+    }
+
+    return true;
 }
 
 bool QUnit::INTSCOptimize(
     bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool isAdd)
 {
-    if (CheckBitsPermutation(start, length)) {
-        bool carryIn = M(carryIndex);
-        if (carryIn == isAdd) {
-            toMod++;
-        }
-
-        bitCapInt lengthPower = 1U << length;
-        bitCapInt signMask = 1U << (length - 1U);
-        bitCapInt inOutInt = GetCachedPermutation(start, length);
-        bitCapInt inInt = toMod;
-
-        bool isOverflow;
-        bitCapInt outInt;
-        if (isAdd) {
-            isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
-            outInt = inOutInt + toMod;
-        } else {
-            isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
-            outInt = (inOutInt + lengthPower) - toMod;
-        }
-
-        bool carryOut = (outInt >= lengthPower);
-        if (carryOut) {
-            outInt &= (lengthPower - 1U);
-        }
-        if (carryIn != carryOut) {
-            X(carryIndex);
-        }
-
-        SetReg(start, length, outInt);
-
-        if (isOverflow) {
-            Z(overflowIndex);
-        }
-
-        return true;
+    if (!CheckBitsPermutation(start, length)) {
+        return false;
     }
 
-    return false;
+    bool carryIn = M(carryIndex);
+    if (carryIn == isAdd) {
+        toMod++;
+    }
+
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt signMask = 1U << (length - 1U);
+    bitCapInt inOutInt = GetCachedPermutation(start, length);
+    bitCapInt inInt = toMod;
+
+    bool isOverflow;
+    bitCapInt outInt;
+    if (isAdd) {
+        isOverflow = IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        outInt = inOutInt + toMod;
+    } else {
+        isOverflow = IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
+        outInt = (inOutInt + lengthPower) - toMod;
+    }
+
+    bool carryOut = (outInt >= lengthPower);
+    if (carryOut) {
+        outInt &= (lengthPower - 1U);
+    }
+    if (carryIn != carryOut) {
+        X(carryIndex);
+    }
+
+    SetReg(start, length, outInt);
+
+    if (isOverflow) {
+        Z(overflowIndex);
+    }
+
+    return true;
 }
 
 bool QUnit::IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
