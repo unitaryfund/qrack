@@ -194,17 +194,13 @@ protected:
     virtual void UpdateRunningNorm();
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
+    void INCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length);
+    void CINCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt* controls,
+        const bitLenInt& controlLen);
+    void INCDECC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    void INCDECS(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& overflowIndex);
+
     typedef std::function<bitCapInt(const bitCapInt&)> MFn;
-    typedef std::function<bool(
-        bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)>
-        OFn;
-    void INCDEC(const MFn& kernelFn, bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length);
-    void CINCDEC(const MFn kernelFn, bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
-        const bitLenInt* controls, const bitLenInt& controlLen);
-    void INCDECC(
-        const MFn& kernelFn, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
-    void INCDECS(const MFn& kernelFn, const OFn& overflowFn, const bitCapInt& toAdd, const bitLenInt& inOutStart,
-        const bitLenInt& length, const bitLenInt& overflowIndex);
     void ModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
         const bitLenInt& outStart, const bitLenInt& length);
     void CModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
