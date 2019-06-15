@@ -99,12 +99,14 @@ void QEngineCPU::INCDEC(const MFn& kernelFn, bitCapInt toMod, const bitLenInt& i
 /// Add integer (without sign)
 void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
+    // Because there is no carry, unsigned integers naturally wrap overflow values correctly, here.
     INCDEC([&toAdd](const bitCapInt& inOutInt) { return inOutInt + toAdd; }, toAdd, inOutStart, length);
 }
 
 /// Subtract integer (without sign)
 void QEngineCPU::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
+    // Because there is no carry, unsigned integers naturally wrap negative values correctly, here.
     INCDEC([&toSub](const bitCapInt& inOutInt) { return inOutInt - toSub; }, toSub, inOutStart, length);
 }
 
@@ -158,9 +160,9 @@ void QEngineCPU::CINC(
 void QEngineCPU::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    bitCapInt lengthPower = 1U << length;
-    CINCDEC([&toSub, &lengthPower](const bitCapInt& inOutInt) { return inOutInt + (lengthPower - toSub); }, toSub,
-        inOutStart, length, controls, controlLen);
+    bitCapInt invToSub = (1U << length) - toSub;
+    CINCDEC([&invToSub](const bitCapInt& inOutInt) { return inOutInt + invToSub; }, toSub, inOutStart, length, controls,
+        controlLen);
 }
 
 void QEngineCPU::INCDECC(
@@ -214,151 +216,12 @@ void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenI
         toSub++;
     }
 
-    bitCapInt lengthPower = 1 << length;
-
-    INCDECC([&toSub, &lengthPower](const bitCapInt& inOutInt) { return inOutInt + (lengthPower - toSub); }, inOutStart,
-        length, carryIndex);
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECC([&invToSub](const bitCapInt& inOutInt) { return inOutInt + invToSub; }, inOutStart, length, carryIndex);
 }
 
-/// Add BCD integer (without sign)
-void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
-{
-    int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
-        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
-    }
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    otherMask ^= inOutMask;
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = lcv & otherMask;
-        bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
-        int test1, test2;
-        int j;
-        int* nibbles = new int[nibbleCount];
-        bool isValid = true;
-        for (j = 0; j < nibbleCount; j++) {
-            test1 = inOutInt & 15U;
-            inOutInt >>= 4U;
-            test2 = (partToAdd % 10);
-            partToAdd /= 10;
-            nibbles[j] = test1 + test2;
-            if (test1 > 9) {
-                isValid = false;
-            }
-        }
-        if (isValid) {
-            bitCapInt outInt = 0;
-            for (j = 0; j < nibbleCount; j++) {
-                if (nibbles[j] > 9) {
-                    nibbles[j] -= 10;
-                    if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1]++;
-                    }
-                }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
-            }
-            nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
-        } else {
-            nStateVec[lcv] = stateVec[lcv];
-        }
-        delete[] nibbles;
-    });
-    ResetStateVec(nStateVec);
-}
-
-/// Add BCD integer (without sign, with carry)
-void QEngineCPU::INCBCDC(
-    bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-    int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
-        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
-    }
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt carryMask = 1 << carryIndex;
-
-    otherMask ^= inOutMask | carryMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = lcv & otherMask;
-        bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
-        int test1, test2;
-        int j;
-        int* nibbles = new int[nibbleCount];
-        bool isValid = true;
-
-        test1 = inOutInt & 15U;
-        inOutInt >>= 4U;
-        test2 = partToAdd % 10;
-        partToAdd /= 10;
-        nibbles[0] = test1 + test2;
-        if ((test1 > 9) || (test2 > 9)) {
-            isValid = false;
-        }
-
-        for (j = 1; j < nibbleCount; j++) {
-            test1 = inOutInt & 15U;
-            inOutInt >>= 4U;
-            test2 = partToAdd % 10;
-            partToAdd /= 10;
-            nibbles[j] = test1 + test2;
-            if ((test1 > 9) || (test2 > 9)) {
-                isValid = false;
-            }
-        }
-        if (isValid) {
-            bitCapInt outInt = 0;
-            bitCapInt outRes = 0;
-            bitCapInt carryRes = 0;
-            for (j = 0; j < nibbleCount; j++) {
-                if (nibbles[j] > 9) {
-                    nibbles[j] -= 10;
-                    if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1]++;
-                    } else {
-                        carryRes = carryMask;
-                    }
-                }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
-            }
-            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = stateVec[lcv];
-            outRes ^= carryMask;
-            nStateVec[outRes] = stateVec[lcv | carryMask];
-        } else {
-            nStateVec[lcv] = stateVec[lcv];
-            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
-        }
-        delete[] nibbles;
-    });
-    ResetStateVec(nStateVec);
-}
-
-/**
- * Add an integer to the register, with sign and without carry. Because the
- * register length is an arbitrary number of bits, the sign bit position on the
- * integer to add is variable. Hence, the integer to add is specified as cast
- * to an unsigned format, with the sign bit assumed to be set at the
- * appropriate position before the cast.
- */
-void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+void QEngineCPU::INCDECS(const MFn& kernelFn, const OFn& overflowFn, const bitCapInt& toMod,
+    const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& overflowIndex)
 {
     bitCapInt overflowMask = 1 << overflowIndex;
     bitCapInt signMask = 1 << (length - 1);
@@ -374,27 +237,15 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
         bitCapInt otherRes = (lcv & (otherMask));
         bitCapInt inOutRes = (lcv & (inOutMask));
         bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt inInt = toAdd;
-        bitCapInt outInt = inOutInt + toAdd;
+        bitCapInt inInt = toMod;
+        bitCapInt outInt = kernelFn(inOutInt);
         bitCapInt outRes;
         if (outInt < lengthPower) {
             outRes = (outInt << (inOutStart)) | otherRes;
         } else {
             outRes = ((outInt - lengthPower) << (inOutStart)) | otherRes;
         }
-        bool isOverflow = false;
-        // Both negative:
-        if (inOutInt & inInt & (signMask)) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-            inInt = ((~inInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) > (signMask))
-                isOverflow = true;
-        }
-        // Both positive:
-        else if ((~inOutInt) & (~inInt) & (signMask)) {
-            if ((inOutInt + inInt) >= (signMask))
-                isOverflow = true;
-        }
+        bool isOverflow = overflowFn(inOutInt, inInt, signMask, lengthPower);
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
             nStateVec[outRes] = -stateVec[lcv];
         } else {
@@ -402,6 +253,31 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
         }
     });
     ResetStateVec(nStateVec);
+}
+
+/**
+ * Add an integer to the register, with sign and without carry. Because the
+ * register length is an arbitrary number of bits, the sign bit position on the
+ * integer to add is variable. Hence, the integer to add is specified as cast
+ * to an unsigned format, with the sign bit assumed to be set at the
+ * appropriate position before the cast.
+ */
+void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+{
+    INCDECS([&toAdd](const bitCapInt& inOutInt) { return inOutInt + toAdd; }, isOverflowAdd, toAdd, inOutStart, length,
+        overflowIndex);
+}
+
+/**
+ * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
+ * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
+ * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
+ */
+void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+{
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECS([&invToSub](const bitCapInt& inOutInt) { return inOutInt + invToSub; }, isOverflowSub, toSub, inOutStart,
+        length, overflowIndex);
 }
 
 /**
@@ -513,111 +389,6 @@ void QEngineCPU::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, 
                 isOverflow = true;
         }
         if (isOverflow) {
-            nStateVec[outRes] = -stateVec[lcv];
-        } else {
-            nStateVec[outRes] = stateVec[lcv];
-        }
-    });
-    ResetStateVec(nStateVec);
-}
-
-/// Subtract BCD integer (without sign)
-void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
-{
-    int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
-        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
-    }
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    otherMask ^= inOutMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = lcv & otherMask;
-        bitCapInt partToSub = toAdd;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
-        int test1, test2;
-        int j;
-        int* nibbles = new int[nibbleCount];
-        bool isValid = true;
-        for (j = 0; j < nibbleCount; j++) {
-            test1 = inOutInt & 15U;
-            if (test1 > 9) {
-                isValid = false;
-                break;
-            }
-            inOutInt >>= 4U;
-            test2 = (partToSub % 10);
-            partToSub /= 10;
-            nibbles[j] = test1 - test2;
-        }
-        if (isValid) {
-            bitCapInt outInt = 0;
-            for (j = 0; j < nibbleCount; j++) {
-                if (nibbles[j] < 0) {
-                    nibbles[j] += 10;
-                    if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1U]--;
-                    }
-                }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
-            }
-            nStateVec[(outInt << (inOutStart)) | otherRes] += stateVec[lcv];
-        } else {
-            nStateVec[lcv] += stateVec[lcv];
-        }
-        delete[] nibbles;
-    });
-    ResetStateVec(nStateVec);
-}
-
-/**
- * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
- * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
- * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
- */
-void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
-{
-    bitCapInt overflowMask = 1 << overflowIndex;
-    bitCapInt signMask = 1 << (length - 1);
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
-    otherMask ^= inOutMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt inInt = overflowMask;
-        bitCapInt outInt = inOutInt - toSub + lengthPower;
-        bitCapInt outRes;
-        if (outInt < lengthPower) {
-            outRes = (outInt << (inOutStart)) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << (inOutStart)) | otherRes;
-        }
-        bool isOverflow = false;
-        // First negative:
-        if (inOutInt & (~inInt) & (signMask)) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) > signMask)
-                isOverflow = true;
-        }
-        // First positive:
-        else if (inOutInt & (~inInt) & (signMask)) {
-            inInt = ((~inInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) >= signMask)
-                isOverflow = true;
-        }
-        if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
             nStateVec[outRes] = -stateVec[lcv];
         } else {
             nStateVec[outRes] = stateVec[lcv];
@@ -742,85 +513,6 @@ void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, 
         } else {
             nStateVec[outRes] = stateVec[lcv];
         }
-    });
-    ResetStateVec(nStateVec);
-}
-
-/// Subtract BCD integer (without sign, with carry)
-void QEngineCPU::DECBCDC(
-    bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-    int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
-        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
-    }
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt carryMask = 1 << carryIndex;
-    otherMask ^= inOutMask | carryMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = lcv & otherMask;
-        bitCapInt partToSub = toSub;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
-        int test1, test2;
-        int j;
-        int* nibbles = new int[nibbleCount];
-        bool isValid = true;
-
-        test1 = inOutInt & 15U;
-        inOutInt >>= 4U;
-        test2 = partToSub % 10;
-        partToSub /= 10;
-        nibbles[0] = test1 - test2;
-        if (test1 > 9) {
-            isValid = false;
-        }
-
-        for (j = 1; j < nibbleCount; j++) {
-            test1 = inOutInt & 15U;
-            inOutInt >>= 4U;
-            test2 = partToSub % 10;
-            partToSub /= 10;
-            nibbles[j] = test1 - test2;
-            if (test1 > 9) {
-                isValid = false;
-            }
-        }
-        if (isValid) {
-            bitCapInt outInt = 0;
-            bitCapInt outRes = 0;
-            bitCapInt carryRes = carryMask;
-            for (j = 0; j < nibbleCount; j++) {
-                if (nibbles[j] < 0) {
-                    nibbles[j] += 10;
-                    if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1]--;
-                    } else {
-                        carryRes = 0;
-                    }
-                }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
-            }
-            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = stateVec[lcv];
-            outRes ^= carryMask;
-            nStateVec[outRes] = stateVec[lcv | carryMask];
-        } else {
-            nStateVec[lcv] = stateVec[lcv];
-            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
-        }
-        delete[] nibbles;
     });
     ResetStateVec(nStateVec);
 }
@@ -1139,6 +831,270 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
     CModNOut([&inStart, &outStart, &toMod, &modN](
                  const bitCapInt& inRes) { return (intPow(toMod, inRes >> inStart) % modN) << outStart; },
         toMod, modN, inStart, outStart, length, controls, controlLen);
+}
+
+/// Add BCD integer (without sign)
+void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+{
+    int nibbleCount = length / 4;
+    if (nibbleCount * 4 != length) {
+        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+    }
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    otherMask ^= inOutMask;
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt partToAdd = toAdd;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
+        bool isValid = true;
+        for (j = 0; j < nibbleCount; j++) {
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
+            test2 = (partToAdd % 10);
+            partToAdd /= 10;
+            nibbles[j] = test1 + test2;
+            if (test1 > 9) {
+                isValid = false;
+            }
+        }
+        if (isValid) {
+            bitCapInt outInt = 0;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] > 9) {
+                    nibbles[j] -= 10;
+                    if ((j + 1) < nibbleCount) {
+                        nibbles[j + 1]++;
+                    }
+                }
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
+            }
+            nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
+        } else {
+            nStateVec[lcv] = stateVec[lcv];
+        }
+        delete[] nibbles;
+    });
+    ResetStateVec(nStateVec);
+}
+
+/// Subtract BCD integer (without sign)
+void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+{
+    int nibbleCount = length / 4;
+    if (nibbleCount * 4 != length) {
+        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+    }
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    otherMask ^= inOutMask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt partToSub = toAdd;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
+        bool isValid = true;
+        for (j = 0; j < nibbleCount; j++) {
+            test1 = inOutInt & 15U;
+            if (test1 > 9) {
+                isValid = false;
+                break;
+            }
+            inOutInt >>= 4U;
+            test2 = (partToSub % 10);
+            partToSub /= 10;
+            nibbles[j] = test1 - test2;
+        }
+        if (isValid) {
+            bitCapInt outInt = 0;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] < 0) {
+                    nibbles[j] += 10;
+                    if ((j + 1) < nibbleCount) {
+                        nibbles[j + 1U]--;
+                    }
+                }
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
+            }
+            nStateVec[(outInt << (inOutStart)) | otherRes] += stateVec[lcv];
+        } else {
+            nStateVec[lcv] += stateVec[lcv];
+        }
+        delete[] nibbles;
+    });
+    ResetStateVec(nStateVec);
+}
+
+/// Add BCD integer (without sign, with carry)
+void QEngineCPU::INCBCDC(
+    bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+    int nibbleCount = length / 4;
+    if (nibbleCount * 4 != length) {
+        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+    }
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    bitCapInt carryMask = 1 << carryIndex;
+
+    otherMask ^= inOutMask | carryMask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt partToAdd = toAdd;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
+        bool isValid = true;
+
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
+        test2 = partToAdd % 10;
+        partToAdd /= 10;
+        nibbles[0] = test1 + test2;
+        if ((test1 > 9) || (test2 > 9)) {
+            isValid = false;
+        }
+
+        for (j = 1; j < nibbleCount; j++) {
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
+            test2 = partToAdd % 10;
+            partToAdd /= 10;
+            nibbles[j] = test1 + test2;
+            if ((test1 > 9) || (test2 > 9)) {
+                isValid = false;
+            }
+        }
+        if (isValid) {
+            bitCapInt outInt = 0;
+            bitCapInt outRes = 0;
+            bitCapInt carryRes = 0;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] > 9) {
+                    nibbles[j] -= 10;
+                    if ((j + 1) < nibbleCount) {
+                        nibbles[j + 1]++;
+                    } else {
+                        carryRes = carryMask;
+                    }
+                }
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
+            }
+            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
+            nStateVec[outRes] = stateVec[lcv];
+            outRes ^= carryMask;
+            nStateVec[outRes] = stateVec[lcv | carryMask];
+        } else {
+            nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
+        }
+        delete[] nibbles;
+    });
+    ResetStateVec(nStateVec);
+}
+
+/// Subtract BCD integer (without sign, with carry)
+void QEngineCPU::DECBCDC(
+    bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+    int nibbleCount = length / 4;
+    if (nibbleCount * 4 != length) {
+        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
+    }
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+    bitCapInt carryMask = 1 << carryIndex;
+    otherMask ^= inOutMask | carryMask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt partToSub = toSub;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        int test1, test2;
+        int j;
+        int* nibbles = new int[nibbleCount];
+        bool isValid = true;
+
+        test1 = inOutInt & 15U;
+        inOutInt >>= 4U;
+        test2 = partToSub % 10;
+        partToSub /= 10;
+        nibbles[0] = test1 - test2;
+        if (test1 > 9) {
+            isValid = false;
+        }
+
+        for (j = 1; j < nibbleCount; j++) {
+            test1 = inOutInt & 15U;
+            inOutInt >>= 4U;
+            test2 = partToSub % 10;
+            partToSub /= 10;
+            nibbles[j] = test1 - test2;
+            if (test1 > 9) {
+                isValid = false;
+            }
+        }
+        if (isValid) {
+            bitCapInt outInt = 0;
+            bitCapInt outRes = 0;
+            bitCapInt carryRes = carryMask;
+            for (j = 0; j < nibbleCount; j++) {
+                if (nibbles[j] < 0) {
+                    nibbles[j] += 10;
+                    if ((j + 1) < nibbleCount) {
+                        nibbles[j + 1]--;
+                    } else {
+                        carryRes = 0;
+                    }
+                }
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
+            }
+            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
+            nStateVec[outRes] = stateVec[lcv];
+            outRes ^= carryMask;
+            nStateVec[outRes] = stateVec[lcv | carryMask];
+        } else {
+            nStateVec[lcv] = stateVec[lcv];
+            nStateVec[lcv | carryMask] = stateVec[lcv | carryMask];
+        }
+        delete[] nibbles;
+    });
+    ResetStateVec(nStateVec);
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.

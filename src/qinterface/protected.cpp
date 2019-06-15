@@ -168,4 +168,44 @@ void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, o
 
 void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
+/// Check if an addition with overflow sets the flag
+bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)
+{
+    // Both negative:
+    if (inOutInt & inInt & signMask) {
+        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
+        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+        if ((inOutInt + inInt) > signMask) {
+            return true;
+        }
+    }
+    // Both positive:
+    else if ((~inOutInt) & (~inInt) & signMask) {
+        if ((inOutInt + inInt) >= signMask) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/// Check if a subtraction with overflow sets the flag
+bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)
+{
+    // First negative:
+    if (inOutInt & (~inInt) & (signMask)) {
+        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
+        if ((inOutInt + inInt) > signMask)
+            return true;
+    }
+    // First positive:
+    else if (inOutInt & (~inInt) & (signMask)) {
+        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+        if ((inOutInt + inInt) >= signMask)
+            return true;
+    }
+
+    return false;
+}
+
 } // namespace Qrack

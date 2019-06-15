@@ -1293,10 +1293,10 @@ bool QUnit::INTSCOptimize(
     bool isOverflow;
     bitCapInt outInt;
     if (isAdd) {
-        isOverflow = (overflowIndex < 0xFF) && IsOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex < 0xFF) && isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
         outInt = inOutInt + toMod;
     } else {
-        isOverflow = (overflowIndex < 0xFF) && IsOverflowSub(inOutInt, inInt, signMask, lengthPower);
+        isOverflow = (overflowIndex < 0xFF) && isOverflowSub(inOutInt, inInt, signMask, lengthPower);
         outInt = (inOutInt + lengthPower) - toMod;
     }
 
@@ -1315,46 +1315,6 @@ bool QUnit::INTSCOptimize(
     }
 
     return true;
-}
-
-/// Check if an addition with overflow sets the flag
-bool QUnit::IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
-{
-    // Both negative:
-    if (inOutInt & inInt & signMask) {
-        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
-        if ((inOutInt + inInt) > signMask) {
-            return true;
-        }
-    }
-    // Both positive:
-    else if ((~inOutInt) & (~inInt) & signMask) {
-        if ((inOutInt + inInt) >= signMask) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/// Check if a subtraction with overflow sets the flag
-bool QUnit::IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
-{
-    // First negative:
-    if (inOutInt & (~inInt) & (signMask)) {
-        inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-        if ((inOutInt + inInt) > signMask)
-            return true;
-    }
-    // First positive:
-    else if (inOutInt & (~inInt) & (signMask)) {
-        inInt = ((~inInt) & (lengthPower - 1)) + 1;
-        if ((inOutInt + inInt) >= signMask)
-            return true;
-    }
-
-    return false;
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
