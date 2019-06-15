@@ -1183,13 +1183,30 @@ void QUnit::CDEC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
     CINT(&QInterface::CDEC, toMod, start, length, controls, controlLen);
 }
 
+void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
+{
+    // Measure the carry flag.
+    // Don't separate the flag just to entangle it again, if it's in the same unit.
+    QInterfacePtr flagUnit = shards[flagIndex].unit;
+    bool isFlagEntangled = false;
+    if (flagUnit->GetQubitCount() > 1) {
+        for (bitLenInt i = 0; i < length; i++) {
+            if (flagUnit == shards[start + i].unit) {
+                isFlagEntangled = true;
+                break;
+            }
+        }
+    }
+    if (isFlagEntangled) {
+        flagUnit->M(shards[flagIndex].mapped);
+    } else {
+        M(flagIndex);
+    }
+}
+
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    /*
-     * FUTURE: If start[length] and carry are already in the same QE, then it
-     * doesn't make sense to Decompose and re-entangle them.
-     */
-    M(flagIndex);
+    CollapseCarry(flagIndex, start, length);
 
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleRange(start, length);
@@ -1215,15 +1232,10 @@ void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
     /*
-     * FUTURE: If start[length] and carry are already in the same QE, then it
-     * doesn't make sense to Decompose and re-entangle them.
-     */
-
-    /*
      * Overflow flag should not be measured, however the carry flag still needs
      * to be measured.
      */
-    M(flag2Index);
+    CollapseCarry(flag2Index, start, length);
 
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
@@ -1401,6 +1413,7 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
+    // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
 
     EntangleRange(start, length);
@@ -1409,6 +1422,7 @@ void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 
 void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
 }
 
@@ -1473,6 +1487,7 @@ void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
+    // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
 
     EntangleRange(start, length);
@@ -1481,6 +1496,7 @@ void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 
 void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
+    // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
 }
 
@@ -1545,6 +1561,12 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
         return;
     }
 
+    if (CheckBitsPermutation(inStart, length)) {
+        bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
+        SetReg(outStart, length, res);
+        return;
+    }
+
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
@@ -1553,6 +1575,12 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (CheckBitsPermutation(inStart, length)) {
+        bitCapInt res = intPow(toMod, GetCachedPermutation(inStart, length)) % modN;
+        SetReg(outStart, length, res);
+        return;
+    }
+
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
