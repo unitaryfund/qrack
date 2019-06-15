@@ -536,6 +536,8 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
     }
 }
 
+/// Check if the qubit at "qubitIndex" has a cached probability indicating that it is in a permutation basis eigenstate,
+/// for optimization.
 bool QUnit::CheckBitPermutation(bitLenInt qubitIndex)
 {
     if (!shards[qubitIndex].isProbDirty &&
@@ -546,8 +548,12 @@ bool QUnit::CheckBitPermutation(bitLenInt qubitIndex)
     }
 }
 
+/// Check if all qubits in the range have cached probabilities indicating that they are in permutation basis
+/// eigenstates, for optimization.
 bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length)
 {
+    // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
+    // Then, operations can often be treated as classical, instead of quantum.
     for (bitLenInt i = 0; i < length; i++) {
         if (!CheckBitPermutation(start + i)) {
             return false;
@@ -556,6 +562,7 @@ bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length)
     return true;
 }
 
+/// Assuming all bits in the range are in cached |0>/|1> eigenstates, read the unsigned integer value of the range.
 bitCapInt QUnit::GetCachedPermutation(bitLenInt start, bitLenInt length)
 {
     bitCapInt res = 0U;
@@ -1175,6 +1182,7 @@ void QUnit::CDEC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
     CINT(&QInterface::CDEC, toMod, start, length, controls, controlLen);
 }
 
+/// Collapse the carry bit in an optimal way, before carry arithmetic.
 void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
 {
     // Measure the carry flag.
@@ -1251,16 +1259,19 @@ void QUnit::INCxx(
     shards[flag2Index].isProbDirty = true;
 }
 
+/// Check if overflow arithmetic can be optimized
 bool QUnit::INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex)
 {
     return INTSCOptimize(toMod, start, length, isAdd, 0xFF, overflowIndex);
 }
 
+/// Check if carry arithmetic can be optimized
 bool QUnit::INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex)
 {
     return INTSCOptimize(toMod, start, length, isAdd, carryIndex, 0xFF);
 }
 
+/// Check if arithmetic with both carry and overflow can be optimized
 bool QUnit::INTSCOptimize(
     bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex)
 {
@@ -1306,6 +1317,7 @@ bool QUnit::INTSCOptimize(
     return true;
 }
 
+/// Check if an addition with overflow sets the flag
 bool QUnit::IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
 {
     // Both negative:
@@ -1326,6 +1338,7 @@ bool QUnit::IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMas
     return false;
 }
 
+/// Check if a subtraction with overflow sets the flag
 bool QUnit::IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower)
 {
     // First negative:
@@ -1512,6 +1525,7 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
         return;
     }
 
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(inOutStart, length);
     DirtyShardRange(carryStart, length);
 
@@ -1538,6 +1552,7 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
         return;
     }
 
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(inOutStart, length);
     DirtyShardRange(carryStart, length);
 
@@ -1547,17 +1562,20 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
 
 void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    // Inexpensive edge case
     if (toMod == 0) {
         SetReg(outStart, length, 0);
         return;
     }
 
+    // Keep the bits separate, if cheap to do so:
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
         SetReg(outStart, length, res);
         return;
     }
 
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
@@ -1566,12 +1584,14 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = intPow(toMod, GetCachedPermutation(inStart, length)) % modN;
         SetReg(outStart, length, res);
         return;
     }
 
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(outStart, length);
 
     EntangleRange(inStart, length, outStart, length);
@@ -1690,6 +1710,16 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        if (GetCachedPermutation(start, length) == 0) {
+            // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
+            shards[start].unit->PhaseFlip();
+        }
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(start, length);
 
     EntangleRange(start, length);
@@ -1698,6 +1728,16 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        if (GetCachedPermutation(start, length) < greaterPerm) {
+            // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
+            shards[start].unit->PhaseFlip();
+        }
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(start, length);
 
     EntangleRange(start, length);
@@ -1706,6 +1746,18 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    // Keep the bits separate, if cheap to do so:
+    if (!shards[flagIndex].isProbDirty) {
+        real1 prob = Prob(flagIndex);
+        if (prob < min_norm) {
+            return;
+        } else if ((ONE_R1 - prob) < min_norm) {
+            PhaseFlipIfLess(greaterPerm, start, length);
+            return;
+        }
+    }
+
+    // Otherwise, form the potentially entangled representation:
     DirtyShardRange(start, length);
     shards[flagIndex].isProbDirty = true;
 
