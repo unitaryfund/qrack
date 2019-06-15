@@ -195,7 +195,9 @@ protected:
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     typedef std::function<bitCapInt(const bitCapInt&)> MFn;
-    void INCDEC(const MFn& kernelFn, const bitCapInt& toAdd, const bitLenInt& inOutStart, const bitLenInt& length);
+    void INCDEC(const MFn& kernelFn, bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length);
+    void CINCDEC(const MFn kernelFn, bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
+        const bitLenInt* controls, const bitLenInt& controlLen);
     void INCDECC(
         const MFn& kernelFn, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     void ModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
