@@ -1286,7 +1286,7 @@ public:
 
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
 
     /** Subtract classical integer (without sign, with carry) */
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;

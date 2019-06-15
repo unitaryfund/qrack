@@ -1433,8 +1433,14 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, co
 void QEngineOCL::CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
     const bitLenInt* controls, const bitLenInt controlLen)
 {
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    toMod &= lengthMask;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
+
+    bitCapInt regMask = lengthMask << start;
 
     bitCapInt controlMask = 0U;
     bitCapInt* controlPowers = new bitCapInt[controlLen];
@@ -1469,17 +1475,6 @@ void QEngineOCL::CINC(
     }
 
     CINT(OCL_API_CINC, toAdd, inOutStart, length, controls, controlLen);
-}
-
-void QEngineOCL::CDEC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    if (controlLen == 0) {
-        DEC(toSub, inOutStart, length);
-        return;
-    }
-
-    CINT(OCL_API_CDEC, toSub, inOutStart, length, controls, controlLen);
 }
 
 /// Add or Subtract integer (without sign, with carry)

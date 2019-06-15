@@ -33,6 +33,14 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
+/// Subtract integer (without sign, with controls)
+void QInterface::CDEC(
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    bitCapInt invToSub = (1U << length) - toSub;
+    CINC(invToSub, inOutStart, length, controls, controlLen);
+}
+
 // Logic Gates:
 
 /// "AND" compare two bits in QInterface, and store result in outputBit

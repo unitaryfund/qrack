@@ -754,7 +754,7 @@ void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt toAdd = bitCapIntPtr[5];
     bitCapInt controlLen = bitCapIntPtr[6];
     bitCapInt controlMask = bitCapIntPtr[7];
-    bitCapInt otherRes, inRes;
+    bitCapInt otherRes;
     bitCapInt iHigh, iLow;
     bitLenInt p;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -767,45 +767,8 @@ void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
         }
         i |= iHigh;
 
-        otherRes = (i & otherMask);
-        inRes = (i & inOutMask);
-
-        inRes = (((lengthMask + 1 + (inRes >> inOutStart)) - toAdd) & lengthMask) << inOutStart;
-        nStateVec[i | controlMask] = stateVec[inRes | otherRes | controlMask];
-    }
-}
-
-void kernel cdec(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
-{
-    bitCapInt Nthreads, i, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
-    bitCapInt inOutStart = bitCapIntPtr[4];
-    bitCapInt toSub = bitCapIntPtr[5];
-    bitCapInt controlLen = bitCapIntPtr[6];
-    bitCapInt controlMask = bitCapIntPtr[7];
-    bitCapInt otherRes, inRes;
-    bitCapInt iHigh, iLow;
-    bitLenInt p;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        i = 0U;
-        for (p = 0U; p < controlLen; p++) {
-            iLow = iHigh & (controlPowers[p] - 1U);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1U;
-        }
-        i |= iHigh;
-
-        otherRes = (i & otherMask);
-        inRes = (i & inOutMask);
-
-        inRes = (((inRes >> inOutStart) + toSub) & lengthMask) << inOutStart;
-        nStateVec[i | controlMask] = stateVec[inRes | otherRes | controlMask];
+        otherRes = i & otherMask;
+        nStateVec[(((((i & inOutMask) >> inOutStart) + toAdd) & lengthMask) << inOutStart) | otherRes | controlMask] = stateVec[i | controlMask];
     }
 }
 

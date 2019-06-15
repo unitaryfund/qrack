@@ -68,6 +68,11 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 void QEngineCPU::CINC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
+    if (controlLen == 0) {
+        INC(toAdd, inOutStart, length);
+        return;
+    }
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toAdd &= lengthMask;
@@ -100,14 +105,6 @@ void QEngineCPU::CINC(
     delete[] controlPowers;
 
     ResetStateVec(nStateVec);
-}
-
-/// Subtract integer (without sign, with controls)
-void QEngineCPU::CDEC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    bitCapInt invToSub = (1U << length) - toSub;
-    CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
 /// Add integer (without sign, with carry)
