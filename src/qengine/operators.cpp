@@ -253,6 +253,86 @@ void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
+void QEngineCPU::INCDECSC(
+    bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+{
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    toMod &= lengthMask;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
+
+    bitCapInt signMask = 1U << (length - 1U);
+    bitCapInt carryMask = 1U << carryIndex;
+    bitCapInt otherMask = maxQPower - 1U;
+    bitCapInt inOutMask = lengthMask << inOutStart;
+
+    otherMask ^= inOutMask | carryMask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inInt = toMod;
+        bitCapInt outInt = inOutInt + toMod;
+        bitCapInt outRes;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
+        } else {
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
+        }
+        bool isOverflow = false;
+        // Both negative:
+        if (inOutInt & inInt & (signMask)) {
+            inOutInt = ((~inOutInt) & lengthMask) + 1U;
+            inInt = ((~inInt) & lengthMask) + 1U;
+            if ((inOutInt + inInt) > signMask)
+                isOverflow = true;
+        }
+        // Both positive:
+        else if ((~inOutInt) & (~inInt) & signMask) {
+            if ((inOutInt + inInt) >= signMask)
+                isOverflow = true;
+        }
+        if (isOverflow) {
+            nStateVec[outRes] = -stateVec[lcv];
+        } else {
+            nStateVec[outRes] = stateVec[lcv];
+        }
+    });
+    ResetStateVec(nStateVec);
+}
+
+/// Add integer (without sign, with carry)
+void QEngineCPU::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECSC(toAdd, inOutStart, length, carryIndex);
+}
+
+/// Subtract integer (without sign, with carry)
+void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECSC(invToSub, inOutStart, length, carryIndex);
+}
+
 /**
  * Add an integer to the register, with sign and with carry. If the overflow is set, flip phase on overflow. Because the
  * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the
@@ -304,64 +384,6 @@ void QEngineCPU::INCSC(
                 isOverflow = true;
         }
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
-            nStateVec[outRes] = -stateVec[lcv];
-        } else {
-            nStateVec[outRes] = stateVec[lcv];
-        }
-    });
-    ResetStateVec(nStateVec);
-}
-
-/**
- * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is an
- * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
- * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
- * cast.
- */
-void QEngineCPU::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-    bitCapInt signMask = 1 << (length - 1);
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
-
-    otherMask ^= inOutMask | carryMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt inInt = toAdd;
-        bitCapInt outInt = inOutInt + toAdd;
-        bitCapInt outRes;
-        if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes;
-        } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | (carryMask);
-        }
-        bool isOverflow = false;
-        // Both negative:
-        if (inOutInt & inInt & (signMask)) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-            inInt = ((~inInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) > (signMask))
-                isOverflow = true;
-        }
-        // Both positive:
-        else if ((~inOutInt) & (~inInt) & (signMask)) {
-            if ((inOutInt + inInt) >= (signMask))
-                isOverflow = true;
-        }
-        if (isOverflow) {
             nStateVec[outRes] = -stateVec[lcv];
         } else {
             nStateVec[outRes] = stateVec[lcv];
@@ -423,65 +445,6 @@ void QEngineCPU::DECSC(
                 isOverflow = true;
         }
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
-            nStateVec[outRes] = -stateVec[lcv];
-        } else {
-            nStateVec[outRes] = stateVec[lcv];
-        }
-    });
-    ResetStateVec(nStateVec);
-}
-
-/**
- * Subtract an integer from the register, with sign and with carry. Flip phase on overflow. Because the register length
- * is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
- * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
- * cast.
- */
-void QEngineCPU::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-    bitCapInt signMask = 1 << (length - 1);
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = (lengthPower - 1) << inOutStart;
-
-    otherMask ^= inOutMask | carryMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for_skip(0, maxQPower, carryMask, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt inInt = toSub;
-        bitCapInt outInt = (inOutInt - toSub) + (lengthPower);
-        bitCapInt outRes;
-        if (outInt < (lengthPower)) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
-        }
-        bool isOverflow = false;
-        // First negative:
-        if (inOutInt & (~inInt) & (signMask)) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) > signMask)
-                isOverflow = true;
-        }
-        // First positive:
-        else if (inOutInt & (~inInt) & (signMask)) {
-            inInt = ((~inInt) & (lengthPower - 1)) + 1;
-            if ((inOutInt + inInt) >= signMask)
-                isOverflow = true;
-        }
-        if (isOverflow) {
             nStateVec[outRes] = -stateVec[lcv];
         } else {
             nStateVec[outRes] = stateVec[lcv];
