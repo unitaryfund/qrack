@@ -40,9 +40,6 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     ResetStateVec(nStateVec);
 }
 
-/// "Circular shift right" - shift bits right, and carry first bits.
-void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
-
 /// Add integer (without sign)
 void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {

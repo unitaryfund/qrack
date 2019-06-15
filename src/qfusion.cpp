@@ -766,6 +766,12 @@ bitCapInt QFusion::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLe
     return qReg->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
+void QFusion::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    std::rotate(bitBuffers.begin() + start, bitBuffers.begin() + start + shift, bitBuffers.begin() + start + length);
+    qReg->ROL(shift, start, length);
+}
+
 void QFusion::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
     if (qubitIndex1 != qubitIndex2) {

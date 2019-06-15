@@ -91,7 +91,6 @@ public:
      */
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);

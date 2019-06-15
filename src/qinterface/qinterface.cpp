@@ -666,17 +666,8 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     }
 }
 
-/// "Circular shift right" - (Uses swap-based algorithm for speed)
-void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start + shift, end);
-        Reverse(start, start + shift);
-        Reverse(start, end);
-    }
-}
+/// "Circular shift right" - shift bits right, and carry first bits.
+void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
 
 std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
 {

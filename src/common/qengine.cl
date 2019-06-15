@@ -725,28 +725,6 @@ void kernel rol(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     }
 }
 
-void kernel ror(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt regMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
-    bitCapInt start = bitCapIntPtr[4];
-    bitCapInt shift = bitCapIntPtr[5];
-    bitCapInt length = bitCapIntPtr[6];
-    bitCapInt otherRes, regRes, regInt, inInt;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = (lcv & otherMask);
-        regRes = (lcv & regMask);
-        regInt = regRes >> start;
-        inInt = ((regInt >> (length - shift)) | (regInt << shift)) & lengthMask;
-        nStateVec[lcv] = stateVec[(inInt << start) | otherRes];
-    }
-}
-
 void kernel inc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, i;
