@@ -90,6 +90,9 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
+    virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
+    virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
+
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 protected:
@@ -101,5 +104,11 @@ protected:
         const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
+
+    /**
+     * Common driver method behing INCC and DECC
+     */
+    virtual void INCDECC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
 };
 } // namespace Qrack

@@ -809,7 +809,7 @@ void kernel cdec(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
-void kernel incc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel incdecc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
 
@@ -820,45 +820,15 @@ void kernel incc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
     bitCapInt carryMask = bitCapIntPtr[4];
     bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toAdd = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
+    bitCapInt toMod = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutRes, outInt, outRes, i;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
-        otherRes = (i & otherMask);
-        inOutRes = (i & inOutMask);
-        outInt = (inOutRes >> inOutStart) + toAdd;
-        outRes = 0U;
-        if (outInt > lengthMask) {
-            outInt &= lengthMask;
-            outRes = carryMask;
-        }
-        outRes |= outInt << inOutStart;
-        nStateVec[outRes | otherRes] = stateVec[i];
-    }
-}
+        i = lcv & (carryMask - 1U);
+        i |= (lcv ^ i) << 1U;
 
-void kernel decc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
-    bitCapInt carryMask = bitCapIntPtr[4];
-    bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toSub = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutRes, outInt, outRes, i, iHigh, iLow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
-        otherRes = (i & otherMask);
-        inOutRes = (i & inOutMask);
-        outInt = (lengthMask + 1U + (inOutRes >> inOutStart)) - toSub;
+        otherRes = i & otherMask;
+        inOutRes = i & inOutMask;
+        outInt = (inOutRes >> inOutStart) + toMod;
         outRes = 0U;
         if (outInt > lengthMask) {
             outInt &= lengthMask;

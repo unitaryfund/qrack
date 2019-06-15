@@ -1486,8 +1486,14 @@ void QEngineOCL::CDEC(
 void QEngineOCL::INTC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    toMod &= lengthMask;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
+
     bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~(regMask | carryMask));
 
@@ -1497,29 +1503,11 @@ void QEngineOCL::INTC(
     ArithmeticCall(api_call, bciArgs);
 }
 
-/** Increment integer (without sign, with carry) */
-void QEngineOCL::INCC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+/// Common driver method behing INCC and DECC
+void QEngineOCL::INCDECC(
+    bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
-    INTC(OCL_API_INCC, toAdd, start, length, carryIndex);
-}
-
-/** Subtract integer (without sign, with carry) */
-void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    INTC(OCL_API_DECC, toSub, start, length, carryIndex);
+    INTC(OCL_API_INCDECC, toMod, inOutStart, length, carryIndex);
 }
 
 /// Add or Subtract integer (with overflow, without carry)

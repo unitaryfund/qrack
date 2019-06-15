@@ -558,4 +558,30 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     return result;
 }
 
+/// Add integer (without sign, with carry)
+void QEngine::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECC(toAdd, inOutStart, length, carryIndex);
+}
+
+/// Subtract integer (without sign, with carry)
+void QEngine::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECC(invToSub, inOutStart, length, carryIndex);
+}
+
 } // namespace Qrack

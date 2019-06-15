@@ -146,32 +146,6 @@ void QEngineCPU::INCDECC(
     ResetStateVec(nStateVec);
 }
 
-/// Add integer (without sign, with carry)
-void QEngineCPU::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
-    INCDECC(toAdd, inOutStart, length, carryIndex);
-}
-
-/// Subtract integer (without sign, with carry)
-void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    bitCapInt invToSub = (1U << length) - toSub;
-    INCDECC(invToSub, inOutStart, length, carryIndex);
-}
-
 /**
  * Add an integer to the register, with sign and without carry. Because the
  * register length is an arbitrary number of bits, the sign bit position on the
