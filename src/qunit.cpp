@@ -42,15 +42,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 {
     shards.resize(qBitCount);
 
-    bool bitState;
-    for (bitLenInt i = 0; i < qBitCount; i++) {
-        bitState = ((1 << i) & initState) >> i;
-        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, bitState ? 1 : 0, rand_generator, phaseFactor,
-            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-        shards[i].mapped = 0;
-        shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
-        shards[i].isProbDirty = false;
-    }
+    SetPermutation(initState, phaseFactor);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -61,13 +53,13 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
-        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, ((1 << i) & perm) >> i, rand_generator, phaseFac,
+        shards[i].unit = CreateQuantumInterface(engine, subengine, 1U, bitState ? 1U : 0U, rand_generator, phaseFac,
             doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
         shards[i].mapped = 0;
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
     }
-} // namespace Qrack
+}
 
 void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 
@@ -1800,6 +1792,11 @@ void QUnit::NormalizeState(real1 nrm)
 
 void QUnit::Finish()
 {
+    if (shards[0].unit == NULL) {
+        // Uninitialized or already freed
+        return;
+    }
+
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
