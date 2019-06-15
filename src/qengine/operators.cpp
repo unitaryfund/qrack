@@ -18,18 +18,15 @@ namespace Qrack {
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    shift %= length;
     if (shift == 0 || length == 0) {
         return;
     }
 
-    bitCapInt regMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-    for (i = 0; i < length; i++) {
-        regMask |= 1 << (start + i);
-    }
-    otherMask -= regMask;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    bitCapInt regMask = lengthMask << start;
+    bitCapInt otherMask = (maxQPower - 1U) ^ regMask;
 
     complex* nStateVec = AllocStateVec(maxQPower);
 
@@ -37,46 +34,21 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt regRes = lcv & regMask;
         bitCapInt regInt = regRes >> start;
-        bitCapInt outInt = (regInt >> (length - shift)) | ((regInt << shift) & (lengthPower - 1));
-        nStateVec[(outInt << start) + otherRes] = stateVec[lcv];
+        bitCapInt outInt = (regInt >> (length - shift)) | ((regInt << shift) & lengthMask);
+        nStateVec[(outInt << start) | otherRes] = stateVec[lcv];
     });
     ResetStateVec(nStateVec);
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
-void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if (shift == 0 || length == 0) {
-        return;
-    }
+void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
 
-    bitCapInt regMask = 0;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt i;
-
-    for (i = 0; i < length; i++) {
-        regMask |= 1 << (start + i);
-    }
-    otherMask -= regMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = lcv & otherMask;
-        bitCapInt regRes = lcv & regMask;
-        bitCapInt regInt = regRes >> start;
-        bitCapInt outInt = (regInt >> shift) | ((regInt << (length - shift)) & (lengthPower - 1));
-        nStateVec[(outInt << start) + otherRes] = stateVec[lcv];
-    });
-    ResetStateVec(nStateVec);
-}
-
-void QEngineCPU::INCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length)
+/// Add integer (without sign)
+void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
     bitCapInt lengthMask = (1U << length) - 1U;
-    toMod &= lengthMask;
-    if ((length == 0U) || (toMod == 0U)) {
+    toAdd &= lengthMask;
+    if ((length == 0U) || (toAdd == 0U)) {
         return;
     }
 
@@ -89,34 +61,27 @@ void QEngineCPU::INCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitL
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
-        bitCapInt outInt = (inOutInt + toMod) & lengthMask;
+        bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
         nStateVec[(outInt << inOutStart) | otherRes] = stateVec[lcv];
     });
     ResetStateVec(nStateVec);
-}
-
-/// Add integer (without sign)
-void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
-{
-    // Because there is no carry, unsigned integers naturally wrap overflow values correctly, here.
-    INCDEC(toAdd, inOutStart, length);
 }
 
 /// Subtract integer (without sign)
 void QEngineCPU::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
     bitCapInt invToSub = (1U << length) - toSub;
-    INCDEC(invToSub, inOutStart, length);
+    INC(invToSub, inOutStart, length);
 }
 
 /// Add integer (without sign, with controls)
-void QEngineCPU::CINCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
-    const bitLenInt* controls, const bitLenInt& controlLen)
+void QEngineCPU::CINC(
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
-    toMod &= lengthMask;
-    if ((length == 0U) || (toMod == 0U)) {
+    toAdd &= lengthMask;
+    if ((length == 0U) || (toAdd == 0U)) {
         return;
     }
 
@@ -138,7 +103,7 @@ void QEngineCPU::CINCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bit
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
-        bitCapInt outInt = (inOutInt + toMod) & lengthMask;
+        bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
         nStateVec[(outInt << inOutStart) | otherRes | controlMask] = stateVec[lcv | controlMask];
     });
 
@@ -147,21 +112,15 @@ void QEngineCPU::CINCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bit
     ResetStateVec(nStateVec);
 }
 
-/// Add integer (without sign, with controls)
-void QEngineCPU::CINC(
-    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    CINCDEC(toAdd, inOutStart, length, controls, controlLen);
-}
-
 /// Subtract integer (without sign, with controls)
 void QEngineCPU::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     bitCapInt invToSub = (1U << length) - toSub;
-    CINCDEC(invToSub, inOutStart, length, controls, controlLen);
+    CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
+/// Add integer (without sign, with carry)
 void QEngineCPU::INCDECC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
@@ -182,15 +141,15 @@ void QEngineCPU::INCDECC(
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt outInt = (inOutInt + toMod);
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt outInt = inOutInt + toMod;
         bitCapInt outRes;
-        if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes;
+        if (outInt < lengthPower) {
+            outRes = (outInt << inOutStart) | otherRes;
         } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | (carryMask);
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
         }
         nStateVec[outRes] = stateVec[lcv];
     });
@@ -223,13 +182,19 @@ void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenI
     INCDECC(invToSub, inOutStart, length, carryIndex);
 }
 
-void QEngineCPU::INCDECS(
-    bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& overflowIndex)
+/**
+ * Add an integer to the register, with sign and without carry. Because the
+ * register length is an arbitrary number of bits, the sign bit position on the
+ * integer to add is variable. Hence, the integer to add is specified as cast
+ * to an unsigned format, with the sign bit assumed to be set at the
+ * appropriate position before the cast.
+ */
+void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
-    toMod &= lengthMask;
-    if ((length == 0U) || (toMod == 0U)) {
+    toAdd &= lengthMask;
+    if ((length == 0U) || (toAdd == 0U)) {
         return;
     }
 
@@ -242,16 +207,16 @@ void QEngineCPU::INCDECS(
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt inInt = toMod;
-        bitCapInt outInt = inOutInt + toMod;
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inInt = toAdd;
+        bitCapInt outInt = inOutInt + toAdd;
         bitCapInt outRes;
         if (outInt < lengthPower) {
-            outRes = (outInt << (inOutStart)) | otherRes;
+            outRes = (outInt << inOutStart) | otherRes;
         } else {
-            outRes = ((outInt - lengthPower) << (inOutStart)) | otherRes;
+            outRes = ((outInt - lengthPower) << inOutStart) | otherRes;
         }
         bool isOverflow = false;
         // Both negative:
@@ -278,18 +243,6 @@ void QEngineCPU::INCDECS(
 }
 
 /**
- * Add an integer to the register, with sign and without carry. Because the
- * register length is an arbitrary number of bits, the sign bit position on the
- * integer to add is variable. Hence, the integer to add is specified as cast
- * to an unsigned format, with the sign bit assumed to be set at the
- * appropriate position before the cast.
- */
-void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
-{
-    INCDECS(toAdd, inOutStart, length, overflowIndex);
-}
-
-/**
  * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
  * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
@@ -297,7 +250,7 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
 void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
     bitCapInt invToSub = (1U << length) - toSub;
-    INCDECS(invToSub, inOutStart, length, overflowIndex);
+    INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
 /**

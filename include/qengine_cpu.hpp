@@ -194,11 +194,7 @@ protected:
     virtual void UpdateRunningNorm();
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
-    void INCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length);
-    void CINCDEC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt* controls,
-        const bitLenInt& controlLen);
     void INCDECC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
-    void INCDECS(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& overflowIndex);
 
     typedef std::function<bitCapInt(const bitCapInt&)> MFn;
     void ModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
