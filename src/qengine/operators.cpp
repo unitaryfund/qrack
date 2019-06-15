@@ -141,26 +141,36 @@ void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenI
     ResetStateVec(nStateVec);
 }
 
-/// Add integer (without sign)
-void QEngineCPU::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+void QEngineCPU::INCDEC(MFn kernelFn, bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
-    bitCapInt lengthPower = 1 << length;
-    toAdd %= lengthPower;
-    if ((length > 0) && (toAdd > 0)) {
-        bitCapInt i, j;
-        bitLenInt end = start + length;
-        bitCapInt startPower = 1 << start;
-        bitCapInt endPower = 1 << end;
-        bitCapInt iterPower = 1 << (qubitCount - end);
-        bitCapInt maxLCV = iterPower * endPower;
+    bitCapInt lengthMask = (1U << length) - 1U;
+    bitCapInt inOutMask = lengthMask << inOutStart;
+    bitCapInt otherMask = (1U << qubitCount) - 1U;
 
-        for (i = 0; i < startPower; i++) {
-            for (j = 0; j < maxLCV; j += endPower) {
-                rotate(stateVec + i + j, stateVec + ((lengthPower - toAdd) * startPower) + i + j,
-                    stateVec + endPower + i + j, startPower);
-            }
-        }
-    }
+    otherMask ^= inOutMask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt inOutRes = lcv & inOutMask;
+        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt outInt = kernelFn(inOutInt) & lengthMask;
+        nStateVec[(outInt << inOutStart) | otherRes] = stateVec[lcv];
+    });
+    ResetStateVec(nStateVec);
+}
+
+/// Add integer (without sign)
+void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+{
+    INCDEC([&toAdd](const bitCapInt& inOutInt) { return inOutInt + toAdd; }, toAdd, inOutStart, length);
+}
+
+/// Subtract integer (without sign)
+void QEngineCPU::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
+{
+    INCDEC([&toSub](const bitCapInt& inOutInt) { return inOutInt - toSub; }, toSub, inOutStart, length);
 }
 
 /// Add integer (without sign, with controls)
@@ -505,27 +515,6 @@ void QEngineCPU::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, 
         }
     });
     ResetStateVec(nStateVec);
-}
-
-/// Subtract integer (without sign)
-void QEngineCPU::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
-{
-    bitCapInt lengthPower = 1 << length;
-    toSub %= lengthPower;
-    if ((length > 0) && (toSub > 0)) {
-        bitCapInt i, j;
-        bitLenInt end = start + length;
-        bitCapInt startPower = 1 << start;
-        bitCapInt endPower = 1 << end;
-        bitCapInt iterPower = 1 << (qubitCount - end);
-        bitCapInt maxLCV = iterPower * endPower;
-        for (i = 0; i < startPower; i++) {
-            for (j = 0; j < maxLCV; j += endPower) {
-                rotate(
-                    stateVec + i + j, stateVec + (toSub * startPower) + i + j, stateVec + endPower + i + j, startPower);
-            }
-        }
-    }
 }
 
 /// Add integer (without sign, with controls)
@@ -879,8 +868,6 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 {
     SetReg(carryStart, length, 0);
 
-    bitCapInt lowMask = (1U << length) - 1U;
-    toMul &= lowMask;
     if (toMul == 0) {
         SetReg(inOutStart, length, 0);
         return;
@@ -889,6 +876,7 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
         return;
     }
 
+    bitCapInt lowMask = (1U << length) - 1U;
     bitCapInt highMask = lowMask << length;
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
@@ -909,14 +897,14 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 
 void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    bitCapInt lowPower = 1U << length;
-    if ((toDiv == 0) || (toDiv >= lowPower)) {
+    if (toDiv == 0) {
         throw "DIV by zero (or modulo 0 to register size)";
     }
     if (toDiv == 1U) {
         return;
     }
 
+    bitCapInt lowPower = 1U << length;
     bitCapInt lowMask = lowPower - 1U;
     bitCapInt highMask = lowMask << length;
     bitCapInt inOutMask = lowMask << inOutStart;
