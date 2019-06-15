@@ -72,76 +72,8 @@ void QEngineCPU::ROR(bitLenInt shift, bitLenInt start, bitLenInt length)
     ResetStateVec(nStateVec);
 }
 
-/// Add integer (without sign, with carry)
-void QEngineCPU::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-
-    otherMask ^= inOutMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt outInt = inOutInt + toAdd;
-        bitCapInt outRes;
-        if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes;
-        } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | (carryMask);
-        }
-        nStateVec[outRes] = stateVec[lcv];
-    });
-    ResetStateVec(nStateVec);
-}
-
-/// Subtract integer (without sign, with carry)
-void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
-    bitCapInt otherMask = (1 << qubitCount) - 1;
-
-    otherMask ^= inOutMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = (lcv & (otherMask));
-        bitCapInt inOutRes = (lcv & (inOutMask));
-        bitCapInt inOutInt = inOutRes >> (inOutStart);
-        bitCapInt outInt = (inOutInt + lengthPower) - toSub;
-        bitCapInt outRes;
-        if (outInt < (lengthPower)) {
-            outRes = (outInt << (inOutStart)) | otherRes;
-        } else {
-            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | carryMask;
-        }
-        nStateVec[outRes] = stateVec[lcv];
-    });
-    ResetStateVec(nStateVec);
-}
-
-void QEngineCPU::INCDEC(MFn kernelFn, bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+void QEngineCPU::INCDEC(
+    const MFn& kernelFn, const bitCapInt& toAdd, const bitLenInt& inOutStart, const bitLenInt& length)
 {
     bitCapInt lengthMask = (1U << length) - 1U;
     bitCapInt inOutMask = lengthMask << inOutStart;
@@ -171,6 +103,63 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 void QEngineCPU::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
     INCDEC([&toSub](const bitCapInt& inOutInt) { return inOutInt - toSub; }, toSub, inOutStart, length);
+}
+
+void QEngineCPU::INCDECC(
+    const MFn& kernelFn, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+{
+    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt lengthPower = 1 << length;
+    bitCapInt inOutMask = ((1 << length) - 1) << inOutStart;
+    bitCapInt otherMask = (1 << qubitCount) - 1;
+
+    otherMask ^= inOutMask;
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
+
+    par_for_skip(0, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = (lcv & (otherMask));
+        bitCapInt inOutRes = (lcv & (inOutMask));
+        bitCapInt inOutInt = inOutRes >> (inOutStart);
+        bitCapInt outInt = kernelFn(inOutInt);
+        bitCapInt outRes;
+        if (outInt < (lengthPower)) {
+            outRes = (outInt << (inOutStart)) | otherRes;
+        } else {
+            outRes = ((outInt - (lengthPower)) << (inOutStart)) | otherRes | (carryMask);
+        }
+        nStateVec[outRes] = stateVec[lcv];
+    });
+    ResetStateVec(nStateVec);
+}
+
+/// Add integer (without sign, with carry)
+void QEngineCPU::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECC([&toAdd](const bitCapInt& inOutInt) { return inOutInt + toAdd; }, inOutStart, length, carryIndex);
+}
+
+/// Subtract integer (without sign, with carry)
+void QEngineCPU::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt lengthPower = 1 << length;
+
+    INCDECC([&toSub, &lengthPower](const bitCapInt& inOutInt) { return (inOutInt + lengthPower) - toSub; }, inOutStart,
+        length, carryIndex);
 }
 
 /// Add integer (without sign, with controls)
@@ -924,8 +913,8 @@ void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::ModNOut(
-    MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
+    const bitLenInt& outStart, const bitLenInt& length)
 {
     SetReg(outStart, length, 0);
 
@@ -1100,8 +1089,8 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
-    bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
+    const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen)
 {
     SetReg(outStart, length, 0);
 

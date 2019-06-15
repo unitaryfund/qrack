@@ -146,6 +146,8 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     using QEngine::Swap;
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void UniformlyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
 
     /** @} */
 
@@ -189,16 +191,16 @@ protected:
     virtual void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
-    virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
     virtual void UpdateRunningNorm();
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     typedef std::function<bitCapInt(const bitCapInt&)> MFn;
-    void INCDEC(MFn kernelFn, bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length);
-    void ModNOut(
-        MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
-        bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+    void INCDEC(const MFn& kernelFn, const bitCapInt& toAdd, const bitLenInt& inOutStart, const bitLenInt& length);
+    void INCDECC(
+        const MFn& kernelFn, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    void ModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
+        const bitLenInt& outStart, const bitLenInt& length);
+    void CModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
+        const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen);
 };
 } // namespace Qrack
