@@ -78,7 +78,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_INCSC_2, "incsc2"),
     OCLKernelHandle(OCL_API_DECSC_2, "decsc2"),
     OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
-    OCLKernelHandle(OCL_API_DECBCD, "decbcd"),
     OCLKernelHandle(OCL_API_INCBCDC, "incbcdc"),
     OCLKernelHandle(OCL_API_DECBCDC, "decbcdc"),
     OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),

@@ -1622,8 +1622,15 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start,
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
-    bitCapInt inOutMask = ((1 << length) - 1) << start;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ inOutMask;
+
+    bitCapInt maxPow = intPow(10U, nibbleCount);
+    toMod %= maxPow;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
+
+    bitCapInt inOutMask = ((1U << length) - 1U) << start;
+    bitCapInt otherMask = (maxQPower - 1U) ^ inOutMask;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, inOutMask, otherMask, start, toMod, nibbleCount, 0, 0, 0, 0 };
 
@@ -1636,12 +1643,6 @@ void QEngineOCL::INCBCD(bitCapInt toAdd, const bitLenInt start, const bitLenInt 
     INTBCD(OCL_API_INCBCD, toAdd, start, length);
 }
 
-/** Subtract integer (BCD) */
-void QEngineOCL::DECBCD(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
-{
-    INTBCD(OCL_API_DECBCD, toSub, start, length);
-}
-
 /// Add or Subtract integer (BCD, with carry)
 void QEngineOCL::INTBCDC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
@@ -1650,6 +1651,7 @@ void QEngineOCL::INTBCDC(
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
+
     bitCapInt inOutMask = ((1 << length) - 1) << start;
     bitCapInt carryMask = 1 << carryIndex;
     bitCapInt otherMask = ((1 << qubitCount) - 1) ^ (inOutMask | carryMask);

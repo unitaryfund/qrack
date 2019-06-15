@@ -701,6 +701,13 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
+
+    bitCapInt maxPow = intPow(10U, nibbleCount);
+    toAdd %= maxPow;
+    if ((length == 0U) || (toAdd == 0U)) {
+        return;
+    }
+
     bitCapInt inOutMask = ((1U << length) - 1U) << inOutStart;
     bitCapInt otherMask = maxQPower - 1U;
     otherMask ^= inOutMask;
@@ -740,60 +747,6 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
             nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
         } else {
             nStateVec[lcv] = stateVec[lcv];
-        }
-        delete[] nibbles;
-    });
-    ResetStateVec(nStateVec);
-}
-
-/// Subtract BCD integer (without sign)
-void QEngineCPU::DECBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
-{
-    int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
-        throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
-    }
-    bitCapInt otherMask = maxQPower - 1U;
-    bitCapInt inOutMask = ((1U << length) - 1U) << inOutStart;
-    otherMask ^= inOutMask;
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
-
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt otherRes = lcv & otherMask;
-        bitCapInt partToSub = toAdd;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
-        int test1, test2;
-        int j;
-        int* nibbles = new int[nibbleCount];
-        bool isValid = true;
-        for (j = 0; j < nibbleCount; j++) {
-            test1 = inOutInt & 15U;
-            if (test1 > 9) {
-                isValid = false;
-                break;
-            }
-            inOutInt >>= 4U;
-            test2 = (partToSub % 10);
-            partToSub /= 10;
-            nibbles[j] = test1 - test2;
-        }
-        if (isValid) {
-            bitCapInt outInt = 0;
-            for (j = 0; j < nibbleCount; j++) {
-                if (nibbles[j] < 0) {
-                    nibbles[j] += 10;
-                    if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1U]--;
-                    }
-                }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
-            }
-            nStateVec[(outInt << (inOutStart)) | otherRes] += stateVec[lcv];
-        } else {
-            nStateVec[lcv] += stateVec[lcv];
         }
         delete[] nibbles;
     });
