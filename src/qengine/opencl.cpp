@@ -1705,9 +1705,8 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 /** Divide by integer */
 void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    bitCapInt lowPower = 1U << length;
-    if ((toDiv == 0) || (toDiv >= lowPower)) {
-        throw "DIV by zero (or modulo 0 to register size)";
+    if (toDiv == 0) {
+        throw "DIV by zero";
     }
 
     MULx(OCL_API_DIV, toDiv, inOutStart, carryStart, length);
@@ -1764,9 +1763,8 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
         return;
     }
 
-    bitCapInt lowPower = 1U << length;
-    if ((toDiv == 0) || (toDiv >= lowPower)) {
-        throw "DIV by zero (or modulo 0 to register size)";
+    if (toDiv == 0) {
+        throw "DIV by zero";
     }
 
     if (toDiv == 1) {
