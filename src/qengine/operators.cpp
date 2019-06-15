@@ -232,17 +232,6 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     ResetStateVec(nStateVec);
 }
 
-/**
- * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
- * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
- * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
- */
-void QEngineCPU::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
-{
-    bitCapInt invToSub = (1U << length) - toSub;
-    INCS(invToSub, inOutStart, length, overflowIndex);
-}
-
 void QEngineCPU::INCDECSC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
@@ -862,7 +851,7 @@ void QEngineCPU::INCBCDC(
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, 1 << carryIndex, 1, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0U, maxQPower, 1U << carryIndex, 1U, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
         bitCapInt inOutRes = lcv & inOutMask;

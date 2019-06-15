@@ -22,6 +22,17 @@ void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
     INC(invToSub, inOutStart, length);
 }
 
+/**
+ * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
+ * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
+ * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
+ */
+void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+{
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCS(invToSub, inOutStart, length, overflowIndex);
+}
+
 // Logic Gates:
 
 /// "AND" compare two bits in QInterface, and store result in outputBit

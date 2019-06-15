@@ -1292,7 +1292,7 @@ public:
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Subtract a classical integer from the register, with sign and without carry. */
-    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
+    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(

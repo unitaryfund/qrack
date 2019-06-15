@@ -182,7 +182,6 @@ public:
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void DECSC(

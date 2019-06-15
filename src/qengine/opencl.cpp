@@ -1395,6 +1395,11 @@ void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    shift %= length;
+    if (shift == 0U || length == 0U) {
+        return;
+    }
+
     bitCapInt lengthPower = 1 << length;
     bitCapInt regMask = (lengthPower - 1) << start;
     bitCapInt otherMask = (maxQPower - 1) & (~regMask);
@@ -1409,8 +1414,14 @@ void QEngineOCL::ROL(bitLenInt shift, bitLenInt start, bitLenInt length) { ROx(O
 /// Add or Subtract integer (without sign or carry)
 void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
 {
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    toMod &= lengthMask;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
+
+    bitCapInt regMask = lengthMask << start;
     bitCapInt otherMask = (maxQPower - 1) & ~(regMask);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, start, toMod, 0, 0, 0, 0 };
@@ -1515,10 +1526,16 @@ void QEngineOCL::DECC(bitCapInt toSub, const bitLenInt start, const bitLenInt le
 void QEngineOCL::INTS(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
 {
-    bitCapInt overflowMask = 1 << overflowIndex;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt regMask = (lengthPower - 1) << start;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    toMod &= lengthMask;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
+
+    bitCapInt overflowMask = 1U << overflowIndex;
+    bitCapInt regMask = lengthMask << start;
+    bitCapInt otherMask = (maxQPower - 1U) ^ regMask;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, overflowMask, start, toMod, 0, 0,
         0 };
@@ -1530,12 +1547,6 @@ void QEngineOCL::INTS(
 void QEngineOCL::INCS(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
 {
     INTS(OCL_API_INCS, toAdd, start, length, overflowIndex);
-}
-
-/** Subtract integer (without sign, with carry) */
-void QEngineOCL::DECS(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex)
-{
-    INTS(OCL_API_DECS, toSub, start, length, overflowIndex);
 }
 
 /// Add or Subtract integer (with sign, with carry)

@@ -919,56 +919,6 @@ void kernel incs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
-void kernel decs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> 1U;
-    bitCapInt overflowMask = bitCapIntPtr[4];
-    bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toSub = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
-    cmplx amp;
-    bool isOverflow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = lcv & otherMask;
-        inOutRes = lcv & inOutMask;
-        inOutInt = inOutRes >> inOutStart;
-        inInt = overflowMask;
-        outInt = inOutInt - toSub + lengthPower;
-        if (outInt < lengthPower) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes;
-        }
-        isOverflow = false;
-        // First negative:
-        if (inOutInt & (~inInt) & signMask) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) > signMask) {
-                isOverflow = true;
-            }
-        }
-        // First positive:
-        else if (inOutInt & (~inInt) & signMask) {
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) >= signMask) {
-                isOverflow = true;
-            }
-        }
-        amp = stateVec[lcv];
-        if (isOverflow && ((outRes & overflowMask) == overflowMask))  {
-            amp = -amp;
-        }
-        nStateVec[outRes] = amp;
-    }
-}
-
 void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
