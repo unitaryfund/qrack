@@ -258,6 +258,7 @@ protected:
         bitLenInt* controls, bitLenInt controlLen);
     typedef void (QInterface::*CMULModFn)(bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
         bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+    void CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length);
     void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     void INCxx(
         INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index);
@@ -272,6 +273,12 @@ protected:
         bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     bool CArithmeticOptimize(bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen,
         std::vector<bitLenInt>* controlVec);
+    bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex);
+    bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
+    bool INTSCOptimize(
+        bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
+    bool IsOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
+    bool IsOverflowSub(bitCapInt inOutInt, bitCapInt inInt, bitCapInt signMask, bitCapInt lengthPower);
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
@@ -279,6 +286,10 @@ protected:
     virtual QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
     virtual QInterfacePtr EntangleAll();
+
+    virtual bool CheckBitPermutation(bitLenInt qubitIndex);
+    virtual bool CheckBitsPermutation(bitLenInt start, bitLenInt length);
+    virtual bitCapInt GetCachedPermutation(bitLenInt start, bitLenInt length);
 
     virtual QInterfacePtr EntangleIterator(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);

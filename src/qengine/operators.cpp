@@ -877,11 +877,12 @@ void QEngineCPU::DECBCDC(
 
 void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    SetReg(carryStart, length, 0);
+
     bitCapInt lowMask = (1U << length) - 1U;
     toMul &= lowMask;
     if (toMul == 0) {
         SetReg(inOutStart, length, 0);
-        SetReg(carryStart, length, 0);
         return;
     }
     if (toMul == 1U) {
