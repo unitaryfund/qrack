@@ -1282,7 +1282,7 @@ public:
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Subtract classical integer (without sign) */
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) = 0;
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(

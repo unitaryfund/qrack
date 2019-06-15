@@ -72,7 +72,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_ROR, "ror"),
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
-    OCLKernelHandle(OCL_API_DEC, "dec"),
     OCLKernelHandle(OCL_API_CDEC, "cdec"),
     OCLKernelHandle(OCL_API_INCC, "incc"),
     OCLKernelHandle(OCL_API_DECC, "decc"),

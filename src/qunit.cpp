@@ -1391,21 +1391,6 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
     INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
 }
 
-void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        SetReg(start, length, GetCachedPermutation(start, length) - toMod);
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    DirtyShardRange(start, length);
-
-    EntangleRange(start, length);
-    shards[start].unit->DEC(toMod, shards[start].mapped, length);
-}
-
 void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // Keep the bits separate, if cheap to do so:

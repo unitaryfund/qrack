@@ -1463,12 +1463,6 @@ void QEngineOCL::CINC(
     CINT(OCL_API_CINC, toAdd, inOutStart, length, controls, controlLen);
 }
 
-/** Subtract integer (without sign, with carry) */
-void QEngineOCL::DEC(bitCapInt toSub, const bitLenInt start, const bitLenInt length)
-{
-    INT(OCL_API_DEC, toSub, start, length);
-}
-
 void QEngineOCL::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {

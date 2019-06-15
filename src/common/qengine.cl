@@ -758,12 +758,8 @@ void kernel inc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
     bitCapInt inOutStart = bitCapIntPtr[4];
     bitCapInt toAdd = bitCapIntPtr[5];
-    bitCapInt otherRes, inRes;
     for (i = ID; i < maxI; i += Nthreads) {
-        otherRes = (i & otherMask);
-        inRes = (i & inOutMask);
-        inRes = (((lengthMask + 1 + (inRes >> inOutStart)) - toAdd) & lengthMask) << inOutStart;
-        nStateVec[i] = stateVec[inRes | otherRes];
+        nStateVec[(((((i & inOutMask) >> inOutStart) + toAdd) & lengthMask) << inOutStart) | (i & otherMask)] = stateVec[i];
     }
 }
 
@@ -798,26 +794,6 @@ void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
 
         inRes = (((lengthMask + 1 + (inRes >> inOutStart)) - toAdd) & lengthMask) << inOutStart;
         nStateVec[i | controlMask] = stateVec[inRes | otherRes | controlMask];
-    }
-}
-
-void kernel dec(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, i;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
-    bitCapInt inOutStart = bitCapIntPtr[4];
-    bitCapInt toSub = bitCapIntPtr[5];
-    bitCapInt otherRes, inRes;
-    for (i = ID; i < maxI; i += Nthreads) {
-        otherRes = (i & otherMask);
-        inRes = (i & inOutMask);
-        inRes = (((inRes >> inOutStart) + toSub) & lengthMask) << inOutStart;
-        nStateVec[i] = stateVec[inRes | otherRes];
     }
 }
 

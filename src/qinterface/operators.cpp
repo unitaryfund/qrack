@@ -14,6 +14,14 @@
 
 namespace Qrack {
 
+// Arithmetic:
+/// Subtract integer (without sign)
+void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
+{
+    bitCapInt invToSub = (1U << length) - toSub;
+    INC(invToSub, inOutStart, length);
+}
+
 // Logic Gates:
 
 /// "AND" compare two bits in QInterface, and store result in outputBit

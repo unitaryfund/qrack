@@ -67,13 +67,6 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     ResetStateVec(nStateVec);
 }
 
-/// Subtract integer (without sign)
-void QEngineCPU::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
-{
-    bitCapInt invToSub = (1U << length) - toSub;
-    INC(invToSub, inOutStart, length);
-}
-
 /// Add integer (without sign, with controls)
 void QEngineCPU::CINC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
