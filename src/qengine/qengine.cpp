@@ -584,4 +584,104 @@ void QEngine::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt 
     INCDECC(invToSub, inOutStart, length, carryIndex);
 }
 
+/**
+ * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is an
+ * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
+ * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
+ * cast.
+ */
+void QEngine::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECSC(toAdd, inOutStart, length, carryIndex);
+}
+
+/**
+ * Subtract an integer from the register, with sign and with carry. Flip phase on overflow. Because the register length
+ * is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
+ * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
+ * cast.
+ */
+void QEngine::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECSC(invToSub, inOutStart, length, carryIndex);
+}
+
+/**
+ * Add an integer to the register, with sign and with carry. If the overflow is set, flip phase on overflow. Because the
+ * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the
+ * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
+ * position before the cast.
+ */
+void QEngine::INCSC(
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECSC(toAdd, inOutStart, length, overflowIndex, carryIndex);
+}
+
+/**
+ * Subtract an integer from the register, with sign and with carry. If the overflow is set, flip phase on overflow.
+ * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable.
+ * Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
+ * appropriate position before the cast.
+ */
+void QEngine::DECSC(
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECSC(invToSub, inOutStart, length, overflowIndex, carryIndex);
+}
+
+/// Add BCD integer (without sign, with carry)
+void QEngine::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECBCDC(toAdd, inOutStart, length, carryIndex);
+}
+
+/// Subtract BCD integer (without sign, with carry)
+void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
+    INCDECBCDC(invToSub, inOutStart, length, carryIndex);
+}
+
 } // namespace Qrack

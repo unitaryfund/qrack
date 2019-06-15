@@ -852,7 +852,7 @@ void kernel incs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
-void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel incdecsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
 
@@ -866,13 +866,12 @@ void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bitCapInt carryMask = bitCapIntPtr[5];
     bitCapInt inOutStart = bitCapIntPtr[6];
     bitCapInt toAdd = bitCapIntPtr[7];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
+        i = lcv & (carryMask - 1U);
+        i |= (lcv ^ i) << 1U;
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -905,60 +904,7 @@ void kernel incsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     }
 }
 
-void kernel decsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> 1U;
-    bitCapInt overflowMask = bitCapIntPtr[4];
-    bitCapInt carryMask = bitCapIntPtr[5];
-    bitCapInt inOutStart = bitCapIntPtr[6];
-    bitCapInt toSub = bitCapIntPtr[7];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
-    cmplx amp;
-    bool isOverflow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1);
-        i = iLow | ((iHigh ^ iLow) << 1);
-
-        otherRes = i & otherMask;
-        inOutRes = i & inOutMask;
-        inOutInt = inOutRes >> inOutStart;
-        inInt = toSub;
-        outInt = (inOutInt - toSub) + lengthPower;
-        if (outInt < lengthPower) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
-        }
-        bool isOverflow = false;
-        // First negative:
-        if (inOutInt & (~inInt) & signMask) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) > signMask)
-                isOverflow = true;
-        }
-        // First positive:
-        else if (inOutInt & (~inInt) & signMask) {
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) >= signMask)
-                isOverflow = true;
-        }
-        amp = stateVec[i];
-        if (isOverflow && ((outRes & overflowMask) == overflowMask))  {
-            amp = -amp;
-        }
-        nStateVec[outRes] = amp;
-    }
-}
-
-void kernel incsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel incdecsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
 
@@ -971,13 +917,12 @@ void kernel incsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     bitCapInt carryMask = bitCapIntPtr[4];
     bitCapInt inOutStart = bitCapIntPtr[5];
     bitCapInt toAdd = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
+        i = lcv & (carryMask - 1U);
+        i |= (lcv ^ i) << 1U;
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -1004,58 +949,6 @@ void kernel incsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
         }
         amp = stateVec[i];
         if (isOverflow) {
-            amp = -amp;
-        }
-        nStateVec[outRes] = amp;
-    }
-}
-
-void kernel decsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> 1U;
-    bitCapInt carryMask = bitCapIntPtr[4];
-    bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toSub = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i, iHigh, iLow;
-    cmplx amp;
-    bool isOverflow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
-
-        otherRes = i & otherMask;
-        inOutRes = i & inOutMask;
-        inOutInt = inOutRes >> inOutStart;
-        inInt = toSub;
-        outInt = (inOutInt - toSub) + lengthPower;
-        if (outInt < (lengthPower)) {
-            outRes = (outInt << inOutStart) | otherRes;
-        } else {
-            outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
-        }
-        bool isOverflow = false;
-        // First negative:
-        if (inOutInt & (~inInt) & signMask) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) > signMask)
-                isOverflow = true;
-        }
-        // First positive:
-        else if (inOutInt & (~inInt) & signMask) {
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
-            if ((inOutInt + inInt) >= signMask)
-                isOverflow = true;
-        }
-        amp = stateVec[i];
-        if (isOverflow)  {
             amp = -amp;
         }
         nStateVec[outRes] = amp;
@@ -1128,7 +1021,7 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, glo
     }
 }
 
-void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+void kernel incdecbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
 
@@ -1140,7 +1033,7 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     bitCapInt inOutStart = bitCapIntPtr[4];
     bitCapInt toAdd = bitCapIntPtr[5];
     int nibbleCount = bitCapIntPtr[6];
-    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes;
+    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes, i;
     char test1, test2;
     int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1148,11 +1041,9 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     int nibbles[16];
     bool isValid;
     cmplx amp1, amp2;
-    bitCapInt i, iLow, iHigh;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1);
-        i = iLow | ((iHigh ^ iLow) << 1);
+        i = lcv & (carryMask - 1U);
+        i |= (lcv ^ i) << 1U;
 
         otherRes = i & otherMask;
         partToAdd = toAdd;
@@ -1192,85 +1083,6 @@ void kernel incbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
                         nibbles[j + 1]++;
                     } else {
                         carryRes = carryMask;
-                    }
-                }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
-            }
-            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
-            nStateVec[outRes] = amp1;
-            outRes ^= carryMask;
-            nStateVec[outRes] = amp2;
-        } else {
-            nStateVec[i] = amp1;
-            nStateVec[i | carryMask] = amp2;
-        }
-    }
-}
-
-void kernel decbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt carryMask = bitCapIntPtr[3];
-    bitCapInt inOutStart = bitCapIntPtr[4];
-    bitCapInt toSub = bitCapIntPtr[5];
-    int nibbleCount = bitCapIntPtr[6];
-    bitCapInt otherRes, partToSub, inOutRes, inOutInt, outInt, outRes, carryRes;
-    int test1, test2;
-    int j;
-    // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
-    // fast private memory.
-    int nibbles[16];
-    bool isValid;
-    cmplx amp1, amp2;
-    bitCapInt i, iLow, iHigh;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & (carryMask - 1);
-        i = iLow | ((iHigh ^ iLow) << 1);
-
-        otherRes = i & otherMask;
-        partToSub = toSub;
-        inOutRes = i & inOutMask;
-        inOutInt = inOutRes >> inOutStart;
-        isValid = true;
-
-        test1 = inOutInt & 15U;
-        inOutInt >>= 4U;
-        test2 = partToSub % 10;
-        partToSub /= 10;
-        nibbles[0] = test1 - test2;
-        if (test1 > 9) {
-            isValid = false;
-        }
-
-        amp1 = stateVec[i];
-        amp2 = stateVec[i | carryMask];
-        for (j = 1; j < nibbleCount; j++) {
-            test1 = inOutInt & 15U;
-            inOutInt >>= 4U;
-            test2 = partToSub % 10;
-            partToSub /= 10;
-            nibbles[j] = test1 - test2;
-            if (test1 > 9) {
-                isValid = false;
-            }
-        }
-        if (isValid) {
-            outInt = 0;
-            outRes = 0;
-            carryRes = carryMask;
-            for (j = 0; j < nibbleCount; j++) {
-                if (nibbles[j] < 0) {
-                    nibbles[j] += 10;
-                    if ((unsigned char)(j + 1) < nibbleCount) {
-                        nibbles[j + 1]--;
-                    } else {
-                        carryRes = 0;
                     }
                 }
                 outInt |= ((bitCapInt)nibbles[j]) << (j * 4);

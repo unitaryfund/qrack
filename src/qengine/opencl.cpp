@@ -1536,43 +1536,29 @@ void QEngineOCL::INCS(bitCapInt toAdd, const bitLenInt start, const bitLenInt le
 void QEngineOCL::INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
     const bitLenInt overflowIndex, const bitLenInt carryIndex)
 {
-    bitCapInt overflowMask = 1 << overflowIndex;
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt inOutMask = (lengthPower - 1) << start;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ (inOutMask | carryMask);
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthMask = lengthPower - 1U;
+    toMod &= lengthMask;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, inOutMask, otherMask, lengthPower, overflowMask, carryMask,
+    bitCapInt overflowMask = 1U << overflowIndex;
+    bitCapInt carryMask = 1U << carryIndex;
+    bitCapInt inOutMask = lengthMask << start;
+    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, lengthPower, overflowMask, carryMask,
         start, toMod, 0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (with sign, with carry) */
-void QEngineOCL::INCSC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex,
-    const bitLenInt carryIndex)
+void QEngineOCL::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenInt& length,
+    const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
-    INTSC(OCL_API_INCSC_1, toAdd, start, length, overflowIndex, carryIndex);
-}
-
-/** Subtract integer (with sign, with carry) */
-void QEngineOCL::DECSC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt overflowIndex,
-    const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    INTSC(OCL_API_DECSC_1, toSub, start, length, overflowIndex, carryIndex);
+    INTSC(OCL_API_INCDECSC_1, toAdd, start, length, overflowIndex, carryIndex);
 }
 
 /// Add or Subtract integer (with sign, with carry)
@@ -1591,28 +1577,9 @@ void QEngineOCL::INTSC(
 }
 
 /** Increment integer (with sign, with carry) */
-void QEngineOCL::INCSC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+void QEngineOCL::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenInt& length, const bitLenInt& carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
-    INTSC(OCL_API_INCSC_2, toAdd, start, length, carryIndex);
-}
-
-/** Subtract integer (with sign, with carry) */
-void QEngineOCL::DECSC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    INTSC(OCL_API_DECSC_2, toSub, start, length, carryIndex);
+    INTSC(OCL_API_INCDECSC_2, toAdd, start, length, carryIndex);
 }
 
 /// Add or Subtract integer (BCD)
@@ -1652,39 +1619,27 @@ void QEngineOCL::INTBCDC(
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
-    bitCapInt inOutMask = ((1 << length) - 1) << start;
-    bitCapInt carryMask = 1 << carryIndex;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ (inOutMask | carryMask);
+    bitCapInt maxPow = intPow(10U, nibbleCount);
+    toMod %= maxPow;
+    if ((length == 0U) || (toMod == 0U)) {
+        return;
+    }
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, inOutMask, otherMask, carryMask, start, toMod, nibbleCount, 0, 0,
-        0 };
+    bitCapInt inOutMask = ((1U << length) - 1U) << start;
+    bitCapInt carryMask = 1U << carryIndex;
+    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, carryMask, start, toMod, nibbleCount, 0,
+        0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
 }
 
 /** Increment integer (BCD, with carry) */
-void QEngineOCL::INCBCDC(bitCapInt toAdd, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
+void QEngineOCL::INCDECBCDC(
+    bitCapInt toAdd, const bitLenInt& start, const bitLenInt& length, const bitLenInt& carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
-    INTBCDC(OCL_API_INCBCDC, toAdd, start, length, carryIndex);
-}
-
-/** Subtract integer (BCD, with carry) */
-void QEngineOCL::DECBCDC(bitCapInt toSub, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
-{
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    INTBCDC(OCL_API_DECBCDC, toSub, start, length, carryIndex);
+    INTBCDC(OCL_API_INCDECBCDC, toAdd, start, length, carryIndex);
 }
 
 /** Multiply by integer */
