@@ -196,11 +196,13 @@ protected:
 
     void INCDECC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& overflowIndex,
+        const bitLenInt& carryIndex);
 
     typedef std::function<bitCapInt(const bitCapInt&)> MFn;
-    void ModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
-        const bitLenInt& outStart, const bitLenInt& length);
-    void CModNOut(const MFn& kernelFn, const bitCapInt& toMod, const bitCapInt& modN, const bitLenInt& inStart,
-        const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen);
+    void ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
+        const bitLenInt& length);
+    void CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
+        const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen);
 };
 } // namespace Qrack
