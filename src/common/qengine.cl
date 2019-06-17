@@ -669,40 +669,6 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     }
 }
 
-void kernel x(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt regMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        nStateVec[lcv] = stateVec[(lcv & otherMask) | ((~lcv) & regMask)];
-    }
-}
-
-void kernel swap(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt reg1Mask = bitCapIntPtr[1];
-    bitCapInt reg2Mask = bitCapIntPtr[2];
-    bitCapInt otherMask = bitCapIntPtr[3];
-    bitCapInt start1 = bitCapIntPtr[4];
-    bitCapInt start2 = bitCapIntPtr[5];
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        nStateVec[lcv] = stateVec[ 
-                                  (((lcv & reg2Mask) >> start2) << start1) |
-                                  (((lcv & reg1Mask) >> start1) << start2) |
-                                  (lcv & otherMask)
-                                 ];
-    }
-}
-
 void kernel rol(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
@@ -1087,7 +1053,7 @@ void kernel incdecbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
                 }
                 outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
-            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
+            outRes = (outInt << inOutStart) | otherRes | carryRes;
             nStateVec[outRes] = amp1;
             outRes ^= carryMask;
             nStateVec[outRes] = amp2;

@@ -86,9 +86,8 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  * asynchronous methods are always joined, in order of dispatch, before any and all non-void-return methods give their
  * results.
  */
-class QEngineOCL : public QEngine {
+class QEngineOCL : virtual public QEngine {
 protected:
-    complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
     std::vector<EventVecPtr> wait_refs;
@@ -133,16 +132,17 @@ public:
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true);
-    ~QEngineOCL()
+
+    QEngineOCL()
     {
-        clFinish();
-
-        FreeStateVec();
-
-        FreeAligned(nrmArray);
+        // Intentionally left blank
     }
 
-    virtual void SetQubitCount(bitLenInt qb);
+    virtual ~QEngineOCL()
+    {
+        Finish();
+        FreeAligned(nrmArray);
+    }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual void CopyState(QInterfacePtr orig);
@@ -154,11 +154,8 @@ public:
     /* Operations that have an improved implementation. */
     using QEngine::X;
     virtual void X(bitLenInt target);
-    virtual void X(bitLenInt start, bitLenInt length);
     using QEngine::Z;
     virtual void Z(bitLenInt target);
-    using QEngine::Swap;
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
@@ -216,7 +213,7 @@ public:
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
-    complex GetAmplitude(bitCapInt perm);
+    virtual complex GetAmplitude(bitCapInt perm);
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
@@ -235,6 +232,10 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    virtual void ResetStateBuffer(BufferPtr nStateBuffer);
+    virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
+
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     virtual void INCDECSC(
@@ -246,20 +247,6 @@ protected:
 
     void InitOCL(int devID);
     PoolItemPtr GetFreePoolItem();
-    void ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer);
-    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual void FreeStateVec()
-    {
-        if (stateVec) {
-#if defined(_WIN32)
-            _aligned_free(stateVec);
-#else
-            free(stateVec);
-#endif
-        }
-        stateVec = NULL;
-    }
-    virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
     real1 ParSum(real1* toSum, bitCapInt maxI);
 
@@ -305,16 +292,16 @@ protected:
         const bitLenInt controlLen, unsigned char* values = NULL, bitCapInt valuesLength = 0);
 
     using QEngine::Apply2x2;
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm)
     {
         Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE);
     }
-    void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special);
 
-    void ApplyM(bitCapInt mask, bool result, complex nrm);
-    void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
+    virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
+    virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /* Utility functions used by the operations above. */
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,

@@ -67,21 +67,12 @@ namespace Qrack {
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG)
-    , stateVec(NULL)
     , deviceID(devID)
     , wait_refs()
     , nrmArray(NULL)
     , unlockHostMem(false)
 {
-    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
-        throw std::invalid_argument(
-            "Cannot instantiate a register with greater capacity than native types on emulating system.");
-
-    runningNorm = ONE_R1;
-    SetQubitCount(qBitCount);
-
     InitOCL(devID);
-
     SetPermutation(initState, phaseFac);
 }
 
@@ -286,7 +277,8 @@ void QEngineOCL::CopyState(QInterfacePtr orig)
 
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-    ResetStateVec(nStateVec, nStateBuffer);
+    ResetStateVec(nStateVec);
+    ResetStateBuffer(nStateBuffer);
 
     src->LockSync(CL_MAP_READ);
     LockSync(CL_MAP_WRITE);
@@ -415,7 +407,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             FreeAligned(nStateVec);
         } else {
             // We had host allocation; we will continue to have it.
-            ResetStateVec(nStateVec, MakeStateVecBuffer(nStateVec));
+            ResetStateVec(nStateVec);
+            ResetStateBuffer(MakeStateVecBuffer(nStateVec));
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -437,12 +430,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 }
 
-void QEngineOCL::SetQubitCount(bitLenInt qb)
-{
-    qubitCount = qb;
-    maxQPower = 1 << qubitCount;
-}
-
 real1 QEngineOCL::ParSum(real1* toSum, bitCapInt maxI)
 {
     // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
@@ -456,14 +443,7 @@ real1 QEngineOCL::ParSum(real1* toSum, bitCapInt maxI)
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID, true); }
 
-void QEngineOCL::ResetStateVec(complex* nStateVec, BufferPtr nStateBuffer)
-{
-    stateBuffer = nStateBuffer;
-    if (stateVec) {
-        FreeStateVec();
-        stateVec = nStateVec;
-    }
-}
+void QEngineOCL::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 
 void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 {
@@ -549,7 +529,8 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_L
 
     WaitCall(api_call, ngc, ngs, oclArgs);
 
-    ResetStateVec(nStateVec, nStateBuffer);
+    ResetStateVec(nStateVec);
+    ResetStateBuffer(nStateBuffer);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -909,7 +890,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->UnlockSync();
     }
 
-    ResetStateVec(nStateVec, nStateBuffer);
+    ResetStateVec(nStateVec);
+    ResetStateBuffer(nStateBuffer);
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
@@ -1131,7 +1113,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, nStateBuffer });
 
-    ResetStateVec(nStateVec, nStateBuffer);
+    ResetStateVec(nStateVec);
+    ResetStateBuffer(nStateBuffer);
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
@@ -1359,38 +1342,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     delete[] powers;
     delete[] skipPowers;
-}
-
-// Apply X ("not") gate to each bit in "length," starting from bit index
-// "start"
-void QEngineOCL::X(bitLenInt start, bitLenInt length)
-{
-    if (length == 1) {
-        X(start);
-        return;
-    }
-
-    bitCapInt regMask = ((1 << length) - 1) << start;
-    bitCapInt otherMask = ((1 << qubitCount) - 1) ^ regMask;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
-
-    ArithmeticCall(OCL_API_X, bciArgs);
-}
-
-/// Bitwise swap
-void QEngineOCL::Swap(bitLenInt start1, bitLenInt start2, bitLenInt length)
-{
-    if (start1 == start2) {
-        return;
-    }
-
-    bitCapInt reg1Mask = ((1 << length) - 1) << start1;
-    bitCapInt reg2Mask = ((1 << length) - 1) << start2;
-    bitCapInt otherMask = maxQPower - 1;
-    otherMask ^= reg1Mask | reg2Mask;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, reg1Mask, reg2Mask, otherMask, start1, start2, 0, 0, 0, 0 };
-
-    ArithmeticCall(OCL_API_SWAP, bciArgs);
 }
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
@@ -1788,7 +1739,8 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuf
         WaitCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer });
     }
 
-    ResetStateVec(nStateVec, nStateBuffer);
+    ResetStateVec(nStateVec);
+    ResetStateBuffer(nStateBuffer);
 }
 
 void QEngineOCL::MULx(

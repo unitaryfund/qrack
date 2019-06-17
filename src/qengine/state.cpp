@@ -39,15 +39,8 @@ namespace Qrack {
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG)
-    , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
-    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
-        throw std::invalid_argument(
-            "Cannot instantiate a register with greater capacity than native types on emulating system.");
-
-    runningNorm = ONE_R1;
-    SetQubitCount(qBitCount);
 
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
@@ -105,12 +98,6 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
 
     QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
     std::copy(src->stateVec, src->stateVec + src->maxQPower, stateVec);
-}
-
-void QEngineCPU::ResetStateVec(complex* nStateVec)
-{
-    FreeStateVec();
-    stateVec = nStateVec;
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
@@ -533,19 +520,28 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     i = 0;
     j = 0;
     k = 0;
-    while (remainderStateProb[i] < min_norm) {
+    while ((i < remainderPower) && (remainderStateProb[i] < min_norm)) {
         i++;
     }
     k = i & ((1U << start) - 1);
-    k |= (i ^ k) << length;
+    k |= (i ^ k) << (start + length);
 
-    while (partStateProb[j] < min_norm) {
+    while ((j < partPower) && (partStateProb[j] < min_norm)) {
         j++;
     }
     k |= j << start;
 
-    real1 refAngle = arg(stateVec[k]);
-    real1 angleOffset = refAngle - (remainderStateAngle[i] + partStateAngle[j]);
+    real1 refAngle = ZERO_R1;
+    if (k < maxQPower) {
+        refAngle = arg(GetAmplitude(k));
+    }
+    real1 angleOffset = refAngle;
+    if (i < remainderPower) {
+        angleOffset -= remainderStateAngle[i];
+    }
+    if (j < partPower) {
+        angleOffset -= partStateAngle[j];
+    }
 
     for (bitCapInt l = 0; l < partPower; l++) {
         partStateAngle[l] += angleOffset;
