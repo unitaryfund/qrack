@@ -32,15 +32,21 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : public QEngine, public ParallelFor {
-protected:
-    complex* stateVec;
-
+class QEngineCPU : virtual public QEngine, public ParallelFor {
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
         bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true);
-    ~QEngineCPU() { FreeStateVec(); }
+
+    QEngineCPU()
+    {
+        // Intentionally left blank
+    }
+
+    virtual ~QEngineCPU()
+    {
+        // Intentionally left blank
+    }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -49,7 +55,7 @@ public:
 
     virtual bitLenInt Compose(QEngineCPUPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
-    std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
     virtual bitLenInt Compose(QEngineCPUPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
@@ -59,28 +65,6 @@ public:
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     virtual void Dispose(bitLenInt start, bitLenInt length);
-
-    /** @} */
-
-    /**
-     * \defgroup RegGates Register-spanning gates
-     *
-     * Convienence and optimized functions implementing gates are applied from
-     * the bit 'start' for 'length' bits for the register.
-     *
-     * @{
-     */
-
-    using QEngine::X;
-    virtual void X(bitLenInt start, bitLenInt length);
-    using QEngine::CNOT;
-    virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);
-    using QEngine::AntiCNOT;
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
-    using QEngine::CCNOT;
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    using QEngine::AntiCCNOT;
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
 
     /** @} */
 
@@ -128,8 +112,6 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    using QEngine::Swap;
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
     virtual void UniformlyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
 
@@ -158,21 +140,9 @@ public:
     /** @} */
 
 protected:
-    virtual void ResetStateVec(complex* nStateVec);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual void FreeStateVec()
-    {
-        if (stateVec) {
-#if defined(_WIN32)
-            _aligned_free(stateVec);
-#else
-            free(stateVec);
-#endif
-        }
-        stateVec = NULL;
-    }
 
-    virtual void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
+    void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
     virtual void UpdateRunningNorm();

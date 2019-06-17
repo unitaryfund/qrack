@@ -51,9 +51,9 @@ enum QInterfaceEngine {
      * Create a QEngineCPU leveraging only local CPU and memory resources.
      */
     QINTERFACE_CPU = 0,
+
     /**
-     * Create a QEngineOCL, derived from QEngineCPU, leveraging OpenCL hardware to increase the speed of certain
-     * calculations.
+     * Create a QEngineOCL, leveraging OpenCL hardware to increase the speed of certain calculations.
      */
     QINTERFACE_OPENCL,
 
@@ -143,6 +143,7 @@ protected:
             free(toFree);
 #endif
         }
+        toFree = NULL;
     }
 
 public:
@@ -169,6 +170,11 @@ public:
         }
     }
 
+    QInterface()
+    {
+        // Intentionally left blank
+    }
+
     /** Destructor of QInterface */
     virtual ~QInterface(){};
 
@@ -179,7 +185,7 @@ public:
     int GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
-    virtual real1 Rand()
+    real1 Rand()
     {
         if (hardware_rand_generator != NULL) {
             return hardware_rand_generator->Next();

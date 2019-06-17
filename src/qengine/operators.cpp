@@ -122,7 +122,7 @@ void QEngineCPU::INCDECC(
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = maxQPower - 1U;
 
-    otherMask ^= inOutMask;
+    otherMask ^= inOutMask | carryMask;
 
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
