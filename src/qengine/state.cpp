@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -716,6 +716,36 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     delete[] partError;
 
     return totError < approxcompare_error;
+}
+
+/// For chips with a zero flag, flip the phase of the state where the register equals zero.
+void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    par_for_skip(0U, maxQPower, 1U << start, length,
+        [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
+}
+
+/// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
+void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    bitCapInt regMask = bitRegMask(start, length);
+    bitCapInt flagMask = 1U << flagIndex;
+
+    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
+            stateVec[lcv] = -stateVec[lcv];
+    });
+}
+
+/// This is an expedient for an adaptive Grover's search for a function's global minimum.
+void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    bitCapInt regMask = bitRegMask(start, length);
+
+    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if (((lcv & regMask) >> start) < greaterPerm)
+            stateVec[lcv] = -stateVec[lcv];
+    });
 }
 
 void QEngineCPU::NormalizeState(real1 nrm)

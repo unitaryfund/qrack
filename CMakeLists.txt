@@ -15,15 +15,17 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
-    src/qinterface/qinterface.cpp
-    src/qinterface/protected.cpp
-    src/qinterface/operators.cpp
+    src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
+    src/qinterface/logic.cpp
+    src/qinterface/protected.cpp
+    src/qinterface/qinterface.cpp
     src/qinterface/rotational.cpp
     src/qengine/qengine.cpp
-    src/qengine/operators.cpp
+    src/qengine/arithmetic.cpp
     src/qengine/gates.cpp
     src/qengine/state.cpp
+    src/qengine/utility.cpp
     src/bitbuffer.cpp
     src/qfusion.cpp
     src/qunit.cpp

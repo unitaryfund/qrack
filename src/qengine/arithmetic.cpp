@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -11,15 +11,18 @@
 // for details.
 
 #include "qengine_cpu.hpp"
-#include "qfactory.hpp"
 
 namespace Qrack {
 
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
+    if (length == 0U) {
+        return;
+    }
+
     shift %= length;
-    if (shift == 0U || length == 0U) {
+    if (shift == 0U) {
         return;
     }
 
@@ -43,9 +46,13 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Add integer (without sign)
 void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
+    if (length == 0U) {
+        return;
+    }
+
     bitCapInt lengthMask = (1U << length) - 1U;
     toAdd &= lengthMask;
-    if ((length == 0U) || (toAdd == 0U)) {
+    if (toAdd == 0U) {
         return;
     }
 
@@ -73,10 +80,14 @@ void QEngineCPU::CINC(
         return;
     }
 
+    if (length == 0U) {
+        return;
+    }
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toAdd &= lengthMask;
-    if ((length == 0U) || (toAdd == 0U)) {
+    if (toAdd == 0U) {
         return;
     }
 
@@ -111,10 +122,14 @@ void QEngineCPU::CINC(
 void QEngineCPU::INCDECC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
+    if (length == 0U) {
+        return;
+    }
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toMod &= lengthMask;
-    if ((length == 0U) || (toMod == 0U)) {
+    if (toMod == 0U) {
         return;
     }
 
@@ -152,10 +167,14 @@ void QEngineCPU::INCDECC(
  */
 void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
+    if (length == 0U) {
+        return;
+    }
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toAdd &= lengthMask;
-    if ((length == 0U) || (toAdd == 0U)) {
+    if (toAdd == 0U) {
         return;
     }
 
@@ -206,10 +225,14 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
 void QEngineCPU::INCDECSC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
+    if (length == 0U) {
+        return;
+    }
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toMod &= lengthMask;
-    if ((length == 0U) || (toMod == 0U)) {
+    if (toMod == 0U) {
         return;
     }
 
@@ -260,10 +283,14 @@ void QEngineCPU::INCDECSC(
 void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
     const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
 {
+    if (length == 0U) {
+        return;
+    }
+
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toMod &= lengthMask;
-    if ((length == 0U) || (toMod == 0U)) {
+    if (toMod == 0U) {
         return;
     }
 
@@ -577,6 +604,10 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 /// Add BCD integer (without sign)
 void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
+    if (length == 0U) {
+        return;
+    }
+
     int nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
@@ -584,11 +615,11 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
     bitCapInt maxPow = intPow(10U, nibbleCount);
     toAdd %= maxPow;
-    if ((length == 0U) || (toAdd == 0U)) {
+    if (toAdd == 0U) {
         return;
     }
 
-    bitCapInt inOutMask = ((1U << length) - 1U) << inOutStart;
+    bitCapInt inOutMask = bitRegMask(inOutStart, length);
     bitCapInt otherMask = maxQPower - 1U;
     otherMask ^= inOutMask;
     complex* nStateVec = AllocStateVec(maxQPower);
@@ -637,6 +668,10 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 void QEngineCPU::INCDECBCDC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
+    if (length == 0U) {
+        return;
+    }
+
     int nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
@@ -644,11 +679,11 @@ void QEngineCPU::INCDECBCDC(
 
     bitCapInt maxPow = intPow(10U, nibbleCount);
     toMod %= maxPow;
-    if ((length == 0U) || (toMod == 0U)) {
+    if (toMod == 0U) {
         return;
     }
 
-    bitCapInt inOutMask = ((1U << length) - 1U) << inOutStart;
+    bitCapInt inOutMask = bitRegMask(inOutStart, length);
     bitCapInt otherMask = maxQPower - 1U;
     bitCapInt carryMask = 1U << carryIndex;
 
@@ -714,36 +749,6 @@ void QEngineCPU::INCDECBCDC(
     ResetStateVec(nStateVec);
 }
 
-/// For chips with a zero flag, flip the phase of the state where the register equals zero.
-void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    par_for_skip(0U, maxQPower, 1U << start, length,
-        [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
-}
-
-/// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
-void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-{
-    bitCapInt regMask = ((1U << length) - 1U) << start;
-    bitCapInt flagMask = 1U << flagIndex;
-
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
-            stateVec[lcv] = -stateVec[lcv];
-    });
-}
-
-/// This is an expedient for an adaptive Grover's search for a function's global minimum.
-void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-{
-    bitCapInt regMask = ((1U << length) - 1U) << start;
-
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if (((lcv & regMask) >> start) < greaterPerm)
-            stateVec[lcv] = -stateVec[lcv];
-    });
-}
-
 /// Set 8 bit register bits based on read from classical memory
 bitCapInt QEngineCPU::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
@@ -752,8 +757,8 @@ bitCapInt QEngineCPU::IndexedLDA(
     SetReg(valueStart, valueLength, 0U);
 
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
-    bitCapInt inputMask = ((1U << indexLength) - 1U) << indexStart;
-    bitCapInt outputMask = ((1U << valueLength) - 1U) << valueStart;
+    bitCapInt inputMask = bitRegMask(indexStart, indexLength);
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     bitCapInt skipPower = 1U << valueStart;
 
     complex* nStateVec = AllocStateVec(maxQPower);
@@ -821,8 +826,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt lengthPower = 1U << valueLength;
     bitCapInt carryMask = 1U << carryIndex;
-    bitCapInt inputMask = ((1U << indexLength) - 1U) << indexStart;
-    bitCapInt outputMask = ((1U << valueLength) - 1U) << valueStart;
+    bitCapInt inputMask = bitRegMask(indexStart, indexLength);
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     bitCapInt otherMask = (maxQPower - 1U) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1U << carryIndex;
 
@@ -923,8 +928,8 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt lengthPower = 1U << valueLength;
     bitCapInt carryMask = 1U << carryIndex;
-    bitCapInt inputMask = ((1U << indexLength) - 1U) << indexStart;
-    bitCapInt outputMask = ((1U << valueLength) - 1U) << valueStart;
+    bitCapInt inputMask = bitRegMask(indexStart, indexLength);
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     bitCapInt otherMask = (maxQPower - 1U) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1U << carryIndex;
 
@@ -995,13 +1000,5 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
     // Return the expectation value.
     return (bitCapInt)(average + 0.5);
-}
-
-QInterfacePtr QEngineCPU::Clone()
-{
-    QInterfacePtr clone = CreateQuantumInterface(
-        QINTERFACE_CPU, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, true);
-    clone->SetQuantumState(stateVec);
-    return clone;
 }
 }; // namespace Qrack

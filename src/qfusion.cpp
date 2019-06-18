@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // QFusion adds an optional "gate fusion" layer on top of a QEngine or QUnit.
 // Single bit gates are buffered in per-bit 2x2 complex matrices, to reduce the cost

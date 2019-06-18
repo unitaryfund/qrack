@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -9,7 +9,6 @@
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
-
 #pragma once
 
 #define _USE_MATH_DEFINES
@@ -36,6 +35,7 @@ void log2x2(complex* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
+inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length) { return ((1U << length) - 1U) << start; }
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
