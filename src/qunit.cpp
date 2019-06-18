@@ -1012,16 +1012,15 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             } else {
                 controlIndex++;
             }
-            continue;
         } else {
             controlIndex++;
-        }
-        for (j = 0; j < targets.size(); j++) {
-            // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the targets,
-            // it isn't worth trying the next optimization.
-            if (shards[controls[i]].unit == shards[targets[j]].unit) {
-                isSeparated = false;
-                break;
+            for (j = 0; j < targets.size(); j++) {
+                // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the
+                // targets, it isn't worth trying the next optimization.
+                if (shards[controls[i]].unit == shards[targets[j]].unit) {
+                    isSeparated = false;
+                    break;
+                }
             }
         }
     }
@@ -1213,6 +1212,7 @@ void QUnit::CINT(
     std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
+        shards[controlVec[i]].isPhaseDirty = true;
     }
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
@@ -1635,6 +1635,7 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
     controlsMapped->resize(controlVec.size() == 0 ? 1 : controlVec.size());
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
         (*controlsMapped)[i] = shards[controlVec[i]].mapped;
+        shards[controlVec[i]].isPhaseDirty = true;
     }
 
     return unit;
