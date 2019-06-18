@@ -828,7 +828,7 @@ void QUnit::H(bitLenInt target)
     real1 phase = shard.phase;
 
     complex zeroAmpIn = ((real1)sqrt(ONE_R1 - prob)) * complex(ONE_R1, ZERO_R1);
-    complex oneAmpOut = ((real)sqrt(prob)) * complex(cos(phase), sin(phase));
+    complex oneAmpOut = ((real1)sqrt(prob)) * complex(cos(phase), sin(phase));
 
     complex zeroAmpOut = ((real1)M_SQRT1_2) * (zeroAmpIn + oneAmpOut);
     oneAmpOut = ((real1)M_SQRT1_2) * (zeroAmpIn - oneAmpOut);
@@ -836,6 +836,14 @@ void QUnit::H(bitLenInt target)
     prob = norm(oneAmpOut);
     shard.prob = prob;
     shard.phase = ClampPhase(arg(oneAmpOut) - arg(zeroAmpOut));
+
+    if (shard.unit->GetQubitCount() > 1) {
+        if (prob < min_norm) {
+            SeparateBit(false, target);
+        } else if (prob > (ONE_R1 - min_norm)) {
+            SeparateBit(true, target);
+        }
+    }
 }
 
 void QUnit::X(bitLenInt target)
@@ -1089,6 +1097,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
+        shards[controlVec[i]].isPhaseDirty = true;
     }
 
     cfn(shards[targets[0]].unit, controlsMapped);
