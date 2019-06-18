@@ -347,6 +347,13 @@ protected:
         }
     }
 
+    void DirtyShardRangePhase(bitLenInt start, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            shards[start + i].isPhaseDirty = true;
+        }
+    }
+
     void DirtyShardIndexArray(bitLenInt* bitIndices, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {

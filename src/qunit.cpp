@@ -1824,7 +1824,7 @@ bitCapInt QUnit::IndexedLDA(
     bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
         shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
 
-    DirtyShardRange(indexStart, indexLength);
+    DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
 
     return toRet;
@@ -1838,7 +1838,7 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
     bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 
-    DirtyShardRange(indexStart, indexLength);
+    DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
     shards[carryIndex].isProbDirty = true;
     shards[carryIndex].isPhaseDirty = true;
@@ -1854,7 +1854,7 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
     bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 
-    DirtyShardRange(indexStart, indexLength);
+    DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
     shards[carryIndex].isProbDirty = true;
     shards[carryIndex].isPhaseDirty = true;
