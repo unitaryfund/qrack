@@ -747,34 +747,6 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
 }
 
-bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
-{
-    bool doesShift = false;
-    real1 phase = -M_PI * 2;
-    for (int i = 0; i < 4; i++) {
-        if (norm(mtrx[i]) > min_norm) {
-            if (phase < -M_PI) {
-                phase = arg(mtrx[i]);
-                continue;
-            }
-
-            real1 diff = arg(mtrx[i]) - phase;
-            if (diff < ZERO_R1) {
-                diff = -diff;
-            }
-            if (diff > M_PI) {
-                diff = (2 * M_PI) - diff;
-            }
-            if (diff > min_norm) {
-                doesShift = true;
-                break;
-            }
-        }
-    }
-
-    return doesShift;
-}
-
 void QUnit::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
