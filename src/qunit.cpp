@@ -1058,11 +1058,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             // avoiding an entangled representation.
             fn();
 
-            for (i = 0; i < (bitLenInt)targets.size(); i++) {
-                shards[targets[i]].isProbDirty = true;
-                shards[targets[i]].isPhaseDirty = true;
-            }
-
             return;
         }
     }
