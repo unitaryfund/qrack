@@ -602,12 +602,8 @@ real1 QUnit::Prob(bitLenInt qubit)
 
         if (shard.unit->GetQubitCount() > 1) {
             if (shard.prob < min_norm) {
-                shard.phase = ZERO_R1;
-                shard.isPhaseDirty = false;
                 SeparateBit(false, qubit);
             } else if (shard.prob > (ONE_R1 - min_norm)) {
-                shard.phase = ZERO_R1;
-                shard.isPhaseDirty = false;
                 SeparateBit(true, qubit);
             }
         }
@@ -655,6 +651,11 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     /* Update the mappings. */
     shards[qubit].unit = dest;
     shards[qubit].mapped = 0;
+    shards[qubit].prob = value ? ONE_R1 : ZERO_R1;
+    shards[qubit].isProbDirty = false;
+    shards[qubit].phase = ZERO_R1;
+    shards[qubit].isPhaseDirty = false;
+
     for (auto&& testShard : shards) {
         if (testShard.unit == origShard.unit && testShard.mapped > origShard.mapped) {
             testShard.mapped--;
@@ -666,12 +667,12 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
     bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
 
-    shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
-    shards[qubit].isProbDirty = false;
-    shards[qubit].phase = ZERO_R1;
-    shards[qubit].isPhaseDirty = false;
-
     if (shards[qubit].unit->GetQubitCount() == 1) {
+        shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
+        shards[qubit].isProbDirty = false;
+        shards[qubit].phase = ZERO_R1;
+        shards[qubit].isPhaseDirty = false;
+
         /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
         return result;
     }
@@ -835,14 +836,6 @@ void QUnit::H(bitLenInt target)
     prob = norm(oneAmpOut);
     shard.prob = prob;
     shard.phase = ClampPhase(arg(oneAmpOut) - arg(zeroAmpOut));
-
-    if (shards[target].unit->GetQubitCount() > 1) {
-        if (prob < min_norm) {
-            SeparateBit(false, target);
-        } else if ((ONE_R1 - prob) < min_norm) {
-            SeparateBit(true, target);
-        }
-    }
 }
 
 void QUnit::X(bitLenInt target)
@@ -852,7 +845,8 @@ void QUnit::X(bitLenInt target)
     shards[target].phase = ClampPhase(2 * M_PI - shards[target].phase);
 }
 
-void QUnit::Z(bitLenInt target) {
+void QUnit::Z(bitLenInt target)
+{
     shards[target].unit->Z(shards[target].mapped);
     shards[target].phase = ClampPhase(shards[target].phase + M_PI);
 }
@@ -1820,8 +1814,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
-        valueLength, shards[carryIndex].mapped, values);
+    bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
+        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 
     DirtyShardRange(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -1836,8 +1830,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
-        valueLength, shards[carryIndex].mapped, values);
+    bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
+        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
 
     DirtyShardRange(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
