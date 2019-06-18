@@ -827,8 +827,8 @@ void QUnit::H(bitLenInt target)
     real1 prob = shard.prob;
     real1 phase = shard.phase;
 
-    complex zeroAmpIn = sqrt(ONE_R1 - prob) * complex(ONE_R1, ZERO_R1);
-    complex oneAmpOut = sqrt(prob) * complex(cos(phase), sin(phase));
+    complex zeroAmpIn = ((real1)sqrt(ONE_R1 - prob)) * complex(ONE_R1, ZERO_R1);
+    complex oneAmpOut = ((real)sqrt(prob)) * complex(cos(phase), sin(phase));
 
     complex zeroAmpOut = ((real1)M_SQRT1_2) * (zeroAmpIn + oneAmpOut);
     oneAmpOut = ((real1)M_SQRT1_2) * (zeroAmpIn - oneAmpOut);
