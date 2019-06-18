@@ -778,6 +778,8 @@ bool QUnit::DoesOperatorPhaseShift(const complex* mtrx)
 void QUnit::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
+    // TODO: Controls that have exactly 0 or 1 probability can be optimized out of the gate.
+
     // If there are no controls, this is equivalent to the single bit gate.
     if (controlLen == 0) {
         ApplySingleBit(mtrxs, true, qubitIndex);
@@ -803,6 +805,7 @@ void QUnit::UniformlyControlledSingleBit(
     bitLenInt* mappedControls = new bitLenInt[controlLen];
     for (i = 0; i < controlLen; i++) {
         mappedControls[i] = shards[controls[i]].mapped;
+        shards[controls[i]].isPhaseDirty = true;
     }
 
     unit->UniformlyControlledSingleBit(mappedControls, controlLen, shards[qubitIndex].mapped, mtrxs);
