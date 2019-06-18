@@ -23,8 +23,10 @@ namespace Qrack {
 struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
-    real1 prob;
     bool isProbDirty;
+    real1 prob;
+    bool isPhaseDirty;
+    real1 phase;
 };
 
 class QUnit;
@@ -48,6 +50,19 @@ protected:
     {
         shards.resize(qb);
         QInterface::SetQubitCount(qb);
+    }
+
+    real1 ClampPhase(real1 phase)
+    {
+        while (phase < 0) {
+            phase += 2 * M_PI;
+        }
+
+        while (phase >= (2 * M_PI)) {
+            phase -= 2 * M_PI;
+        }
+
+        return phase;
     }
 
 public:
@@ -84,6 +99,8 @@ public:
      *@{
      */
 
+    using QInterface::H;
+    virtual void H(bitLenInt target);
     using QInterface::X;
     virtual void X(bitLenInt target);
     using QInterface::Z;
@@ -326,6 +343,7 @@ protected:
     {
         for (bitLenInt i = 0; i < length; i++) {
             shards[start + i].isProbDirty = true;
+            shards[start + i].isPhaseDirty = true;
         }
     }
 
@@ -333,6 +351,7 @@ protected:
     {
         for (bitLenInt i = 0; i < length; i++) {
             shards[bitIndices[i]].isProbDirty = true;
+            shards[bitIndices[i]].isPhaseDirty = true;
         }
     }
 };
