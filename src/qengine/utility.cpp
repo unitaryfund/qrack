@@ -10,17 +10,16 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#define cmplx double2
-#define cmplx2 double4
-#define cmplx4 double8
-#define real1 double
-#define ZERO_R1 0.0
-#define SineShift M_PI_2
-#define PI_R1 M_PI
-#define min_norm 1e-30
-#define bitCapInt ulong
-#define bitCapInt2 ulong2
-#define bitCapInt4 ulong4
-#define bitLenInt unsigned char
+#include "qfactory.hpp"
 
+namespace Qrack {
+
+QInterfacePtr QEngineCPU::Clone()
+{
+    QInterfacePtr clone = CreateQuantumInterface(
+        QINTERFACE_CPU, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, true);
+    clone->SetQuantumState(stateVec);
+    return clone;
+}
+
+} // namespace Qrack

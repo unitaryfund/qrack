@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -52,7 +52,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_APPLY2X2_NORM_SINGLE_WIDE, "apply2x2normsinglewide"),
     OCLKernelHandle(OCL_API_APPLY2X2_DOUBLE_WIDE, "apply2x2doublewide"),
     OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
-    OCLKernelHandle(OCL_API_X, "x"),
     OCLKernelHandle(OCL_API_X_SINGLE, "xsingle"),
     OCLKernelHandle(OCL_API_X_SINGLE_WIDE, "xsinglewide"),
     OCLKernelHandle(OCL_API_Z_SINGLE, "zsingle"),
@@ -67,25 +66,15 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
     OCLKernelHandle(OCL_API_PROBMASK, "probmask"),
     OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
-    OCLKernelHandle(OCL_API_SWAP, "swap"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
-    OCLKernelHandle(OCL_API_ROR, "ror"),
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
-    OCLKernelHandle(OCL_API_DEC, "dec"),
-    OCLKernelHandle(OCL_API_CDEC, "cdec"),
-    OCLKernelHandle(OCL_API_INCC, "incc"),
-    OCLKernelHandle(OCL_API_DECC, "decc"),
+    OCLKernelHandle(OCL_API_INCDECC, "incdecc"),
     OCLKernelHandle(OCL_API_INCS, "incs"),
-    OCLKernelHandle(OCL_API_DECS, "decs"),
-    OCLKernelHandle(OCL_API_INCSC_1, "incsc1"),
-    OCLKernelHandle(OCL_API_DECSC_1, "decsc1"),
-    OCLKernelHandle(OCL_API_INCSC_2, "incsc2"),
-    OCLKernelHandle(OCL_API_DECSC_2, "decsc2"),
+    OCLKernelHandle(OCL_API_INCDECSC_1, "incdecsc1"),
+    OCLKernelHandle(OCL_API_INCDECSC_2, "incdecsc2"),
     OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
-    OCLKernelHandle(OCL_API_DECBCD, "decbcd"),
-    OCLKernelHandle(OCL_API_INCBCDC, "incbcdc"),
-    OCLKernelHandle(OCL_API_DECBCDC, "decbcdc"),
+    OCLKernelHandle(OCL_API_INCDECBCDC, "incdecbcdc"),
     OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
     OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
     OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),

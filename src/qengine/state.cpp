@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -39,15 +39,8 @@ namespace Qrack {
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG)
-    , stateVec(NULL)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
-    if (qBitCount > (sizeof(bitCapInt) * bitsInByte))
-        throw std::invalid_argument(
-            "Cannot instantiate a register with greater capacity than native types on emulating system.");
-
-    runningNorm = ONE_R1;
-    SetQubitCount(qBitCount);
 
     stateVec = AllocStateVec(maxQPower);
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
@@ -105,12 +98,6 @@ void QEngineCPU::CopyState(QInterfacePtr orig)
 
     QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
     std::copy(src->stateVec, src->stateVec + src->maxQPower, stateVec);
-}
-
-void QEngineCPU::ResetStateVec(complex* nStateVec)
-{
-    FreeStateVec();
-    stateVec = nStateVec;
 }
 
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
@@ -533,19 +520,28 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     i = 0;
     j = 0;
     k = 0;
-    while (remainderStateProb[i] < min_norm) {
+    while ((i < remainderPower) && (remainderStateProb[i] < min_norm)) {
         i++;
     }
     k = i & ((1U << start) - 1);
-    k |= (i ^ k) << length;
+    k |= (i ^ k) << (start + length);
 
-    while (partStateProb[j] < min_norm) {
+    while ((j < partPower) && (partStateProb[j] < min_norm)) {
         j++;
     }
     k |= j << start;
 
-    real1 refAngle = arg(stateVec[k]);
-    real1 angleOffset = refAngle - (remainderStateAngle[i] + partStateAngle[j]);
+    real1 refAngle = ZERO_R1;
+    if (k < maxQPower) {
+        refAngle = arg(GetAmplitude(k));
+    }
+    real1 angleOffset = refAngle;
+    if (i < remainderPower) {
+        angleOffset -= remainderStateAngle[i];
+    }
+    if (j < partPower) {
+        angleOffset -= partStateAngle[j];
+    }
 
     for (bitCapInt l = 0; l < partPower; l++) {
         partStateAngle[l] += angleOffset;
@@ -720,6 +716,36 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     delete[] partError;
 
     return totError < approxcompare_error;
+}
+
+/// For chips with a zero flag, flip the phase of the state where the register equals zero.
+void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    par_for_skip(0U, maxQPower, 1U << start, length,
+        [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
+}
+
+/// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
+void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    bitCapInt regMask = bitRegMask(start, length);
+    bitCapInt flagMask = 1U << flagIndex;
+
+    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
+            stateVec[lcv] = -stateVec[lcv];
+    });
+}
+
+/// This is an expedient for an adaptive Grover's search for a function's global minimum.
+void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    bitCapInt regMask = bitRegMask(start, length);
+
+    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        if (((lcv & regMask) >> start) < greaterPerm)
+            stateVec[lcv] = -stateVec[lcv];
+    });
 }
 
 void QEngineCPU::NormalizeState(real1 nrm)

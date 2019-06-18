@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -32,15 +32,21 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : public QEngine, public ParallelFor {
-protected:
-    complex* stateVec;
-
+class QEngineCPU : virtual public QEngine, public ParallelFor {
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
         bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true);
-    ~QEngineCPU() { FreeStateVec(); }
+
+    QEngineCPU()
+    {
+        // Intentionally left blank
+    }
+
+    virtual ~QEngineCPU()
+    {
+        // Intentionally left blank
+    }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -49,7 +55,7 @@ public:
 
     virtual bitLenInt Compose(QEngineCPUPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
-    std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
     virtual bitLenInt Compose(QEngineCPUPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
@@ -63,55 +69,17 @@ public:
     /** @} */
 
     /**
-     * \defgroup RegGates Register-spanning gates
-     *
-     * Convienence and optimized functions implementing gates are applied from
-     * the bit 'start' for 'length' bits for the register.
-     *
-     * @{
-     */
-
-    using QEngine::X;
-    virtual void X(bitLenInt start, bitLenInt length);
-    using QEngine::CNOT;
-    virtual void CNOT(bitLenInt control, bitLenInt target, bitLenInt length);
-    using QEngine::AntiCNOT;
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length);
-    using QEngine::CCNOT;
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-    using QEngine::AntiCCNOT;
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-
-    /** @} */
-
-    /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
      * @{
      */
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-    virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
-    virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
-    virtual void DECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
@@ -144,8 +112,8 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    using QEngine::Swap;
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void UniformlyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
 
     /** @} */
 
@@ -172,32 +140,33 @@ public:
     /** @} */
 
 protected:
-    virtual void ResetStateVec(complex* nStateVec);
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual void FreeStateVec()
-    {
-        if (stateVec) {
-#if defined(_WIN32)
-            _aligned_free(stateVec);
-#else
-            free(stateVec);
-#endif
-        }
-        stateVec = NULL;
-    }
 
-    virtual void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
+    void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm);
-    virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
     virtual void UpdateRunningNorm();
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
+    virtual void INCDECC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    virtual void INCDECSC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
+        const bitLenInt& overflowIndex, const bitLenInt& carryIndex);
+    virtual void INCDECBCDC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+
+    typedef std::function<bitCapInt(const bitCapInt&, const bitCapInt&)> IOFn;
+    void MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
+        const bitLenInt& carryStart, const bitLenInt& length);
+    void CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
+        const bitLenInt& carryStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt controlLen);
+
     typedef std::function<bitCapInt(const bitCapInt&)> MFn;
-    void ModNOut(
-        MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    void CModNOut(MFn kernelFn, bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart,
-        bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+    void ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
+        const bitLenInt& length);
+    void CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
+        const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen);
 };
 } // namespace Qrack

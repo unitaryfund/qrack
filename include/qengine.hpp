@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -25,6 +25,7 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
  */
 class QEngine : public QInterface {
 protected:
+    complex* stateVec;
     bool randGlobalPhase;
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
@@ -42,12 +43,42 @@ protected:
     }
 
 public:
-    QEngine(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
+    QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true)
-        : QInterface(n, rgp, doNorm, useHardwareRNG)
+        : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
+        , stateVec(NULL)
         , randGlobalPhase(randomGlobalPhase)
         , useHostRam(useHostMem)
-        , runningNorm(ONE_R1){};
+        , runningNorm(ONE_R1)
+    {
+        if (qBitCount > (sizeof(bitCapInt) * bitsInByte)) {
+            throw std::invalid_argument(
+                "Cannot instantiate a register with greater capacity than native types on emulating system.");
+        }
+    };
+
+    QEngine()
+    {
+        // Intentionally left blank
+    }
+
+    virtual ~QEngine()
+    {
+        Finish();
+        FreeStateVec();
+    }
+
+    virtual void FreeStateVec()
+    {
+        if (stateVec) {
+#if defined(_WIN32)
+            _aligned_free(stateVec);
+#else
+            free(stateVec);
+#endif
+        }
+        stateVec = NULL;
+    }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
@@ -90,9 +121,23 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
+    virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
+    virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
+    virtual void INCSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 protected:
+    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false) = 0;
+    virtual void ResetStateVec(complex* nStateVec);
+
     virtual bool IsIdentity(const complex* mtrx);
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
@@ -101,5 +146,26 @@ protected:
         const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
+
+    /**
+     * Common driver method behind INCC and DECC
+     */
+    virtual void INCDECC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
+    /**
+     * Common driver method behind INCSC and DECSC (without overflow flag)
+     */
+    virtual void INCDECSC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
+    /**
+     * Common driver method behind INCSC and DECSC (with overflow flag)
+     */
+    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
+        const bitLenInt& overflowIndex, const bitLenInt& carryIndex) = 0;
+    /**
+     * Common driver method behind INCSC and DECSC (without overflow flag)
+     */
+    virtual void INCDECBCDC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
 };
 } // namespace Qrack

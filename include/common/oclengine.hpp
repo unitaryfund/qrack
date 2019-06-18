@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -68,30 +68,19 @@ enum OCLAPI {
     OCL_API_PROBREGALL,
     OCL_API_PROBMASK,
     OCL_API_PROBMASKALL,
-    OCL_API_X,
     OCL_API_X_SINGLE,
     OCL_API_X_SINGLE_WIDE,
     OCL_API_Z_SINGLE,
     OCL_API_Z_SINGLE_WIDE,
-    OCL_API_SWAP,
     OCL_API_ROL,
-    OCL_API_ROR,
     OCL_API_INC,
     OCL_API_CINC,
-    OCL_API_DEC,
-    OCL_API_CDEC,
-    OCL_API_INCC,
-    OCL_API_DECC,
+    OCL_API_INCDECC,
     OCL_API_INCS,
-    OCL_API_DECS,
-    OCL_API_INCSC_1,
-    OCL_API_DECSC_1,
-    OCL_API_INCSC_2,
-    OCL_API_DECSC_2,
+    OCL_API_INCDECSC_1,
+    OCL_API_INCDECSC_2,
     OCL_API_INCBCD,
-    OCL_API_DECBCD,
-    OCL_API_INCBCDC,
-    OCL_API_DECBCDC,
+    OCL_API_INCDECBCDC,
     OCL_API_INDEXEDLDA,
     OCL_API_INDEXEDADC,
     OCL_API_INDEXEDSBC,

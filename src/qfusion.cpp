@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // QFusion adds an optional "gate fusion" layer on top of a QEngine or QUnit.
 // Single bit gates are buffered in per-bit 2x2 complex matrices, to reduce the cost
@@ -764,6 +764,12 @@ bitCapInt QFusion::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLe
     FlushReg(valueStart, valueLength);
     FlushBit(carryIndex);
     return qReg->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+}
+
+void QFusion::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    std::rotate(bitBuffers.begin() + start, bitBuffers.begin() + start + shift, bitBuffers.begin() + start + length);
+    qReg->ROL(shift, start, length);
 }
 
 void QFusion::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)

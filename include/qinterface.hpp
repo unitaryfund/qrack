@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -9,7 +9,6 @@
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
-
 #pragma once
 
 #define _USE_MATH_DEFINES
@@ -33,7 +32,10 @@ void cl_free(void* toFree);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
+inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length) { return ((1U << length) - 1U) << start; }
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
@@ -49,9 +51,9 @@ enum QInterfaceEngine {
      * Create a QEngineCPU leveraging only local CPU and memory resources.
      */
     QINTERFACE_CPU = 0,
+
     /**
-     * Create a QEngineOCL, derived from QEngineCPU, leveraging OpenCL hardware to increase the speed of certain
-     * calculations.
+     * Create a QEngineOCL, leveraging OpenCL hardware to increase the speed of certain calculations.
      */
     QINTERFACE_OPENCL,
 
@@ -141,6 +143,7 @@ protected:
             free(toFree);
 #endif
         }
+        toFree = NULL;
     }
 
 public:
@@ -167,6 +170,11 @@ public:
         }
     }
 
+    QInterface()
+    {
+        // Intentionally left blank
+    }
+
     /** Destructor of QInterface */
     virtual ~QInterface(){};
 
@@ -177,7 +185,7 @@ public:
     int GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
-    virtual real1 Rand()
+    real1 Rand()
     {
         if (hardware_rand_generator != NULL) {
             return hardware_rand_generator->Next();
@@ -1280,17 +1288,17 @@ public:
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Subtract classical integer (without sign) */
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) = 0;
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
 
     /** Subtract classical integer (without sign, with carry) */
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Subtract a classical integer from the register, with sign and without carry. */
-    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
+    virtual void DECS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(
@@ -1300,7 +1308,7 @@ public:
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Subtract BCD integer (without sign) */
-    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Subtract BCD integer (without sign, with carry) */
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
