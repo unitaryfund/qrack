@@ -1012,15 +1012,30 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have total
     // or no probability of altering the targets, such that we can still keep them separate.
 
+    std::vector<bitLenInt> controlVec(controlLen);
+    std::copy(controls, controls + controlLen, controlVec.begin());
+    bitLenInt controlIndex = 0;
+
     bool isSeparated = true;
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
             // Since it's cached, check whether the bit probability is 0, (or 1, if "anti").
-            real1 checkZero = Prob(controls[0]);
-            if ((anti && ((ONE_R1 - checkZero) < min_norm)) || (!anti && (checkZero < min_norm))) {
-                // If it is, this gate does nothing.
-                return;
+            real1 checkZero = Prob(controls[i]);
+            if (checkZero < min_norm) {
+                if (!anti) {
+                    // If it is, this gate does nothing.
+                    return;
+                }
+                controlVec.erase(controlVec.begin() + controlIndex);
+            } else if ((ONE_R1 - checkZero) < min_norm) {
+                if (anti) {
+                    // If it is, this gate does nothing.
+                    return;
+                }
+                controlVec.erase(controlVec.begin() + controlIndex);
+            } else {
+                controlIndex++;
             }
             continue;
         }
@@ -1032,20 +1047,13 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 break;
             }
         }
-        if (!isSeparated) {
-            break;
-        }
     }
-
-    std::vector<bitLenInt> controlVec(controlLen);
-    std::copy(controls, controls + controlLen, controlVec.begin());
 
     if (isSeparated) {
         // The controls are entirely separated from the targets already, in this branch. If the probability of a change
         // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
         real1 prob = ONE_R1;
         real1 bitProb;
-        bitLenInt controlIndex = 0;
         for (i = 0; i < controlLen; i++) {
             bitProb = Prob(controls[i]);
 
@@ -1057,11 +1065,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
             if (prob < min_norm) {
                 break;
-            } else if ((ONE_R1 - prob) < min_norm) {
-                // We can avoid entangling the control, if it is guaranteed to activate.
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else {
-                controlIndex++;
             }
         }
         if (prob < min_norm) {
