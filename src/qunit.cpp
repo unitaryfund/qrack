@@ -1054,10 +1054,17 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     if (isSeparated) {
         // The controls are entirely separated from the targets already, in this branch. If the probability of a change
         // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
+        controlIndex = 0;
         real1 prob = ONE_R1;
         real1 bitProb;
-        for (i = 0; i < controlLen; i++) {
-            bitProb = Prob(controls[i]);
+        for (i = 0; i < controlVec.size(); i++) {
+            bitProb = Prob(controlVec[controlIndex]);
+
+            if ((bitProb < min_norm) || ((ONE_R1 - bitProb) < min_norm)) {
+                controlVec.erase(controlVec.begin() + controlIndex);
+            } else {
+                controlIndex++;
+            }
 
             if (anti) {
                 prob *= ONE_R1 - bitProb;
