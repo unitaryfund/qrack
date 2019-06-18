@@ -1038,6 +1038,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 controlIndex++;
             }
             continue;
+        } else {
+            controlIndex++;
         }
         for (j = 0; j < targets.size(); j++) {
             // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the targets,
