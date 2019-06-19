@@ -366,20 +366,20 @@ void QEngine::AntiCISqrtSwap(
 void QEngine::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex* mtrx, bool doCalcNorm)
 {
-    bitCapInt* qPowers = new bitCapInt[controlLen + 1];
-    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1];
-    bitCapInt fullMask = 0;
+    bitCapInt* qPowers = new bitCapInt[controlLen + 1U];
+    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
+    bitCapInt fullMask = 0U;
     bitCapInt controlMask;
-    for (int i = 0; i < controlLen; i++) {
-        qPowers[i] = 1 << controls[i];
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        qPowers[i] = 1U << controls[i];
         fullMask |= qPowers[i];
     }
     controlMask = fullMask;
-    qPowers[controlLen] = 1 << target;
+    qPowers[controlLen] = 1U << target;
     fullMask |= qPowers[controlLen];
-    std::copy(qPowers, qPowers + controlLen + 1, qPowersSorted);
-    std::sort(qPowersSorted, qPowersSorted + controlLen + 1);
-    Apply2x2(controlMask, fullMask, mtrx, controlLen + 1, qPowersSorted, doCalcNorm);
+    std::copy(qPowers, qPowers + controlLen + 1U, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
+    Apply2x2(controlMask, fullMask, mtrx, controlLen + 1U, qPowersSorted, doCalcNorm);
     delete[] qPowers;
     delete[] qPowersSorted;
 }
@@ -387,15 +387,15 @@ void QEngine::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& con
 void QEngine::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex* mtrx, bool doCalcNorm)
 {
-    bitCapInt* qPowers = new bitCapInt[controlLen + 1];
-    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1];
-    for (int i = 0; i < controlLen; i++) {
-        qPowers[i] = 1 << controls[i];
+    bitCapInt* qPowers = new bitCapInt[controlLen + 1U];
+    bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
+    for (int i = 0U; i < controlLen; i++) {
+        qPowers[i] = 1U << controls[i];
     }
-    qPowers[controlLen] = 1 << target;
-    std::copy(qPowers, qPowers + controlLen + 1, qPowersSorted);
-    std::sort(qPowersSorted, qPowersSorted + controlLen + 1);
-    Apply2x2(0, qPowers[controlLen], mtrx, controlLen + 1, qPowersSorted, doCalcNorm);
+    qPowers[controlLen] = 1U << target;
+    std::copy(qPowers, qPowers + controlLen + 1U, qPowersSorted);
+    std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
+    Apply2x2(0U, qPowers[controlLen], mtrx, controlLen + 1U, qPowersSorted, doCalcNorm);
     delete[] qPowers;
     delete[] qPowersSorted;
 }

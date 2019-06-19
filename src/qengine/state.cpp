@@ -156,12 +156,14 @@ union ComplexUnion {
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    doCalcNorm &= doNormalize && (bitCount == 1);
+
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
-    if (doCalcNorm && (bitCount == 1)) {
+    if (doCalcNorm) {
         real1* rngNrm = new real1[numCores];
         std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
@@ -205,10 +207,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
 {
+    doCalcNorm &= doNormalize && (bitCount == 1);
+
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
-    if (doCalcNorm && (bitCount == 1)) {
+    if (doCalcNorm) {
         real1* rngNrm = new real1[numCores];
         std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
