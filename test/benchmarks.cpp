@@ -409,6 +409,7 @@ TEST_CASE("test_qft_permutation_round_trip_entangled")
         },
         true, false, testEngineType == QINTERFACE_QUNIT);
 }
+
 TEST_CASE("test_qft_superposition_round_trip")
 {
     benchmarkLoop(
