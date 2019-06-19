@@ -456,12 +456,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     complex amp;
     if (phaseFac == complex(-999.0, -999.0)) {
-        if (randGlobalPhase) {
-            real1 angle = Rand() * 2.0 * PI_R1;
-            amp = complex(cos(angle), sin(angle));
-        } else {
-            amp = complex(ONE_R1, ZERO_R1);
-        }
+        amp = GetNonunitaryPhase();
     } else {
         amp = phaseFac;
     }

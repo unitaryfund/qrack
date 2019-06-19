@@ -46,14 +46,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     std::fill(stateVec, stateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
     if (phaseFac == complex(-999.0, -999.0)) {
-        complex phase;
-        if (randGlobalPhase) {
-            real1 angle = Rand() * 2.0 * PI_R1;
-            phase = complex(cos(angle), sin(angle));
-        } else {
-            phase = complex(ONE_R1, ZERO_R1);
-        }
-        stateVec[initState] = phase;
+        stateVec[initState] = GetNonunitaryPhase();
     } else {
         stateVec[initState] = phaseFac;
     }
