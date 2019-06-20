@@ -681,6 +681,11 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     }
 
     nrm = norm(toCompare->stateVec[basePerm]);
+    if (nrm < min_norm) {
+        // If the amplitude we sample for global phase offset correction doesn't match, we're done.
+        return false;
+    }
+
     complex basePhaseFac2 = (ONE_R1 / sqrt(nrm)) * toCompare->stateVec[basePerm];
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {

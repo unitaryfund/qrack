@@ -1551,29 +1551,33 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
     basePerm--;
     amp = stateVec1[basePerm];
     nrm = dot(amp, amp);
-    basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * amp;
 
-    amp = stateVec2[basePerm];
-    cmplx basePhaseFac2 = (ONE_R1 / sqrt(dot(amp, amp))) * amp;
+    // If the amplitude we sample for global phase offset correction doesn't match, we're done.
+    if (nrm > min_norm) {
+        basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * amp;
 
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = zmul(basePhaseFac2, stateVec1[lcv]) - zmul(basePhaseFac1, stateVec2[lcv]);
-        partNrm += dot(amp, amp);
-    }
+        amp = stateVec2[basePerm];
+        cmplx basePhaseFac2 = (ONE_R1 / sqrt(dot(amp, amp))) * amp;
 
-    locID = get_local_id(0);
-    locNthreads = get_local_size(0);
-    lProbBuffer[locID] = partNrm;
+        for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+            amp = zmul(basePhaseFac2, stateVec1[lcv]) - zmul(basePhaseFac1, stateVec2[lcv]);
+            partNrm += dot(amp, amp);
+        }
+
+        locID = get_local_id(0);
+        locNthreads = get_local_size(0);
+        lProbBuffer[locID] = partNrm;
     
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if (locID < lcv) {
-            lProbBuffer[locID] += lProbBuffer[locID + lcv];
-        } 
-    }
+        for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if (locID < lcv) {
+                lProbBuffer[locID] += lProbBuffer[locID + lcv];
+            }
+        }
 
-    if (locID == 0U) {
-        norm_ptr[get_group_id(0)] = lProbBuffer[0];
+        if (locID == 0U) {
+            norm_ptr[get_group_id(0)] = lProbBuffer[0];
+        }
     }
 }
 
