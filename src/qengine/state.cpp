@@ -198,7 +198,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec[lcv + offset2] = qubit.cmplx[1];
 #endif
         });
-        if (doNormalize && doCalcNorm) {
+        if (doCalcNorm) {
             UpdateRunningNorm();
         }
     }
@@ -246,7 +246,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec[lcv + offset1] = qubit[0];
             stateVec[lcv + offset2] = qubit[1];
         });
-        if (doNormalize && doCalcNorm) {
+        if (doCalcNorm) {
             UpdateRunningNorm();
         }
     }
