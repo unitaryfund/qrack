@@ -1578,6 +1578,8 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
         if (locID == 0U) {
             norm_ptr[get_group_id(0)] = lProbBuffer[0];
         }
+    } else {
+        norm_ptr[get_group_id(0)] = 10;
     }
 }
 
