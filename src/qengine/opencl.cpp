@@ -1111,7 +1111,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     delete[] partStateProb;
     delete[] partStateAngle;
 
-    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is false, then we need to force it right here.
+    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is
+    // false, then we need to force it right here.
     UpdateRunningNorm();
     if (!doNormalize) {
         NormalizeState();
@@ -1119,7 +1120,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     if (destination != nullptr) {
         destination->UpdateRunningNorm();
         if (!(destination->doNormalize)) {
-             destination->NormalizeState();
+            destination->NormalizeState();
         }
     }
 }
@@ -1547,8 +1548,8 @@ void QEngineOCL::INTSC(
     bitCapInt inOutMask = (lengthPower - 1U) << start;
     bitCapInt otherMask = ((1U << qubitCount) - 1U) ^ (inOutMask | carryMask);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0,
-        0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, lengthPower, carryMask, start, toMod, 0,
+        0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
 }

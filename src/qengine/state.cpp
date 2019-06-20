@@ -544,7 +544,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         partStateAngle[l] += angleOffset;
     }
 
-    if ((maxQPower - partPower) == 0U) {
+    if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
@@ -569,8 +569,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     delete[] partStateProb;
     delete[] partStateAngle;
 
-
-    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is false, then we need to force it right here.
+    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is
+    // false, then we need to force it right here.
     UpdateRunningNorm();
     if (!doNormalize) {
         NormalizeState();
@@ -578,7 +578,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     if (destination != nullptr) {
         destination->UpdateRunningNorm();
         if (!(destination->doNormalize)) {
-             destination->NormalizeState();
+            destination->NormalizeState();
         }
     }
 }
@@ -731,8 +731,8 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    par_for_skip(0, maxQPower, 1U << start, length,
-        [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
+    par_for_skip(
+        0, maxQPower, 1U << start, length, [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
