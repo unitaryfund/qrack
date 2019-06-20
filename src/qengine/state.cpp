@@ -568,6 +568,19 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     delete[] remainderStateAngle;
     delete[] partStateProb;
     delete[] partStateAngle;
+
+
+    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is false, then we need to force it right here.
+    UpdateRunningNorm();
+    if (!doNormalize) {
+        NormalizeState();
+    }
+    if (destination != nullptr) {
+        destination->UpdateRunningNorm();
+        if (!(destination->doNormalize)) {
+             destination->NormalizeState();
+        }
+    }
 }
 
 void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
