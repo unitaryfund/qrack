@@ -1101,11 +1101,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    runningNorm = ONE_R1;
-    if (destination != nullptr) {
-        destination->runningNorm = ONE_R1;
-    }
-
     WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec);
@@ -1115,6 +1110,18 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     delete[] remainderStateAngle;
     delete[] partStateProb;
     delete[] partStateAngle;
+
+    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is false, then we need to force it right here.
+    UpdateRunningNorm();
+    if (!doNormalize) {
+        NormalizeState();
+    }
+    if (destination != nullptr) {
+        destination->UpdateRunningNorm();
+        if (!(destination->doNormalize)) {
+             destination->NormalizeState();
+        }
+    }
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
