@@ -381,63 +381,6 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 }
 
 /**
- * Combine (copies) each QEngineCPU in the vector with this one, after the last bit
- * index of this one. (If the programmer doesn't want to "cheat," it is left up
- * to them to delete the old unit that was added.
- *
- * Returns a mapping of the index into the new QEngine that each old one was mapped to.
- */
-std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr> toCopy)
-{
-    std::map<QInterfacePtr, bitLenInt> ret;
-
-    bitLenInt i;
-    bitLenInt toComposeCount = toCopy.size();
-
-    std::vector<bitLenInt> offset(toComposeCount);
-    std::vector<bitCapInt> mask(toComposeCount);
-
-    bitCapInt startMask = maxQPower - 1U;
-    bitCapInt nQubitCount = qubitCount;
-    bitCapInt nMaxQPower;
-
-    if (doNormalize && (runningNorm != ONE_R1)) {
-        NormalizeState();
-    }
-
-    for (i = 0; i < toComposeCount; i++) {
-        QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
-        if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
-            src->NormalizeState();
-        }
-        mask[i] = (src->GetMaxQPower() - 1U) << nQubitCount;
-        offset[i] = nQubitCount;
-        ret[toCopy[i]] = nQubitCount;
-        nQubitCount += src->GetQubitCount();
-    }
-
-    nMaxQPower = 1 << nQubitCount;
-
-    complex* nStateVec = AllocStateVec(nMaxQPower);
-
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
-        nStateVec[lcv] = stateVec[lcv & startMask];
-
-        for (bitLenInt j = 0; j < toComposeCount; j++) {
-            QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[j]);
-            nStateVec[lcv] *= src->stateVec[(lcv & mask[j]) >> offset[j]];
-        }
-    });
-
-    qubitCount = nQubitCount;
-    maxQPower = nMaxQPower;
-
-    ResetStateVec(nStateVec);
-
-    return ret;
-}
-
-/**
  * Minimally decompose a set of contigious bits from the separable unit. The
  * length of this separable unit is reduced by the length of bits decomposed, and
  * the bits removed are output in the destination QEngineCPU pointer. The

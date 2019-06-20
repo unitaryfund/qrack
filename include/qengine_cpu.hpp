@@ -55,7 +55,6 @@ public:
 
     virtual bitLenInt Compose(QEngineCPUPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
-    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
     virtual bitLenInt Compose(QEngineCPUPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
