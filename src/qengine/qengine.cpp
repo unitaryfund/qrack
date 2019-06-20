@@ -375,7 +375,7 @@ void QEngine::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& con
     }
     controlMask = fullMask;
     qPowersSorted[controlLen] = 1U << target;
-    fullMask |= qPowersSorted[controlLen];
+    fullMask |= 1U << target;
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
     Apply2x2(controlMask, fullMask, mtrx, controlLen + 1U, qPowersSorted, doCalcNorm);
     delete[] qPowersSorted;

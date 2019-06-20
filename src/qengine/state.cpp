@@ -328,9 +328,9 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     }
 
     bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
-    bitCapInt nMaxQPower = 1 << nQubitCount;
-    bitCapInt startMask = (1 << qubitCount) - 1;
-    bitCapInt endMask = ((1 << (toCopy->qubitCount)) - 1) << qubitCount;
+    bitCapInt nMaxQPower = 1U << nQubitCount;
+    bitCapInt startMask = maxQPower - 1U;
+    bitCapInt endMask = (toCopy->maxQPower - 1U) << qubitCount;
 
     complex* nStateVec = AllocStateVec(nMaxQPower);
 
@@ -361,10 +361,10 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 
     bitCapInt oQubitCount = toCopy->qubitCount;
     bitCapInt nQubitCount = qubitCount + oQubitCount;
-    bitCapInt nMaxQPower = 1 << nQubitCount;
-    bitCapInt startMask = (1 << start) - 1;
-    bitCapInt midMask = ((1 << oQubitCount) - 1) << start;
-    bitCapInt endMask = ((1 << (qubitCount + oQubitCount)) - 1) & ~(startMask | midMask);
+    bitCapInt nMaxQPower = 1U << nQubitCount;
+    bitCapInt startMask = (1U << start) - 1U;
+    bitCapInt midMask = ((1U << oQubitCount) - 1U) << start;
+    bitCapInt endMask = ((1U << (qubitCount + oQubitCount)) - 1U) & ~(startMask | midMask);
 
     complex* nStateVec = AllocStateVec(nMaxQPower);
 
@@ -397,7 +397,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     std::vector<bitLenInt> offset(toComposeCount);
     std::vector<bitCapInt> mask(toComposeCount);
 
-    bitCapInt startMask = maxQPower - 1;
+    bitCapInt startMask = maxQPower - 1U;
     bitCapInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
@@ -410,7 +410,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
         }
-        mask[i] = ((1 << src->GetQubitCount()) - 1) << nQubitCount;
+        mask[i] = (src->GetMaxQPower() - 1U) << nQubitCount;
         offset[i] = nQubitCount;
         ret[toCopy[i]] = nQubitCount;
         nQubitCount += src->GetQubitCount();
@@ -454,8 +454,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         NormalizeState();
     }
 
-    bitCapInt partPower = 1 << length;
-    bitCapInt remainderPower = 1 << (qubitCount - length);
+    bitCapInt partPower = 1U << length;
+    bitCapInt remainderPower = 1U << (qubitCount - length);
 
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower]();
@@ -464,7 +464,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, k, l;
-        j = lcv & ((1U << start) - 1);
+        j = lcv & ((1U << start) - 1U);
         j |= (lcv ^ j) << length;
 
         real1 firstAngle = -16 * M_PI;
@@ -496,7 +496,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         real1 nrm;
 
         for (k = 0; k < remainderPower; k++) {
-            l = k & ((1 << start) - 1);
+            l = k & ((1U << start) - 1U);
             l |= (k ^ l) << length;
             l = j | l;
 
@@ -520,7 +520,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     while ((i < remainderPower) && (remainderStateProb[i] < min_norm)) {
         i++;
     }
-    k = i & ((1U << start) - 1);
+    k = i & ((1U << start) - 1U);
     k |= (i ^ k) << (start + length);
 
     while ((j < partPower) && (partStateProb[j] < min_norm)) {
@@ -544,7 +544,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         partStateAngle[l] += angleOffset;
     }
 
-    if ((maxQPower - partPower) == 0) {
+    if ((maxQPower - partPower) == 0U) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
@@ -587,16 +587,16 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
         NormalizeState();
     }
 
-    bitCapInt qPower = (1 << qubit);
-    bitCapInt qMask = qPower - 1;
+    bitCapInt qPower = 1U << qubit;
+    bitCapInt qMask = qPower - 1U;
     real1 oneChance = 0;
 
     int numCores = GetConcurrencyLevel();
     real1* oneChanceBuff = new real1[numCores]();
 
-    par_for(0, maxQPower >> 1, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower >> 1U, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt i = lcv & qMask;
-        i |= ((lcv ^ i) << 1) | qPower;
+        i |= ((lcv ^ i) << 1U) | qPower;
         oneChanceBuff[cpu] += norm(stateVec[i]);
     });
 
@@ -657,7 +657,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     std::vector<bitCapInt> skipPowersVec;
     for (length = 0; v; length++) {
         oldV = v;
-        v &= v - 1; // clear the least significant bit set
+        v &= v - 1U; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
@@ -718,7 +718,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    par_for_skip(0U, maxQPower, 1U << start, length,
+    par_for_skip(0, maxQPower, 1U << start, length,
         [&](const bitCapInt lcv, const int cpu) { stateVec[lcv] = -stateVec[lcv]; });
 }
 
@@ -728,7 +728,7 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     bitCapInt regMask = bitRegMask(start, length);
     bitCapInt flagMask = 1U << flagIndex;
 
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
             stateVec[lcv] = -stateVec[lcv];
     });
@@ -739,7 +739,7 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 {
     bitCapInt regMask = bitRegMask(start, length);
 
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         if (((lcv & regMask) >> start) < greaterPerm)
             stateVec[lcv] = -stateVec[lcv];
     });
