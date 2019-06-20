@@ -916,11 +916,11 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 {
     bitLenInt result = start;
 
-    bitCapInt oQubitCount = toCopy->qubitCount;
-    bitCapInt nQubitCount = qubitCount + oQubitCount;
+    bitLenInt oQubitCount = toCopy->qubitCount;
+    bitLenInt nQubitCount = qubitCount + oQubitCount;
     bitCapInt nMaxQPower = 1U << nQubitCount;
     bitCapInt startMask = (1U << start) - 1U;
-    bitCapInt midMask = ((1U << oQubitCount) - 1U) << start;
+    bitCapInt midMask = bitRegMask(start, oQubitCount);
     bitCapInt endMask = ((1U << (qubitCount + oQubitCount)) - 1U) & ~(startMask | midMask);
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start, 0, 0,
         0 };

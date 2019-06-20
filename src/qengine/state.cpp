@@ -359,11 +359,11 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
         toCopy->NormalizeState();
     }
 
-    bitCapInt oQubitCount = toCopy->qubitCount;
-    bitCapInt nQubitCount = qubitCount + oQubitCount;
+    bitLenInt oQubitCount = toCopy->qubitCount;
+    bitLenInt nQubitCount = qubitCount + oQubitCount;
     bitCapInt nMaxQPower = 1U << nQubitCount;
     bitCapInt startMask = (1U << start) - 1U;
-    bitCapInt midMask = ((1U << oQubitCount) - 1U) << start;
+    bitCapInt midMask = bitRegMask(start, oQubitCount);
     bitCapInt endMask = ((1U << (qubitCount + oQubitCount)) - 1U) & ~(startMask | midMask);
 
     complex* nStateVec = AllocStateVec(nMaxQPower);
