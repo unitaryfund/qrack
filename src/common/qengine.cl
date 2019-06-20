@@ -1538,9 +1538,26 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
     cmplx amp;
     real1 partNrm = ZERO_R1;
 
+    // Hopefully, since this is identical redundant work by all elements, the break hits for all at the same time.
+    cmplx basePhaseFac1;
+    real1 nrm;
+    bitCapInt basePerm = 0;
+    do {
+        amp = stateVec1[basePerm];
+        nrm = dot(amp, amp);
+        basePerm++;
+    } while (nrm < min_norm);
+
+    basePerm--;
+    amp = stateVec1[basePerm];
+    nrm = dot(amp, amp);
+    basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * amp;
+
+    amp = stateVec2[basePerm];
+    cmplx basePhaseFac2 = (ONE_R1 / sqrt(dot(amp, amp))) * amp;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = stateVec1[lcv] - stateVec2[lcv];
+        amp = zmul(basePhaseFac2, stateVec1[lcv]) - zmul(basePhaseFac1, stateVec2[lcv]);
         partNrm += dot(amp, amp);
     }
 

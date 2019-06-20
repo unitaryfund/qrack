@@ -978,54 +978,11 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     EventVecPtr waitVec2 = ResetWaitEvents();
 
-    queue.enqueueMapBuffer(
-        *probBuffer1, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * remainderPower, waitVec2.get());
-    queue.enqueueMapBuffer(*probBuffer2, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * partPower);
-    queue.enqueueMapBuffer(*angleBuffer1, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * remainderPower);
-    queue.enqueueMapBuffer(*angleBuffer2, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(real1) * partPower);
-
-    bitCapInt i, j, k;
-    i = 0;
-    j = 0;
-    k = 0;
-    while ((i < remainderPower) && (remainderStateProb[i] < min_norm)) {
-        i++;
-    }
-    k = i & ((1U << start) - 1U);
-    k |= (i ^ k) << (start + length);
-
-    while ((j < partPower) && (partStateProb[j] < min_norm)) {
-        j++;
-    }
-    k |= j << start;
-
-    real1 refAngle = ZERO_R1;
-    if (k < maxQPower) {
-        refAngle = arg(GetAmplitude(k));
-    }
-    real1 angleOffset = refAngle;
-    if (i < remainderPower) {
-        angleOffset -= remainderStateAngle[i];
-    }
-    if (j < partPower) {
-        angleOffset -= partStateAngle[j];
-    }
-
-    for (bitCapInt l = 0; l < partPower; l++) {
-        partStateAngle[l] += angleOffset;
-    }
-
-    if ((maxQPower - partPower) <= 0) {
+    if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
         SetQubitCount(qubitCount - length);
     }
-
-    device_context->wait_events->resize(4);
-    queue.enqueueUnmapMemObject(*probBuffer1, remainderStateProb, NULL, &((*(device_context->wait_events.get()))[0]));
-    queue.enqueueUnmapMemObject(*probBuffer2, partStateProb, NULL, &((*(device_context->wait_events.get()))[1]));
-    queue.enqueueUnmapMemObject(*angleBuffer1, remainderStateAngle, NULL, &((*(device_context->wait_events.get()))[2]));
-    queue.enqueueUnmapMemObject(*angleBuffer2, partStateAngle, NULL, &((*(device_context->wait_events.get()))[3]));
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
@@ -1110,19 +1067,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     delete[] remainderStateAngle;
     delete[] partStateProb;
     delete[] partStateAngle;
-
-    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is
-    // false, then we need to force it right here.
-    UpdateRunningNorm();
-    if (!doNormalize) {
-        NormalizeState();
-    }
-    if (destination != nullptr) {
-        destination->UpdateRunningNorm();
-        if (!(destination->doNormalize)) {
-            destination->NormalizeState();
-        }
-    }
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)

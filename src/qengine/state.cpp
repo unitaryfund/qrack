@@ -513,37 +513,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         }
     });
 
-    bitCapInt i, j, k;
-    i = 0;
-    j = 0;
-    k = 0;
-    while ((i < remainderPower) && (remainderStateProb[i] < min_norm)) {
-        i++;
-    }
-    k = i & ((1U << start) - 1U);
-    k |= (i ^ k) << (start + length);
-
-    while ((j < partPower) && (partStateProb[j] < min_norm)) {
-        j++;
-    }
-    k |= j << start;
-
-    real1 refAngle = ZERO_R1;
-    if (k < maxQPower) {
-        refAngle = arg(GetAmplitude(k));
-    }
-    real1 angleOffset = refAngle;
-    if (i < remainderPower) {
-        angleOffset -= remainderStateAngle[i];
-    }
-    if (j < partPower) {
-        angleOffset -= partStateAngle[j];
-    }
-
-    for (bitCapInt l = 0; l < partPower; l++) {
-        partStateAngle[l] += angleOffset;
-    }
-
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
@@ -568,19 +537,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     delete[] remainderStateAngle;
     delete[] partStateProb;
     delete[] partStateAngle;
-
-    // We absolutely need to normalize, here. If the engine will not pick it up in stride, because "doNormalize" is
-    // false, then we need to force it right here.
-    UpdateRunningNorm();
-    if (!doNormalize) {
-        NormalizeState();
-    }
-    if (destination != nullptr) {
-        destination->UpdateRunningNorm();
-        if (!(destination->doNormalize)) {
-            destination->NormalizeState();
-        }
-    }
 }
 
 void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
@@ -713,8 +669,22 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     int numCores = GetConcurrencyLevel();
     real1* partError = new real1[numCores]();
 
+    complex basePhaseFac1;
+    real1 nrm;
+    bitCapInt basePerm;
+    for (basePerm = 0; basePerm < maxQPower; basePerm++) {
+        nrm = norm(stateVec[basePerm]);
+        if (nrm > min_norm) {
+            basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * stateVec[basePerm];
+            break;
+        }
+    }
+
+    nrm = norm(toCompare->stateVec[basePerm]);
+    complex basePhaseFac2 = (ONE_R1 / sqrt(nrm)) * toCompare->stateVec[basePerm];
+
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        real1 elemError = norm(stateVec[lcv] - toCompare->stateVec[lcv]);
+        real1 elemError = norm(basePhaseFac2 * stateVec[lcv] - basePhaseFac1 * toCompare->stateVec[lcv]);
         partError[cpu] += elemError;
     });
 
