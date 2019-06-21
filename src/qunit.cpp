@@ -371,6 +371,8 @@ QInterfacePtr QUnit::EntangleRange(
 
 QInterfacePtr QUnit::EntangleAll()
 {
+    EndAllEmulation();
+
     std::vector<QInterfacePtr> units;
     units.reserve(qubitCount);
 
