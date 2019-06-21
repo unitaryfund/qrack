@@ -1911,6 +1911,8 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
         return false;
     }
 
+    EndAllEmulation();
+
     QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Clone());
     thisCopy->EntangleAll();
     thisCopy->OrderContiguous(thisCopy->shards[0].unit);
