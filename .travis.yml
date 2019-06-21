@@ -2,11 +2,10 @@ language:
   - c
 install:
   - sudo apt-get update
-  - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake python3 python3-pip python3-pytest python3-networkx
-  - sudo pip3 install --upgrade pip setuptools wheel pytest networkx
+  - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake python3 python3-pip python3-pytest
+  - sudo pip3 install --upgrade pip setuptools wheel pytest
   - sudo pip3 install --only-binary=numpy,scipy numpy scipy
-  - sudo pip3 install dormouse
-  - sudo pip3 install pybind11
+  - sudo pip3 install dormouse pybind11 networkx
 script:
   - mkdir _build && cd _build && cmake -DUSE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - sudo make install
