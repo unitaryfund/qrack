@@ -963,18 +963,19 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     bitLenInt controlIndex = 0;
 
     bool isSeparated = true;
+    real1 bitProb;
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
             // Since it's cached, check whether the bit probability is 0, (or 1, if "anti").
-            real1 checkZero = Prob(controls[i]);
-            if (checkZero < min_norm) {
+            bitProb = Prob(controls[i]);
+            if (bitProb < min_norm) {
                 if (!anti) {
                     // If it is, this gate does nothing.
                     return;
                 }
                 controlVec.erase(controlVec.begin() + controlIndex);
-            } else if ((ONE_R1 - checkZero) < min_norm) {
+            } else if ((ONE_R1 - bitProb) < min_norm) {
                 if (anti) {
                     // If it is, this gate does nothing.
                     return;
@@ -996,35 +997,30 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
     }
 
+    bitLenInt controlsLeft = controlVec.size();
     if (isSeparated) {
         // The controls are entirely separated from the targets already, in this branch. If the probability of a change
         // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
         controlIndex = 0;
-        real1 prob = ONE_R1;
-        real1 bitProb;
-        for (i = 0; i < controlVec.size(); i++) {
+        for (i = 0; i < controlsLeft; i++) {
             bitProb = Prob(controlVec[controlIndex]);
-
-            if ((bitProb < min_norm) || ((ONE_R1 - bitProb) < min_norm)) {
+            if (bitProb < min_norm) {
+                if (!anti) {
+                    // If it is, this gate does nothing.
+                    return;
+                }
+                controlVec.erase(controlVec.begin() + controlIndex);
+            } else if ((ONE_R1 - bitProb) < min_norm) {
+                if (anti) {
+                    // If it is, this gate does nothing.
+                    return;
+                }
                 controlVec.erase(controlVec.begin() + controlIndex);
             } else {
                 controlIndex++;
             }
-
-            if (anti) {
-                prob *= ONE_R1 - bitProb;
-            } else {
-                prob *= bitProb;
-            }
-
-            if (prob < min_norm) {
-                break;
-            }
         }
-        if (prob < min_norm) {
-            // Here, the gate is guaranteed not to have any effect, so we skip it.
-            return;
-        } else if ((ONE_R1 - prob) < min_norm) {
+        if (controlVec.size() == 0) {
             // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
             // avoiding an entangled representation.
             fn();
