@@ -23,6 +23,7 @@ namespace Qrack {
 struct QEngineShard {
     QInterfacePtr unit;
     bitLenInt mapped;
+    bool isEmulated;
     bool isProbDirty;
     real1 prob;
     bool isPhaseDirty;
@@ -356,6 +357,34 @@ protected:
         for (bitLenInt i = 0; i < length; i++) {
             shards[bitIndices[i]].isProbDirty = true;
             shards[bitIndices[i]].isPhaseDirty = true;
+        }
+    }
+
+    void EndEmulation(QEngineShard& shard)
+    {
+        if (shard.isEmulated) {
+            shard.unit->SetBit(shard.mapped, shard.prob >= (ONE_R1 / 2));
+            shard.isEmulated = false;
+        }
+    }
+
+    void EndEmulation(const bitLenInt& target)
+    {
+        QEngineShard& shard = shards[target];
+        EndEmulation(shard);
+    }
+
+    void EndEmulation(bitLenInt* bitIndices, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            EndEmulation(bitIndices[i]);
+        }
+    }
+
+    void EndAllEmulation()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            EndEmulation(i);
         }
     }
 };

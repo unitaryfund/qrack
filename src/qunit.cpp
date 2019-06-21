@@ -17,6 +17,10 @@
 #include "qfactory.hpp"
 #include "qunit.hpp"
 
+#define CACHED_CLASSICAL(shard) !(shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm)))
+#define PHASE_MATTERS(shard)                                                                                           \
+    !randGlobalPhase || shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))
+
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -56,6 +60,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
         shards[i].unit = CreateQuantumInterface(engine, subengine, 1U, bitState ? 1U : 0U, rand_generator, phaseFac,
             doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
         shards[i].mapped = 0;
+        shards[i].isEmulated = false;
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i].isProbDirty = false;
         shards[i].phase = ZERO_R1;
@@ -68,6 +73,8 @@ void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 // protected method
 void QUnit::CopyState(QUnit* orig)
 {
+    EndAllEmulation();
+
     SetQubitCount(orig->GetQubitCount());
     shards.clear();
 
@@ -76,6 +83,7 @@ void QUnit::CopyState(QUnit* orig)
     for (auto&& otherShard : orig->shards) {
         QEngineShard shard;
         shard.mapped = otherShard.mapped;
+        shard.isEmulated = otherShard.isEmulated;
         shard.prob = otherShard.prob;
         shard.isProbDirty = otherShard.isProbDirty;
         shard.phase = otherShard.phase;
@@ -92,6 +100,8 @@ void QUnit::CopyState(QUnit* orig)
 
 void QUnit::CopyState(QInterfacePtr orig)
 {
+    EndAllEmulation();
+
     QInterfacePtr unit = CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->CopyState(orig);
@@ -104,6 +114,7 @@ void QUnit::CopyState(QInterfacePtr orig)
         QEngineShard shard;
         shard.unit = unit;
         shard.mapped = i;
+        shard.isEmulated = false;
         shard.isProbDirty = true;
         shard.isPhaseDirty = true;
         shards.push_back(shard);
@@ -112,6 +123,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(const complex* inputState)
 {
+    EndAllEmulation();
+
     auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->SetQuantumState(inputState);
@@ -120,6 +133,7 @@ void QUnit::SetQuantumState(const complex* inputState)
     for (auto&& shard : shards) {
         shard.unit = unit;
         shard.mapped = idx++;
+        shard.isEmulated = false;
         shard.isProbDirty = true;
         shard.isPhaseDirty = true;
     }
@@ -127,6 +141,7 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
+    EndAllEmulation();
     QUnit qUnitCopy(engine, subengine, 1, 0);
     qUnitCopy.CopyState((QUnit*)this);
     qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
@@ -135,6 +150,7 @@ void QUnit::GetQuantumState(complex* outputState)
 
 void QUnit::GetProbs(real1* outputProbs)
 {
+    EndAllEmulation();
     QUnit qUnitCopy(engine, subengine, 1, 0);
     qUnitCopy.CopyState((QUnit*)this);
     qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
@@ -143,6 +159,8 @@ void QUnit::GetProbs(real1* outputProbs)
 
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
+    EndAllEmulation();
+
     complex result(ONE_R1, ZERO_R1);
 
     std::map<QInterfacePtr, bitCapInt> perms;
@@ -177,7 +195,7 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); 
 bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
     /* Create a clone of the quantum state in toCopy. */
-    QUnitPtr clone(toCopy);
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
     /* Insert the new shards in the middle */
     shards.insert(shards.begin() + start, clone->shards.begin(), clone->shards.end());
@@ -210,6 +228,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     if (dest) {
         for (bitLenInt i = 0; i < length; i++) {
+            dest->shards[start + i].isEmulated = shards[start + i].isEmulated;
             dest->shards[start + i].prob = shards[start + i].prob;
             dest->shards[start + i].isProbDirty = shards[start + i].isProbDirty;
             dest->shards[start + i].phase = shards[start + i].phase;
@@ -246,6 +265,10 @@ void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, n
 
 QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    for (auto bit = first; bit < last; bit++) {
+        EndEmulation(shards[**bit]);
+    }
+
     std::vector<QInterfacePtr> units;
     units.reserve((int)(last - first));
 
@@ -352,6 +375,8 @@ QInterfacePtr QUnit::EntangleRange(
 
 QInterfacePtr QUnit::EntangleAll()
 {
+    EndAllEmulation();
+
     std::vector<QInterfacePtr> units;
     units.reserve(qubitCount);
 
@@ -420,6 +445,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     if (length > 1) {
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
+    } else {
+        EndEmulation(start);
     }
 
     QInterfacePtr separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator,
@@ -585,6 +612,8 @@ real1 QUnit::Prob(bitLenInt qubit)
 
 real1 QUnit::ProbAll(bitCapInt perm)
 {
+    EndAllEmulation();
+
     real1 result = ONE_R1;
 
     std::map<QInterfacePtr, bitCapInt> perms;
@@ -622,6 +651,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     /* Update the mappings. */
     shards[qubit].unit = dest;
     shards[qubit].mapped = 0;
+    shards[qubit].isEmulated = false;
     shards[qubit].prob = value ? ONE_R1 : ZERO_R1;
     shards[qubit].isProbDirty = false;
     shards[qubit].phase = ZERO_R1;
@@ -636,7 +666,14 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
-    bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
+    QEngineShard& shard = shards[qubit];
+
+    bool result;
+    if (CACHED_CLASSICAL(shard)) {
+        result = shard.prob >= (ONE_R1 / 2);
+    } else {
+        result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
+    }
 
     if (shards[qubit].unit->GetQubitCount() == 1) {
         shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
@@ -661,7 +698,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
         bitState = value & (1 << i);
-        shards[i + start].unit->SetPermutation(bitState ? 1 : 0);
+        shards[i + start].isEmulated = true;
         shards[i + start].prob = bitState ? ONE_R1 : ZERO_R1;
         shards[i + start].isProbDirty = false;
         shards[i + start].phase = ZERO_R1;
@@ -675,20 +712,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
-
     // Swap the bit mapping.
-    std::swap(shard1.mapped, shard2.mapped);
-
-    // Swap the QInterface object.
-    std::swap(shard1.unit, shard2.unit);
-
-    // Swap the cached probability.
-    std::swap(shard1.prob, shard2.prob);
-    std::swap(shard1.isProbDirty, shard2.isProbDirty);
-    std::swap(shard1.phase, shard2.phase);
-    std::swap(shard1.isPhaseDirty, shard2.isPhaseDirty);
+    std::swap(shards[qubit1], shards[qubit2]);
 }
 
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
@@ -700,6 +725,10 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     shards[qubit1].isProbDirty = true;
     shards[qubit2].isProbDirty = true;
     shards[qubit1].isPhaseDirty = true;
@@ -710,6 +739,10 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     shards[qubit1].isProbDirty = true;
     shards[qubit2].isProbDirty = true;
     shards[qubit1].isPhaseDirty = true;
@@ -762,6 +795,9 @@ void QUnit::UniformlyControlledSingleBit(
 void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
+
+    EndEmulation(shard);
+
     shard.unit->H(shard.mapped);
 
     if (shard.isProbDirty || shard.isPhaseDirty) {
@@ -794,21 +830,34 @@ void QUnit::H(bitLenInt target)
 
 void QUnit::X(bitLenInt target)
 {
-    shards[target].unit->X(shards[target].mapped);
-    shards[target].prob = ONE_R1 - shards[target].prob;
-    shards[target].phase = ClampPhase(2 * M_PI - shards[target].phase);
+    QEngineShard& shard = shards[target];
+    if (CACHED_CLASSICAL(shard)) {
+        shard.isEmulated = true;
+    } else {
+        shard.unit->X(shard.mapped);
+    }
+    shard.prob = ONE_R1 - shard.prob;
+    shard.phase = ClampPhase(2 * M_PI - shard.phase);
 }
 
 void QUnit::Z(bitLenInt target)
 {
-    shards[target].unit->Z(shards[target].mapped);
-    shards[target].phase = ClampPhase(shards[target].phase + M_PI);
+    QEngineShard& shard = shards[target];
+    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+    if (PHASE_MATTERS(shard)) {
+        EndEmulation(shard);
+        shard.unit->Z(shard.mapped);
+        shard.phase = ClampPhase(shard.phase + M_PI);
+    }
 }
 
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
+    if (qubit1 == qubit2) {                                                                                            \
+        return;                                                                                                        \
+    }                                                                                                                  \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
 #define CTRL_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, mtrx
@@ -855,22 +904,36 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
-    shards[target].unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shards[target].mapped);
-    shards[target].phase = ClampPhase(shards[target].phase + arg(bottomRight) - arg(topLeft));
+    QEngineShard& shard = shards[target];
+    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+    if (PHASE_MATTERS(shard)) {
+        EndEmulation(shard);
+        shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
+        shard.phase = ClampPhase(shard.phase + arg(bottomRight) - arg(topLeft));
+    }
 }
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
-    shards[target].unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shards[target].mapped);
-    shards[target].prob = ONE_R1 - shards[target].prob;
-    shards[target].phase = ClampPhase((2 * M_PI - shards[target].phase) + (arg(topRight) - arg(bottomLeft)));
+    QEngineShard& shard = shards[target];
+    if (CACHED_CLASSICAL(shard)) {
+        shard.isEmulated = true;
+    } else {
+        shard.unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped);
+    }
+    shard.prob = ONE_R1 - shard.prob;
+    shard.phase = ClampPhase((2 * M_PI - shard.phase) + (arg(topRight) - arg(bottomLeft)));
 }
 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topLeft, const complex bottomRight)
 {
-    CTRLED_CALL_WRAP(
-        ApplyControlledSinglePhase(CTRL_P_ARGS), ApplySinglePhase(topLeft, bottomRight, true, target), false);
+    QEngineShard& shard = shards[target];
+    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+    if (PHASE_MATTERS(shard)) {
+        CTRLED_CALL_WRAP(
+            ApplyControlledSinglePhase(CTRL_P_ARGS), ApplySinglePhase(topLeft, bottomRight, true, target), false);
+    }
 }
 
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -896,9 +959,11 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
-    shards[qubit].isProbDirty = true;
-    shards[qubit].isPhaseDirty = true;
-    shards[qubit].unit->ApplySingleBit(mtrx, doCalcNorm, shards[qubit].mapped);
+    QEngineShard& shard = shards[qubit];
+    EndEmulation(shard);
+    shard.isProbDirty = true;
+    shard.isPhaseDirty = true;
+    shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped);
 }
 
 void QUnit::ApplyControlledSingleBit(
@@ -1210,6 +1275,7 @@ void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length
         }
     }
     if (isFlagEntangled) {
+        EndEmulation(shards[flagIndex]);
         flagUnit->M(shards[flagIndex].mapped);
     } else {
         M(flagIndex);
@@ -1794,6 +1860,7 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
 void QUnit::UpdateRunningNorm()
 {
+    EndAllEmulation();
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
@@ -1806,6 +1873,7 @@ void QUnit::UpdateRunningNorm()
 
 void QUnit::NormalizeState(real1 nrm)
 {
+    EndAllEmulation();
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
@@ -1856,6 +1924,8 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
         return false;
     }
 
+    EndAllEmulation();
+
     QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Clone());
     thisCopy->EntangleAll();
     thisCopy->OrderContiguous(thisCopy->shards[0].unit);
@@ -1869,6 +1939,8 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
 
 QInterfacePtr QUnit::Clone()
 {
+    EndAllEmulation();
+
     QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
         complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
