@@ -3,6 +3,7 @@ language:
 install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
+  - if [ "${PYTHON:0:1}" = "3" ]; then export PY=3; fi
 script:
   - mkdir _build && cd _build && cmake -DUSE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - cd .. && rm -r _build
