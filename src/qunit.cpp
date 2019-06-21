@@ -949,6 +949,27 @@ void QUnit::AntiCISqrtSwap(
     CTRLED_SWAP_WRAP(AntiCISqrtSwap(CTRL_S_ARGS), ISqrtSwap(qubit1, qubit2), true);
 }
 
+#define CHECK_BREAK_AND_TRIM()                                                                                         \
+    /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
+    bitProb = Prob(controlVec[controlIndex]);                                                                          \
+    if (bitProb < min_norm) {                                                                                          \
+        if (!anti) {                                                                                                   \
+            /* This gate does nothing, so return without applying anything. */                                         \
+            return;                                                                                                    \
+        }                                                                                                              \
+        /* This control has 100% chance to "fire," so don't entangle it. */                                            \
+        controlVec.erase(controlVec.begin() + controlIndex);                                                           \
+    } else if ((ONE_R1 - bitProb) < min_norm) {                                                                        \
+        if (anti) {                                                                                                    \
+            /* This gate does nothing, so return without applying anything. */                                         \
+            return;                                                                                                    \
+        }                                                                                                              \
+        /* This control has 100% chance to "fire," so don't entangle it. */                                            \
+        controlVec.erase(controlVec.begin() + controlIndex);                                                           \
+    } else {                                                                                                           \
+        controlIndex++;                                                                                                \
+    }
+
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
     const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
@@ -967,23 +988,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
-            // Since it's cached, check whether the bit probability is 0, (or 1, if "anti").
-            bitProb = Prob(controls[i]);
-            if (bitProb < min_norm) {
-                if (!anti) {
-                    // If it is, this gate does nothing.
-                    return;
-                }
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else if ((ONE_R1 - bitProb) < min_norm) {
-                if (anti) {
-                    // If it is, this gate does nothing.
-                    return;
-                }
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else {
-                controlIndex++;
-            }
+            // This might determine that we can just skip out of the whole gate, in which case it returns this method:
+            CHECK_BREAK_AND_TRIM();
         } else {
             controlIndex++;
             for (j = 0; j < targets.size(); j++) {
@@ -1003,22 +1009,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
         controlIndex = 0;
         for (i = 0; i < controlsLeft; i++) {
-            bitProb = Prob(controlVec[controlIndex]);
-            if (bitProb < min_norm) {
-                if (!anti) {
-                    // If it is, this gate does nothing.
-                    return;
-                }
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else if ((ONE_R1 - bitProb) < min_norm) {
-                if (anti) {
-                    // If it is, this gate does nothing.
-                    return;
-                }
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else {
-                controlIndex++;
-            }
+            // This might determine that we can just skip out of the whole gate, in which case it returns this method:
+            CHECK_BREAK_AND_TRIM();
         }
         if (controlVec.size() == 0) {
             // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
