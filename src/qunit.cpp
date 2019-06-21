@@ -799,11 +799,13 @@ void QUnit::X(bitLenInt target)
     shards[target].phase = ClampPhase(2 * M_PI - shards[target].phase);
 }
 
+#define PHASE_MATTERS(shard) !randGlobalPhase || shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))
+
 void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))) {
+    if (PHASE_MATTERS(shard)) {
         shard.unit->Z(shard.mapped);
         shard.phase = ClampPhase(shard.phase + M_PI);
     }
@@ -861,7 +863,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 {
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))) {
+    if (PHASE_MATTERS(shard)) {
         shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
         shard.phase = ClampPhase(shard.phase + arg(bottomRight) - arg(topLeft));
     }
@@ -879,7 +881,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
 {
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))) {
+    if (PHASE_MATTERS(shard)) {
         CTRLED_CALL_WRAP(
             ApplyControlledSinglePhase(CTRL_P_ARGS), ApplySinglePhase(topLeft, bottomRight, true, target), false);
     }
