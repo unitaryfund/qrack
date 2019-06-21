@@ -169,50 +169,21 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     return result;
 }
 
-/*
- * Append QInterface to the end of the unit.
- */
-void QUnit::Compose(QUnitPtr toCopy, bool isMid, bitLenInt start)
-{
-    bitLenInt oQubitCount = toCopy->GetQubitCount();
-    bitLenInt oldCount = qubitCount;
-
-    /* Increase the number of bits in this object. */
-    SetQubitCount(qubitCount + oQubitCount);
-
-    /* Create a clone of the quantum state in toCopy. */
-    QUnitPtr clone(toCopy);
-
-    /* Update shards to reference the cloned state. */
-    bitLenInt j;
-    for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {
-        j = i + oldCount;
-        shards[j].unit = clone->shards[i].unit;
-        shards[j].mapped = clone->shards[i].mapped;
-        shards[j].prob = clone->shards[i].prob;
-        shards[j].isProbDirty = clone->shards[i].isProbDirty;
-        shards[j].phase = clone->shards[i].phase;
-        shards[j].isPhaseDirty = clone->shards[i].isPhaseDirty;
-    }
-
-    if (isMid) {
-        ROL(oQubitCount, start, qubitCount - start);
-    }
-}
-
-bitLenInt QUnit::Compose(QUnitPtr toCopy)
-{
-    bitLenInt oldCount = qubitCount;
-    Compose(toCopy, false, 0);
-    return oldCount;
-}
+bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
 
 /*
  * Append QInterface in the middle of QUnit.
  */
 bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
-    Compose(toCopy, true, start);
+    /* Create a clone of the quantum state in toCopy. */
+    QUnitPtr clone(toCopy);
+
+    /* Insert the new shards in the middle */
+    shards.insert(shards.begin() + start, clone->shards.begin(), clone->shards.end());
+
+    SetQubitCount(qubitCount + toCopy->GetQubitCount());
+
     return start;
 }
 
