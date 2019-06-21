@@ -801,8 +801,12 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    shards[target].unit->Z(shards[target].mapped);
-    shards[target].phase = ClampPhase(shards[target].phase + M_PI);
+    QEngineShard& shard = shards[target];
+    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+    if (shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))) {
+        shard.unit->Z(shard.mapped);
+        shard.phase = ClampPhase(shard.phase + M_PI);
+    }
 }
 
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
