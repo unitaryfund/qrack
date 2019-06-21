@@ -1212,9 +1212,6 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     delete[] skipPowers;
 
-    if (oneChance > ONE_R1)
-        oneChance = ONE_R1;
-
     return clampProb(oneChance);
 }
 

@@ -675,7 +675,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     for (basePerm = 0; basePerm < maxQPower; basePerm++) {
         nrm = norm(stateVec[basePerm]);
         if (nrm > min_norm) {
-            basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * stateVec[basePerm];
+            basePhaseFac1 = (ONE_R1 / (real1)sqrt(nrm)) * stateVec[basePerm];
             break;
         }
     }
@@ -686,7 +686,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
         return false;
     }
 
-    complex basePhaseFac2 = (ONE_R1 / sqrt(nrm)) * toCompare->stateVec[basePerm];
+    complex basePhaseFac2 = (ONE_R1 / (real1)sqrt(nrm)) * toCompare->stateVec[basePerm];
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         real1 elemError = norm(basePhaseFac2 * stateVec[lcv] - basePhaseFac1 * toCompare->stateVec[lcv]);
