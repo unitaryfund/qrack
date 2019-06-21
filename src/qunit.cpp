@@ -169,50 +169,21 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     return result;
 }
 
-/*
- * Append QInterface to the end of the unit.
- */
-void QUnit::Compose(QUnitPtr toCopy, bool isMid, bitLenInt start)
-{
-    bitLenInt oQubitCount = toCopy->GetQubitCount();
-    bitLenInt oldCount = qubitCount;
-
-    /* Increase the number of bits in this object. */
-    SetQubitCount(qubitCount + oQubitCount);
-
-    /* Create a clone of the quantum state in toCopy. */
-    QUnitPtr clone(toCopy);
-
-    /* Update shards to reference the cloned state. */
-    bitLenInt j;
-    for (bitLenInt i = 0; i < clone->GetQubitCount(); i++) {
-        j = i + oldCount;
-        shards[j].unit = clone->shards[i].unit;
-        shards[j].mapped = clone->shards[i].mapped;
-        shards[j].prob = clone->shards[i].prob;
-        shards[j].isProbDirty = clone->shards[i].isProbDirty;
-        shards[j].phase = clone->shards[i].phase;
-        shards[j].isPhaseDirty = clone->shards[i].isPhaseDirty;
-    }
-
-    if (isMid) {
-        ROL(oQubitCount, start, qubitCount - start);
-    }
-}
-
-bitLenInt QUnit::Compose(QUnitPtr toCopy)
-{
-    bitLenInt oldCount = qubitCount;
-    Compose(toCopy, false, 0);
-    return oldCount;
-}
+bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
 
 /*
  * Append QInterface in the middle of QUnit.
  */
 bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
-    Compose(toCopy, true, start);
+    /* Create a clone of the quantum state in toCopy. */
+    QUnitPtr clone(toCopy);
+
+    /* Insert the new shards in the middle */
+    shards.insert(shards.begin() + start, clone->shards.begin(), clone->shards.end());
+
+    SetQubitCount(qubitCount + toCopy->GetQubitCount());
+
     return start;
 }
 
@@ -978,6 +949,27 @@ void QUnit::AntiCISqrtSwap(
     CTRLED_SWAP_WRAP(AntiCISqrtSwap(CTRL_S_ARGS), ISqrtSwap(qubit1, qubit2), true);
 }
 
+#define CHECK_BREAK_AND_TRIM()                                                                                         \
+    /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
+    bitProb = Prob(controlVec[controlIndex]);                                                                          \
+    if (bitProb < min_norm) {                                                                                          \
+        if (!anti) {                                                                                                   \
+            /* This gate does nothing, so return without applying anything. */                                         \
+            return;                                                                                                    \
+        }                                                                                                              \
+        /* This control has 100% chance to "fire," so don't entangle it. */                                            \
+        controlVec.erase(controlVec.begin() + controlIndex);                                                           \
+    } else if ((ONE_R1 - bitProb) < min_norm) {                                                                        \
+        if (anti) {                                                                                                    \
+            /* This gate does nothing, so return without applying anything. */                                         \
+            return;                                                                                                    \
+        }                                                                                                              \
+        /* This control has 100% chance to "fire," so don't entangle it. */                                            \
+        controlVec.erase(controlVec.begin() + controlIndex);                                                           \
+    } else {                                                                                                           \
+        controlIndex++;                                                                                                \
+    }
+
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
     const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
@@ -992,26 +984,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     bitLenInt controlIndex = 0;
 
     bool isSeparated = true;
+    real1 bitProb;
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
-            // Since it's cached, check whether the bit probability is 0, (or 1, if "anti").
-            real1 checkZero = Prob(controls[i]);
-            if (checkZero < min_norm) {
-                if (!anti) {
-                    // If it is, this gate does nothing.
-                    return;
-                }
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else if ((ONE_R1 - checkZero) < min_norm) {
-                if (anti) {
-                    // If it is, this gate does nothing.
-                    return;
-                }
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else {
-                controlIndex++;
-            }
+            // This might determine that we can just skip out of the whole gate, in which case it returns this method:
+            CHECK_BREAK_AND_TRIM();
         } else {
             controlIndex++;
             for (j = 0; j < targets.size(); j++) {
@@ -1025,35 +1003,16 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
     }
 
+    bitLenInt controlsLeft = controlVec.size();
     if (isSeparated) {
         // The controls are entirely separated from the targets already, in this branch. If the probability of a change
         // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
         controlIndex = 0;
-        real1 prob = ONE_R1;
-        real1 bitProb;
-        for (i = 0; i < controlVec.size(); i++) {
-            bitProb = Prob(controlVec[controlIndex]);
-
-            if ((bitProb < min_norm) || ((ONE_R1 - bitProb) < min_norm)) {
-                controlVec.erase(controlVec.begin() + controlIndex);
-            } else {
-                controlIndex++;
-            }
-
-            if (anti) {
-                prob *= ONE_R1 - bitProb;
-            } else {
-                prob *= bitProb;
-            }
-
-            if (prob < min_norm) {
-                break;
-            }
+        for (i = 0; i < controlsLeft; i++) {
+            // This might determine that we can just skip out of the whole gate, in which case it returns this method:
+            CHECK_BREAK_AND_TRIM();
         }
-        if (prob < min_norm) {
-            // Here, the gate is guaranteed not to have any effect, so we skip it.
-            return;
-        } else if ((ONE_R1 - prob) < min_norm) {
+        if (controlVec.size() == 0) {
             // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
             // avoiding an entangled representation.
             fn();

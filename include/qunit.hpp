@@ -86,7 +86,6 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), start);
     }
-    virtual void Compose(QUnitPtr toCopy, bool isMid, bitLenInt start);
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
         Decompose(start, length, std::dynamic_pointer_cast<QUnit>(dest));
