@@ -17,6 +17,10 @@
 #include "qfactory.hpp"
 #include "qunit.hpp"
 
+#define CACHED_CLASSICAL(shard) !(shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm)))
+#define PHASE_MATTERS(shard)                                                                                           \
+    !randGlobalPhase || shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))
+
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -441,6 +445,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     if (length > 1) {
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
+    } else {
+        EndEmulation(start);
     }
 
     QInterfacePtr separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator,
@@ -662,11 +668,12 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
     QEngineShard& shard = shards[qubit];
 
-    if (shard.isEmulated) {
-        return shard.prob >= (ONE_R1 / 2);
+    bool result;
+    if (CACHED_CLASSICAL(shard)) {
+        result = shard.prob >= (ONE_R1 / 2);
+    } else {
+        result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
     }
-
-    bool result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
 
     if (shards[qubit].unit->GetQubitCount() == 1) {
         shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
@@ -718,6 +725,10 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     shards[qubit1].isProbDirty = true;
     shards[qubit2].isProbDirty = true;
     shards[qubit1].isPhaseDirty = true;
@@ -728,6 +739,10 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
+
     shards[qubit1].isProbDirty = true;
     shards[qubit2].isProbDirty = true;
     shards[qubit1].isPhaseDirty = true;
@@ -813,8 +828,6 @@ void QUnit::H(bitLenInt target)
     }
 }
 
-#define CACHED_CLASSICAL(shard) !(shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm)))
-
 void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
@@ -826,9 +839,6 @@ void QUnit::X(bitLenInt target)
     shard.prob = ONE_R1 - shard.prob;
     shard.phase = ClampPhase(2 * M_PI - shard.phase);
 }
-
-#define PHASE_MATTERS(shard)                                                                                           \
-    !randGlobalPhase || shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))
 
 void QUnit::Z(bitLenInt target)
 {
@@ -845,6 +855,9 @@ void QUnit::Z(bitLenInt target)
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
+    if (qubit1 == qubit2) {                                                                                            \
+        return;                                                                                                        \
+    }                                                                                                                  \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
 #define CTRL_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, mtrx
