@@ -191,7 +191,7 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); 
 bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
     /* Create a clone of the quantum state in toCopy. */
-    QUnitPtr clone(toCopy);
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
     /* Insert the new shards in the middle */
     shards.insert(shards.begin() + start, clone->shards.begin(), clone->shards.end());
