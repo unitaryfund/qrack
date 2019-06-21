@@ -69,6 +69,8 @@ void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
 // protected method
 void QUnit::CopyState(QUnit* orig)
 {
+    EndAllEmulation();
+
     SetQubitCount(orig->GetQubitCount());
     shards.clear();
 
@@ -94,6 +96,8 @@ void QUnit::CopyState(QUnit* orig)
 
 void QUnit::CopyState(QInterfacePtr orig)
 {
+    EndAllEmulation();
+
     QInterfacePtr unit = CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->CopyState(orig);
@@ -115,6 +119,8 @@ void QUnit::CopyState(QInterfacePtr orig)
 
 void QUnit::SetQuantumState(const complex* inputState)
 {
+    EndAllEmulation();
+
     auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND);
     unit->SetQuantumState(inputState);
@@ -131,6 +137,7 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
+    EndAllEmulation();
     QUnit qUnitCopy(engine, subengine, 1, 0);
     qUnitCopy.CopyState((QUnit*)this);
     qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
@@ -139,6 +146,7 @@ void QUnit::GetQuantumState(complex* outputState)
 
 void QUnit::GetProbs(real1* outputProbs)
 {
+    EndAllEmulation();
     QUnit qUnitCopy(engine, subengine, 1, 0);
     qUnitCopy.CopyState((QUnit*)this);
     qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
@@ -147,6 +155,8 @@ void QUnit::GetProbs(real1* outputProbs)
 
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
+    EndAllEmulation();
+
     complex result(ONE_R1, ZERO_R1);
 
     std::map<QInterfacePtr, bitCapInt> perms;
@@ -594,6 +604,8 @@ real1 QUnit::Prob(bitLenInt qubit)
 
 real1 QUnit::ProbAll(bitCapInt perm)
 {
+    EndAllEmulation();
+
     real1 result = ONE_R1;
 
     std::map<QInterfacePtr, bitCapInt> perms;
@@ -799,13 +811,15 @@ void QUnit::H(bitLenInt target)
     }
 }
 
+#define CACHED_CLASSICAL(shard) !(shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm)))
+
 void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-    if (shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))) {
-        shard.unit->X(shard.mapped);
-    } else {
+    if (CACHED_CLASSICAL(shard)) {
         shard.isEmulated = true;
+    } else {
+        shard.unit->X(shard.mapped);
     }
     shard.prob = ONE_R1 - shard.prob;
     shard.phase = ClampPhase(2 * M_PI - shard.phase);
@@ -887,10 +901,10 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-    if (shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))) {
-        shard.unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped);
-    } else {
+    if (CACHED_CLASSICAL(shard)) {
         shard.isEmulated = true;
+    } else {
+        shard.unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped);
     }
     shard.prob = ONE_R1 - shard.prob;
     shard.phase = ClampPhase((2 * M_PI - shard.phase) + (arg(topRight) - arg(bottomLeft)));
