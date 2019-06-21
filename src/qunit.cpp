@@ -1926,6 +1926,8 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
 
 QInterfacePtr QUnit::Clone()
 {
+    EndAllEmulation();
+
     QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
         complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
