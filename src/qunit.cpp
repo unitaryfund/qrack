@@ -1212,9 +1212,11 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
         return;
     }
 
+    // All controls not optimized out are either in "isProbDirty" state or definitely true.
+    // If all are definitely true, we're better off using INC.
     bool canSkip = true;
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        if (!CheckBitPermutation(controlVec[i]) || (shards[controlVec[i]].prob < (ONE_R1 / 2))) {
+        if (!CheckBitPermutation(controlVec[i])) {
             canSkip = false;
             break;
         }
