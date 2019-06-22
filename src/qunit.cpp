@@ -1246,17 +1246,25 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
         return;
     }
 
-    CINT(&QInterface::CINC, toMod, start, length, controls, controlLen);
-}
+    bool canSkip = true;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        if (CheckBitPermutation(controls[i])) {
+            if (shards[controls[i]].prob < (ONE_R1 / 2)) {
+                return;
+            }
+        } else {
+            canSkip = false;
+            break;
+        }
+    }
 
-void QUnit::CDEC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    if (controlLen == 0) {
-        DEC(toMod, start, length);
+    if (canSkip) {
+        // INC is much better optimized
+        INC(toMod, start, length);
         return;
     }
 
-    CINT(&QInterface::CDEC, toMod, start, length, controls, controlLen);
+    CINT(&QInterface::CINC, toMod, start, length, controls, controlLen);
 }
 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
