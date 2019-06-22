@@ -1504,7 +1504,7 @@ void QEngineOCL::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenI
 /// Add or Subtract integer (BCD)
 void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
@@ -1515,7 +1515,7 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start,
 
     bitCapInt maxPow = intPow(10U, nibbleCount);
     toMod %= maxPow;
-    if (toMod == 0U) {
+    if (toMod == 0) {
         return;
     }
 
@@ -1537,7 +1537,7 @@ void QEngineOCL::INCBCD(bitCapInt toAdd, const bitLenInt start, const bitLenInt 
 void QEngineOCL::INTBCDC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
@@ -1548,7 +1548,7 @@ void QEngineOCL::INTBCDC(
 
     bitCapInt maxPow = intPow(10U, nibbleCount);
     toMod %= maxPow;
-    if (toMod == 0U) {
+    if (toMod == 0) {
         return;
     }
 
@@ -1760,13 +1760,13 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutSt
 
     bitCapInt* skipPowers = new bitCapInt[controlLen + length];
     bitCapInt* controlPowers = new bitCapInt[controlLen];
-    bitCapInt controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    bitCapInt controlMask = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
         controlPowers[i] = 1U << controls[i];
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         skipPowers[i + controlLen] = 1U << (carryStart + i);
     }
     std::sort(skipPowers, skipPowers + controlLen + length);
@@ -1794,13 +1794,13 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, cons
 
     bitCapInt* skipPowers = new bitCapInt[controlLen + length];
     bitCapInt* controlPowers = new bitCapInt[controlLen];
-    bitCapInt controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    bitCapInt controlMask = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
         controlPowers[i] = 1U << controls[i];
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         skipPowers[i + controlLen] = 1U << (carryStart + i);
     }
     std::sort(skipPowers, skipPowers + controlLen + length);
@@ -1846,7 +1846,7 @@ bitCapInt QEngineOCL::IndexedLDA(
         average /= totProb;
     }
 
-    return (bitCapInt)(average + 0.5);
+    return (bitCapInt)(average + (ONE_R1 / 2));
 }
 
 /** Add or Subtract based on an indexed load from classical memory */
@@ -1893,7 +1893,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     }
 
     // Return the expectation value.
-    return (bitCapInt)(average + 0.5);
+    return (bitCapInt)(average + (ONE_R1 / 2));
 }
 
 /** Add based on an indexed load from classical memory */

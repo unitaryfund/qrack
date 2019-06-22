@@ -26,23 +26,23 @@ namespace Qrack {
  */
 void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    if (((int)itemCount) <= numCores) {
+    if (itemCount <= (bitCapInt)numCores) {
         std::vector<std::future<void>> futures(itemCount);
         bitCapInt j;
-        int cpu;
-        for (cpu = 0; cpu < (int)itemCount; cpu++) {
+        uint32_t cpu;
+        for (cpu = 0; cpu < itemCount; cpu++) {
             j = begin + cpu;
             futures[cpu] = std::async(std::launch::async, [j, cpu, inc, fn]() { fn(inc(j, cpu), cpu); });
         }
-        for (cpu = 0; cpu < (int)itemCount; cpu++) {
+        for (cpu = 0; cpu < itemCount; cpu++) {
             futures[cpu].get();
         }
-    } else if (((int)(itemCount / PSTRIDE)) < numCores) {
-        int parStride = itemCount / numCores;
-        int remainder = itemCount - (parStride * numCores);
+    } else if ((itemCount / PSTRIDE) < (bitCapInt)numCores) {
+        bitCapInt parStride = itemCount / (bitCapInt)numCores;
+        bitCapInt remainder = itemCount - (parStride * numCores);
         std::vector<std::future<void>> futures(numCores);
-        int cpu, count;
-        int offset = begin;
+        int32_t cpu, count;
+        bitCapInt offset = begin;
         for (cpu = 0; cpu < numCores; cpu++) {
             bitCapInt workUnit = parStride;
             if (remainder > 0) {
@@ -176,23 +176,23 @@ void ParallelFor::par_for_mask(
 real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
 {
     real1 nrmSqr = 0;
-    if (((int)maxQPower) <= numCores) {
+    if (maxQPower <= (bitCapInt)numCores) {
         std::vector<std::future<real1>> futures(maxQPower);
         bitCapInt j;
-        int cpu;
-        for (cpu = 0; cpu < (int)maxQPower; cpu++) {
+        uint32_t cpu;
+        for (cpu = 0; cpu < maxQPower; cpu++) {
             j = cpu;
             futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray[j]); });
         }
-        for (cpu = 0; cpu < (int)maxQPower; cpu++) {
+        for (cpu = 0; cpu < maxQPower; cpu++) {
             nrmSqr += futures[cpu].get();
         }
-    } else if (((int)(maxQPower / PSTRIDE)) < numCores) {
-        int parStride = maxQPower / numCores;
-        int remainder = maxQPower - (parStride * numCores);
+    } else if ((maxQPower / PSTRIDE) < (bitCapInt)numCores) {
+        bitCapInt parStride = maxQPower / numCores;
+        bitCapInt remainder = maxQPower - (parStride * numCores);
         std::vector<std::future<real1>> futures(numCores);
-        int cpu, count;
-        int offset = 0;
+        int32_t cpu, count;
+        bitCapInt offset = 0;
         for (cpu = 0; cpu < numCores; cpu++) {
             bitCapInt workUnit = parStride;
             if (remainder > 0) {
@@ -236,7 +236,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
             });
         }
 
-        for (int cpu = 0; cpu != numCores; ++cpu) {
+        for (int32_t cpu = 0; cpu != numCores; ++cpu) {
             nrmSqr += futures[cpu].get();
         }
     }

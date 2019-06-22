@@ -86,7 +86,7 @@ public:
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
     {
-        bitCapInt powerTest = result ? qPower : 0U;
+        bitCapInt powerTest = result ? qPower : 0;
         ApplyM(qPower, powerTest, nrm);
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
