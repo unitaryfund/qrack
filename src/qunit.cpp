@@ -1203,13 +1203,26 @@ bool QUnit::CArithmeticOptimize(
     return false;
 }
 
-void QUnit::CINT(
-    CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
     if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire gate.
+        return;
+    }
+
+    bool canSkip = true;
+    for (bitLenInt i = 0; i < controlVec.size(); i++) {
+        if (!CheckBitPermutation(controlVec[i]) || (shards[controlVec[i]].prob < (ONE_R1 / 2))) {
+            canSkip = false;
+            break;
+        }
+    }
+
+    if (canSkip) {
+        // INC is much better optimized
+        INC(toMod, start, length);
         return;
     }
 
@@ -1234,32 +1247,9 @@ void QUnit::CINT(
         shards[controlVec[i]].isPhaseDirty = true;
     }
 
-    ((*unit).*fn)(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
+    unit->CINC(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
 
     DirtyShardRange(start, length);
-}
-
-void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    bool canSkip = true;
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        if (CheckBitPermutation(controls[i])) {
-            if (shards[controls[i]].prob < (ONE_R1 / 2)) {
-                return;
-            }
-        } else {
-            canSkip = false;
-            break;
-        }
-    }
-
-    if (canSkip) {
-        // INC is much better optimized
-        INC(toMod, start, length);
-        return;
-    }
-
-    CINT(&QInterface::CINC, toMod, start, length, controls, controlLen);
 }
 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
