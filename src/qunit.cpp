@@ -1448,8 +1448,11 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
         return;
     }
 
-    // Otherwise, use Draper addition and hope we avoid as much entanglement as possible:
+    // Otherwise, we can try to use Draper addition and hope we avoid as much entanglement as possible.
+    // However, it loses accuracy due to float rounding of the dyadic rotation.
     // QInterface::INC(toMod, start, length);
+
+    // We're stuck with this:
     EntangleRange(start, length);
     shards[start].unit->INC(toMod, shards[start].mapped, length);
     DirtyShardRange(start, length);
