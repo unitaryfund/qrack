@@ -1407,7 +1407,6 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     }
 
     // Try Ripple addition, to avoid entanglement.
-
     bool toAdd, inReg;
     bool carry = false;
     int total;
@@ -1415,7 +1414,7 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     for (bitLenInt i = 0; i < origLength; i++) {
         toAdd = toMod & 1U;
 
-        if (!toAdd && !carry) {
+        if (toAdd == carry) {
             toMod >>= 1U;
             start++;
             length--;
@@ -1426,7 +1425,7 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
         if (CheckBitPermutation(start)) {
             inReg = (shards[start].prob >= (ONE_R1 / 2));
             total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
-            if (inReg != (total & 1U)) {
+            if (inReg != (total & 1)) {
                 X(start);
             }
             carry = (total > 1);
@@ -1441,8 +1440,6 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
                 toMod++;
                 break;
             }
-
-            // TODO: We don't have to restrict to low-to-high ripple addition, here.
         }
     }
 
