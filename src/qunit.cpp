@@ -1406,25 +1406,50 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
         return;
     }
 
-    bitLenInt toModLen = log2(toMod) + 1U;
-    if (CheckBitsPermutation(start, toModLen)) {
-        bitCapInt lengthMask = ((1U << length) - 1U);
-        bitCapInt val = GetCachedPermutation(start, toModLen);
-        while ((toModLen <= length) && (((val + toMod) & lengthMask) >= (1U << toModLen))) {
-            if (!CheckBitPermutation(start + toModLen)) {
-                toModLen = length;
-            }
-            toModLen++;
-            val = GetCachedPermutation(start, toModLen);
+    // Try Ripple addition, to avoid entanglement.
+
+    bool toAdd, inReg;
+    bool carry = false;
+    int total;
+    bitLenInt origLength = length;
+    for (bitLenInt i = 0; i < origLength; i++) {
+        toAdd = toMod & 1U;
+
+        if (!toAdd && !carry) {
+            toMod >>= 1U;
+            start++;
+            length--;
+            // Nothing is changed, in this bit.
+            continue;
         }
 
-        if (toModLen <= length) {
-            SetReg(start, toModLen, (val + toMod) & lengthMask);
-            return;
+        if (CheckBitPermutation(start)) {
+            inReg = (shards[start].prob >= (ONE_R1 / 2));
+            total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
+            if (inReg != (total & 1U)) {
+                X(start);
+            }
+            carry = (total > 1);
+
+            toMod >>= 1U;
+            start++;
+            length--;
+        } else {
+            // We're blocked by needing to add 1 or 2 to a bit in an indefinite state.
+            if (carry) {
+                // We've kept toMod up to date with only the work left to do.
+                toMod++;
+            }
         }
     }
 
-    // Otherwise, form the potentially entangled representation:
+    if (toMod == 0) {
+        // We got lucky, and we were able to totally avoid entanglement.
+        return;
+    }
+
+    // Otherwise, use Draper addition and hope we avoid as much entanglement as possible:
+    // QInterface::INC(toMod, start, length);
     EntangleRange(start, length);
     shards[start].unit->INC(toMod, shards[start].mapped, length);
     DirtyShardRange(start, length);
@@ -1486,38 +1511,6 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 {
     // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
-}
-
-void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
-{
-    // Keep the bits separate, if cheap to do so:
-    toMod &= ((1U << length) - 1U);
-    if (toMod == 0) {
-        return;
-    }
-
-    bitLenInt toModLen = log2(toMod) + 1U;
-    if (CheckBitsPermutation(start, toModLen)) {
-        bitCapInt lengthMask = ((1U << length) - 1U);
-        bitCapInt val = GetCachedPermutation(start, toModLen);
-        while ((toModLen <= length) && (((val - toMod) & lengthMask) >= (1U << toModLen))) {
-            if (!CheckBitPermutation(start + toModLen)) {
-                toModLen = length;
-            }
-            toModLen++;
-            val = GetCachedPermutation(start, toModLen);
-        }
-
-        if (toModLen <= length) {
-            SetReg(start, toModLen, (val - toMod) & lengthMask);
-            return;
-        }
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    EntangleRange(start, length);
-    shards[start].unit->DEC(toMod, shards[start].mapped, length);
-    DirtyShardRange(start, length);
 }
 
 void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)

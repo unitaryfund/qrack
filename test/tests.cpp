@@ -1577,9 +1577,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_add_1")
     qftReg->IQFT(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
-    qftReg->SetPermutation(0);
-    qftReg->QInterface::INC(1, 0, 8);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+    qftReg->SetPermutation(20);
+    qftReg->QInterface::INC(17, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 37));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
