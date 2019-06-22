@@ -1568,6 +1568,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_lsr")
     REQUIRE_THAT(qftReg, HasProbability(64));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_add_1")
+{
+    qftReg->SetPermutation(0);
+    qftReg->QFT(0, 2);
+    qftReg->RTDyad(1, 0, 0);
+    qftReg->RTDyad(1, 1, 1);
+    qftReg->IQFT(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+
+    qftReg->SetPermutation(0);
+    qftReg->QInterface::INC(1, 0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;
@@ -1964,7 +1978,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    qftReg->SetPermutation(85);
+    bitCapInt randPerm = qftReg->Rand() * 256U;
+    qftReg->SetPermutation(randPerm);
 
     int i;
 
@@ -1980,7 +1995,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
         qftReg->H(i);
     }
 
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished") { REQUIRE(qftReg->isFinished()); }

@@ -25,7 +25,7 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     for (bitLenInt i = 0; i < length; i++) {
         for (bitLenInt j = 0; j <= i; j++) {
             if ((toAdd >> j) & 1U) {
-                RTDyad(1, (i + 1U) - j, inOutStart + i);
+                RTDyad(1, i - j, inOutStart + i);
             }
         }
     }
