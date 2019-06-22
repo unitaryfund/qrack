@@ -1241,11 +1241,6 @@ void QUnit::CINT(
 
 void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0) {
-        INC(toMod, start, length);
-        return;
-    }
-
     bool canSkip = true;
     for (bitLenInt i = 0; i < controlLen; i++) {
         if (CheckBitPermutation(controls[i])) {
