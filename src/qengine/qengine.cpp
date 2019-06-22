@@ -84,15 +84,15 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     }
     std::sort(qPowers, qPowers + length);
 
-    bitCapInt lengthPower = 1 << length;
+    bitCapInt lengthPower = 1U << length;
     real1 nrmlzr = ONE_R1;
     bitCapInt lcv, result;
     complex nrm;
 
     if (values != NULL) {
-        result = 0U;
+        result = 0;
         for (bitLenInt j = 0; j < length; j++) {
-            result |= values[j] ? (1U << bits[j]) : 0U;
+            result |= values[j] ? (1U << bits[j]) : 0;
         }
         nrmlzr = ProbMask(regMask, result);
         nrm = phase / (real1)(std::sqrt(nrmlzr));
@@ -110,7 +110,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     lcv = 0;
     real1 lowerProb = ZERO_R1;
     real1 largestProb = ZERO_R1;
-    result = lengthPower - 1;
+    result = lengthPower - 1U;
 
     /*
      * The value of 'lcv' should not exceed lengthPower unless the stateVec is
@@ -452,27 +452,27 @@ void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1*
 
 void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
-    long v = mask; // count the number of bits set in v
+    bitCapInt v = mask; // count the number of bits set in v
     bitCapInt oldV;
     bitLenInt length;
     std::vector<bitCapInt> powersVec;
     for (length = 0; v; length++) {
         oldV = v;
-        v &= v - 1; // clear the least significant bit set
+        v &= v - 1U; // clear the least significant bit set
     }
 
-    v = (~mask) & (maxQPower - 1); // count the number of bits set in v
+    v = (~mask) & (maxQPower - 1U); // count the number of bits set in v
     bitCapInt power;
     bitLenInt len; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
     for (len = 0; v; len++) {
         oldV = v;
-        v &= v - 1; // clear the least significant bit set
+        v &= v - 1U; // clear the least significant bit set
         power = (v ^ oldV) & oldV;
         skipPowersVec.push_back(power);
     }
 
-    bitCapInt lengthPower = 1 << length;
+    bitCapInt lengthPower = 1U << length;
     bitCapInt lcv;
 
     bitLenInt p;
@@ -481,9 +481,9 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         iHigh = lcv;
         i = 0;
         for (p = 0; p < (skipPowersVec.size()); p++) {
-            iLow = iHigh & (skipPowersVec[p] - 1);
+            iLow = iHigh & (skipPowersVec[p] - 1U);
             i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1;
+            iHigh = (iHigh ^ iLow) << 1U;
             if (iHigh == 0) {
                 break;
             }
@@ -501,7 +501,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         if (ForceM(start, result & 1U, doForce)) {
             return 1U;
         } else {
-            return 0U;
+            return 0;
         }
     }
 
@@ -511,8 +511,8 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
     real1 prob = Rand();
     complex phase = GetNonunitaryPhase();
-    bitCapInt lengthPower = 1 << length;
-    bitCapInt regMask = (lengthPower - 1) << start;
+    bitCapInt lengthPower = 1U << length;
+    bitCapInt regMask = (lengthPower - 1U) << start;
     real1* probArray = new real1[lengthPower]();
     bitCapInt lcv;
     real1 nrmlzr = ONE_R1;
@@ -523,7 +523,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         lcv = 0;
         real1 lowerProb = ZERO_R1;
         real1 largestProb = ZERO_R1;
-        result = lengthPower - 1;
+        result = lengthPower - 1U;
 
         /*
          * The value of 'lcv' should not exceed lengthPower unless the stateVec is

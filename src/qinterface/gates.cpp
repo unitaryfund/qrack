@@ -183,7 +183,7 @@ void QInterface::UniformlyControlledSingleBit(
             }
         }
 
-        ApplyControlledSingleBit(controls, controlLen, qubitIndex, &(mtrxs[index * 4]));
+        ApplyControlledSingleBit(controls, controlLen, qubitIndex, &(mtrxs[index * 4U]));
 
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
             if (!((index >> bit_pos) & 1)) {
@@ -224,7 +224,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
         if (op->uniform) {
             complex* expMtrx = new complex[maxJ];
             for (bitCapInt j = 0; j < (1U << op->controlLen); j++) {
-                exp2x2(mtrx + (j * 4), expMtrx + (j * 4));
+                exp2x2(mtrx + (j * 4U), expMtrx + (j * 4U));
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);
             delete[] expMtrx;

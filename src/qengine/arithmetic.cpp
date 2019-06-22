@@ -17,12 +17,12 @@ namespace Qrack {
 /// "Circular shift left" - shift bits left, and carry last bits.
 void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     shift %= length;
-    if (shift == 0U) {
+    if (shift == 0) {
         return;
     }
 
@@ -33,7 +33,7 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 
     complex* nStateVec = AllocStateVec(maxQPower);
 
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt regRes = lcv & regMask;
         bitCapInt regInt = regRes >> start;
@@ -46,13 +46,13 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Add integer (without sign)
 void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     bitCapInt lengthMask = (1U << length) - 1U;
     toAdd &= lengthMask;
-    if (toAdd == 0U) {
+    if (toAdd == 0) {
         return;
     }
 
@@ -61,7 +61,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
     complex* nStateVec = AllocStateVec(maxQPower);
 
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
@@ -80,20 +80,20 @@ void QEngineCPU::CINC(
         return;
     }
 
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toAdd &= lengthMask;
-    if (toAdd == 0U) {
+    if (toAdd == 0) {
         return;
     }
 
     bitCapInt* controlPowers = new bitCapInt[controlLen];
-    bitCapInt controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    bitCapInt controlMask = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
         controlPowers[i] = 1U << controls[i];
         controlMask |= controlPowers[i];
     }
@@ -105,7 +105,7 @@ void QEngineCPU::CINC(
     complex* nStateVec = AllocStateVec(maxQPower);
     std::copy(stateVec, stateVec + maxQPower, nStateVec);
 
-    par_for_mask(0U, maxQPower, controlPowers, controlLen, [&](const bitCapInt lcv, const int cpu) {
+    par_for_mask(0, maxQPower, controlPowers, controlLen, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
@@ -122,14 +122,14 @@ void QEngineCPU::CINC(
 void QEngineCPU::INCDECC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toMod &= lengthMask;
-    if (toMod == 0U) {
+    if (toMod == 0) {
         return;
     }
 
@@ -142,7 +142,7 @@ void QEngineCPU::INCDECC(
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, 1U << carryIndex, 1U, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, 1U << carryIndex, 1U, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
@@ -167,14 +167,14 @@ void QEngineCPU::INCDECC(
  */
 void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toAdd &= lengthMask;
-    if (toAdd == 0U) {
+    if (toAdd == 0) {
         return;
     }
 
@@ -186,7 +186,7 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
@@ -225,14 +225,14 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
 void QEngineCPU::INCDECSC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toMod &= lengthMask;
-    if (toMod == 0U) {
+    if (toMod == 0) {
         return;
     }
 
@@ -246,7 +246,7 @@ void QEngineCPU::INCDECSC(
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, carryMask, 1U, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, carryMask, 1U, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
@@ -283,14 +283,14 @@ void QEngineCPU::INCDECSC(
 void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
     const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
     bitCapInt lengthPower = 1U << length;
     bitCapInt lengthMask = lengthPower - 1U;
     toMod &= lengthMask;
-    if (toMod == 0U) {
+    if (toMod == 0) {
         return;
     }
 
@@ -303,7 +303,7 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, carryMask, 1U, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, carryMask, 1U, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
@@ -349,7 +349,7 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, 1U << carryStart, length, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, 1U << carryStart, length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt mulInt = ((lcv & inOutMask) >> inOutStart) * toMul;
         bitCapInt mulRes =
@@ -362,10 +362,10 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
 
 void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    SetReg(carryStart, length, 0U);
+    SetReg(carryStart, length, 0);
 
-    if (toMul == 0U) {
-        SetReg(inOutStart, length, 0U);
+    if (toMul == 0) {
+        SetReg(inOutStart, length, 0);
         return;
     }
     if (toMul == 1U) {
@@ -378,7 +378,7 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 
 void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    if (toDiv == 0U) {
+    if (toDiv == 0) {
         throw "DIV by zero";
     }
     if (toDiv == 1U) {
@@ -399,13 +399,13 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 
     bitCapInt* skipPowers = new bitCapInt[controlLen + length];
     bitCapInt* controlPowers = new bitCapInt[controlLen];
-    bitCapInt controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    bitCapInt controlMask = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
         controlPowers[i] = 1U << controls[i];
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         skipPowers[i + controlLen] = 1U << (carryStart + i);
     }
     std::sort(skipPowers, skipPowers + controlLen + length);
@@ -415,7 +415,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_mask(0U, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
+    par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt mulInt = ((lcv & inOutMask) >> inOutStart) * toMul;
         bitCapInt mulRes = ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) |
@@ -426,8 +426,8 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
         nStateVec[lcv] = stateVec[lcv];
         bitCapInt partControlMask;
         for (bitCapInt j = 1U; j < ((1U << controlLen) - 1U); j++) {
-            partControlMask = 0U;
-            for (bitLenInt k = 0U; k < controlLen; k++) {
+            partControlMask = 0;
+            for (bitLenInt k = 0; k < controlLen; k++) {
                 if (j & (1U << k)) {
                     partControlMask |= controlPowers[k];
                 }
@@ -445,15 +445,15 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (controlLen == 0) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
     }
 
-    SetReg(carryStart, length, 0U);
+    SetReg(carryStart, length, 0);
 
-    if (toMul == 0U) {
-        SetReg(inOutStart, length, 0U);
+    if (toMul == 0) {
+        SetReg(inOutStart, length, 0);
         return;
     }
     if (toMul == 1U) {
@@ -468,12 +468,12 @@ void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (controlLen == 0) {
         DIV(toDiv, inOutStart, carryStart, length);
         return;
     }
 
-    if (toDiv == 0U) {
+    if (toDiv == 0) {
         throw "DIV by zero";
     }
     if (toDiv == 1U) {
@@ -488,7 +488,7 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart,
     const bitLenInt& outStart, const bitLenInt& length)
 {
-    SetReg(outStart, length, 0U);
+    SetReg(outStart, length, 0);
 
     bitCapInt lowMask = (1U << length) - 1U;
     bitCapInt inMask = lowMask << inStart;
@@ -498,7 +498,7 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, 1U << outStart, length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
@@ -510,8 +510,8 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
 
 void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (toMod == 0U) {
-        SetReg(outStart, length, 0U);
+    if (toMod == 0) {
+        SetReg(outStart, length, 0);
         return;
     }
 
@@ -526,7 +526,7 @@ void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
 void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart,
     const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen)
 {
-    SetReg(outStart, length, 0U);
+    SetReg(outStart, length, 0);
 
     bitCapInt lowPower = 1U << length;
     bitCapInt lowMask = lowPower - 1U;
@@ -535,13 +535,13 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 
     bitCapInt* skipPowers = new bitCapInt[controlLen + length];
     bitCapInt* controlPowers = new bitCapInt[controlLen];
-    bitCapInt controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    bitCapInt controlMask = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
         controlPowers[i] = 1U << controls[i];
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         skipPowers[i + controlLen] = 1U << (outStart + i);
     }
     std::sort(skipPowers, skipPowers + controlLen + length);
@@ -551,7 +551,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_mask(0U, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
+    par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
@@ -561,8 +561,8 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 
         bitCapInt partControlMask;
         for (bitCapInt j = 1U; j < ((1U << controlLen) - 1U); j++) {
-            partControlMask = 0U;
-            for (bitLenInt k = 0U; k < controlLen; k++) {
+            partControlMask = 0;
+            for (bitLenInt k = 0; k < controlLen; k++) {
                 if (j & (1U << k)) {
                     partControlMask |= controlPowers[k];
                 }
@@ -580,7 +580,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (controlLen == 0) {
         MULModNOut(toMod, modN, inStart, outStart, length);
         return;
     }
@@ -592,7 +592,7 @@ void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (controlLen == 0) {
         POWModNOut(toMod, modN, inStart, outStart, length);
         return;
     }
@@ -604,7 +604,7 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 /// Add BCD integer (without sign)
 void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
@@ -615,7 +615,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
     bitCapInt maxPow = intPow(10U, nibbleCount);
     toAdd %= maxPow;
-    if (toAdd == 0U) {
+    if (toAdd == 0) {
         return;
     }
 
@@ -625,7 +625,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for(0U, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
         bitCapInt inOutRes = lcv & inOutMask;
@@ -655,7 +655,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                 }
                 outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
-            nStateVec[(outInt << (inOutStart)) | otherRes] = stateVec[lcv];
+            nStateVec[(outInt << inOutStart) | otherRes] = stateVec[lcv];
         } else {
             nStateVec[lcv] = stateVec[lcv];
         }
@@ -668,7 +668,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 void QEngineCPU::INCDECBCDC(
     bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
 {
-    if (length == 0U) {
+    if (length == 0) {
         return;
     }
 
@@ -679,7 +679,7 @@ void QEngineCPU::INCDECBCDC(
 
     bitCapInt maxPow = intPow(10U, nibbleCount);
     toMod %= maxPow;
-    if (toMod == 0U) {
+    if (toMod == 0) {
         return;
     }
 
@@ -692,7 +692,7 @@ void QEngineCPU::INCDECBCDC(
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, 1U << carryIndex, 1U, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, 1U << carryIndex, 1U, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toMod;
         bitCapInt inOutRes = lcv & inOutMask;
@@ -736,7 +736,7 @@ void QEngineCPU::INCDECBCDC(
                 }
                 outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
-            outRes = (outInt << (inOutStart)) | otherRes | carryRes;
+            outRes = (outInt << inOutStart) | otherRes | carryRes;
             nStateVec[outRes] = stateVec[lcv];
             outRes ^= carryMask;
             nStateVec[outRes] = stateVec[lcv | carryMask];
@@ -754,7 +754,7 @@ bitCapInt QEngineCPU::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     bitCapInt i, outputInt;
-    SetReg(valueStart, valueLength, 0U);
+    SetReg(valueStart, valueLength, 0);
 
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
@@ -764,11 +764,11 @@ bitCapInt QEngineCPU::IndexedLDA(
     complex* nStateVec = AllocStateVec(maxQPower);
     std::fill(nStateVec, nStateVec + maxQPower, complex(ZERO_R1, ZERO_R1));
 
-    par_for_skip(0U, maxQPower, skipPower, valueLength, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, skipPower, valueLength, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt inputRes = lcv & inputMask;
         bitCapInt inputInt = inputRes >> indexStart;
-        bitCapInt outputInt = 0U;
-        for (bitLenInt j = 0U; j < valueBytes; j++) {
+        bitCapInt outputInt = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
             outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         bitCapInt outputRes = outputInt << valueStart;
@@ -790,7 +790,7 @@ bitCapInt QEngineCPU::IndexedLDA(
 
     ResetStateVec(nStateVec);
 
-    return (bitCapInt)(average + 0.5);
+    return (bitCapInt)(average + (ONE_R1 / 2));
 }
 
 /// Add based on an indexed load from classical memory
@@ -831,7 +831,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt otherMask = (maxQPower - 1U) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1U << carryIndex;
 
-    par_for_skip(0U, maxQPower, skipPower, 1U, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, skipPower, 1U, [&](const bitCapInt lcv, const int cpu) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -851,8 +851,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         // corresponding with the state of the "inputStart" register to
         // "outputStart" register value its entangled with in this
         // iteration of the loop.
-        bitCapInt outputInt = 0U;
-        for (bitLenInt j = 0U; j < valueBytes; j++) {
+        bitCapInt outputInt = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
             outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         outputInt += (outputRes >> valueStart) + carryIn;
@@ -893,7 +893,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     ResetStateVec(nStateVec);
 
     // Return the expectation value.
-    return (bitCapInt)(average + 0.5);
+    return (bitCapInt)(average + (ONE_R1 / 2));
 }
 
 /// Subtract based on an indexed load from classical memory
@@ -933,7 +933,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt otherMask = (maxQPower - 1U) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1U << carryIndex;
 
-    par_for_skip(0U, maxQPower, skipPower, 1U, [&](const bitCapInt lcv, const int cpu) {
+    par_for_skip(0, maxQPower, skipPower, 1U, [&](const bitCapInt lcv, const int cpu) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -953,8 +953,8 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         // value corresponding with the state of the "inputStart" register
         // from "outputStart" register value its entangled with in this
         // iteration of the loop.
-        bitCapInt outputInt = 0U;
-        for (bitLenInt j = 0U; j < valueBytes; j++) {
+        bitCapInt outputInt = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
             outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         outputInt = (outputRes >> valueStart) + (lengthPower - (outputInt + carryIn));
@@ -963,7 +963,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         // entangle the carry as set.  (Since we're using unsigned types,
         // we start by adding 256 with the carry, and then subtract 256 and
         // clear the carry if we don't have a borrow-out.)
-        bitCapInt carryRes = 0U;
+        bitCapInt carryRes = 0;
 
         if (outputInt >= lengthPower) {
             outputInt -= lengthPower;
@@ -999,6 +999,6 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     ResetStateVec(nStateVec);
 
     // Return the expectation value.
-    return (bitCapInt)(average + 0.5);
+    return (bitCapInt)(average + (ONE_R1 / 2));
 }
 }; // namespace Qrack

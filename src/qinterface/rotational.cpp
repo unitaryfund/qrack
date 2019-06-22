@@ -56,17 +56,17 @@ void QInterface::UniformlyControlledRY(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapInt permCount = 1U << controlLen;
-    complex* pauliRYs = new complex[4 * permCount];
+    complex* pauliRYs = new complex[4U * permCount];
 
     real1 cosine, sine;
     for (bitCapInt i = 0; i < permCount; i++) {
         cosine = cos(angles[i] / 2);
         sine = sin(angles[i] / 2);
 
-        pauliRYs[0 + 4 * i] = complex(cosine, ZERO_R1);
-        pauliRYs[1 + 4 * i] = complex(-sine, ZERO_R1);
-        pauliRYs[2 + 4 * i] = complex(sine, ZERO_R1);
-        pauliRYs[3 + 4 * i] = complex(cosine, ZERO_R1);
+        pauliRYs[0U + 4U * i] = complex(cosine, ZERO_R1);
+        pauliRYs[1U + 4U * i] = complex(-sine, ZERO_R1);
+        pauliRYs[2U + 4U * i] = complex(sine, ZERO_R1);
+        pauliRYs[3U + 4U * i] = complex(cosine, ZERO_R1);
     }
 
     UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRYs);
@@ -80,17 +80,17 @@ void QInterface::UniformlyControlledRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapInt permCount = 1U << controlLen;
-    complex* pauliRZs = new complex[4 * permCount];
+    complex* pauliRZs = new complex[4U * permCount];
 
     real1 cosine, sine;
     for (bitCapInt i = 0; i < permCount; i++) {
         cosine = cos(angles[i] / 2);
         sine = sin(angles[i] / 2);
 
-        pauliRZs[0 + 4 * i] = complex(cosine, -sine);
-        pauliRZs[1 + 4 * i] = complex(ZERO_R1, ZERO_R1);
-        pauliRZs[2 + 4 * i] = complex(ZERO_R1, ZERO_R1);
-        pauliRZs[3 + 4 * i] = complex(cosine, sine);
+        pauliRZs[0U + 4U * i] = complex(cosine, -sine);
+        pauliRZs[1U + 4U * i] = complex(ZERO_R1, ZERO_R1);
+        pauliRZs[2U + 4U * i] = complex(ZERO_R1, ZERO_R1);
+        pauliRZs[3U + 4U * i] = complex(cosine, sine);
     }
 
     UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRZs);
