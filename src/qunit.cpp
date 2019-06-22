@@ -1439,7 +1439,10 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
             if (carry) {
                 // We've kept toMod up to date with only the work left to do.
                 toMod++;
+                break;
             }
+
+            // TODO: We don't have to restrict to low-to-high ripple addition, here.
         }
     }
 
