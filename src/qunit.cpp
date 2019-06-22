@@ -1453,15 +1453,48 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     DirtyShardRange(start, length);
 }
 
-void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCDECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    // Keep the bits separate, if cheap to do so:
-    if (INTCOptimize(toMod, start, length, true, carryIndex)) {
-        return;
+    if ((start + length) == qubitCount) {
+        ROR(1, 0, qubitCount);
+        start--;
     }
 
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::INCC, toMod, start, length, carryIndex);
+    Swap(start + length, carryIndex);
+    // INC is much better optimized
+    INC(toMod, start, length + 1);
+    Swap(start + length, carryIndex);
+
+    if ((start + length) == qubitCount) {
+        ROL(1, 0, qubitCount);
+        start++;
+    }
+}
+
+/// Add integer (without sign, with carry)
+void QUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECC(toAdd, inOutStart, length, carryIndex);
+}
+
+/// Subtract integer (without sign, with carry)
+void QUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INCDECC(invToSub, inOutStart, length, carryIndex);
 }
 
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
@@ -1509,17 +1542,6 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 {
     // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
-}
-
-void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::DECC, toMod, start, length, carryIndex);
 }
 
 void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
