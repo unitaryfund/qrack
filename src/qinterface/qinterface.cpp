@@ -273,6 +273,10 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
         for (j = 0; j < ((length - 1U) - i); j++) {
             CRTDyad(1, j + 2, (end - i) - (j + 1U), end - i);
         }
+
+        if (trySeparate) {
+            TrySeparate(end - i);
+        }
     }
 }
 
@@ -289,6 +293,10 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
             CRTDyad(-1, j + 2, (start + i) - (j + 1U), start + i);
         }
         H(start + i);
+
+        if (trySeparate) {
+            TrySeparate(start + i);
+        }
     }
 }
 
