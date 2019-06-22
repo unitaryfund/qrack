@@ -1401,8 +1401,10 @@ bool QUnit::INTSCOptimize(
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        SetReg(start, length, GetCachedPermutation(start, length) + toMod);
+
+    bitLenInt toModLen = log2(toMod) + 1U;
+    if (CheckBitsPermutation(start, toModLen)) {
+        SetReg(start, toModLen, GetCachedPermutation(start, toModLen) + toMod);
         return;
     }
 
@@ -1473,8 +1475,9 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        SetReg(start, length, GetCachedPermutation(start, length) - toMod);
+    bitLenInt toModLen = log2(toMod) + 1U;
+    if (CheckBitsPermutation(start, toModLen)) {
+        SetReg(start, toModLen, GetCachedPermutation(start, toModLen) - toMod);
         return;
     }
 

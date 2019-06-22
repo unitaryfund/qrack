@@ -106,7 +106,7 @@ protected:
 
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
-    static inline bitCapInt log2(bitCapInt n)
+    static inline bitLenInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
         bitLenInt p = n >> 1;
