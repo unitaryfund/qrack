@@ -1401,11 +1401,27 @@ bool QUnit::INTSCOptimize(
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // Keep the bits separate, if cheap to do so:
+    toMod &= ((1U << length) - 1U);
+    if (toMod == 0) {
+        return;
+    }
 
     bitLenInt toModLen = log2(toMod) + 1U;
     if (CheckBitsPermutation(start, toModLen)) {
-        SetReg(start, toModLen, GetCachedPermutation(start, toModLen) + toMod);
-        return;
+        bitCapInt lengthMask = ((1U << length) - 1U);
+        bitCapInt val = GetCachedPermutation(start, toModLen);
+        while ((toModLen <= length) && (((val + toMod) & lengthMask) >= (1U << toModLen))) {
+            if (!CheckBitPermutation(start + toModLen)) {
+                toModLen = length;
+            }
+            toModLen++;
+            val = GetCachedPermutation(start, toModLen);
+        }
+
+        if (toModLen <= length) {
+            SetReg(start, toModLen, (val + toMod) & lengthMask);
+            return;
+        }
     }
 
     // Otherwise, form the potentially entangled representation:
@@ -1475,10 +1491,27 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // Keep the bits separate, if cheap to do so:
+    toMod &= ((1U << length) - 1U);
+    if (toMod == 0) {
+        return;
+    }
+
     bitLenInt toModLen = log2(toMod) + 1U;
     if (CheckBitsPermutation(start, toModLen)) {
-        SetReg(start, toModLen, GetCachedPermutation(start, toModLen) - toMod);
-        return;
+        bitCapInt lengthMask = ((1U << length) - 1U);
+        bitCapInt val = GetCachedPermutation(start, toModLen);
+        while ((toModLen <= length) && (((val - toMod) & lengthMask) >= (1U << toModLen))) {
+            if (!CheckBitPermutation(start + toModLen)) {
+                toModLen = length;
+            }
+            toModLen++;
+            val = GetCachedPermutation(start, toModLen);
+        }
+
+        if (toModLen <= length) {
+            SetReg(start, toModLen, (val - toMod) & lengthMask);
+            return;
+        }
     }
 
     // Otherwise, form the potentially entangled representation:
