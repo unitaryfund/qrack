@@ -1418,7 +1418,7 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
             toMod >>= 1U;
             start++;
             length--;
-            // Nothing is changed, in this bit.
+            // Nothing is changed, in this bit. (The carry gets promoted to the next bit.)
             continue;
         }
 
