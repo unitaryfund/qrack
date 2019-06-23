@@ -1453,7 +1453,8 @@ void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
     DirtyShardRange(start, length);
 }
 
-void QUnit::INCDECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCDECSC(
+    bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool isOverflow)
 {
     if ((start + length) == qubitCount) {
         ROR(1, 0, qubitCount);
@@ -1462,7 +1463,11 @@ void QUnit::INCDECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 
     Swap(start + length, carryIndex);
     // INC is much better optimized
-    INC(toMod, start, length + 1);
+    if (isOverflow) {
+        INCS(toMod, start, length + 1, overflowIndex);
+    } else {
+        INC(toMod, start, length + 1);
+    }
     Swap(start + length, carryIndex);
 
     if ((start + length) == qubitCount) {
@@ -1480,7 +1485,7 @@ void QUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt le
         toAdd++;
     }
 
-    INCDECC(toAdd, inOutStart, length, carryIndex);
+    INCDECSC(toAdd, inOutStart, length, 0xFF, carryIndex, false);
 }
 
 /// Subtract integer (without sign, with carry)
@@ -1494,7 +1499,7 @@ void QUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt le
     }
 
     bitCapInt invToSub = (1U << length) - toSub;
-    INCDECC(invToSub, inOutStart, length, carryIndex);
+    INCDECSC(invToSub, inOutStart, length, 0xFF, carryIndex, false);
 }
 
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
@@ -1533,24 +1538,6 @@ void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
     INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
 }
 
-void QUnit::INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-{
-    if ((start + length) == qubitCount) {
-        ROR(1, 0, qubitCount);
-        start--;
-    }
-
-    Swap(start + length, carryIndex);
-    // INC is much better optimized
-    INCS(toMod, start, length + 1, overflowIndex);
-    Swap(start + length, carryIndex);
-
-    if ((start + length) == qubitCount) {
-        ROL(1, 0, qubitCount);
-        start++;
-    }
-}
-
 void QUnit::INCSC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
@@ -1560,7 +1547,7 @@ void QUnit::INCSC(
         toAdd++;
     }
 
-    INCDECSC(toAdd, inOutStart, length, overflowIndex, carryIndex);
+    INCDECSC(toAdd, inOutStart, length, overflowIndex, carryIndex, true);
 }
 
 void QUnit::DECSC(
@@ -1574,7 +1561,7 @@ void QUnit::DECSC(
     }
 
     bitCapInt invToSub = (1U << length) - toSub;
-    INCDECSC(invToSub, inOutStart, length, overflowIndex, carryIndex);
+    INCDECSC(invToSub, inOutStart, length, overflowIndex, carryIndex, true);
 }
 
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
