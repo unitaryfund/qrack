@@ -1421,13 +1421,15 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     bool carry = false;
     int total;
     bitLenInt origLength = length;
-    for (bitLenInt i = 0; i < origLength; i++) {
+    bitLenInt i = 0;
+    while (i < origLength) {
         toAdd = toMod & 1U;
 
         if (toAdd == carry) {
             toMod >>= 1U;
             start++;
             length--;
+            i++;
             // Nothing is changed, in this bit. (The carry gets promoted to the next bit.)
             continue;
         }
@@ -1443,18 +1445,61 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             toMod >>= 1U;
             start++;
             length--;
+            i++;
         } else {
-            // We're blocked by needing to add 1 to a bit in an indefinite state, which would superpose the carry out.
-            if (carry) {
-                // We've kept toMod up to date with only the work left to do.
-                toMod++;
+            if (length == 1) {
+                if (carry) {
+                    toMod++;
+                }
+                break;
+            }
+
+            // We're blocked by needing to add 1 to a bit in an indefinite state, which would superpose the carry-out.
+            // However, if we hit another index where the qubit is known and toAdd == inReg, the carry-out is guaranteed
+            // not to be superposed.
+
+            // Load the first bit:
+            bitCapInt bitMask = 1U;
+            bitCapInt partMod = toMod & bitMask;
+            bitLenInt partLength = 1;
+            bitLenInt partStart;
+            i++;
+
+            do {
+                // Guaranteed to need to load the second bit
+                partLength++;
+                i++;
+                bitMask <<= 1U;
+
+                toAdd = toMod & bitMask;
+                partMod |= toMod & bitMask;
+
+                partStart = start + partLength - 1U;
+                if (CheckBitPermutation(partStart)) {
+                    inReg = (shards[partStart].prob >= (ONE_R1 / 2));
+                    if (toAdd == inReg) {
+                        // This prevents superposition of the carry-out.
+                        EntangleRange(start, partLength);
+                        shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+
+                        carry = toAdd;
+                        toMod >>= partLength;
+                        start += partLength;
+                        length -= partLength;
+                        break;
+                    }
+                }
+            } while (i < (origLength - 1U));
+
+            if (i == (origLength - 1U)) {
+                // The last unit muse be entangled, in this case.
                 break;
             }
         }
     }
 
     if ((toMod == 0) && (length == 0)) {
-        // We got lucky, and we were able to totally avoid entanglement.
+        // We got lucky, and we were able to avoid entangling the cary.
         if (hasCarry && carry) {
             X(carryIndex);
         }
