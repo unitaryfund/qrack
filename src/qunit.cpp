@@ -1475,24 +1475,31 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 partMod |= toMod & bitMask;
 
                 partStart = start + partLength - 1U;
-                if (CheckBitPermutation(partStart)) {
-                    inReg = (shards[partStart].prob >= (ONE_R1 / 2));
-                    if (toAdd == inReg) {
-                        // This prevents superposition of the carry-out.
-                        EntangleRange(start, partLength);
-                        shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+                if (!CheckBitPermutation(partStart)) {
+                    // If the quantum bit at this position is superposed, then we can't determine that the carry won't
+                    // be superposed. Advance the loop.
+                    continue;
+                }
 
-                        carry = toAdd;
-                        toMod >>= partLength;
-                        start += partLength;
-                        length -= partLength;
-                        break;
-                    }
+                inReg = (shards[partStart].prob >= (ONE_R1 / 2));
+                if (toAdd == inReg) {
+                    // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
+                    // is independent of the superposed output value of the quantum bit.
+                    EntangleRange(start, partLength);
+                    shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+
+                    carry = toAdd;
+                    toMod >>= partLength;
+                    start += partLength;
+                    length -= partLength;
+
+                    // Break out of the inner loop and return to the flow of the containing loop.
+                    break;
                 }
             } while (i < (origLength - 1U));
 
             if (i == (origLength - 1U)) {
-                // The last unit muse be entangled, in this case.
+                // The last unit must be entangled, in this case.
                 break;
             }
         }
