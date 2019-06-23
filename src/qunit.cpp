@@ -1482,27 +1482,31 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 }
 
                 inReg = (shards[partStart].prob >= (ONE_R1 / 2));
-                if (toAdd == inReg) {
-                    // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
-                    // is independent of the superposed output value of the quantum bit.
-                    EntangleRange(start, partLength);
-                    shards[start].unit->INC(partMod, shards[start].mapped, partLength);
-                    DirtyShardRange(start, partLength);
-
-                    carry = toAdd;
-                    toMod >>= partLength;
-                    start += partLength;
-                    length -= partLength;
-
-                    // Break out of the inner loop and return to the flow of the containing loop.
-                    break;
+                if (toAdd != inReg) {
+                    // If toAdd != inReg, the carry out might be superposed. Advance the loop.
+                    continue;
                 }
+
+                // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
+                // is independent of the superposed output value of the quantum bit.
+                EntangleRange(start, partLength);
+                shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+                DirtyShardRange(start, partLength);
+
+                carry = toAdd;
+                toMod >>= partLength;
+                start += partLength;
+                length -= partLength;
+
+                // Break out of the inner loop and return to the flow of the containing loop.
+                // (Otherwise, we hit the "continue" calls above.)
+                break;
             } while (i < origLength);
         }
     }
 
     if ((toMod == 0) && (length == 0)) {
-        // We got lucky, and we were able to avoid entangling the cary.
+        // We were able to avoid entangling the cary.
         if (hasCarry && carry) {
             X(carryIndex);
         }
