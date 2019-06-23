@@ -1487,6 +1487,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                     // is independent of the superposed output value of the quantum bit.
                     EntangleRange(start, partLength);
                     shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+                    DirtyShardRange(start, partLength);
 
                     carry = toAdd;
                     toMod >>= partLength;
@@ -1496,12 +1497,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                     // Break out of the inner loop and return to the flow of the containing loop.
                     break;
                 }
-            } while (i < (origLength - 1U));
-
-            if (i == (origLength - 1U)) {
-                // The last unit must be entangled, in this case.
-                break;
-            }
+            } while (i < origLength);
         }
     }
 
