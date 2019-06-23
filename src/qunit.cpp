@@ -1510,18 +1510,14 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     }
 
     if ((toMod == 0) && (length == 0)) {
-        // We were able to avoid entangling the cary.
+        // We were able to avoid entangling the carry.
         if (hasCarry && carry) {
             X(carryIndex);
         }
         return;
     }
 
-    // Otherwise, we can try to use Draper addition and hope we avoid as much entanglement as possible.
-    // However, it loses accuracy due to float rounding of the dyadic rotation.
-    // QInterface::INC(toMod, start, length);
-
-    // We're stuck with this:
+    // Otherwise, we have one unit left that needs to be entangled, plus carry bit.
     if (hasCarry) {
         EntangleRange(start, length, carryIndex, 1);
         shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
