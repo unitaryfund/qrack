@@ -262,27 +262,20 @@ void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
-    if (length > 0) {
-        bool wasNormOn = doNormalize;
-        bitLenInt end = start + length;
-        int i, j;
-        for (i = start; i < end; i++) {
-            doNormalize = false;
-            H(i);
+    if (length == 0) {
+        return;
+    }
 
-            for (j = 1; j < ((end - 1) - i); j++) {
-                CRTDyad(1, j, i + j, i);
-            }
+    bitLenInt end = start + (length - 1U);
+    bitLenInt i, j;
+    for (i = 0; i < length; i++) {
+        H(end - i);
+        for (j = 0; j < ((length - 1U) - i); j++) {
+            CRTDyad(1, j + 2, (end - i) - (j + 1U), end - i);
+        }
 
-            doNormalize = wasNormOn;
-
-            if (i < (end - 1)) {
-                CRTDyad(1, (end - i) - 1, end - 1, i);
-            }
-
-            if (trySeparate) {
-                TrySeparate(i);
-            }
+        if (trySeparate) {
+            TrySeparate(end - i);
         }
     }
 }
@@ -290,24 +283,19 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
 void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
-    if (length > 0) {
-        bool wasNormOn = doNormalize;
-        bitLenInt end = start + length;
-        int i, j;
-        for (i = (end - 1); i >= start; i--) {
-            doNormalize = false;
+    if (length == 0) {
+        return;
+    }
 
-            for (j = (end - 1) - i; j >= 1; j--) {
-                CRTDyad(-1, j, i + j, i);
-            }
+    bitLenInt i, j;
+    for (i = 0; i < length; i++) {
+        for (j = 0; j < i; j++) {
+            CRTDyad(-1, j + 2, (start + i) - (j + 1U), start + i);
+        }
+        H(start + i);
 
-            doNormalize = wasNormOn;
-
-            H(i);
-
-            if (trySeparate) {
-                TrySeparate(i);
-            }
+        if (trySeparate) {
+            TrySeparate(start + i);
         }
     }
 }

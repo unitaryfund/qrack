@@ -332,6 +332,11 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
     std::vector<bitLenInt> bits(length1 + length2);
     std::vector<bitLenInt*> ebits(length1 + length2);
 
+    if (start2 < start1) {
+        std::swap(start1, start2);
+        std::swap(length1, length2);
+    }
+
     for (auto i = 0; i < length1; i++) {
         bits[i] = i + start1;
         ebits[i] = &bits[i];
@@ -352,6 +357,21 @@ QInterfacePtr QUnit::EntangleRange(
 {
     std::vector<bitLenInt> bits(length1 + length2 + length3);
     std::vector<bitLenInt*> ebits(length1 + length2 + length3);
+
+    if (start2 < start1) {
+        std::swap(start1, start2);
+        std::swap(length1, length2);
+    }
+
+    if (start3 < start1) {
+        std::swap(start1, start3);
+        std::swap(length1, length3);
+    }
+
+    if (start3 < start2) {
+        std::swap(start2, start3);
+        std::swap(length2, length3);
+    }
 
     for (auto i = 0; i < length1; i++) {
         bits[i] = i + start1;
@@ -1203,13 +1223,28 @@ bool QUnit::CArithmeticOptimize(
     return false;
 }
 
-void QUnit::CINT(
-    CINTFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
     if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire gate.
+        return;
+    }
+
+    // All controls not optimized out are either in "isProbDirty" state or definitely true.
+    // If all are definitely true, we're better off using INC.
+    bool canSkip = true;
+    for (bitLenInt i = 0; i < controlVec.size(); i++) {
+        if (!CheckBitPermutation(controlVec[i])) {
+            canSkip = false;
+            break;
+        }
+    }
+
+    if (canSkip) {
+        // INC is much better optimized
+        INC(toMod, start, length);
         return;
     }
 
@@ -1234,29 +1269,9 @@ void QUnit::CINT(
         shards[controlVec[i]].isPhaseDirty = true;
     }
 
-    ((*unit).*fn)(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
+    unit->CINC(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
 
     DirtyShardRange(start, length);
-}
-
-void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    if (controlLen == 0) {
-        INC(toMod, start, length);
-        return;
-    }
-
-    CINT(&QInterface::CINC, toMod, start, length, controls, controlLen);
-}
-
-void QUnit::CDEC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
-{
-    if (controlLen == 0) {
-        DEC(toMod, start, length);
-        return;
-    }
-
-    CINT(&QInterface::CDEC, toMod, start, length, controls, controlLen);
 }
 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
@@ -1398,51 +1413,223 @@ bool QUnit::INTSCOptimize(
     return true;
 }
 
-void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length)
+void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry)
 {
     // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        SetReg(start, length, GetCachedPermutation(start, length) + toMod);
+    toMod &= ((1U << length) - 1U);
+    if (toMod == 0) {
         return;
     }
 
-    // Otherwise, form the potentially entangled representation:
-    EntangleRange(start, length);
-    shards[start].unit->INC(toMod, shards[start].mapped, length);
+    // Try ripple addition, to avoid entanglement.
+    bool toAdd, inReg;
+    bool carry = false;
+    int total;
+    bitLenInt origLength = length;
+    bitLenInt i = 0;
+    while (i < origLength) {
+        toAdd = toMod & 1U;
+
+        if (toAdd == carry) {
+            toMod >>= 1U;
+            start++;
+            length--;
+            i++;
+            // Nothing is changed, in this bit. (The carry gets promoted to the next bit.)
+            continue;
+        }
+
+        if (CheckBitPermutation(start)) {
+            inReg = (shards[start].prob >= (ONE_R1 / 2));
+            total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
+            if (inReg != (total & 1)) {
+                X(start);
+            }
+            carry = (total > 1);
+
+            toMod >>= 1U;
+            start++;
+            length--;
+            i++;
+        } else {
+            // The carry-in is classical.
+            if (carry) {
+                carry = false;
+                toMod++;
+            }
+
+            if (length == 1) {
+                // We need at least two quantum bits left to try to achieve further separability.
+                break;
+            }
+
+            // We're blocked by needing to add 1 to a bit in an indefinite state, which would superpose the carry-out.
+            // However, if we hit another index where the qubit is known and toAdd == inReg, the carry-out is guaranteed
+            // not to be superposed.
+
+            // Load the first bit:
+            bitCapInt bitMask = 1U;
+            bitCapInt partMod = toMod & bitMask;
+            bitLenInt partLength = 1;
+            bitLenInt partStart;
+            i++;
+
+            do {
+                // Guaranteed to need to load the second bit
+                partLength++;
+                i++;
+                bitMask <<= 1U;
+
+                toAdd = toMod & bitMask;
+                partMod |= toMod & bitMask;
+
+                partStart = start + partLength - 1U;
+                if (!CheckBitPermutation(partStart)) {
+                    // If the quantum bit at this position is superposed, then we can't determine that the carry won't
+                    // be superposed. Advance the loop.
+                    continue;
+                }
+
+                inReg = (shards[partStart].prob >= (ONE_R1 / 2));
+                if (toAdd != inReg) {
+                    // If toAdd != inReg, the carry out might be superposed. Advance the loop.
+                    continue;
+                }
+
+                // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
+                // is independent of the superposed output value of the quantum bit.
+                EntangleRange(start, partLength);
+                shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+                DirtyShardRange(start, partLength);
+
+                carry = toAdd;
+                toMod >>= partLength;
+                start += partLength;
+                length -= partLength;
+
+                // Break out of the inner loop and return to the flow of the containing loop.
+                // (Otherwise, we hit the "continue" calls above.)
+                break;
+            } while (i < origLength);
+        }
+    }
+
+    if ((toMod == 0) && (length == 0)) {
+        // We were able to avoid entangling the carry.
+        if (hasCarry && carry) {
+            X(carryIndex);
+        }
+        return;
+    }
+
+    // Otherwise, we have one unit left that needs to be entangled, plus carry bit.
+    if (hasCarry) {
+        EntangleRange(start, length, carryIndex, 1);
+        shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
+    } else {
+        EntangleRange(start, length);
+        shards[start].unit->INC(toMod, shards[start].mapped, length);
+    }
     DirtyShardRange(start, length);
 }
 
-void QUnit::INCC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
+
+/// Add integer (without sign, with carry)
+void QUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
-    // Keep the bits separate, if cheap to do so:
-    if (INTCOptimize(toMod, start, length, true, carryIndex)) {
+    if (M(carryIndex)) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INT(toAdd, inOutStart, length, carryIndex, true);
+}
+
+/// Subtract integer (without sign, with carry)
+void QUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
+{
+    if (M(carryIndex)) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INT(invToSub, inOutStart, length, carryIndex, true);
+}
+
+void QUnit::INTS(
+    bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool hasCarry)
+{
+    toMod &= ((1U << length) - 1U);
+    if (toMod == 0) {
+        return;
+    }
+
+    bitLenInt signBit = start + length - 1U;
+    bool knewFlagSet = CheckBitPermutation(overflowIndex);
+    bool flagSet = shards[overflowIndex].prob < (ONE_R1 / 2);
+
+    if (knewFlagSet && !flagSet) {
+        // Overflow detection is disabled
+        INT(toMod, start, length, carryIndex, hasCarry);
+        return;
+    }
+
+    bool addendNeg = toMod & (1U << (length - 1U));
+    bool knewSign = CheckBitPermutation(signBit);
+    bool quantumNeg = shards[signBit].prob >= (ONE_R1 / 2);
+
+    if (knewSign && (addendNeg != quantumNeg)) {
+        // No chance of overflow
+        INT(toMod, start, length, carryIndex, hasCarry);
         return;
     }
 
     // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::INCC, toMod, start, length, carryIndex);
+    if (hasCarry) {
+        // Keep the bits separate, if cheap to do so:
+        if (INTSCOptimize(toMod, start, length, true, carryIndex, overflowIndex)) {
+            return;
+        }
+        INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
+    } else {
+        // Keep the bits separate, if cheap to do so:
+        if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
+            return;
+        }
+        INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+    }
 }
 
 void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
-    // Keep the bits separate, if cheap to do so:
-    if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+    INTS(toMod, start, length, overflowIndex, 0xFF, false);
 }
 
-void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void QUnit::INCSC(
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    // Keep the bits separate, if cheap to do so:
-    if (INTSCOptimize(toMod, start, length, true, carryIndex, overflowIndex)) {
-        return;
+    if (M(carryIndex)) {
+        X(carryIndex);
+        toAdd++;
     }
 
-    // Otherwise, form the potentially entangled representation:
-    INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
+    INTS(toAdd, inOutStart, length, overflowIndex, carryIndex, true);
+}
+
+void QUnit::DECSC(
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    if (M(carryIndex)) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = (1U << length) - toSub;
+    INTS(invToSub, inOutStart, length, overflowIndex, carryIndex, true);
 }
 
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -1468,53 +1655,6 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 {
     // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
-}
-
-void QUnit::DEC(bitCapInt toMod, bitLenInt start, bitLenInt length)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        SetReg(start, length, GetCachedPermutation(start, length) - toMod);
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    EntangleRange(start, length);
-    shards[start].unit->DEC(toMod, shards[start].mapped, length);
-    DirtyShardRange(start, length);
-}
-
-void QUnit::DECC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::DECC, toMod, start, length, carryIndex);
-}
-
-void QUnit::DECS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (INTSOptimize(toMod, start, length, false, overflowIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::DECS, toMod, start, length, overflowIndex);
-}
-
-void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (INTSCOptimize(toMod, start, length, false, carryIndex, overflowIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCxx(&QInterface::DECSC, toMod, start, length, overflowIndex, carryIndex);
 }
 
 void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)

@@ -15,6 +15,24 @@
 namespace Qrack {
 
 // Arithmetic:
+/// Add integer (without sign)
+void QInterface::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
+{
+    // See Draper, https://arxiv.org/abs/quant-ph/0008033
+
+    QFT(inOutStart, length);
+
+    for (bitLenInt i = 0; i < length; i++) {
+        for (bitLenInt j = 0; j <= i; j++) {
+            if ((toAdd >> j) & 1U) {
+                RTDyad(1, i - j, inOutStart + i);
+            }
+        }
+    }
+
+    IQFT(inOutStart, length);
+}
+
 /// Subtract integer (without sign)
 void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
