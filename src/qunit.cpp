@@ -98,29 +98,6 @@ void QUnit::CopyState(QUnit* orig)
     }
 }
 
-void QUnit::CopyState(QInterfacePtr orig)
-{
-    EndAllEmulation();
-
-    QInterfacePtr unit = CreateQuantumInterface(engine, subengine, orig->GetQubitCount(), 0, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-    unit->CopyState(orig);
-
-    SetQubitCount(orig->GetQubitCount());
-    shards.clear();
-
-    /* Set up the shards to refer to the new unit. */
-    for (bitLenInt i = 0; i < (orig->GetQubitCount()); i++) {
-        QEngineShard shard;
-        shard.unit = unit;
-        shard.mapped = i;
-        shard.isEmulated = false;
-        shard.isProbDirty = true;
-        shard.isPhaseDirty = true;
-        shards.push_back(shard);
-    }
-}
-
 void QUnit::SetQuantumState(const complex* inputState)
 {
     EndAllEmulation();
@@ -1569,7 +1546,7 @@ void QUnit::INTS(
 
     bitLenInt signBit = start + length - 1U;
     bool knewFlagSet = CheckBitPermutation(overflowIndex);
-    bool flagSet = shards[overflowIndex].prob < (ONE_R1 / 2);
+    bool flagSet = shards[overflowIndex].prob >= (ONE_R1 / 2);
 
     if (knewFlagSet && !flagSet) {
         // Overflow detection is disabled

@@ -243,7 +243,7 @@ public:
      */
 
     virtual void CopyState(QUnitPtr orig);
-    virtual void CopyState(QInterfacePtr orig);
+    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QUnit>(orig)); }
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool ApproxCompare(QInterfacePtr toCompare)

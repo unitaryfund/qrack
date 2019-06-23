@@ -45,26 +45,6 @@ void cl_free(void* toFree)
 #endif
 }
 
-template <class BidirectionalIterator>
-void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride)
-{
-    while ((first < last) && (first < (last - stride))) {
-        last -= stride;
-        std::iter_swap(first, last);
-        first += stride;
-    }
-}
-
-template <class BidirectionalIterator>
-void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride)
-{
-    reverse(first, middle, stride);
-    reverse(middle, last, stride);
-    reverse(first, last, stride);
-}
-
-template void rotate<complex*>(complex* first, complex* middle, complex* last, bitCapInt stride);
-
 bitCapInt intPow(bitCapInt base, bitCapInt power)
 {
     if (power == 0U) {
@@ -199,7 +179,7 @@ bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
             return true;
     }
     // First positive:
-    else if (inOutInt & (~inInt) & (signMask)) {
+    else if ((~inOutInt) & inInt & (signMask)) {
         inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
         if ((inOutInt + inInt) >= signMask)
             return true;
