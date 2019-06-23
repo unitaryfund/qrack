@@ -1453,7 +1453,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         }
     }
 
-    if (toMod == 0) {
+    if ((toMod == 0) && (length == 0)) {
         // We got lucky, and we were able to totally avoid entanglement.
         if (hasCarry && carry) {
             X(carryIndex);
