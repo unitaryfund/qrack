@@ -1610,6 +1610,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(126));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(128));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(254));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(7);
+    qftReg->H(1);
+    qftReg->INC(1, 0, 8);
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(129));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(131));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
@@ -1648,6 +1657,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
     qftReg->INCC(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(128));
+
+    qftReg->SetPermutation(255);
+    qftReg->H(7);
+    qftReg->INCC(255, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(510));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(382));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
