@@ -1416,7 +1416,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
-    // Try Ripple addition, to avoid entanglement.
+    // Try ripple addition, to avoid entanglement.
     bool toAdd, inReg;
     bool carry = false;
     int total;
@@ -1447,10 +1447,14 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             length--;
             i++;
         } else {
+            // The carry-in is classical.
+            if (carry) {
+                carry = false;
+                toMod++;
+            }
+
             if (length == 1) {
-                if (carry) {
-                    toMod++;
-                }
+                // We need at least two quantum bits left to try to achieve further separability.
                 break;
             }
 
