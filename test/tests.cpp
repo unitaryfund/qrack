@@ -1634,6 +1634,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
             REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
         }
     }
+
+    qftReg->SetPermutation(255);
+    qftReg->H(8);
+    qftReg->INCS(1, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
@@ -1724,6 +1730,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
             REQUIRE_THAT(qftReg, HasProbability(0, 10, 2 + i - 8));
         }
     }
+
+    qftReg->SetPermutation(255);
+    qftReg->H(0);
+    qftReg->INCSC(1, 0, 8, 8, 9);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(255));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(512));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
@@ -1759,6 +1771,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
             REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
         }
     }
+
+    qftReg->SetPermutation(255);
+    qftReg->H(8);
+    qftReg->CINC(1, 0, 8, controls, 1);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(255));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
@@ -1895,6 +1913,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
 {
     int i;
 
+    qftReg->SetPermutation(5);
+    qftReg->MUL(0, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
+
+    qftReg->SetPermutation(7);
+    qftReg->MUL(1, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 7));
+
     qftReg->SetPermutation(3);
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
@@ -1904,6 +1930,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
         res *= 2;
         REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
     }
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->MUL(8, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
@@ -1917,6 +1949,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
         res /= 2;
         REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
     }
+
+    qftReg->SetPermutation(0);
+    qftReg->H(3);
+    qftReg->DIV(8, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
@@ -1926,6 +1964,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
     qftReg->SetPermutation(65);
     qftReg->MULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (69 << 8)));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(3);
+    qftReg->MULModNOut(2, 256U, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8 | (16 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
@@ -1935,6 +1979,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
     qftReg->SetPermutation(6);
     qftReg->POWModNOut(3, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 6 | (217 << 8)));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(1);
+    qftReg->POWModNOut(2, 256U, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1 << 8));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2 | (4 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
@@ -2391,6 +2441,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
         }
     }
     qftReg->SetQuantumState(state);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_copystate")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
+    qftReg->H(0, 2);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
+    qftReg2->CopyState(qftReg);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getprobs")
