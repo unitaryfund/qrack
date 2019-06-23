@@ -368,6 +368,11 @@ QInterfacePtr QUnit::EntangleRange(
         std::swap(length1, length3);
     }
 
+    if (start3 < start2) {
+        std::swap(start2, start3);
+        std::swap(length2, length3);
+    }
+
     for (auto i = 0; i < length1; i++) {
         bits[i] = i + start1;
         ebits[i] = &bits[i];
