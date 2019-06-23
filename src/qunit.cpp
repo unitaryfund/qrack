@@ -1444,7 +1444,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             start++;
             length--;
         } else {
-            // We're blocked by needing to add 1 or 2 to a bit in an indefinite state.
+            // We're blocked by needing to add 1 to a bit in an indefinite state, which would superpose the carry out.
             if (carry) {
                 // We've kept toMod up to date with only the work left to do.
                 toMod++;
@@ -1478,29 +1478,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
 
-void QUnit::INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-{
-    if ((start + length) == qubitCount) {
-        ROR(1, 0, qubitCount);
-        start--;
-    }
-
-    Swap(start + length, carryIndex);
-    // INCS is better optimized
-    INCS(toMod, start, length + 1, overflowIndex);
-    Swap(start + length, carryIndex);
-
-    if ((start + length) == qubitCount) {
-        ROL(1, 0, qubitCount);
-        start++;
-    }
-}
-
 /// Add integer (without sign, with carry)
 void QUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
+    if (M(carryIndex)) {
         X(carryIndex);
         toAdd++;
     }
@@ -1511,8 +1492,7 @@ void QUnit::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt le
 /// Subtract integer (without sign, with carry)
 void QUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
+    if (M(carryIndex)) {
         X(carryIndex);
     } else {
         toSub++;
@@ -1522,7 +1502,8 @@ void QUnit::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt le
     INT(invToSub, inOutStart, length, carryIndex, true);
 }
 
-void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+void QUnit::INTS(
+    bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool hasCarry)
 {
     toMod &= ((1U << length) - 1U);
     if (toMod == 0) {
@@ -1535,7 +1516,7 @@ void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
 
     if (knewFlagSet && !flagSet) {
         // Overflow detection is disabled
-        INC(toMod, start, length);
+        INT(toMod, start, length, carryIndex, hasCarry);
         return;
     }
 
@@ -1545,43 +1526,53 @@ void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
 
     if (knewSign && (addendNeg != quantumNeg)) {
         // No chance of overflow
-        INC(toMod, start, length);
-        return;
-    }
-
-    // Keep the bits separate, if cheap to do so:
-    if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
+        INT(toMod, start, length, carryIndex, hasCarry);
         return;
     }
 
     // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+    if (hasCarry) {
+        // Keep the bits separate, if cheap to do so:
+        if (INTSCOptimize(toMod, start, length, true, carryIndex, overflowIndex)) {
+            return;
+        }
+        INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
+    } else {
+        // Keep the bits separate, if cheap to do so:
+        if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
+            return;
+        }
+        INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+    }
+}
+
+void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    INTS(toMod, start, length, overflowIndex, 0xFF, false);
 }
 
 void QUnit::INCSC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
+    if (M(carryIndex)) {
         X(carryIndex);
         toAdd++;
     }
 
-    INCDECSC(toAdd, inOutStart, length, overflowIndex, carryIndex);
+    INTS(toAdd, inOutStart, length, overflowIndex, carryIndex, true);
 }
 
 void QUnit::DECSC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
-    if (hasCarry) {
+    if (M(carryIndex)) {
         X(carryIndex);
     } else {
         toSub++;
     }
 
     bitCapInt invToSub = (1U << length) - toSub;
-    INCDECSC(invToSub, inOutStart, length, overflowIndex, carryIndex);
+    INTS(invToSub, inOutStart, length, overflowIndex, carryIndex, true);
 }
 
 void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
