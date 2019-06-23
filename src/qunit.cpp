@@ -1546,7 +1546,7 @@ void QUnit::INTS(
 
     bitLenInt signBit = start + length - 1U;
     bool knewFlagSet = CheckBitPermutation(overflowIndex);
-    bool flagSet = shards[overflowIndex].prob < (ONE_R1 / 2);
+    bool flagSet = shards[overflowIndex].prob >= (ONE_R1 / 2);
 
     if (knewFlagSet && !flagSet) {
         // Overflow detection is disabled

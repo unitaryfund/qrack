@@ -109,6 +109,8 @@ TEST_CASE("test_complex")
     REQUIRE(test);
     test = (imag(cmplx3) > (real1)(-2.0 - EPSILON)) && (imag(cmplx3) < (real1)(-2.0 + EPSILON));
     REQUIRE(test);
+
+    
 }
 
 TEST_CASE("test_qengine_cpu_par_for")
@@ -1640,6 +1642,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
     qftReg->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->INCS(1, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
+
+    qftReg->SetPermutation(256);
+    qftReg->H(7);
+    qftReg->INCS(1, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(257));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(385));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
@@ -1731,11 +1745,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
         }
     }
 
-    qftReg->SetPermutation(255);
+    qftReg->SetPermutation(0);
     qftReg->H(0);
-    qftReg->INCSC(1, 0, 8, 8, 9);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(255));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(512));
+    qftReg->H(1);
+    qftReg->INCSC(1, 0, 2, 3, 2);
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(2));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(4));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
@@ -2128,6 +2145,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
     qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
     qftReg->H(19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(19);
+    qftReg->H(18);
+    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    qftReg->CZ(19, 18);
+    qftReg->H(18);
+    qftReg->H(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1U << 18));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phase_flip")
