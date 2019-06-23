@@ -109,8 +109,6 @@ TEST_CASE("test_complex")
     REQUIRE(test);
     test = (imag(cmplx3) > (real1)(-2.0 - EPSILON)) && (imag(cmplx3) < (real1)(-2.0 + EPSILON));
     REQUIRE(test);
-
-    
 }
 
 TEST_CASE("test_qengine_cpu_par_for")
@@ -1625,6 +1623,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 {
+    REQUIRE(!isOverflowAdd(1, 1, 128, 256));
+    REQUIRE(isOverflowAdd(127, 127, 128, 256));
+    REQUIRE(isOverflowAdd(128, 128, 128, 256));
+
     int i;
 
     qftReg->SetPermutation(250);
@@ -1815,6 +1817,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 {
+    REQUIRE(!isOverflowSub(1, 1, 128, 256));
+    REQUIRE(isOverflowSub(1, 128, 128, 256));
+    REQUIRE(isOverflowSub(128, 127, 128, 256));
+
     int i;
     int start = 0x08;
 
