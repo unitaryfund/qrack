@@ -968,7 +968,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         return;
     }
 
-    complex qubit[2] = { ((real1)sqrt(ONE_R1 - shard.prob)) * complex(ONE_R1, ZERO_R1), ((real1)sqrt(shard.prob)) * complex(cos(shard.phase), sin(shard.phase)) };
+    complex qubit[2] = { ((real1)sqrt(ONE_R1 - shard.prob)) * complex(ONE_R1, ZERO_R1),
+        ((real1)sqrt(shard.prob)) * complex(cos(shard.phase), sin(shard.phase)) };
     complex Y0 = qubit[0];
 
     qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
