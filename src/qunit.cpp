@@ -954,13 +954,37 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
         ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplySingleInvert(topRight, bottomLeft, true, target), true);
 }
 
-void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    QEngineShard& shard = shards[qubit];
-    EndEmulation(shard);
-    shard.isProbDirty = true;
-    shard.isPhaseDirty = true;
+    EndEmulation(target);
+
+    QEngineShard& shard = shards[target];
+
     shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped);
+
+    if (shard.isProbDirty || shard.isPhaseDirty) {
+        shard.isProbDirty = true;
+        shard.isPhaseDirty = true;
+        return;
+    }
+
+    complex qubit[2] = { ((real1)sqrt(ONE_R1 - shard.prob)) * complex(ONE_R1, ZERO_R1),
+        ((real1)sqrt(shard.prob)) * complex(cos(shard.phase), sin(shard.phase)) };
+    complex Y0 = qubit[0];
+
+    qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+    qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
+
+    shard.prob = norm(qubit[1]);
+    shard.phase = ClampPhase(arg(qubit[1]) - arg(qubit[0]));
+
+    if (shard.unit->GetQubitCount() > 1) {
+        if (shard.prob < min_norm) {
+            SeparateBit(false, target);
+        } else if (shard.prob > (ONE_R1 - min_norm)) {
+            SeparateBit(true, target);
+        }
+    }
 }
 
 void QUnit::ApplyControlledSingleBit(
