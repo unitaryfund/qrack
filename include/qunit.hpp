@@ -298,9 +298,11 @@ protected:
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
     virtual QInterfacePtr EntangleAll();
 
-    virtual bool CheckBitPermutation(bitLenInt qubitIndex);
-    virtual bool CheckBitsPermutation(bitLenInt start, bitLenInt length);
-    virtual bitCapInt GetCachedPermutation(bitLenInt start, bitLenInt length);
+    virtual bool CheckBitPermutation(const bitLenInt& qubitIndex);
+    virtual bool CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length);
+    virtual bool CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length);
+    virtual bitCapInt GetCachedPermutation(const bitLenInt& start, const bitLenInt& length);
+    virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length);
 
     virtual QInterfacePtr EntangleIterator(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
