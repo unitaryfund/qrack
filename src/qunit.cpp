@@ -2043,7 +2043,7 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             value &= valueMask;
             carry = true;
         }
-        SetReg(value, valueLength, value);
+        SetReg(valueStart, valueLength, value);
         if (carry) {
             X(carryIndex);
         }
@@ -2096,7 +2096,7 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             value &= valueMask;
             carry = true;
         }
-        SetReg(value, valueLength, value);
+        SetReg(valueStart, valueLength, value);
         if (carry) {
             X(carryIndex);
         }
