@@ -543,7 +543,7 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
 
 /// Check if the qubit at "qubitIndex" has a cached probability indicating that it is in a permutation basis eigenstate,
 /// for optimization.
-bool QUnit::CheckBitPermutation(bitLenInt qubitIndex)
+bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex)
 {
     if (!shards[qubitIndex].isProbDirty &&
         ((Prob(qubitIndex) < min_norm) || ((ONE_R1 - Prob(qubitIndex)) < min_norm))) {
@@ -555,7 +555,7 @@ bool QUnit::CheckBitPermutation(bitLenInt qubitIndex)
 
 /// Check if all qubits in the range have cached probabilities indicating that they are in permutation basis
 /// eigenstates, for optimization.
-bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length)
+bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length)
 {
     // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
     // Then, operations can often be treated as classical, instead of quantum.
@@ -567,12 +567,37 @@ bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length)
     return true;
 }
 
+/// Check if all qubits in the index array have cached probabilities indicating that they are in permutation basis
+/// eigenstates, for optimization.
+bool QUnit::CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length)
+{
+    // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
+    // Then, operations can often be treated as classical, instead of quantum.
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!CheckBitPermutation(bitArray[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /// Assuming all bits in the range are in cached |0>/|1> eigenstates, read the unsigned integer value of the range.
-bitCapInt QUnit::GetCachedPermutation(bitLenInt start, bitLenInt length)
+bitCapInt QUnit::GetCachedPermutation(const bitLenInt& start, const bitLenInt& length)
 {
     bitCapInt res = 0U;
     for (bitLenInt i = 0; i < length; i++) {
         if (shards[start + i].prob >= (ONE_R1 / 2)) {
+            res |= 1U << i;
+        }
+    }
+    return res;
+}
+
+bitCapInt QUnit::GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length)
+{
+    bitCapInt res = 0U;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (shards[bitArray[i]].prob >= (ONE_R1 / 2)) {
             res |= 1U << i;
         }
     }
@@ -751,11 +776,20 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 void QUnit::UniformlyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
 {
-    // TODO: Controls that have exactly 0 or 1 probability can be optimized out of the gate.
-
     // If there are no controls, this is equivalent to the single bit gate.
     if (controlLen == 0) {
         ApplySingleBit(mtrxs, true, qubitIndex);
+        return;
+    }
+
+    // TODO: Controls that have exactly 0 or 1 probability can be optimized out of the gate.
+    // In the meantime, checking if all controls are in eigenstates improves statistical fitting scripts based on this
+    // method.
+    if (CheckBitsPermutation(controls, controlLen)) {
+        bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
+        complex mtrx[4];
+        std::copy(mtrxs + (controlPerm * 4U), mtrxs + ((controlPerm + 1U) * 4U), mtrx);
+        ApplySingleBit(mtrx, true, qubitIndex);
         return;
     }
 
