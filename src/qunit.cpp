@@ -1754,7 +1754,7 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
     shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
-    DirtyShardRange(inStart, length);
+    DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
 }
 
@@ -1770,7 +1770,7 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
     shards[inStart].unit->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
-    DirtyShardRange(inStart, length);
+    DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
 }
 
@@ -1778,7 +1778,6 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
     bitLenInt length, std::vector<bitLenInt>* controlsMapped)
 {
     EntangleRange(start, length);
-    DirtyShardRange(start, length);
     EntangleRange(carryStart, length);
     DirtyShardRange(carryStart, length);
 
@@ -1822,6 +1821,8 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 
     ((*unit).*fn)(
         toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
+
+    DirtyShardRange(start, length);
 }
 
 void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
@@ -1839,6 +1840,8 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
 
     ((*unit).*fn)(
         toMod, modN, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
+
+    DirtyShardRangePhase(start, length);
 }
 
 void QUnit::CMUL(
