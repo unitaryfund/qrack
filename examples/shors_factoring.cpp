@@ -88,6 +88,10 @@ int main()
     qReg->IQFT(0, qubitCount);
 
     bitCapInt y = qReg->MReg(0, qubitCount);
+    if (y == 0) {
+        std::cout << "Something went wrong: y = 0" << std::endl;
+        return 0;
+    }
     bitCapInt qubitPower = 1U << qubitCount;
 
     // Value is always fractional, so skip first step, by flipping numerator and denominator:
