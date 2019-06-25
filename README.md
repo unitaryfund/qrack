@@ -141,7 +141,7 @@ static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std
 ```
 The `home` argument default indicates that the default home directory path should be used. 
 
-## Pure 32 bit OpenCL kernels (including Raspberry Pi 3)
+## VM6502Q
 
 ```
 $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
