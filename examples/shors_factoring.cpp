@@ -73,7 +73,7 @@ int main()
 
     bitCapInt testFactor = gcd(toFactor, base);
     if (testFactor != 1) {
-        std::cout << "Chose non- relative prime: " << testFactor << std::endl;
+        std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
         return 0;
     }
 
