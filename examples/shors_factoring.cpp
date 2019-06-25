@@ -28,6 +28,34 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return gcd(n2, n1 % n2);
 }
 
+bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
+{
+    bitCapInt intPart = (*numerator) / (*denominator);
+    bitCapInt partDenominator = (*numerator) - intPart * (*denominator);
+    bitCapInt partNumerator = (*denominator);
+
+    (*numerator) = partNumerator;
+    (*denominator) = partDenominator;
+    return intPart;
+}
+
+real1 calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
+{
+    bitCapInt approxNumer = 1;
+    bitCapInt approxDenom = denominators.back();
+    bitCapInt temp;
+
+    for (int i = (denominators.size() - 1); i > 0; i--) {
+        temp = denominators[i] * approxDenom + approxNumer;
+        approxNumer = approxDenom;
+        approxDenom = temp;
+    }
+
+    (*numerator) = approxNumer;
+    (*denominator) = approxDenom;
+    return ((real1)approxNumer) / approxDenom;
+}
+
 int main()
 {
     bitCapInt toFactor, base;
@@ -52,13 +80,33 @@ int main()
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
     QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, qubitCount * 4, 0);
+        CreateQuantumInterface(QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, QINTERFACE_OPTIMAL, qubitCount * 4, 0);
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
     qReg->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
-    bitCapInt r = qReg->MReg(0, qubitCount);
+
+    bitCapInt y = qReg->MReg(0, qubitCount);
+    bitCapInt qubitPower = 1U << qubitCount;
+
+    // Value is always fractional, so skip first step, by flipping numerator and denominator:
+    bitCapInt numerator = qubitPower;
+    bitCapInt denominator = y;
+
+    std::vector<bitCapInt> denominators;
+    bitCapInt approxNumer;
+    bitCapInt approxDenom;
+    do {
+        denominators.push_back(continued_fraction_step(&numerator, &denominator));
+        calc_continued_fraction(denominators, &approxNumer, &approxDenom);
+    } while ((denominator > 0) && (approxDenom < toFactor));
+    if (approxDenom >= toFactor) {
+        denominators.pop_back();
+    }
+
+    bitCapInt r;
+    calc_continued_fraction(denominators, &approxNumer, &r);
 
     // Try to determine the factors
     if (r & 1U) {
