@@ -1824,16 +1824,17 @@ bitCapInt QEngineOCL::IndexedLDA(
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
-    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0, 0, 0, 0 };
 
     ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes);
 
-    real1 prob;
     real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
+    real1 prob;
     real1 totProb = ZERO_R1;
     bitCapInt i, outputInt;
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     LockSync(CL_MAP_READ);
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
@@ -1845,6 +1846,7 @@ bitCapInt QEngineOCL::IndexedLDA(
     if (totProb > ZERO_R1) {
         average /= totProb;
     }
+#endif
 
     return (bitCapInt)(average + (ONE_R1 / 2));
 }
@@ -1875,9 +1877,10 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
 
     ArithmeticCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes);
 
+    real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;
-    real1 average = ZERO_R1;
     real1 totProb = ZERO_R1;
     bitCapInt i, outputInt;
     LockSync(CL_MAP_READ);
@@ -1891,6 +1894,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     if (totProb > ZERO_R1) {
         average /= totProb;
     }
+#endif
 
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
