@@ -89,7 +89,7 @@ int main()
 
     bitCapInt y = qReg->MReg(0, qubitCount);
     if (y == 0) {
-        std::cout << "Something went wrong: y = 0" << std::endl;
+        std::cout << "Failed: y = 0 in period estimation subroutine." << std::endl;
         return 0;
     }
     bitCapInt qubitPower = 1U << qubitCount;
