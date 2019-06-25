@@ -105,12 +105,14 @@ int main()
         denominators.push_back(continued_fraction_step(&numerator, &denominator));
         calc_continued_fraction(denominators, &approxNumer, &approxDenom);
     } while ((denominator > 0) && (approxDenom < toFactor));
-    if (approxDenom >= toFactor) {
-        denominators.pop_back();
-    }
+    denominators.pop_back();
 
     bitCapInt r;
-    calc_continued_fraction(denominators, &approxNumer, &r);
+    if (denominators.size() == 0) {
+        r = y;
+    } else {
+        calc_continued_fraction(denominators, &approxNumer, &r);
+    }
 
     // Try to determine the factors
     if (r & 1U) {
