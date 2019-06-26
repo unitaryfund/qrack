@@ -253,12 +253,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #endif
 
-void QEngineCPU::UniformlyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+    bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
 {
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(mtrxs, true, qubitIndex);
+        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), true, qubitIndex);
         return;
     }
 
@@ -282,6 +283,18 @@ void QEngineCPU::UniformlyControlledSingleBit(
                 offset |= 1 << j;
             }
         }
+
+        bitCapInt i, iHigh, iLow, p;
+        iHigh = offset;
+        i = 0;
+        for (p = 0; p < mtrxSkipLen; p++) {
+            iLow = iHigh & (mtrxSkipPowers[p] - 1U);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << 1U;
+        }
+        i |= iHigh;
+
+        offset = i | mtrxSkipValueMask;
 
         // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
         // capacity for the unsigned bitCapInt.)

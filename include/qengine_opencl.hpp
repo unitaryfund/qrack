@@ -148,8 +148,9 @@ public:
     virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
-    virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+        const bitCapInt& mtrxSkipValueMask);
 
     /* Operations that have an improved implementation. */
     using QEngine::X;

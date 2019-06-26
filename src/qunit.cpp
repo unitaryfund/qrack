@@ -773,8 +773,9 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
 }
 
-void QUnit::UniformlyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
 {
     // If there are no controls, this is equivalent to the single bit gate.
     if (controlLen == 0) {
@@ -782,9 +783,7 @@ void QUnit::UniformlyControlledSingleBit(
         return;
     }
 
-    // TODO: Controls that have exactly 0 or 1 probability can be optimized out of the gate.
-    // In the meantime, checking if all controls are in eigenstates improves statistical fitting scripts based on this
-    // method.
+    // If all controls are in eigenstates, we can avoid entangling them.
     if (CheckBitsPermutation(controls, controlLen)) {
         bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
         complex mtrx[4];
@@ -795,27 +794,42 @@ void QUnit::UniformlyControlledSingleBit(
 
     bitLenInt i;
 
-    std::vector<bitLenInt> bits(controlLen + 1);
+    std::vector<bitLenInt> trimmedControls;
+    std::vector<bitCapInt> combinedSkipPowers(mtrxSkipLen);
+    std::copy(mtrxSkipPowers, mtrxSkipPowers + mtrxSkipLen, combinedSkipPowers.begin());
+    bitCapInt combinedSkipValueMask = 0;
     for (i = 0; i < controlLen; i++) {
-        bits[i] = controls[i];
+        if (!CheckBitPermutation(controls[i])) {
+            trimmedControls.push_back(controls[i]);
+        } else {
+            combinedSkipPowers.push_back(1U << controls[i]);
+            combinedSkipValueMask |= (shards[controls[i]].prob >= (ONE_R1 / 2)) ? combinedSkipPowers.back() : 0;
+        }
     }
-    bits[controlLen] = qubitIndex;
+    std::sort(combinedSkipPowers.begin(), combinedSkipPowers.end());
+
+    std::vector<bitLenInt> bits(trimmedControls.size() + 1);
+    for (i = 0; i < trimmedControls.size(); i++) {
+        bits[i] = trimmedControls[i];
+    }
+    bits[trimmedControls.size()] = qubitIndex;
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(controlLen + 1);
+    std::vector<bitLenInt*> ebits(trimmedControls.size() + 1);
     for (i = 0; i < bits.size(); i++) {
         ebits[i] = &bits[i];
     }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    bitLenInt* mappedControls = new bitLenInt[controlLen];
-    for (i = 0; i < controlLen; i++) {
-        mappedControls[i] = shards[controls[i]].mapped;
-        shards[controls[i]].isPhaseDirty = true;
+    bitLenInt* mappedControls = new bitLenInt[trimmedControls.size()];
+    for (i = 0; i < trimmedControls.size(); i++) {
+        mappedControls[i] = shards[trimmedControls[i]].mapped;
+        shards[trimmedControls[i]].isPhaseDirty = true;
     }
 
-    unit->UniformlyControlledSingleBit(mappedControls, controlLen, shards[qubitIndex].mapped, mtrxs);
+    unit->UniformlyControlledSingleBit(mappedControls, trimmedControls.size(), shards[qubitIndex].mapped, mtrxs,
+        &(combinedSkipPowers[0]), combinedSkipPowers.size(), combinedSkipValueMask);
 
     shards[qubitIndex].isProbDirty = true;
     shards[qubitIndex].isPhaseDirty = true;
