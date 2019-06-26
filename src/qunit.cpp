@@ -1351,14 +1351,10 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> bits(2);
-    bits[0] = start;
-    bits[1] = flagIndex;
+    std::vector<bitLenInt> bits = { start, flagIndex };
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(2);
-    ebits[0] = &bits[0];
-    ebits[1] = &bits[1];
+    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
@@ -1380,16 +1376,10 @@ void QUnit::INCxx(
 
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
-    std::vector<bitLenInt> bits(3);
-    bits[0] = start;
-    bits[1] = flag1Index;
-    bits[2] = flag2Index;
+    std::vector<bitLenInt> bits = { start, flag1Index, flag2Index };
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(3);
-    ebits[0] = &bits[0];
-    ebits[1] = &bits[1];
-    ebits[2] = &bits[2];
+    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1], &bits[2] };
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
@@ -1984,14 +1974,10 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     // Otherwise, form the potentially entangled representation:
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> bits(2);
-    bits[0] = start;
-    bits[1] = flagIndex;
+    std::vector<bitLenInt> bits = { start, flagIndex };
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(2);
-    ebits[0] = &bits[0];
-    ebits[1] = &bits[1];
+    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
