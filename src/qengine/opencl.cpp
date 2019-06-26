@@ -1822,20 +1822,9 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, cons
     delete[] controlPowers;
 }
 
-/** Set 8 bit register bits based on read from classical memory */
-bitCapInt QEngineOCL::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+real1 QEngineOCL::GetExpecation(bitLenInt valueStart, bitLenInt valueLength)
 {
-    SetReg(valueStart, valueLength, 0);
-    bitLenInt valueBytes = (valueLength + 7) / 8;
-    bitCapInt inputMask = bitRegMask(indexStart, indexLength);
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
-        valueLength, 0, 0, 0, 0 };
-
-    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes);
-
     real1 average = ZERO_R1;
-#if ENABLE_VM6502Q_DEBUG
     real1 prob;
     real1 totProb = ZERO_R1;
     bitCapInt i, outputInt;
@@ -1851,6 +1840,25 @@ bitCapInt QEngineOCL::IndexedLDA(
     if (totProb > ZERO_R1) {
         average /= totProb;
     }
+
+    return average;
+}
+
+/** Set 8 bit register bits based on read from classical memory */
+bitCapInt QEngineOCL::IndexedLDA(
+    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+{
+    SetReg(valueStart, valueLength, 0);
+    bitLenInt valueBytes = (valueLength + 7) / 8;
+    bitCapInt inputMask = bitRegMask(indexStart, indexLength);
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
+        valueLength, 0, 0, 0, 0 };
+
+    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes);
+
+    real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
+    average = GetExpectation(valueStart, valueLength);
 #endif
 
     return (bitCapInt)(average + (ONE_R1 / 2));
@@ -1884,21 +1892,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
 
     real1 average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
-    // At the end, just as a convenience, we return the expectation value for the addition result.
-    real1 prob;
-    real1 totProb = ZERO_R1;
-    bitCapInt i, outputInt;
-    LockSync(CL_MAP_READ);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(stateVec[i]);
-        totProb += prob;
-        average += prob * outputInt;
-    }
-    UnlockSync();
-    if (totProb > ZERO_R1) {
-        average /= totProb;
-    }
+    average = GetExpectation(valueStart, valueLength);
 #endif
 
     // Return the expectation value.
