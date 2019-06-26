@@ -838,6 +838,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->NormalizeState();
     }
 
+    Finish();
     toCopy->Finish();
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -948,6 +949,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     if (doNormalize) {
         NormalizeState();
     }
+
+    Finish();
 
     bitCapInt partPower = 1U << length;
     bitCapInt remainderPower = 1U << (qubitCount - length);
