@@ -2010,6 +2010,7 @@ bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
     // TODO: Index bits that have exactly 0 or 1 probability can be optimized out of the gate.
+    // This could follow the logic of UniformlyControlledSingleBit().
     // In the meantime, checking if all index bits are in eigenstates takes very little overhead.
     if (CheckBitsPermutation(indexStart, indexLength)) {
         bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
@@ -2040,10 +2041,12 @@ bitCapInt QUnit::IndexedLDA(
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
-// TODO: Index bits that have exactly 0 or 1 probability can be optimized out of the gate.
-// In the meantime, checking if all index bits are in eigenstates takes very little overhead.
+
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
+#else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+#endif
         bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
         bitLenInt valueBytes = (valueLength + 7U) / 8U;
         bitCapInt value = 0;
@@ -2051,6 +2054,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             value |= values[indexInt * valueBytes + j] << (8U * j);
         }
         value = GetCachedPermutation(valueStart, valueLength) + value;
+
+#if ENABLE_VM6502Q_DEBUG
         bitCapInt valueMask = (1U << valueLength) - 1U;
         bool carry = false;
         if (value > valueMask) {
@@ -2062,20 +2067,11 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             X(carryIndex);
         }
         return value;
-    }
 #else
-    if (CheckBitsPermutation(indexStart, indexLength)) {
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
-        value = GetCachedPermutation(valueStart, valueLength) + value;
         INCC(value, valueStart, valueLength, carryIndex);
         return 0;
-    }
 #endif
+    }
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
@@ -2093,10 +2089,11 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
-// TODO: Index bits that have exactly 0 or 1 probability can be optimized out of the gate.
-// In the meantime, checking if all index bits are in eigenstates takes very little overhead.
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
+#else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+#endif
         bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
         bitLenInt valueBytes = (valueLength + 7U) / 8U;
         bitCapInt value = 0;
@@ -2104,6 +2101,7 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             value |= values[indexInt * valueBytes + j] << (8U * j);
         }
         value = GetCachedPermutation(valueStart, valueLength) - value;
+#if ENABLE_VM6502Q_DEBUG
         bitCapInt valueMask = (1U << valueLength) - 1U;
         bool carry = false;
         if (value > valueMask) {
@@ -2115,20 +2113,11 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             X(carryIndex);
         }
         return value;
-    }
 #else
-    if (CheckBitsPermutation(indexStart, indexLength)) {
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
-        value = GetCachedPermutation(valueStart, valueLength) - value;
         DECC(value, valueStart, valueLength, carryIndex);
         return 0;
-    }
 #endif
+    }
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
