@@ -142,7 +142,7 @@ public:
 
 protected:
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    virtual real1 GetExpecation(bitLenInt valueStart, bitLenInt valueLength);
+    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

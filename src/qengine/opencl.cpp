@@ -1822,7 +1822,7 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, cons
     delete[] controlPowers;
 }
 
-real1 QEngineOCL::GetExpecation(bitLenInt valueStart, bitLenInt valueLength)
+real1 QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
     real1 average = ZERO_R1;
     real1 prob;

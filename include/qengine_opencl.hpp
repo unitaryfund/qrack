@@ -236,7 +236,7 @@ protected:
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
-    virtual real1 GetExpecation(bitLenInt valueStart, bitLenInt valueLength);
+    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);

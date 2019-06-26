@@ -1990,6 +1990,19 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
 
+bitCapInt QUnit::GetIndexedEigenstate(
+    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+{
+    bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
+    bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    bitCapInt value = 0;
+    for (bitLenInt j = 0; j < valueBytes; j++) {
+        value |= values[indexInt * valueBytes + j] << (8U * j);
+    }
+
+    return value;
+}
+
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
@@ -1997,12 +2010,7 @@ bitCapInt QUnit::IndexedLDA(
     // This could follow the logic of UniformlyControlledSingleBit().
     // In the meantime, checking if all index bits are in eigenstates takes very little overhead.
     if (CheckBitsPermutation(indexStart, indexLength)) {
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         SetReg(valueStart, valueLength, value);
 #if ENABLE_VM6502Q_DEBUG
         return value;
@@ -2028,18 +2036,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
-#else
-    if (CheckBitsPermutation(indexStart, indexLength)) {
-#endif
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         value = GetCachedPermutation(valueStart, valueLength) + value;
-
-#if ENABLE_VM6502Q_DEBUG
         bitCapInt valueMask = (1U << valueLength) - 1U;
         bool carry = false;
         if (value > valueMask) {
@@ -2051,11 +2049,14 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             X(carryIndex);
         }
         return value;
+    }
 #else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         INCC(value, valueStart, valueLength, carryIndex);
         return 0;
-#endif
     }
+#endif
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
@@ -2075,17 +2076,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
-#else
-    if (CheckBitsPermutation(indexStart, indexLength)) {
-#endif
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         value = GetCachedPermutation(valueStart, valueLength) - value;
-#if ENABLE_VM6502Q_DEBUG
         bitCapInt valueMask = (1U << valueLength) - 1U;
         bool carry = false;
         if (value > valueMask) {
@@ -2097,11 +2089,14 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             X(carryIndex);
         }
         return value;
+    }
 #else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         DECC(value, valueStart, valueLength, carryIndex);
         return 0;
-#endif
     }
+#endif
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
