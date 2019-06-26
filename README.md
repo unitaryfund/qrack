@@ -141,6 +141,13 @@ static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std
 ```
 The `home` argument default indicates that the default home directory path should be used. 
 
+## VM6502Q
+
+```
+$ cmake -DENABLE_VM6502Q_DEBUG=ON ..
+```
+Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
+
 ## Copyright and License
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.

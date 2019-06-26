@@ -229,11 +229,13 @@ void QFusion::ApplyAntiControlledSingleBit(
     bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
-void QFusion::UniformlyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QFusion::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
 {
     FlushAll();
-    qReg->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
+    qReg->UniformlyControlledSingleBit(
+        controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
 }
 
 // "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed"

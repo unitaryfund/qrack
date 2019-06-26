@@ -34,6 +34,7 @@ void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length) { return ((1U << length) - 1U) << start; }
 
@@ -446,8 +447,15 @@ public:
      * component ordering in each matrix is the same as all other gates with an arbitrary 2x2 applied to a single bit,
      * such as Qrack::ApplySingleBit.)
      */
+
     virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs);
+        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+    {
+        UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs, NULL, 0, 0);
+    }
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+        const bitCapInt& mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are

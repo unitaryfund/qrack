@@ -90,10 +90,12 @@ include ("cmake/OpenCL.cmake" )
 include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
+include ("cmake/VM6502Q.cmake")
 
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
+message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)

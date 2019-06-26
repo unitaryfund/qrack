@@ -188,4 +188,23 @@ bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
     return false;
 }
 
+bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount)
+{
+    if (skipPowersCount == 0) {
+        return perm;
+    }
+
+    bitCapInt i, iHigh, iLow, p;
+    iHigh = perm;
+    i = 0;
+    for (p = 0; p < skipPowersCount; p++) {
+        iLow = iHigh & (skipPowers[p] - 1U);
+        i |= iLow;
+        iHigh = (iHigh ^ iLow) << 1U;
+    }
+    i |= iHigh;
+
+    return i;
+}
+
 } // namespace Qrack

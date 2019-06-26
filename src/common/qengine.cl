@@ -286,6 +286,8 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
     bitCapInt targetPower = bitCapIntPtr[1];
     bitCapInt targetMask = targetPower - 1;
     bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt mtrxSkipLen = bitCapIntPtr[3];
+    bitCapInt mtrxSkipValueMask = bitCapIntPtr[4];
 
     real1 nrm = nrmIn[0];
 
@@ -295,18 +297,28 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
     cmplx Y0;
 
     bitCapInt i, offset;
-    bitLenInt j;
+    bitCapInt j, jHigh, jLow, p;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & targetMask;
-        i |= (lcv ^ i) << 1;
+        i |= (lcv ^ i) << 1U;
 
         offset = 0;
-        for (j = 0; j < controlLen; j++) {
-            if (i & qPowers[j]) {
-                offset |= 1 << j;
+        for (p = 0; p < controlLen; p++) {
+            if (i & qPowers[p]) {
+                offset |= 1U << p;
             }
         }
+
+        jHigh = offset;
+        j = 0;
+        for (p = 0; p < mtrxSkipLen; p++) {
+            jLow = jHigh & (qPowers[controlLen + p] - 1U);
+            j |= jLow;
+            jHigh = (jHigh ^ jLow) << 1U;
+        }
+        j |= jHigh;
+        offset = j | mtrxSkipValueMask;
 
         qubit.lo = stateVec[i];
         qubit.hi = stateVec[i | targetPower];

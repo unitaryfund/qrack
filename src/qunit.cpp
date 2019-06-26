@@ -773,8 +773,9 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
 }
 
-void QUnit::UniformlyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
 {
     // If there are no controls, this is equivalent to the single bit gate.
     if (controlLen == 0) {
@@ -782,9 +783,7 @@ void QUnit::UniformlyControlledSingleBit(
         return;
     }
 
-    // TODO: Controls that have exactly 0 or 1 probability can be optimized out of the gate.
-    // In the meantime, checking if all controls are in eigenstates improves statistical fitting scripts based on this
-    // method.
+    // If all controls are in eigenstates, we can avoid entangling them.
     if (CheckBitsPermutation(controls, controlLen)) {
         bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
         complex mtrx[4];
@@ -795,27 +794,40 @@ void QUnit::UniformlyControlledSingleBit(
 
     bitLenInt i;
 
-    std::vector<bitLenInt> bits(controlLen + 1);
+    std::vector<bitLenInt> trimmedControls;
+    std::vector<bitCapInt> skipPowers;
+    bitCapInt skipValueMask = 0;
     for (i = 0; i < controlLen; i++) {
-        bits[i] = controls[i];
+        if (!CheckBitPermutation(controls[i])) {
+            trimmedControls.push_back(controls[i]);
+        } else {
+            skipPowers.push_back(1U << i);
+            skipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
+        }
     }
-    bits[controlLen] = qubitIndex;
+
+    std::vector<bitLenInt> bits(trimmedControls.size() + 1);
+    for (i = 0; i < trimmedControls.size(); i++) {
+        bits[i] = trimmedControls[i];
+    }
+    bits[trimmedControls.size()] = qubitIndex;
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(controlLen + 1);
+    std::vector<bitLenInt*> ebits(trimmedControls.size() + 1);
     for (i = 0; i < bits.size(); i++) {
         ebits[i] = &bits[i];
     }
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
-    bitLenInt* mappedControls = new bitLenInt[controlLen];
-    for (i = 0; i < controlLen; i++) {
-        mappedControls[i] = shards[controls[i]].mapped;
-        shards[controls[i]].isPhaseDirty = true;
+    bitLenInt* mappedControls = new bitLenInt[trimmedControls.size()];
+    for (i = 0; i < trimmedControls.size(); i++) {
+        mappedControls[i] = shards[trimmedControls[i]].mapped;
+        shards[trimmedControls[i]].isPhaseDirty = true;
     }
 
-    unit->UniformlyControlledSingleBit(mappedControls, controlLen, shards[qubitIndex].mapped, mtrxs);
+    unit->UniformlyControlledSingleBit(mappedControls, trimmedControls.size(), shards[qubitIndex].mapped, mtrxs,
+        &(skipPowers[0]), skipPowers.size(), skipValueMask);
 
     shards[qubitIndex].isProbDirty = true;
     shards[qubitIndex].isPhaseDirty = true;
@@ -1995,6 +2007,24 @@ void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
+    // TODO: Index bits that have exactly 0 or 1 probability can be optimized out of the gate.
+    // This could follow the logic of UniformlyControlledSingleBit().
+    // In the meantime, checking if all index bits are in eigenstates takes very little overhead.
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
+        bitLenInt valueBytes = (valueLength + 7U) / 8U;
+        bitCapInt value = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
+            value |= values[indexInt * valueBytes + j] << (8U * j);
+        }
+        SetReg(valueStart, valueLength, value);
+#if ENABLE_VM6502Q_DEBUG
+        return value;
+#else
+        return 0;
+#endif
+    }
+
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
@@ -2009,6 +2039,38 @@ bitCapInt QUnit::IndexedLDA(
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
+
+#if ENABLE_VM6502Q_DEBUG
+    if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
+#else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+#endif
+        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
+        bitLenInt valueBytes = (valueLength + 7U) / 8U;
+        bitCapInt value = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
+            value |= values[indexInt * valueBytes + j] << (8U * j);
+        }
+        value = GetCachedPermutation(valueStart, valueLength) + value;
+
+#if ENABLE_VM6502Q_DEBUG
+        bitCapInt valueMask = (1U << valueLength) - 1U;
+        bool carry = false;
+        if (value > valueMask) {
+            value &= valueMask;
+            carry = true;
+        }
+        SetReg(valueStart, valueLength, value);
+        if (carry) {
+            X(carryIndex);
+        }
+        return value;
+#else
+        INCC(value, valueStart, valueLength, carryIndex);
+        return 0;
+#endif
+    }
+
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
@@ -2025,6 +2087,36 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     bitLenInt carryIndex, unsigned char* values)
 {
+#if ENABLE_VM6502Q_DEBUG
+    if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
+#else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+#endif
+        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
+        bitLenInt valueBytes = (valueLength + 7U) / 8U;
+        bitCapInt value = 0;
+        for (bitLenInt j = 0; j < valueBytes; j++) {
+            value |= values[indexInt * valueBytes + j] << (8U * j);
+        }
+        value = GetCachedPermutation(valueStart, valueLength) - value;
+#if ENABLE_VM6502Q_DEBUG
+        bitCapInt valueMask = (1U << valueLength) - 1U;
+        bool carry = false;
+        if (value > valueMask) {
+            value &= valueMask;
+            carry = true;
+        }
+        SetReg(valueStart, valueLength, value);
+        if (carry) {
+            X(carryIndex);
+        }
+        return value;
+#else
+        DECC(value, valueStart, valueLength, carryIndex);
+        return 0;
+#endif
+    }
+
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,

@@ -1319,6 +1319,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
 
+    qftReg->SetReg(0, 8, 0x22);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
+    qftReg->H(4);
+    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
+    qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
+    qftReg->H(4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x22));
+
     controls[0] = 5;
     controls[1] = 4;
 

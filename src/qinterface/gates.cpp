@@ -173,12 +173,15 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
     ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
 }
 
-void QInterface::UniformlyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+    bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
 {
-    for (bitCapInt index = 0; index < (1U << controlLen); index++) {
+    bitCapInt index;
+    for (bitCapInt lcv = 0; lcv < (1U << controlLen); lcv++) {
+        index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
-            if (!((index >> bit_pos) & 1)) {
+            if (!((lcv >> bit_pos) & 1)) {
                 X(controls[bit_pos]);
             }
         }
@@ -186,7 +189,7 @@ void QInterface::UniformlyControlledSingleBit(
         ApplyControlledSingleBit(controls, controlLen, qubitIndex, &(mtrxs[index * 4U]));
 
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
-            if (!((index >> bit_pos) & 1)) {
+            if (!((lcv >> bit_pos) & 1)) {
                 X(controls[bit_pos]);
             }
         }

@@ -419,7 +419,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
-    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * sizeof(bitCapInt) * 8);
+    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * sizeof(bitCapInt) * 16);
 
     if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer =
@@ -732,12 +732,13 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
-void QEngineOCL::UniformlyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+    bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
 {
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(mtrxs, true, qubitIndex);
+        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), true, qubitIndex);
         return;
     }
 
@@ -749,21 +750,25 @@ void QEngineOCL::UniformlyControlledSingleBit(
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> 1;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, 0, 0, 0, 0, 0, 0, 0 };
-    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 3, bciArgs);
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, mtrxSkipLen, mtrxSkipValueMask,
+        0, 0, 0, 0, 0 };
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
     real1 nrm = (real1)(ONE_R1 / std::sqrt(runningNorm));
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
-    BufferPtr uniformBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 4 * (1U << controlLen));
+    BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_READ_ONLY, sizeof(complex) * 4U * (1U << (controlLen + mtrxSkipLen)));
 
-    DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << controlLen), mtrxs);
+    DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << (controlLen + mtrxSkipLen)), mtrxs);
 
-    bitCapInt* qPowers = new bitCapInt[controlLen];
+    bitCapInt* qPowers = new bitCapInt[controlLen + mtrxSkipLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
-        qPowers[i] = 1 << controls[i];
+        qPowers[i] = 1U << controls[i];
+    }
+    for (bitLenInt i = 0; i < mtrxSkipLen; i++) {
+        qPowers[controlLen + i] = mtrxSkipPowers[i];
     }
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
@@ -772,7 +777,7 @@ void QEngineOCL::UniformlyControlledSingleBit(
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
-    DISPATCH_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * controlLen, qPowers);
+    DISPATCH_WRITE(waitVec, *powersBuffer, sizeof(bitCapInt) * (controlLen + mtrxSkipLen), qPowers);
 
     // We call the kernel, with global buffers and one local buffer.
     WaitCall(OCL_API_UNIFORMLYCONTROLLED, ngc, ngs,
@@ -1824,16 +1829,17 @@ bitCapInt QEngineOCL::IndexedLDA(
     SetReg(valueStart, valueLength, 0);
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
-    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0, 0, 0, 0 };
 
     ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes);
 
-    real1 prob;
     real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
+    real1 prob;
     real1 totProb = ZERO_R1;
     bitCapInt i, outputInt;
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
     LockSync(CL_MAP_READ);
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;
@@ -1845,6 +1851,7 @@ bitCapInt QEngineOCL::IndexedLDA(
     if (totProb > ZERO_R1) {
         average /= totProb;
     }
+#endif
 
     return (bitCapInt)(average + (ONE_R1 / 2));
 }
@@ -1875,9 +1882,10 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
 
     ArithmeticCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes);
 
+    real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
     // At the end, just as a convenience, we return the expectation value for the addition result.
     real1 prob;
-    real1 average = ZERO_R1;
     real1 totProb = ZERO_R1;
     bitCapInt i, outputInt;
     LockSync(CL_MAP_READ);
@@ -1891,6 +1899,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
     if (totProb > ZERO_R1) {
         average /= totProb;
     }
+#endif
 
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
