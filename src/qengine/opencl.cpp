@@ -981,8 +981,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     QueueCall(api_call, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
 
-    EventVecPtr waitVec2 = ResetWaitEvents();
-
     if ((maxQPower - partPower) == 0) {
         SetQubitCount(1);
     } else {
@@ -991,7 +989,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
-        Finish();
         destination->Finish();
 
         bciArgs[0] = partPower;
