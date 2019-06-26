@@ -783,15 +783,6 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
         return;
     }
 
-    // If all controls are in eigenstates, we can avoid entangling them.
-    if (CheckBitsPermutation(controls, controlLen)) {
-        bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
-        complex mtrx[4];
-        std::copy(mtrxs + (controlPerm * 4U), mtrxs + ((controlPerm + 1U) * 4U), mtrx);
-        ApplySingleBit(mtrx, true, qubitIndex);
-        return;
-    }
-
     bitLenInt i;
 
     std::vector<bitLenInt> trimmedControls;
@@ -804,6 +795,15 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
             skipPowers.push_back(1U << i);
             skipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
         }
+    }
+
+    // If all controls are in eigenstates, we can avoid entangling them.
+    if (trimmedControls.size() == 0) {
+        bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
+        complex mtrx[4];
+        std::copy(mtrxs + (controlPerm * 4U), mtrxs + ((controlPerm + 1U) * 4U), mtrx);
+        ApplySingleBit(mtrx, true, qubitIndex);
+        return;
     }
 
     std::vector<bitLenInt> bits(trimmedControls.size() + 1);
