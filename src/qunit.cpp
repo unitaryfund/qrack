@@ -783,15 +783,6 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
         return;
     }
 
-    // If all controls are in eigenstates, we can avoid entangling them.
-    if (CheckBitsPermutation(controls, controlLen)) {
-        bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
-        complex mtrx[4];
-        std::copy(mtrxs + (controlPerm * 4U), mtrxs + ((controlPerm + 1U) * 4U), mtrx);
-        ApplySingleBit(mtrx, true, qubitIndex);
-        return;
-    }
-
     bitLenInt i;
 
     std::vector<bitLenInt> trimmedControls;
@@ -804,6 +795,15 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
             skipPowers.push_back(1U << i);
             skipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
         }
+    }
+
+    // If all controls are in eigenstates, we can avoid entangling them.
+    if (trimmedControls.size() == 0) {
+        bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
+        complex mtrx[4];
+        std::copy(mtrxs + (controlPerm * 4U), mtrxs + ((controlPerm + 1U) * 4U), mtrx);
+        ApplySingleBit(mtrx, true, qubitIndex);
+        return;
     }
 
     std::vector<bitLenInt> bits(trimmedControls.size() + 1);
@@ -1351,14 +1351,10 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
     /* Make sure the flag bit is entangled in the same QU. */
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> bits(2);
-    bits[0] = start;
-    bits[1] = flagIndex;
+    std::vector<bitLenInt> bits = { start, flagIndex };
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(2);
-    ebits[0] = &bits[0];
-    ebits[1] = &bits[1];
+    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
@@ -1380,16 +1376,10 @@ void QUnit::INCxx(
 
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
-    std::vector<bitLenInt> bits(3);
-    bits[0] = start;
-    bits[1] = flag1Index;
-    bits[2] = flag2Index;
+    std::vector<bitLenInt> bits = { start, flag1Index, flag2Index };
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(3);
-    ebits[0] = &bits[0];
-    ebits[1] = &bits[1];
-    ebits[2] = &bits[2];
+    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1], &bits[2] };
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
@@ -1984,14 +1974,10 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     // Otherwise, form the potentially entangled representation:
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> bits(2);
-    bits[0] = start;
-    bits[1] = flagIndex;
+    std::vector<bitLenInt> bits = { start, flagIndex };
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(2);
-    ebits[0] = &bits[0];
-    ebits[1] = &bits[1];
+    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
 
     QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
 
@@ -2004,6 +1990,19 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
 
+bitCapInt QUnit::GetIndexedEigenstate(
+    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+{
+    bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
+    bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    bitCapInt value = 0;
+    for (bitLenInt j = 0; j < valueBytes; j++) {
+        value |= values[indexInt * valueBytes + j] << (8U * j);
+    }
+
+    return value;
+}
+
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
@@ -2011,12 +2010,7 @@ bitCapInt QUnit::IndexedLDA(
     // This could follow the logic of UniformlyControlledSingleBit().
     // In the meantime, checking if all index bits are in eigenstates takes very little overhead.
     if (CheckBitsPermutation(indexStart, indexLength)) {
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         SetReg(valueStart, valueLength, value);
 #if ENABLE_VM6502Q_DEBUG
         return value;
@@ -2042,18 +2036,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
-#else
-    if (CheckBitsPermutation(indexStart, indexLength)) {
-#endif
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         value = GetCachedPermutation(valueStart, valueLength) + value;
-
-#if ENABLE_VM6502Q_DEBUG
         bitCapInt valueMask = (1U << valueLength) - 1U;
         bool carry = false;
         if (value > valueMask) {
@@ -2065,11 +2049,14 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             X(carryIndex);
         }
         return value;
+    }
 #else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         INCC(value, valueStart, valueLength, carryIndex);
         return 0;
-#endif
     }
+#endif
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
@@ -2089,17 +2076,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 {
 #if ENABLE_VM6502Q_DEBUG
     if (CheckBitsPermutation(indexStart, indexLength) && CheckBitsPermutation(valueStart, valueLength)) {
-#else
-    if (CheckBitsPermutation(indexStart, indexLength)) {
-#endif
-        bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
-        bitLenInt valueBytes = (valueLength + 7U) / 8U;
-        bitCapInt value = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            value |= values[indexInt * valueBytes + j] << (8U * j);
-        }
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         value = GetCachedPermutation(valueStart, valueLength) - value;
-#if ENABLE_VM6502Q_DEBUG
         bitCapInt valueMask = (1U << valueLength) - 1U;
         bool carry = false;
         if (value > valueMask) {
@@ -2111,11 +2089,14 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
             X(carryIndex);
         }
         return value;
+    }
 #else
+    if (CheckBitsPermutation(indexStart, indexLength)) {
+        bitCapInt value = GetIndexedEigenstate(indexStart, indexLength, valueStart, valueLength, values);
         DECC(value, valueStart, valueLength, carryIndex);
         return 0;
-#endif
     }
+#endif
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 

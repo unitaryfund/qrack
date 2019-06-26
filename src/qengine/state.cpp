@@ -83,6 +83,26 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
     runningNorm = ONE_R1;
 }
 
+real1 QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+{
+    real1 average = ZERO_R1;
+    real1 prob;
+    real1 totProb = ZERO_R1;
+    bitCapInt i, outputInt;
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> valueStart;
+        prob = norm(stateVec[i]);
+        totProb += prob;
+        average += prob * outputInt;
+    }
+    if (totProb > ZERO_R1) {
+        average /= totProb;
+    }
+
+    return average;
+}
+
 void QEngineCPU::CopyState(QInterfacePtr orig)
 {
     /* Set the size and reset the stateVec to the correct size. */

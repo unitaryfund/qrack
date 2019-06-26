@@ -1012,7 +1012,7 @@ void kernel incdecbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt toAdd = bitCapIntPtr[5];
     int nibbleCount = bitCapIntPtr[6];
     bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes, i;
-    char test1, test2;
+    int test1, test2;
     int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
     // fast private memory.

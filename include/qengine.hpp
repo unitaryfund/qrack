@@ -137,6 +137,7 @@ public:
 protected:
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false) = 0;
     virtual void ResetStateVec(complex* nStateVec);
+    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
     virtual bool IsIdentity(const complex* mtrx);
 

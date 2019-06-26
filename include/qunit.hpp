@@ -333,6 +333,9 @@ protected:
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
         const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f);
 
+    bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values);
+
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }

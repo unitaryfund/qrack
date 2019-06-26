@@ -773,24 +773,12 @@ bitCapInt QEngineCPU::IndexedLDA(
         nStateVec[outputRes | lcv] = stateVec[lcv];
     });
 
+    ResetStateVec(nStateVec);
+
     real1 average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
-    real1 prob;
-    real1 totProb = ZERO_R1;
-    bitCapInt i, outputInt;
-    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(nStateVec[i]);
-        totProb += prob;
-        average += prob * outputInt;
-    }
-    if (totProb > ZERO_R1) {
-        average /= totProb;
-    }
+    average = GetExpectation(valueStart, valueLength);
 #endif
-
-    ResetStateVec(nStateVec);
 
     return (bitCapInt)(average + (ONE_R1 / 2));
 }
@@ -874,27 +862,14 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     });
 
-    real1 average = ZERO_R1;
-#if ENABLE_VM6502Q_DEBUG
-    // At the end, just as a convenience, we return the expectation value for
-    // the addition result.
-    bitCapInt i, outputInt;
-    real1 prob;
-    real1 totProb = ZERO_R1;
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(nStateVec[i]);
-        totProb += prob;
-        average += prob * outputInt;
-    }
-    if (totProb > ZERO_R1) {
-        average /= totProb;
-    }
-#endif
-
-    // Finally, we dealloc the old state vector and replace it with the one we
+    // We dealloc the old state vector and replace it with the one we
     // just calculated.
     ResetStateVec(nStateVec);
+
+    real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
+    average = GetExpectation(valueStart, valueLength);
+#endif
 
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
@@ -982,27 +957,14 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[lcv];
     });
 
-    real1 average = ZERO_R1;
-#if ENABLE_VM6502Q_DEBUG
-    // At the end, just as a convenience, we return the expectation value for
-    // the addition result.
-    bitCapInt i, outputInt;
-    real1 prob;
-    real1 totProb = ZERO_R1;
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(nStateVec[i]);
-        totProb += prob;
-        average += prob * outputInt;
-    }
-    if (totProb > ZERO_R1) {
-        average /= totProb;
-    }
-#endif
-
-    // Finally, we dealloc the old state vector and replace it with the one we
+    // We dealloc the old state vector and replace it with the one we
     // just calculated.
     ResetStateVec(nStateVec);
+
+    real1 average = ZERO_R1;
+#if ENABLE_VM6502Q_DEBUG
+    average = GetExpectation(valueStart, valueLength);
+#endif
 
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
