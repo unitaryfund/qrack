@@ -795,18 +795,16 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     bitLenInt i;
 
     std::vector<bitLenInt> trimmedControls;
-    std::vector<bitCapInt> combinedSkipPowers(mtrxSkipLen);
-    std::copy(mtrxSkipPowers, mtrxSkipPowers + mtrxSkipLen, combinedSkipPowers.begin());
-    bitCapInt combinedSkipValueMask = mtrxSkipValueMask;
+    std::vector<bitCapInt> skipPowers;
+    bitCapInt skipValueMask = 0;
     for (i = 0; i < controlLen; i++) {
         if (!CheckBitPermutation(controls[i])) {
             trimmedControls.push_back(controls[i]);
         } else {
-            combinedSkipPowers.push_back(1U << i);
-            combinedSkipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
+            skipPowers.push_back(1U << i);
+            skipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
         }
     }
-    std::sort(combinedSkipPowers.begin(), combinedSkipPowers.end());
 
     std::vector<bitLenInt> bits(trimmedControls.size() + 1);
     for (i = 0; i < trimmedControls.size(); i++) {
@@ -829,7 +827,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     }
 
     unit->UniformlyControlledSingleBit(mappedControls, trimmedControls.size(), shards[qubitIndex].mapped, mtrxs,
-        &(combinedSkipPowers[0]), combinedSkipPowers.size(), combinedSkipValueMask);
+        &(skipPowers[0]), skipPowers.size(), skipValueMask);
 
     shards[qubitIndex].isProbDirty = true;
     shards[qubitIndex].isPhaseDirty = true;
