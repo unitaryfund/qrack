@@ -978,7 +978,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
-    QueueCall(api_call, ngc, ngs,
+    WaitCall(api_call, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
 
     if ((maxQPower - partPower) == 0) {
