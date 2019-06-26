@@ -838,7 +838,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->NormalizeState();
     }
 
-    Finish();
     toCopy->Finish();
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -950,8 +949,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
-    Finish();
-
     bitCapInt partPower = 1U << length;
     bitCapInt remainderPower = 1U << (qubitCount - length);
     bitCapInt bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
@@ -994,6 +991,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != nullptr) {
+        Finish();
         destination->Finish();
 
         bciArgs[0] = partPower;
