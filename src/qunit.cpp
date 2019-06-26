@@ -797,13 +797,13 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     std::vector<bitLenInt> trimmedControls;
     std::vector<bitCapInt> combinedSkipPowers(mtrxSkipLen);
     std::copy(mtrxSkipPowers, mtrxSkipPowers + mtrxSkipLen, combinedSkipPowers.begin());
-    bitCapInt combinedSkipValueMask = 0;
+    bitCapInt combinedSkipValueMask = mtrxSkipValueMask;
     for (i = 0; i < controlLen; i++) {
         if (!CheckBitPermutation(controls[i])) {
             trimmedControls.push_back(controls[i]);
         } else {
-            combinedSkipPowers.push_back(1U << controls[i]);
-            combinedSkipValueMask |= (shards[controls[i]].prob >= (ONE_R1 / 2)) ? combinedSkipPowers.back() : 0;
+            combinedSkipPowers.push_back(1U << i);
+            combinedSkipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
         }
     }
     std::sort(combinedSkipPowers.begin(), combinedSkipPowers.end());
