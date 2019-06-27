@@ -17,7 +17,7 @@
 
 /* Needed for bitCapInt typedefs. */
 #include "qrack_types.hpp"
-#include "statevector.hpp"
+#include "qrack/statevector.hpp"
 
 namespace Qrack {
 
