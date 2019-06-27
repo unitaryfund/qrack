@@ -65,7 +65,7 @@ namespace Qrack {
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG)
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG)
     , deviceID(devID)
     , wait_refs()
@@ -442,6 +442,14 @@ real1 QEngineOCL::ParSum(real1* toSum, bitCapInt maxI)
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID, true); }
+
+void QEngineOCL::ResetStateVec(complex* nStateVec)
+{
+    if (stateVec) {
+        FreeStateVec();
+        stateVec = nStateVec;
+    }
+}
 
 void QEngineOCL::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 

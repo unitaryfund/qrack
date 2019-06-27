@@ -25,7 +25,6 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
  */
 class QEngine : public QInterface {
 protected:
-    complex* stateVec;
     bool randGlobalPhase;
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
@@ -46,7 +45,6 @@ public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true)
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
-        , stateVec(NULL)
         , randGlobalPhase(randomGlobalPhase)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
@@ -62,23 +60,7 @@ public:
         // Intentionally left blank
     }
 
-    virtual ~QEngine()
-    {
-        Finish();
-        FreeStateVec();
-    }
-
-    virtual void FreeStateVec()
-    {
-        if (stateVec) {
-#if defined(_WIN32)
-            _aligned_free(stateVec);
-#else
-            free(stateVec);
-#endif
-        }
-        stateVec = NULL;
-    }
+    virtual ~QEngine() { Finish(); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
@@ -135,8 +117,6 @@ public:
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 protected:
-    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false) = 0;
-    virtual void ResetStateVec(complex* nStateVec);
     virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
     virtual bool IsIdentity(const complex* mtrx);

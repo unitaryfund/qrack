@@ -14,14 +14,6 @@
 
 namespace Qrack {
 
-void QEngine::ResetStateVec(complex* nStateVec)
-{
-    if (stateVec) {
-        FreeStateVec();
-        stateVec = nStateVec;
-    }
-}
-
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
 {

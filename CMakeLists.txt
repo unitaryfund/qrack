@@ -150,6 +150,7 @@ install (FILES
 install (FILES
     include/bitbuffer.hpp
     include/hamiltonian.hpp
+    include/statevector.hpp
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp

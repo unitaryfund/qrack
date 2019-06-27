@@ -88,6 +88,7 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineOCL : virtual public QEngine {
 protected:
+    complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
     std::vector<EventVecPtr> wait_refs;
@@ -131,7 +132,7 @@ public:
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true);
+        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false);
 
     QEngineOCL()
     {
@@ -142,6 +143,19 @@ public:
     {
         Finish();
         FreeAligned(nrmArray);
+        FreeStateVec();
+    }
+
+    virtual void FreeStateVec()
+    {
+        if (stateVec) {
+#if defined(_WIN32)
+            _aligned_free(stateVec);
+#else
+            free(stateVec);
+#endif
+        }
+        stateVec = NULL;
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
@@ -234,6 +248,7 @@ public:
 
 protected:
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    virtual void ResetStateVec(complex* sv);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
     virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);

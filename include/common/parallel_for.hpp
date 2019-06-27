@@ -17,6 +17,7 @@
 
 /* Needed for bitCapInt typedefs. */
 #include "qrack_types.hpp"
+#include "statevector.hpp"
 
 namespace Qrack {
 
@@ -66,7 +67,7 @@ public:
         const bitCapInt, const bitCapInt, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
-    real1 par_norm(const bitCapInt maxQPower, const complex* stateArray);
+    real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };
 
 } // namespace Qrack

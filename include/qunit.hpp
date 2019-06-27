@@ -44,6 +44,7 @@ protected:
     bool randGlobalPhase;
     bool useHostRam;
     bool useRDRAND;
+    bool isSparse;
 
     qrack_rand_gen_ptr rand_generator;
 
@@ -69,10 +70,11 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool doNorm = false,
-        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true);
+        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true);
+        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false);
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
