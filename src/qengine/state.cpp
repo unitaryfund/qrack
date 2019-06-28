@@ -206,12 +206,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     if (stateVec->is_sparse()) {
         bitCapInt setMask = offset1 ^ offset2;
-        bitCapInt skipMask = 0;
+        bitCapInt filterMask = 0;
         for (bitLenInt i = 0; i < bitCount; i++) {
-            skipMask |= (qPowersSorted[i] & ~setMask);
+            filterMask |= (qPowersSorted[i] & ~setMask);
         }
-        bitCapInt skipValues = skipMask & offset1 & offset2;
-        par_for_set(stateVec->iterable(setMask, skipMask, skipValues), fn);
+        bitCapInt filterValues = filterMask & offset1 & offset2;
+        par_for_set(stateVec->iterable(setMask, filterMask, filterValues), fn);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
     }
@@ -268,12 +268,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     if (stateVec->is_sparse()) {
         bitCapInt setMask = offset1 ^ offset2;
-        bitCapInt skipMask = 0;
+        bitCapInt filterMask = 0;
         for (bitLenInt i = 0; i < bitCount; i++) {
-            skipMask |= (qPowersSorted[i] & ~setMask);
+            filterMask |= (qPowersSorted[i] & ~setMask);
         }
-        bitCapInt skipValues = skipMask & offset1 & offset2;
-        par_for_set(stateVec->iterable(setMask, skipMask, skipValues), fn);
+        bitCapInt filterValues = filterMask & offset1 & offset2;
+        par_for_set(stateVec->iterable(setMask, filterMask, filterValues), fn);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
     }

@@ -762,7 +762,7 @@ bitCapInt QEngineCPU::IndexedLDA(
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
 
-    par_for_skip(0, maxQPower, skipPower, valueLength, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         bitCapInt inputRes = lcv & inputMask;
         bitCapInt inputInt = inputRes >> indexStart;
         bitCapInt outputInt = 0;
@@ -771,7 +771,13 @@ bitCapInt QEngineCPU::IndexedLDA(
         }
         bitCapInt outputRes = outputInt << valueStart;
         nStateVec->write(outputRes | lcv, stateVec->read(lcv));
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(0, bitRegMask(valueStart, valueLength), 0), fn);
+    } else {
+        par_for_skip(0, maxQPower, skipPower, valueLength, fn);
+    }
 
     ResetStateVec(nStateVec);
 
@@ -821,7 +827,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt otherMask = (maxQPower - 1U) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1U << carryIndex;
 
-    par_for_skip(0, maxQPower, skipPower, 1U, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -860,7 +866,13 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         outputRes = outputInt << valueStart;
 
         nStateVec->write(outputRes | inputRes | otherRes | carryRes, stateVec->read(lcv));
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(0, skipPower, 0), fn);
+    } else {
+        par_for_skip(0, maxQPower, skipPower, 1, fn);
+    }
 
     // We dealloc the old state vector and replace it with the one we
     // just calculated.
@@ -912,7 +924,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt otherMask = (maxQPower - 1U) & (~(inputMask | outputMask | carryMask));
     bitCapInt skipPower = 1U << carryIndex;
 
-    par_for_skip(0, maxQPower, skipPower, 1U, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         // These are qubits that are not directly involved in the
         // operation. We iterate over all of their possibilities, but their
         // input value matches their output value:
@@ -955,7 +967,13 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         outputRes = outputInt << valueStart;
 
         nStateVec->write(outputRes | inputRes | otherRes | carryRes, stateVec->read(lcv));
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(0, skipPower, 0), fn);
+    } else {
+        par_for_skip(0, maxQPower, skipPower, valueLength, fn);
+    }
 
     // We dealloc the old state vector and replace it with the one we
     // just calculated.
