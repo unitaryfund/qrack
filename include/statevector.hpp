@@ -39,10 +39,11 @@ public:
         : capacity(cap)
     {
     }
-    virtual complex get(const bitCapInt& i) = 0;
-    virtual void set(const bitCapInt& i, const complex& c) = 0;
-    /// Optimized "set" that is only guaranteed to set if either amplitude is nonzero. (Useful for the result of 2x2 tensor slicing.)
-    virtual void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
+    virtual complex read(const bitCapInt& i) = 0;
+    virtual void write(const bitCapInt& i, const complex& c) = 0;
+    /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
+    /// tensor slicing.)
+    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
     virtual void copy_out(complex* outArray) = 0;
@@ -95,11 +96,12 @@ public:
 
     ~StateVectorArray() { Free(); }
 
-    complex get(const bitCapInt& i) { return amplitudes[i]; };
+    complex read(const bitCapInt& i) { return amplitudes[i]; };
 
-    void set(const bitCapInt& i, const complex& c) { amplitudes[i] = c; };
+    void write(const bitCapInt& i, const complex& c) { amplitudes[i] = c; };
 
-    void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) {
+    void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
+    {
         amplitudes[i1] = c1;
         amplitudes[i2] = c2;
     };
@@ -137,7 +139,7 @@ public:
     {
     }
 
-    complex get(const bitCapInt& i)
+    complex read(const bitCapInt& i)
     {
         mtx.lock();
         complex toRet;
@@ -151,7 +153,7 @@ public:
         return toRet;
     }
 
-    void set(const bitCapInt& i, const complex& c)
+    void write(const bitCapInt& i, const complex& c)
     {
         if (norm(c) < min_norm) {
             mtx.lock();
@@ -164,7 +166,7 @@ public:
         }
     }
 
-    void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
+    void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
         if ((norm(c1) > min_norm) || (norm(c2) > min_norm)) {
             mtx.lock();
@@ -184,14 +186,14 @@ public:
     void copy_in(const complex* copyIn)
     {
         for (bitCapInt i = 0; i < capacity; i++) {
-            set(i, copyIn[i]);
+            write(i, copyIn[i]);
         }
     }
 
     void copy_out(complex* copyOut)
     {
         for (bitCapInt i = 0; i < capacity; i++) {
-            copyOut[i] = get(i);
+            copyOut[i] = read(i);
         }
     }
 
@@ -209,7 +211,7 @@ public:
     {
         mtx.lock();
         for (bitCapInt i = 0; i < capacity; i++) {
-            outArray[i] = norm(get(i));
+            outArray[i] = norm(read(i));
         }
         mtx.unlock();
     }

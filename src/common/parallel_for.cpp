@@ -182,7 +182,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         uint32_t cpu;
         for (cpu = 0; cpu < maxQPower; cpu++) {
             j = cpu;
-            futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray->get(j)); });
+            futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray->read(j)); });
         }
         for (cpu = 0; cpu < maxQPower; cpu++) {
             nrmSqr += futures[cpu].get();
@@ -202,7 +202,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
             futures[cpu] = std::async(std::launch::async, [workUnit, offset, stateArray]() {
                 real1 result = 0.0;
                 for (bitCapInt j = 0; j < workUnit; j++) {
-                    result += norm(stateArray->get(offset + j));
+                    result += norm(stateArray->read(offset + j));
                 }
                 return result;
             });
@@ -227,7 +227,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
                         k = i * PSTRIDE + j;
                         if (k >= maxQPower)
                             break;
-                        sqrNorm += norm(stateArray->get(k));
+                        sqrNorm += norm(stateArray->read(k));
                     }
                     if (k >= maxQPower)
                         break;

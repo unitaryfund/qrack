@@ -18,9 +18,9 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
     par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
         if ((i & regMask) == result) {
-            stateVec->set(i, nrm * stateVec->get(i));
+            stateVec->write(i, nrm * stateVec->read(i));
         } else {
-            stateVec->set(i, complex(ZERO_R1, ZERO_R1));
+            stateVec->write(i, complex(ZERO_R1, ZERO_R1));
         }
     });
 
@@ -33,7 +33,7 @@ void QEngineCPU::PhaseFlip()
     // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
     // phase offsets.
     if (!randGlobalPhase) {
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec->set(lcv, -stateVec->get(lcv)); });
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
     }
 }
 

@@ -38,7 +38,7 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
         bitCapInt regRes = lcv & regMask;
         bitCapInt regInt = regRes >> start;
         bitCapInt outInt = (regInt >> (length - shift)) | ((regInt << shift) & lengthMask);
-        nStateVec->set((outInt << start) | otherRes, stateVec->get(lcv));
+        nStateVec->write((outInt << start) | otherRes, stateVec->read(lcv));
     });
     ResetStateVec(nStateVec);
 }
@@ -66,7 +66,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
         bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
-        nStateVec->set((outInt << inOutStart) | otherRes, stateVec->get(lcv));
+        nStateVec->write((outInt << inOutStart) | otherRes, stateVec->read(lcv));
     });
     ResetStateVec(nStateVec);
 }
@@ -110,7 +110,7 @@ void QEngineCPU::CINC(
         bitCapInt inOutRes = lcv & inOutMask;
         bitCapInt inOutInt = inOutRes >> inOutStart;
         bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
-        nStateVec->set((outInt << inOutStart) | otherRes | controlMask, stateVec->get(lcv | controlMask));
+        nStateVec->write((outInt << inOutStart) | otherRes | controlMask, stateVec->read(lcv | controlMask));
     });
 
     delete[] controlPowers;
@@ -153,7 +153,7 @@ void QEngineCPU::INCDECC(
         } else {
             outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
         }
-        nStateVec->set(outRes, stateVec->get(lcv));
+        nStateVec->write(outRes, stateVec->read(lcv));
     });
     ResetStateVec(nStateVec);
 }
@@ -214,9 +214,9 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
             }
         }
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
-            nStateVec->set(outRes, -stateVec->get(lcv));
+            nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
-            nStateVec->set(outRes, stateVec->get(lcv));
+            nStateVec->write(outRes, stateVec->read(lcv));
         }
     });
     ResetStateVec(nStateVec);
@@ -272,9 +272,9 @@ void QEngineCPU::INCDECSC(
                 isOverflow = true;
         }
         if (isOverflow) {
-            nStateVec->set(outRes, -stateVec->get(lcv));
+            nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
-            nStateVec->set(outRes, stateVec->get(lcv));
+            nStateVec->write(outRes, stateVec->read(lcv));
         }
     });
     ResetStateVec(nStateVec);
@@ -329,9 +329,9 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
                 isOverflow = true;
         }
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
-            nStateVec->set(outRes, -stateVec->get(lcv));
+            nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
-            nStateVec->set(outRes, stateVec->get(lcv));
+            nStateVec->write(outRes, stateVec->read(lcv));
         }
     });
     ResetStateVec(nStateVec);
@@ -354,7 +354,7 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
         bitCapInt mulInt = ((lcv & inOutMask) >> inOutStart) * toMul;
         bitCapInt mulRes =
             ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) | otherRes;
-        nStateVec->set(outFn(lcv, mulRes), stateVec->get(inFn(lcv, mulRes)));
+        nStateVec->write(outFn(lcv, mulRes), stateVec->read(inFn(lcv, mulRes)));
     });
 
     ResetStateVec(nStateVec);
@@ -421,9 +421,9 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
         bitCapInt mulRes = ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) |
             otherRes | controlMask;
         bitCapInt origRes = lcv | controlMask;
-        nStateVec->set(outFn(origRes, mulRes), stateVec->get(inFn(origRes, mulRes)));
+        nStateVec->write(outFn(origRes, mulRes), stateVec->read(inFn(origRes, mulRes)));
 
-        nStateVec->set(lcv, stateVec->get(lcv));
+        nStateVec->write(lcv, stateVec->read(lcv));
         bitCapInt partControlMask;
         for (bitCapInt j = 1U; j < ((1U << controlLen) - 1U); j++) {
             partControlMask = 0;
@@ -432,7 +432,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
                     partControlMask |= controlPowers[k];
                 }
             }
-            nStateVec->set(lcv | partControlMask, stateVec->get(lcv | partControlMask));
+            nStateVec->write(lcv | partControlMask, stateVec->read(lcv | partControlMask));
         }
     });
 
@@ -502,7 +502,7 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
-        nStateVec->set(inRes | outRes | otherRes, stateVec->get(lcv));
+        nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv));
     });
 
     ResetStateVec(nStateVec);
@@ -556,8 +556,8 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
 
-        nStateVec->set(inRes | outRes | otherRes, stateVec->get(lcv | controlMask));
-        nStateVec->set(lcv, stateVec->get(lcv));
+        nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv | controlMask));
+        nStateVec->write(lcv, stateVec->read(lcv));
 
         bitCapInt partControlMask;
         for (bitCapInt j = 1U; j < ((1U << controlLen) - 1U); j++) {
@@ -567,7 +567,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
                     partControlMask |= controlPowers[k];
                 }
             }
-            nStateVec->set(lcv | partControlMask, stateVec->get(lcv | partControlMask));
+            nStateVec->write(lcv | partControlMask, stateVec->read(lcv | partControlMask));
         }
     });
 
@@ -655,9 +655,9 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                 }
                 outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
-            nStateVec->set((outInt << inOutStart) | otherRes, stateVec->get(lcv));
+            nStateVec->write((outInt << inOutStart) | otherRes, stateVec->read(lcv));
         } else {
-            nStateVec->set(lcv, stateVec->get(lcv));
+            nStateVec->write(lcv, stateVec->read(lcv));
         }
         delete[] nibbles;
     });
@@ -737,12 +737,12 @@ void QEngineCPU::INCDECBCDC(
                 outInt |= ((bitCapInt)nibbles[j]) << (j * 4U);
             }
             outRes = (outInt << inOutStart) | otherRes | carryRes;
-            nStateVec->set(outRes, stateVec->get(lcv));
+            nStateVec->write(outRes, stateVec->read(lcv));
             outRes ^= carryMask;
-            nStateVec->set(outRes, stateVec->get(lcv | carryMask));
+            nStateVec->write(outRes, stateVec->read(lcv | carryMask));
         } else {
-            nStateVec->set(lcv, stateVec->get(lcv));
-            nStateVec->set(lcv | carryMask, stateVec->get(lcv | carryMask));
+            nStateVec->write(lcv, stateVec->read(lcv));
+            nStateVec->write(lcv | carryMask, stateVec->read(lcv | carryMask));
         }
         delete[] nibbles;
     });
@@ -770,7 +770,7 @@ bitCapInt QEngineCPU::IndexedLDA(
             outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         bitCapInt outputRes = outputInt << valueStart;
-        nStateVec->set(outputRes | lcv, stateVec->get(lcv));
+        nStateVec->write(outputRes | lcv, stateVec->read(lcv));
     });
 
     ResetStateVec(nStateVec);
@@ -859,7 +859,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         // shunt the uninvoled "other" bits from input to output.
         outputRes = outputInt << valueStart;
 
-        nStateVec->set(outputRes | inputRes | otherRes | carryRes, stateVec->get(lcv));
+        nStateVec->write(outputRes | inputRes | otherRes | carryRes, stateVec->read(lcv));
     });
 
     // We dealloc the old state vector and replace it with the one we
@@ -954,7 +954,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         // shunt the uninvoled "other" bits from input to output.
         outputRes = outputInt << valueStart;
 
-        nStateVec->set(outputRes | inputRes | otherRes | carryRes, stateVec->get(lcv));
+        nStateVec->write(outputRes | inputRes | otherRes | carryRes, stateVec->read(lcv));
     });
 
     // We dealloc the old state vector and replace it with the one we
