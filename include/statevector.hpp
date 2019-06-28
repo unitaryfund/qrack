@@ -41,6 +41,7 @@ public:
     }
     virtual complex get(const bitCapInt& i) = 0;
     virtual void set(const bitCapInt& i, const complex& c) = 0;
+    virtual void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
     virtual void copy_out(complex* outArray) = 0;
@@ -97,6 +98,11 @@ public:
 
     void set(const bitCapInt& i, const complex& c) { amplitudes[i] = c; };
 
+    void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) {
+        amplitudes[i1] = c1;
+        amplitudes[i2] = c2;
+    };
+
     void clear() { std::fill(amplitudes, amplitudes + capacity, complex(ZERO_R1, ZERO_R1)); }
 
     void copy_in(const complex* copyIn) { std::copy(copyIn, copyIn + capacity, amplitudes); }
@@ -142,7 +148,7 @@ public:
         }
         mtx.unlock();
         return toRet;
-    };
+    }
 
     void set(const bitCapInt& i, const complex& c)
     {
@@ -155,7 +161,17 @@ public:
             amplitudes[i] = c;
             mtx.unlock();
         }
-    };
+    }
+
+    void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
+    {
+        if ((norm(c1) > min_norm) || (norm(c2) > min_norm)) {
+            mtx.lock();
+            amplitudes[i1] = c1;
+            amplitudes[i2] = c2;
+            mtx.unlock();
+        }
+    }
 
     void clear()
     {

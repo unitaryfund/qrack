@@ -192,8 +192,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec->set(lcv + offset2, complex(qubit.comp[2], qubit.comp[3]));
             rngNrm[cpu] += norm(qubit.cmplx2);
 #else
-            stateVec->set(lcv + offset1, qubit.cmplx[0]);
-            stateVec->set(lcv + offset2, qubit.cmplx[1]);
+            stateVec->set2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
             rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 #endif
         });
@@ -211,8 +210,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec->set(lcv + offset1, complex(qubit.comp[0], qubit.comp[1]));
             stateVec->set(lcv + offset2, complex(qubit.comp[2], qubit.comp[3]));
 #else
-            stateVec->set(lcv + offset1, qubit.cmplx[0]);
-            stateVec->set(lcv + offset2, qubit.cmplx[1]);
+            stateVec->set2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
         });
         if (doCalcNorm) {
@@ -242,8 +240,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
             rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
-            stateVec->set(lcv + offset1, qubit[0]);
-            stateVec->set(lcv + offset2, qubit[1]);
+            stateVec->set2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
         });
         runningNorm = ZERO_R1;
         for (int i = 0; i < numCores; i++) {
@@ -260,8 +257,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
             qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
 
-            stateVec->set(lcv + offset1, qubit[0]);
-            stateVec->set(lcv + offset2, qubit[1]);
+            stateVec->set2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
         });
         if (doCalcNorm) {
             UpdateRunningNorm();
@@ -327,8 +323,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
         rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
-        stateVec->set(lcv, qubit[0]);
-        stateVec->set(lcv | targetPower, qubit[1]);
+        stateVec->set2(lcv, qubit[0], lcv | targetPower, qubit[1]);
     });
 
     runningNorm = ZERO_R1;
