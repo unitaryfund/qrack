@@ -155,15 +155,13 @@ public:
 
     void write(const bitCapInt& i, const complex& c)
     {
+        mtx.lock();
         if (norm(c) < min_norm) {
-            mtx.lock();
             amplitudes.erase(i);
-            mtx.unlock();
         } else {
-            mtx.lock();
             amplitudes[i] = c;
-            mtx.unlock();
         }
+        mtx.unlock();
     }
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
@@ -171,7 +169,6 @@ public:
         if ((norm(c1) > min_norm) || (norm(c2) > min_norm)) {
             write(i1, c1);
             write(i2, c2);
-            mtx.unlock();
         }
     }
 
@@ -200,19 +197,17 @@ public:
 
     void copy(const StateVectorSparse& toCopy)
     {
-        capacity = toCopy.capacity;
         mtx.lock();
+        capacity = toCopy.capacity;
         amplitudes = toCopy.amplitudes;
         mtx.unlock();
     }
 
     void get_probs(real1* outArray)
     {
-        mtx.lock();
         for (bitCapInt i = 0; i < capacity; i++) {
             outArray[i] = norm(read(i));
         }
-        mtx.unlock();
     }
 };
 
