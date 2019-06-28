@@ -951,6 +951,26 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
+    if (length == qubitCount) {
+        if (destination != nullptr) {
+            if (deviceID == destination->deviceID) {
+                destination->stateVec = stateVec;
+                destination->stateBuffer = stateBuffer;
+            } else {
+                LockSync();
+                destination->LockSync();
+                std::copy(stateVec, stateVec + maxQPower, destination->stateVec);
+                destination->UnlockSync();
+                UnlockSync();
+            }
+        }
+        SetQubitCount(1);
+        // This will be cleared by the destructor:
+        stateVec = AllocStateVec(2);
+        stateBuffer = MakeStateVecBuffer(stateVec);
+        return;
+    }
+
     OCLAPI api_call = OCL_API_DECOMPOSEPROB;
 
     if (doNormalize) {

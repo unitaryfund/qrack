@@ -476,6 +476,20 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
+    if (length == qubitCount) {
+        if (destination != nullptr) {
+            destination->stateVec = stateVec;
+        }
+        SetQubitCount(1);
+        // This will be cleared by the destructor:
+        if (isSparse) {
+            stateVec = std::make_shared<StateVectorSparse>(2);
+        } else {
+            stateVec = std::make_shared<StateVectorArray>(2);
+        }
+        return;
+    }
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
