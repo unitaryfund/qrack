@@ -95,6 +95,17 @@ void ParallelFor::par_for(const bitCapInt begin, const bitCapInt end, ParallelFu
     par_for_inc(begin, end - begin, [](const bitCapInt i, int cpu) { return i; }, fn);
 }
 
+void ParallelFor::par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn)
+{
+    par_for_inc(0, sparseSet.size(),
+        [&sparseSet](const bitCapInt i, int cpu) {
+            auto it = sparseSet.begin();
+            std::advance(it, i);
+            return *it;
+        },
+        fn);
+}
+
 void ParallelFor::par_for_skip(
     const bitCapInt begin, const bitCapInt end, const bitCapInt skipMask, const bitLenInt maskWidth, ParallelFunc fn)
 {

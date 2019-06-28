@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <map>
 #include <mutex>
+#include <set>
 
 #include "common/qrack_types.hpp"
 
@@ -49,6 +50,10 @@ public:
     virtual void copy_out(complex* outArray) = 0;
     virtual void copy(const StateVector& toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;
+    virtual bool is_sparse() = 0;
+    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
+    virtual std::set<bitCapInt> iterable(
+        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0) = 0;
 };
 
 class StateVectorArray : public StateVector {
@@ -125,6 +130,15 @@ public:
     }
 
     void get_probs(real1* outArray) { std::transform(amplitudes, amplitudes + capacity, outArray, normHelper); }
+
+    bool is_sparse() { return false; }
+
+    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
+    std::set<bitCapInt> iterable(
+        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
+    {
+        return std::set<bitCapInt>();
+    }
 };
 
 class StateVectorSparse : public StateVector {
@@ -211,6 +225,35 @@ public:
         for (bitCapInt i = 0; i < capacity; i++) {
             outArray[i] = norm(read(i));
         }
+    }
+
+    bool is_sparse() { return (amplitudes.size() < (capacity >> 2U)); }
+
+    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
+    std::set<bitCapInt> iterable(
+        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
+    {
+        bitCapInt unsetMask = ~setMask;
+        bitCapInt unfilterMask = ~filterMask;
+        bitCapInt val;
+        std::set<bitCapInt> toRet;
+
+        mtx.lock();
+
+        std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+        while (it != amplitudes.end()) {
+            if ((it->first & filterMask) == filterValues) {
+                val = (it->first & unsetMask & unfilterMask);
+                if (toRet.find(val) == toRet.end()) {
+                    toRet.insert(val);
+                }
+            }
+            it++;
+        }
+
+        mtx.unlock();
+
+        return toRet;
     }
 };
 

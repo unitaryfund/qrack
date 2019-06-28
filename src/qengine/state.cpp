@@ -172,10 +172,12 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
     ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
+    real1* rngNrm = NULL;
+    ParallelFunc fn;
     if (doCalcNorm) {
-        real1* rngNrm = new real1[numCores];
-        std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+        rngNrm = new real1[numCores]();
+
+        fn = [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
@@ -187,14 +189,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
             rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 #endif
-        });
-        runningNorm = ZERO_R1;
-        for (int i = 0; i < numCores; i++) {
-            runningNorm += rngNrm[i];
-        }
-        delete[] rngNrm;
+        };
     } else {
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+        fn = [&](const bitCapInt lcv, const int cpu) {
             ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
             qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
@@ -204,10 +201,27 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 #else
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-        });
-        if (doCalcNorm) {
-            UpdateRunningNorm();
+        };
+    }
+
+    if (stateVec->is_sparse()) {
+        bitCapInt setMask = offset1 ^ offset2;
+        bitCapInt skipMask = 0;
+        for (bitLenInt i = 0; i < bitCount; i++) {
+            skipMask |= (qPowersSorted[i] & ~setMask);
         }
+        bitCapInt skipValues = skipMask & offset1 & offset2;
+        par_for_set(stateVec->iterable(setMask, skipMask, skipValues), fn);
+    } else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
+    }
+
+    if (doCalcNorm) {
+        runningNorm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
     }
 }
 #else
@@ -218,11 +232,15 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+    ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
+    ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
+    real1* rngNrm = NULL;
+    ParallelFunc fn;
     if (doCalcNorm) {
-        real1* rngNrm = new real1[numCores];
-        std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+        rngNrm = new real1[numCores]();
+
+        fn = [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
 
             complex Y0 = stateVec->read(lcv + offset1);
@@ -233,14 +251,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
 
             stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-        });
-        runningNorm = ZERO_R1;
-        for (int i = 0; i < numCores; i++) {
-            runningNorm += rngNrm[i];
-        }
-        delete[] rngNrm;
+        };
     } else {
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, [&](const bitCapInt lcv, const int cpu) {
+        fn = [&](const bitCapInt lcv, const int cpu) {
             complex qubit[2];
 
             complex Y0 = stateVec->read(lcv + offset1);
@@ -250,10 +263,27 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
 
             stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-        });
-        if (doCalcNorm) {
-            UpdateRunningNorm();
+        };
+    }
+
+    if (stateVec->is_sparse()) {
+        bitCapInt setMask = offset1 ^ offset2;
+        bitCapInt skipMask = 0;
+        for (bitLenInt i = 0; i < bitCount; i++) {
+            skipMask |= (qPowersSorted[i] & ~setMask);
         }
+        bitCapInt skipValues = skipMask & offset1 & offset2;
+        par_for_set(stateVec->iterable(setMask, skipMask, skipValues), fn);
+    } else {
+        par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
+    }
+
+    if (doCalcNorm) {
+        runningNorm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            runningNorm += rngNrm[i];
+        }
+        delete[] rngNrm;
     }
 }
 #endif

@@ -66,6 +66,9 @@ public:
     void par_for_mask(
         const bitCapInt, const bitCapInt, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn);
 
+    /** Iterate over a sparse state vector. */
+    void par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn);
+
     /** Calculate the normal for the array. */
     real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };
