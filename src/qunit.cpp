@@ -214,11 +214,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
             dest->shards[start + i].isPhaseDirty = shards[start + i].isPhaseDirty;
         }
 
-        if (unit->GetQubitCount() > length) {
-            unit->Decompose(mapped, length, destEngine);
-        } else {
-            destEngine->CopyState(unit);
-        }
+        unit->Decompose(mapped, length, destEngine);
     } else {
         unit->Dispose(mapped, length);
     }
