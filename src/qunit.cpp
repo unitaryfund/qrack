@@ -120,19 +120,17 @@ void QUnit::SetQuantumState(const complex* inputState)
 void QUnit::GetQuantumState(complex* outputState)
 {
     EndAllEmulation();
-    QUnit qUnitCopy(engine, subengine, 1, 0);
-    qUnitCopy.CopyState((QUnit*)this);
-    qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
-    qUnitCopy.shards[0].unit->GetQuantumState(outputState);
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    clone->OrderContiguous(clone->EntangleAll());
+    clone->shards[0].unit->GetQuantumState(outputState);
 }
 
 void QUnit::GetProbs(real1* outputProbs)
 {
     EndAllEmulation();
-    QUnit qUnitCopy(engine, subengine, 1, 0);
-    qUnitCopy.CopyState((QUnit*)this);
-    qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
-    qUnitCopy.shards[0].unit->GetProbs(outputProbs);
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    clone->OrderContiguous(clone->EntangleAll());
+    clone->shards[0].unit->GetProbs(outputProbs);
 }
 
 complex QUnit::GetAmplitude(bitCapInt perm)
