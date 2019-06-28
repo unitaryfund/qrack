@@ -41,6 +41,7 @@ public:
     }
     virtual complex get(const bitCapInt& i) = 0;
     virtual void set(const bitCapInt& i, const complex& c) = 0;
+    /// Optimized "set" that is only guaranteed to set if either amplitude is nonzero. (Useful for the result of 2x2 tensor slicing.)
     virtual void set2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
