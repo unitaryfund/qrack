@@ -951,6 +951,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
+    if (doNormalize) {
+        NormalizeState();
+    }
+
     if (length == qubitCount) {
         if (destination != nullptr) {
             if (deviceID == destination->deviceID) {
@@ -963,6 +967,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
                 destination->UnlockSync();
                 UnlockSync();
             }
+        } else { 
+            FreeStateVec();
         }
         SetQubitCount(1);
         // This will be cleared by the destructor:
@@ -972,10 +978,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
     OCLAPI api_call = OCL_API_DECOMPOSEPROB;
-
-    if (doNormalize) {
-        NormalizeState();
-    }
 
     bitCapInt partPower = 1U << length;
     bitCapInt remainderPower = 1U << (qubitCount - length);
