@@ -169,9 +169,8 @@ public:
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
         if ((norm(c1) > min_norm) || (norm(c2) > min_norm)) {
-            mtx.lock();
-            amplitudes[i1] = c1;
-            amplitudes[i2] = c2;
+            write(i1, c1);
+            write(i2, c2);
             mtx.unlock();
         }
     }
