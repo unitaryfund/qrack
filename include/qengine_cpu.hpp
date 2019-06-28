@@ -133,7 +133,6 @@ public:
 
     virtual StateVectorPtr GetStateVector();
     virtual void SetStateVector(StateVectorPtr sv);
-    virtual void CopyState(QInterfacePtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);

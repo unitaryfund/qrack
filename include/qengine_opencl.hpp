@@ -159,7 +159,6 @@ public:
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
-    virtual void CopyState(QInterfacePtr orig);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

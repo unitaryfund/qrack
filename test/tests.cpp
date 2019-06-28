@@ -2483,15 +2483,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
     qftReg->SetQuantumState(state);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_copystate")
-{
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
-    qftReg->H(0, 2);
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
-    qftReg2->CopyState(qftReg);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getprobs")
 {
     real1 state[1U << 4U];

@@ -268,26 +268,6 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     device_context->wait_events->push_back(kernelEvent);
 }
 
-void QEngineOCL::CopyState(QInterfacePtr orig)
-{
-    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
-
-    /* Set the size and reset the stateVec to the correct size. */
-    SetQubitCount(orig->GetQubitCount());
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-    ResetStateVec(nStateVec);
-    ResetStateBuffer(nStateBuffer);
-
-    src->LockSync(CL_MAP_READ);
-    LockSync(CL_MAP_WRITE);
-    runningNorm = src->runningNorm;
-    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
-    src->UnlockSync();
-    UnlockSync();
-}
-
 real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 {
     if (doNormalize) {
@@ -967,7 +947,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
                 destination->UnlockSync();
                 UnlockSync();
             }
-        } else { 
+        } else {
             FreeStateVec();
         }
         SetQubitCount(1);

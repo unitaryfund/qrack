@@ -801,13 +801,6 @@ void QFusion::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     }
 }
 
-void QFusion::CopyState(QFusionPtr orig)
-{
-    FlushAll();
-    orig->FlushAll();
-    qReg->CopyState(orig->qReg);
-}
-
 real1 QFusion::Prob(bitLenInt qubitIndex)
 {
     FlushBit(qubitIndex);

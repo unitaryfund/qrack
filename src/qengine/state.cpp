@@ -102,14 +102,6 @@ real1 QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     return average;
 }
 
-void QEngineCPU::CopyState(QInterfacePtr orig)
-{
-    /* Set the size and reset the stateVec to the correct size. */
-    SetQubitCount(orig->GetQubitCount());
-    QEngineCPUPtr src = std::dynamic_pointer_cast<QEngineCPU>(orig);
-    stateVec->copy(*(src->stateVec));
-}
-
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {

@@ -74,35 +74,6 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
-
-// protected method
-void QUnit::CopyState(QUnit* orig)
-{
-    EndAllEmulation();
-
-    SetQubitCount(orig->GetQubitCount());
-    shards.clear();
-
-    /* Set up the shards to refer to the new unit. */
-    std::map<QInterfacePtr, QInterfacePtr> otherUnits;
-    for (auto&& otherShard : orig->shards) {
-        QEngineShard shard;
-        shard.mapped = otherShard.mapped;
-        shard.isEmulated = otherShard.isEmulated;
-        shard.prob = otherShard.prob;
-        shard.isProbDirty = otherShard.isProbDirty;
-        shard.phase = otherShard.phase;
-        shard.isPhaseDirty = otherShard.isPhaseDirty;
-        if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] = MakeEngine(1, 0);
-            otherUnits[otherShard.unit]->CopyState(otherShard.unit);
-        }
-        shard.unit = otherUnits[otherShard.unit];
-        shards.push_back(shard);
-    }
-}
-
 void QUnit::SetQuantumState(const complex* inputState)
 {
     EndAllEmulation();

@@ -151,8 +151,6 @@ public:
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QFusion>(orig)); }
-    virtual void CopyState(QFusionPtr orig);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);

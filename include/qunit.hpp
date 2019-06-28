@@ -245,8 +245,6 @@ public:
      * @{
      */
 
-    virtual void CopyState(QUnitPtr orig);
-    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QUnit>(orig)); }
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
@@ -267,7 +265,6 @@ protected:
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
-    virtual void CopyState(QUnit* orig);
 
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
