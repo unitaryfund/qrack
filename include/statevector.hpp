@@ -130,7 +130,7 @@ public:
 class StateVectorSparse : public StateVector {
 protected:
     std::map<bitCapInt, complex> amplitudes;
-    std::recursive_mutex mtx;
+    std::mutex mtx;
 
 public:
     StateVectorSparse(bitCapInt cap)
@@ -141,27 +141,30 @@ public:
 
     complex read(const bitCapInt& i)
     {
-        mtx.lock();
         complex toRet;
+        mtx.lock();
         std::map<bitCapInt, complex>::const_iterator it = amplitudes.find(i);
         if (it == amplitudes.end()) {
+            mtx.unlock();
             toRet = complex(ZERO_R1, ZERO_R1);
         } else {
             toRet = it->second;
+            mtx.unlock();
         }
-        mtx.unlock();
         return toRet;
     }
 
     void write(const bitCapInt& i, const complex& c)
     {
-        mtx.lock();
         if (norm(c) < min_norm) {
+            mtx.lock();
             amplitudes.erase(i);
+            mtx.unlock();
         } else {
+            mtx.lock();
             amplitudes[i] = c;
+            mtx.unlock();
         }
-        mtx.unlock();
     }
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
