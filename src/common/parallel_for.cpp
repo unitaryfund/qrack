@@ -95,6 +95,17 @@ void ParallelFor::par_for(const bitCapInt begin, const bitCapInt end, ParallelFu
     par_for_inc(begin, end - begin, [](const bitCapInt i, int cpu) { return i; }, fn);
 }
 
+void ParallelFor::par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn)
+{
+    par_for_inc(0, sparseSet.size(),
+        [&sparseSet](const bitCapInt i, int cpu) {
+            auto it = sparseSet.begin();
+            std::advance(it, i);
+            return *it;
+        },
+        fn);
+}
+
 void ParallelFor::par_for_skip(
     const bitCapInt begin, const bitCapInt end, const bitCapInt skipMask, const bitLenInt maskWidth, ParallelFunc fn)
 {
@@ -173,7 +184,7 @@ void ParallelFor::par_for_mask(
     delete[] masks;
 }
 
-real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray)
+real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray)
 {
     real1 nrmSqr = 0;
     if (maxQPower <= (bitCapInt)numCores) {
@@ -182,7 +193,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
         uint32_t cpu;
         for (cpu = 0; cpu < maxQPower; cpu++) {
             j = cpu;
-            futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray[j]); });
+            futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray->read(j)); });
         }
         for (cpu = 0; cpu < maxQPower; cpu++) {
             nrmSqr += futures[cpu].get();
@@ -202,7 +213,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
             futures[cpu] = std::async(std::launch::async, [workUnit, offset, stateArray]() {
                 real1 result = 0.0;
                 for (bitCapInt j = 0; j < workUnit; j++) {
-                    result += norm(stateArray[offset + j]);
+                    result += norm(stateArray->read(offset + j));
                 }
                 return result;
             });
@@ -227,7 +238,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const complex* stateArray
                         k = i * PSTRIDE + j;
                         if (k >= maxQPower)
                             break;
-                        sqrNorm += norm(stateArray[k]);
+                        sqrNorm += norm(stateArray->read(k));
                     }
                     if (k >= maxQPower)
                         break;

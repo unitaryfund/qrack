@@ -44,6 +44,7 @@ protected:
     bool randGlobalPhase;
     bool useHostRam;
     bool useRDRAND;
+    bool isSparse;
 
     qrack_rand_gen_ptr rand_generator;
 
@@ -66,13 +67,16 @@ protected:
         return phase;
     }
 
+    QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
+
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool doNorm = false,
-        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true);
+        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true);
+        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false);
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -241,8 +245,6 @@ public:
      * @{
      */
 
-    virtual void CopyState(QUnitPtr orig);
-    virtual void CopyState(QInterfacePtr orig) { return CopyState(std::dynamic_pointer_cast<QUnit>(orig)); }
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
@@ -263,7 +265,6 @@ protected:
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
-    virtual void CopyState(QUnit* orig);
 
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);

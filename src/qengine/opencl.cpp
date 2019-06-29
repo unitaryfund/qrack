@@ -65,7 +65,7 @@ namespace Qrack {
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG)
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG)
     , deviceID(devID)
     , wait_refs()
@@ -268,26 +268,6 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     device_context->wait_events->push_back(kernelEvent);
 }
 
-void QEngineOCL::CopyState(QInterfacePtr orig)
-{
-    QEngineOCLPtr src = std::dynamic_pointer_cast<QEngineOCL>(orig);
-
-    /* Set the size and reset the stateVec to the correct size. */
-    SetQubitCount(orig->GetQubitCount());
-
-    complex* nStateVec = AllocStateVec(maxQPower);
-    BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-    ResetStateVec(nStateVec);
-    ResetStateBuffer(nStateBuffer);
-
-    src->LockSync(CL_MAP_READ);
-    LockSync(CL_MAP_WRITE);
-    runningNorm = src->runningNorm;
-    std::copy(src->stateVec, src->stateVec + (1 << (src->qubitCount)), stateVec);
-    src->UnlockSync();
-    UnlockSync();
-}
-
 real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
 {
     if (doNormalize) {
@@ -442,6 +422,14 @@ real1 QEngineOCL::ParSum(real1* toSum, bitCapInt maxI)
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID, true); }
+
+void QEngineOCL::ResetStateVec(complex* nStateVec)
+{
+    if (stateVec) {
+        FreeStateVec();
+        stateVec = nStateVec;
+    }
+}
 
 void QEngineOCL::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 
@@ -943,11 +931,33 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
-    OCLAPI api_call = OCL_API_DECOMPOSEPROB;
-
     if (doNormalize) {
         NormalizeState();
     }
+
+    if (length == qubitCount) {
+        if (destination != nullptr) {
+            if (deviceID == destination->deviceID) {
+                destination->stateVec = stateVec;
+                destination->stateBuffer = stateBuffer;
+            } else {
+                LockSync();
+                destination->LockSync();
+                std::copy(stateVec, stateVec + maxQPower, destination->stateVec);
+                destination->UnlockSync();
+                UnlockSync();
+            }
+        } else {
+            FreeStateVec();
+        }
+        SetQubitCount(1);
+        // This will be cleared by the destructor:
+        stateVec = AllocStateVec(2);
+        stateBuffer = MakeStateVecBuffer(stateVec);
+        return;
+    }
+
+    OCLAPI api_call = OCL_API_DECOMPOSEPROB;
 
     bitCapInt partPower = 1U << length;
     bitCapInt remainderPower = 1U << (qubitCount - length);

@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "qengine.hpp"
+#include "statevector.hpp"
 
 #include "common/parallel_for.hpp"
 
@@ -33,10 +34,14 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  * General purpose QEngineCPU implementation
  */
 class QEngineCPU : virtual public QEngine, public ParallelFor {
+protected:
+    StateVectorPtr stateVec;
+    bool isSparse;
+
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
-        bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true);
+        bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false);
 
     QEngineCPU()
     {
@@ -47,6 +52,8 @@ public:
     {
         // Intentionally left blank
     }
+
+    virtual void FreeStateVec() { stateVec = NULL; }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -124,8 +131,8 @@ public:
      * @{
      */
 
-    virtual complex* GetStateVector();
-    virtual void CopyState(QInterfacePtr orig);
+    virtual StateVectorPtr GetStateVector();
+    virtual void SetStateVector(StateVectorPtr sv);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
@@ -141,7 +148,8 @@ public:
     /** @} */
 
 protected:
-    virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
+    virtual void ResetStateVec(StateVectorPtr sv);
     virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);

@@ -24,16 +24,16 @@
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG)
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec)
     : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID,
-          useHardwareRNG)
+          useHardwareRNG, useSparseStateVec)
 {
     // Intentionally left blank
 }
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG)
+    bool useHardwareRNG, bool useSparseStateVec)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
     , engine(eng)
     , subengine(subEng)
@@ -43,10 +43,17 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , randGlobalPhase(randomGlobalPhase)
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
+    , isSparse(useSparseStateVec)
 {
     shards.resize(qBitCount);
 
     SetPermutation(initState, phaseFactor);
+}
+
+QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
+{
+    return CreateQuantumInterface(engine, subengine, length, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -57,8 +64,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
-        shards[i].unit = CreateQuantumInterface(engine, subengine, 1U, bitState ? 1U : 0U, rand_generator, phaseFac,
-            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+        shards[i].unit = MakeEngine(1, bitState ? 1 : 0);
         shards[i].mapped = 0;
         shards[i].isEmulated = false;
         shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
@@ -68,42 +74,11 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QUnit::CopyState(QUnitPtr orig) { CopyState(orig.get()); }
-
-// protected method
-void QUnit::CopyState(QUnit* orig)
-{
-    EndAllEmulation();
-
-    SetQubitCount(orig->GetQubitCount());
-    shards.clear();
-
-    /* Set up the shards to refer to the new unit. */
-    std::map<QInterfacePtr, QInterfacePtr> otherUnits;
-    for (auto&& otherShard : orig->shards) {
-        QEngineShard shard;
-        shard.mapped = otherShard.mapped;
-        shard.isEmulated = otherShard.isEmulated;
-        shard.prob = otherShard.prob;
-        shard.isProbDirty = otherShard.isProbDirty;
-        shard.phase = otherShard.phase;
-        shard.isPhaseDirty = otherShard.isPhaseDirty;
-        if (otherUnits.find(otherShard.unit) == otherUnits.end()) {
-            otherUnits[otherShard.unit] = CreateQuantumInterface(engine, subengine, 1, 0, rand_generator, phaseFactor,
-                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
-            otherUnits[otherShard.unit]->CopyState(otherShard.unit);
-        }
-        shard.unit = otherUnits[otherShard.unit];
-        shards.push_back(shard);
-    }
-}
-
 void QUnit::SetQuantumState(const complex* inputState)
 {
     EndAllEmulation();
 
-    auto unit = CreateQuantumInterface(engine, subengine, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND);
+    auto unit = MakeEngine(qubitCount, 0);
     unit->SetQuantumState(inputState);
 
     int idx = 0;
@@ -119,19 +94,17 @@ void QUnit::SetQuantumState(const complex* inputState)
 void QUnit::GetQuantumState(complex* outputState)
 {
     EndAllEmulation();
-    QUnit qUnitCopy(engine, subengine, 1, 0);
-    qUnitCopy.CopyState((QUnit*)this);
-    qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
-    qUnitCopy.shards[0].unit->GetQuantumState(outputState);
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    clone->OrderContiguous(clone->EntangleAll());
+    clone->shards[0].unit->GetQuantumState(outputState);
 }
 
 void QUnit::GetProbs(real1* outputProbs)
 {
     EndAllEmulation();
-    QUnit qUnitCopy(engine, subengine, 1, 0);
-    qUnitCopy.CopyState((QUnit*)this);
-    qUnitCopy.OrderContiguous(qUnitCopy.EntangleAll());
-    qUnitCopy.shards[0].unit->GetProbs(outputProbs);
+    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    clone->OrderContiguous(clone->EntangleAll());
+    clone->shards[0].unit->GetProbs(outputProbs);
 }
 
 complex QUnit::GetAmplitude(bitCapInt perm)
@@ -212,11 +185,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
             dest->shards[start + i].isPhaseDirty = shards[start + i].isPhaseDirty;
         }
 
-        if (unit->GetQubitCount() > length) {
-            unit->Decompose(mapped, length, destEngine);
-        } else {
-            destEngine->CopyState(unit);
-        }
+        unit->Decompose(mapped, length, destEngine);
     } else {
         unit->Dispose(mapped, length);
     }
@@ -446,8 +415,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         EndEmulation(start);
     }
 
-    QInterfacePtr separatedBits = CreateQuantumInterface(engine, subengine, length, 0, rand_generator,
-        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+    QInterfacePtr separatedBits = MakeEngine(length, 0);
 
     QInterfacePtr unitCopy = shards[start].unit->Clone();
 
@@ -665,8 +633,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard origShard = shards[qubit];
 
-    QInterfacePtr dest = CreateQuantumInterface(engine, subengine, 1, value ? 1 : 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND);
+    QInterfacePtr dest = MakeEngine(1, value ? 1 : 0);
 
     origShard.unit->Dispose(origShard.mapped, 1);
 

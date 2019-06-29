@@ -29,6 +29,7 @@ qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
+bool sparse = false;
 int device_id = -1;
 
 int main(int argc, char* argv[])
@@ -151,6 +152,15 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
+        if (num_failed == 0 && cpu) {
+            session.config().stream() << "############ QUnit -> QEngine -> CPU (Sparse) ############" << std::endl;
+            testSubEngineType = QINTERFACE_CPU;
+            testSubEngineType = QINTERFACE_CPU;
+            sparse = true;
+            num_failed = session.run();
+            sparse = false;
+        }
+
 #if ENABLE_OPENCL
         if (num_failed == 0 && opencl_single) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
@@ -169,6 +179,14 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
+        }
+
+        if (num_failed == 0 && cpu) {
+            session.config().stream() << "############ QUnit -> QFusion -> CPU (Sparse) ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CPU;
+            sparse = true;
+            num_failed = session.run();
+            sparse = false;
         }
 
 #if ENABLE_OPENCL
@@ -196,5 +214,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
+        complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
 }
