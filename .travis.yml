@@ -6,6 +6,7 @@ install:
   - sudo pip3 install --upgrade pip setuptools wheel pytest
   - sudo pip3 install --only-binary=numpy,scipy numpy scipy
   - sudo pip3 install dormouse pybind11 networkx
+  - sudo pip3 install --upgrade numpy
 script:
   - mkdir _build && cd _build && cmake -DUSE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - sudo make install
