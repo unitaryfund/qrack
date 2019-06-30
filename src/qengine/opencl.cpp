@@ -1588,7 +1588,7 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
     SetReg(carryStart, length, 0);
 
     bitCapInt lowPower = 1U << length;
-    toMul %= lowPower;
+    toMul &= (lowPower - 1U);
     if (toMul == 0) {
         SetReg(inOutStart, length, 0);
         return;
@@ -1636,12 +1636,7 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
     SetReg(carryStart, length, 0);
 
     bitCapInt lowPower = 1U << length;
-    toMul %= lowPower;
-    if (toMul == 0) {
-        SetReg(inOutStart, length, 0);
-        return;
-    }
-
+    toMul &= (lowPower - 1U);
     if (toMul == 1) {
         return;
     }
@@ -1681,7 +1676,7 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     SetReg(outStart, length, 0);
 
     bitCapInt lowPower = 1U << length;
-    toMul %= lowPower;
+    toMul &= (lowPower - 1U);
     if (toMul == 0) {
         return;
     }
