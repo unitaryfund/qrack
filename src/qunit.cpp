@@ -17,9 +17,11 @@
 #include "qfactory.hpp"
 #include "qunit.hpp"
 
-#define CACHED_CLASSICAL(shard) !(shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm)))
+#define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
+#define CACHED_CLASSICAL(shard) (!shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define PHASE_MATTERS(shard)                                                                                           \
-    !randGlobalPhase || shard.isProbDirty || !((shard.prob < min_norm) || ((ONE_R1 - shard.prob) < min_norm))
+    (!randGlobalPhase || shard.isProbDirty || shard.isPhaseDirty ||                                                    \
+        !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 
 namespace Qrack {
 
@@ -64,13 +66,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
-        shards[i].unit = MakeEngine(1, bitState ? 1 : 0);
-        shards[i].mapped = 0;
-        shards[i].isEmulated = false;
-        shards[i].prob = bitState ? ONE_R1 : ZERO_R1;
-        shards[i].isProbDirty = false;
-        shards[i].phase = ZERO_R1;
-        shards[i].isPhaseDirty = false;
+        shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
 
@@ -179,10 +175,10 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     if (dest) {
         for (bitLenInt i = 0; i < length; i++) {
             dest->shards[start + i].isEmulated = shards[start + i].isEmulated;
-            dest->shards[start + i].prob = shards[start + i].prob;
             dest->shards[start + i].isProbDirty = shards[start + i].isProbDirty;
-            dest->shards[start + i].phase = shards[start + i].phase;
             dest->shards[start + i].isPhaseDirty = shards[start + i].isPhaseDirty;
+            dest->shards[start + i].amp0 = shards[start + i].amp0;
+            dest->shards[start + i].amp1 = shards[start + i].amp1;
         }
 
         unit->Decompose(mapped, length, destEngine);
@@ -554,7 +550,7 @@ bitCapInt QUnit::GetCachedPermutation(const bitLenInt& start, const bitLenInt& l
 {
     bitCapInt res = 0U;
     for (bitLenInt i = 0; i < length; i++) {
-        if (shards[start + i].prob >= (ONE_R1 / 2)) {
+        if (SHARD_STATE(shards[start + i])) {
             res |= 1U << i;
         }
     }
@@ -565,7 +561,7 @@ bitCapInt QUnit::GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt
 {
     bitCapInt res = 0U;
     for (bitLenInt i = 0; i < length; i++) {
-        if (shards[bitArray[i]].prob >= (ONE_R1 / 2)) {
+        if (SHARD_STATE(shards[bitArray[i]])) {
             res |= 1U << i;
         }
     }
@@ -585,19 +581,21 @@ real1 QUnit::Prob(bitLenInt qubit)
     QEngineShard& shard = shards[qubit];
 
     if (shard.isProbDirty) {
-        shard.prob = (shard.unit->Prob)(shard.mapped);
+        real1 prob = (shard.unit->Prob)(shard.mapped);
+        shard.amp1 = complex(sqrt(prob), ZERO_R1);
+        shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         shard.isProbDirty = false;
 
         if (shard.unit->GetQubitCount() > 1) {
-            if (shard.prob < min_norm) {
+            if (prob < min_norm) {
                 SeparateBit(false, qubit);
-            } else if (shard.prob > (ONE_R1 - min_norm)) {
+            } else if ((ONE_R1 - prob) < min_norm) {
                 SeparateBit(true, qubit);
             }
         }
     }
 
-    return shard.prob;
+    return norm(shard.amp1);
 }
 
 real1 QUnit::ProbAll(bitCapInt perm)
@@ -638,13 +636,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     origShard.unit->Dispose(origShard.mapped, 1);
 
     /* Update the mappings. */
-    shards[qubit].unit = dest;
-    shards[qubit].mapped = 0;
-    shards[qubit].isEmulated = false;
-    shards[qubit].prob = value ? ONE_R1 : ZERO_R1;
-    shards[qubit].isProbDirty = false;
-    shards[qubit].phase = ZERO_R1;
-    shards[qubit].isPhaseDirty = false;
+    shards[qubit] = QEngineShard(dest, value);
 
     for (auto&& testShard : shards) {
         if (testShard.unit == origShard.unit && testShard.mapped > origShard.mapped) {
@@ -659,16 +651,16 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 
     bool result;
     if (CACHED_CLASSICAL(shard)) {
-        result = shard.prob >= (ONE_R1 / 2);
+        result = SHARD_STATE(shard);
     } else {
-        result = shards[qubit].unit->ForceM(shards[qubit].mapped, res, doForce);
+        result = shard.unit->ForceM(shard.mapped, res, doForce);
     }
 
-    if (shards[qubit].unit->GetQubitCount() == 1) {
-        shards[qubit].prob = result ? ONE_R1 : ZERO_R1;
-        shards[qubit].isProbDirty = false;
-        shards[qubit].phase = ZERO_R1;
-        shards[qubit].isPhaseDirty = false;
+    if (shard.unit->GetQubitCount() == 1) {
+        shard.isProbDirty = false;
+        shard.isPhaseDirty = false;
+        shard.amp0 = result ? ZERO_R1 : ONE_R1;
+        shard.amp1 = result ? ONE_R1 : ZERO_R1;
 
         /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
         return result;
@@ -686,12 +678,9 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
-        bitState = value & (1 << i);
+        bitState = (value >> i) & 1U;
+        shards[i + start] = QEngineShard(shards[i + start].unit, bitState);
         shards[i + start].isEmulated = true;
-        shards[i + start].prob = bitState ? ONE_R1 : ZERO_R1;
-        shards[i + start].isProbDirty = false;
-        shards[i + start].phase = ZERO_R1;
-        shards[i + start].isPhaseDirty = false;
     }
 }
 
@@ -718,12 +707,17 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    shards[qubit1].isProbDirty = true;
-    shards[qubit2].isProbDirty = true;
-    shards[qubit1].isPhaseDirty = true;
-    shards[qubit2].isPhaseDirty = true;
-
     EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
+
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // TODO: If we multiply out cached amplitudes, we can optimize this.
+
+    shard1.isProbDirty = true;
+    shard1.isPhaseDirty = true;
+    shard2.isProbDirty = true;
+    shard2.isPhaseDirty = true;
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -732,12 +726,17 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    shards[qubit1].isProbDirty = true;
-    shards[qubit2].isProbDirty = true;
-    shards[qubit1].isPhaseDirty = true;
-    shards[qubit2].isPhaseDirty = true;
-
     EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
+
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // TODO: If we multiply out cached amplitudes, we can optimize this.
+
+    shard1.isProbDirty = true;
+    shard1.isPhaseDirty = true;
+    shard2.isProbDirty = true;
+    shard2.isPhaseDirty = true;
 }
 
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
@@ -760,7 +759,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
             trimmedControls.push_back(controls[i]);
         } else {
             skipPowers.push_back(1U << i);
-            skipValueMask |= ((shards[controls[i]].prob >= (ONE_R1 / 2)) ? (1U << i) : 0);
+            skipValueMask |= (SHARD_STATE(shards[controls[i]]) ? (1U << i) : 0);
         }
     }
 
@@ -785,7 +784,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
         ebits[i] = &bits[i];
     }
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     bitLenInt* mappedControls = new bitLenInt[trimmedControls.size()];
     for (i = 0; i < trimmedControls.size(); i++) {
@@ -816,24 +815,15 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
-    real1 prob = shard.prob;
-    real1 phase = shard.phase;
-
-    complex zeroAmpIn = ((real1)sqrt(ONE_R1 - prob)) * complex(ONE_R1, ZERO_R1);
-    complex oneAmpOut = ((real1)sqrt(prob)) * complex(cos(phase), sin(phase));
-
-    complex zeroAmpOut = ((real1)M_SQRT1_2) * (zeroAmpIn + oneAmpOut);
-    oneAmpOut = ((real1)M_SQRT1_2) * (zeroAmpIn - oneAmpOut);
-
-    prob = norm(oneAmpOut);
-    shard.prob = prob;
-    shard.phase = ClampPhase(arg(oneAmpOut) - arg(zeroAmpOut));
+    complex tempAmp1 = ((real1)M_SQRT1_2) * (shard.amp0 - shard.amp1);
+    shard.amp0 = ((real1)M_SQRT1_2) * (shard.amp0 + shard.amp1);
+    shard.amp1 = tempAmp1;
 
     if (shard.unit->GetQubitCount() > 1) {
-        if (prob < min_norm) {
-            SeparateBit(false, target);
-        } else if (prob > (ONE_R1 - min_norm)) {
+        if (norm(shard.amp0) < min_norm) {
             SeparateBit(true, target);
+        } else if (norm(shard.amp1) < min_norm) {
+            SeparateBit(false, target);
         }
     }
 }
@@ -846,8 +836,7 @@ void QUnit::X(bitLenInt target)
     } else {
         shard.unit->X(shard.mapped);
     }
-    shard.prob = ONE_R1 - shard.prob;
-    shard.phase = ClampPhase(2 * M_PI - shard.phase);
+    std::swap(shard.amp0, shard.amp1);
 }
 
 void QUnit::Z(bitLenInt target)
@@ -857,7 +846,7 @@ void QUnit::Z(bitLenInt target)
     if (PHASE_MATTERS(shard)) {
         EndEmulation(shard);
         shard.unit->Z(shard.mapped);
-        shard.phase = ClampPhase(shard.phase + M_PI);
+        shard.amp1 = -shard.amp1;
     }
 }
 
@@ -919,7 +908,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     if (PHASE_MATTERS(shard)) {
         EndEmulation(shard);
         shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
-        shard.phase = ClampPhase(shard.phase + arg(bottomRight) - arg(topLeft));
+        shard.amp0 *= topLeft;
+        shard.amp1 *= bottomRight;
     }
 }
 
@@ -931,8 +921,10 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     } else {
         shard.unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped);
     }
-    shard.prob = ONE_R1 - shard.prob;
-    shard.phase = ClampPhase((2 * M_PI - shard.phase) + (arg(topRight) - arg(bottomLeft)));
+
+    complex tempAmp1 = shard.amp0 * bottomLeft;
+    shard.amp0 = shard.amp1 * topRight;
+    shard.amp1 = tempAmp1;
 }
 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -981,21 +973,16 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         return;
     }
 
-    complex qubit[2] = { ((real1)sqrt(ONE_R1 - shard.prob)) * complex(ONE_R1, ZERO_R1),
-        ((real1)sqrt(shard.prob)) * complex(cos(shard.phase), sin(shard.phase)) };
-    complex Y0 = qubit[0];
+    complex Y0 = shard.amp0;
 
-    qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
-    qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
-
-    shard.prob = norm(qubit[1]);
-    shard.phase = ClampPhase(arg(qubit[1]) - arg(qubit[0]));
+    shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+    shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
 
     if (shard.unit->GetQubitCount() > 1) {
-        if (shard.prob < min_norm) {
-            SeparateBit(false, target);
-        } else if (shard.prob > (ONE_R1 - min_norm)) {
+        if (norm(shard.amp0) < min_norm) {
             SeparateBit(true, target);
+        } else if (norm(shard.amp1) < min_norm) {
+            SeparateBit(false, target);
         }
     }
 }
@@ -1131,7 +1118,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
@@ -1275,7 +1262,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
         ebits[i] = &bits[i];
     }
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
@@ -1323,7 +1310,7 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 
     std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 
@@ -1348,7 +1335,7 @@ void QUnit::INCxx(
 
     std::vector<bitLenInt*> ebits = { &bits[0], &bits[1], &bits[2] };
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 
@@ -1444,7 +1431,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         }
 
         if (CheckBitPermutation(start)) {
-            inReg = (shards[start].prob >= (ONE_R1 / 2));
+            inReg = SHARD_STATE(shards[start]);
             total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
             if (inReg != (total & 1)) {
                 X(start);
@@ -1494,7 +1481,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                     continue;
                 }
 
-                inReg = (shards[partStart].prob >= (ONE_R1 / 2));
+                inReg = SHARD_STATE(shards[partStart]);
                 if (toAdd != inReg) {
                     // If toAdd != inReg, the carry out might be superposed. Advance the loop.
                     continue;
@@ -1573,7 +1560,7 @@ void QUnit::INTS(
 
     bitLenInt signBit = start + length - 1U;
     bool knewFlagSet = CheckBitPermutation(overflowIndex);
-    bool flagSet = shards[overflowIndex].prob >= (ONE_R1 / 2);
+    bool flagSet = SHARD_STATE(shards[overflowIndex]);
 
     if (knewFlagSet && !flagSet) {
         // Overflow detection is disabled
@@ -1583,7 +1570,7 @@ void QUnit::INTS(
 
     bool addendNeg = toMod & (1U << (length - 1U));
     bool knewSign = CheckBitPermutation(signBit);
-    bool quantumNeg = shards[signBit].prob >= (ONE_R1 / 2);
+    bool quantumNeg = SHARD_STATE(shards[signBit]);
 
     if (knewSign && (addendNeg != quantumNeg)) {
         // No chance of overflow
@@ -1797,7 +1784,7 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
         ebits[i] = &bits[i];
     }
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     controlsMapped->resize(controlVec.size() == 0 ? 1 : controlVec.size());
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
@@ -1946,12 +1933,11 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
     std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
 
-    QInterfacePtr unit = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr unit = Entangle(ebits);
 
     unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 
     DirtyShardRange(start, length);
-    shards[flagIndex].isProbDirty = true;
     shards[flagIndex].isPhaseDirty = true;
 }
 
@@ -2177,12 +2163,8 @@ QInterfacePtr QUnit::Clone()
         origEngine = find(shardEngines.begin(), shardEngines.end(), shards[i].unit);
         engineIndex = origEngine - shardEngines.begin();
 
+        copyPtr->shards[i] = QEngineShard(shards[i]);
         copyPtr->shards[i].unit = dupeEngines[engineIndex];
-        copyPtr->shards[i].mapped = shards[i].mapped;
-        copyPtr->shards[i].prob = shards[i].prob;
-        copyPtr->shards[i].isProbDirty = shards[i].isProbDirty;
-        copyPtr->shards[i].phase = shards[i].phase;
-        copyPtr->shards[i].isPhaseDirty = shards[i].isPhaseDirty;
     }
 
     return copyPtr;

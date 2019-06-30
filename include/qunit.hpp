@@ -25,9 +25,37 @@ struct QEngineShard {
     bitLenInt mapped;
     bool isEmulated;
     bool isProbDirty;
-    real1 prob;
     bool isPhaseDirty;
-    real1 phase;
+    complex amp0;
+    complex amp1;
+    QInterfacePtr fourierUnit;
+    bitLenInt fourierMapped;
+
+    QEngineShard()
+        : unit(NULL)
+        , mapped(0)
+        , isEmulated(false)
+        , isProbDirty(false)
+        , isPhaseDirty(false)
+        , amp0(complex(ONE_R1, ZERO_R1))
+        , amp1(complex(ZERO_R1, ZERO_R1))
+        , fourierUnit(NULL)
+        , fourierMapped(0)
+    {
+    }
+
+    QEngineShard(QInterfacePtr u, const bool& set)
+        : unit(u)
+        , mapped(0)
+        , isEmulated(false)
+        , isProbDirty(false)
+        , isPhaseDirty(false)
+        , fourierUnit(NULL)
+        , fourierMapped(0)
+    {
+        amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
+        amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+    }
 };
 
 class QUnit;
@@ -52,19 +80,6 @@ protected:
     {
         shards.resize(qb);
         QInterface::SetQubitCount(qb);
-    }
-
-    real1 ClampPhase(real1 phase)
-    {
-        while (phase < 0) {
-            phase += 2 * M_PI;
-        }
-
-        while (phase >= (2 * M_PI)) {
-            phase -= 2 * M_PI;
-        }
-
-        return phase;
     }
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
@@ -367,7 +382,7 @@ protected:
     void EndEmulation(QEngineShard& shard)
     {
         if (shard.isEmulated) {
-            shard.unit->SetBit(shard.mapped, shard.prob >= (ONE_R1 / 2));
+            shard.unit->SetBit(shard.mapped, norm(shard.amp0) < (ONE_R1 / 2));
             shard.isEmulated = false;
         }
     }
@@ -389,6 +404,54 @@ protected:
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             EndEmulation(i);
+        }
+    }
+
+    void TransformBasis(const bitLenInt& i, const bool& toFourier)
+    {
+        if ((shards[i].fourierUnit != NULL) == toFourier) {
+            // Already in target basis
+            return;
+        }
+
+        QInterfacePtr unit = toFourier ? shards[i].unit : shards[i].fourierUnit;
+        QUnit subUnit = QUnit(engine, subengine, unit->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
+                subUnit.shards[toFourier ? shards[i].mapped : shards[i].fourierMapped] = shards[i];
+            }
+        }
+
+        if (toFourier) {
+            subUnit.QFT(0, unit->GetQubitCount());
+        } else {
+            subUnit.IQFT(0, unit->GetQubitCount());
+        }
+
+        QInterfacePtr tUnit = subUnit.shards[0].unit;
+
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
+                if (toFourier) {
+                    bitLenInt tempMapped = shards[i].mapped;
+                    shards[i] = subUnit.shards[shards[i].mapped];
+                    shards[i].fourierUnit = tUnit;
+                    shards[i].fourierMapped = tempMapped;
+                } else {
+                    shards[i] = subUnit.shards[shards[i].fourierMapped];
+                    shards[i].fourierUnit = NULL;
+                    shards[i].fourierMapped = 0;
+                }
+            }
+        }
+    }
+
+    void TransformBasisAll(const bool& toFourier)
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            TransformBasis(i, toFourier);
         }
     }
 };
