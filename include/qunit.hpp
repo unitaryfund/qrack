@@ -476,11 +476,33 @@ protected:
 
     bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier)
     {
+        QInterfacePtr fourierRoot = NULL;
         for (bitLenInt i = 0; i < length; i++) {
             if (fourier != (shards[start + i].fourierUnit != NULL)) {
                 return false;
+            } else if (fourier) {
+                if (fourierRoot == NULL) {
+                    fourierRoot = shards[start + i].fourierUnit;
+                } else if (fourierRoot != shards[start + i].fourierUnit) {
+                    return false;
+                }
             }
         }
+
+        if (fourier) {
+            for (bitLenInt i = 0; i < start; i++) {
+                if (shards[i].fourierUnit == fourierRoot) {
+                    return false;
+                }
+            }
+
+            for (bitLenInt i = (start + length); i < qubitCount; i++) {
+                if (shards[i].fourierUnit == fourierRoot) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 };
