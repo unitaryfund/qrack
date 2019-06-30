@@ -413,6 +413,11 @@ protected:
 
     void TransformBasis(const bool& toFourier, const bitLenInt& i)
     {
+        if (isSparse) {
+            // Sparse state vector already fulfills the point of this optimization
+            return;
+        }
+
         if ((shards[i].fourierUnit != NULL) == toFourier) {
             // Already in target basis
             return;
