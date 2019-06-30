@@ -1563,6 +1563,12 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
+    // TODO: We can carry this further:
+    if (!hasCarry && CheckRangeInBasis(start, length, true)) {
+        QFTINC(toMod, start, length);
+        return;
+    }
+
     // Try ripple addition, to avoid entanglement.
     bool toAdd, inReg;
     bool carry = false;
