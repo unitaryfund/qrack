@@ -430,7 +430,10 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
     } else {
-        EndEmulation(start);
+        real1 prob = Prob(start, true);
+        if ((prob < min_norm) || ((ONE_R1 - prob) < min_norm)) {
+            return true;
+        }
     }
 
     QInterfacePtr separatedBits = MakeEngine(length, 0);
@@ -598,9 +601,12 @@ void QUnit::DumpShards()
     }
 }
 
-real1 QUnit::Prob(bitLenInt qubit)
+real1 QUnit::Prob(bitLenInt qubit, bool inCurrentBasis)
 {
-    TransformBasis(false, qubit);
+    if (!inCurrentBasis) {
+        TransformBasis(false, qubit);
+    }
+
     QEngineShard& shard = shards[qubit];
 
     if (shard.isProbDirty) {
@@ -1294,7 +1300,6 @@ bool QUnit::CArithmeticOptimize(
     for (auto i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
-        TransformBasis(false, controls[i]);
         if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
             return true;
         }

@@ -271,7 +271,8 @@ public:
      * @{
      */
 
-    virtual real1 Prob(bitLenInt qubit);
+    virtual real1 Prob(bitLenInt qubit) { return Prob(qubit, false); }
+    virtual real1 Prob(bitLenInt qubit, bool inCurrentBasis);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
