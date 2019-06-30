@@ -73,8 +73,7 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-
-    qrack_rand_gen_ptr rand_generator;
+    bool freezeBasis;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -228,6 +227,18 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
+    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false)
+    {
+        freezeBasis = !trySeparate;
+        QInterface::QFT(start, length, trySeparate);
+        freezeBasis = false;
+    }
+    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false)
+    {
+        freezeBasis = !trySeparate;
+        QInterface::IQFT(start, length, trySeparate);
+        freezeBasis = false;
+    }
 
     /** @} */
 
@@ -407,7 +418,7 @@ protected:
         }
     }
 
-    void TransformBasis(const bitLenInt& i, const bool& toFourier)
+    void TransformBasis(const bool& toFourier, const bitLenInt& i)
     {
         if ((shards[i].fourierUnit != NULL) == toFourier) {
             // Already in target basis
@@ -420,7 +431,13 @@ protected:
 
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
-                subUnit.shards[toFourier ? shards[i].mapped : shards[i].fourierMapped] = shards[i];
+                if (toFourier) {
+                    subUnit.shards[shards[i].mapped] = shards[i];
+                } else {
+                    subUnit.shards[shards[i].fourierMapped] = shards[i];
+                    shards[i].fourierUnit = NULL;
+                    shards[i].fourierMapped = 0;
+                }
             }
         }
 
@@ -448,12 +465,21 @@ protected:
         }
     }
 
-    void TransformBasisAll(const bool& toFourier)
+    void TransformBasis(const bool& toFourier, const bitLenInt& start, const bitLenInt& length)
     {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            TransformBasis(i, toFourier);
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformBasis(toFourier, start + i);
         }
     }
+
+    void TransformBasis(const bool& toFourier, const bitLenInt* bits, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformBasis(toFourier, bits[i]);
+        }
+    }
+
+    void TransformBasisAll(const bool& toFourier) { TransformBasis(toFourier, (bitLenInt)0, qubitCount); }
 };
 
 } // namespace Qrack
