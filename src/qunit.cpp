@@ -430,10 +430,9 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
     } else {
+        // If length == 1, this is usually all that's worth trying:
         real1 prob = Prob(start, true);
-        if ((prob < min_norm) || ((ONE_R1 - prob) < min_norm)) {
-            return true;
-        }
+        return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
     QInterfacePtr separatedBits = MakeEngine(length, 0);
@@ -532,9 +531,11 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
 
 /// Check if the qubit at "qubitIndex" has a cached probability indicating that it is in a permutation basis eigenstate,
 /// for optimization.
-bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex)
+bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis)
 {
-    TransformBasis(false, qubitIndex);
+    if (!inCurrentBasis) {
+        TransformBasis(false, qubitIndex);
+    }
     if (CACHED_CLASSICAL(shards[qubitIndex])) {
         return true;
     } else {
@@ -544,12 +545,12 @@ bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex)
 
 /// Check if all qubits in the range have cached probabilities indicating that they are in permutation basis
 /// eigenstates, for optimization.
-bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length)
+bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length, const bool& inCurrentBasis)
 {
     // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
     // Then, operations can often be treated as classical, instead of quantum.
     for (bitLenInt i = 0; i < length; i++) {
-        if (!CheckBitPermutation(start + i)) {
+        if (!CheckBitPermutation(start + i, inCurrentBasis)) {
             return false;
         }
     }
@@ -558,12 +559,12 @@ bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length
 
 /// Check if all qubits in the index array have cached probabilities indicating that they are in permutation basis
 /// eigenstates, for optimization.
-bool QUnit::CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length)
+bool QUnit::CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length, const bool& inCurrentBasis)
 {
     // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
     // Then, operations can often be treated as classical, instead of quantum.
     for (bitLenInt i = 0; i < length; i++) {
-        if (!CheckBitPermutation(bitArray[i])) {
+        if (!CheckBitPermutation(bitArray[i], inCurrentBasis)) {
             return false;
         }
     }
@@ -839,6 +840,42 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     shards[qubitIndex].isPhaseDirty = true;
 
     delete[] mappedControls;
+}
+
+void QUnit::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
+{
+    if (trySeparate) {
+        if (CheckRangeInBasis(start, length, false) && CheckBitsPermutation(start, length, true)) {
+            QInterfacePtr unit = shards[start].unit;
+            for (bitLenInt i = 0; i < length; i++) {
+                shards[start + i].fourierUnit = unit;
+                shards[start + i].fourierMapped = i;
+            }
+
+            return;
+        }
+    }
+
+    freezeBasis = !trySeparate;
+    QInterface::QFT(start, length, !isSparse && trySeparate);
+    freezeBasis = false;
+}
+void QUnit::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
+{
+    if (trySeparate) {
+        if (CheckRangeInBasis(start, length, true) && CheckBitsPermutation(start, length, true)) {
+            for (bitLenInt i = 0; i < length; i++) {
+                shards[start + i].fourierUnit = NULL;
+                shards[start + i].fourierMapped = 0;
+            }
+
+            return;
+        }
+    }
+
+    freezeBasis = !trySeparate;
+    QInterface::IQFT(start, length, !isSparse && trySeparate);
+    freezeBasis = false;
 }
 
 void QUnit::H(bitLenInt target)

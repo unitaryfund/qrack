@@ -227,18 +227,8 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
-    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false)
-    {
-        freezeBasis = !trySeparate;
-        QInterface::QFT(start, length, !isSparse);
-        freezeBasis = false;
-    }
-    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false)
-    {
-        freezeBasis = !trySeparate;
-        QInterface::IQFT(start, length, !isSparse);
-        freezeBasis = false;
-    }
+    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
+    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
     /** @} */
 
@@ -328,9 +318,11 @@ protected:
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
     virtual QInterfacePtr EntangleAll();
 
-    virtual bool CheckBitPermutation(const bitLenInt& qubitIndex);
-    virtual bool CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length);
-    virtual bool CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length);
+    virtual bool CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis = false);
+    virtual bool CheckBitsPermutation(
+        const bitLenInt& start, const bitLenInt& length, const bool& inCurrentBasis = false);
+    virtual bool CheckBitsPermutation(
+        const bitLenInt* bitArray, const bitLenInt& length, const bool& inCurrentBasis = false);
     virtual bitCapInt GetCachedPermutation(const bitLenInt& start, const bitLenInt& length);
     virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length);
 
@@ -481,6 +473,16 @@ protected:
     }
 
     void TransformBasisAll(const bool& toFourier) { TransformBasis(toFourier, (bitLenInt)0, qubitCount); }
+
+    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            if (fourier != (shards[start + i].fourierUnit != NULL)) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 } // namespace Qrack
