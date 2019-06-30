@@ -230,13 +230,13 @@ public:
     virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false)
     {
         freezeBasis = !trySeparate;
-        QInterface::QFT(start, length, trySeparate);
+        QInterface::QFT(start, length, !isSparse);
         freezeBasis = false;
     }
     virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false)
     {
         freezeBasis = !trySeparate;
-        QInterface::IQFT(start, length, trySeparate);
+        QInterface::IQFT(start, length, !isSparse);
         freezeBasis = false;
     }
 
