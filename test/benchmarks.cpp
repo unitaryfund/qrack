@@ -155,7 +155,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomP
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
-#if 0
+
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
@@ -399,7 +399,7 @@ TEST_CASE("test_qft_permutation_init")
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, true); }, true, false, testEngineType == QINTERFACE_QUNIT);
 }
-#endif
+
 TEST_CASE("test_qft_permutation_round_trip_separated")
 {
     benchmarkLoop(
