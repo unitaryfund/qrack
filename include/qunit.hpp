@@ -56,6 +56,14 @@ struct QEngineShard {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
     }
+
+    ~QEngineShard()
+    {
+        if (unit)
+            unit->Finish();
+        if (fourierUnit)
+            fourierUnit->Finish();
+    }
 };
 
 class QUnit;
@@ -227,8 +235,6 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
-    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
-    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
     /** @} */
 

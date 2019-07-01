@@ -847,19 +847,6 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     delete[] mappedControls;
 }
 
-void QUnit::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
-{
-    freezeBasis = !trySeparate;
-    QInterface::QFT(start, length, !isSparse);
-    freezeBasis = false;
-}
-void QUnit::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
-{
-    freezeBasis = !trySeparate;
-    QInterface::IQFT(start, length, !isSparse);
-    freezeBasis = false;
-}
-
 void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
@@ -883,7 +870,7 @@ void QUnit::H(bitLenInt target)
             SeparateBit(true, target);
         } else if (norm(shard.amp1) < min_norm) {
             SeparateBit(false, target);
-        } else if (!freezeBasis) {
+        } else {
             TransformBasis(shard.fourierUnit == NULL, target);
         }
     }
@@ -1001,7 +988,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
                 SeparateBit(true, target);
             } else if (norm(shard.amp1) < min_norm) {
                 SeparateBit(false, target);
-            } else if (!freezeBasis) {
+            } else {
                 TransformBasis(shard.fourierUnit == NULL, target);
             }
         }
@@ -1035,7 +1022,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
                 SeparateBit(true, target);
             } else if (norm(shard.amp1) < min_norm) {
                 SeparateBit(false, target);
-            } else if (!freezeBasis) {
+            } else {
                 TransformBasis(shard.fourierUnit == NULL, target);
             }
         }
@@ -1109,7 +1096,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
             SeparateBit(true, target);
         } else if (norm(shard.amp1) < min_norm) {
             SeparateBit(false, target);
-        } else if (!freezeBasis) {
+        } else {
             TransformBasis(shard.fourierUnit == NULL, target);
         }
     }
@@ -1165,7 +1152,14 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = Prob(controlVec[controlIndex]);                                                                          \
+    bitProb = Prob(controlVec[controlIndex], true);                                                                    \
+    if (shards[controlVec[controlIndex]].fourierUnit != NULL) {                                                        \
+        if (abs(bitProb - (ONE_R1 / 2)) < min_norm) {                                                                  \
+            bitProb = Prob(controlVec[controlIndex]);                                                                  \
+        } else {                                                                                                       \
+            bitProb = ONE_R1 / 2;                                                                                      \
+        }                                                                                                              \
+    }                                                                                                                  \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1260,6 +1254,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].isProbDirty = true;
         shards[targets[i]].isPhaseDirty = true;
     }
+
+    TransformBasis(true, targets[0]);
 }
 
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
@@ -2316,6 +2312,8 @@ void QUnit::TransformToFourier(const bitLenInt& i)
         return;
     }
 
+    freezeBasis = true;
+
     QInterfacePtr unit = shards[i].unit;
 
     QUnit subUnit = QUnit(engine, subengine, unit->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize,
@@ -2327,7 +2325,8 @@ void QUnit::TransformToFourier(const bitLenInt& i)
         }
     }
 
-    subUnit.QFT(0, unit->GetQubitCount(), false);
+    subUnit.freezeBasis = true;
+    subUnit.QFT(0, unit->GetQubitCount(), true);
 
     QInterfacePtr tUnit = subUnit.shards[0].unit;
 
@@ -2339,6 +2338,8 @@ void QUnit::TransformToFourier(const bitLenInt& i)
             shards[i].fourierMapped = tempMapped;
         }
     }
+
+    freezeBasis = false;
 }
 
 void QUnit::TransformToPerm(const bitLenInt& i)
@@ -2348,6 +2349,8 @@ void QUnit::TransformToPerm(const bitLenInt& i)
         // or already in target basis.
         return;
     }
+
+    freezeBasis = true;
 
     QInterfacePtr unit = shards[i].fourierUnit;
 
@@ -2364,12 +2367,11 @@ void QUnit::TransformToPerm(const bitLenInt& i)
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (unit == shards[i].fourierUnit) {
             subUnit.shards[shards[i].fourierMapped] = shards[i];
-            subUnit.shards[i].fourierUnit = NULL;
-            subUnit.shards[i].fourierMapped = 0;
         }
     }
 
-    subUnit.IQFT(0, shardCount, false);
+    subUnit.freezeBasis = true;
+    subUnit.IQFT(0, shardCount, true);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (unit == shards[i].fourierUnit) {
@@ -2378,6 +2380,8 @@ void QUnit::TransformToPerm(const bitLenInt& i)
             shards[i].fourierMapped = 0;
         }
     }
+
+    freezeBasis = false;
 }
 
 void QUnit::TransformBasis(const bool& toFourier, const bitLenInt& i)
