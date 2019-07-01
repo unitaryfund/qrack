@@ -2326,6 +2326,11 @@ QInterfacePtr QUnit::Clone()
 
 void QUnit::TransformBasis(const bool& toFourier, const bitLenInt& i)
 {
+    if (freezeBasis && toFourier) {
+        // Recursive call
+        return;
+    }
+
     if (isSparse) {
         // Sparse state vector already fulfills the point of this optimization
         return;
