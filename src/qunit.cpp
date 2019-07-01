@@ -2310,7 +2310,7 @@ QInterfacePtr QUnit::Clone()
 
 void QUnit::TransformToFourier(const bitLenInt& i)
 {
-    if (isSparse || (shards[i].fourierUnit != NULL)) {
+    if (freezeBasis || isSparse || (shards[i].fourierUnit != NULL)) {
         // A sparse state vector already fulfills the point of this optimization,
         // or already in target basis.
         return;
@@ -2343,7 +2343,7 @@ void QUnit::TransformToFourier(const bitLenInt& i)
 
 void QUnit::TransformToPerm(const bitLenInt& i)
 {
-    if (isSparse || (shards[i].fourierUnit == NULL)) {
+    if (freezeBasis || isSparse || (shards[i].fourierUnit == NULL)) {
         // A sparse state vector already fulfills the point of this optimization,
         // or already in target basis.
         return;
