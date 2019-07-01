@@ -884,6 +884,17 @@ void QUnit::H(bitLenInt target)
     }
 }
 
+void QUnit::ZBase(const bitLenInt& target)
+{
+    QEngineShard& shard = shards[target];
+    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+    if (PHASE_MATTERS(shard)) {
+        EndEmulation(shard);
+        shard.unit->Z(shard.mapped);
+        shard.amp1 = -shard.amp1;
+    }
+}
+
 void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
@@ -895,12 +906,7 @@ void QUnit::X(bitLenInt target)
         }
         std::swap(shard.amp0, shard.amp1);
     } else {
-        // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-        if (PHASE_MATTERS(shard)) {
-            EndEmulation(shard);
-            shard.unit->Z(shard.mapped);
-            shard.amp1 = -shard.amp1;
-        }
+        ZBase(target);
     }
 }
 
@@ -908,12 +914,7 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     if (shard.fourierUnit == NULL) {
-        // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-        if (PHASE_MATTERS(shard)) {
-            EndEmulation(shard);
-            shard.unit->Z(shard.mapped);
-            shard.amp1 = -shard.amp1;
-        }
+        ZBase(target);
     } else {
         QInterface::Z(target);
     }
