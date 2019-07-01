@@ -413,22 +413,21 @@ protected:
         }
     }
 
+    void TransformToFourier(const bitLenInt& i);
+    void TransformToPerm(const bitLenInt& i);
     void TransformBasis(const bool& toFourier, const bitLenInt& i);
-
     void TransformBasis(const bool& toFourier, const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
             TransformBasis(toFourier, start + i);
         }
     }
-
     void TransformBasis(const bool& toFourier, const bitLenInt* bits, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
             TransformBasis(toFourier, bits[i]);
         }
     }
-
     void TransformBasisAll(const bool& toFourier) { TransformBasis(toFourier, (bitLenInt)0, qubitCount); }
 
     bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier);

@@ -2306,55 +2306,94 @@ QInterfacePtr QUnit::Clone()
     return copyPtr;
 }
 
-bool QUnit::TransformBasis(const bool& toFourier, const bitLenInt& i)
+void QUnit::TransformToFourier(const bitLenInt& i)
 {
     if (isSparse) {
         // Sparse state vector already fulfills the point of this optimization
         return;
     }
 
-    if ((shards[i].fourierUnit != NULL) == toFourier) {
+    if (shards[i].fourierUnit != NULL) {
         // Already in target basis
         return;
     }
 
-    QInterfacePtr unit = toFourier ? shards[i].unit : shards[i].fourierUnit;
+    QInterfacePtr unit = shards[i].unit;
+
     QUnit subUnit = QUnit(engine, subengine, unit->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
-            if (toFourier) {
-                subUnit.shards[shards[i].mapped] = shards[i];
-            } else {
-                subUnit.shards[shards[i].fourierMapped] = shards[i];
-                shards[i].fourierUnit = NULL;
-                shards[i].fourierMapped = 0;
-            }
+        if (unit == shards[i].unit) {
+            subUnit.shards[shards[i].mapped] = shards[i];
         }
     }
 
-    if (toFourier) {
-        subUnit.QFT(0, unit->GetQubitCount());
-    } else {
-        subUnit.IQFT(0, unit->GetQubitCount());
-    }
+    subUnit.QFT(0, unit->GetQubitCount());
 
     QInterfacePtr tUnit = subUnit.shards[0].unit;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
-            if (toFourier) {
-                bitLenInt tempMapped = shards[i].mapped;
-                shards[i] = subUnit.shards[shards[i].mapped];
-                shards[i].fourierUnit = tUnit;
-                shards[i].fourierMapped = tempMapped;
-            } else {
-                shards[i] = subUnit.shards[shards[i].fourierMapped];
-                shards[i].fourierUnit = NULL;
-                shards[i].fourierMapped = 0;
-            }
+        if (unit == shards[i].unit) {
+            bitLenInt tempMapped = shards[i].mapped;
+            shards[i] = subUnit.shards[shards[i].mapped];
+            shards[i].fourierUnit = tUnit;
+            shards[i].fourierMapped = tempMapped;
         }
+    }
+}
+
+void QUnit::TransformToPerm(const bitLenInt& i)
+{
+    if (isSparse) {
+        // Sparse state vector already fulfills the point of this optimization
+        return;
+    }
+
+    if (shards[i].fourierUnit == NULL) {
+        // Already in target basis
+        return;
+    }
+
+    QInterfacePtr unit = shards[i].fourierUnit;
+
+    bitLenInt shardCount = 0;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (unit == shards[i].fourierUnit) {
+            shardCount++;
+        }
+    }
+
+    QUnit subUnit = QUnit(engine, subengine, shardCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (unit == shards[i].fourierUnit) {
+            subUnit.shards[shards[i].fourierMapped] = shards[i];
+            shards[i].fourierUnit = NULL;
+            shards[i].fourierMapped = 0;
+        }
+    }
+
+    subUnit.IQFT(0, shardCount);
+
+    QInterfacePtr tUnit = subUnit.shards[0].unit;
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (unit == shards[i].fourierUnit) {
+            shards[i] = subUnit.shards[shards[i].fourierMapped];
+            shards[i].fourierUnit = NULL;
+            shards[i].fourierMapped = 0;
+        }
+    }
+}
+
+void QUnit::TransformBasis(const bool& toFourier, const bitLenInt& i)
+{
+    if (toFourier) {
+        TransformToFourier(i);
+    } else {
+        TransformToPerm(i);
     }
 }
 
