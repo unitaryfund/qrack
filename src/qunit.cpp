@@ -1254,8 +1254,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].isProbDirty = true;
         shards[targets[i]].isPhaseDirty = true;
     }
-
-    TransformBasis(true, targets[0]);
 }
 
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
