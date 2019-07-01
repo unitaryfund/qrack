@@ -411,105 +411,22 @@ protected:
         }
     }
 
-    void TransformBasis(const bool& toFourier, const bitLenInt& i)
-    {
-        if (isSparse) {
-            // Sparse state vector already fulfills the point of this optimization
-            return;
-        }
-
-        if ((shards[i].fourierUnit != NULL) == toFourier) {
-            // Already in target basis
-            return;
-        }
-
-        QInterfacePtr unit = toFourier ? shards[i].unit : shards[i].fourierUnit;
-        QUnit subUnit = QUnit(engine, subengine, unit->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
-
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
-                if (toFourier) {
-                    subUnit.shards[shards[i].mapped] = shards[i];
-                } else {
-                    subUnit.shards[shards[i].fourierMapped] = shards[i];
-                    shards[i].fourierUnit = NULL;
-                    shards[i].fourierMapped = 0;
-                }
-            }
-        }
-
-        if (toFourier) {
-            subUnit.QFT(0, unit->GetQubitCount());
-        } else {
-            subUnit.IQFT(0, unit->GetQubitCount());
-        }
-
-        QInterfacePtr tUnit = subUnit.shards[0].unit;
-
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
-                if (toFourier) {
-                    bitLenInt tempMapped = shards[i].mapped;
-                    shards[i] = subUnit.shards[shards[i].mapped];
-                    shards[i].fourierUnit = tUnit;
-                    shards[i].fourierMapped = tempMapped;
-                } else {
-                    shards[i] = subUnit.shards[shards[i].fourierMapped];
-                    shards[i].fourierUnit = NULL;
-                    shards[i].fourierMapped = 0;
-                }
-            }
-        }
-    }
-
+    void TransformBasis(const bool& toFourier, const bitLenInt& i);
     void TransformBasis(const bool& toFourier, const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
             TransformBasis(toFourier, start + i);
         }
     }
-
     void TransformBasis(const bool& toFourier, const bitLenInt* bits, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
             TransformBasis(toFourier, bits[i]);
         }
     }
-
     void TransformBasisAll(const bool& toFourier) { TransformBasis(toFourier, (bitLenInt)0, qubitCount); }
 
-    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier)
-    {
-        QInterfacePtr fourierRoot = NULL;
-        for (bitLenInt i = 0; i < length; i++) {
-            if (fourier != (shards[start + i].fourierUnit != NULL)) {
-                return false;
-            } else if (fourier) {
-                if (fourierRoot == NULL) {
-                    fourierRoot = shards[start + i].fourierUnit;
-                } else if (fourierRoot != shards[start + i].fourierUnit) {
-                    return false;
-                }
-            }
-        }
-
-        if (fourier) {
-            for (bitLenInt i = 0; i < start; i++) {
-                if (shards[i].fourierUnit == fourierRoot) {
-                    return false;
-                }
-            }
-
-            for (bitLenInt i = (start + length); i < qubitCount; i++) {
-                if (shards[i].fourierUnit == fourierRoot) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
+    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier);
 };
 
 } // namespace Qrack

@@ -1182,7 +1182,7 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = Prob(controlVec[controlIndex]);                                                                          \
+    bitProb = Prob(controlVec[controlIndex], true);                                                                    \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1445,9 +1445,7 @@ void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    TransformBasis(false, start, length);
     TransformBasis(false, flagIndex);
-
     CollapseCarry(flagIndex, start, length);
 
     /* Make sure the flag bit is entangled in the same QU. */
@@ -1470,8 +1468,6 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
-    TransformBasis(false, start, length);
-    TransformBasis(false, flag1Index);
     TransformBasis(false, flag2Index);
     /*
      * Overflow flag should not be measured, however the carry flag still needs
@@ -2326,6 +2322,86 @@ QInterfacePtr QUnit::Clone()
     }
 
     return copyPtr;
+}
+
+void QUnit::TransformBasis(const bool& toFourier, const bitLenInt& i)
+{
+    if (isSparse) {
+        // Sparse state vector already fulfills the point of this optimization
+        return;
+    }
+
+    if ((shards[i].fourierUnit != NULL) == toFourier) {
+        // Already in target basis
+        return;
+    }
+
+    QInterfacePtr unit = toFourier ? shards[i].unit : shards[i].fourierUnit;
+    QUnit subUnit = QUnit(engine, subengine, unit->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
+            if (toFourier) {
+                subUnit.shards[shards[i].mapped] = shards[i];
+            } else {
+                subUnit.shards[shards[i].fourierMapped] = shards[i];
+                shards[i].fourierUnit = NULL;
+                shards[i].fourierMapped = 0;
+            }
+        }
+    }
+
+    if (toFourier) {
+        subUnit.QFT(0, unit->GetQubitCount(), false);
+    } else {
+        subUnit.IQFT(0, unit->GetQubitCount(), false);
+    }
+
+    QInterfacePtr tUnit = subUnit.shards[0].unit;
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if ((toFourier && (unit == shards[i].unit)) || (!toFourier && (unit == shards[i].fourierUnit))) {
+            if (toFourier) {
+                bitLenInt tempMapped = shards[i].mapped;
+                shards[i] = subUnit.shards[shards[i].mapped];
+                shards[i].fourierUnit = tUnit;
+                shards[i].fourierMapped = tempMapped;
+            } else {
+                shards[i] = subUnit.shards[shards[i].fourierMapped];
+                shards[i].fourierUnit = NULL;
+                shards[i].fourierMapped = 0;
+            }
+        }
+    }
+}
+
+bool QUnit::CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier)
+{
+    QInterfacePtr fourierRoot = shards[start].fourierUnit;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (fourierRoot != shards[start + i].fourierUnit) {
+            return false;
+        }
+    }
+
+    if (!fourier) {
+        return true;
+    }
+
+    for (bitLenInt i = 0; i < start; i++) {
+        if (shards[i].fourierUnit == fourierRoot) {
+            return false;
+        }
+    }
+
+    for (bitLenInt i = (start + length); i < qubitCount; i++) {
+        if (shards[i].fourierUnit == fourierRoot) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace Qrack
