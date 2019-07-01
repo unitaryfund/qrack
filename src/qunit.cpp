@@ -215,6 +215,7 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
 {
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
+        TransformBasis(false, **bit);
     }
 
     std::vector<QInterfacePtr> units;
@@ -255,18 +256,10 @@ QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, s
     return unit1;
 }
 
-QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
-{
-    for (bitLenInt i = 0; i < bits.size(); i++) {
-        TransformBasis(false, *(bits[i]));
-    }
-    return EntangleIterator(bits.begin(), bits.end());
-}
+QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits) { return EntangleIterator(bits.begin(), bits.end()); }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
-    TransformBasis(false, start, length);
-
     if (length == 1) {
         return shards[start].unit;
     }
@@ -278,16 +271,13 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
         ebits[i] = &bits[i];
     }
 
-    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = Entangle(ebits);
     OrderContiguous(shards[start].unit);
     return toRet;
 }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
 {
-    TransformBasis(false, start1, length1);
-    TransformBasis(false, start2, length2);
-
     std::vector<bitLenInt> bits(length1 + length2);
     std::vector<bitLenInt*> ebits(length1 + length2);
 
@@ -306,7 +296,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
         ebits[i + length1] = &bits[i + length1];
     }
 
-    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = Entangle(ebits);
     OrderContiguous(shards[start1].unit);
     return toRet;
 }
@@ -314,10 +304,6 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
 QInterfacePtr QUnit::EntangleRange(
     bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3)
 {
-    TransformBasis(false, start1, length1);
-    TransformBasis(false, start2, length2);
-    TransformBasis(false, start3, length3);
-
     std::vector<bitLenInt> bits(length1 + length2 + length3);
     std::vector<bitLenInt*> ebits(length1 + length2 + length3);
 
@@ -351,7 +337,7 @@ QInterfacePtr QUnit::EntangleRange(
         ebits[i + length1 + length2] = &bits[i + length1 + length2];
     }
 
-    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = Entangle(ebits);
     OrderContiguous(shards[start1].unit);
     return toRet;
 }
@@ -2074,7 +2060,13 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     shards[flagIndex].isPhaseDirty = true;
 }
 
-void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
+void QUnit::PhaseFlip()
+{
+    if (PHASE_MATTERS(shards[0])) {
+        TransformBasis(false, 0);
+        shards[0].unit->PhaseFlip();
+    }
+}
 
 bitCapInt QUnit::GetIndexedEigenstate(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
