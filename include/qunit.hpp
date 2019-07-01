@@ -279,6 +279,8 @@ public:
     /** @} */
 
 protected:
+    virtual void ZBase(const bitLenInt& target);
+
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
