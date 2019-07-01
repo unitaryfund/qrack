@@ -215,8 +215,8 @@ void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, n
 QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     for (auto bit = first; bit < last; bit++) {
-        EndEmulation(shards[**bit]);
         TransformBasis(false, **bit);
+        EndEmulation(shards[**bit]);
     }
 
     std::vector<QInterfacePtr> units;
@@ -1388,6 +1388,8 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
 void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
 {
+    TransformBasis(false, flagIndex);
+
     // Measure the carry flag.
     // Don't separate the flag just to entangle it again, if it's in the same unit.
     QInterfacePtr flagUnit = shards[flagIndex].unit;
@@ -1410,7 +1412,6 @@ void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    TransformBasis(false, flagIndex);
     CollapseCarry(flagIndex, start, length);
 
     /* Make sure the flag bit is entangled in the same QU. */
@@ -1433,7 +1434,6 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
-    TransformBasis(false, flag2Index);
     /*
      * Overflow flag should not be measured, however the carry flag still needs
      * to be measured.
