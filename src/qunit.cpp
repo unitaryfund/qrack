@@ -850,13 +850,13 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
 void QUnit::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
     freezeBasis = !trySeparate;
-    QInterface::QFT(start, length, !isSparse && trySeparate);
+    QInterface::QFT(start, length, !isSparse);
     freezeBasis = false;
 }
 void QUnit::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
     freezeBasis = !trySeparate;
-    QInterface::IQFT(start, length, !isSparse && trySeparate);
+    QInterface::IQFT(start, length, !isSparse);
     freezeBasis = false;
 }
 
@@ -1543,7 +1543,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     }
 
     // TODO: We can carry this further:
-    //if (!hasCarry && CheckRangeInBasis(start, length, true)) {
+    // if (!hasCarry && CheckRangeInBasis(start, length, true)) {
     //    QFTINC(toMod, start, length);
     //    return;
     //}
@@ -2079,7 +2079,8 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     shards[flagIndex].isPhaseDirty = true;
 }
 
-void QUnit::PhaseFlip() {
+void QUnit::PhaseFlip()
+{
     if (PHASE_MATTERS(shards[0])) {
         TransformBasis(false, 0);
         shards[0].unit->PhaseFlip();
@@ -2357,8 +2358,8 @@ void QUnit::TransformToPerm(const bitLenInt& i)
         }
     }
 
-    QUnit subUnit = QUnit(engine, subengine, shardCount, 0, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+    QUnit subUnit = QUnit(engine, subengine, shardCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (unit == shards[i].fourierUnit) {
