@@ -2520,7 +2520,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
 
     // std::cout << "Iterations:" << std::endl;
     // Twelve iterations maximizes the probablity for 256 searched elements.
-    for (i = 0; i < 12; i++) {
+    int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << 8)));
+    for (i = 0; i < optIter; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
         qftReg->DEC(100, 0, 8);
         qftReg->ZeroPhaseFlip(0, 8);
@@ -2530,7 +2531,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
         qftReg->ZeroPhaseFlip(0, 8);
         qftReg->H(0, 8);
         qftReg->PhaseFlip();
-        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) << std::endl;
+        // std::cout << "\t" << std::setw(2) << i << "> chance of match:" << qftReg->ProbAll(TARGET_PROB) <<
+        // std::endl;
     }
 
     // std::cout << "Ind Result:     " << std::showbase << qftReg << std::endl;

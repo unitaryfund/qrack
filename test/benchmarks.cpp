@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 28;
 
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
@@ -156,7 +156,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomP
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
-
+#if 0
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
@@ -353,7 +353,7 @@ TEST_CASE("test_set_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetReg(0, n, 1); });
 }
-
+#endif
 TEST_CASE("test_grover")
 {
 
@@ -363,19 +363,22 @@ TEST_CASE("test_grover")
     benchmarkLoopVariable(
         [](QInterfacePtr qftReg, int n) {
             int i;
-            // Twelve iterations maximizes the probablity for 256 searched elements, for example.
-            // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-            int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
 
-            // Our input to the subroutine "oracle" is 8 bits.
+            // Grover's search inverts the function of a black box subroutine.
+            // Our subroutine returns true only for an input of 100.
+
+            const int TARGET_PROB = 3;
+
+            // Our input to the subroutine "oracle" is  bits.
             qftReg->SetPermutation(0);
             qftReg->H(0, n);
 
+            int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
             for (i = 0; i < optIter; i++) {
-                // Our "oracle" is true for an input of "3" and false for all other inputs.
-                qftReg->DEC(3, 0, n);
+                // Our "oracle" is true for an input of "100" and false for all other inputs.
+                qftReg->DEC(TARGET_PROB, 0, n);
                 qftReg->ZeroPhaseFlip(0, n);
-                qftReg->INC(3, 0, n);
+                qftReg->INC(TARGET_PROB, 0, n);
                 // This ends the "oracle."
                 qftReg->H(0, n);
                 qftReg->ZeroPhaseFlip(0, n);
@@ -383,11 +386,11 @@ TEST_CASE("test_grover")
                 qftReg->PhaseFlip();
             }
 
-            REQUIRE_THAT(qftReg, HasProbability(0x3));
-
             qftReg->MReg(0, n);
+
+            REQUIRE_THAT(qftReg, HasProbability(0, n, TARGET_PROB));
         },
-        16);
+        16, false, false, false);
 }
 
 TEST_CASE("test_qft_ideal_init")
