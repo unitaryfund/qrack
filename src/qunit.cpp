@@ -52,7 +52,12 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 {
     shards.resize(qBitCount);
 
-    SetPermutation(initState, phaseFactor);
+    bool bitState;
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        bitState = (initState >> i) & 1U;
+        shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
+    }
 }
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
@@ -68,7 +73,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     Finish();
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = ((1 << i) & perm) >> i;
+        bitState = (perm >> i) & 1U;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -1401,6 +1406,8 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
 void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
 {
+    TransformBasis(false, flagIndex);
+
     // Measure the carry flag.
     // Don't separate the flag just to entangle it again, if it's in the same unit.
     QInterfacePtr flagUnit = shards[flagIndex].unit;
@@ -1423,9 +1430,6 @@ void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    TransformBasis(false, start, length);
-    TransformBasis(false, flagIndex);
-
     CollapseCarry(flagIndex, start, length);
 
     /* Make sure the flag bit is entangled in the same QU. */
@@ -1448,9 +1452,6 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
-    TransformBasis(false, start, length);
-    TransformBasis(false, flag1Index);
-    TransformBasis(false, flag2Index);
     /*
      * Overflow flag should not be measured, however the carry flag still needs
      * to be measured.
@@ -1542,10 +1543,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     }
 
     // TODO: We can carry this further:
-    if (!hasCarry && CheckRangeInBasis(start, length, true)) {
-        QFTINC(toMod, start, length);
-        return;
-    }
+    //if (!hasCarry && CheckRangeInBasis(start, length, true)) {
+    //    QFTINC(toMod, start, length);
+    //    return;
+    //}
 
     // Try ripple addition, to avoid entanglement.
     bool toAdd, inReg;
@@ -2078,7 +2079,12 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     shards[flagIndex].isPhaseDirty = true;
 }
 
-void QUnit::PhaseFlip() { shards[0].unit->PhaseFlip(); }
+void QUnit::PhaseFlip() {
+    if (PHASE_MATTERS(shards[0])) {
+        TransformBasis(false, 0);
+        shards[0].unit->PhaseFlip();
+    }
+}
 
 bitCapInt QUnit::GetIndexedEigenstate(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
@@ -2228,11 +2234,6 @@ void QUnit::NormalizeState(real1 nrm)
 
 void QUnit::Finish()
 {
-    if (shards[0].unit == NULL) {
-        // Uninitialized or already freed
-        return;
-    }
-
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
@@ -2308,13 +2309,9 @@ QInterfacePtr QUnit::Clone()
 
 void QUnit::TransformToFourier(const bitLenInt& i)
 {
-    if (isSparse) {
-        // Sparse state vector already fulfills the point of this optimization
-        return;
-    }
-
-    if (shards[i].fourierUnit != NULL) {
-        // Already in target basis
+    if (isSparse || (shards[i].fourierUnit != NULL)) {
+        // A sparse state vector already fulfills the point of this optimization,
+        // or already in target basis.
         return;
     }
 
@@ -2329,7 +2326,7 @@ void QUnit::TransformToFourier(const bitLenInt& i)
         }
     }
 
-    subUnit.QFT(0, unit->GetQubitCount());
+    subUnit.QFT(0, unit->GetQubitCount(), false);
 
     QInterfacePtr tUnit = subUnit.shards[0].unit;
 
@@ -2345,13 +2342,9 @@ void QUnit::TransformToFourier(const bitLenInt& i)
 
 void QUnit::TransformToPerm(const bitLenInt& i)
 {
-    if (isSparse) {
-        // Sparse state vector already fulfills the point of this optimization
-        return;
-    }
-
-    if (shards[i].fourierUnit == NULL) {
-        // Already in target basis
+    if (isSparse || (shards[i].fourierUnit == NULL)) {
+        // A sparse state vector already fulfills the point of this optimization,
+        // or already in target basis.
         return;
     }
 
@@ -2370,14 +2363,12 @@ void QUnit::TransformToPerm(const bitLenInt& i)
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (unit == shards[i].fourierUnit) {
             subUnit.shards[shards[i].fourierMapped] = shards[i];
-            shards[i].fourierUnit = NULL;
-            shards[i].fourierMapped = 0;
+            subUnit.shards[i].fourierUnit = NULL;
+            subUnit.shards[i].fourierMapped = 0;
         }
     }
 
-    subUnit.IQFT(0, shardCount);
-
-    QInterfacePtr tUnit = subUnit.shards[0].unit;
+    subUnit.IQFT(0, shardCount, false);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (unit == shards[i].fourierUnit) {
