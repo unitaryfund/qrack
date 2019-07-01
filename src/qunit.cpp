@@ -844,35 +844,12 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
 
 void QUnit::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
-    if (trySeparate) {
-        if (CheckRangeInBasis(start, length, false) && CheckBitsPermutation(start, length, true)) {
-            QInterfacePtr unit = shards[start].unit;
-            for (bitLenInt i = 0; i < length; i++) {
-                shards[start + i].fourierUnit = unit;
-                shards[start + i].fourierMapped = i;
-            }
-
-            return;
-        }
-    }
-
     freezeBasis = !trySeparate;
     QInterface::QFT(start, length, !isSparse && trySeparate);
     freezeBasis = false;
 }
 void QUnit::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
-    if (trySeparate) {
-        if (CheckRangeInBasis(start, length, true) && CheckBitsPermutation(start, length, true)) {
-            for (bitLenInt i = 0; i < length; i++) {
-                shards[start + i].fourierUnit = NULL;
-                shards[start + i].fourierMapped = 0;
-            }
-
-            return;
-        }
-    }
-
     freezeBasis = !trySeparate;
     QInterface::IQFT(start, length, !isSparse && trySeparate);
     freezeBasis = false;
@@ -2326,7 +2303,7 @@ QInterfacePtr QUnit::Clone()
 
 void QUnit::TransformBasis(const bool& toFourier, const bitLenInt& i)
 {
-    if (freezeBasis && toFourier) {
+    if (freezeBasis) {
         // Recursive call
         return;
     }
