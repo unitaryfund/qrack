@@ -391,31 +391,31 @@ TEST_CASE("test_grover")
 
 TEST_CASE("test_qft_ideal_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, true); }, false, false);
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
 }
 
 TEST_CASE("test_qft_permutation_init")
 {
     benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, true); }, true, false, testEngineType == QINTERFACE_QUNIT);
+        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_qft_permutation_round_trip_separated")
+TEST_CASE("test_qft_permutation_round_trip_entangled")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
-            qftReg->QFT(0, n, true);
-            qftReg->IQFT(0, n, true);
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
         },
         true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_iqft_superposition_round_trip_separated")
+TEST_CASE("test_qft_superposition_round_trip")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
-            qftReg->IQFT(0, n, true);
-            qftReg->QFT(0, n, true);
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
         },
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
