@@ -19,10 +19,9 @@
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define CACHED_CLASSICAL(shard)                                                                                        \
-    ((!shard.isPlusMinus) && !shard.isProbDirty &&                                                              \
-        ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+    ((!shard.isPlusMinus) && !shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define PHASE_MATTERS(shard)                                                                                           \
-    (!randGlobalPhase || shard.isProbDirty || shard.isPhaseDirty ||                                                    \
+    (!randGlobalPhase || shard.isPlusMinus || shard.isProbDirty || shard.isPhaseDirty ||                               \
         !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 
 namespace Qrack {
@@ -852,6 +851,11 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    if (!freezeBasis) {
+        shard.isPlusMinus = !shard.isPlusMinus;
+        return;
+    }
+
     EndEmulation(shard);
 
     shard.unit->H(shard.mapped);
@@ -871,8 +875,6 @@ void QUnit::H(bitLenInt target)
             SeparateBit(true, target);
         } else if (norm(shard.amp1) < min_norm) {
             SeparateBit(false, target);
-        } else {
-            TransformBasis(!shard.isPlusMinus, target);
         }
     }
 }
@@ -1123,7 +1125,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
-        CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+        CTRLED_PHASE_WRAP(ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
             ApplySinglePhase(topLeft, bottomRight, true, target), false);
     }
 }
@@ -1131,7 +1133,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+    CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, true, target), true);
 }
 
@@ -1224,6 +1226,13 @@ void QUnit::AntiCISqrtSwap(
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
     bitProb = Prob(controlVec[controlIndex], true);                                                                    \
+    if (shards[controlVec[controlIndex]].isPlusMinus) {                                                                \
+        if (abs(bitProb - (ONE_R1 / 2)) < min_norm) {                                                                  \
+            bitProb = Prob(controlVec[controlIndex]);                                                                  \
+        } else {                                                                                                       \
+            bitProb = (ONE_R1 / 2);                                                                                    \
+        }                                                                                                              \
+    }                                                                                                                  \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
