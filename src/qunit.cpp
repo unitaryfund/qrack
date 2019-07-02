@@ -914,6 +914,22 @@ void QUnit::Z(bitLenInt target)
     }
 }
 
+#define CTRLED_GEN_WRAP(ctrld, bare, anti) \
+    ApplyEitherControlled(controls, controlLen, { target }, anti, \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { \
+            complex trnsMtrx[4]; \
+            if (shards[target].fourierUnit == NULL) { \
+                std::copy(mtrx, mtrx + 4, trnsMtrx); \
+            } else { \
+                trnsMtrx[0] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) + (mtrx[2] + mtrx[3])); \
+                trnsMtrx[1] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] - mtrx[3])); \
+                trnsMtrx[2] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) - (mtrx[2] + mtrx[3])); \
+                trnsMtrx[3] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] + mtrx[3])); \
+            } \
+            unit->ctrld; \
+        }, \
+        [&]() { bare; } \
+    );
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
@@ -923,6 +939,7 @@ void QUnit::Z(bitLenInt target)
     }                                                                                                                  \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
+#define CTRL_GEN_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, trnsMtrx
 #define CTRL_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, mtrx
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
 #define CTRL_2_ARGS mappedControls[0], mappedControls[1], shards[target].mapped
@@ -1107,13 +1124,13 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CTRLED_CALL_WRAP(ApplyControlledSingleBit(CTRL_ARGS), ApplySingleBit(mtrx, true, target), false);
+    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CTRLED_CALL_WRAP(ApplyAntiControlledSingleBit(CTRL_ARGS), ApplySingleBit(mtrx, true, target), true);
+    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true);
 }
 
 void QUnit::CSwap(
@@ -1155,13 +1172,6 @@ void QUnit::AntiCISqrtSwap(
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
     bitProb = Prob(controlVec[controlIndex], true);                                                                    \
-    if (shards[controlVec[controlIndex]].fourierUnit != NULL) {                                                        \
-        if (abs(bitProb - (ONE_R1 / 2)) < min_norm) {                                                                  \
-            bitProb = Prob(controlVec[controlIndex]);                                                                  \
-        } else {                                                                                                       \
-            bitProb = ONE_R1 / 2;                                                                                      \
-        }                                                                                                              \
-    }                                                                                                                  \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1238,11 +1248,23 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(controlVec.size() + targets.size());
+    bool sameUnit = true;
+    QInterfacePtr fUnit = shards[targets[0]].fourierUnit;
     for (i = 0; i < (controlVec.size() + targets.size()); i++) {
         ebits[i] = &allBits[i];
+        if (fUnit != shards[allBits[i]].fourierUnit) {
+            sameUnit = false;
+        }
     }
 
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit = NULL;
+    if (sameUnit) {
+        // Avoid changing the basis:
+        unit = EntangleIterator(ebits.begin(), ebits.end());
+    } else {
+        // Transform to a common basis, in the process:
+        unit = Entangle(ebits);
+    }
 
     std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
