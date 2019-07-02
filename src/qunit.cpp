@@ -725,13 +725,11 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    if (shards[qubit1].isPlusMinus != shards[qubit2].isPlusMinus) {
-        TransformBasis(false, qubit1);
-        TransformBasis(false, qubit2);
-    }
-
     // Swap the bit mapping.
     std::swap(shards[qubit1], shards[qubit2]);
+    // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
+    // on the other bit.
+    std::swap(shards[qubit1].isPlusMinus, shards[qubit2].isPlusMinus);
 }
 
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
