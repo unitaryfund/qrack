@@ -1329,6 +1329,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     for (i = 0; i < targets.size(); i++) {
         shards[targets[i]].isProbDirty = true;
         shards[targets[i]].isPhaseDirty = true;
+        TransformBasis(!shards[targets[i]].isPlusMinus, targets[i]);
     }
 }
 
