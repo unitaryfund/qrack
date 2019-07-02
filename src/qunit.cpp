@@ -914,22 +914,51 @@ void QUnit::Z(bitLenInt target)
     }
 }
 
-#define CTRLED_GEN_WRAP(ctrld, bare, anti) \
-    ApplyEitherControlled(controls, controlLen, { target }, anti, \
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { \
-            complex trnsMtrx[4]; \
-            if (shards[target].fourierUnit == NULL) { \
-                std::copy(mtrx, mtrx + 4, trnsMtrx); \
-            } else { \
-                trnsMtrx[0] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) + (mtrx[2] + mtrx[3])); \
-                trnsMtrx[1] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] - mtrx[3])); \
-                trnsMtrx[2] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) - (mtrx[2] + mtrx[3])); \
-                trnsMtrx[3] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] + mtrx[3])); \
-            } \
-            unit->ctrld; \
-        }, \
-        [&]() { bare; } \
-    );
+#define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
+    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
+            complex trnsMtrx[4];                                                                                       \
+            if (shards[target].fourierUnit == NULL) {                                                                  \
+                std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
+            } else {                                                                                                   \
+                trnsMtrx[0] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) + (mtrx[2] + mtrx[3]));                              \
+                trnsMtrx[1] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] - mtrx[3]));                              \
+                trnsMtrx[2] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) - (mtrx[2] + mtrx[3]));                              \
+                trnsMtrx[3] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] + mtrx[3]));                              \
+            }                                                                                                          \
+            unit->ctrld;                                                                                               \
+        },                                                                                                             \
+        [&]() { bare; });
+#define CTRLED_PHASE_WRAP(ctrld, ctrldgen, bare, anti)                                                                 \
+    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
+            if (shards[target].fourierUnit == NULL) {                                                                  \
+                unit->ctrld;                                                                                           \
+            } else {                                                                                                   \
+                complex trnsMtrx[4];                                                                                   \
+                trnsMtrx[0] = (topLeft + bottomRight) * (ONE_R1 / 2);                                                  \
+                trnsMtrx[1] = (topLeft - bottomRight) * (ONE_R1 / 2);                                                  \
+                trnsMtrx[2] = (topLeft - bottomRight) * (ONE_R1 / 2);                                                  \
+                trnsMtrx[3] = (topLeft + bottomRight) * (ONE_R1 / 2);                                                  \
+                unit->ctrldgen;                                                                                        \
+            }                                                                                                          \
+        },                                                                                                             \
+        [&]() { bare; });
+#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti)                                                                \
+    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
+            if (shards[target].fourierUnit == NULL) {                                                                  \
+                unit->ctrld;                                                                                           \
+            } else {                                                                                                   \
+                complex trnsMtrx[4];                                                                                   \
+                trnsMtrx[0] = (bottomLeft + topRight) * (ONE_R1 / 2);                                                  \
+                trnsMtrx[1] = (-bottomLeft + topRight) * (ONE_R1 / 2);                                                 \
+                trnsMtrx[2] = (bottomLeft - topRight) * (ONE_R1 / 2);                                                  \
+                trnsMtrx[3] = -(bottomLeft + topRight) * (ONE_R1 / 2);                                                 \
+                unit->ctrldgen;                                                                                        \
+            }                                                                                                          \
+        },                                                                                                             \
+        [&]() { bare; });
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
@@ -1054,30 +1083,34 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
-        CTRLED_CALL_WRAP(
-            ApplyControlledSinglePhase(CTRL_P_ARGS), ApplySinglePhase(topLeft, bottomRight, true, target), false);
+        CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySinglePhase(topLeft, bottomRight, true, target), false);
     }
 }
 
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    CTRLED_CALL_WRAP(
-        ApplyControlledSingleInvert(CTRL_I_ARGS), ApplySingleInvert(topRight, bottomLeft, true, target), false);
+    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+        ApplySingleInvert(topRight, bottomLeft, true, target), false);
 }
 
 void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
-    CTRLED_CALL_WRAP(
-        ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplySinglePhase(topLeft, bottomRight, true, target), true);
+    QEngineShard& shard = shards[target];
+    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+    if (PHASE_MATTERS(shard)) {
+        CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySinglePhase(topLeft, bottomRight, true, target), false);
+    }
 }
 
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    CTRLED_CALL_WRAP(
-        ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplySingleInvert(topRight, bottomLeft, true, target), true);
+    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+        ApplySingleInvert(topRight, bottomLeft, true, target), true);
 }
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
