@@ -28,8 +28,7 @@ struct QEngineShard {
     bool isPhaseDirty;
     complex amp0;
     complex amp1;
-    QInterfacePtr fourierUnit;
-    bitLenInt fourierMapped;
+    bool isPlusMinus;
 
     QEngineShard()
         : unit(NULL)
@@ -39,8 +38,7 @@ struct QEngineShard {
         , isPhaseDirty(false)
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
-        , fourierUnit(NULL)
-        , fourierMapped(0)
+        , isPlusMinus(false)
     {
     }
 
@@ -50,8 +48,7 @@ struct QEngineShard {
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , fourierUnit(NULL)
-        , fourierMapped(0)
+        , isPlusMinus(false)
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -61,8 +58,6 @@ struct QEngineShard {
     {
         if (unit)
             unit->Finish();
-        if (fourierUnit)
-            fourierUnit->Finish();
     }
 };
 
@@ -364,6 +359,10 @@ protected:
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
 
+    void Transform2x2(const complex* mtrxIn, complex* mtrxOut);
+    void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
+    void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
+
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
@@ -419,24 +418,50 @@ protected:
         }
     }
 
-    void TransformToFourier(const bitLenInt& i);
-    void TransformToPerm(const bitLenInt& i);
-    void TransformBasis(const bool& toFourier, const bitLenInt& i);
-    void TransformBasis(const bool& toFourier, const bitLenInt& start, const bitLenInt& length)
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
     {
-        for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toFourier, start + i);
+        if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
+            return;
         }
-    }
-    void TransformBasis(const bool& toFourier, const bitLenInt* bits, const bitLenInt& length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toFourier, bits[i]);
-        }
-    }
-    void TransformBasisAll(const bool& toFourier) { TransformBasis(toFourier, (bitLenInt)0, qubitCount); }
 
-    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& fourier);
+        freezeBasis = true;
+
+        H(i);
+        shards[i].isPlusMinus = toPlusMinus;
+        TrySeparate(i);
+
+        freezeBasis = false;
+    }
+
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformBasis(toPlusMinus, start + i);
+        }
+    }
+
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt* bits, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformBasis(toPlusMinus, bits[i]);
+        }
+    }
+
+    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, (bitLenInt)0, qubitCount); }
+
+    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
+    {
+        bool root = shards[start].isPlusMinus;
+        for (bitLenInt i = 0; i < length; i++) {
+            if (root != shards[start + i].isPlusMinus) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 };
 
 } // namespace Qrack
