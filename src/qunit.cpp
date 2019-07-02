@@ -1184,14 +1184,7 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = Prob(controlVec[controlIndex], true);                                                                    \
-    if (shards[controlVec[controlIndex]].isPlusMinus) {                                                                \
-        if (abs(bitProb - (ONE_R1 / 2)) < min_norm) {                                                                  \
-            bitProb = Prob(controlVec[controlIndex]);                                                                  \
-        } else {                                                                                                       \
-            bitProb = (ONE_R1 / 2);                                                                                    \
-        }                                                                                                              \
-    }                                                                                                                  \
+    bitProb = Prob(controlVec[controlIndex]);                                                                          \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
