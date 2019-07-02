@@ -619,13 +619,7 @@ real1 QUnit::Prob(bitLenInt qubit, bool inCurrentBasis)
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         shard.isProbDirty = false;
 
-        if (shard.unit->GetQubitCount() > 1) {
-            if (prob < min_norm) {
-                SeparateBit(false, qubit);
-            } else if ((ONE_R1 - prob) < min_norm) {
-                SeparateBit(true, qubit);
-            }
-        }
+        CheckShardSeparable(qubit);
     }
 
     return norm(shard.amp1);
@@ -1015,15 +1009,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
 
-        if (shard.unit->GetQubitCount() > 1) {
-            if (norm(shard.amp0) < min_norm) {
-                SeparateBit(true, target);
-            } else if (norm(shard.amp1) < min_norm) {
-                SeparateBit(false, target);
-            } else {
-                TransformBasis(!shard.isPlusMinus, target);
-            }
-        }
+        CheckShardSeparable(target);
     }
 }
 
@@ -1049,15 +1035,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
 
-        if (shard.unit->GetQubitCount() > 1) {
-            if (norm(shard.amp0) < min_norm) {
-                SeparateBit(true, target);
-            } else if (norm(shard.amp1) < min_norm) {
-                SeparateBit(false, target);
-            } else {
-                TransformBasis(!shard.isPlusMinus, target);
-            }
-        }
+        CheckShardSeparable(target);
     }
 }
 
@@ -1123,15 +1101,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
 
-    if (shard.unit->GetQubitCount() > 1) {
-        if (norm(shard.amp0) < min_norm) {
-            SeparateBit(true, target);
-        } else if (norm(shard.amp1) < min_norm) {
-            SeparateBit(false, target);
-        } else {
-            TransformBasis(!shard.isPlusMinus, target);
-        }
-    }
+    CheckShardSeparable(target);
 }
 
 void QUnit::ApplyControlledSingleBit(

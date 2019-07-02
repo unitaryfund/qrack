@@ -462,6 +462,23 @@ protected:
 
         return true;
     }
+
+    void CheckShardSeparable(const bitLenInt& target)
+    {
+        QEngineShard& shard = shards[target];
+
+        if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1)) {
+            return;
+        }
+
+        if (norm(shard.amp0) < min_norm) {
+            SeparateBit(true, target);
+        } else if (norm(shard.amp1) < min_norm) {
+            SeparateBit(false, target);
+        } else if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
+            TransformBasis(!shard.isPlusMinus, target);
+        }
+    }
 };
 
 } // namespace Qrack
