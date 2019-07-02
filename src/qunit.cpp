@@ -733,8 +733,10 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis(false, qubit1);
-    TransformBasis(false, qubit2);
+    if (shards[qubit1].fourierUnit != shards[qubit2].fourierUnit) {
+        TransformBasis(false, qubit1);
+        TransformBasis(false, qubit2);
+    }
 
     // Swap the bit mapping.
     std::swap(shards[qubit1], shards[qubit2]);
