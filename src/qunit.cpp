@@ -914,6 +914,14 @@ void QUnit::Z(bitLenInt target)
     }
 }
 
+void QUnit::Transform2x2(const complex* mtrxIn, complex* mtrxOut)
+{
+    mtrxOut[0] = (ONE_R1 / 2) * ((mtrxIn[0] + mtrxIn[1]) + (mtrxIn[2] + mtrxIn[3]));
+    mtrxOut[1] = (ONE_R1 / 2) * ((mtrxIn[0] - mtrxIn[1]) + (mtrxIn[2] - mtrxIn[3]));
+    mtrxOut[2] = (ONE_R1 / 2) * ((mtrxIn[0] + mtrxIn[1]) - (mtrxIn[2] + mtrxIn[3]));
+    mtrxOut[3] = (ONE_R1 / 2) * ((mtrxIn[0] - mtrxIn[1]) + (mtrxIn[2] + mtrxIn[3]));
+}
+
 #define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
@@ -921,14 +929,20 @@ void QUnit::Z(bitLenInt target)
             if (shards[target].fourierUnit == NULL) {                                                                  \
                 std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
             } else {                                                                                                   \
-                trnsMtrx[0] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) + (mtrx[2] + mtrx[3]));                              \
-                trnsMtrx[1] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] - mtrx[3]));                              \
-                trnsMtrx[2] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) - (mtrx[2] + mtrx[3]));                              \
-                trnsMtrx[3] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] + mtrx[3]));                              \
+                Transform2x2(mtrx, trnsMtrx);                                                                          \
             }                                                                                                          \
             unit->ctrld;                                                                                               \
         },                                                                                                             \
         [&]() { bare; });
+
+void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
+{
+    mtrxOut[0] = (ONE_R1 / 2) * (topLeft + bottomRight);
+    mtrxOut[1] = (ONE_R1 / 2) * (topLeft - bottomRight);
+    mtrxOut[2] = (ONE_R1 / 2) * (topLeft - bottomRight);
+    mtrxOut[3] = (ONE_R1 / 2) * (topLeft + bottomRight);
+}
+
 #define CTRLED_PHASE_WRAP(ctrld, ctrldgen, bare, anti)                                                                 \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
@@ -936,14 +950,20 @@ void QUnit::Z(bitLenInt target)
                 unit->ctrld;                                                                                           \
             } else {                                                                                                   \
                 complex trnsMtrx[4];                                                                                   \
-                trnsMtrx[0] = (topLeft + bottomRight) * (ONE_R1 / 2);                                                  \
-                trnsMtrx[1] = (topLeft - bottomRight) * (ONE_R1 / 2);                                                  \
-                trnsMtrx[2] = (topLeft - bottomRight) * (ONE_R1 / 2);                                                  \
-                trnsMtrx[3] = (topLeft + bottomRight) * (ONE_R1 / 2);                                                  \
+                TransformPhase(topLeft, bottomRight, trnsMtrx);                                                        \
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
         [&]() { bare; });
+
+void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
+{
+    mtrxOut[0] = (ONE_R1 / 2) * (bottomLeft + topRight);
+    mtrxOut[1] = (ONE_R1 / 2) * (-bottomLeft + topRight);
+    mtrxOut[2] = (ONE_R1 / 2) * (bottomLeft - topRight);
+    mtrxOut[3] = (ONE_R1 / 2) * -(bottomLeft + topRight);
+}
+
 #define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti)                                                                \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
@@ -951,14 +971,12 @@ void QUnit::Z(bitLenInt target)
                 unit->ctrld;                                                                                           \
             } else {                                                                                                   \
                 complex trnsMtrx[4];                                                                                   \
-                trnsMtrx[0] = (bottomLeft + topRight) * (ONE_R1 / 2);                                                  \
-                trnsMtrx[1] = (-bottomLeft + topRight) * (ONE_R1 / 2);                                                 \
-                trnsMtrx[2] = (bottomLeft - topRight) * (ONE_R1 / 2);                                                  \
-                trnsMtrx[3] = -(bottomLeft + topRight) * (ONE_R1 / 2);                                                 \
+                TransformInvert(topRight, bottomLeft, trnsMtrx);                                                       \
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
         [&]() { bare; });
+
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
@@ -1023,8 +1041,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             shard.amp1 *= bottomRight;
         }
     } else {
-        complex mtrx[4] = { (topLeft + bottomRight) * (ONE_R1 / 2), (topLeft - bottomRight) * (ONE_R1 / 2),
-            (topLeft - bottomRight) * (ONE_R1 / 2), (topLeft + bottomRight) * (ONE_R1 / 2) };
+        complex mtrx[4];
+        TransformPhase(topLeft, bottomRight, mtrx);
 
         complex Y0 = shard.amp0;
 
@@ -1057,8 +1075,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
     } else {
-        complex mtrx[4] = { (bottomLeft + topRight) * (ONE_R1 / 2), (-bottomLeft + topRight) * (ONE_R1 / 2),
-            (bottomLeft - topRight) * (ONE_R1 / 2), -(bottomLeft + topRight) * (ONE_R1 / 2) };
+        complex mtrx[4];
+        TransformInvert(topRight, bottomLeft, mtrx);
 
         complex Y0 = shard.amp0;
 
@@ -1124,10 +1142,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
     if (shard.fourierUnit == NULL) {
         std::copy(mtrx, mtrx + 4, trnsMtrx);
     } else {
-        trnsMtrx[0] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) + (mtrx[2] + mtrx[3]));
-        trnsMtrx[1] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] - mtrx[3]));
-        trnsMtrx[2] = (ONE_R1 / 2) * ((mtrx[0] + mtrx[1]) - (mtrx[2] + mtrx[3]));
-        trnsMtrx[3] = (ONE_R1 / 2) * ((mtrx[0] - mtrx[1]) + (mtrx[2] + mtrx[3]));
+        Transform2x2(mtrx, trnsMtrx);
     }
 
     shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);

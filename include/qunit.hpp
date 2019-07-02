@@ -364,6 +364,10 @@ protected:
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
 
+    void Transform2x2(const complex* mtrxIn, complex* mtrxOut);
+    void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
+    void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
+
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
