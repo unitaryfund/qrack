@@ -455,14 +455,7 @@ protected:
         }
     }
 
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt* bits, const bitLenInt& length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toPlusMinus, bits[i]);
-        }
-    }
-
-    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, (bitLenInt)0, qubitCount); }
+    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
 
     bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
     {
