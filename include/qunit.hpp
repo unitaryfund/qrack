@@ -275,7 +275,6 @@ public:
      * @{
      */
 
-    virtual real1 ProbBase(const bitLenInt& qubit);
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
@@ -294,6 +293,7 @@ public:
 
 protected:
     virtual void ZBase(const bitLenInt& target);
+    virtual real1 ProbBase(const bitLenInt& qubit);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
@@ -376,9 +376,18 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    /* Debugging and diagnostic routines. */
-    void DumpShards();
-    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i);
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformBasis(toPlusMinus, start + i);
+        }
+    }
+    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
+
+    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus);
+
+    void CheckShardSeparable(const bitLenInt& target);
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
@@ -431,60 +440,9 @@ protected:
         }
     }
 
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
-    {
-        if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
-            // Recursive call that should be blocked,
-            // or already in target basis.
-            return;
-        }
-
-        freezeBasis = true;
-
-        H(i);
-        shards[i].isPlusMinus = toPlusMinus;
-        TrySeparate(i);
-
-        freezeBasis = false;
-    }
-
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toPlusMinus, start + i);
-        }
-    }
-
-    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
-
-    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
-    {
-        bool root = shards[start].isPlusMinus;
-        for (bitLenInt i = 0; i < length; i++) {
-            if (root != shards[start + i].isPlusMinus) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    void CheckShardSeparable(const bitLenInt& target)
-    {
-        QEngineShard& shard = shards[target];
-
-        if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1)) {
-            return;
-        }
-
-        if (norm(shard.amp0) < min_norm) {
-            SeparateBit(true, target);
-        } else if (norm(shard.amp1) < min_norm) {
-            SeparateBit(false, target);
-        } else if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
-            TransformBasis(!shard.isPlusMinus, target);
-        }
-    }
+    /* Debugging and diagnostic routines. */
+    void DumpShards();
+    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 };
 
 } // namespace Qrack

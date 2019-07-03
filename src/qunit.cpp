@@ -597,7 +597,8 @@ void QUnit::DumpShards()
     }
 }
 
-real1 QUnit::ProbBase(const bitLenInt& qubit) {
+real1 QUnit::ProbBase(const bitLenInt& qubit)
+{
     QEngineShard& shard = shards[qubit];
 
     if (shard.isProbDirty) {
@@ -2328,6 +2329,52 @@ QInterfacePtr QUnit::Clone()
     }
 
     return copyPtr;
+}
+
+void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
+{
+    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
+        // Recursive call that should be blocked,
+        // or already in target basis.
+        return;
+    }
+
+    freezeBasis = true;
+
+    H(i);
+    shards[i].isPlusMinus = toPlusMinus;
+    TrySeparate(i);
+
+    freezeBasis = false;
+}
+
+bool QUnit::CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
+{
+    bool root = shards[start].isPlusMinus;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (root != shards[start + i].isPlusMinus) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void QUnit::CheckShardSeparable(const bitLenInt& target)
+{
+    QEngineShard& shard = shards[target];
+
+    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1)) {
+        return;
+    }
+
+    if (norm(shard.amp0) < min_norm) {
+        SeparateBit(true, target);
+    } else if (norm(shard.amp1) < min_norm) {
+        SeparateBit(false, target);
+    } else if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
+        TransformBasis(!shard.isPlusMinus, target);
+    }
 }
 
 } // namespace Qrack
