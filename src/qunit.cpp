@@ -426,7 +426,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         OrderContiguous(shards[start].unit);
     } else {
         // If length == 1, this is usually all that's worth trying:
-        real1 prob = Prob(start, true);
+        real1 prob = ProbBase(start);
         return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
@@ -597,12 +597,7 @@ void QUnit::DumpShards()
     }
 }
 
-real1 QUnit::Prob(bitLenInt qubit, bool inCurrentBasis)
-{
-    if (!inCurrentBasis) {
-        TransformBasis(false, qubit);
-    }
-
+real1 QUnit::ProbBase(const bitLenInt& qubit) {
     QEngineShard& shard = shards[qubit];
 
     if (shard.isProbDirty) {
@@ -611,10 +606,20 @@ real1 QUnit::Prob(bitLenInt qubit, bool inCurrentBasis)
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         shard.isProbDirty = false;
 
-        CheckShardSeparable(qubit);
+        if (norm(shard.amp0) < min_norm) {
+            SeparateBit(true, qubit);
+        } else if (norm(shard.amp1) < min_norm) {
+            SeparateBit(false, qubit);
+        }
     }
 
     return norm(shard.amp1);
+}
+
+real1 QUnit::Prob(bitLenInt qubit)
+{
+    TransformBasis(false, qubit);
+    return ProbBase(qubit);
 }
 
 real1 QUnit::ProbAll(bitCapInt perm)
