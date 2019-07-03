@@ -1241,6 +1241,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             if (isSeparated) {
                 CHECK_BREAK_AND_TRIM();
             } else {
+                TransformBasis(false, controls[i]);
                 controlVec.push_back(controls[i]);
             }
         }
