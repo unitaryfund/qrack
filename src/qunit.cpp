@@ -79,7 +79,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
 void QUnit::SetQuantumState(const complex* inputState)
 {
-    auto unit = MakeEngine(qubitCount, 0);
+    QInterfacePtr unit = MakeEngine(qubitCount, 0);
     unit->SetQuantumState(inputState);
 
     for (bitLenInt idx = 0; idx < qubitCount; idx++) {
