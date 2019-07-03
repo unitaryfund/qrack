@@ -169,8 +169,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 #if ENABLE_COMPLEX8
-            stateVec->write(lcv + offset1, complex(qubit.comp[0], qubit.comp[1]));
-            stateVec->write(lcv + offset2, complex(qubit.comp[2], qubit.comp[3]));
+            stateVec->write(lcv + offset1, qubit.cmplx[0]);
+            stateVec->write(lcv + offset2, qubit.cmplx[1]);
             rngNrm[cpu] += norm(qubit.cmplx2);
 #else
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
@@ -183,8 +183,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 #if ENABLE_COMPLEX8
-            stateVec->write(lcv + offset1, complex(qubit.comp[0], qubit.comp[1]));
-            stateVec->write(lcv + offset2, complex(qubit.comp[2], qubit.comp[3]));
+            stateVec->write(lcv + offset1, qubit.cmplx[0]);
+            stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
