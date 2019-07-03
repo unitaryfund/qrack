@@ -32,7 +32,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
+const bitLenInt MaxQubits = 28;
 
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
@@ -155,7 +155,7 @@ void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomP
 {
     benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
-
+#if 0
 TEST_CASE("test_cnot_single")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
@@ -352,7 +352,7 @@ TEST_CASE("test_set_reg")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetReg(0, n, 1); });
 }
-
+#endif
 TEST_CASE("test_grover")
 {
 
@@ -391,31 +391,31 @@ TEST_CASE("test_grover")
 
 TEST_CASE("test_qft_ideal_init")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, true); }, false, false);
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
 }
 
 TEST_CASE("test_qft_permutation_init")
 {
     benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, true); }, true, false, testEngineType == QINTERFACE_QUNIT);
+        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_qft_permutation_round_trip_separated")
+TEST_CASE("test_qft_permutation_round_trip_entangled")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
-            qftReg->QFT(0, n, true);
-            qftReg->IQFT(0, n, true);
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
         },
         true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_iqft_superposition_round_trip_separated")
+TEST_CASE("test_qft_superposition_round_trip")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
-            qftReg->IQFT(0, n, true);
-            qftReg->QFT(0, n, true);
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
         },
         true, true, testEngineType == QINTERFACE_QUNIT);
 }

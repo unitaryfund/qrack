@@ -1072,6 +1072,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
     CTRLED_CALL_WRAP(
         ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplySingleInvert(topRight, bottomLeft, true, target), true);
 }
+
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
     EndEmulation(target);
@@ -1152,23 +1153,21 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = Prob(controlVec[controlIndex]);                                                                          \
+    bitProb = Prob(controls[i]);                                                                                       \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-        controlVec.erase(controlVec.begin() + controlIndex);                                                           \
     } else if ((ONE_R1 - bitProb) < min_norm) {                                                                        \
         if (anti) {                                                                                                    \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-        controlVec.erase(controlVec.begin() + controlIndex);                                                           \
     } else {                                                                                                           \
-        controlIndex++;                                                                                                \
+        controlVec.push_back(controls[i]);                                                                             \
     }
 
 template <typename CF, typename F>
@@ -1180,9 +1179,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have total
     // or no probability of altering the targets, such that we can still keep them separate.
 
-    std::vector<bitLenInt> controlVec(controlLen);
-    std::copy(controls, controls + controlLen, controlVec.begin());
-    bitLenInt controlIndex = 0;
+    std::vector<bitLenInt> controlVec;
 
     bool isSeparated = true;
     real1 bitProb;
@@ -1192,7 +1189,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             // This might determine that we can just skip out of the whole gate, in which case it returns this method:
             CHECK_BREAK_AND_TRIM();
         } else {
-            controlIndex++;
+            isSeparated = true;
             for (j = 0; j < targets.size(); j++) {
                 // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the
                 // targets, it isn't worth trying the next optimization.
@@ -1201,25 +1198,19 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                     break;
                 }
             }
+            if (isSeparated) {
+                CHECK_BREAK_AND_TRIM();
+            } else {
+                controlVec.push_back(controls[i]);
+            }
         }
     }
+    if (controlVec.size() == 0) {
+        // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
+        // avoiding an entangled representation.
+        fn();
 
-    bitLenInt controlsLeft = controlVec.size();
-    if (isSeparated) {
-        // The controls are entirely separated from the targets already, in this branch. If the probability of a change
-        // in state from this gate is 0 or 1, we can just act the gate or skip it, without entangling the bits further.
-        controlIndex = 0;
-        for (i = 0; i < controlsLeft; i++) {
-            // This might determine that we can just skip out of the whole gate, in which case it returns this method:
-            CHECK_BREAK_AND_TRIM();
-        }
-        if (controlVec.size() == 0) {
-            // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
-            // avoiding an entangled representation.
-            fn();
-
-            return;
-        }
+        return;
     }
 
     // If we've made it this far, we have to form the entangled representation and apply the gate.
@@ -1229,7 +1220,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(controlVec.size() + targets.size());
-    for (i = 0; i < (controlVec.size() + targets.size()); i++) {
+    for (i = 0; i < allBits.size(); i++) {
         ebits[i] = &allBits[i];
     }
 
