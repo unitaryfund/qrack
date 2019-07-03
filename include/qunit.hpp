@@ -54,6 +54,19 @@ struct QEngineShard {
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
     }
 
+    // Dirty state constructor:
+    QEngineShard(QInterfacePtr u, const bitLenInt& mapping)
+        : unit(u)
+        , mapped(mapping)
+        , isEmulated(false)
+        , isProbDirty(true)
+        , isPhaseDirty(true)
+        , amp0(complex(ONE_R1, ZERO_R1))
+        , amp1(complex(ZERO_R1, ZERO_R1))
+        , isPlusMinus(false)
+    {
+    }
+
     ~QEngineShard()
     {
         if (unit)

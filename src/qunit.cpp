@@ -79,19 +79,11 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
 void QUnit::SetQuantumState(const complex* inputState)
 {
-    EndAllEmulation();
-
     auto unit = MakeEngine(qubitCount, 0);
     unit->SetQuantumState(inputState);
 
-    int idx = 0;
-    for (auto&& shard : shards) {
-        shard.unit = unit;
-        shard.mapped = idx++;
-        shard.isEmulated = false;
-        shard.isProbDirty = true;
-        shard.isPhaseDirty = true;
-        shard.isPlusMinus = false;
+    for (bitLenInt idx = 0; idx < qubitCount; idx++) {
+        shards[idx] = QEngineShard(unit, idx);
     }
 }
 
