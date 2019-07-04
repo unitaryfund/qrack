@@ -342,7 +342,7 @@ protected:
     virtual bitCapInt GetCachedPermutation(const bitLenInt& start, const bitLenInt& length);
     virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length);
 
-    virtual QInterfacePtr EntangleIterator(
+    virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);

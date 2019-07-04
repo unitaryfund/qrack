@@ -206,7 +206,7 @@ void QUnit::Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
-QInterfacePtr QUnit::EntangleIterator(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
+QInterfacePtr QUnit::EntangleInCurrentBasis(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
@@ -255,7 +255,7 @@ QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
     for (bitLenInt i = 0; i < bits.size(); i++) {
         TransformBasis(false, *(bits[i]));
     }
-    return EntangleIterator(bits.begin(), bits.end());
+    return EntangleInCurrentBasis(bits.begin(), bits.end());
 }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
@@ -273,7 +273,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
         ebits[i] = &bits[i];
     }
 
-    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     OrderContiguous(shards[start].unit);
     return toRet;
 }
@@ -301,7 +301,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
         ebits[i + length1] = &bits[i + length1];
     }
 
-    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     OrderContiguous(shards[start1].unit);
     return toRet;
 }
@@ -346,7 +346,7 @@ QInterfacePtr QUnit::EntangleRange(
         ebits[i + length1 + length2] = &bits[i + length1 + length2];
     }
 
-    QInterfacePtr toRet = EntangleIterator(ebits.begin(), ebits.end());
+    QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     OrderContiguous(shards[start1].unit);
     return toRet;
 }
@@ -1266,7 +1266,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     QInterfacePtr unit;
     if (targets.size() == 1) {
         // Avoid changing basis, if unnecessary
-        unit = EntangleIterator(ebits.begin(), ebits.end());
+        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     } else {
         unit = Entangle(ebits);
     }
