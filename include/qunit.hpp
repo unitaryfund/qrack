@@ -337,8 +337,6 @@ protected:
     virtual bool CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis = false);
     virtual bool CheckBitsPermutation(
         const bitLenInt& start, const bitLenInt& length, const bool& inCurrentBasis = false);
-    virtual bool CheckBitsPermutation(
-        const bitLenInt* bitArray, const bitLenInt& length, const bool& inCurrentBasis = false);
     virtual bitCapInt GetCachedPermutation(const bitLenInt& start, const bitLenInt& length);
     virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length);
 

@@ -553,20 +553,6 @@ bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length
     return true;
 }
 
-/// Check if all qubits in the index array have cached probabilities indicating that they are in permutation basis
-/// eigenstates, for optimization.
-bool QUnit::CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length, const bool& inCurrentBasis)
-{
-    // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
-    // Then, operations can often be treated as classical, instead of quantum.
-    for (bitLenInt i = 0; i < length; i++) {
-        if (!CheckBitPermutation(bitArray[i], inCurrentBasis)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 /// Assuming all bits in the range are in cached |0>/|1> eigenstates, read the unsigned integer value of the range.
 bitCapInt QUnit::GetCachedPermutation(const bitLenInt& start, const bitLenInt& length)
 {
