@@ -652,6 +652,8 @@ void QFusion::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
 void QFusion::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     if (toMul == 0U) {
+        DiscardReg(inOutStart, length);
+        DiscardReg(carryStart, length);
         SetReg(inOutStart, length, 0U);
         SetReg(carryStart, length, 0U);
     } else if (toMul > 1U) {

@@ -25,9 +25,53 @@ struct QEngineShard {
     bitLenInt mapped;
     bool isEmulated;
     bool isProbDirty;
-    real1 prob;
     bool isPhaseDirty;
-    real1 phase;
+    complex amp0;
+    complex amp1;
+    bool isPlusMinus;
+
+    QEngineShard()
+        : unit(NULL)
+        , mapped(0)
+        , isEmulated(false)
+        , isProbDirty(false)
+        , isPhaseDirty(false)
+        , amp0(complex(ONE_R1, ZERO_R1))
+        , amp1(complex(ZERO_R1, ZERO_R1))
+        , isPlusMinus(false)
+    {
+    }
+
+    QEngineShard(QInterfacePtr u, const bool& set)
+        : unit(u)
+        , mapped(0)
+        , isEmulated(false)
+        , isProbDirty(false)
+        , isPhaseDirty(false)
+        , isPlusMinus(false)
+    {
+        amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
+        amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+    }
+
+    // Dirty state constructor:
+    QEngineShard(QInterfacePtr u, const bitLenInt& mapping)
+        : unit(u)
+        , mapped(mapping)
+        , isEmulated(false)
+        , isProbDirty(true)
+        , isPhaseDirty(true)
+        , amp0(complex(ONE_R1, ZERO_R1))
+        , amp1(complex(ZERO_R1, ZERO_R1))
+        , isPlusMinus(false)
+    {
+    }
+
+    ~QEngineShard()
+    {
+        if (unit)
+            unit->Finish();
+    }
 };
 
 class QUnit;
@@ -45,26 +89,12 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-
-    qrack_rand_gen_ptr rand_generator;
+    bool freezeBasis;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         shards.resize(qb);
         QInterface::SetQubitCount(qb);
-    }
-
-    real1 ClampPhase(real1 phase)
-    {
-        while (phase < 0) {
-            phase += 2 * M_PI;
-        }
-
-        while (phase >= (2 * M_PI)) {
-            phase -= 2 * M_PI;
-        }
-
-        return phase;
     }
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
@@ -262,6 +292,9 @@ public:
     /** @} */
 
 protected:
+    virtual void ZBase(const bitLenInt& target);
+    virtual real1 ProbBase(const bitLenInt& qubit);
+
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
@@ -301,13 +334,13 @@ protected:
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
     virtual QInterfacePtr EntangleAll();
 
-    virtual bool CheckBitPermutation(const bitLenInt& qubitIndex);
-    virtual bool CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length);
-    virtual bool CheckBitsPermutation(const bitLenInt* bitArray, const bitLenInt& length);
+    virtual bool CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis = false);
+    virtual bool CheckBitsPermutation(
+        const bitLenInt& start, const bitLenInt& length, const bool& inCurrentBasis = false);
     virtual bitCapInt GetCachedPermutation(const bitLenInt& start, const bitLenInt& length);
     virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length);
 
-    virtual QInterfacePtr EntangleIterator(
+    virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
@@ -337,9 +370,22 @@ protected:
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
 
-    /* Debugging and diagnostic routines. */
-    void DumpShards();
-    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
+    void Transform2x2(const complex* mtrxIn, complex* mtrxOut);
+    void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
+    void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
+
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i);
+    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformBasis(toPlusMinus, start + i);
+        }
+    }
+    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
+
+    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus);
+
+    void CheckShardSeparable(const bitLenInt& target);
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
@@ -367,7 +413,7 @@ protected:
     void EndEmulation(QEngineShard& shard)
     {
         if (shard.isEmulated) {
-            shard.unit->SetBit(shard.mapped, shard.prob >= (ONE_R1 / 2));
+            shard.unit->SetBit(shard.mapped, norm(shard.amp0) < (ONE_R1 / 2));
             shard.isEmulated = false;
         }
     }
@@ -391,6 +437,10 @@ protected:
             EndEmulation(i);
         }
     }
+
+    /* Debugging and diagnostic routines. */
+    void DumpShards();
+    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 };
 
 } // namespace Qrack

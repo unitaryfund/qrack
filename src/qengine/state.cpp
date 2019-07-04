@@ -137,18 +137,6 @@ void QEngineCPU::GetProbs(real1* outputProbs)
 
 #if ENABLE_COMPLEX_X2
 
-#if ENABLE_COMPLEX8
-union ComplexUnion {
-    complex2 cmplx2;
-    float comp[4];
-
-    inline ComplexUnion(){};
-    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
-    {
-        cmplx2 = complex2(real(cmplx0), imag(cmplx0), real(cmplx1), imag(cmplx1));
-    }
-};
-#else
 union ComplexUnion {
     complex2 cmplx2;
     complex cmplx[2];
@@ -160,7 +148,6 @@ union ComplexUnion {
         cmplx[1] = cmplx1;
     }
 };
-#endif
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm)
@@ -182,8 +169,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 #if ENABLE_COMPLEX8
-            stateVec->write(lcv + offset1, complex(qubit.comp[0], qubit.comp[1]));
-            stateVec->write(lcv + offset2, complex(qubit.comp[2], qubit.comp[3]));
+            stateVec->write(lcv + offset1, qubit.cmplx[0]);
+            stateVec->write(lcv + offset2, qubit.cmplx[1]);
             rngNrm[cpu] += norm(qubit.cmplx2);
 #else
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
@@ -196,8 +183,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 #if ENABLE_COMPLEX8
-            stateVec->write(lcv + offset1, complex(qubit.comp[0], qubit.comp[1]));
-            stateVec->write(lcv + offset2, complex(qubit.comp[2], qubit.comp[3]));
+            stateVec->write(lcv + offset1, qubit.cmplx[0]);
+            stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
@@ -232,8 +219,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
-    ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
-    ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
     real1* rngNrm = NULL;
     ParallelFunc fn;
