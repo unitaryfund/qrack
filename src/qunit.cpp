@@ -206,7 +206,8 @@ void QUnit::Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
-QInterfacePtr QUnit::EntangleInCurrentBasis(std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
+QInterfacePtr QUnit::EntangleInCurrentBasis(
+    std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
@@ -1564,12 +1565,6 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     if (toMod == 0) {
         return;
     }
-
-    // TODO: We can carry this further:
-    // if (!hasCarry && CheckRangeInBasis(start, length, true)) {
-    //    QFTINC(toMod, start, length);
-    //    return;
-    //}
 
     // Try ripple addition, to avoid entanglement.
     bool toAdd, inReg;
