@@ -82,6 +82,21 @@ void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
     CNOT(inputBit1, inputBit2);
 }
 
+/// Quantum analog of classical "Full Subtractor" gate
+void QInterface::FullSub(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+    // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
+    // (CNOT and CCNOT are self-inverse.)
+
+    // Assume outputBit is in 0 state.
+    CNOT(inputBit1, inputBit2);
+    CNOT(inputBit2, carryInSumOut);
+    CCNOT(inputBit2, carryInSumOut, carryOut);
+    CNOT(inputBit1, inputBit2);
+    CCNOT(inputBit1, inputBit2, carryOut);
+}
+
 void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {

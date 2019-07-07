@@ -1360,6 +1360,13 @@ public:
     virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
+     * Quantum analog of classical "Full Subtractor" gate
+     *
+     * (Exact inverse of FullAdd)
+     */
+    virtual void FullSub(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+
+    /**
      * Add a quantum integer to a quantum integer, with carry
      *
      * (Assumes the output register is in the 0 state)

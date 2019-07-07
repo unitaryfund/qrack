@@ -974,41 +974,12 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     }                                                                                                                  \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
-#define CTRL_GEN_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, trnsMtrx
-#define CTRL_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, mtrx
+#define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
+#define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, mtrx
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
-#define CTRL_2_ARGS mappedControls[0], mappedControls[1], shards[target].mapped
-#define CTRL_S_ARGS &(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped
-#define CTRL_P_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, topLeft, bottomRight
-#define CTRL_I_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, topRight, bottomLeft
-
-void QUnit::CNOT(bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CNOT(CTRL_1_ARGS), X(target), false);
-}
-
-void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
-{
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true);
-}
-
-void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    bitLenInt controls[2] = { control1, control2 };
-    bitLenInt controlLen = 2;
-    CTRLED_CALL_WRAP(CCNOT(CTRL_2_ARGS), X(target), false);
-}
-
-void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    bitLenInt controls[2] = { control1, control2 };
-    bitLenInt controlLen = 2;
-    CTRLED_CALL_WRAP(AntiCCNOT(CTRL_2_ARGS), X(target), true);
-}
+#define CTRL_S_ARGS &(mappedControls[0]), mappedControls.size(), shards[qubit1].mapped, shards[qubit2].mapped
+#define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
+#define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
