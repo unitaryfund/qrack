@@ -1628,6 +1628,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fulladd")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0F));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc")
+{
+    qftReg->SetPermutation(2);
+    qftReg->H(2, 2);
+    qftReg->ADC(0, 2, 4, 2, 6);
+    qftReg->H(2, 2);
+    qftReg->H(5, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 2);
+    qftReg->ADC(0, 2, 4, 2, 6);
+    qftReg->CNOT(0, 2);
+    qftReg->H(0);
+    qftReg->H(4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;
