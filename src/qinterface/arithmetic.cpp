@@ -83,7 +83,7 @@ void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
 }
 
 /// Quantum analog of classical "Full Subtractor" gate
-void QInterface::FullSub(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
     // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
@@ -125,7 +125,7 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     }
 
     bitLenInt end = length - 1U;
-    FullSub(input1 + end, input2 + end, output + end, carry);
+    IFullAdd(input1 + end, input2 + end, output + end, carry);
 
     if (length == 1) {
         Swap(carry, output);
@@ -134,9 +134,9 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
 
     // Otherwise, length > 1.
     for (bitLenInt i = (end - 1); i > 0; i--) {
-        FullSub(input1 + i, input2 + i, output + i, output + i + 1);
+        IFullAdd(input1 + i, input2 + i, output + i, output + i + 1);
     }
-    FullSub(input1, input2, carry, output);
+    IFullAdd(input1, input2, carry, output);
 }
 
 void QInterface::SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
