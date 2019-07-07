@@ -987,4 +987,38 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
 }
+
+void QEngineCPU::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitCapInt input1Mask = bitRegMask(input1, length);
+    bitCapInt input2Mask = bitRegMask(input2, length);
+    bitCapInt outputMask = bitRegMask(output, length);
+    bitCapInt carryMask = 1U << carry;
+    bitCapInt lengthMask = (1U << length) - 1U;
+    bitCapInt otherMask = (maxQPower - 1U) ^ (outputMask | carryMask);
+
+    StateVectorPtr nStateVec = AllocStateVec(maxQPower);
+    nStateVec->copy(*stateVec);
+
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt otherRes = lcv & otherMask;
+        bitCapInt addInt =
+            ((lcv & input1Mask) >> input1) + ((lcv & input2Mask) >> input2) + ((lcv & carryMask) >> carry);
+        bitCapInt addRes = 0;
+        if (addInt > lengthMask) {
+            addInt &= lengthMask;
+            addRes |= carryMask;
+        }
+        addRes |= addInt << output;
+        addRes ^= (lcv & outputMask);
+        nStateVec->write(addRes | otherRes, stateVec->read(lcv));
+    });
+
+    ResetStateVec(nStateVec);
+}
+
 }; // namespace Qrack
