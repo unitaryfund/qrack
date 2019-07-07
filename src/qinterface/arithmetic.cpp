@@ -118,4 +118,25 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
     FullAdd(input1 + end, input2 + end, output + end, carry);
 }
 
+void QInterface::SBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitLenInt end = length - 1U;
+    FullSub(input1 + end, input2 + end, output + end, carry);
+
+    if (length == 1) {
+        Swap(carry, output);
+        return;
+    }
+
+    // Otherwise, length > 1.
+    for (bitLenInt i = (end - 1); i > 0; i--) {
+        FullSub(input1 + i, input2 + i, output + i, output + i + 1);
+    }
+    FullSub(input1, input2, carry, output);
+}
+
 } // namespace Qrack

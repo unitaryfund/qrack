@@ -1373,6 +1373,13 @@ public:
      */
     virtual void ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
 
+    /**
+     * Subtract a quantum integer to a quantum integer, with carry
+     *
+     * (Exact inverse of ADC)
+     */
+    virtual void SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry);
+
     /** @} */
 
     /**
