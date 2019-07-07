@@ -139,6 +139,10 @@ public:
     virtual void X(bitLenInt target);
     using QInterface::Z;
     virtual void Z(bitLenInt target);
+    using QInterface::CNOT;
+    virtual void CNOT(bitLenInt control, bitLenInt target);
+    using QInterface::AntiCNOT;
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
     using QInterface::CZ;
     virtual void CZ(bitLenInt control, bitLenInt target);
 

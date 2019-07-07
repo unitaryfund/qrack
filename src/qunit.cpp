@@ -981,6 +981,20 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
+void QUnit::CNOT(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    CTRLED_CALL_WRAP(CNOT(CTRL_1_ARGS), X(target), false);
+}
+
+void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true);
+}
+
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
