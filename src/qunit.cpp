@@ -715,6 +715,11 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
     // on the other bit.
     std::swap(shards[qubit1].isPlusMinus, shards[qubit2].isPlusMinus);
+
+    QInterfacePtr unit = shards[qubit1].unit;
+    if (unit == shards[qubit2].unit) {
+        OrderContiguous(unit);
+    }
 }
 
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
