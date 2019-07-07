@@ -1628,6 +1628,59 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fulladd")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0F));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_fulladd_noncoding")
+{
+    QInterfacePtr qftReg2 = qftReg->Clone();
+
+    qftReg->SetPermutation(0x00 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x00 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x01 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x01 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x02 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x02 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x03 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x03 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x04 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x04 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x05 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x05 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x06 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x06 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
+    qftReg->SetPermutation(0x07 | 8);
+    qftReg->FullAdd(0, 1, 2, 3);
+    qftReg2->SetPermutation(0x07 | 8);
+    qftReg2->QInterface::FullAdd(0, 1, 2, 3);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ifulladd")
 {
     // This is contingent on the previous test passing.
