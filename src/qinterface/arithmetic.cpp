@@ -118,7 +118,7 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
     FullAdd(input1 + end, input2 + end, output + end, carry);
 }
 
-void QInterface::SBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {
         return;

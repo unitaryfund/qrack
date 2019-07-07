@@ -1374,11 +1374,11 @@ public:
     virtual void ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /**
-     * Subtract a quantum integer to a quantum integer, with carry
+     * Inverse of ADC
      *
-     * (Exact inverse of ADC)
+     * (Can be thought of as "subtraction," but with a register convention that the same inputs invert ADC.)
      */
-    virtual void SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry);
+    virtual void IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /** @} */
 
