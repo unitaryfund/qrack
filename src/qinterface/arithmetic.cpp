@@ -139,4 +139,30 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     FullSub(input1, input2, carry, output);
 }
 
+void QInterface::SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    // As opposed to the exact inverse of "ADC," want the second register to be subtracted from the first and to place
+    // the result in the output register. We can use two's complement, for this.
+    X(subtrahend, length);
+    X(carry);
+
+    ADC(minuend, subtrahend, output, length, carry);
+
+    X(carry);
+    X(subtrahend, length);
+}
+
+void QInterface::ISBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    // As opposed to the exact inverse of "IADC," want the second register to be subtracted from the first and to place
+    // the result in the output register. We can use two's complement, for this.
+    X(subtrahend, length);
+    X(carry);
+
+    IADC(minuend, subtrahend, output, length, carry);
+
+    X(carry);
+    X(subtrahend, length);
+}
+
 } // namespace Qrack

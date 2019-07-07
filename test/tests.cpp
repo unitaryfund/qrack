@@ -1733,6 +1733,70 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_iadc")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc")
+{
+    qftReg->SetPermutation(2);
+    qftReg->H(2, 2);
+    qftReg->SBC(0, 2, 4, 2, 6);
+    qftReg->H(2, 2);
+    qftReg->H(5, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 2);
+    qftReg->SBC(0, 2, 4, 2, 6);
+    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->CNOT(0, 2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+
+    qftReg->SetPermutation(1);
+    qftReg->SBC(0, 1, 2, 1, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
+
+    qftReg->SetPermutation(3);
+    qftReg->SBC(0, 1, 2, 1, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 3));
+
+    qftReg->SetPermutation(1);
+    qftReg->ADC(0, 1, 2, 0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isbc")
+{
+    // This is contingent on the previous test passing.
+
+    qftReg->SetPermutation(8);
+    qftReg->H(2, 2);
+    qftReg->SBC(0, 2, 4, 2, 6);
+    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->H(2, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 8));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 2);
+    qftReg->SBC(0, 2, 4, 2, 6);
+    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->CNOT(0, 2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+
+    qftReg->SetPermutation(1);
+    qftReg->SBC(0, 1, 2, 1, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
+    qftReg->ISBC(0, 1, 2, 1, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+
+    qftReg->SetPermutation(1);
+    qftReg->SBC(0, 1, 2, 0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+    qftReg->IADC(0, 1, 2, 0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;

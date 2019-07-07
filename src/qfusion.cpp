@@ -699,6 +699,45 @@ void QFusion::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenIn
     qReg->ADC(input1, input2, output, length, carry);
 }
 
+void QFusion::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    FlushReg(input1, length);
+    FlushReg(input2, length);
+    FlushReg(output, length);
+    FlushBit(carry);
+    qReg->IADC(input1, input2, output, length, carry);
+}
+
+void QFusion::SBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    FlushReg(input1, length);
+    FlushReg(input2, length);
+    FlushReg(output, length);
+    FlushBit(carry);
+    qReg->SBC(input1, input2, output, length, carry);
+}
+
+void QFusion::ISBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    FlushReg(input1, length);
+    FlushReg(input2, length);
+    FlushReg(output, length);
+    FlushBit(carry);
+    qReg->ISBC(input1, input2, output, length, carry);
+}
+
 void QFusion::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {

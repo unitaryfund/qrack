@@ -1380,6 +1380,20 @@ public:
      */
     virtual void IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
 
+    /**
+     * Subtract a quantum integer subtrahend from a quantum integer minuend, with carry
+     *
+     * (Assumes the output register is in the 0 state)
+     */
+    virtual void SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry);
+
+    /**
+     * Inverse of SBC
+     *
+     * (Can be thought of as "addition," but with a register convention that the same inputs invert SBC.)
+     */
+    virtual void ISBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry);
+
     /** @} */
 
     /**
