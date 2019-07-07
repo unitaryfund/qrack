@@ -143,6 +143,10 @@ public:
     virtual void CNOT(bitLenInt control, bitLenInt target);
     using QInterface::AntiCNOT;
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
+    using QInterface::CCNOT;
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    using QInterface::AntiCCNOT;
+    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     using QInterface::CZ;
     virtual void CZ(bitLenInt control, bitLenInt target);
 

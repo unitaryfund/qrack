@@ -968,6 +968,16 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
+#define CTRLED2_CALL_WRAP(ctrld2, ctrld1, bare, anti)                                                                  \
+    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
+            if (mappedControls.size() == 2) {                                                                          \
+                unit->ctrld2;                                                                                          \
+            } else {                                                                                                   \
+                unit->ctrld1;                                                                                          \
+            }                                                                                                          \
+        },                                                                                                             \
+        [&]() { bare; })
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
         return;                                                                                                        \
@@ -977,6 +987,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
 #define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, mtrx
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
+#define CTRL_2_ARGS mappedControls[0], mappedControls[1], shards[target].mapped
 #define CTRL_S_ARGS &(mappedControls[0]), mappedControls.size(), shards[qubit1].mapped, shards[qubit2].mapped
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
@@ -993,6 +1004,20 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true);
+}
+
+void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    bitLenInt controlLen = 2;
+    CTRLED2_CALL_WRAP(CCNOT(CTRL_2_ARGS), CNOT(CTRL_1_ARGS), X(target), false);
+}
+
+void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    bitLenInt controlLen = 2;
+    CTRLED2_CALL_WRAP(AntiCCNOT(CTRL_2_ARGS), AntiCNOT(CTRL_1_ARGS), X(target), true);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
