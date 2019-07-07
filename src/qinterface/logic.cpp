@@ -25,7 +25,6 @@ void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
     }
 
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetReg(outputBit, length, 0);
         if (inputBit1 == inputBit2) {
             CNOT(inputBit1, outputBit, length);
         } else {
@@ -45,7 +44,7 @@ void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBi
     }
 
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetReg(outputBit, length, (1 << length) - 1);
+        X(outputBit, length);
         if (inputBit1 == inputBit2) {
             AntiCNOT(inputBit1, outputBit, length);
         } else {
@@ -69,7 +68,6 @@ void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
     } else if (inputBit2 == outputBit) {
         CNOT(inputBit1, outputBit, length);
     } else {
-        SetReg(outputBit, length, 0);
         CNOT(inputBit1, outputBit, length);
         CNOT(inputBit2, outputBit, length);
     }
@@ -83,7 +81,6 @@ void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
     }
 
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetBit(outputBit, false);
         if (inputBit1 == inputBit2) {
             CNOT(inputBit1, outputBit);
         } else {
@@ -102,7 +99,7 @@ void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBi
     }
 
     if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetBit(outputBit, true);
+        X(outputBit);
         if (inputBit1 == inputBit2) {
             AntiCNOT(inputBit1, outputBit);
         } else {
@@ -125,7 +122,6 @@ void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
     } else if (inputBit2 == outputBit) {
         CNOT(inputBit1, outputBit);
     } else {
-        SetBit(outputBit, false);
         CNOT(inputBit1, outputBit);
         CNOT(inputBit2, outputBit);
     }
@@ -133,7 +129,6 @@ void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
 
 void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
-    SetBit(outputBit, false);
     if (inputClassicalBit && (inputQBit != outputBit)) {
         CNOT(inputQBit, outputBit);
     }
@@ -142,9 +137,8 @@ void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
 void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
     if (inputClassicalBit) {
-        SetBit(outputBit, true);
+        X(outputBit);
     } else if (inputQBit != outputBit) {
-        SetBit(outputBit, false);
         CNOT(inputQBit, outputBit);
     }
 }
@@ -152,7 +146,9 @@ void QInterface::CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt out
 void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
     if (inputQBit != outputBit) {
-        SetBit(outputBit, inputClassicalBit);
+        if (inputClassicalBit) {
+            X(outputBit);
+        }
         CNOT(inputQBit, outputBit);
     } else if (inputClassicalBit) {
         X(outputBit);

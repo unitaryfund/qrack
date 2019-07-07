@@ -699,42 +699,39 @@ public:
     /**
      * Quantum analog of classical "AND" gate
      *
-     * Measures the outputBit, then overwrites it with result.
+     * (Assumes the outputBit is in the 0 state)
      */
     virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate
      *
-     * Measures the outputBit, then overwrites it with result.
+     * (Assumes the outputBit is in the 0 state)
      */
     virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate
      *
-     * Measures the outputBit, then overwrites it with result.
+     * (Assumes the outputBit is in the 0 state)
      */
     virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
 
     /**
      *  Quantum analog of classical "AND" gate. Takes one qubit input and one
-     *  classical bit input. Measures the outputBit, then overwrites it with
-     *  result.
+     *  classical bit input. (Assumes the outputBit is in the 0 state)
      */
     virtual void CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "OR" gate. Takes one qubit input and one
-     * classical bit input. Measures the outputBit, then overwrites it with
-     * result.
+     * classical bit input. (Assumes the outputBit is in the 0 state)
      */
     virtual void CLOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
      * Quantum analog of classical "XOR" gate. Takes one qubit input and one
-     * classical bit input. Measures the outputBit, then overwrites it with
-     * result.
+     * classical bit input. (Assumes the outputBit is in the 0 state)
      */
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
@@ -1354,6 +1351,20 @@ public:
     /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
+
+    /**
+     * Quantum analog of classical "Full Adder" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+
+    /**
+     * Add a quantum integer to a quantum integer, with carry
+     *
+     * (Assumes the output register is in the 0 state)
+     */
+    virtual void ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /** @} */
 
