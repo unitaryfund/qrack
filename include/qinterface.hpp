@@ -1364,7 +1364,7 @@ public:
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert FullAdd.)
      */
-    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryOut, bitLenInt carryInDiffOut);
+    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
      * Add a quantum integer to a quantum integer, with carry
