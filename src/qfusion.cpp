@@ -686,30 +686,22 @@ void QFusion::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
     qReg->POWModNOut(base, modN, inStart, outStart, length);
 }
 
-void QFusion::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+void QFusion::FullAdd(bitLenInt input1, bitLenInt input2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
-    if (length == 0) {
-        return;
-    }
-
-    FlushReg(input1, length);
-    FlushReg(input2, length);
-    FlushReg(output, length);
-    FlushBit(carry);
-    qReg->ADC(input1, input2, output, length, carry);
+    FlushBit(input1);
+    FlushBit(input2);
+    FlushBit(carryInSumOut);
+    FlushBit(carryOut);
+    qReg->FullAdd(input1, input2, carryInSumOut, carryOut);
 }
 
-void QFusion::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+void QFusion::IFullAdd(bitLenInt input1, bitLenInt input2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
-    if (length == 0) {
-        return;
-    }
-
-    FlushReg(input1, length);
-    FlushReg(input2, length);
-    FlushReg(output, length);
-    FlushBit(carry);
-    qReg->IADC(input1, input2, output, length, carry);
+    FlushBit(input1);
+    FlushBit(input2);
+    FlushBit(carryInSumOut);
+    FlushBit(carryOut);
+    qReg->IFullAdd(input1, input2, carryInSumOut, carryOut);
 }
 
 void QFusion::SBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
