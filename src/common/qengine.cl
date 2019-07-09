@@ -1205,6 +1205,166 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     }
 }
 
+void kernel fulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt input1Mask = bitCapIntPtr[1];
+    bitCapInt input2Mask = bitCapIntPtr[2];
+    bitCapInt carryInSumOutMask = bitCapIntPtr[3];
+    bitCapInt carryOutMask = bitCapIntPtr[4];
+
+    bitCapInt qMask1, qMask2;
+    if (carryInSumOutMask < carryOutMask) {
+        qMask1 = carryInSumOutMask - 1U;
+        qMask2 = carryOutMask - 1U;
+    } else {
+        qMask1 = carryOutMask - 1U;
+        qMask2 = carryInSumOutMask - 1U;
+    }
+
+    cmplx ins0c0, ins0c1, ins1c0, ins1c1;
+    cmplx outs0c0, outs0c1, outs1c0, outs1c1;
+
+    bitCapInt i, iLow, iHigh;
+
+    bool aVal, bVal;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        PUSH_APART_2();
+
+        // Carry-in, sum bit in
+        ins0c0 = stateVec[i];
+        ins0c1 = stateVec[i | carryInSumOutMask];
+        ins1c0 = stateVec[i | carryOutMask];
+        ins1c1 = stateVec[i | carryInSumOutMask | carryOutMask];
+
+        aVal = (i & input1Mask);
+        bVal = (i & input2Mask);
+
+        if (!aVal) {
+            if (!bVal) {
+                // Coding:
+                outs0c0 = ins0c0;
+                outs1c0 = ins0c1;
+                // Non-coding:
+                outs0c1 = ins1c0;
+                outs1c1 = ins1c1;
+            } else {
+                // Coding:
+                outs1c0 = ins0c0;
+                outs0c1 = ins0c1;
+                // Non-coding:
+                outs1c1 = ins1c0;
+                outs0c0 = ins1c1;
+            }
+        } else {
+            if (!bVal) {
+                // Coding:
+                outs1c0 = ins0c0;
+                outs0c1 = ins0c1;
+                // Non-coding:
+                outs1c1 = ins1c0;
+                outs0c0 = ins1c1;
+            } else {
+                // Coding:
+                outs0c1 = ins0c0;
+                outs1c1 = ins0c1;
+                // Non-coding:
+                outs0c0 = ins1c0;
+                outs1c0 = ins1c1;
+            }
+        }
+
+        stateVec[i] = outs0c0;
+        stateVec[i | carryOutMask] = outs0c1;
+        stateVec[i | carryInSumOutMask] = outs1c0;
+        stateVec[i | carryInSumOutMask | carryOutMask] = outs1c1;
+    }
+}
+
+void kernel ifulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt input1Mask = bitCapIntPtr[1];
+    bitCapInt input2Mask = bitCapIntPtr[2];
+    bitCapInt carryInSumOutMask = bitCapIntPtr[3];
+    bitCapInt carryOutMask = bitCapIntPtr[4];
+
+    bitCapInt qMask1, qMask2;
+    if (carryInSumOutMask < carryOutMask) {
+        qMask1 = carryInSumOutMask - 1U;
+        qMask2 = carryOutMask - 1U;
+    } else {
+        qMask1 = carryOutMask - 1U;
+        qMask2 = carryInSumOutMask - 1U;
+    }
+
+    cmplx ins0c0, ins0c1, ins1c0, ins1c1;
+    cmplx outs0c0, outs0c1, outs1c0, outs1c1;
+
+    bitCapInt i, iLow, iHigh;
+
+    bool aVal, bVal;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        PUSH_APART_2();
+
+        // Carry-in, sum bit out
+        outs0c0 = stateVec[i];
+        outs0c1 = stateVec[i | carryOutMask];
+        outs1c0 = stateVec[i | carryInSumOutMask];
+        outs1c1 = stateVec[i | carryInSumOutMask | carryOutMask];
+
+        aVal = (i & input1Mask);
+        bVal = (i & input2Mask);
+
+        if (!aVal) {
+            if (!bVal) {
+                // Coding:
+                ins0c0 = outs0c0;
+                ins0c1 = outs1c0;
+                // Non-coding:
+                ins1c0 = outs0c1;
+                ins1c1 = outs1c1;
+            } else {
+                // Coding:
+                ins0c0 = outs1c0;
+                ins0c1 = outs0c1;
+                // Non-coding:
+                ins1c0 = outs1c1;
+                ins1c1 = outs0c0;
+            }
+        } else {
+            if (!bVal) {
+                // Coding:
+                ins0c0 = outs1c0;
+                ins0c1 = outs0c1;
+                // Non-coding:
+                ins1c0 = outs1c1;
+                ins1c1 = outs0c0;
+            } else {
+                // Coding:
+                ins0c0 = outs0c1;
+                ins0c1 = outs1c1;
+                // Non-coding:
+                ins1c0 = outs0c0;
+                ins1c1 = outs1c0;
+            }
+        }
+
+        stateVec[i] = ins0c0;
+        stateVec[i | carryInSumOutMask] = ins0c1;
+        stateVec[i | carryOutMask] = ins1c0;
+        stateVec[i | carryInSumOutMask | carryOutMask] = ins1c1;
+    }
+}
+
 #define CMOD_START()                                                                 \
     iHigh = lcv;                                                                     \
     i = 0U;                                                                          \

@@ -715,6 +715,11 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
     // on the other bit.
     std::swap(shards[qubit1].isPlusMinus, shards[qubit2].isPlusMinus);
+
+    QInterfacePtr unit = shards[qubit1].unit;
+    if (unit == shards[qubit2].unit) {
+        OrderContiguous(unit);
+    }
 }
 
 /* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
@@ -963,19 +968,29 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
+#define CTRLED2_CALL_WRAP(ctrld2, ctrld1, bare, anti)                                                                  \
+    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
+            if (mappedControls.size() == 2) {                                                                          \
+                unit->ctrld2;                                                                                          \
+            } else {                                                                                                   \
+                unit->ctrld1;                                                                                          \
+            }                                                                                                          \
+        },                                                                                                             \
+        [&]() { bare; })
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
         return;                                                                                                        \
     }                                                                                                                  \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
-#define CTRL_GEN_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, trnsMtrx
-#define CTRL_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, mtrx
+#define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
+#define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, mtrx
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
 #define CTRL_2_ARGS mappedControls[0], mappedControls[1], shards[target].mapped
-#define CTRL_S_ARGS &(mappedControls[0]), controlLen, shards[qubit1].mapped, shards[qubit2].mapped
-#define CTRL_P_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, topLeft, bottomRight
-#define CTRL_I_ARGS &(mappedControls[0]), controlLen, shards[target].mapped, topRight, bottomLeft
+#define CTRL_S_ARGS &(mappedControls[0]), mappedControls.size(), shards[qubit1].mapped, shards[qubit2].mapped
+#define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
+#define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
@@ -995,14 +1010,14 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
     bitLenInt controlLen = 2;
-    CTRLED_CALL_WRAP(CCNOT(CTRL_2_ARGS), X(target), false);
+    CTRLED2_CALL_WRAP(CCNOT(CTRL_2_ARGS), CNOT(CTRL_1_ARGS), X(target), false);
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
     bitLenInt controlLen = 2;
-    CTRLED_CALL_WRAP(AntiCCNOT(CTRL_2_ARGS), X(target), true);
+    CTRLED2_CALL_WRAP(AntiCCNOT(CTRL_2_ARGS), AntiCNOT(CTRL_1_ARGS), X(target), true);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)

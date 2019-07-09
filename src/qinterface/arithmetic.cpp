@@ -69,4 +69,100 @@ void QInterface::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
     INCBCD(invToSub, inOutStart, length);
 }
 
+/// Quantum analog of classical "Full Adder" gate
+void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+
+    // Assume outputBit is in 0 state.
+    CCNOT(inputBit1, inputBit2, carryOut);
+    CNOT(inputBit1, inputBit2);
+    CCNOT(inputBit2, carryInSumOut, carryOut);
+    CNOT(inputBit2, carryInSumOut);
+    CNOT(inputBit1, inputBit2);
+}
+
+/// Inverse of FullAdd
+void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+    // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
+    // (CNOT and CCNOT are self-inverse.)
+
+    // Assume outputBit is in 0 state.
+    CNOT(inputBit1, inputBit2);
+    CNOT(inputBit2, carryInSumOut);
+    CCNOT(inputBit2, carryInSumOut, carryOut);
+    CNOT(inputBit1, inputBit2);
+    CCNOT(inputBit1, inputBit2, carryOut);
+}
+
+void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    FullAdd(input1, input2, carry, output);
+
+    if (length == 1) {
+        Swap(carry, output);
+        return;
+    }
+
+    // Otherwise, length > 1.
+    bitLenInt end = length - 1U;
+    for (bitLenInt i = 1; i < end; i++) {
+        FullAdd(input1 + i, input2 + i, output + i, output + i + 1);
+    }
+    FullAdd(input1 + end, input2 + end, output + end, carry);
+}
+
+void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitLenInt end = length - 1U;
+    IFullAdd(input1 + end, input2 + end, output + end, carry);
+
+    if (length == 1) {
+        Swap(carry, output);
+        return;
+    }
+
+    // Otherwise, length > 1.
+    for (bitLenInt i = (end - 1); i > 0; i--) {
+        IFullAdd(input1 + i, input2 + i, output + i, output + i + 1);
+    }
+    IFullAdd(input1, input2, carry, output);
+}
+
+void QInterface::SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    // As opposed to the exact inverse of "ADC," want the second register to be subtracted from the first and to place
+    // the result in the output register. We can use two's complement, for this.
+    X(subtrahend, length);
+    X(carry);
+
+    ADC(minuend, subtrahend, output, length, carry);
+
+    X(carry);
+    X(subtrahend, length);
+}
+
+void QInterface::ISBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
+{
+    // As opposed to the exact inverse of "IADC," want the second register to be subtracted from the first and to place
+    // the result in the output register. We can use two's complement, for this.
+    X(subtrahend, length);
+    X(carry);
+
+    IADC(minuend, subtrahend, output, length, carry);
+
+    X(carry);
+    X(subtrahend, length);
+}
+
 } // namespace Qrack

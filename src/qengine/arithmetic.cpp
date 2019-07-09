@@ -987,4 +987,135 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
 }
+
+void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    bitCapInt input1Mask = 1U << inputBit1;
+    bitCapInt input2Mask = 1U << inputBit2;
+    bitCapInt carryInSumOutMask = 1U << carryInSumOut;
+    bitCapInt carryOutMask = 1U << carryOut;
+
+    bitCapInt qPowers[2] = { carryInSumOutMask, carryOutMask };
+    std::sort(qPowers, qPowers + 2);
+
+    par_for_mask(0, maxQPower, qPowers, 2, [&](const bitCapInt lcv, const int cpu) {
+
+        // Carry-in, sum bit in
+        complex ins0c0 = stateVec->read(lcv);
+        complex ins0c1 = stateVec->read(lcv | carryInSumOutMask);
+        complex ins1c0 = stateVec->read(lcv | carryOutMask);
+        complex ins1c1 = stateVec->read(lcv | carryInSumOutMask | carryOutMask);
+
+        bool aVal = (lcv & input1Mask);
+        bool bVal = (lcv & input2Mask);
+
+        // Carry-out, sum bit out
+        complex outs0c0, outs0c1, outs1c0, outs1c1;
+
+        if (!aVal) {
+            if (!bVal) {
+                // Coding:
+                outs0c0 = ins0c0;
+                outs1c0 = ins0c1;
+                // Non-coding:
+                outs0c1 = ins1c0;
+                outs1c1 = ins1c1;
+            } else {
+                // Coding:
+                outs1c0 = ins0c0;
+                outs0c1 = ins0c1;
+                // Non-coding:
+                outs1c1 = ins1c0;
+                outs0c0 = ins1c1;
+            }
+        } else {
+            if (!bVal) {
+                // Coding:
+                outs1c0 = ins0c0;
+                outs0c1 = ins0c1;
+                // Non-coding:
+                outs1c1 = ins1c0;
+                outs0c0 = ins1c1;
+            } else {
+                // Coding:
+                outs0c1 = ins0c0;
+                outs1c1 = ins0c1;
+                // Non-coding:
+                outs0c0 = ins1c0;
+                outs1c0 = ins1c1;
+            }
+        }
+
+        stateVec->write(lcv, outs0c0);
+        stateVec->write(lcv | carryOutMask, outs0c1);
+        stateVec->write(lcv | carryInSumOutMask, outs1c0);
+        stateVec->write(lcv | carryInSumOutMask | carryOutMask, outs1c1);
+    });
+}
+
+void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    bitCapInt input1Mask = 1U << inputBit1;
+    bitCapInt input2Mask = 1U << inputBit2;
+    bitCapInt carryInSumOutMask = 1U << carryInSumOut;
+    bitCapInt carryOutMask = 1U << carryOut;
+
+    bitCapInt qPowers[2] = { carryInSumOutMask, carryOutMask };
+    std::sort(qPowers, qPowers + 2);
+
+    par_for_mask(0, maxQPower, qPowers, 2, [&](const bitCapInt lcv, const int cpu) {
+
+        // Carry-in, sum bit out
+        complex outs0c0 = stateVec->read(lcv);
+        complex outs0c1 = stateVec->read(lcv | carryOutMask);
+        complex outs1c0 = stateVec->read(lcv | carryInSumOutMask);
+        complex outs1c1 = stateVec->read(lcv | carryInSumOutMask | carryOutMask);
+
+        bool aVal = (lcv & input1Mask);
+        bool bVal = (lcv & input2Mask);
+
+        // Carry-out, sum bit in
+        complex ins0c0, ins0c1, ins1c0, ins1c1;
+
+        if (!aVal) {
+            if (!bVal) {
+                // Coding:
+                ins0c0 = outs0c0;
+                ins0c1 = outs1c0;
+                // Non-coding:
+                ins1c0 = outs0c1;
+                ins1c1 = outs1c1;
+            } else {
+                // Coding:
+                ins0c0 = outs1c0;
+                ins0c1 = outs0c1;
+                // Non-coding:
+                ins1c0 = outs1c1;
+                ins1c1 = outs0c0;
+            }
+        } else {
+            if (!bVal) {
+                // Coding:
+                ins0c0 = outs1c0;
+                ins0c1 = outs0c1;
+                // Non-coding:
+                ins1c0 = outs1c1;
+                ins1c1 = outs0c0;
+            } else {
+                // Coding:
+                ins0c0 = outs0c1;
+                ins0c1 = outs1c1;
+                // Non-coding:
+                ins1c0 = outs0c0;
+                ins1c1 = outs1c0;
+            }
+        }
+
+        stateVec->write(lcv, ins0c0);
+        stateVec->write(lcv | carryInSumOutMask, ins0c1);
+        stateVec->write(lcv | carryOutMask, ins1c0);
+        stateVec->write(lcv | carryInSumOutMask | carryOutMask, ins1c1);
+    });
+}
+
 }; // namespace Qrack
