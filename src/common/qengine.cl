@@ -1218,11 +1218,11 @@ void kernel fulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 
     bitCapInt qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
-        qMask1 = carryInSumOutMask;
-        qMask2 = carryOutMask;
+        qMask1 = carryInSumOutMask - 1U;
+        qMask2 = carryOutMask - 1U;
     } else {
-        qMask1 = carryOutMask;
-        qMask2 = carryInSumOutMask;
+        qMask1 = carryOutMask - 1U;
+        qMask2 = carryInSumOutMask - 1U;
     }
 
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
@@ -1298,11 +1298,11 @@ void kernel ifulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 
     bitCapInt qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
-        qMask1 = carryInSumOutMask;
-        qMask2 = carryOutMask;
+        qMask1 = carryInSumOutMask - 1U;
+        qMask2 = carryOutMask - 1U;
     } else {
-        qMask1 = carryOutMask;
-        qMask2 = carryInSumOutMask;
+        qMask1 = carryOutMask - 1U;
+        qMask2 = carryInSumOutMask - 1U;
     }
 
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;

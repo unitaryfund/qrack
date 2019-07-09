@@ -1624,6 +1624,40 @@ void QEngineOCL::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, b
     MULModx(OCL_API_POWMODN_OUT, base, modN, inStart, outStart, length);
 }
 
+/** Quantum analog of classical "Full Adder" gate */
+void QEngineOCL::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    FullAdx(inputBit1, inputBit2, carryInSumOut, carryOut, OCL_API_FULLADD);
+}
+
+/** Inverse of FullAdd */
+void QEngineOCL::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    FullAdx(inputBit1, inputBit2, carryInSumOut, carryOut, OCL_API_IFULLADD);
+}
+
+void QEngineOCL::FullAdx(
+    bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call)
+{
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 2U, 1U << inputBit1, 1U << inputBit2, 1U << carryInSumOut,
+        1U << carryOut, 0, 0, 0, 0, 0 };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 5, bciArgs, writeArgsEvent);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    wait_refs.clear();
+
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+}
+
 /** Controlled multiplication by integer */
 void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)

@@ -95,7 +95,9 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CMUL, "cmul"),
     OCLKernelHandle(OCL_API_CDIV, "cdiv"),
     OCLKernelHandle(OCL_API_CMULMODN_OUT, "cmulmodnout"),
-    OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout")
+    OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
+    OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
+    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd")
 };
 // clang-format on
 

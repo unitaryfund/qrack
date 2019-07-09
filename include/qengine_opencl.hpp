@@ -202,6 +202,8 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
+    virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
@@ -351,6 +353,8 @@ protected:
         const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
     void CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inOutStart,
         const bitLenInt carryStart, const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
+    void FullAdx(
+        bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call);
     void PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs);
 
     bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
