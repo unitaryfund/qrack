@@ -1731,8 +1731,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc")
     qftReg->SetPermutation(2);
     qftReg->H(2, 2);
     qftReg->ADC(0, 2, 4, 2, 6);
+    qftReg->IADC(0, 2, 4, 2, 6);
     qftReg->H(2, 2);
-    qftReg->H(5, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     qftReg->SetPermutation(0);
@@ -1791,8 +1791,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc")
     qftReg->SetPermutation(2);
     qftReg->H(2, 2);
     qftReg->SBC(0, 2, 4, 2, 6);
+    qftReg->ISBC(0, 2, 4, 2, 6);
     qftReg->H(2, 2);
-    qftReg->H(5, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     qftReg->SetPermutation(0);
