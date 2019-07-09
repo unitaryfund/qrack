@@ -82,7 +82,7 @@ void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
     CNOT(inputBit1, inputBit2);
 }
 
-/// Quantum analog of classical "Full Subtractor" gate
+/// Inverse of FullAdd
 void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
