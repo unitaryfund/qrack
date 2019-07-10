@@ -1367,6 +1367,22 @@ public:
     virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
+     * Controlled quantum analog of classical "Full Adder" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+        bitLenInt carryInSumOut, bitLenInt carryOut);
+
+    /**
+     * Inverse of CFullAdd
+     *
+     * (Can be thought of as "subtraction," but with a register convention that the same inputs invert CFullAdd.)
+     */
+    virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+        bitLenInt carryInSumOut, bitLenInt carryOut);
+
+    /**
      * Add a quantum integer to a quantum integer, with carry
      *
      * (Assumes the output register is in the 0 state)
@@ -1381,18 +1397,20 @@ public:
     virtual void IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /**
-     * Subtract a quantum integer subtrahend from a quantum integer minuend, with carry
+     * Add a quantum integer to a quantum integer, with carry and with controls
      *
      * (Assumes the output register is in the 0 state)
      */
-    virtual void SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry);
+    virtual void CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
+        bitLenInt length, bitLenInt carry);
 
     /**
-     * Inverse of SBC
+     * Inverse of CADC
      *
-     * (Can be thought of as "addition," but with a register convention that the same inputs invert SBC.)
+     * (Can be thought of as "subtraction," but with a register convention that the same inputs invert CADC.)
      */
-    virtual void ISBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry);
+    virtual void CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
+        bitLenInt length, bitLenInt carry);
 
     /** @} */
 

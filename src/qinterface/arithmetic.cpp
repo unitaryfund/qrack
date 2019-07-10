@@ -97,6 +97,64 @@ void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
     CCNOT(inputBit1, inputBit2, carryOut);
 }
 
+/// Quantum analog of classical "Full Adder" gate
+void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+    bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+    bitLenInt* cBits = new bitLenInt[controlLen + 2];
+    std::copy(controlBits, controlBits + controlLen, cBits);
+
+    // Assume outputBit is in 0 state.
+    cBits[controlLen] = inputBit1;
+    cBits[controlLen + 1] = inputBit2;
+    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    cBits[controlLen] = inputBit2;
+    cBits[controlLen + 1] = carryInSumOut;
+    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    ApplyControlledSingleInvert(
+        cBits, controlLen + 1, carryInSumOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    cBits[controlLen] = inputBit1;
+    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    delete[] cBits;
+}
+
+/// Inverse of FullAdd
+void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+    bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
+    // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
+    // (CNOT and CCNOT are self-inverse.)
+
+    bitLenInt* cBits = new bitLenInt[controlLen + 2];
+    std::copy(controlBits, controlBits + controlLen, cBits);
+
+    // Assume outputBit is in 0 state.
+    cBits[controlLen] = inputBit1;
+    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    cBits[controlLen] = inputBit2;
+    ApplyControlledSingleInvert(
+        cBits, controlLen + 1, carryInSumOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    cBits[controlLen + 1] = carryInSumOut;
+    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    cBits[controlLen] = inputBit1;
+    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    cBits[controlLen + 1] = inputBit2;
+    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+
+    delete[] cBits;
+}
+
 void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {
@@ -139,30 +197,48 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     IFullAdd(input1, input2, carry, output);
 }
 
-void QInterface::SBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
+void QInterface::CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
+    bitLenInt length, bitLenInt carry)
 {
-    // As opposed to the exact inverse of "ADC," want the second register to be subtracted from the first and to place
-    // the result in the output register. We can use two's complement, for this.
-    X(subtrahend, length);
-    X(carry);
+    if (length == 0) {
+        return;
+    }
 
-    ADC(minuend, subtrahend, output, length, carry);
+    CFullAdd(controls, controlLen, input1, input2, carry, output);
 
-    X(carry);
-    X(subtrahend, length);
+    if (length == 1) {
+        CSwap(controls, controlLen, carry, output);
+        return;
+    }
+
+    // Otherwise, length > 1.
+    bitLenInt end = length - 1U;
+    for (bitLenInt i = 1; i < end; i++) {
+        CFullAdd(controls, controlLen, input1 + i, input2 + i, output + i, output + i + 1);
+    }
+    CFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
 }
 
-void QInterface::ISBC(bitLenInt minuend, bitLenInt subtrahend, bitLenInt output, bitLenInt length, bitLenInt carry)
+void QInterface::CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
+    bitLenInt length, bitLenInt carry)
 {
-    // As opposed to the exact inverse of "IADC," want the second register to be subtracted from the first and to place
-    // the result in the output register. We can use two's complement, for this.
-    X(subtrahend, length);
-    X(carry);
+    if (length == 0) {
+        return;
+    }
 
-    IADC(minuend, subtrahend, output, length, carry);
+    bitLenInt end = length - 1U;
+    CIFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
 
-    X(carry);
-    X(subtrahend, length);
+    if (length == 1) {
+        CSwap(controls, controlLen, carry, output);
+        return;
+    }
+
+    // Otherwise, length > 1.
+    for (bitLenInt i = (end - 1); i > 0; i--) {
+        CIFullAdd(controls, controlLen, input1 + i, input2 + i, output + i, output + i + 1);
+    }
+    CIFullAdd(controls, controlLen, input1, input2, carry, output);
 }
 
 } // namespace Qrack

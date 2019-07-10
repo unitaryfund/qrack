@@ -1728,12 +1728,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ifulladd")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc")
 {
-    qftReg->SetPermutation(2);
+    qftReg->SetPermutation(0);
     qftReg->H(2, 2);
     qftReg->ADC(0, 2, 4, 2, 6);
     qftReg->IADC(0, 2, 4, 2, 6);
     qftReg->H(2, 2);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
@@ -1786,68 +1786,162 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_iadc")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cfulladd")
 {
-    qftReg->SetPermutation(2);
+    bitLenInt control[1] = { 10 };
+    qftReg->SetPermutation(0x00); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x05));
+
+    qftReg->SetPermutation(0x02); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0B));
+
+    qftReg->SetPermutation(0x04); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+
+    qftReg->SetPermutation(0x05);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x09));
+
+    qftReg->SetPermutation(0x06); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x06));
+
+    qftReg->SetPermutation(0x07);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0F));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cifulladd")
+{
+    // This is contingent on the previous test passing.
+
+    bitLenInt control[1] = { 10 };
+
+    qftReg->SetPermutation(0x00); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetPermutation(0x02); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetPermutation(0x04); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+
+    qftReg->SetPermutation(0x05);
+    qftReg->X(control[0]); // on
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x05));
+
+    qftReg->X(control[0]); // off
+
+    qftReg->SetPermutation(0x06);
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x06));
+
+    qftReg->SetPermutation(0x07); // off
+    qftReg->CFullAdd(control, 1, 0, 1, 2, 3);
+    qftReg->CIFullAdd(control, 1, 0, 1, 2, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x07));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cadc")
+{
+    bitLenInt control[1] = { 10 };
+
+    qftReg->SetPermutation(0); // off
     qftReg->H(2, 2);
-    qftReg->SBC(0, 2, 4, 2, 6);
-    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
     qftReg->H(2, 2);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(0);
+    qftReg->X(control[0]); // on
     qftReg->H(0);
     qftReg->CNOT(0, 2);
-    qftReg->SBC(0, 2, 4, 2, 6);
-    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CIADC(control, 1, 0, 2, 4, 2, 6);
     qftReg->CNOT(0, 2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
     qftReg->SetPermutation(1);
-    qftReg->SBC(0, 1, 2, 1, 3);
+    qftReg->X(control[0]); // on
+    qftReg->CADC(control, 1, 0, 1, 2, 1, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
 
-    qftReg->SetPermutation(3);
-    qftReg->SBC(0, 1, 2, 1, 3);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 3));
-
-    qftReg->SetPermutation(1);
-    qftReg->ADC(0, 1, 2, 0, 3);
+    qftReg->SetPermutation(1); // off
+    qftReg->CADC(control, 1, 0, 1, 2, 0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_isbc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ciadc")
 {
     // This is contingent on the previous test passing.
+    bitLenInt control[1] = { 10 };
 
-    qftReg->SetPermutation(8);
+    qftReg->SetPermutation(8); // off
     qftReg->H(2, 2);
-    qftReg->SBC(0, 2, 4, 2, 6);
-    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CIADC(control, 1, 0, 2, 4, 2, 6);
     qftReg->H(2, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 8));
 
     qftReg->SetPermutation(0);
+    qftReg->X(control[0]); // on
     qftReg->H(0);
     qftReg->CNOT(0, 2);
-    qftReg->SBC(0, 2, 4, 2, 6);
-    qftReg->ISBC(0, 2, 4, 2, 6);
+    qftReg->CADC(control, 1, 0, 2, 4, 2, 6);
+    qftReg->CIADC(control, 1, 0, 2, 4, 2, 6);
     qftReg->CNOT(0, 2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
-    qftReg->SetPermutation(1);
-    qftReg->SBC(0, 1, 2, 1, 3);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
-    qftReg->ISBC(0, 1, 2, 1, 3);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+    qftReg->SetPermutation(2);
+    qftReg->X(control[0]); // on
+    qftReg->CADC(control, 1, 0, 1, 2, 1, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 6));
+    qftReg->CIADC(control, 1, 0, 1, 2, 1, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
-    qftReg->SetPermutation(1);
-    qftReg->SBC(0, 1, 2, 0, 3);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
-    qftReg->IADC(0, 1, 2, 0, 3);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
+    qftReg->SetPermutation(2); // off
+    qftReg->CADC(control, 1, 0, 1, 2, 0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+    qftReg->CIADC(control, 1, 0, 1, 2, 0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")

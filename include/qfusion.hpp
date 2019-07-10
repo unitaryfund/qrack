@@ -126,8 +126,6 @@ public:
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
-    virtual void SBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
-    virtual void ISBC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
