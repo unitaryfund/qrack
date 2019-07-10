@@ -1731,7 +1731,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc")
     qftReg->SetPermutation(0);
     qftReg->H(2, 2);
     qftReg->ADC(0, 2, 4, 2, 6);
-    qftReg->CNOT(2, 4, 2);
+    qftReg->IADC(0, 2, 4, 2, 6);
     qftReg->H(2, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
