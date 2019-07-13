@@ -889,7 +889,6 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    TransformBasis(false, target);
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
