@@ -840,13 +840,12 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    TransformToPerm(target);
-
     if (!freezeBasis) {
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
 
+    TransformToPerm(target);
     EndEmulation(shard);
 
     shard.unit->H(shard.mapped);
