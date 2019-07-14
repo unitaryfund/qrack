@@ -260,9 +260,6 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 {
     for (bitLenInt i = 0; i < bits.size(); i++) {
-        TransformToPerm(*(bits[i]));
-    }
-    for (bitLenInt i = 0; i < bits.size(); i++) {
         TransformBasis(false, *(bits[i]));
     }
     return EntangleInCurrentBasis(bits.begin(), bits.end());
@@ -270,7 +267,6 @@ QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
-    TransformToPerm(start, length);
     TransformBasis(false, start, length);
 
     if (length == 1) {
@@ -291,8 +287,6 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
 {
-    TransformToPerm(start1, length1);
-    TransformToPerm(start2, length2);
     TransformBasis(false, start1, length1);
     TransformBasis(false, start2, length2);
 
@@ -322,9 +316,6 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
 QInterfacePtr QUnit::EntangleRange(
     bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3)
 {
-    TransformToPerm(start1, length1);
-    TransformToPerm(start2, length2);
-    TransformToPerm(start3, length3);
     TransformBasis(false, start1, length1);
     TransformBasis(false, start2, length2);
     TransformBasis(false, start3, length3);
@@ -369,7 +360,6 @@ QInterfacePtr QUnit::EntangleRange(
 
 QInterfacePtr QUnit::EntangleAll()
 {
-    TransformToPermAll();
     TransformBasisAll(false);
     EndAllEmulation();
 
@@ -542,7 +532,6 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
 bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis)
 {
     if (!inCurrentBasis) {
-        TransformToPerm(qubitIndex);
         TransformBasis(false, qubitIndex);
     }
     if (CACHED_CLASSICAL(shards[qubitIndex])) {
@@ -619,7 +608,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
 
 real1 QUnit::Prob(bitLenInt qubit)
 {
-    TransformToPerm(qubit);
     TransformBasis(false, qubit);
     return ProbBase(qubit);
 }
@@ -681,7 +669,6 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
-    TransformToPerm(qubit);
     TransformBasis(false, qubit);
     QEngineShard& shard = shards[qubit];
 
@@ -1269,7 +1256,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             if (isSeparated) {
                 CHECK_BREAK_AND_TRIM();
             } else {
-                TransformToPerm(controls[i]);
                 TransformBasis(false, controls[i]);
                 controlVec.push_back(controls[i]);
             }
@@ -1462,7 +1448,6 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
 void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
 {
-    TransformToPerm(flagIndex);
     TransformBasis(false, flagIndex);
 
     // Measure the carry flag.
@@ -2101,7 +2086,6 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    TransformToPerm(flagIndex);
     TransformBasis(false, flagIndex);
 
     // Keep the bits separate, if cheap to do so:
@@ -2133,7 +2117,6 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip()
 {
-    TransformToPerm(0);
     if (PHASE_MATTERS(shards[0])) {
         TransformBasis(false, 0);
         shards[0].unit->PhaseFlip();
@@ -2369,7 +2352,12 @@ void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
         return;
     }
 
-    TransformToPerm(i);
+    if (!toPlusMinus) {
+        TransformToPerm(i);
+    } else if (shards[i].fourierUnit) {
+        // If the bit is compressed, skip this.
+        return;
+    }
 
     freezeBasis = true;
 
