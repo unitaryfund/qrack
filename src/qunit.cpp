@@ -108,6 +108,7 @@ void QUnit::GetProbs(real1* outputProbs)
 
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
+    TransformToPermAll();
     TransformBasisAll(false);
     EndAllEmulation();
 
@@ -359,10 +360,7 @@ QInterfacePtr QUnit::EntangleRange(
 
 QInterfacePtr QUnit::EntangleAll()
 {
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        TransformToPerm(i);
-    }
-
+    TransformToPermAll();
     TransformBasisAll(false);
     EndAllEmulation();
 
@@ -434,10 +432,6 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     if (length > 1) {
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
-    } else {
-        // If length == 1, this is usually all that's worth trying:
-        real1 prob = ProbBase(start);
-        return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
     QInterfacePtr separatedBits = MakeEngine(length, 0);

@@ -396,6 +396,13 @@ protected:
     void TransformToFourier(const bitLenInt& i);
     void TransformToPerm(const bitLenInt& i);
 
+    void TransformToPermAll()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            TransformToPerm(i);
+        }
+    }
+
     void CheckShardSeparable(const bitLenInt& target);
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
