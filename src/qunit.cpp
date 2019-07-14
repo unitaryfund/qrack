@@ -260,6 +260,9 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 {
     for (bitLenInt i = 0; i < bits.size(); i++) {
+        TransformToPerm(*(bits[i]));
+    }
+    for (bitLenInt i = 0; i < bits.size(); i++) {
         TransformBasis(false, *(bits[i]));
     }
     return EntangleInCurrentBasis(bits.begin(), bits.end());
