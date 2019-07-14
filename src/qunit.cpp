@@ -19,11 +19,11 @@
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define CACHED_CLASSICAL(shard)                                                                                        \
-    (!shard.isPlusMinus && !shard.fourierUnit && !shard.isProbDirty &&                                                 \
+    (!shard.isPlusMinus && (shard.fourierUnits.size() == 0) && !shard.isProbDirty &&                                   \
         ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define PHASE_MATTERS(shard)                                                                                           \
-    (!randGlobalPhase || shard.isPlusMinus || shard.fourierUnit || shard.isProbDirty || shard.isPhaseDirty ||          \
-        !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+    (!randGlobalPhase || shard.isPlusMinus || (shard.fourierUnits.size() > 0) || shard.isProbDirty ||                  \
+        shard.isPhaseDirty || !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 
 namespace Qrack {
 
@@ -2350,7 +2350,7 @@ void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
         TransformToPerm(i);
     }
 
-    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus) || shards[i].fourierUnit) {
+    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus) || (shards[i].fourierUnits.size() > 0)) {
         // Recursive call that should be blocked,
         // or already in target basis,
         // or blocked by compression.
@@ -2397,27 +2397,33 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 
 void QUnit::TransformToFourier(const bitLenInt& target)
 {
-    if (!randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnit != NULL)) {
-        // A sparse state vector already fulfills the point of this optimization,
-        // or already in target basis.
+    if (!randGlobalPhase || freezeBasis || isSparse) {
+        // A sparse state vector already fulfills the point of this optimization.
+        return;
+    }
+
+    QInterfacePtr unit = shards[target].unit;
+    bitLenInt origLength = unit->GetQubitCount();
+
+    if (origLength == 1) {
         return;
     }
 
     freezeBasis = true;
 
-    QInterfacePtr unit = shards[target].unit;
+    QUnit subUnit = QUnit(engine, subengine, origLength, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse);
 
-    QUnit subUnit = QUnit(engine, subengine, unit->GetQubitCount(), 0, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
-
+    std::vector<bitLenInt> subBitList;
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (unit == shards[i].unit) {
             subUnit.shards[shards[i].mapped] = shards[i];
+            subBitList.push_back(i);
         }
     }
 
     subUnit.freezeBasis = true;
-    subUnit.QFT(0, unit->GetQubitCount(), true);
+    subUnit.QFT(0, origLength, true);
 
     QInterfacePtr tUnit = subUnit.shards[0].unit;
 
@@ -2425,39 +2431,57 @@ void QUnit::TransformToFourier(const bitLenInt& target)
         if (unit == shards[i].unit) {
             bitLenInt tempMapped = shards[i].mapped;
             shards[i] = subUnit.shards[shards[i].mapped];
-            shards[i].fourierUnit = tUnit;
-            shards[i].fourierMapped = tempMapped;
+            shards[i].fourierUnits.push_back(tUnit);
+            shards[i].fourierMappings.push_back(tempMapped);
         }
     }
 
     freezeBasis = false;
+
+    bitLenInt nLength = shards[target].unit->GetQubitCount();
+    if (nLength != origLength) {
+        for (bitLenInt i = 0; i < subBitList.size(); i++) {
+            TransformToFourier(subBitList[i]);
+        }
+    }
 }
 
 void QUnit::TransformToPerm(const bitLenInt& target)
 {
-    if (!randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnit == NULL)) {
+    if (!randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnits.size() == 0)) {
         // A sparse state vector already fulfills the point of this optimization,
         // or already in target basis.
         return;
     }
 
-    freezeBasis = true;
-
-    QInterfacePtr unit = shards[target].fourierUnit;
+    QInterfacePtr unit = shards[target].fourierUnits.back();
 
     bitLenInt shardCount = 0;
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (unit == shards[i].fourierUnit) {
+        QEngineShard& shard = shards[i];
+
+        if (shard.fourierUnits.size() == 0) {
+            continue;
+        }
+
+        if (unit == shard.fourierUnits.back()) {
             shardCount++;
+        } else if (find(shards[i].fourierUnits.begin(), shards[i].fourierUnits.end(), unit) !=
+            shards[i].fourierUnits.end()) {
+            // Transform the deepest shard in the set:
+            TransformToPerm(i);
+            return;
         }
     }
+
+    freezeBasis = true;
 
     QUnit subUnit = QUnit(engine, subengine, shardCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
         useHostRam, devID, useRDRAND, isSparse);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (unit == shards[i].fourierUnit) {
-            subUnit.shards[shards[i].fourierMapped] = shards[i];
+        if ((shards[i].fourierUnits.size() > 0) && (unit == shards[i].fourierUnits.back())) {
+            subUnit.shards[shards[i].fourierMappings.back()] = shards[i];
         }
     }
 
@@ -2465,14 +2489,18 @@ void QUnit::TransformToPerm(const bitLenInt& target)
     subUnit.IQFT(0, shardCount, true);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (unit == shards[i].fourierUnit) {
-            shards[i] = subUnit.shards[shards[i].fourierMapped];
-            shards[i].fourierUnit = NULL;
-            shards[i].fourierMapped = 0;
+        if ((shards[i].fourierUnits.size() > 0) && (unit == shards[i].fourierUnits.back())) {
+            shards[i] = subUnit.shards[shards[i].fourierMappings.back()];
+            shards[i].fourierUnits.pop_back();
+            shards[i].fourierMappings.pop_back();
         }
     }
 
     freezeBasis = false;
+
+    if (shards[target].fourierUnits.size() > 0) {
+        TransformToPerm(target);
+    }
 }
 
 } // namespace Qrack

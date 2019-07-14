@@ -29,8 +29,8 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
-    QInterfacePtr fourierUnit;
-    bitLenInt fourierMapped;
+    std::vector<QInterfacePtr> fourierUnits;
+    std::vector<bitLenInt> fourierMappings;
 
     QEngineShard()
         : unit(NULL)
@@ -41,8 +41,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , fourierUnit(NULL)
-        , fourierMapped(0)
+        , fourierUnits()
+        , fourierMappings()
     {
     }
 
@@ -53,8 +53,8 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
-        , fourierUnit(NULL)
-        , fourierMapped(0)
+        , fourierUnits(0)
+        , fourierMappings()
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -70,8 +70,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , fourierUnit(NULL)
-        , fourierMapped(0)
+        , fourierUnits()
+        , fourierMappings()
     {
     }
 
