@@ -2397,7 +2397,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 
 void QUnit::TransformToFourier(const bitLenInt& target)
 {
-    if (freezeBasis || isSparse || (shards[target].fourierUnit != NULL)) {
+    if (!randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnit != NULL)) {
         // A sparse state vector already fulfills the point of this optimization,
         // or already in target basis.
         return;
@@ -2435,7 +2435,7 @@ void QUnit::TransformToFourier(const bitLenInt& target)
 
 void QUnit::TransformToPerm(const bitLenInt& target)
 {
-    if (freezeBasis || isSparse || (shards[target].fourierUnit == NULL)) {
+    if (!randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnit == NULL)) {
         // A sparse state vector already fulfills the point of this optimization,
         // or already in target basis.
         return;
