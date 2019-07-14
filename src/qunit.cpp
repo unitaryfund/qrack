@@ -108,7 +108,6 @@ void QUnit::GetProbs(real1* outputProbs)
 
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
-    TransformToPermAll();
     TransformBasisAll(false);
     EndAllEmulation();
 
@@ -171,6 +170,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
             destEngine = dest->shards[0].unit;
         }
+    } else {
+        TransformToPerm(start);
     }
 
     QInterfacePtr unit = shards[start].unit;
@@ -1128,11 +1129,10 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
+    TransformToPerm(target);
     EndEmulation(target);
 
     QEngineShard& shard = shards[target];
-
-    TransformToPerm(target);
 
     complex trnsMtrx[4];
 
@@ -2346,16 +2346,14 @@ QInterfacePtr QUnit::Clone()
 
 void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
 {
-    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
-        // Recursive call that should be blocked,
-        // or already in target basis.
-        return;
-    }
-
     if (!toPlusMinus) {
         TransformToPerm(i);
-    } else if (shards[i].fourierUnit) {
-        // If the bit is compressed, skip this.
+    }
+
+    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus) || shards[i].fourierUnit) {
+        // Recursive call that should be blocked,
+        // or already in target basis,
+        // or blocked by compression.
         return;
     }
 

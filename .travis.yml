@@ -17,4 +17,3 @@ script:
   - ./unittest --proc-cpu
   - cd .. && git clone https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
   - sudo python3 setup.py --with-qracksimulator install
-  - cd build && export OMP_NUM_THREADS=1 && sudo python3 -m pytest .
