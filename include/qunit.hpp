@@ -396,6 +396,13 @@ protected:
     void TransformToFourier(const bitLenInt& i);
     void TransformToPerm(const bitLenInt& i);
 
+    void TransformToPerm(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            TransformToPerm(start + i);
+        }
+    }
+
     void TransformToPermAll()
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {

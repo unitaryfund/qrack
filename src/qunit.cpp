@@ -267,6 +267,7 @@ QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
+    TransformToPerm(start, length);
     TransformBasis(false, start, length);
 
     if (length == 1) {
@@ -287,6 +288,8 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
 {
+    TransformToPerm(start1, length1);
+    TransformToPerm(start2, length2);
     TransformBasis(false, start1, length1);
     TransformBasis(false, start2, length2);
 
@@ -316,6 +319,9 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
 QInterfacePtr QUnit::EntangleRange(
     bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3)
 {
+    TransformToPerm(start1, length1);
+    TransformToPerm(start2, length2);
+    TransformToPerm(start3, length3);
     TransformBasis(false, start1, length1);
     TransformBasis(false, start2, length2);
     TransformBasis(false, start3, length3);
@@ -610,12 +616,14 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
 
 real1 QUnit::Prob(bitLenInt qubit)
 {
+    TransformToPerm(qubit);
     TransformBasis(false, qubit);
     return ProbBase(qubit);
 }
 
 real1 QUnit::ProbAll(bitCapInt perm)
 {
+    TransformToPermAll();
     TransformBasisAll(false);
     EndAllEmulation();
 
@@ -874,7 +882,6 @@ void QUnit::H(bitLenInt target)
 void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
         EndEmulation(shard);
@@ -1451,6 +1458,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
 void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
 {
+    TransformToPerm(flagIndex);
     TransformBasis(false, flagIndex);
 
     // Measure the carry flag.
@@ -2089,6 +2097,7 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    TransformToPerm(flagIndex);
     TransformBasis(false, flagIndex);
 
     // Keep the bits separate, if cheap to do so:
