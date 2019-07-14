@@ -29,6 +29,8 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
+    QInterfacePtr fourierUnit;
+    bitLenInt fourierMapped;
 
     QEngineShard()
         : unit(NULL)
@@ -39,6 +41,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , fourierUnit(NULL)
+        , fourierMapped(0)
     {
     }
 
@@ -49,6 +53,8 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
+        , fourierUnit(NULL)
+        , fourierMapped(0)
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -64,6 +70,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , fourierUnit(NULL)
+        , fourierMapped(0)
     {
     }
 
@@ -384,6 +392,9 @@ protected:
     void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
 
     bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus);
+
+    void TransformToFourier(const bitLenInt& i);
+    void TransformToPerm(const bitLenInt& i);
 
     void CheckShardSeparable(const bitLenInt& target);
 
