@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
     bool qunit_qfusion = false;
     bool cpu = false;
     bool opencl_single = false;
+    bool selDefault = false;
     bool selSparse = false;
     bool selCompressed = false;
 
@@ -64,6 +65,7 @@ int main(int argc, char* argv[])
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
         Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)") |
+        Opt(selSparse)["--opt-default"]("Enable tests with both sparse and compressed state vectors off") |
         Opt(selSparse)["--opt-sparse"]("Enable sparse state vector (CPU only)") |
         Opt(selCompressed)["--opt-compressed"]("Enable Fourier-basis-compressed state vector");
 
@@ -103,7 +105,8 @@ int main(int argc, char* argv[])
         opencl_single = true;
     }
 
-    if (!selSparse && !selCompressed) {
+    if (!selDefault && !selSparse && !selCompressed) {
+        selDefault = true;
         selSparse = true;
         selCompressed = true;
     }
@@ -155,8 +158,8 @@ int main(int argc, char* argv[])
 
     if (num_failed == 0 && qunit) {
         testEngineType = QINTERFACE_QUNIT;
-        if (num_failed == 0 && cpu) {
-            session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
+        if (num_failed == 0 && cpu && selDefault) {
+            session.config().stream() << "############ QUnit -> QEngine -> CPU (Default) ############" << std::endl;
             testSubEngineType = QINTERFACE_CPU;
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
@@ -181,8 +184,8 @@ int main(int argc, char* argv[])
         }
 
 #if ENABLE_OPENCL
-        if (num_failed == 0 && opencl_single) {
-            session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
+        if (num_failed == 0 && opencl_single && selDefault) {
+            session.config().stream() << "############ QUnit -> QEngine -> OpenCL (Default) ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
             testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
@@ -204,8 +207,8 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qunit_qfusion) {
         testEngineType = QINTERFACE_QUNIT;
         testSubEngineType = QINTERFACE_QFUSION;
-        if (num_failed == 0 && cpu) {
-            session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+        if (num_failed == 0 && cpu && selDefault) {
+            session.config().stream() << "############ QUnit -> QFusion -> CPU (Default) ############" << std::endl;
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
@@ -227,8 +230,8 @@ int main(int argc, char* argv[])
         }
 
 #if ENABLE_OPENCL
-        if (num_failed == 0 && opencl_single) {
-            session.config().stream() << "############ QUnit -> QFusion -> OpenCL ############" << std::endl;
+        if (num_failed == 0 && opencl_single && selDefault) {
+            session.config().stream() << "############ QUnit -> QFusion -> OpenCL (Default) ############" << std::endl;
             testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
