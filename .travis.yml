@@ -15,6 +15,6 @@ script:
   - cd .. && sudo rm -r _build
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
   - ./unittest --proc-cpu
-  - cd .. && git clone https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
+  - cd .. && git clone -b fourier_basis https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
   - sudo python3 setup.py --with-qracksimulator install
   - cd build && export OMP_NUM_THREADS=1 && sudo python3 -m pytest .
