@@ -39,7 +39,11 @@ const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 double formatTime(double t, bool logNormal)
 {
     if (logNormal) {
-        return pow(2.0, pow(2.0, t));
+        if (compressed) {
+            return pow(2.0, pow(2.0, t));
+        } else {
+            return pow(2.0, t);
+        }
     } else {
         return t;
     }
@@ -102,7 +106,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             // Collect interval data
             tClock = clock() - iterClock;
             if (logNormal) {
-                trialClocks[i] = log2(log2(tClock * clockFactor));
+                if (compressed) {
+                    trialClocks[i] = log2(log2(tClock * clockFactor));
+                } else {
+                    trialClocks[i] = log2(tClock * clockFactor);
+                }
             } else {
                 trialClocks[i] = tClock * clockFactor;
             }
