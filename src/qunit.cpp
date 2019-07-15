@@ -432,6 +432,10 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     if (length > 1) {
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
+    } else {
+        // If length == 1, this is usually all that's worth trying:
+        real1 prob = ProbBase(start);
+        return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
     QInterfacePtr separatedBits = MakeEngine(length, 0);
@@ -883,8 +887,14 @@ void QUnit::ZBase(const bitLenInt& target)
 void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
-    if (!shard.isPlusMinus) {
+
+    if (shard.unit->GetQubitCount() > 1) {
+        TransformToPerm(target);
+    }
+    bitLenInt order = shard.isPlusMinus ? 1 : 0;
+    order += shard.fourierUnits.size();
+
+    if (!(order & 1U)) {
         if (CACHED_CLASSICAL(shard)) {
             shard.isEmulated = true;
         } else {
@@ -899,8 +909,14 @@ void QUnit::X(bitLenInt target)
 void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
-    if (!shard.isPlusMinus) {
+
+    if (shard.unit->GetQubitCount() > 1) {
+        TransformToPerm(target);
+    }
+    bitLenInt order = shard.isPlusMinus ? 1 : 0;
+    order += shard.fourierUnits.size();
+
+    if (!(order & 1U)) {
         if (PHASE_MATTERS(shard)) {
             EndEmulation(shard);
             shard.unit->Z(shard.mapped);
@@ -1039,8 +1055,14 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
-    if (!shard.isPlusMinus) {
+
+    if (shard.unit->GetQubitCount() > 1) {
+        TransformToPerm(target);
+    }
+    bitLenInt order = shard.isPlusMinus ? 1 : 0;
+    order += shard.fourierUnits.size();
+
+    if (!(order & 1U)) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
         if (PHASE_MATTERS(shard)) {
             EndEmulation(shard);
@@ -1064,8 +1086,14 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
-    if (!shard.isPlusMinus) {
+
+    if (shard.unit->GetQubitCount() > 1) {
+        TransformToPerm(target);
+    }
+    bitLenInt order = shard.isPlusMinus ? 1 : 0;
+    order += shard.fourierUnits.size();
+
+    if (!(order & 1U)) {
         if (CACHED_CLASSICAL(shard)) {
             shard.isEmulated = true;
         } else {
@@ -1092,7 +1120,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     const complex topLeft, const complex bottomRight)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
         CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
@@ -1111,7 +1138,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
     QEngineShard& shard = shards[target];
-    TransformToPerm(target);
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
         CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
@@ -1128,14 +1154,19 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    TransformToPerm(target);
     EndEmulation(target);
 
     QEngineShard& shard = shards[target];
 
     complex trnsMtrx[4];
 
-    if (!shard.isPlusMinus) {
+    if (shard.unit->GetQubitCount() > 1) {
+        TransformToPerm(target);
+    }
+    bitLenInt order = shard.isPlusMinus ? 1 : 0;
+    order += shard.fourierUnits.size();
+
+    if (!(order & 1U)) {
         std::copy(mtrx, mtrx + 4, trnsMtrx);
     } else {
         Transform2x2(mtrx, trnsMtrx);
