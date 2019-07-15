@@ -435,6 +435,10 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     } else {
         // If length == 1, this is usually all that's worth trying:
         real1 prob = ProbBase(start);
+        if (abs(prob - (ONE_R1 / 2)) < min_norm) {
+            TransformBasis(!shards[start].isPlusMinus, start);
+            prob = ProbBase(start);
+        }
         return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
@@ -1154,8 +1158,6 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    EndEmulation(target);
-
     QEngineShard& shard = shards[target];
 
     complex trnsMtrx[4];
@@ -1163,6 +1165,9 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
     if (shard.unit->GetQubitCount() > 1) {
         TransformToPerm(target);
     }
+
+    EndEmulation(target);
+
     bitLenInt order = shard.isPlusMinus ? 1 : 0;
     order += shard.fourierUnits.size();
 
