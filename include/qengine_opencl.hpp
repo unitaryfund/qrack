@@ -132,7 +132,8 @@ public:
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false);
+        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
+        bool ignored2 = false);
 
     QEngineOCL()
     {

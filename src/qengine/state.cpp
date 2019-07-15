@@ -37,7 +37,8 @@ namespace Qrack {
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec)
+    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
+    bool useQubitCompression)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG)
     , isSparse(useSparseStateVec)
 {

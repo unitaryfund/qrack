@@ -28,16 +28,17 @@
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec)
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
+    bool useQubitCompression)
     : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID,
-          useHardwareRNG, useSparseStateVec)
+          useHardwareRNG, useSparseStateVec, useQubitCompression)
 {
     // Intentionally left blank
 }
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec)
+    bool useHardwareRNG, bool useSparseStateVec, bool useQubitCompression)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
     , engine(eng)
     , subengine(subEng)
@@ -49,6 +50,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , freezeBasis(false)
+    , useCompression(useQubitCompression)
 {
     shards.resize(qBitCount);
 
@@ -2432,7 +2434,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 
 void QUnit::TransformToFourier(const bitLenInt& target)
 {
-    if (!randGlobalPhase || freezeBasis || isSparse) {
+    if (!useCompression || !randGlobalPhase || freezeBasis || isSparse) {
         // A sparse state vector already fulfills the point of this optimization.
         return;
     }
@@ -2483,7 +2485,7 @@ void QUnit::TransformToFourier(const bitLenInt& target)
 
 void QUnit::TransformToPerm(const bitLenInt& target)
 {
-    if (!randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnits.size() == 0)) {
+    if (!useCompression || !randGlobalPhase || freezeBasis || isSparse || (shards[target].fourierUnits.size() == 0)) {
         // A sparse state vector already fulfills the point of this optimization,
         // or already in target basis.
         return;

@@ -21,7 +21,7 @@ namespace Qrack {
 
 QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
     complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
-    bool useSparseStateVec)
+    bool useSparseStateVec, bool ignored)
     : QInterface(qBitCount, rgp, deviceID, useHardwareRNG)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
