@@ -437,10 +437,6 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     } else {
         // If length == 1, this is usually all that's worth trying:
         real1 prob = ProbBase(start);
-        if (abs(prob - (ONE_R1 / 2)) < min_norm) {
-            TransformBasis(!shards[start].isPlusMinus, start);
-            prob = ProbBase(start);
-        }
         return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
