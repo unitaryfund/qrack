@@ -211,7 +211,7 @@ void QEngineOCL::QueueCall(
     }
 }
 
-CL_CALLBACK void _PopQueue(cl_event event, cl_int type, void* user_data)
+void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
 {
     ((QEngineOCL*)user_data)->PopQueue(event, type);
 }

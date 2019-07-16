@@ -28,7 +28,7 @@ unsigned char* cl_alloc(size_t ucharCount)
     return (unsigned char*)_aligned_malloc(((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE)
             ? QRACK_ALIGN_SIZE
             : (sizeof(unsigned char) * ucharCount),
-        ALIGN_SIZE);
+		QRACK_ALIGN_SIZE);
 #else
     return (unsigned char*)aligned_alloc(QRACK_ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE
