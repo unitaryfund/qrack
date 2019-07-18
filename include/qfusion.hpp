@@ -78,10 +78,16 @@ public:
     }
     virtual bool TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySinglePhase(
+        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
@@ -136,8 +142,10 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
-    virtual void CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt carryInSumOut, bitLenInt carryOut);
-    virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt carryInSumOut, bitLenInt carryOut);
 
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
