@@ -1630,6 +1630,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fulladd")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fulladd_noncoding")
 {
+    if (testEngineType == QINTERFACE_QFUSION) {
+        return;
+    }
+
     QInterfacePtr qftReg2 = qftReg->Clone();
 
     qftReg->SetPermutation(0x00 | 8);
