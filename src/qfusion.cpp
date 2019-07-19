@@ -135,7 +135,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
 {
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates.
-    if (qubitCount < MIN_FUSION_BITS) {
+    if (qubitCount < (MIN_FUSION_BITS + ((bitBuffers[qubitIndex] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(qubitIndex);
         qReg->ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
@@ -161,7 +161,7 @@ void QFusion::ApplySinglePhase(const complex topLeft, const complex bottomRight,
 {
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates.
-    if (qubitCount < MIN_FUSION_BITS) {
+    if (qubitCount < (MIN_FUSION_BITS + ((bitBuffers[qubitIndex] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(qubitIndex);
         qReg->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, qubitIndex);
@@ -192,7 +192,7 @@ void QFusion::ApplyControlledSingleBit(
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
-    if (qubitCount < (MIN_FUSION_BITS + controlLen)) {
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(target);
         qReg->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
@@ -226,7 +226,7 @@ void QFusion::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLen
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
-    if (qubitCount < (MIN_FUSION_BITS + controlLen)) {
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(target);
         qReg->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
@@ -259,9 +259,8 @@ void QFusion::ApplyAntiControlledSingleBit(
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
-    if (qubitCount < (MIN_FUSION_BITS + controlLen)) {
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
-        FlushArray(controls, controlLen);
         FlushBit(target);
         qReg->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
         return;
@@ -294,7 +293,7 @@ void QFusion::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bi
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
-    if (qubitCount < (MIN_FUSION_BITS + controlLen)) {
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(target);
         qReg->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
