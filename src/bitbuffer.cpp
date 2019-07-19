@@ -130,18 +130,19 @@ BitBufferPtr GateBuffer::LeftRightCompose(BitBufferPtr rightBuffer)
 
 bool GateBuffer::IsIdentity()
 {
-    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity operator,
-    // then we can discard this buffer without applying it.
+    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
+    // operator, then we can discard this buffer without applying it.
+    if (norm(matrix.get()[1]) > min_norm) {
+        return false;
+    }
+    if (norm(matrix.get()[2]) > min_norm) {
+        return false;
+    }
+
+    // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
+    // offset (but shouldn't).
     complex toTest = matrix.get()[0];
     if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = matrix.get()[1];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
-        return false;
-    }
-    toTest = matrix.get()[2];
-    if ((real(toTest) > min_norm) || (imag(toTest) > min_norm)) {
         return false;
     }
     toTest = matrix.get()[3];

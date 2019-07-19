@@ -78,10 +78,16 @@ public:
     }
     virtual bool TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySinglePhase(
+        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
@@ -136,6 +142,10 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt carryInSumOut, bitLenInt carryOut);
+    virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt carryInSumOut, bitLenInt carryOut);
 
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
@@ -200,21 +210,28 @@ protected:
 
     void FlushBit(const bitLenInt& qubitIndex);
 
-    inline void FlushReg(const bitLenInt& start, const bitLenInt& length)
+    void FlushReg(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0U; i < length; i++) {
             FlushBit(start + i);
         }
     }
 
-    inline void FlushList(const bitLenInt* bitList, const bitLenInt& bitListLen)
+    void FlushArray(const bitLenInt* bitList, const bitLenInt& bitListLen)
     {
         for (bitLenInt i = 0; i < bitListLen; i++) {
             FlushBit(bitList[i]);
         }
     }
 
-    inline void FlushMask(const bitCapInt mask)
+    void FlushVec(const std::vector<bitLenInt> bitList)
+    {
+        for (bitLenInt i = 0; i < bitList.size(); i++) {
+            FlushBit(bitList[i]);
+        }
+    }
+
+    void FlushMask(const bitCapInt mask)
     {
         bitCapInt v = mask; // count the number of bits set in v
         bitCapInt oldV;
@@ -230,7 +247,7 @@ protected:
         }
     }
 
-    inline void FlushAll() { FlushReg(0, qubitCount); }
+    void FlushAll() { FlushReg(0, qubitCount); }
 
     /** Buffer discard methods, for when the state of a bit becomes irrelevant before a buffer flush */
 

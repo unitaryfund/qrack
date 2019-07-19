@@ -45,8 +45,8 @@ QFusion::QFusion(QInterfacePtr target)
 }
 
 /**
- * All buffering operations happen in ApplySingleBit, which underlies the application of all 2x2 complex element matrix
- * operators, such as H, X, Y, Z, RX, etc..
+ * All buffering operations happen in ApplySingleBit and its variants, which underly the application of all 2x2 complex
+ * element matrix operators, such as H, X, Y, Z, RX, etc..
  *
  * Without a QFusion layer, ApplySingleBit applies the Kroenecker product of a 2x2 complex element matrix operator to a
  * state vector of 2^N elements for N bits. With tensor slicing, this implies a complexity that scales as approximately
@@ -66,31 +66,6 @@ QFusion::QFusion(QInterfacePtr target)
  * buffered (and doesn't "commute") and before output from qubits. The rest of the engine simply wraps the other public
  * methods of QInterface to flush or discard the buffers as necessary.
  */
-void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
-{
-    // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
-    // more expensive than directly applying the gates.
-    if (qubitCount < MIN_FUSION_BITS) {
-        // Directly apply the gate and return.
-        FlushBit(qubitIndex);
-        qReg->ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
-        return;
-    }
-
-    // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
-    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
-    if (!(bfr->Combinable(bitBuffers[qubitIndex]))) {
-        // Flush the old buffer, if the buffered control bits don't match.
-        FlushBit(qubitIndex);
-    }
-
-    // Now, we're going to chain our buffered gates;
-    bitBuffers[qubitIndex] = bfr->LeftRightCompose(bitBuffers[qubitIndex]);
-}
-
-// Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
-// discard the buffers.
-
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
     // If we ended up with a buffer that's (approximately or exactly) equal to identity operator, we can discard it
@@ -99,18 +74,6 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
         DiscardBit(qubitIndex);
         return;
     }
-
-    bitLenInt i;
-
-    // Before any bit is buffered as a control, it's flushed.
-    // If the bit needs to be flushed again, before buffering as a target bit, everything that depends on it as a
-    // control needs to be flushed.
-    for (i = 0; i < bitControls[qubitIndex].size(); i++) {
-        if (bitControls[qubitIndex][i] != qubitIndex) {
-            FlushBit(bitControls[qubitIndex][i]);
-        }
-    }
-    bitControls[qubitIndex].resize(0);
 
     BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
@@ -122,7 +85,7 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
             // controlled by another bit.
             std::vector<bitLenInt>::iterator found;
             bitLenInt control;
-            for (i = 0; i < bfr->controls.size(); i++) {
+            for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
                 control = bfr->controls[i];
                 found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
                 if (found != bitControls[control].end()) {
@@ -166,15 +129,70 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
     bitBuffers[qubitIndex] = NULL;
 }
 
+// Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
+// discard the buffers.
+void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
+{
+    // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
+    // more expensive than directly applying the gates.
+    if (qubitCount < (MIN_FUSION_BITS + ((bitBuffers[qubitIndex] == NULL) ? 0 : 1))) {
+        // Directly apply the gate and return.
+        FlushBit(qubitIndex);
+        qReg->ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
+        return;
+    }
+
+    FlushVec(bitControls[qubitIndex]);
+
+    // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
+    if (!(bfr->Combinable(bitBuffers[qubitIndex]))) {
+        // Flush the old buffer, if the buffered control bits don't match.
+        FlushBit(qubitIndex);
+    }
+
+    // Now, we're going to chain our buffered gates;
+    bitBuffers[qubitIndex] = bfr->LeftRightCompose(bitBuffers[qubitIndex]);
+}
+
+// Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
+// discard the buffers.
+void QFusion::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex)
+{
+    // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
+    // more expensive than directly applying the gates.
+    if (qubitCount < (MIN_FUSION_BITS + ((bitBuffers[qubitIndex] == NULL) ? 0 : 1))) {
+        // Directly apply the gate and return.
+        FlushBit(qubitIndex);
+        qReg->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, qubitIndex);
+        return;
+    }
+
+    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
+    // flush this bit as a control.
+
+    // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
+    complex mtrx[4] = { topLeft, 0, 0, bottomRight };
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
+    if (!(bfr->Combinable(bitBuffers[qubitIndex]))) {
+        // Flush the old buffer, if the buffered control bits don't match.
+        FlushBit(qubitIndex);
+    }
+
+    // Now, we're going to chain our buffered gates;
+    bitBuffers[qubitIndex] = bfr->LeftRightCompose(bitBuffers[qubitIndex]);
+}
+
 void QFusion::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
+    FlushVec(bitControls[target]);
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
-    if (qubitCount < (MIN_FUSION_BITS + controlLen)) {
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(target);
         qReg->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
@@ -198,15 +216,50 @@ void QFusion::ApplyControlledSingleBit(
     bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
-void QFusion::ApplyAntiControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QFusion::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
+    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
+    // flush this bit as a control.
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
     // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
-    if (qubitCount < (MIN_FUSION_BITS + controlLen)) {
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
+        // Directly apply the gate and return.
+        FlushBit(target);
+        qReg->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        return;
+    }
+
+    complex mtrx[4] = { topLeft, 0, 0, bottomRight };
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, controls, controlLen, mtrx);
+    if (!(bfr->Combinable(bitBuffers[target]))) {
+        // Flush the old buffer, if the buffered control bits don't match.
+        FlushBit(target);
+    }
+
+    // We record that this bit is controlled by the bits in its control list.
+    if (bitBuffers[target] == NULL) {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            bitControls[controls[i]].push_back(target);
+        }
+    }
+
+    // Now, we're going to chain our buffered gates;
+    bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
+}
+
+void QFusion::ApplyAntiControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    FlushArray(controls, controlLen);
+
+    // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
+    // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
+    // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(target);
         qReg->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
@@ -230,13 +283,49 @@ void QFusion::ApplyAntiControlledSingleBit(
     bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
 }
 
-void QFusion::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
+void QFusion::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+{
+    FlushArray(controls, controlLen);
+    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
+    // flush this bit as a control.
+
+    // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
+    // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
+    // buffering is only efficient if we have one additional total bit for each additional control bit to buffer.
+    if (qubitCount < (MIN_FUSION_BITS + controlLen + ((bitBuffers[target] == NULL) ? 0 : 1))) {
+        // Directly apply the gate and return.
+        FlushBit(target);
+        qReg->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        return;
+    }
+
+    complex mtrx[4] = { topLeft, 0, 0, bottomRight };
+    GateBufferPtr bfr = std::make_shared<GateBuffer>(true, controls, controlLen, mtrx);
+    if (!(bfr->Combinable(bitBuffers[target]))) {
+        // Flush the old buffer, if the buffered control bits don't match.
+        FlushBit(target);
+    }
+
+    // We record that this bit is controlled by the bits in its control list.
+    if (bitBuffers[target] == NULL) {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            bitControls[controls[i]].push_back(target);
+        }
+    }
+
+    // Now, we're going to chain our buffered gates;
+    bitBuffers[target] = bfr->LeftRightCompose(bitBuffers[target]);
+}
+
+void QFusion::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt target,
     const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
 {
-    FlushAll();
+    FlushArray(controls, controlLen);
+    FlushBit(target);
     qReg->UniformlyControlledSingleBit(
-        controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
+        controls, controlLen, target, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
 }
 
 // "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed"
@@ -305,34 +394,10 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     }
 }
 
-// "TryDecompose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per
-// "decomposed" qubit, so it's definitely cheaper to maintain our buffers until after the Decomposed.
 bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
-    FlushReg(start, length);
-
-    bool result = qReg->TryDecompose(start, length, dest->qReg);
-
-    if (result == false) {
-        return false;
-    }
-
-    if (length < qubitCount) {
-        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
-    }
-    SetQubitCount(qReg->GetQubitCount());
-    dest->SetQubitCount(length);
-
-    // If the Decompose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
-    // gets:
-    if (qubitCount < MIN_FUSION_BITS) {
-        FlushAll();
-    }
-    if (dest->GetQubitCount() < MIN_FUSION_BITS) {
-        dest->FlushAll();
-    }
-
-    return true;
+    FlushAll();
+    return qReg->TryDecompose(start, length, dest->qReg);
 }
 
 // "PhaseFlip" can be buffered as a single bit operation to make it cheaper, (equivalent to the application of the gates
@@ -402,7 +467,7 @@ void QFusion::CSwap(
         return;
     }
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
     qReg->CSwap(controls, controlLen, qubit1, qubit2);
@@ -415,7 +480,7 @@ void QFusion::AntiCSwap(
         return;
     }
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
     qReg->AntiCSwap(controls, controlLen, qubit1, qubit2);
@@ -428,7 +493,7 @@ void QFusion::CSqrtSwap(
         return;
     }
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
     qReg->CSqrtSwap(controls, controlLen, qubit1, qubit2);
@@ -441,7 +506,7 @@ void QFusion::AntiCSqrtSwap(
         return;
     }
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
     qReg->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
@@ -454,7 +519,7 @@ void QFusion::CISqrtSwap(
         return;
     }
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
     qReg->CISqrtSwap(controls, controlLen, qubit1, qubit2);
@@ -467,7 +532,7 @@ void QFusion::AntiCISqrtSwap(
         return;
     }
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushBit(qubit1);
     FlushBit(qubit2);
     qReg->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
@@ -499,7 +564,7 @@ void QFusion::BufferArithmetic(
 
     bitLenInt i;
 
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
 
     BitBufferPtr toCheck;
     BitBufferPtr bfr = std::make_shared<ArithmeticBuffer>(false, controls, controlLen, inOutStart, length, toAdd);
@@ -704,11 +769,33 @@ void QFusion::IFullAdd(bitLenInt input1, bitLenInt input2, bitLenInt carryInSumO
     qReg->IFullAdd(input1, input2, carryInSumOut, carryOut);
 }
 
+void QFusion::CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+    bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    FlushArray(controls, controlLen);
+    FlushBit(input1);
+    FlushBit(input2);
+    FlushBit(carryInSumOut);
+    FlushBit(carryOut);
+    qReg->CFullAdd(controls, controlLen, input1, input2, carryInSumOut, carryOut);
+}
+
+void QFusion::CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+    bitLenInt carryInSumOut, bitLenInt carryOut)
+{
+    FlushArray(controls, controlLen);
+    FlushBit(input1);
+    FlushBit(input2);
+    FlushBit(carryInSumOut);
+    FlushBit(carryOut);
+    qReg->CIFullAdd(controls, controlLen, input1, input2, carryInSumOut, carryOut);
+}
+
 void QFusion::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
     if (toMul != 1U) {
-        FlushList(controls, controlLen);
+        FlushArray(controls, controlLen);
         FlushReg(inOutStart, length);
         FlushReg(carryStart, length);
         qReg->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
@@ -719,7 +806,7 @@ void QFusion::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, 
     bitLenInt controlLen)
 {
     if (toDiv != 1U) {
-        FlushList(controls, controlLen);
+        FlushArray(controls, controlLen);
         FlushReg(inOutStart, length);
         FlushReg(carryStart, length);
         qReg->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
@@ -729,7 +816,7 @@ void QFusion::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, 
 void QFusion::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushReg(inStart, length);
     FlushReg(outStart, length);
     qReg->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
@@ -738,7 +825,7 @@ void QFusion::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
 void QFusion::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    FlushList(controls, controlLen);
+    FlushArray(controls, controlLen);
     FlushReg(inStart, length);
     FlushReg(outStart, length);
     qReg->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
