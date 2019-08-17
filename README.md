@@ -152,7 +152,7 @@ Qrack was originally written so that the disassembler of VM6502Q should show the
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 
-The given DOI date is the date of first "official release." Qrack has always been a publicly available and living work, since the creation of the repo in 2017 and continuing indefinitely into the future. It may be apppropriate to reference the date of a specific commit, in a fork or branch, of a particular authorship, etc.. We leave this to the discretion of citing authors, (in good faith).
+(The given DOI date is that of first "official release.")
 
 Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
 
