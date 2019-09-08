@@ -68,9 +68,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
     double avgt, stdet;
 
-    bitLenInt mnQbts = 4;
+    bitLenInt mnQbts;
     if (single_qubit_run) {
         mnQbts = mxQbts;
+    } else {
+        mnQbts = 4;
     }
 
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
@@ -356,37 +358,6 @@ TEST_CASE("test_set_reg", "[aux]")
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetReg(0, n, 1); });
 }
 
-TEST_CASE("test_qft_ideal_init", "[qft]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
-}
-
-TEST_CASE("test_qft_permutation_init", "[qft]")
-{
-    benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
-}
-
-TEST_CASE("test_qft_permutation_round_trip_entangled", "[qft]")
-{
-    benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) {
-            qftReg->QFT(0, n, false);
-            qftReg->IQFT(0, n, false);
-        },
-        true, false, testEngineType == QINTERFACE_QUNIT);
-}
-
-TEST_CASE("test_qft_superposition_round_trip", "[qft]")
-{
-    benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) {
-            qftReg->QFT(0, n, false);
-            qftReg->IQFT(0, n, false);
-        },
-        true, true, testEngineType == QINTERFACE_QUNIT);
-}
-
 TEST_CASE("test_grover", "[grover]")
 {
 
@@ -419,4 +390,35 @@ TEST_CASE("test_grover", "[grover]")
 
         qftReg->MReg(0, n);
     });
+}
+
+TEST_CASE("test_qft_ideal_init", "[qft]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
+}
+
+TEST_CASE("test_qft_permutation_init", "[qft]")
+{
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
+}
+
+TEST_CASE("test_qft_permutation_round_trip_entangled", "[qft]")
+{
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) {
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
+        },
+        true, false, testEngineType == QINTERFACE_QUNIT);
+}
+
+TEST_CASE("test_qft_superposition_round_trip", "[qft]")
+{
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) {
+            qftReg->QFT(0, n, false);
+            qftReg->IQFT(0, n, false);
+        },
+        true, true, testEngineType == QINTERFACE_QUNIT);
 }
