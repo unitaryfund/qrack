@@ -30,6 +30,8 @@ bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
 int device_id = -1;
+bitLenInt max_qubits = 24;
+bool single_qubit_run = false;
 
 int main(int argc, char* argv[])
 {
@@ -41,6 +43,8 @@ int main(int argc, char* argv[])
     bool qunit_qfusion = false;
     bool cpu = false;
     bool opencl_single = false;
+
+    int mxQbts = 24;
 
     using namespace Catch::clara;
 
@@ -60,7 +64,10 @@ int main(int argc, char* argv[])
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
-        Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)");
+        Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)") |
+        Opt(mxQbts, "max-qubits")["-m"]["--max-qubits"](
+            "Maximum qubits for test (default value 24, enter \"-1\" for automatic selection)") |
+        Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests");
 
     session.cli(cli);
 
@@ -95,6 +102,35 @@ int main(int argc, char* argv[])
     if (!cpu && !opencl_single) {
         cpu = true;
         opencl_single = true;
+    }
+
+    if (mxQbts == -1) {
+        // If we're talking about a particular OpenCL device,
+        // we have an API designed to tell us device capabilities and limitations,
+        // like maximum RAM allocation.
+        if (opencl_single) {
+#if ENABLE_OPENCL
+            // Make sure the context singleton is initialized.
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();
+
+            DeviceContextPtr device_context = OCLEngine::Instance()->GetDeviceContextPtr(device_id);
+            size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+            size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+
+            // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
+            max_qubits = log2(maxAlloc);
+            if ((3 * (1U << max_qubits)) > maxMem) {
+                max_qubits = log2(maxMem / 3);
+            }
+#else
+        // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.
+        // If we're not talking about the OpenCL resources of a single device,
+        // maximum allocation becomes a notoriously thorny matter.
+        // For any case besides the above, we just use the default.
+#endif
+        }
+    } else {
+        max_qubits = mxQbts;
     }
 
     int num_failed = 0;

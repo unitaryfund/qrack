@@ -32,8 +32,6 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
-
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
 double formatTime(double t, bool logNormal)
@@ -70,7 +68,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
     double avgt, stdet;
 
-    for (numBits = 4; numBits <= mxQbts; numBits++) {
+    bitLenInt mnQbts = 4;
+    if (single_qubit_run) {
+        mnQbts = mxQbts;
+    }
+
+    for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
             0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
         avgt = 0.0;
@@ -153,7 +156,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true,
     bool hadamardRandomBits = false, bool logNormal = false)
 {
-    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
+    benchmarkLoopVariable(fn, max_qubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
 
 TEST_CASE("test_cnot_single", "[gates]")
@@ -305,8 +308,8 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
 {
     bitCapInt i, j;
 
-    bitCapInt wordLength = (MaxQubits / 16 + 1);
-    bitCapInt indexLength = (1 << (MaxQubits / 2));
+    bitCapInt wordLength = (max_qubits / 16 + 1);
+    bitCapInt indexLength = (1 << (max_qubits / 2));
     unsigned char* testPage = new unsigned char[wordLength * indexLength];
     for (j = 0; j < indexLength; j++) {
         for (i = 0; i < wordLength; i++) {
@@ -390,31 +393,30 @@ TEST_CASE("test_grover", "[grover]")
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 3.
 
-    benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) {
-            int i;
-            // Twelve iterations maximizes the probablity for 256 searched elements, for example.
-            // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-            int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        int i;
+        // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+        // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
+        int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
 
-            // Our input to the subroutine "oracle" is 8 bits.
-            qftReg->SetPermutation(0);
+        // Our input to the subroutine "oracle" is 8 bits.
+        qftReg->SetPermutation(0);
+        qftReg->H(0, n);
+
+        for (i = 0; i < optIter; i++) {
+            // Our "oracle" is true for an input of "3" and false for all other inputs.
+            qftReg->DEC(3, 0, n);
+            qftReg->ZeroPhaseFlip(0, n);
+            qftReg->INC(3, 0, n);
+            // This ends the "oracle."
             qftReg->H(0, n);
+            qftReg->ZeroPhaseFlip(0, n);
+            qftReg->H(0, n);
+            qftReg->PhaseFlip();
+        }
 
-            for (i = 0; i < optIter; i++) {
-                // Our "oracle" is true for an input of "3" and false for all other inputs.
-                qftReg->DEC(3, 0, n);
-                qftReg->ZeroPhaseFlip(0, n);
-                qftReg->INC(3, 0, n);
-                // This ends the "oracle."
-                qftReg->H(0, n);
-                qftReg->ZeroPhaseFlip(0, n);
-                qftReg->H(0, n);
-                qftReg->PhaseFlip();
-            }
+        REQUIRE_THAT(qftReg, HasProbability(0x3));
 
-            REQUIRE_THAT(qftReg, HasProbability(0x3));
-
-            qftReg->MReg(0, n);
-        });
+        qftReg->MReg(0, n);
+    });
 }
