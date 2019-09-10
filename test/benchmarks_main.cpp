@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
             size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
 
             // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
-            max_qubits = log2(maxAlloc);
+            max_qubits = log2(maxAlloc / sizeof(complex));
             if ((3 * (1U << max_qubits)) > maxMem) {
                 max_qubits = log2(maxMem / 3);
             }
