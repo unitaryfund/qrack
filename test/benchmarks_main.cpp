@@ -114,12 +114,12 @@ int main(int argc, char* argv[])
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();
 
             DeviceContextPtr device_context = OCLEngine::Instance()->GetDeviceContextPtr(device_id);
-            size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-            size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+            size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>() / sizeof(complex);
+            size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() / sizeof(complex);
 
             // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
-            max_qubits = log2(maxAlloc / sizeof(complex));
-            if ((3 * (1U << max_qubits)) > maxMem) {
+            max_qubits = log2(maxAlloc);
+            if ((3 * (1U << max_qubits)) > maxMem ) {
                 max_qubits = log2(maxMem / 3);
             }
 #else
