@@ -32,8 +32,6 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const bitLenInt MaxQubits = 24;
-
 const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
 
 double formatTime(double t, bool logNormal)
@@ -70,7 +68,14 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
     double avgt, stdet;
 
-    for (numBits = 4; numBits <= mxQbts; numBits++) {
+    bitLenInt mnQbts;
+    if (single_qubit_run) {
+        mnQbts = mxQbts;
+    } else {
+        mnQbts = 4;
+    }
+
+    for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
             0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
         avgt = 0.0;
@@ -153,150 +158,150 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true,
     bool hadamardRandomBits = false, bool logNormal = false)
 {
-    benchmarkLoopVariable(fn, MaxQubits, resetRandomPerm, hadamardRandomBits, logNormal);
+    benchmarkLoopVariable(fn, max_qubits, resetRandomPerm, hadamardRandomBits, logNormal);
 }
 
-TEST_CASE("test_cnot_single")
+TEST_CASE("test_cnot_single", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, 1); });
 }
 
-TEST_CASE("test_x_single")
+TEST_CASE("test_x_single", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0); });
 }
 
-TEST_CASE("test_y_single")
+TEST_CASE("test_y_single", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0); });
 }
 
-TEST_CASE("test_z_single")
+TEST_CASE("test_z_single", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0); });
 }
 
-TEST_CASE("test_swap_single")
+TEST_CASE("test_swap_single", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, 1); });
 }
 
-TEST_CASE("test_cnot_all")
+TEST_CASE("test_cnot_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CNOT(0, n / 2, n / 2); });
 }
 
-TEST_CASE("test_x_all")
+TEST_CASE("test_x_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->X(0, n); });
 }
 
-TEST_CASE("test_y_all")
+TEST_CASE("test_y_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Y(0, n); });
 }
 
-TEST_CASE("test_z_all")
+TEST_CASE("test_z_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Z(0, n); });
 }
 
-TEST_CASE("test_swap_all")
+TEST_CASE("test_swap_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->Swap(0, n / 2, n / 2); });
 }
 
-TEST_CASE("test_ccnot_all")
+TEST_CASE("test_ccnot_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CCNOT(0, n / 3, (2 * n) / 3, n / 3); });
 }
 
-TEST_CASE("test_and_all")
+TEST_CASE("test_and_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->AND(0, n / 3, (2 * n) / 3, n / 3); });
 }
 
-TEST_CASE("test_or_all")
+TEST_CASE("test_or_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->OR(0, n / 3, (2 * n) / 3, n / 3); });
 }
 
-TEST_CASE("test_xor_all")
+TEST_CASE("test_xor_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->XOR(0, n / 3, (2 * n) / 3, n / 3); });
 }
 
-TEST_CASE("test_cland_all")
+TEST_CASE("test_cland_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CLAND(0, 0x0c, 0, n); });
 }
 
-TEST_CASE("test_clor_all")
+TEST_CASE("test_clor_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CLOR(0, 0x0d, 0, n); });
 }
 
-TEST_CASE("test_clxor_all")
+TEST_CASE("test_clxor_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CLXOR(0, 0x0d, 0, n); });
 }
 
-TEST_CASE("test_rt_all")
+TEST_CASE("test_rt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->RT(M_PI, 0, n); });
 }
 
-TEST_CASE("test_crt_all")
+TEST_CASE("test_crt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CRT(M_PI, 0, n / 2, n / 2); });
 }
 
-TEST_CASE("test_rol")
+TEST_CASE("test_rol", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->ROL(1, 0, n); });
 }
 
-TEST_CASE("test_inc")
+TEST_CASE("test_inc", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INC(1, 0, n); });
 }
 
-TEST_CASE("test_incs")
+TEST_CASE("test_incs", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCS(1, 0, n - 1, n - 1); });
 }
 
-TEST_CASE("test_incc")
+TEST_CASE("test_incc", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCC(1, 0, n - 1, n - 1); });
 }
 
-TEST_CASE("test_incsc")
+TEST_CASE("test_incsc", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
 }
 
-TEST_CASE("test_zero_phase_flip")
+TEST_CASE("test_zero_phase_flip", "[phaseflip]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->ZeroPhaseFlip(0, n); });
 }
 
-TEST_CASE("test_c_phase_flip_if_less")
+TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
 }
 
-TEST_CASE("test_phase_flip")
+TEST_CASE("test_phase_flip", "[phaseflip]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->PhaseFlip(); });
 }
 
-TEST_CASE("test_m")
+TEST_CASE("test_m", "[measure]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->M(n - 1); });
 }
 
-TEST_CASE("test_mreg")
+TEST_CASE("test_mreg", "[measure]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->MReg(0, n); });
 }
@@ -305,8 +310,8 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
 {
     bitCapInt i, j;
 
-    bitCapInt wordLength = (MaxQubits / 16 + 1);
-    bitCapInt indexLength = (1 << (MaxQubits / 2));
+    bitCapInt wordLength = (max_qubits / 16 + 1);
+    bitCapInt indexLength = (1 << (max_qubits / 2));
     unsigned char* testPage = new unsigned char[wordLength * indexLength];
     for (j = 0; j < indexLength; j++) {
         for (i = 0; i < wordLength; i++) {
@@ -317,90 +322,88 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
     delete[] testPage;
 }
 
-TEST_CASE("test_superposition_reg")
+TEST_CASE("test_superposition_reg", "[indexed]")
 {
     benchmarkSuperpose([](QInterfacePtr qftReg, int n, unsigned char* testPage) {
         qftReg->IndexedLDA(0, n / 2, n / 2, n / 2, testPage);
     });
 }
 
-TEST_CASE("test_adc_superposition_reg")
+TEST_CASE("test_adc_superposition_reg", "[indexed]")
 {
     benchmarkSuperpose([](QInterfacePtr qftReg, int n, unsigned char* testPage) {
         qftReg->IndexedADC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
 
-TEST_CASE("test_sbc_superposition_reg")
+TEST_CASE("test_sbc_superposition_reg", "[indexed]")
 {
     benchmarkSuperpose([](QInterfacePtr qftReg, int n, unsigned char* testPage) {
         qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
 
-TEST_CASE("test_setbit")
+TEST_CASE("test_setbit", "[aux]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetBit(0, true); });
 }
 
-TEST_CASE("test_proball")
+TEST_CASE("test_proball", "[aux]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->ProbAll(0x02); });
 }
 
-TEST_CASE("test_set_reg")
+TEST_CASE("test_set_reg", "[aux]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->SetReg(0, n, 1); });
 }
 
-TEST_CASE("test_grover")
+TEST_CASE("test_grover", "[grover]")
 {
 
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 3.
 
-    benchmarkLoopVariable(
-        [](QInterfacePtr qftReg, int n) {
-            int i;
-            // Twelve iterations maximizes the probablity for 256 searched elements, for example.
-            // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-            int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        int i;
+        // Twelve iterations maximizes the probablity for 256 searched elements, for example.
+        // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
+        int optIter = M_PI / (4.0 * asin(1.0 / sqrt(1 << n)));
 
-            // Our input to the subroutine "oracle" is 8 bits.
-            qftReg->SetPermutation(0);
+        // Our input to the subroutine "oracle" is 8 bits.
+        qftReg->SetPermutation(0);
+        qftReg->H(0, n);
+
+        for (i = 0; i < optIter; i++) {
+            // Our "oracle" is true for an input of "3" and false for all other inputs.
+            qftReg->DEC(3, 0, n);
+            qftReg->ZeroPhaseFlip(0, n);
+            qftReg->INC(3, 0, n);
+            // This ends the "oracle."
             qftReg->H(0, n);
+            qftReg->ZeroPhaseFlip(0, n);
+            qftReg->H(0, n);
+            qftReg->PhaseFlip();
+        }
 
-            for (i = 0; i < optIter; i++) {
-                // Our "oracle" is true for an input of "3" and false for all other inputs.
-                qftReg->DEC(3, 0, n);
-                qftReg->ZeroPhaseFlip(0, n);
-                qftReg->INC(3, 0, n);
-                // This ends the "oracle."
-                qftReg->H(0, n);
-                qftReg->ZeroPhaseFlip(0, n);
-                qftReg->H(0, n);
-                qftReg->PhaseFlip();
-            }
+        REQUIRE_THAT(qftReg, HasProbability(0x3));
 
-            REQUIRE_THAT(qftReg, HasProbability(0x3));
-
-            qftReg->MReg(0, n);
-        },
-        16);
+        qftReg->MReg(0, n);
+    });
 }
 
-TEST_CASE("test_qft_ideal_init")
+TEST_CASE("test_qft_ideal_init", "[qft]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
 }
 
-TEST_CASE("test_qft_permutation_init")
+TEST_CASE("test_qft_permutation_init", "[qft]")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_qft_permutation_round_trip_entangled")
+TEST_CASE("test_qft_permutation_round_trip_entangled", "[qft]")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
@@ -410,7 +413,7 @@ TEST_CASE("test_qft_permutation_round_trip_entangled")
         true, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_qft_superposition_round_trip")
+TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 {
     benchmarkLoop(
         [](QInterfacePtr qftReg, int n) {
