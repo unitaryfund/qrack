@@ -999,6 +999,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard)) {
         if (!tShard.isPlusMinus) {
             CNOT(target, control);
+        } else if (norm(tShard.amp0) < min_norm) {
+            std::swap(cShard.amp0, cShard.amp1);
         }
         return;
     }
@@ -1015,6 +1017,10 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard)) {
         if (!tShard.isPlusMinus) {
             AntiCNOT(target, control);
+        } else if (norm(tShard.amp0) < min_norm) {
+            Swap(control, target);
+            tShard.amp0 *= -1;
+            tShard.amp1 *= -1;
         }
         return;
     }
