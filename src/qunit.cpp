@@ -993,6 +993,14 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+    if (cShard.isPlusMinus && !tShard.isPlusMinus && !cShard.isProbDirty &&
+        (norm(cShard.amp0) < min_norm || norm(cShard.amp1) < min_norm)) {
+        CNOT(target, control);
+        return;
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(CNOT(CTRL_1_ARGS), X(target), false);
