@@ -32,6 +32,8 @@ extern bool enable_normalization;
 extern bool disable_hardware_rng;
 extern bool async_time;
 extern int device_id;
+extern bitLenInt max_qubits;
+extern bool single_qubit_run;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
