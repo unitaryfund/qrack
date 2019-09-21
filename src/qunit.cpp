@@ -995,10 +995,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
-    if (cShard.isPlusMinus && !tShard.isPlusMinus && !cShard.isProbDirty &&
-        (norm(cShard.amp0) < min_norm || norm(cShard.amp1) < min_norm)) {
-        CNOT(target, control);
-        return;
+    if (cShard.isPlusMinus && !cShard.isProbDirty && (norm(tShard.amp0) < min_norm || norm(tShard.amp1) < min_norm)) {
+        if (!tShard.isPlusMinus) {
+            CNOT(target, control);
+            return;
+        } else {
+            Swap(control, target);
+            return;
+        }
     }
 
     bitLenInt controls[1] = { control };
