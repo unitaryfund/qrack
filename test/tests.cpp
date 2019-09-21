@@ -330,6 +330,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
     REQUIRE_THAT(qftReg, HasProbability(0x00001));
     qftReg->AntiCNOT(18, 19);
     REQUIRE_THAT(qftReg, HasProbability(0x80001));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->H(0, 2);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->Z(0);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")

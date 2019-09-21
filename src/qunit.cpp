@@ -1010,6 +1010,15 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+    if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard)) {
+        if (!tShard.isPlusMinus) {
+            AntiCNOT(target, control);
+        }
+        return;
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true);
