@@ -1018,7 +1018,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         if (!tShard.isPlusMinus) {
             AntiCNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
-            Swap(control, target);
+            std::swap(cShard.amp0, cShard.amp1);
             tShard.amp0 *= -1;
             tShard.amp1 *= -1;
         }
