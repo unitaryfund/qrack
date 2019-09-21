@@ -1001,6 +1001,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             CNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
             std::swap(cShard.amp0, cShard.amp1);
+            cShard.isEmulated = true;
         }
         return;
     }
@@ -1019,6 +1020,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
             AntiCNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
             std::swap(cShard.amp0, cShard.amp1);
+            cShard.isEmulated = true;
             tShard.amp0 *= -1;
             tShard.amp1 *= -1;
         }
