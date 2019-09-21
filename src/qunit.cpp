@@ -23,6 +23,7 @@
 #define PHASE_MATTERS(shard)                                                                                           \
     (!randGlobalPhase || shard.isPlusMinus || shard.isProbDirty || shard.isPhaseDirty ||                               \
         !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+#define DIRTY(shard) (shard.isProbDirty || shard.isPhaseDirty)
 
 namespace Qrack {
 
@@ -995,14 +996,13 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
-    if (cShard.isPlusMinus && !cShard.isProbDirty && (norm(tShard.amp0) < min_norm || norm(tShard.amp1) < min_norm)) {
-        if (!tShard.isPlusMinus) {
-            CNOT(target, control);
-            return;
-        } else {
+    if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard)) {
+        if (tShard.isPlusMinus) {
             Swap(control, target);
-            return;
+        } else {
+            CNOT(target, control);
         }
+        return;
     }
 
     bitLenInt controls[1] = { control };
