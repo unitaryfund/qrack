@@ -877,7 +877,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
-        if (CACHED_CLASSICAL(shard)) {
+        if (shard.unit->GetQubitCount() == 1) {
             shard.isEmulated = true;
         } else {
             shard.unit->X(shard.mapped);
@@ -1001,7 +1001,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             CNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
             std::swap(cShard.amp0, cShard.amp1);
-            cShard.isEmulated = true;
+            if (cShard.unit->GetQubitCount() == 1) {
+                cShard.isEmulated = true;
+            } else {
+                cShard.unit->X(cShard.mapped);
+            }
         }
         return;
     }
@@ -1020,7 +1024,12 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
             AntiCNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
             std::swap(cShard.amp0, cShard.amp1);
-            cShard.isEmulated = true;
+            if (cShard.unit->GetQubitCount() == 1) {
+                cShard.isEmulated = true;
+            } else {
+                cShard.unit->X(cShard.mapped);
+                cShard.unit->PhaseFlip();
+            }
             tShard.amp0 *= -1;
             tShard.amp1 *= -1;
         }
@@ -1073,12 +1082,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
         if (PHASE_MATTERS(shard)) {
-            if (DIRTY(shard)) {  
-                EndEmulation(shard);
-                shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
-            } else {
-                shard.isEmulated = true;
-            }
+            EndEmulation(shard);
+            shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
         }
