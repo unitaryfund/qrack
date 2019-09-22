@@ -38,13 +38,12 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qra
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
     bool useHardwareRNG, bool useSparseStateVec)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase)
     , engine(eng)
     , subengine(subEng)
     , devID(deviceID)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
-    , randGlobalPhase(randomGlobalPhase)
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
@@ -843,7 +842,7 @@ void QUnit::H(bitLenInt target)
 
     shard.unit->H(shard.mapped);
 
-    if (shard.isProbDirty || shard.isPhaseDirty) {
+    if (DIRTY(shard)) {
         shard.isProbDirty = true;
         shard.isPhaseDirty = true;
         return;
@@ -1053,19 +1052,22 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
 }
 
-void QUnit::CleanPlusMinus(bitLenInt target) {
-     QEngineShard& shard = shards[target];
+void QUnit::CleanPlusMinus(bitLenInt target)
+{
+    QEngineShard& shard = shards[target];
 
-     if (DIRTY(shard) && shard.isPlusMinus) {
-        freezeBasis = true;
-        H(target);
-        freezeBasis = false;
-        shard.isPlusMinus = false;
+    if (DIRTY(shard) && shard.isPlusMinus) {
+        TransformBasis(false, target);
     }
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
+    complex iTest[4] = { topLeft, 0, 0, bottomRight };
+    if (IsIdentity(iTest)) {
+        return;
+    }
+
     CleanPlusMinus(target);
 
     QEngineShard& shard = shards[target];
@@ -1073,7 +1075,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
         if (PHASE_MATTERS(shard)) {
-            if (DIRTY(shard)) {  
+            if (DIRTY(shard)) {
                 EndEmulation(shard);
                 shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
             } else {
@@ -1090,9 +1092,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-
-        CheckShardSeparable(target);
     }
+
+    CheckShardSeparable(target);
 }
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
@@ -1120,9 +1122,9 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-
-        CheckShardSeparable(target);
     }
+
+    CheckShardSeparable(target);
 }
 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -1131,6 +1133,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
+        complex iTest[4] = { topLeft, 0, 0, bottomRight };
+        if (IsIdentity(iTest)) {
+            return;
+        }
+
         CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
             ApplySinglePhase(topLeft, bottomRight, true, target), false);
     }
@@ -1149,6 +1156,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
+        complex iTest[4] = { topLeft, 0, 0, bottomRight };
+        if (IsIdentity(iTest)) {
+            return;
+        }
+
         CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
             ApplySinglePhase(topLeft, bottomRight, true, target), false);
     }
@@ -1163,7 +1175,9 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    EndEmulation(target);
+    if (IsIdentity(mtrx)) {
+        return;
+    }
 
     QEngineShard& shard = shards[target];
 
@@ -1175,9 +1189,9 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         Transform2x2(mtrx, trnsMtrx);
     }
 
-    shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);
-
-    if (shard.isProbDirty || shard.isPhaseDirty) {
+    if (DIRTY(shard)) {
+        EndEmulation(target);
+        shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);
         shard.isProbDirty = true;
         shard.isPhaseDirty = true;
         return;

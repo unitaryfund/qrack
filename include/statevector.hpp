@@ -60,9 +60,9 @@ class StateVectorArray : public StateVector {
 protected:
     complex* amplitudes;
 
-    static real1 normHelper(complex c) { return norm(c); }
+    static real1 normHelper(const complex& c) { return norm(c); }
 
-    complex* Alloc(bitCapInt elemCount)
+    complex* Alloc(const bitCapInt& elemCount)
     {
 // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
 #if defined(__APPLE__)
