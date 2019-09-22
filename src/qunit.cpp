@@ -1189,14 +1189,12 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         Transform2x2(mtrx, trnsMtrx);
     }
 
+    shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);
+
     if (DIRTY(shard)) {
-        EndEmulation(target);
-        shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);
         shard.isProbDirty = true;
         shard.isPhaseDirty = true;
         return;
-    } else {
-        shard.isEmulated = true;
     }
 
     complex Y0 = shard.amp0;
