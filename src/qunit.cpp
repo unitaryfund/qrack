@@ -1061,23 +1061,12 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
 }
 
-void QUnit::CleanPlusMinus(bitLenInt target)
-{
-    QEngineShard& shard = shards[target];
-
-    if (DIRTY(shard) && shard.isPlusMinus) {
-        TransformBasis(false, target);
-    }
-}
-
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     complex iTest[4] = { topLeft, 0, 0, bottomRight };
     if (IsIdentity(iTest)) {
         return;
     }
-
-    CleanPlusMinus(target);
 
     QEngineShard& shard = shards[target];
 
@@ -1097,6 +1086,13 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         complex mtrx[4];
         TransformPhase(topLeft, bottomRight, mtrx);
 
+        if (shard.unit->GetQubitCount() == 1) {
+            shard.isEmulated = true;
+        } else {
+            EndEmulation(shard);
+            shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped);
+        }
+
         complex Y0 = shard.amp0;
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
@@ -1108,12 +1104,10 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
-    CleanPlusMinus(target);
-
     QEngineShard& shard = shards[target];
 
     if (!shard.isPlusMinus) {
-        if (CACHED_CLASSICAL(shard)) {
+        if (shard.unit->GetQubitCount() == 1) {
             shard.isEmulated = true;
         } else {
             EndEmulation(shard);
@@ -1126,6 +1120,13 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     } else {
         complex mtrx[4];
         TransformInvert(topRight, bottomLeft, mtrx);
+
+        if (shard.unit->GetQubitCount() == 1) {
+            shard.isEmulated = true;
+        } else {
+            EndEmulation(shard);
+            shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped);
+        }
 
         complex Y0 = shard.amp0;
 
