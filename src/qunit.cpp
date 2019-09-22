@@ -1053,14 +1053,32 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
 }
 
+void QUnit::CleanPlusMinus(bitLenInt target) {
+     QEngineShard& shard = shards[target];
+
+     if (DIRTY(shard) && shard.isPlusMinus) {
+        freezeBasis = true;
+        H(target);
+        freezeBasis = false;
+        shard.isPlusMinus = false;
+    }
+}
+
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
+    CleanPlusMinus(target);
+
     QEngineShard& shard = shards[target];
+
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
         if (PHASE_MATTERS(shard)) {
-            EndEmulation(shard);
-            shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
+            if (DIRTY(shard)) {  
+                EndEmulation(shard);
+                shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
+            } else {
+                shard.isEmulated = true;
+            }
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
         }
@@ -1079,11 +1097,15 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
+    CleanPlusMinus(target);
+
     QEngineShard& shard = shards[target];
+
     if (!shard.isPlusMinus) {
         if (CACHED_CLASSICAL(shard)) {
             shard.isEmulated = true;
         } else {
+            EndEmulation(shard);
             shard.unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped);
         }
 
