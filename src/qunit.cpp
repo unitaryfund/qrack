@@ -1195,6 +1195,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         shard.isProbDirty = true;
         shard.isPhaseDirty = true;
         return;
+    } else {
+        shard.isEmulated = true;
     }
 
     complex Y0 = shard.amp0;
