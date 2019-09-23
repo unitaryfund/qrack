@@ -437,6 +437,16 @@ protected:
         }
     }
 
+    template <typename F> void ApplyOrEmulate(QEngineShard& shard, F payload)
+    {
+        if (shard.unit->GetQubitCount() == 1) {
+            shard.isEmulated = true;
+        } else {
+            EndEmulation(shard);
+            payload(shard);
+        }
+    }
+
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }

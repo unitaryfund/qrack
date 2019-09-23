@@ -25,14 +25,6 @@
         !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define DIRTY(shard) (shard.isProbDirty || shard.isPhaseDirty)
 
-#define APPLY_OR_EMULATE(shard, payload)                                                                               \
-    if (shard.unit->GetQubitCount() == 1) {                                                                            \
-        shard.isEmulated = true;                                                                                       \
-    } else {                                                                                                           \
-        EndEmulation(shard);                                                                                           \
-        shard.unit->payload;                                                                                           \
-    }
-
 namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
@@ -1081,7 +1073,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
         if (PHASE_MATTERS(shard)) {
-            APPLY_OR_EMULATE(shard, ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped));
+            ApplyOrEmulate(shard, [&](QEngineShard& shard) {
+                shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
+            });
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
         }
@@ -1089,7 +1083,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         complex mtrx[4];
         TransformPhase(topLeft, bottomRight, mtrx);
 
-        APPLY_OR_EMULATE(shard, ApplySingleBit(mtrx, doCalcNorm, shard.mapped));
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped); });
 
         complex Y0 = shard.amp0;
 
@@ -1105,7 +1099,9 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     QEngineShard& shard = shards[target];
 
     if (!shard.isPlusMinus) {
-        APPLY_OR_EMULATE(shard, ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped));
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) {
+            shard.unit->ApplySingleInvert(topRight, bottomLeft, doCalcNorm, shard.mapped);
+        });
 
         complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
@@ -1114,7 +1110,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         complex mtrx[4];
         TransformInvert(topRight, bottomLeft, mtrx);
 
-        APPLY_OR_EMULATE(shard, ApplySingleBit(mtrx, doCalcNorm, shard.mapped));
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped); });
 
         complex Y0 = shard.amp0;
 
