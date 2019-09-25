@@ -39,7 +39,7 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 /// Subtract integer (without sign)
 void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
-    bitCapInt invToSub = (1U << length) - toSub;
+    bitCapInt invToSub = pow2(length) - toSub;
     INC(invToSub, inOutStart, length);
 }
 
@@ -50,7 +50,7 @@ void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
  */
 void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
-    bitCapInt invToSub = (1U << length) - toSub;
+    bitCapInt invToSub = pow2(length) - toSub;
     INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
@@ -58,7 +58,7 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 void QInterface::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    bitCapInt invToSub = (1U << length) - toSub;
+    bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 

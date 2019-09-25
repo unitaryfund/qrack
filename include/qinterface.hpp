@@ -36,7 +36,13 @@ bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
-inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length) { return ((1U << length) - 1U) << start; }
+inline bitCapInt pow2(const bitLenInt& p) { return 1UL << p; }
+inline bitCapInt pow2Mask(const bitLenInt& p) { return (1UL << p) - 1UL; }
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (1UL << bit) & source; }
+inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
+{
+    return ((1UL << length) - 1UL) << start;
+}
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;

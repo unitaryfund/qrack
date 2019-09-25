@@ -153,8 +153,8 @@ bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 {
     // Both negative:
     if (inOutInt & inInt & signMask) {
-        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+        inOutInt = ((~inOutInt) & (lengthPower - 1UL)) + 1UL;
+        inInt = ((~inInt) & (lengthPower - 1UL)) + 1UL;
         if ((inOutInt + inInt) > signMask) {
             return true;
         }
@@ -174,13 +174,13 @@ bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 {
     // First negative:
     if (inOutInt & (~inInt) & (signMask)) {
-        inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
+        inOutInt = ((~inOutInt) & (lengthPower - 1UL)) + 1UL;
         if ((inOutInt + inInt) > signMask)
             return true;
     }
     // First positive:
     else if ((~inOutInt) & inInt & (signMask)) {
-        inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+        inInt = ((~inInt) & (lengthPower - 1UL)) + 1UL;
         if ((inOutInt + inInt) >= signMask)
             return true;
     }
@@ -198,7 +198,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
     iHigh = perm;
     i = 0;
     for (p = 0; p < skipPowersCount; p++) {
-        iLow = iHigh & (skipPowers[p] - 1U);
+        iLow = iHigh & (skipPowers[p] - 1UL);
         i |= iLow;
         iHigh = (iHigh ^ iLow) << 1U;
     }

@@ -178,7 +178,7 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     const bitCapInt& mtrxSkipValueMask)
 {
     bitCapInt index;
-    for (bitCapInt lcv = 0; lcv < (1U << controlLen); lcv++) {
+    for (bitCapInt lcv = 0; lcv < pow2(controlLen); lcv++) {
         index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
             if (!((lcv >> bit_pos) & 1)) {
@@ -208,7 +208,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
         bitCapInt maxJ = 4;
         if (op->uniform) {
-            maxJ *= 1U << op->controlLen;
+            maxJ *= pow2(op->controlLen);
         }
         mtrx = new complex[maxJ];
 
@@ -226,7 +226,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
         if (op->uniform) {
             complex* expMtrx = new complex[maxJ];
-            for (bitCapInt j = 0; j < (1U << op->controlLen); j++) {
+            for (bitCapInt j = 0; j < pow2(op->controlLen); j++) {
                 exp2x2(mtrx + (j * 4U), expMtrx + (j * 4U));
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);

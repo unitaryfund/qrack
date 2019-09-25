@@ -55,7 +55,7 @@ void QInterface::RZ(real1 radians, bitLenInt qubit)
 void QInterface::UniformlyControlledRY(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
-    bitCapInt permCount = 1U << controlLen;
+    bitCapInt permCount = pow2(controlLen);
     complex* pauliRYs = new complex[4U * permCount];
 
     real1 cosine, sine;
@@ -79,7 +79,7 @@ void QInterface::UniformlyControlledRY(
 void QInterface::UniformlyControlledRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
-    bitCapInt permCount = 1U << controlLen;
+    bitCapInt permCount = pow2(controlLen);
     complex* pauliRZs = new complex[4U * permCount];
 
     real1 cosine, sine;

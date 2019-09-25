@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
             // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
             max_qubits = log2(maxAlloc);
-            if ((3 * (1U << max_qubits)) > maxMem ) {
+            if ((3 * (1U << max_qubits)) > maxMem) {
                 max_qubits = log2(maxMem / 3);
             }
 #else

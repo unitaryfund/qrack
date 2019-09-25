@@ -124,7 +124,7 @@ void ParallelFor::par_for_skip(
         return;
     }
 
-    bitCapInt lowMask = skipMask - 1;
+    bitCapInt lowMask = skipMask - 1UL;
     bitCapInt highMask = ~lowMask;
 
     IncrementFunc incFn;
@@ -170,7 +170,7 @@ void ParallelFor::par_for_mask(
         incFn = [&masks, maskLen](bitCapInt i, int cpu) {
             /* Push i apart, one mask at a time. */
             for (int m = 0; m < maskLen; m++) {
-                i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
+                i = ((i << 1U) & masks[m][1]) | (i & masks[m][0]);
             }
             return i;
         };
