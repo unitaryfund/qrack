@@ -103,7 +103,7 @@ protected:
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
-        maxQPower = 1 << qubitCount;
+        maxQPower = 1U << qubitCount;
     }
 
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
