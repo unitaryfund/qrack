@@ -85,7 +85,6 @@ protected:
     std::vector<QEngineShard> shards;
     complex phaseFactor;
     bool doNormalize;
-    bool randGlobalPhase;
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
@@ -435,6 +434,16 @@ protected:
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             EndEmulation(i);
+        }
+    }
+
+    template <typename F> void ApplyOrEmulate(QEngineShard& shard, F payload)
+    {
+        if (shard.unit->GetQubitCount() == 1) {
+            shard.isEmulated = true;
+        } else {
+            EndEmulation(shard);
+            payload(shard);
         }
     }
 

@@ -25,7 +25,6 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
  */
 class QEngine : public QInterface {
 protected:
-    bool randGlobalPhase;
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
@@ -44,8 +43,7 @@ protected:
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true)
-        : QInterface(qBitCount, rgp, doNorm, useHardwareRNG)
-        , randGlobalPhase(randomGlobalPhase)
+        : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
     {
@@ -118,8 +116,6 @@ public:
 
 protected:
     virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
-
-    virtual bool IsIdentity(const complex* mtrx);
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;

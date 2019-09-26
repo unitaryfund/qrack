@@ -299,6 +299,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
     REQUIRE_THAT(qftReg, HasProbability(0x40001));
     qftReg->CNOT(18, 19);
     REQUIRE_THAT(qftReg, HasProbability(0xC0001));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->H(0, 2);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->Z(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
@@ -311,6 +330,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
     REQUIRE_THAT(qftReg, HasProbability(0x00001));
     qftReg->AntiCNOT(18, 19);
     REQUIRE_THAT(qftReg, HasProbability(0x80001));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->H(0, 2);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->Z(0);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
@@ -566,6 +604,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
     qftReg->S(1);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetReg(0, 8, 0x01);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->H(0);
+    qftReg->S(0);
+    qftReg->H(0);
+    qftReg->H(0);
+    qftReg->S(0);
+    qftReg->S(0);
+    qftReg->S(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_s_reg")
@@ -588,6 +638,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_is")
     qftReg->IS(1);
     qftReg->S(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+
+    qftReg->SetReg(0, 8, 0x01);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+    qftReg->H(0);
+    qftReg->IS(0);
+    qftReg->H(0);
+    qftReg->H(0);
+    qftReg->IS(0);
+    qftReg->IS(0);
+    qftReg->IS(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_is_reg")
@@ -2754,7 +2816,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
     qftReg->SetPermutation(0xb);
     qftReg->H(0, 4);
     qftReg->CNOT(0, 4, 4);
-    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == false);
+    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == (testEngineType == QINTERFACE_QUNIT));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")

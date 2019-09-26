@@ -145,45 +145,6 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     return result;
 }
 
-bool QEngine::IsIdentity(const complex* mtrx)
-{
-    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
-    // operator, then we can discard this buffer without applying it.
-    if (norm(mtrx[1]) > min_norm) {
-        return false;
-    }
-    if (norm(mtrx[2]) > min_norm) {
-        return false;
-    }
-
-    if (randGlobalPhase) {
-        // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
-        // the user's purposes.
-        real1 toTest = norm(mtrx[0]);
-        if (toTest < (ONE_R1 - min_norm)) {
-            return false;
-        }
-        toTest = norm(mtrx[0] - mtrx[3]);
-        if (toTest > min_norm) {
-            return false;
-        }
-    } else {
-        // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
-        // offset (but shouldn't).
-        complex toTest = mtrx[0];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-            return false;
-        }
-        toTest = mtrx[3];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
-            return false;
-        }
-    }
-
-    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
-    return true;
-}
-
 void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
 {
     if (IsIdentity(mtrx)) {
