@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
             // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
             max_qubits = log2(maxAlloc);
-            if ((3 * (1U << max_qubits)) > maxMem ) {
+            if ((3 * (1U << max_qubits)) > maxMem) {
                 max_qubits = log2(maxMem / 3);
             }
 #else
@@ -231,6 +231,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, false, -1, !disable_hardware_rng);
+    qftReg = NULL;
 }

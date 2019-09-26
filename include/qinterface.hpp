@@ -98,11 +98,12 @@ protected:
     std::uniform_real_distribution<real1> rand_distribution;
     std::shared_ptr<RdRandWrapper::RdRandom> hardware_rand_generator;
     bool doNormalize;
+    bool randGlobalPhase;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
-        maxQPower = 1 << qubitCount;
+        maxQPower = 1U << qubitCount;
     }
 
     virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
@@ -147,11 +148,15 @@ protected:
         toFree = NULL;
     }
 
+    bool IsIdentity(const complex* mtrx);
+
 public:
-    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true)
+    QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
+        bool randomGlobalPhase = true)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
+        , randGlobalPhase(randomGlobalPhase)
     {
         SetQubitCount(n);
 
