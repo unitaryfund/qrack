@@ -606,7 +606,7 @@ real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 {
     real1 prob = ONE_R1;
     for (bitLenInt i = 0; i < length; i++) {
-        if ((permutation >> i) & 1UL) {
+        if ((permutation >> i) & 1U) {
             prob *= Prob(start + i);
         } else {
             prob *= (ONE_R1 - Prob(start + i));

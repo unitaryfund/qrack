@@ -308,9 +308,9 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
         iHigh = offset;
         i = 0;
         for (p = 0; p < mtrxSkipLen; p++) {
-            iLow = iHigh & (mtrxSkipPowers[p] - 1UL);
+            iLow = iHigh & (mtrxSkipPowers[p] - ONE_BCI);
             i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1UL;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
         i |= iHigh;
 
@@ -361,8 +361,8 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 
     bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
     bitCapInt nMaxQPower = pow2(nQubitCount);
-    bitCapInt startMask = maxQPower - 1UL;
-    bitCapInt endMask = (toCopy->maxQPower - 1UL) << qubitCount;
+    bitCapInt startMask = maxQPower - ONE_BCI;
+    bitCapInt endMask = (toCopy->maxQPower - ONE_BCI) << qubitCount;
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
 
@@ -430,7 +430,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     std::vector<bitLenInt> offset(toComposeCount);
     std::vector<bitCapInt> mask(toComposeCount);
 
-    bitCapInt startMask = maxQPower - 1UL;
+    bitCapInt startMask = maxQPower - ONE_BCI;
     bitCapInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
@@ -443,7 +443,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
         }
-        mask[i] = (src->GetMaxQPower() - 1UL) << nQubitCount;
+        mask[i] = (src->GetMaxQPower() - ONE_BCI) << nQubitCount;
         offset[i] = nQubitCount;
         ret[toCopy[i]] = nQubitCount;
         nQubitCount += src->GetQubitCount();
@@ -591,15 +591,15 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     }
 
     bitCapInt qPower = pow2(qubit);
-    bitCapInt qMask = qPower - 1UL;
+    bitCapInt qMask = qPower - ONE_BCI;
     real1 oneChance = 0;
 
     int numCores = GetConcurrencyLevel();
     real1* oneChanceBuff = new real1[numCores]();
 
-    par_for(0, maxQPower >> 1UL, [&](const bitCapInt lcv, const int cpu) {
+    par_for(0, maxQPower >> ONE_BCI, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt i = lcv & qMask;
-        i |= ((lcv ^ i) << 1UL) | qPower;
+        i |= ((lcv ^ i) << ONE_BCI) | qPower;
         oneChanceBuff[cpu] += norm(stateVec->read(i));
     });
 
@@ -660,7 +660,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     std::vector<bitCapInt> skipPowersVec;
     for (length = 0; v; length++) {
         oldV = v;
-        v &= v - 1UL; // clear the least significant bit set
+        v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 

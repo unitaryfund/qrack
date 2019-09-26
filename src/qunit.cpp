@@ -54,7 +54,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     bool bitState;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = (initState >> i) & 1UL;
+        bitState = (initState >> i) & ONE_BCI;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -72,7 +72,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     Finish();
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = (perm >> i) & 1UL;
+        bitState = (perm >> i) & ONE_BCI;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -118,7 +118,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         if (perms.find(shards[i].unit) == perms.end()) {
             perms[shards[i].unit] = 0U;
         }
-        if ((perm >> i) & 1UL) {
+        if ((perm >> i) & ONE_BCI) {
             perms[shards[i].unit] |= pow2(shards[i].mapped);
         }
     }
@@ -623,7 +623,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
         if (perms.find(shards[i].unit) == perms.end()) {
             perms[shards[i].unit] = 0U;
         }
-        if ((perm >> i) & 1UL) {
+        if ((perm >> i) & ONE_BCI) {
             perms[shards[i].unit] |= pow2(shards[i].mapped);
         }
     }
@@ -698,7 +698,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
-        bitState = (value >> i) & 1UL;
+        bitState = (value >> i) & ONE_BCI;
         shards[i + start] = QEngineShard(shards[i + start].unit, bitState);
         shards[i + start].isEmulated = true;
     }
@@ -795,7 +795,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     if (trimmedControls.size() == 0) {
         bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
         complex mtrx[4];
-        std::copy(mtrxs + (controlPerm * 4UL), mtrxs + ((controlPerm + 1UL) * 4UL), mtrx);
+        std::copy(mtrxs + (controlPerm * 4UL), mtrxs + ((controlPerm + ONE_BCI) * 4U), mtrx);
         ApplySingleBit(mtrx, true, qubitIndex);
         return;
     }
@@ -1584,7 +1584,7 @@ bool QUnit::INTSCOptimize(
     }
 
     bitCapInt lengthPower = pow2(length);
-    bitCapInt signMask = pow2(length - 1UL);
+    bitCapInt signMask = pow2(length - 1U);
     bitCapInt inOutInt = GetCachedPermutation(start, length);
     bitCapInt inInt = toMod;
 
@@ -1600,7 +1600,7 @@ bool QUnit::INTSCOptimize(
 
     bool carryOut = (outInt >= lengthPower);
     if (carryOut) {
-        outInt &= (lengthPower - 1UL);
+        outInt &= (lengthPower - ONE_BCI);
     }
     if (carry && (carryIn != carryOut)) {
         X(carryIndex);
@@ -1630,10 +1630,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     bitLenInt origLength = length;
     bitLenInt i = 0;
     while (i < origLength) {
-        toAdd = toMod & 1UL;
+        toAdd = toMod & ONE_BCI;
 
         if (toAdd == carry) {
-            toMod >>= 1UL;
+            toMod >>= ONE_BCI;
             start++;
             length--;
             i++;
@@ -1649,7 +1649,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             }
             carry = (total > 1);
 
-            toMod >>= 1UL;
+            toMod >>= ONE_BCI;
             start++;
             length--;
             i++;
@@ -1670,9 +1670,9 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             // not to be superposed.
 
             // Load the first bit:
-            bitCapInt bitMask = 1UL;
+            bitCapInt bitMask = ONE_BCI;
             bitCapInt partMod = toMod & bitMask;
-            bitLenInt partLength = 1;
+            bitLenInt partLength = 1U;
             bitLenInt partStart;
             i++;
 
@@ -1680,12 +1680,12 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 // Guaranteed to need to load the second bit
                 partLength++;
                 i++;
-                bitMask <<= 1UL;
+                bitMask <<= ONE_BCI;
 
                 toAdd = toMod & bitMask;
                 partMod |= toMod & bitMask;
 
-                partStart = start + partLength - 1UL;
+                partStart = start + partLength - ONE_BCI;
                 if (!CheckBitPermutation(partStart)) {
                     // If the quantum bit at this position is superposed, then we can't determine that the carry won't
                     // be superposed. Advance the loop.
@@ -1769,7 +1769,7 @@ void QUnit::INTS(
         return;
     }
 
-    bitLenInt signBit = start + length - 1UL;
+    bitLenInt signBit = start + length - 1U;
     bool knewFlagSet = CheckBitPermutation(overflowIndex);
     bool flagSet = SHARD_STATE(shards[overflowIndex]);
 
@@ -1779,7 +1779,7 @@ void QUnit::INTS(
         return;
     }
 
-    bool addendNeg = toMod & pow2(length - 1UL);
+    bool addendNeg = toMod & pow2(length - 1U);
     bool knewSign = CheckBitPermutation(signBit);
     bool quantumNeg = SHARD_STATE(shards[signBit]);
 

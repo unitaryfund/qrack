@@ -411,16 +411,16 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     std::vector<bitCapInt> powersVec;
     for (length = 0; v; length++) {
         oldV = v;
-        v &= v - 1UL; // clear the least significant bit set
+        v &= v - ONE_BCI; // clear the least significant bit set
     }
 
-    v = (~mask) & (maxQPower - 1UL); // count the number of bits set in v
+    v = (~mask) & (maxQPower - ONE_BCI); // count the number of bits set in v
     bitCapInt power;
     bitLenInt len; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
     for (len = 0; v; len++) {
         oldV = v;
-        v &= v - 1UL; // clear the least significant bit set
+        v &= v - ONE_BCI; // clear the least significant bit set
         power = (v ^ oldV) & oldV;
         skipPowersVec.push_back(power);
     }
@@ -434,9 +434,9 @@ void QEngine::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         iHigh = lcv;
         i = 0;
         for (p = 0; p < (skipPowersVec.size()); p++) {
-            iLow = iHigh & (skipPowersVec[p] - 1UL);
+            iLow = iHigh & (skipPowersVec[p] - ONE_BCI);
             i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1UL;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
             if (iHigh == 0) {
                 break;
             }
@@ -465,7 +465,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     real1 prob = Rand();
     complex phase = GetNonunitaryPhase();
     bitCapInt lengthPower = pow2(length);
-    bitCapInt regMask = (lengthPower - 1UL) << start;
+    bitCapInt regMask = (lengthPower - ONE_BCI) << start;
     real1* probArray = new real1[lengthPower]();
     bitCapInt lcv;
     real1 nrmlzr = ONE_R1;
@@ -476,7 +476,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         lcv = 0;
         real1 lowerProb = ZERO_R1;
         real1 largestProb = ZERO_R1;
-        result = lengthPower - 1UL;
+        result = lengthPower - ONE_BCI;
 
         /*
          * The value of 'lcv' should not exceed lengthPower unless the stateVec is
