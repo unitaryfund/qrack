@@ -55,7 +55,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     double err;
     double trialErrors[ITERATIONS];
 
-    int i, numBits;
+    int i;
+    bitLenInt numBits;
 
     double avge, stdee;
 

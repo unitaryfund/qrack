@@ -571,7 +571,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     }
 
     int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
+    if (nibbleCount * 4 != (int)length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
@@ -635,7 +635,7 @@ void QEngineCPU::INCDECBCDC(
     }
 
     int nibbleCount = length / 4;
-    if (nibbleCount * 4 != length) {
+    if (nibbleCount * 4 != (int)length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 

@@ -269,7 +269,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 
     std::vector<bitLenInt> bits(length);
     std::vector<bitLenInt*> ebits(length);
-    for (auto i = 0; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         bits[i] = i + start;
         ebits[i] = &bits[i];
     }
@@ -292,12 +292,12 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
         std::swap(length1, length2);
     }
 
-    for (auto i = 0; i < length1; i++) {
+    for (bitLenInt i = 0; i < length1; i++) {
         bits[i] = i + start1;
         ebits[i] = &bits[i];
     }
 
-    for (auto i = 0; i < length2; i++) {
+    for (bitLenInt i = 0; i < length2; i++) {
         bits[i + length1] = i + start2;
         ebits[i + length1] = &bits[i + length1];
     }
@@ -332,17 +332,17 @@ QInterfacePtr QUnit::EntangleRange(
         std::swap(length2, length3);
     }
 
-    for (auto i = 0; i < length1; i++) {
+    for (bitLenInt i = 0; i < length1; i++) {
         bits[i] = i + start1;
         ebits[i] = &bits[i];
     }
 
-    for (auto i = 0; i < length2; i++) {
+    for (bitLenInt i = 0; i < length2; i++) {
         bits[i + length1] = i + start2;
         ebits[i + length1] = &bits[i + length1];
     }
 
-    for (auto i = 0; i < length3; i++) {
+    for (bitLenInt i = 0; i < length3; i++) {
         bits[i + length1 + length2] = i + start3;
         ebits[i + length1 + length2] = &bits[i + length1 + length2];
     }
@@ -473,8 +473,8 @@ void QUnit::OrderContiguous(QInterfacePtr unit)
     /* Create a sortable collection of all of the bits that are in the unit. */
     std::vector<QSortEntry> bits(unit->GetQubitCount());
 
-    int j = 0;
-    for (int i = 0; i < qubitCount; i++) {
+    bitLenInt j = 0;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
         if (shards[i].unit == unit) {
             bits[j].mapped = shards[i].mapped;
             bits[j].bit = i;
@@ -580,7 +580,7 @@ void QUnit::DumpShards()
 {
     int i = 0;
     for (auto shard : shards) {
-        printf("%2d.\t%p[%d]\n", i++, shard.unit.get(), shard.mapped);
+        printf("%2d.\t%p[%d]\n", i++, shard.unit.get(), (int)shard.mapped);
     }
 }
 
@@ -1341,7 +1341,7 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
 bool QUnit::CArithmeticOptimize(
     bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
-    for (auto i = 0; i < controlLen; i++) {
+    for (bitLenInt i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
         if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
@@ -1356,7 +1356,7 @@ bool QUnit::CArithmeticOptimize(
     std::copy(controls, controls + controlLen, controlVec->begin());
     bitLenInt controlIndex = 0;
 
-    for (auto i = 0; i < controlLen; i++) {
+    for (bitLenInt i = 0; i < controlLen; i++) {
         if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
             continue;
         }
