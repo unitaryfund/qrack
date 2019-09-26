@@ -15,11 +15,10 @@
 #include <memory>
 #include <random>
 
+#define bitLenInt uint8_t
 #if ENABLE_PURE32
-#define bitLenInt uint32_t
 #define bitCapInt uint32_t
 #else
-#define bitLenInt uint64_t
 #define bitCapInt uint64_t
 #endif
 #define bitsInByte 8

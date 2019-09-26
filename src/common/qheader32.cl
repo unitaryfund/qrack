@@ -23,4 +23,4 @@
 #define bitCapInt uint
 #define bitCapInt2 uint2
 #define bitCapInt4 uint4
-#define bitLenInt uint
+#define bitLenInt unsigned char
