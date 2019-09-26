@@ -62,7 +62,7 @@ protected:
 
     static real1 normHelper(const complex& c) { return norm(c); }
 
-    complex* Alloc(const bitCapInt& elemCount)
+    complex* Alloc(bitCapInt elemCount)
     {
 // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
 #if defined(__APPLE__)

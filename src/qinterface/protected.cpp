@@ -211,10 +211,7 @@ bool QInterface::IsIdentity(const complex* mtrx)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if (norm(mtrx[1]) > min_norm) {
-        return false;
-    }
-    if (norm(mtrx[2]) > min_norm) {
+    if ((norm(mtrx[1]) > min_norm) || (norm(mtrx[2]) > min_norm)) {
         return false;
     }
 
