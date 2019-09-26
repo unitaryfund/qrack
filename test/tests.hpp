@@ -67,15 +67,14 @@ inline std::ostream& outputPerBitProbs(std::ostream& os, Qrack::QInterfacePtr qf
 
 inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr qftReg)
 {
-    int i;
+    bitCapInt i;
 
     double maxProb = 0;
-    int maxProbIdx = 0;
+    bitCapInt maxProbIdx = 0;
     double totalProb = 0;
 
-    // Iterate through all possible values of the bit array, starting at the
-    // max.
-    for (i = qftReg->GetMaxQPower() - 1; i >= 0; i--) {
+    // Iterate through all possible values of the bit array
+    for (i = 0; i < qftReg->GetMaxQPower(); i++) {
         double prob = qftReg->ProbAll(i);
         totalProb += prob;
         if (prob > maxProb) {
@@ -90,7 +89,7 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
     os << qftReg->GetQubitCount() << "/";
 
     // Print the resulting maximum probability bit pattern.
-    for (i = qftReg->GetMaxQPower() >> 1; i > 0; i >>= 1) {
+    for (i = qftReg->GetMaxQPower() >> 1UL; i > 0; i >>= 1UL) {
         if (i & maxProbIdx) {
             os << "1";
         } else {
