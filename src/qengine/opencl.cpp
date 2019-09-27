@@ -1127,7 +1127,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 
     bitCapInt qPower = pow2(qubit);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     return Probx(OCL_API_PROB, bciArgs);
 }
@@ -1912,7 +1912,7 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
          * If the carry is set, we flip the carry bit. We always initially
          * clear the carry after testing for carry in.
          */
-        carryIn ^= 1U;
+        carryIn ^= ONE_BCI;
         X(carryIndex);
     }
 
