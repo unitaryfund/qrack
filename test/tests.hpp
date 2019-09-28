@@ -133,10 +133,10 @@ public:
 class ProbPattern : public Catch::MatcherBase<Qrack::QInterfacePtr> {
     bitLenInt start;
     bitLenInt length;
-    uint64_t mask;
+    bitCapInt mask;
 
 public:
-    ProbPattern(bitLenInt s, bitLenInt l, uint64_t m)
+    ProbPattern(bitLenInt s, bitLenInt l, bitCapInt m)
         : start(s)
         , length(l)
         , mask(m)
@@ -154,7 +154,7 @@ public:
             return false;
         }
 
-        for (uint8_t j = 0; j < length; j++) {
+        for (bitCapInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
             if (bit != !!(mask & (1U << j))) {
