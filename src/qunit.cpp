@@ -21,7 +21,7 @@
 #define CACHED_CLASSICAL(shard)                                                                                        \
     ((!shard.isPlusMinus) && !shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define PHASE_MATTERS(shard)                                                                                           \
-    (!randGlobalPhase || shard.isPlusMinus || shard.isProbDirty || shard.isPhaseDirty ||                               \
+    (!randGlobalPhase || shard.isPlusMinus || shard.isProbDirty ||                                                     \
         !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define DIRTY(shard) (shard.isProbDirty || shard.isPhaseDirty)
 
@@ -1134,7 +1134,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
 
         bitLenInt* lcontrols = new bitLenInt[controlLen];
         bitLenInt ltarget;
-        if (controlLen == 1 && CACHED_CLASSICAL(shards[target]) && !CACHED_CLASSICAL(shards[controls[0]])) {
+        if (controlLen == 1 && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
             ltarget = controls[0];
             lcontrols[0] = target;
         } else {
@@ -1169,16 +1169,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
 
         bitLenInt* lcontrols = new bitLenInt[controlLen];
         bitLenInt ltarget;
-        if (controlLen == 1 && CACHED_CLASSICAL(shards[target]) && !CACHED_CLASSICAL(shards[controls[0]])) {
-            ltarget = controls[0];
-            lcontrols[0] = target;
-        } else {
-            ltarget = target;
-            std::copy(controls, controls + controlLen, lcontrols);
-        }
 
-        CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySinglePhase(topLeft, bottomRight, true, target), false);
+        ltarget = target;
+        std::copy(controls, controls + controlLen, lcontrols);
+        CTRLED_PHASE_WRAP(ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySinglePhase(topLeft, bottomRight, true, target), true);
 
         delete[] lcontrols;
     }
