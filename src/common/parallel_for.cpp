@@ -124,7 +124,7 @@ void ParallelFor::par_for_skip(
         return;
     }
 
-    bitCapInt lowMask = skipMask - 1UL;
+    bitCapInt lowMask = skipMask - ONE_BCI;
     bitCapInt highMask = ~lowMask;
 
     IncrementFunc incFn;
