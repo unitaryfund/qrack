@@ -55,7 +55,7 @@ int main()
     }
 
     // Now, we prepare a superposition of all available powers of 2, to predict.
-    bitLenInt* powersOf2 = new bitLenInt[ControlCount];
+    unsigned char* powersOf2 = new unsigned char[ControlCount];
     for (bitLenInt i = 0; i < ControlCount; i++) {
         powersOf2[i] = 1U << i;
     }

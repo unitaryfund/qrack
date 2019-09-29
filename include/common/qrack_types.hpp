@@ -18,8 +18,10 @@
 #define bitLenInt uint8_t
 #if ENABLE_PURE32
 #define bitCapInt uint32_t
+#define ONE_BCI 1U
 #else
 #define bitCapInt uint64_t
+#define ONE_BCI 1ULL
 #endif
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64

@@ -17,6 +17,7 @@
 #define real1 double
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
+#define ONE_BCI 1UL
 #define SineShift M_PI_2
 #define PI_R1 M_PI
 #define min_norm 1e-30

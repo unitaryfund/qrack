@@ -719,7 +719,7 @@ void QFusion::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
         DiscardReg(carryStart, length);
         SetReg(inOutStart, length, 0U);
         SetReg(carryStart, length, 0U);
-    } else if (toMul > 1U) {
+    } else if (toMul > ONE_BCI) {
         FlushReg(inOutStart, length);
         FlushReg(carryStart, length);
         qReg->MUL(toMul, inOutStart, carryStart, length);
@@ -728,7 +728,7 @@ void QFusion::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
 
 void QFusion::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
-    if (toDiv != 1U) {
+    if (toDiv != ONE_BCI) {
         FlushReg(inOutStart, length);
         FlushReg(carryStart, length);
         qReg->DIV(toDiv, inOutStart, carryStart, length);
@@ -792,7 +792,7 @@ void QFusion::CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inp
 void QFusion::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
-    if (toMul != 1U) {
+    if (toMul != ONE_BCI) {
         FlushArray(controls, controlLen);
         FlushReg(inOutStart, length);
         FlushReg(carryStart, length);
@@ -803,7 +803,7 @@ void QFusion::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, 
 void QFusion::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
-    if (toDiv != 1U) {
+    if (toDiv != ONE_BCI) {
         FlushArray(controls, controlLen);
         FlushReg(inOutStart, length);
         FlushReg(carryStart, length);

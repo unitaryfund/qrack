@@ -174,7 +174,7 @@ void QInterface::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenIn
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
-        cBit = (1 << i) & classicalInput;
+        cBit = bitSlice(i, classicalInput);
         CLAND(qInputStart + i, cBit, outputStart + i);
     }
 }
@@ -185,7 +185,7 @@ void QInterface::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
-        cBit = (1 << i) & classicalInput;
+        cBit = bitSlice(i, classicalInput);
         CLOR(qInputStart + i, cBit, outputStart + i);
     }
 }
@@ -196,7 +196,7 @@ void QInterface::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenIn
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
-        cBit = (1 << i) & classicalInput;
+        cBit = bitSlice(i, classicalInput);
         CLXOR(qInputStart + i, cBit, outputStart + i);
     }
 }
@@ -312,8 +312,8 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
         bool bitVal;
         bitCapInt regVal = MReg(start, length);
         for (bitLenInt i = 0; i < length; i++) {
-            bitVal = regVal & (1 << i);
-            if ((bitVal && !(value & (1 << i))) || (!bitVal && (value & (1 << i))))
+            bitVal = bitSlice(i, regVal);
+            if ((bitVal && !bitSlice(i, value)) || (!bitVal && bitSlice(i, value)))
                 X(start + i);
         }
     }
@@ -579,7 +579,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
     bitCapInt res = 0;
     bitCapInt power;
     for (bitLenInt bit = 0; bit < length; bit++) {
-        power = 1U << bit;
+        power = pow2(bit);
         res |= ForceM(start + bit, !(!(power & result)), doForce) ? power : 0;
     }
     return res;
@@ -591,11 +591,11 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
     bitCapInt result = 0;
     if (values == NULL) {
         for (bitLenInt bit = 0; bit < length; bit++) {
-            result |= M(bits[bit]) ? (1U << (bits[bit])) : 0;
+            result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
         }
     } else {
         for (bitLenInt bit = 0; bit < length; bit++) {
-            result |= ForceM(bits[bit], values[bit]) ? (1U << (bits[bit])) : 0;
+            result |= ForceM(bits[bit], values[bit]) ? pow2(bits[bit]) : 0;
         }
     }
     return result;
@@ -606,7 +606,7 @@ real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 {
     real1 prob = ONE_R1;
     for (bitLenInt i = 0; i < length; i++) {
-        if (permutation & (1U << i)) {
+        if ((permutation >> i) & 1U) {
             prob *= Prob(start + i);
         } else {
             prob *= (ONE_R1 - Prob(start + i));

@@ -60,21 +60,21 @@ inline real1 arg(const cmplx cmp)
     iHigh = lcv;                                                                     \
     i = 0U;                                                                          \
     for (p = 0U; p < BITCOUNT_ARG; p++) {                                            \
-        iLow = iHigh & (qPowersSorted[p] - 1U);                                      \
+        iLow = iHigh & (qPowersSorted[p] - ONE_BCI);                                 \
         i |= iLow;                                                                   \
-        iHigh = (iHigh ^ iLow) << 1U;                                                \
+        iHigh = (iHigh ^ iLow) << ONE_BCI;                                           \
     }                                                                                \
     i |= iHigh
 
 #define PUSH_APART_1()                                                               \
     i = lcv & qMask;                                                                 \
-    i |= (lcv ^ i) << 1U
+    i |= (lcv ^ i) << ONE_BCI
 
 #define PUSH_APART_2()                                                               \
     i = lcv & qMask1;                                                                \
-    iHigh = (lcv ^ i) << 1U;                                                         \
+    iHigh = (lcv ^ i) << ONE_BCI;                                                    \
     iLow = iHigh & qMask2;                                                           \
-    i |= iLow | ((iHigh ^ iLow) << 1U)
+    i |= iLow | ((iHigh ^ iLow) << ONE_BCI)
 
 #define APPLY_AND_OUT()                                                              \
     mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
@@ -98,7 +98,7 @@ inline real1 arg(const cmplx cmp)
     locNthreads = get_local_size(0);                                                 \
     lProbBuffer[locID] = partNrm;                                                    \
                                                                                      \
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {                          \
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {                \
         barrier(CLK_LOCAL_MEM_FENCE);                                                \
         if (locID < lcv) {                                                           \
             lProbBuffer[locID] += lProbBuffer[locID + lcv];                          \
@@ -284,7 +284,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
 
     bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt targetPower = bitCapIntPtr[1];
-    bitCapInt targetMask = targetPower - 1;
+    bitCapInt targetMask = targetPower - ONE_BCI;
     bitCapInt controlLen = bitCapIntPtr[2];
     bitCapInt mtrxSkipLen = bitCapIntPtr[3];
     bitCapInt mtrxSkipValueMask = bitCapIntPtr[4];
@@ -301,21 +301,21 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & targetMask;
-        i |= (lcv ^ i) << 1U;
+        i |= (lcv ^ i) << ONE_BCI;
 
         offset = 0;
         for (p = 0; p < controlLen; p++) {
             if (i & qPowers[p]) {
-                offset |= 1U << p;
+                offset |= ONE_BCI << p;
             }
         }
 
         jHigh = offset;
         j = 0;
         for (p = 0; p < mtrxSkipLen; p++) {
-            jLow = jHigh & (qPowers[controlLen + p] - 1U);
+            jLow = jHigh & (qPowers[controlLen + p] - ONE_BCI);
             j |= jLow;
-            jHigh = (jHigh ^ jLow) << 1U;
+            jHigh = (jHigh ^ jLow) << ONE_BCI;
         }
         j |= jHigh;
         offset = j | mtrxSkipValueMask;
@@ -335,7 +335,7 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitC
     locNthreads = get_local_size(0);
     lProbBuffer[locID] = partNrm;
     
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
         barrier(CLK_LOCAL_MEM_FENCE);
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
@@ -415,7 +415,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntP
     real1 partProb, nrm, firstAngle, currentAngle;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
-        j = lcv & ((1U << start) - 1);
+        j = lcv & ((ONE_BCI << start) - ONE_BCI);
         j |= (lcv ^ j) << len;
 
         partProb = ZERO_R1;
@@ -447,7 +447,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntP
         firstAngle = -16 * PI_R1;
 
         for (k = 0U; k < remainderPower; k++) {
-            l = k & ((1U << start) - 1);
+            l = k & ((ONE_BCI << start) - ONE_BCI);
             l |= (k ^ l) << len;
             l = j | l;
             
@@ -490,7 +490,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt2 args = vload2(0, bitCapIntPtr);
     bitCapInt maxI = args.x;
     bitCapInt qPower = args.y;
-    bitCapInt qMask = qPower - 1U;
+    bitCapInt qMask = qPower - ONE_BCI;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
@@ -498,7 +498,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
-        i |= ((lcv ^ i) << 1U) | qPower;
+        i |= ((lcv ^ i) << ONE_BCI) | qPower;
         amp = stateVec[i];
         oneChancePart += dot(amp, amp);
     }
@@ -507,7 +507,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     locNthreads = get_local_size(0);
     lProbBuffer[locID] = oneChancePart;
     
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
         barrier(CLK_LOCAL_MEM_FENCE);
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
@@ -530,7 +530,7 @@ void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     bitCapInt perm = args.y;
     bitCapInt start = args.z;
     bitCapInt len = args.w;
-    bitCapInt qMask = (1U << start) - 1U;
+    bitCapInt qMask = (ONE_BCI << start) - ONE_BCI;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
@@ -547,7 +547,7 @@ void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     locNthreads = get_local_size(0);
     lProbBuffer[locID] = oneChancePart;
     
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
         barrier(CLK_LOCAL_MEM_FENCE);
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
@@ -570,7 +570,7 @@ void kernel probregall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt maxJ = args.y;
     bitCapInt start = args.z;
     bitCapInt len = args.w;
-    bitCapInt qMask = (1U << start) - 1U;
+    bitCapInt qMask = (ONE_BCI << start) - ONE_BCI;
 
     real1 oneChancePart;
     cmplx amp;
@@ -610,9 +610,9 @@ void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, g
         iHigh = lcv;
         i = 0U;
         for (p = 0U; p < len; p++) {
-            iLow = iHigh & (qPowers[p] - 1U);
+            iLow = iHigh & (qPowers[p] - ONE_BCI);
             i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1U;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
         i |= iHigh;
 
@@ -624,7 +624,7 @@ void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, g
     locNthreads = get_local_size(0);
     lProbBuffer[locID] = oneChancePart;
     
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
         barrier(CLK_LOCAL_MEM_FENCE);
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
@@ -657,9 +657,9 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
         iHigh = lcv1;
         perm = 0U;
         for (p = 0U; p < skipLen; p++) {
-            iLow = iHigh & (qPowersSkip[p] - 1U);
+            iLow = iHigh & (qPowersSkip[p] - ONE_BCI);
             perm |= iLow;
-            iHigh = (iHigh ^ iLow) << 1U;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
         perm |= iHigh;
 
@@ -668,9 +668,9 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
             iHigh = lcv2;
             i = 0U;
             for (p = 0U; p < maskLen; p++) {
-                iLow = iHigh & (qPowersMask[p] - 1U);
+                iLow = iHigh & (qPowersMask[p] - ONE_BCI);
                 i |= iLow;
-                iHigh = (iHigh ^ iLow) << 1U;
+                iHigh = (iHigh ^ iLow) << ONE_BCI;
             }
             i |= iHigh;
 
@@ -689,7 +689,7 @@ void kernel rol(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt regMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
     bitCapInt start = bitCapIntPtr[4];
     bitCapInt shift = bitCapIntPtr[5];
     bitCapInt length = bitCapIntPtr[6];
@@ -711,7 +711,7 @@ void kernel inc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt inOutMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
     bitCapInt inOutStart = bitCapIntPtr[4];
     bitCapInt toAdd = bitCapIntPtr[5];
     for (i = ID; i < maxI; i += Nthreads) {
@@ -727,7 +727,7 @@ void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt inOutMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
     bitCapInt inOutStart = bitCapIntPtr[4];
     bitCapInt toAdd = bitCapIntPtr[5];
     bitCapInt controlLen = bitCapIntPtr[6];
@@ -739,9 +739,9 @@ void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
         iHigh = lcv;
         i = 0U;
         for (p = 0U; p < controlLen; p++) {
-            iLow = iHigh & (controlPowers[p] - 1U);
+            iLow = iHigh & (controlPowers[p] - ONE_BCI);
             i |= iLow;
-            iHigh = (iHigh ^ iLow) << 1U;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
         i |= iHigh;
 
@@ -758,14 +758,14 @@ void kernel incdecc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, gl
     bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt inOutMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - 1U;
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
     bitCapInt carryMask = bitCapIntPtr[4];
     bitCapInt inOutStart = bitCapIntPtr[5];
     bitCapInt toMod = bitCapIntPtr[6];
     bitCapInt otherRes, inOutRes, outInt, outRes, i;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        i = lcv & (carryMask - 1U);
-        i |= (lcv ^ i) << 1U;
+        i = lcv & (carryMask - ONE_BCI);
+        i |= (lcv ^ i) << ONE_BCI;
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -789,7 +789,7 @@ void kernel incs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt inOutMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
     bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> 1U;
+    bitCapInt signMask = lengthPower >> ONE_BCI;
     bitCapInt overflowMask = bitCapIntPtr[4];
     bitCapInt inOutStart = bitCapIntPtr[5];
     bitCapInt toAdd = bitCapIntPtr[6];
@@ -810,8 +810,8 @@ void kernel incs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
         isOverflow = false;
         // Both negative:
         if (inOutInt & inInt & signMask) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+            inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
+            inInt = ((~inInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
             if ((inOutInt + inInt) > signMask) {
                 isOverflow = true;
             }
@@ -839,7 +839,7 @@ void kernel incdecsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, 
     bitCapInt inOutMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
     bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> 1U;
+    bitCapInt signMask = lengthPower >> ONE_BCI;
     bitCapInt overflowMask = bitCapIntPtr[4];
     bitCapInt carryMask = bitCapIntPtr[5];
     bitCapInt inOutStart = bitCapIntPtr[6];
@@ -848,8 +848,8 @@ void kernel incdecsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, 
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        i = lcv & (carryMask - 1U);
-        i |= (lcv ^ i) << 1U;
+        i = lcv & (carryMask - ONE_BCI);
+        i |= (lcv ^ i) << ONE_BCI;
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -864,8 +864,8 @@ void kernel incdecsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, 
         bool isOverflow = false;
         // Both negative:
         if (inOutInt & inInt & signMask) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+            inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
+            inInt = ((~inInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
             if ((inOutInt + inInt) > signMask)
                 isOverflow = true;
         }
@@ -891,7 +891,7 @@ void kernel incdecsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, 
     bitCapInt inOutMask = bitCapIntPtr[1];
     bitCapInt otherMask = bitCapIntPtr[2];
     bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> 1U;
+    bitCapInt signMask = lengthPower >> ONE_BCI;
     bitCapInt carryMask = bitCapIntPtr[4];
     bitCapInt inOutStart = bitCapIntPtr[5];
     bitCapInt toAdd = bitCapIntPtr[6];
@@ -899,8 +899,8 @@ void kernel incdecsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, 
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        i = lcv & (carryMask - 1U);
-        i |= (lcv ^ i) << 1U;
+        i = lcv & (carryMask - ONE_BCI);
+        i |= (lcv ^ i) << ONE_BCI;
 
         otherRes = i & otherMask;
         inOutRes = i & inOutMask;
@@ -915,8 +915,8 @@ void kernel incdecsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, 
         bool isOverflow = false;
         // Both negative:
         if (inOutInt & inInt & (signMask)) {
-            inOutInt = ((~inOutInt) & (lengthPower - 1U)) + 1U;
-            inInt = ((~inInt) & (lengthPower - 1U)) + 1U;
+            inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
+            inInt = ((~inInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
             if ((inOutInt + inInt) > signMask)
                 isOverflow = true;
         }
@@ -1020,8 +1020,8 @@ void kernel incdecbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bool isValid;
     cmplx amp1, amp2;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        i = lcv & (carryMask - 1U);
-        i |= (lcv ^ i) << 1U;
+        i = lcv & (carryMask - ONE_BCI);
+        i |= (lcv ^ i) << ONE_BCI;
 
         otherRes = i & otherMask;
         partToAdd = toAdd;
@@ -1087,7 +1087,7 @@ void kernel mul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     bitCapInt carryMask = bitCapIntPtr[3];
     bitCapInt otherMask = bitCapIntPtr[4];
     bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt highMask = lowMask << len;
     bitCapInt inOutStart = bitCapIntPtr[6];
     bitCapInt carryStart = bitCapIntPtr[7];
@@ -1116,7 +1116,7 @@ void kernel div(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     bitCapInt carryMask = bitCapIntPtr[3];
     bitCapInt otherMask = bitCapIntPtr[4];
     bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt highMask = lowMask << len;
     bitCapInt inOutStart = bitCapIntPtr[6];
     bitCapInt carryStart = bitCapIntPtr[7];
@@ -1145,7 +1145,7 @@ void kernel mulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt outMask = bitCapIntPtr[3];
     bitCapInt otherMask = bitCapIntPtr[4];
     bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt inStart = bitCapIntPtr[6];
     bitCapInt outStart = bitCapIntPtr[7];
     bitCapInt skipMask = bitCapIntPtr[8];
@@ -1175,7 +1175,7 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     bitCapInt outMask = bitCapIntPtr[3];
     bitCapInt otherMask = bitCapIntPtr[4];
     bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt inStart = bitCapIntPtr[6];
     bitCapInt outStart = bitCapIntPtr[7];
     bitCapInt skipMask = bitCapIntPtr[8];
@@ -1218,11 +1218,11 @@ void kernel fulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 
     bitCapInt qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
-        qMask1 = carryInSumOutMask - 1U;
-        qMask2 = carryOutMask - 1U;
+        qMask1 = carryInSumOutMask - ONE_BCI;
+        qMask2 = carryOutMask - ONE_BCI;
     } else {
-        qMask1 = carryOutMask - 1U;
-        qMask2 = carryInSumOutMask - 1U;
+        qMask1 = carryOutMask - ONE_BCI;
+        qMask2 = carryInSumOutMask - ONE_BCI;
     }
 
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
@@ -1298,11 +1298,11 @@ void kernel ifulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 
     bitCapInt qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
-        qMask1 = carryInSumOutMask - 1U;
-        qMask2 = carryOutMask - 1U;
+        qMask1 = carryInSumOutMask - ONE_BCI;
+        qMask2 = carryOutMask - ONE_BCI;
     } else {
-        qMask1 = carryOutMask - 1U;
-        qMask2 = carryInSumOutMask - 1U;
+        qMask1 = carryOutMask - ONE_BCI;
+        qMask2 = carryInSumOutMask - ONE_BCI;
     }
 
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
@@ -1369,18 +1369,18 @@ void kernel ifulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
     iHigh = lcv;                                                                     \
     i = 0U;                                                                          \
     for (p = 0U; p < (controlLen + len); p++) {                                      \
-        iLow = iHigh & (controlPowers[p] - 1U);                                      \
+        iLow = iHigh & (controlPowers[p] - ONE_BCI);                                 \
         i |= iLow;                                                                   \
-        iHigh = (iHigh ^ iLow) << 1U;                                                \
+        iHigh = (iHigh ^ iLow) << ONE_BCI;                                           \
     }                                                                                \
     i |= iHigh;                                                                      \
 
 #define CMOD_FINISH()                                                                \
     nStateVec[i] = stateVec[i];                                                      \
-    for (j = 1U; j < ((1U << controlLen) - 1U); j++) {                               \
+    for (j = ONE_BCI; j < ((ONE_BCI << controlLen) - ONE_BCI); j++) {                \
         partControlMask = 0U;                                                        \
         for (k = 0U; k < controlLen; k++) {                                          \
-            if (j & (1U << k)) {                                                     \
+            if (j & (ONE_BCI << k)) {                                                \
                 partControlMask |= controlPowers[controlLen + len + k];              \
             }                                                                        \
         }                                                                            \
@@ -1400,7 +1400,7 @@ void kernel cmul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt carryMask = bitCapIntPtr[5];
     bitCapInt otherMask = bitCapIntPtr[6];
     bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt highMask = lowMask << len;
     bitCapInt inOutStart = bitCapIntPtr[8];
     bitCapInt carryStart = bitCapIntPtr[9];
@@ -1432,7 +1432,7 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     bitCapInt carryMask = bitCapIntPtr[5];
     bitCapInt otherMask = bitCapIntPtr[6];
     bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (1 << len) - 1;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt highMask = lowMask << len;
     bitCapInt inOutStart = bitCapIntPtr[8];
     bitCapInt carryStart = bitCapIntPtr[9];
@@ -1464,11 +1464,11 @@ void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     bitCapInt outMask = bitCapIntPtr[5];
     bitCapInt modN = bitCapIntPtr[6];
     bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt inStart = bitCapIntPtr[8];
     bitCapInt outStart = bitCapIntPtr[9];
 
-    bitCapInt otherMask = (maxI - 1U) ^ (inMask | outMask | controlMask);
+    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
     maxI >>= (controlLen + len);
 
     bitCapInt otherRes, outRes, inRes;
@@ -1501,11 +1501,11 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     bitCapInt outMask = bitCapIntPtr[5];
     bitCapInt modN = bitCapIntPtr[6];
     bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (1U << len) - 1U;
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapInt inStart = bitCapIntPtr[8];
     bitCapInt outStart = bitCapIntPtr[9];
 
-    bitCapInt otherMask = (maxI - 1U) ^ (inMask | outMask | controlMask);
+    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
     maxI >>= (controlLen + len);
 
     bitCapInt otherRes, outRes, inRes, inInt;
@@ -1547,7 +1547,7 @@ void kernel indexedLda(
     bitCapInt outputStart = bitCapIntPtr[3];
     bitCapInt valueBytes = bitCapIntPtr[4];
     bitCapInt valueLength = bitCapIntPtr[5];
-    bitCapInt lowMask = (1U << outputStart) - 1U;
+    bitCapInt lowMask = (ONE_BCI << outputStart) - ONE_BCI;
     bitCapInt inputRes, inputInt, outputRes, outputInt;
     bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1586,8 +1586,8 @@ void kernel indexedAdc(
     bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
+        iLow = iHigh & (carryMask - ONE_BCI);
+        i = iLow | ((iHigh ^ iLow) << ONE_BCI);
 
         otherRes = i & otherMask;
         inputRes = i & inputMask;
@@ -1630,8 +1630,8 @@ void kernel indexedSbc(
     bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        iLow = iHigh & (carryMask - 1U);
-        i = iLow | ((iHigh ^ iLow) << 1U);
+        iLow = iHigh & (carryMask - ONE_BCI);
+        i = iLow | ((iHigh ^ iLow) << ONE_BCI);
 
         otherRes = i & otherMask;
         inputRes = i & inputMask;
@@ -1690,7 +1690,7 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     locID = get_local_id(0);
     locNthreads = get_local_size(0);
     lProbBuffer[locID] = partNrm;
-    for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
         barrier(CLK_LOCAL_MEM_FENCE);
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
@@ -1740,7 +1740,7 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
         locNthreads = get_local_size(0);
         lProbBuffer[locID] = partNrm;
     
-        for (lcv = (locNthreads >> 1U); lcv > 0U; lcv >>= 1U) {
+        for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
             barrier(CLK_LOCAL_MEM_FENCE);
             if (locID < lcv) {
                 lProbBuffer[locID] += lProbBuffer[locID + lcv];
@@ -1761,7 +1761,7 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
     bitCapInt qPower = bitCapIntPtr[1];
-    bitCapInt qMask = qPower - 1U;
+    bitCapInt qMask = qPower - ONE_BCI;
     bitCapInt savePower = bitCapIntPtr[2];
     bitCapInt discardPower = qPower ^ savePower;
     cmplx nrm = cmplx_ptr[0];
@@ -1770,7 +1770,7 @@ void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & qMask;
-        i = iLow | ((iHigh ^ iLow) << 1U);
+        i = iLow | ((iHigh ^ iLow) << ONE_BCI);
 
         stateVec[i | savePower] = zmul(nrm, stateVec[i | savePower]);
         stateVec[i | discardPower] = (cmplx)(ZERO_R1, ZERO_R1);
@@ -1809,7 +1809,7 @@ void kernel zerophaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntP
     
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt skipMask = bitCapIntPtr[1] - 1U;
+    bitCapInt skipMask = bitCapIntPtr[1] - ONE_BCI;
     bitCapInt skipLength = bitCapIntPtr[2];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1834,8 +1834,8 @@ void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapI
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
-        iLow = iHigh & (skipPower - 1U);
-        i = (iLow | ((iHigh ^ iLow) << 1U)) | skipPower;
+        iLow = iHigh & (skipPower - ONE_BCI);
+        i = (iLow | ((iHigh ^ iLow) << ONE_BCI)) | skipPower;
 
         if (((i & regMask) >> start) < greaterPerm)
             stateVec[i] = -stateVec[i];

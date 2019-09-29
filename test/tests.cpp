@@ -3012,7 +3012,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
     // Our subroutine returns true only for an input of 100.
     const bitLenInt length = 10;
     const int TARGET_PROB = 100;
-    int i;
+    bitLenInt i;
     bitLenInt partStart;
     // Start in a superposition of all inputs.
     qftReg->SetPermutation(0);
@@ -3414,19 +3414,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0));
-    for (int i = 0; i < qftReg->GetQubitCount(); i += 2) {
+    for (bitLenInt i = 0; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x55555));
-    for (int i = 0; i < (qftReg->GetQubitCount() - 1); i += 2) {
+    for (bitLenInt i = 0; i < (qftReg->GetQubitCount() - 1); i += 2) {
         qftReg->CNOT(i, i + 1);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xfffff));
-    for (int i = qftReg->GetQubitCount() - 2; i > 0; i -= 2) {
+    for (bitLenInt i = qftReg->GetQubitCount() - 2; i > 0; i -= 2) {
         qftReg->CNOT(i - 1, i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xAAAAB));
-    for (int i = 1; i < qftReg->GetQubitCount(); i += 2) {
+    for (bitLenInt i = 1; i < qftReg->GetQubitCount(); i += 2) {
         qftReg->X(i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));

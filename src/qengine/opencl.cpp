@@ -139,10 +139,10 @@ size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
         // Otherwise, clamp to a power of two
         size_t power = 2;
         while (power < wic) {
-            power <<= 1U;
+            power <<= ONE_BCI;
         }
         if (power > wic) {
-            power >>= 1U;
+            power >>= ONE_BCI;
         }
         wic = power;
     }
@@ -325,7 +325,9 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     size_t stateVecSize = maxQPower * sizeof(complex);
     bool usingHostRam;
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
-    if (useHostRam && !(stateVecSize > maxAlloc || (3 * stateVecSize) > maxMem)) {
+    if (stateVecSize > maxAlloc) {
+        throw "Error: State vector exceeds device maximum OpenCL allocation";
+    } else if (useHostRam || ((3 * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
         usingHostRam = false;
@@ -334,16 +336,16 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // constrain to a power of two
     size_t procElemPow = 1;
     while (procElemPow < procElemCount) {
-        procElemPow <<= 1U;
+        procElemPow <<= ONE_BCI;
     }
     procElemCount = procElemPow;
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     nrmGroupCount = maxWorkItems;
     size_t nrmGroupPow = 2;
     while (nrmGroupPow <= nrmGroupCount) {
-        nrmGroupPow <<= 1U;
+        nrmGroupPow <<= ONE_BCI;
     }
-    nrmGroupCount = nrmGroupPow >> 1U;
+    nrmGroupCount = nrmGroupPow >> ONE_BCI;
     if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
         nrmGroupSize = (nrmGroupCount / procElemCount);
         if (nrmGroupSize == 0) {
@@ -522,7 +524,7 @@ void QEngineOCL::X(bitLenInt qubit)
     const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
         complex(ZERO_R1, ZERO_R1) };
     bitCapInt qPowers[1];
-    qPowers[0] = 1 << qubit;
+    qPowers[0] = pow2(qubit);
     Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, SPECIAL_2X2::PAULIX);
 }
 
@@ -534,7 +536,7 @@ void QEngineOCL::Z(bitLenInt qubit)
     const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
     bitCapInt qPowers[1];
-    qPowers[0] = 1 << qubit;
+    qPowers[0] = pow2(qubit);
     Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, SPECIAL_2X2::PAULIZ);
 }
 
@@ -738,22 +740,22 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     // Load the integer kernel arguments buffer.
     bitCapInt maxI = maxQPower >> 1;
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, (bitCapInt)(1 << qubitIndex), controlLen, mtrxSkipLen, mtrxSkipValueMask,
-        0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, pow2(qubitIndex), controlLen, mtrxSkipLen, mtrxSkipValueMask, 0, 0, 0, 0,
+        0 };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
     real1 nrm = (real1)(ONE_R1 / std::sqrt(runningNorm));
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
-    BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_READ_ONLY, sizeof(complex) * 4U * (1U << (controlLen + mtrxSkipLen)));
+    BufferPtr uniformBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 4U * pow2(controlLen + mtrxSkipLen));
 
-    DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4 * (1U << (controlLen + mtrxSkipLen)), mtrxs);
+    DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2(controlLen + mtrxSkipLen), mtrxs);
 
     bitCapInt* qPowers = new bitCapInt[controlLen + mtrxSkipLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
-        qPowers[i] = 1U << controls[i];
+        qPowers[i] = pow2(controls[i]);
     }
     for (bitLenInt i = 0; i < mtrxSkipLen; i++) {
         qPowers[controlLen + i] = mtrxSkipPowers[i];
@@ -888,9 +890,9 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
 
     bitCapInt oQubitCount = toCopy->qubitCount;
     bitCapInt nQubitCount = qubitCount + oQubitCount;
-    bitCapInt nMaxQPower = 1U << nQubitCount;
-    bitCapInt startMask = maxQPower - 1U;
-    bitCapInt endMask = (toCopy->maxQPower - 1U) << qubitCount;
+    bitCapInt nMaxQPower = pow2(nQubitCount);
+    bitCapInt startMask = maxQPower - ONE_BCI;
+    bitCapInt endMask = (toCopy->maxQPower - ONE_BCI) << qubitCount;
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, startMask, endMask, 0, 0, 0, 0, 0, 0 };
 
     OCLAPI api_call;
@@ -911,10 +913,10 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 
     bitLenInt oQubitCount = toCopy->qubitCount;
     bitLenInt nQubitCount = qubitCount + oQubitCount;
-    bitCapInt nMaxQPower = 1U << nQubitCount;
-    bitCapInt startMask = (1U << start) - 1U;
+    bitCapInt nMaxQPower = pow2(nQubitCount);
+    bitCapInt startMask = pow2(start) - ONE_BCI;
     bitCapInt midMask = bitRegMask(start, oQubitCount);
-    bitCapInt endMask = ((1U << (qubitCount + oQubitCount)) - 1U) & ~(startMask | midMask);
+    bitCapInt endMask = pow2Mask(qubitCount + oQubitCount) & ~(startMask | midMask);
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start, 0, 0,
         0 };
 
@@ -959,8 +961,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     OCLAPI api_call = OCL_API_DECOMPOSEPROB;
 
-    bitCapInt partPower = 1U << length;
-    bitCapInt remainderPower = 1U << (qubitCount - length);
+    bitCapInt partPower = pow2(length);
+    bitCapInt remainderPower = pow2(qubitCount - length);
     bitCapInt bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -1125,9 +1127,9 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
         return ProbAll(1);
     }
 
-    bitCapInt qPower = 1U << qubit;
+    bitCapInt qPower = pow2(qubit);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     return Probx(OCL_API_PROB, bciArgs);
 }
@@ -1148,7 +1150,7 @@ real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
 void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
-    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthPower = pow2(length);
     bitCapInt maxJ = maxQPower >> length;
 
     if (doNormalize) {
@@ -1236,11 +1238,11 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     std::vector<bitCapInt> powersVec;
     for (length = 0; v; length++) {
         oldV = v;
-        v &= v - 1U; // clear the least significant bit set
+        v &= v - ONE_BCI; // clear the least significant bit set
         powersVec.push_back((v ^ oldV) & oldV);
     }
 
-    bitCapInt lengthPower = 1U << length;
+    bitCapInt lengthPower = pow2(length);
     bitCapInt maxJ = maxQPower >> length;
 
     if (doNormalize) {
@@ -1254,13 +1256,13 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         return;
     }
 
-    v = (~mask) & (maxQPower - 1U); // count the number of bits set in v
+    v = (~mask) & (maxQPower - ONE_BCI); // count the number of bits set in v
     bitCapInt skipPower;
     bitLenInt skipLength = 0; // c accumulates the total bits set in v
     std::vector<bitCapInt> skipPowersVec;
     for (skipLength = 0; v; skipLength++) {
         oldV = v;
-        v &= v - 1U; // clear the least significant bit set
+        v &= v - ONE_BCI; // clear the least significant bit set
         skipPower = (v ^ oldV) & oldV;
         skipPowersVec.push_back(skipPower);
     }
@@ -1312,9 +1314,9 @@ void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenIn
         return;
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt regMask = (lengthPower - 1U) << start;
-    bitCapInt otherMask = (maxQPower - 1U) & (~regMask);
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt regMask = (lengthPower - ONE_BCI) << start;
+    bitCapInt otherMask = (maxQPower - ONE_BCI) & (~regMask);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, start, shift, length, 0, 0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
@@ -1330,15 +1332,15 @@ void QEngineOCL::INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, co
         return;
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt lengthMask = lengthPower - 1U;
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
     bitCapInt regMask = lengthMask << start;
-    bitCapInt otherMask = (maxQPower - 1U) & ~(regMask);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) & ~(regMask);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, start, toMod, 0, 0, 0, 0 };
 
@@ -1353,8 +1355,8 @@ void QEngineOCL::CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, c
         return;
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt lengthMask = lengthPower - 1U;
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
@@ -1365,12 +1367,12 @@ void QEngineOCL::CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, c
     bitCapInt controlMask = 0;
     bitCapInt* controlPowers = new bitCapInt[controlLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers[i] = 1U << controls[i];
+        controlPowers[i] = pow2(controls[i]);
         controlMask |= controlPowers[i];
     }
     std::sort(controlPowers, controlPowers + controlLen);
 
-    bitCapInt otherMask = (maxQPower - 1U) ^ (regMask | controlMask);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (regMask | controlMask);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> controlLen, regMask, otherMask, lengthPower, start, toMod,
         controlLen, controlMask, 0, 0 };
@@ -1405,19 +1407,19 @@ void QEngineOCL::INTC(
         return;
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt lengthMask = lengthPower - 1U;
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
-    bitCapInt carryMask = 1U << carryIndex;
-    bitCapInt regMask = (lengthPower - 1U) << start;
-    bitCapInt otherMask = (maxQPower - 1U) & (~(regMask | carryMask));
+    bitCapInt carryMask = pow2(carryIndex);
+    bitCapInt regMask = (lengthPower - ONE_BCI) << start;
+    bitCapInt otherMask = (maxQPower - ONE_BCI) & (~(regMask | carryMask));
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, regMask, otherMask, lengthPower, carryMask, start, toMod, 0, 0,
-        0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, regMask, otherMask, lengthPower, carryMask, start, toMod,
+        0, 0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -1437,16 +1439,16 @@ void QEngineOCL::INTS(
         return;
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt lengthMask = lengthPower - 1U;
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
-    bitCapInt overflowMask = 1U << overflowIndex;
+    bitCapInt overflowMask = pow2(overflowIndex);
     bitCapInt regMask = lengthMask << start;
-    bitCapInt otherMask = (maxQPower - 1U) ^ regMask;
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ regMask;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, regMask, otherMask, lengthPower, overflowMask, start, toMod, 0, 0,
         0 };
@@ -1468,19 +1470,19 @@ void QEngineOCL::INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, 
         return;
     }
 
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt lengthMask = lengthPower - 1U;
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
-    bitCapInt overflowMask = 1U << overflowIndex;
-    bitCapInt carryMask = 1U << carryIndex;
+    bitCapInt overflowMask = pow2(overflowIndex);
+    bitCapInt carryMask = pow2(carryIndex);
     bitCapInt inOutMask = lengthMask << start;
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, lengthPower, overflowMask, carryMask,
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, inOutMask, otherMask, lengthPower, overflowMask, carryMask,
         start, toMod, 0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
@@ -1497,13 +1499,13 @@ void QEngineOCL::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenI
 void QEngineOCL::INTSC(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bitCapInt carryMask = 1U << carryIndex;
-    bitCapInt lengthPower = 1U << length;
-    bitCapInt inOutMask = (lengthPower - 1U) << start;
-    bitCapInt otherMask = ((1U << qubitCount) - 1U) ^ (inOutMask | carryMask);
+    bitCapInt carryMask = pow2(carryIndex);
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt inOutMask = (lengthPower - ONE_BCI) << start;
+    bitCapInt otherMask = pow2Mask(qubitCount) ^ (inOutMask | carryMask);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, lengthPower, carryMask, start, toMod, 0,
-        0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, inOutMask, otherMask, lengthPower, carryMask, start, toMod,
+        0, 0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -1533,7 +1535,7 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt start,
     }
 
     bitCapInt inOutMask = bitRegMask(start, length);
-    bitCapInt otherMask = (maxQPower - 1U) ^ inOutMask;
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ inOutMask;
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, inOutMask, otherMask, start, toMod, nibbleCount, 0, 0, 0, 0 };
 
@@ -1566,11 +1568,11 @@ void QEngineOCL::INTBCDC(
     }
 
     bitCapInt inOutMask = bitRegMask(start, length);
-    bitCapInt carryMask = 1U << carryIndex;
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+    bitCapInt carryMask = pow2(carryIndex);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask);
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1U, inOutMask, otherMask, carryMask, start, toMod, nibbleCount, 0,
-        0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, inOutMask, otherMask, carryMask, start, toMod, nibbleCount,
+        0, 0, 0 };
 
     ArithmeticCall(api_call, bciArgs);
 }
@@ -1587,8 +1589,8 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 {
     SetReg(carryStart, length, 0);
 
-    bitCapInt lowPower = 1U << length;
-    toMul &= (lowPower - 1U);
+    bitCapInt lowPower = pow2(length);
+    toMul &= (lowPower - ONE_BCI);
     if (toMul == 0) {
         SetReg(inOutStart, length, 0);
         return;
@@ -1639,8 +1641,8 @@ void QEngineOCL::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 void QEngineOCL::FullAdx(
     bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call)
 {
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 2U, 1U << inputBit1, 1U << inputBit2, 1U << carryInSumOut,
-        1U << carryOut, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 2UL, pow2(inputBit1), pow2(inputBit2), pow2(carryInSumOut),
+        pow2(carryOut), 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1669,8 +1671,8 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 
     SetReg(carryStart, length, 0);
 
-    bitCapInt lowPower = 1U << length;
-    toMul &= (lowPower - 1U);
+    bitCapInt lowPower = pow2(length);
+    toMul &= (lowPower - ONE_BCI);
     if (toMul == 1) {
         return;
     }
@@ -1709,8 +1711,8 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 
     SetReg(outStart, length, 0);
 
-    bitCapInt lowPower = 1U << length;
-    toMul &= (lowPower - 1U);
+    bitCapInt lowPower = pow2(length);
+    toMul &= (lowPower - ONE_BCI);
     if (toMul == 0) {
         return;
     }
@@ -1764,11 +1766,11 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuf
 void QEngineOCL::MULx(
     OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart, const bitLenInt length)
 {
-    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt lowMask = pow2Mask(length);
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
-    bitCapInt skipMask = (1U << carryStart) - 1U;
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask);
+    bitCapInt skipMask = pow2Mask(carryStart);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMod, inOutMask, carryMask, otherMask, length, inOutStart,
         carryStart, skipMask, 0 };
@@ -1781,11 +1783,11 @@ void QEngineOCL::MULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const
 {
     SetReg(outStart, length, 0);
 
-    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt lowMask = pow2Mask(length);
     bitCapInt inMask = lowMask << inStart;
     bitCapInt outMask = lowMask << outStart;
-    bitCapInt skipMask = (1U << outStart) - 1U;
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inMask | outMask);
+    bitCapInt skipMask = pow2Mask(outStart);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inMask | outMask);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, toMod, inMask, outMask, otherMask, length, inStart,
         outStart, skipMask, modN };
@@ -1796,7 +1798,7 @@ void QEngineOCL::MULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const
 void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
     const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen)
 {
-    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt lowMask = pow2Mask(length);
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
 
@@ -1804,16 +1806,16 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutSt
     bitCapInt* controlPowers = new bitCapInt[controlLen];
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers[i] = 1U << controls[i];
+        controlPowers[i] = pow2(controls[i]);
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[i + controlLen] = 1U << (carryStart + i);
+        skipPowers[i + controlLen] = pow2(carryStart + i);
     }
     std::sort(skipPowers, skipPowers + controlLen + length);
 
-    bitCapInt otherMask = (maxQPower - 1U) ^ (inOutMask | carryMask | controlMask);
+    bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
 
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (controlLen + length), toMod, controlLen, controlMask, inOutMask,
         carryMask, otherMask, length, inOutStart, carryStart };
@@ -1830,7 +1832,7 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutSt
 void QEngineOCL::CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inOutStart,
     const bitLenInt carryStart, const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen)
 {
-    bitCapInt lowMask = (1U << length) - 1U;
+    bitCapInt lowMask = pow2Mask(length);
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
 
@@ -1838,12 +1840,12 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, cons
     bitCapInt* controlPowers = new bitCapInt[controlLen];
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers[i] = 1U << controls[i];
+        controlPowers[i] = pow2(controls[i]);
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[i + controlLen] = 1U << (carryStart + i);
+        skipPowers[i + controlLen] = pow2(carryStart + i);
     }
     std::sort(skipPowers, skipPowers + controlLen + length);
 
@@ -1891,7 +1893,7 @@ bitCapInt QEngineOCL::IndexedLDA(
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
         valueLength, 0, 0, 0, 0 };
 
-    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, (1 << indexLength) * valueBytes);
+    ArithmeticCall(OCL_API_INDEXEDLDA, bciArgs, values, pow2(indexLength) * valueBytes);
 
     real1 average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
@@ -1912,20 +1914,20 @@ bitCapInt QEngineOCL::OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt in
          * If the carry is set, we flip the carry bit. We always initially
          * clear the carry after testing for carry in.
          */
-        carryIn ^= 1U;
+        carryIn ^= ONE_BCI;
         X(carryIndex);
     }
 
     bitLenInt valueBytes = (valueLength + 7) / 8;
-    bitCapInt lengthPower = 1 << valueLength;
-    bitCapInt carryMask = 1 << carryIndex;
+    bitCapInt lengthPower = pow2(valueLength);
+    bitCapInt carryMask = pow2(carryIndex);
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
     bitCapInt outputMask = bitRegMask(valueStart, valueLength);
-    bitCapInt otherMask = (maxQPower - 1) & (~(inputMask | outputMask | carryMask));
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, indexStart, inputMask, valueStart, outputMask, otherMask,
+    bitCapInt otherMask = (maxQPower - ONE_BCI) & (~(inputMask | outputMask | carryMask));
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, indexStart, inputMask, valueStart, outputMask, otherMask,
         carryIn, carryMask, lengthPower, valueBytes };
 
-    ArithmeticCall(api_call, bciArgs, values, (1 << indexLength) * valueBytes);
+    ArithmeticCall(api_call, bciArgs, values, pow2(indexLength) * valueBytes);
 
     real1 average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
@@ -1981,15 +1983,15 @@ void QEngineOCL::PhaseFlip()
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, (1U << start), length, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> length, pow2(start), length, 0, 0, 0, 0, 0, 0, 0 };
 
     PhaseFlipX(OCL_API_ZEROPHASEFLIP, bciArgs);
 }
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, bitRegMask(start, length), 1U << flagIndex, greaterPerm, start,
-        0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, bitRegMask(start, length), pow2(flagIndex), greaterPerm,
+        start, 0, 0, 0, 0, 0 };
 
     PhaseFlipX(OCL_API_CPHASEFLIPIFLESS, bciArgs);
 }

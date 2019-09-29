@@ -124,7 +124,7 @@ void ParallelFor::par_for_skip(
         return;
     }
 
-    bitCapInt lowMask = skipMask - 1;
+    bitCapInt lowMask = skipMask - ONE_BCI;
     bitCapInt highMask = ~lowMask;
 
     IncrementFunc incFn;
@@ -142,7 +142,7 @@ void ParallelFor::par_for_skip(
 void ParallelFor::par_for_mask(
     const bitCapInt begin, const bitCapInt end, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn)
 {
-    for (int i = 1; i < maskLen; i++) {
+    for (bitLenInt i = 1; i < maskLen; i++) {
         if (maskArray[i] < maskArray[i - 1]) {
             throw std::invalid_argument("Masks must be ordered by size");
         }
@@ -150,12 +150,12 @@ void ParallelFor::par_for_mask(
 
     /* Pre-calculate the masks to simplify the increment function later. */
     bitCapInt** masks = new bitCapInt*[maskLen];
-    for (int i = 0; i < maskLen; i++) {
+    for (bitLenInt i = 0; i < maskLen; i++) {
         masks[i] = new bitCapInt[2];
     }
 
     bool onlyLow = true;
-    for (int i = 0; i < maskLen; i++) {
+    for (bitLenInt i = 0; i < maskLen; i++) {
         masks[i][0] = maskArray[i] - 1; // low mask
         masks[i][1] = (~(masks[i][0] + maskArray[i])); // high mask
         if (maskArray[maskLen - i - 1] != (end >> (i + 1))) {
@@ -169,8 +169,8 @@ void ParallelFor::par_for_mask(
     } else {
         incFn = [&masks, maskLen](bitCapInt i, int cpu) {
             /* Push i apart, one mask at a time. */
-            for (int m = 0; m < maskLen; m++) {
-                i = ((i << 1) & masks[m][1]) | (i & masks[m][0]);
+            for (bitLenInt m = 0; m < maskLen; m++) {
+                i = ((i << 1U) & masks[m][1]) | (i & masks[m][0]);
             }
             return i;
         };
@@ -178,7 +178,7 @@ void ParallelFor::par_for_mask(
         par_for_inc(begin, (end - begin) >> maskLen, incFn, fn);
     }
 
-    for (int i = 0; i < maskLen; i++) {
+    for (bitLenInt i = 0; i < maskLen; i++) {
         delete[] masks[i];
     }
     delete[] masks;
