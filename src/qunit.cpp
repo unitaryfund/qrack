@@ -939,9 +939,9 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         [&]() { bare; });
 
 #define CTRLED_PHASE_WRAP(ctrld, ctrldgen, bare, anti)                                                                 \
-    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+    ApplyEitherControlled(lcontrols, controlLen, { ltarget }, anti,                                                    \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
-            if (!shards[target].isPlusMinus) {                                                                         \
+            if (!shards[ltarget].isPlusMinus) {                                                                        \
                 unit->ctrld;                                                                                           \
             } else {                                                                                                   \
                 complex trnsMtrx[4];                                                                                   \
@@ -1132,8 +1132,20 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
             return;
         }
 
+        bitLenInt* lcontrols = new bitLenInt[controlLen];
+        bitLenInt ltarget;
+        if (controlLen == 1 && CACHED_CLASSICAL(shards[target]) && !CACHED_CLASSICAL(shards[controls[0]])) {
+            ltarget = controls[0];
+            lcontrols[0] = target;
+        } else {
+            ltarget = target;
+            std::copy(controls, controls + controlLen, lcontrols);
+        }
+
         CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
             ApplySinglePhase(topLeft, bottomRight, true, target), false);
+
+        delete[] lcontrols;
     }
 }
 
@@ -1155,8 +1167,20 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
             return;
         }
 
+        bitLenInt* lcontrols = new bitLenInt[controlLen];
+        bitLenInt ltarget;
+        if (controlLen == 1 && CACHED_CLASSICAL(shards[target]) && !CACHED_CLASSICAL(shards[controls[0]])) {
+            ltarget = controls[0];
+            lcontrols[0] = target;
+        } else {
+            ltarget = target;
+            std::copy(controls, controls + controlLen, lcontrols);
+        }
+
         CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
             ApplySinglePhase(topLeft, bottomRight, true, target), false);
+
+        delete[] lcontrols;
     }
 }
 
