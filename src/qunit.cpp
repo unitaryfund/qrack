@@ -107,7 +107,7 @@ void QUnit::GetProbs(real1* outputProbs)
 
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
-    TransformBasisAll(false);
+    ToPermBasisAll();
     EndAllEmulation();
 
     complex result(ONE_R1, ZERO_R1);
@@ -254,14 +254,14 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 {
     for (bitLenInt i = 0; i < bits.size(); i++) {
-        TransformBasis(false, *(bits[i]));
+        TransformBasis1(false, *(bits[i]));
     }
     return EntangleInCurrentBasis(bits.begin(), bits.end());
 }
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 {
-    TransformBasis(false, start, length);
+    ToPermBasis(start, length);
 
     if (length == 1) {
         return shards[start].unit;
@@ -281,8 +281,8 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
 
 QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2)
 {
-    TransformBasis(false, start1, length1);
-    TransformBasis(false, start2, length2);
+    ToPermBasis(start1, length1);
+    ToPermBasis(start2, length2);
 
     std::vector<bitLenInt> bits(length1 + length2);
     std::vector<bitLenInt*> ebits(length1 + length2);
@@ -310,9 +310,9 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
 QInterfacePtr QUnit::EntangleRange(
     bitLenInt start1, bitLenInt length1, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3)
 {
-    TransformBasis(false, start1, length1);
-    TransformBasis(false, start2, length2);
-    TransformBasis(false, start3, length3);
+    ToPermBasis(start1, length1);
+    ToPermBasis(start2, length2);
+    ToPermBasis(start3, length3);
 
     std::vector<bitLenInt> bits(length1 + length2 + length3);
     std::vector<bitLenInt*> ebits(length1 + length2 + length3);
@@ -354,7 +354,7 @@ QInterfacePtr QUnit::EntangleRange(
 
 QInterfacePtr QUnit::EntangleAll()
 {
-    TransformBasisAll(false);
+    ToPermBasisAll();
     EndAllEmulation();
 
     std::vector<QInterfacePtr> units;
@@ -530,7 +530,7 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
 bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis)
 {
     if (!inCurrentBasis) {
-        TransformBasis(false, qubitIndex);
+        ToPermBasis(qubitIndex);
     }
     if (CACHED_CLASSICAL(shards[qubitIndex])) {
         return true;
@@ -606,13 +606,13 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
 
 real1 QUnit::Prob(bitLenInt qubit)
 {
-    TransformBasis(false, qubit);
+    ToPermBasis(qubit);
     return ProbBase(qubit);
 }
 
 real1 QUnit::ProbAll(bitCapInt perm)
 {
-    TransformBasisAll(false);
+    ToPermBasisAll();
     EndAllEmulation();
 
     real1 result = ONE_R1;
@@ -666,7 +666,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
-    TransformBasis(false, qubit);
+    ToPermBasis(qubit);
     QEngineShard& shard = shards[qubit];
 
     bool result;
@@ -1316,7 +1316,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             if (isSeparated) {
                 CHECK_BREAK_AND_TRIM();
             } else {
-                TransformBasis(false, controls[i]);
+                ToPermBasis(controls[i]);
                 controlVec.push_back(controls[i]);
             }
         }
@@ -1506,7 +1506,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
 void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
 {
-    TransformBasis(false, flagIndex);
+    ToPermBasis(flagIndex);
 
     // Measure the carry flag.
     // Don't separate the flag just to entangle it again, if it's in the same unit.
@@ -2144,7 +2144,7 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    TransformBasis(false, flagIndex);
+    ToPermBasis(flagIndex);
 
     // Keep the bits separate, if cheap to do so:
     if (!shards[flagIndex].isProbDirty) {
@@ -2176,7 +2176,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 void QUnit::PhaseFlip()
 {
     if (PHASE_MATTERS(shards[0])) {
-        TransformBasis(false, 0);
+        ToPermBasis(0);
         shards[0].unit->PhaseFlip();
     }
 }
@@ -2402,23 +2402,6 @@ QInterfacePtr QUnit::Clone()
     return copyPtr;
 }
 
-void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
-{
-    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
-        // Recursive call that should be blocked,
-        // or already in target basis.
-        return;
-    }
-
-    freezeBasis = true;
-
-    H(i);
-    shards[i].isPlusMinus = toPlusMinus;
-    TrySeparate(i);
-
-    freezeBasis = false;
-}
-
 bool QUnit::CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
 {
     bool root = shards[start].isPlusMinus;
@@ -2444,7 +2427,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
     } else if (norm(shard.amp1) < min_norm) {
         SeparateBit(false, target);
     } else if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
-        TransformBasis(!shard.isPlusMinus, target);
+        TransformBasis1(!shard.isPlusMinus, target);
     }
 }
 

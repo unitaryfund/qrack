@@ -29,6 +29,9 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
+    bool isFourier2;
+    bitLenInt fourier2Mapped;
+    QEngineShard* fourier2Partner;
 
     QEngineShard()
         : unit(NULL)
@@ -39,6 +42,9 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , isFourier2(false)
+        , fourier2Mapped(0)
+        , fourier2Partner(NULL)
     {
     }
 
@@ -49,6 +55,9 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
+        , isFourier2(false)
+        , fourier2Mapped(0)
+        , fourier2Partner(NULL)
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -64,6 +73,9 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , isFourier2(false)
+        , fourier2Mapped(0)
+        , fourier2Partner(NULL)
     {
     }
 
@@ -72,6 +84,8 @@ struct QEngineShard {
         if (unit)
             unit->Finish();
     }
+
+    bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
 };
 
 class QUnit;
@@ -373,16 +387,83 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i);
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
+    void TransformBasis1(const bool& toPlusMinus, const bitLenInt& i)
     {
-        for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toPlusMinus, start + i);
+        QEngineShard& shard = shards[i];
+
+        if (freezeBasis || (toPlusMinus == shard.isPlusMinus)) {
+            // Recursive and idempotent calls stop here
+            return;
+        }
+
+        freezeBasis = true;
+
+        H(i);
+        shard.isPlusMinus = toPlusMinus;
+        TrySeparate(i);
+
+        freezeBasis = false;
+    }
+
+    void RevertBasis2(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
+
+        if (freezeBasis || !shard.isFourier2) {
+            // Recursive and idempotent calls stop here
+            return;
+        }
+
+        bitLenInt bit0, bit1;
+        if (shard.fourier2Mapped == 0) {
+            bit0 = shard.mapped;
+            bit1 = shard.fourier2Partner->mapped;
+        } else {
+            bit1 = shard.mapped;
+            bit0 = shard.fourier2Partner->mapped;
+        }
+
+        freezeBasis = true;
+
+        shard.unit->H(bit0);
+        shard.unit->CZ(bit0, bit1);
+        shard.unit->H(bit1);
+
+        shard.isFourier2 = false;
+        shard.fourier2Partner->isFourier2 = false;
+
+        TrySeparate(i);
+        bitLenInt j = 0;
+        for (bitLenInt lcv = 0; lcv < shards.size(); lcv++) {
+            if (shards[lcv] == *(shard.fourier2Partner)) {
+                j = lcv;
+                break;
+            }
+        }
+        TrySeparate(j);
+
+        freezeBasis = false;
+    }
+
+    void ToPermBasis(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
+        if (shard.isPlusMinus) {
+            TransformBasis1(false, i);
+        }
+        if (shard.isFourier2) {
+            RevertBasis2(i);
         }
     }
-    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
+    void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            ToPermBasis(start + i);
+        }
+    }
+    void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
 
-    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus);
+    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& toOrder);
 
     void CheckShardSeparable(const bitLenInt& target);
 
