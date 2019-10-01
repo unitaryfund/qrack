@@ -19,10 +19,10 @@
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define CACHED_CLASSICAL(shard)                                                                                        \
-    (!shard.isPlusMinus && !shard.isFourier2 && !shard.isProbDirty &&                                                  \
+    (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty &&                                             \
         ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define PHASE_MATTERS(shard)                                                                                           \
-    (!randGlobalPhase || shard.isPlusMinus || shard.isFourier2 || shard.isProbDirty ||                                 \
+    (!randGlobalPhase || shard.isPlusMinus || shard.fourier2Partner || shard.isProbDirty ||                            \
         !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
 #define DIRTY(shard) (shard.isProbDirty || shard.isPhaseDirty)
 
@@ -1066,6 +1066,34 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
+    if (!freezeBasis) {
+        QEngineShard& shard = shards[target];
+        QEngineShard& cShard = shards[control];
+
+        if (!shard.fourier2Partner && !cShard.fourier2Partner) {
+            shard.fourier2Partner = &cShard;
+            cShard.fourier2Partner = &shard;
+            shard.fourier2Mapped = 1U;
+            cShard.fourier2Mapped = 0U;
+
+            shard.isPlusMinus = !shard.isPlusMinus;
+
+            return;
+        } else if (shard.fourier2Partner && *(shard.fourier2Partner) == cShard) {
+            shard.fourier2Partner = NULL;
+            cShard.fourier2Partner = NULL;
+            shard.fourier2Mapped = 0U;
+            cShard.fourier2Mapped = 0U;
+
+            cShard.isPlusMinus = !cShard.isPlusMinus;
+
+            return;
+        }
+    }
+
+    RevertBasis2(control);
+    RevertBasis2(target);
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
@@ -1135,55 +1163,43 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     const complex topLeft, const complex bottomRight)
 {
     QEngineShard& shard = shards[target];
-    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (PHASE_MATTERS(shard)) {
-        complex iTest[4] = { topLeft, 0, 0, bottomRight };
-        if (IsIdentity(iTest)) {
+
+    if (!PHASE_MATTERS(shard)) {
+        // Has no measurable effect
+        return;
+    }
+
+    complex iTest[4] = { topLeft, 0, 0, bottomRight };
+    if (IsIdentity(iTest)) {
+        // Identity operator has no effect
+        return;
+    }
+
+    bitLenInt* lcontrols = new bitLenInt[controlLen];
+    bitLenInt ltarget;
+
+    if (controlLen == 1U && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
+        ltarget = controls[0];
+        lcontrols[0] = target;
+    } else {
+
+        bool isZ = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm) &&
+            (real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm);
+        if (isZ && controlLen == 1U) {
+            // Optimized case
+            CZ(controls[0], target);
+            delete[] lcontrols;
             return;
         }
 
-        QEngineShard& cShard = shards[controls[0]];
-        bitLenInt* lcontrols = new bitLenInt[controlLen];
-        bitLenInt ltarget;
-        if (controlLen == 1U && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(cShard)) {
-            ltarget = controls[0];
-            lcontrols[0] = target;
-        } else {
-            bool isZ = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm) &&
-                (real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm);
-            if (isZ && controlLen == 1U &&
-                ((!shard.isFourier2 && !cShard.isFourier2) || (*(shard.fourier2Partner) == cShard))) {
-
-                if (!shard.isFourier2 && !cShard.isFourier2) {
-                    shard.fourier2Partner = &cShard;
-                    cShard.fourier2Partner = &shard;
-                    shard.fourier2Mapped = 0;
-                    cShard.fourier2Mapped = 1;
-                } else {
-                    shard.fourier2Partner = NULL;
-                    cShard.fourier2Partner = NULL;
-                    shard.fourier2Mapped = 0;
-                    cShard.fourier2Mapped = 0;
-                }
-
-                shard.isFourier2 = !shard.isFourier2;
-                cShard.isFourier2 = !cShard.isFourier2;
-                shard.isPlusMinus = !shard.isPlusMinus;
-                cShard.isPlusMinus = !cShard.isPlusMinus;
-
-                delete[] lcontrols;
-                return;
-            }
-
-            ltarget = target;
-            std::copy(controls, controls + controlLen, lcontrols);
-        }
-
-        CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySinglePhase(topLeft, bottomRight, true, target), false);
-
-        delete[] lcontrols;
+        ltarget = target;
+        std::copy(controls, controls + controlLen, lcontrols);
     }
+
+    CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+        ApplySinglePhase(topLeft, bottomRight, true, target), false);
+
+    delete[] lcontrols;
 }
 
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -2461,7 +2477,7 @@ void QUnit::RevertBasis2(bitLenInt i)
 {
     QEngineShard& shard = shards[i];
 
-    if (freezeBasis || !shard.isFourier2) {
+    if (freezeBasis || !shard.fourier2Partner) {
         // Recursive and idempotent calls stop here
         return;
     }
@@ -2483,10 +2499,8 @@ void QUnit::RevertBasis2(bitLenInt i)
     freezeBasis = false;
     H(j);
 
-    QEngineShard& pShard = *(shard.fourier2Partner);
+    QEngineShard& pShard = shards[j];
 
-    shard.isFourier2 = false;
-    pShard.isFourier2 = false;
     shard.fourier2Mapped = 0U;
     pShard.fourier2Mapped = 0U;
     shard.fourier2Partner = NULL;

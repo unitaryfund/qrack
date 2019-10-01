@@ -29,7 +29,6 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
-    bool isFourier2;
     bitLenInt fourier2Mapped;
     QEngineShard* fourier2Partner;
 
@@ -42,7 +41,6 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , isFourier2(false)
         , fourier2Mapped(0)
         , fourier2Partner(NULL)
     {
@@ -55,7 +53,6 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
-        , isFourier2(false)
         , fourier2Mapped(0)
         , fourier2Partner(NULL)
     {
@@ -73,7 +70,6 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , isFourier2(false)
         , fourier2Mapped(0)
         , fourier2Partner(NULL)
     {
@@ -392,10 +388,17 @@ protected:
 
     void RevertBasis2(bitLenInt i);
 
+    void RevertBasis2(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            RevertBasis2(start + i);
+        }
+    }
+
     void ToPermBasis(const bitLenInt& i)
     {
         QEngineShard& shard = shards[i];
-        if (shard.isFourier2) {
+        if (shard.fourier2Partner) {
             RevertBasis2(i);
         }
         if (shard.isPlusMinus) {
