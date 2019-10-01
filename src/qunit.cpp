@@ -714,8 +714,11 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    RevertBasis2(qubit1);
-    RevertBasis2(qubit2);
+    if ((shard1.fourier2Partner && (*(shard1.fourier2Partner) != shard2)) ||
+        (shard2.fourier2Partner && (*(shard2.fourier2Partner) != shard1))) {
+        RevertBasis2(qubit1);
+        RevertBasis2(qubit2);
+    }
 
     // Swap the bit mapping.
     std::swap(shard1, shard2);
@@ -1077,16 +1080,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    if (!shard.isPlusMinus) {
-        // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-        if (PHASE_MATTERS(shard)) {
-            ApplyOrEmulate(shard, [&](QEngineShard& shard) {
-                shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
-            });
-            shard.amp0 *= topLeft;
-            shard.amp1 *= bottomRight;
-        }
-    } else {
+    if (shard.isPlusMinus) {
         complex mtrx[4];
         TransformPhase(topLeft, bottomRight, mtrx);
 
@@ -1096,6 +1090,15 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+    } else {
+        // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
+        if (PHASE_MATTERS(shard)) {
+            ApplyOrEmulate(shard, [&](QEngineShard& shard) {
+                shard.unit->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, shard.mapped);
+            });
+            shard.amp0 *= topLeft;
+            shard.amp1 *= bottomRight;
+        }
     }
 
     CheckShardSeparable(target);
@@ -1150,21 +1153,23 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
                 (real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm);
             if (isZ && controlLen == 1U &&
                 ((!shard.isFourier2 && !cShard.isFourier2) || (*(shard.fourier2Partner) == cShard))) {
+
                 if (!shard.isFourier2 && !cShard.isFourier2) {
-                    shard.isFourier2 = true;
-                    cShard.isFourier2 = true;
                     shard.fourier2Partner = &cShard;
                     cShard.fourier2Partner = &shard;
                     shard.fourier2Mapped = 0;
                     cShard.fourier2Mapped = 1;
                 } else {
-                    shard.isFourier2 = false;
-                    cShard.isFourier2 = false;
                     shard.fourier2Partner = NULL;
                     cShard.fourier2Partner = NULL;
                     shard.fourier2Mapped = 0;
                     cShard.fourier2Mapped = 0;
                 }
+
+                shard.isFourier2 = !shard.isFourier2;
+                cShard.isFourier2 = !cShard.isFourier2;
+                shard.isPlusMinus = !shard.isPlusMinus;
+                cShard.isPlusMinus = !cShard.isPlusMinus;
 
                 delete[] lcontrols;
                 return;
@@ -2472,23 +2477,23 @@ void QUnit::RevertBasis2(bitLenInt i)
         std::swap(i, j);
     }
 
-    freezeBasis = true;
-
     H(i);
+    freezeBasis = true;
     CZ(i, j);
+    freezeBasis = false;
     H(j);
 
+    QEngineShard& pShard = *(shard.fourier2Partner);
+
     shard.isFourier2 = false;
-    shard.fourier2Partner->isFourier2 = false;
+    pShard.isFourier2 = false;
     shard.fourier2Mapped = 0U;
-    shard.fourier2Partner->fourier2Mapped = 0U;
-    shard.fourier2Partner->fourier2Partner = NULL;
+    pShard.fourier2Mapped = 0U;
     shard.fourier2Partner = NULL;
+    pShard.fourier2Partner = NULL;
 
     // TrySeparate(i);
     // TrySeparate(j);
-
-    freezeBasis = false;
 }
 
 void QUnit::CheckShardSeparable(const bitLenInt& target)

@@ -86,6 +86,7 @@ struct QEngineShard {
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
+    bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
 
 class QUnit;
@@ -394,11 +395,11 @@ protected:
     void ToPermBasis(const bitLenInt& i)
     {
         QEngineShard& shard = shards[i];
-        if (shard.isPlusMinus) {
-            TransformBasis1(false, i);
-        }
         if (shard.isFourier2) {
             RevertBasis2(i);
+        }
+        if (shard.isPlusMinus) {
+            TransformBasis1(false, i);
         }
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
