@@ -1076,7 +1076,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             shard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
 
+            std::swap(shard.isPlusMinus, cShard.isPlusMinus);
             shard.isPlusMinus = !shard.isPlusMinus;
+            cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
         } else if (shard.fourier2Partner && *(shard.fourier2Partner) == cShard) {
@@ -1085,14 +1087,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             shard.fourier2Mapped = 0U;
             cShard.fourier2Mapped = 0U;
 
+            std::swap(shard.isPlusMinus, cShard.isPlusMinus);
+            shard.isPlusMinus = !shard.isPlusMinus;
             cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
         }
     }
-
-    RevertBasis2(control);
-    RevertBasis2(target);
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
