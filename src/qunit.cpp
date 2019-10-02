@@ -1126,32 +1126,54 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
 {
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (PHASE_MATTERS(shard)) {
-        complex iTest[4] = { topLeft, 0, 0, bottomRight };
-        if (IsIdentity(iTest)) {
-            return;
-        }
-
-        bitLenInt* lcontrols = new bitLenInt[controlLen];
-        bitLenInt ltarget;
-        if (controlLen == 1 && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
-            ltarget = controls[0];
-            lcontrols[0] = target;
-        } else {
-            ltarget = target;
-            std::copy(controls, controls + controlLen, lcontrols);
-        }
-
-        CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySinglePhase(topLeft, bottomRight, true, target), false);
-
-        delete[] lcontrols;
+    if (!PHASE_MATTERS(shard)) {
+        return;
     }
+
+    // Identity operator has no effect.
+    complex iTest[4] = { topLeft, 0, 0, bottomRight };
+    if (IsIdentity(iTest)) {
+        return;
+    }
+
+    bitLenInt* lcontrols = new bitLenInt[controlLen];
+    bitLenInt ltarget;
+    if (controlLen == 1 && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
+        ltarget = controls[0];
+        lcontrols[0] = target;
+    } else {
+        ltarget = target;
+        std::copy(controls, controls + controlLen, lcontrols);
+    }
+
+    CTRLED_PHASE_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+        ApplySinglePhase(topLeft, bottomRight, true, target), false);
+
+    delete[] lcontrols;
 }
 
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
+    // TODO: Check if bits are classically 0, for additional cases caught here
+    if (controlLen == 1U) {
+        QEngineShard& cShard = shards[controls[0]];
+        QEngineShard& tShard = shards[target];
+        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
+            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm))) {
+            if (!PHASE_MATTERS(tShard)) {
+                CNOT(controls[0], target);
+                return;
+            } else {
+                complex iTest[4] = { bottomLeft, 0, 0, topRight };
+                if (IsIdentity(iTest)) {
+                    CNOT(controls[0], target);
+                    return;
+                }
+            }
+        }
+    }
+
     CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, true, target), false);
 }
@@ -1182,7 +1204,26 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+    // TODO: Check if bits are classically 0, for additional cases caught here
+    if (controlLen == 1U) {
+        QEngineShard& cShard = shards[controls[0]];
+        QEngineShard& tShard = shards[target];
+        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
+            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm))) {
+            if (!PHASE_MATTERS(tShard)) {
+                AntiCNOT(controls[0], target);
+                return;
+            } else {
+                complex iTest[4] = { bottomLeft, 0, 0, topRight };
+                if (IsIdentity(iTest)) {
+                    AntiCNOT(controls[0], target);
+                    return;
+                }
+            }
+        }
+    }
+
+    CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, true, target), true);
 }
 
