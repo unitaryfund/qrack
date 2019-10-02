@@ -1032,7 +1032,11 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
         QEngineShard& tShard = shards[target];
         if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
             (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm)) && !PHASE_MATTERS(tShard)) {
-            CNOT(rControl, target);
+            if (!tShard.isPlusMinus) {
+                CNOT(target, rControl);
+            } else {
+                CNOT(rControl, target);
+            }
             return true;
         }
     }
@@ -1146,6 +1150,23 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
+
+    if (!PHASE_MATTERS(shard)) {
+        X(target);
+        return;
+    }
+
+    real1 phaseDiff = arg(topRight) - arg(bottomLeft);
+    if (phaseDiff > M_PI) {
+        phaseDiff -= 2U * M_PI;
+    } else if (phaseDiff < -M_PI) {
+        phaseDiff += 2U * M_PI;
+    }
+    if ((abs(phaseDiff) < min_norm) &&
+        (randGlobalPhase || ((imag(topRight) < min_norm) && (real(topRight) > ZERO_R1)))) {
+        X(target);
+        return;
+    }
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(shard, [&](QEngineShard& shard) {
