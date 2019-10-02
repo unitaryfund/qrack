@@ -991,6 +991,55 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
+bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex& bottomLeft, const complex& topRight, const bool& anti)
+{
+    // "true" if successfully handled/consumed,
+    // "false" if needs general handling
+
+    bitLenInt rControl = 0;
+    bitLenInt rControlLen = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        QEngineShard& shard = shards[controls[i]];
+        if (CACHED_CLASSICAL(shard)) {
+            if ((!anti && norm(shard.amp1) < min_norm) || (anti && norm(shard.amp0) < min_norm)) {
+                return true;
+            }
+        } else {
+            rControl = controls[i];
+            rControlLen++;
+            if (rControlLen > 1U) {
+                break;
+            }
+        }
+    }
+
+    if (rControlLen == 0U) {
+        ApplySingleInvert(topRight, bottomLeft, true, target);
+        return true;
+    } else if (rControlLen == 1U) {
+        complex iTest[4] = { bottomLeft, 0, 0, topRight };
+        if (IsIdentity(iTest)) {
+            if (anti) {
+                AntiCNOT(rControl, target);
+            } else {
+                CNOT(rControl, target);
+            }
+            return true;
+        }
+
+        QEngineShard& cShard = shards[rControl];
+        QEngineShard& tShard = shards[target];
+        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
+            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm)) && !PHASE_MATTERS(tShard)) {
+            CNOT(rControl, target);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& cShard = shards[control];
@@ -1155,27 +1204,10 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    // TODO: Check if bits are classically 0, for additional cases caught here
-    if (controlLen == 1U) {
-        QEngineShard& cShard = shards[controls[0]];
-        QEngineShard& tShard = shards[target];
-        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
-            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm))) {
-            if (!PHASE_MATTERS(tShard)) {
-                CNOT(controls[0], target);
-                return;
-            } else {
-                complex iTest[4] = { bottomLeft, 0, 0, topRight };
-                if (IsIdentity(iTest)) {
-                    CNOT(controls[0], target);
-                    return;
-                }
-            }
-        }
+    if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
+        CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySingleInvert(topRight, bottomLeft, true, target), false);
     }
-
-    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, true, target), false);
 }
 
 void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -1204,27 +1236,10 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    // TODO: Check if bits are classically 0, for additional cases caught here
-    if (controlLen == 1U) {
-        QEngineShard& cShard = shards[controls[0]];
-        QEngineShard& tShard = shards[target];
-        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
-            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm))) {
-            if (!PHASE_MATTERS(tShard)) {
-                AntiCNOT(controls[0], target);
-                return;
-            } else {
-                complex iTest[4] = { bottomLeft, 0, 0, topRight };
-                if (IsIdentity(iTest)) {
-                    AntiCNOT(controls[0], target);
-                    return;
-                }
-            }
-        }
+    if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, true)) {
+        CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySingleInvert(topRight, bottomLeft, true, target), true);
     }
-
-    CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, true, target), true);
 }
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
