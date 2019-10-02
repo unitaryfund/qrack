@@ -1345,6 +1345,7 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
+    CheckShardSeparable(controls[i]);                                                                                  \
     bitProb = Prob(controls[i]);                                                                                       \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
@@ -2512,7 +2513,16 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1)) {
+    if (shard.isProbDirty) {
+        return;
+    }
+
+    if (shard.unit->GetQubitCount() == 1) {
+        // Now is the perfect time to execute deferred (or preferential) basis change:
+        if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
+            TransformBasis(!shard.isPlusMinus, target);
+        }
+        // Otherwise, we were already done.
         return;
     }
 
