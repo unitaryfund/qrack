@@ -1066,11 +1066,16 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    if (!freezeBasis) {
-        QEngineShard& shard = shards[target];
-        QEngineShard& cShard = shards[control];
+    QEngineShard& shard = shards[target];
 
-        if (!shard.fourier2Partner && !cShard.fourier2Partner) {
+    if (!PHASE_MATTERS(shard)) {
+        return;
+    }
+
+    QEngineShard& cShard = shards[control];
+
+    if (!freezeBasis && !CACHED_CLASSICAL(cShard)) {
+        if (!shard.fourier2Partner && !cShard.fourier2Partner && shard.isPlusMinus && !cShard.isPlusMinus) {
             shard.fourier2Partner = &cShard;
             cShard.fourier2Partner = &shard;
             shard.fourier2Mapped = 1U;
@@ -1081,7 +1086,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
-        } else if (shard.fourier2Partner && *(shard.fourier2Partner) == cShard) {
+        } else if (shard.fourier2Partner && (*(shard.fourier2Partner) == cShard) && !shard.isPlusMinus &&
+            cShard.isPlusMinus) {
             shard.fourier2Partner = NULL;
             cShard.fourier2Partner = NULL;
             shard.fourier2Mapped = 0U;
@@ -2490,17 +2496,15 @@ void QUnit::RevertBasis2(bitLenInt i)
         }
     }
 
+    QEngineShard& pShard = shards[j];
+
     if (shard.fourier2Mapped == 1U) {
         std::swap(i, j);
     }
 
-    H(i);
     freezeBasis = true;
     CZ(i, j);
     freezeBasis = false;
-    H(j);
-
-    QEngineShard& pShard = shards[j];
 
     shard.fourier2Mapped = 0U;
     pShard.fourier2Mapped = 0U;

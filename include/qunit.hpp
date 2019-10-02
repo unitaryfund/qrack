@@ -397,11 +397,10 @@ protected:
 
     void ToPermBasis(const bitLenInt& i)
     {
-        QEngineShard& shard = shards[i];
-        if (shard.fourier2Partner) {
+        if (shards[i].fourier2Partner) {
             RevertBasis2(i);
         }
-        if (shard.isPlusMinus) {
+        if (shards[i].isPlusMinus) {
             TransformBasis1(false, i);
         }
     }
