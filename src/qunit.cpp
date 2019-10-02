@@ -1082,8 +1082,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.fourier2Mapped = 0U;
 
             std::swap(shard.isPlusMinus, cShard.isPlusMinus);
-            shard.isPlusMinus = !shard.isPlusMinus;
-            cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
         } else if (shard.fourier2Partner && (*(shard.fourier2Partner) == cShard) && !shard.isPlusMinus &&
@@ -1094,8 +1092,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.fourier2Mapped = 0U;
 
             std::swap(shard.isPlusMinus, cShard.isPlusMinus);
-            shard.isPlusMinus = !shard.isPlusMinus;
-            cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
         }
