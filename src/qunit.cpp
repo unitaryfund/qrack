@@ -1074,24 +1074,25 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (!freezeBasis && !CACHED_CLASSICAL(cShard)) {
-        if (!shard.fourier2Partner && !cShard.fourier2Partner && shard.isPlusMinus && !cShard.isPlusMinus) {
+    if (!freezeBasis) {
+        if (!shard.fourier2Partner && !cShard.fourier2Partner) {
             shard.fourier2Partner = &cShard;
             cShard.fourier2Partner = &shard;
             shard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
 
-            std::swap(shard.isPlusMinus, cShard.isPlusMinus);
+            shard.isPlusMinus = !shard.isPlusMinus;
+            cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
-        } else if (shard.fourier2Partner && (*(shard.fourier2Partner) == cShard) && !shard.isPlusMinus &&
-            cShard.isPlusMinus) {
+        } else if (shard.fourier2Partner && (*(shard.fourier2Partner) == cShard)) {
             shard.fourier2Partner = NULL;
             cShard.fourier2Partner = NULL;
             shard.fourier2Mapped = 0U;
             cShard.fourier2Mapped = 0U;
 
-            std::swap(shard.isPlusMinus, cShard.isPlusMinus);
+            shard.isPlusMinus = !shard.isPlusMinus;
+            cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
         }
@@ -2506,6 +2507,8 @@ void QUnit::RevertBasis2(bitLenInt i)
     pShard.fourier2Mapped = 0U;
     shard.fourier2Partner = NULL;
     pShard.fourier2Partner = NULL;
+    shard.isPlusMinus = !shard.isPlusMinus;
+    pShard.isPlusMinus = !pShard.isPlusMinus;
 
     // TrySeparate(i);
     // TrySeparate(j);
