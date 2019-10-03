@@ -18,8 +18,8 @@
 #include "qunit.hpp"
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
-#define CACHED_CLASSICAL(shard)                                                                                        \
-    ((!shard.isPlusMinus) && !shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+#define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
+#define CACHED_CLASSICAL(shard) ((!shard.isPlusMinus) && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
 #define PHASE_MATTERS(shard)                                                                                           \
     (!randGlobalPhase || shard.isPlusMinus || shard.isProbDirty ||                                                     \
         !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
@@ -600,8 +600,11 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
             } else if (norm(shard.amp1) < min_norm) {
                 SeparateBit(false, qubit);
             }
-        } else if (CACHED_CLASSICAL(shard)) {
-            // 1 qubit, therefore |0>/|1> eigenstate phase is unimportant to Hermitian eigenvalues
+        }
+
+        if (shard.isPhaseDirty && (shard.unit->GetQubitCount() == 1U) && UNSAFE_CACHED_CLASSICAL(shard)) {
+            // Since the probability cache is correct, and we have one separated qubit, phase is clean if we are in a
+            // natural basis eigenstate. |0>/|1> separable eigenstate phase is unimportant to Hermitian eigenvalues
             shard.isPhaseDirty = false;
         }
     }
@@ -2523,11 +2526,6 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         // We also update the probability cache, with ProbBase();
         if (abs(ProbBase(target) - (ONE_R1 / 2)) < min_norm) {
             TransformBasis(!shard.isPlusMinus, target);
-        }
-        // Since the probability cache is correct, and we have one separated qubit, phase is clean if we are in a
-        // natural basis eigenstate.
-        if (CACHED_CLASSICAL(shard)) {
-            shard.isPhaseDirty = false;
         }
 
         // The shard is already separated.
