@@ -2517,10 +2517,14 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 
     if (shard.unit->GetQubitCount() == 1) {
         // Now is the perfect time to execute deferred (or preferential) basis change:
+        // We also update the probability cache, with ProbBase();
         if (abs(ProbBase(target) - (ONE_R1 / 2)) < min_norm) {
             TransformBasis(!shard.isPlusMinus, target);
         }
-        // Otherwise, we were already done.
+        // Since the probability cache is correct, and we have one separated qubit, phase is clean.
+        shard.isPhaseDirty = false;
+
+        // The shard is already separated.
         return;
     }
 
