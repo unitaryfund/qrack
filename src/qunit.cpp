@@ -594,10 +594,12 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         shard.isProbDirty = false;
 
-        if (norm(shard.amp0) < min_norm) {
-            SeparateBit(true, qubit);
-        } else if (norm(shard.amp1) < min_norm) {
-            SeparateBit(false, qubit);
+        if (shard.unit->GetQubitCount() > 1U) {
+            if (norm(shard.amp0) < min_norm) {
+                SeparateBit(true, qubit);
+            } else if (norm(shard.amp1) < min_norm) {
+                SeparateBit(false, qubit);
+            }
         }
     }
 
@@ -2513,16 +2515,16 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty) {
-        return;
-    }
-
     if (shard.unit->GetQubitCount() == 1) {
         // Now is the perfect time to execute deferred (or preferential) basis change:
-        if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
+        if (abs(ProbBase(target) - (ONE_R1 / 2)) < min_norm) {
             TransformBasis(!shard.isPlusMinus, target);
         }
         // Otherwise, we were already done.
+        return;
+    }
+
+    if (shard.isProbDirty) {
         return;
     }
 
