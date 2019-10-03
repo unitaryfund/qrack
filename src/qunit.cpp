@@ -594,18 +594,10 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         shard.isProbDirty = false;
 
-        if (shard.unit->GetQubitCount() > 1U) {
-            if (norm(shard.amp0) < min_norm) {
-                SeparateBit(true, qubit);
-            } else if (norm(shard.amp1) < min_norm) {
-                SeparateBit(false, qubit);
-            }
-        }
-
-        if (shard.isPhaseDirty && (shard.unit->GetQubitCount() == 1U) && UNSAFE_CACHED_CLASSICAL(shard)) {
-            // Since the probability cache is correct, and we have one separated qubit, phase is clean if we are in a
-            // natural basis eigenstate. |0>/|1> separable eigenstate phase is unimportant to Hermitian eigenvalues
-            shard.isPhaseDirty = false;
+        if (norm(shard.amp0) < min_norm) {
+            SeparateBit(true, qubit);
+        } else if (norm(shard.amp1) < min_norm) {
+            SeparateBit(false, qubit);
         }
     }
 
@@ -2521,18 +2513,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.unit->GetQubitCount() == 1) {
-        // Now is the perfect time to execute deferred (or preferential) basis change:
-        // We also update the probability cache, with ProbBase();
-        if (abs(ProbBase(target) - (ONE_R1 / 2)) < min_norm) {
-            TransformBasis(!shard.isPlusMinus, target);
-        }
-
-        // The shard is already separated.
-        return;
-    }
-
-    if (shard.isProbDirty) {
+    if (shard.isProbDirty || shard.unit->GetQubitCount() == 1U) {
         return;
     }
 
@@ -2540,8 +2521,6 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         SeparateBit(true, target);
     } else if (norm(shard.amp1) < min_norm) {
         SeparateBit(false, target);
-    } else if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
-        TransformBasis(!shard.isPlusMinus, target);
     }
 }
 
