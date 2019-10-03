@@ -6,6 +6,17 @@
 // See https://arxiv.org/abs/1710.05867
 // (The makers of Qrack have no affiliation with the authors of that paper.)
 //
+// When we allocate a quantum register, all bits are in a (re)set state. At this point,
+// we know they are separable, in the sense of full Schmidt decomposability into qubits
+// in the "natural" or "permutation" basis of the register. Many operations can be
+// traced in terms of fewer qubits that the full "Schr\{"o}dinger representation."
+//
+// Based on experimentation, QUnit is designed to avoid increasing representational
+// entanglement for its primary action, and only try to decrease it when inquiries
+// about probability need to be made otherwise anyway. Avoiding introducing the cost of
+// any basically any entanglement whatsoever, rather than exponentially costly "garbage
+// collection," should be the first and ultimate concern, in the authors' experience.
+//
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
@@ -735,10 +746,15 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
+
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
+        return;
+    }
+
+    EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
@@ -754,10 +770,15 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
+
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
+        return;
+    }
+
+    EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
