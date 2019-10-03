@@ -600,8 +600,8 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
             } else if (norm(shard.amp1) < min_norm) {
                 SeparateBit(false, qubit);
             }
-        } else {
-            // 1 qubit, therefore phase is unimportant to Hermitian eigenvalues
+        } else if (CACHED_CLASSICAL(shard)) {
+            // 1 qubit, therefore |0>/|1> eigenstate phase is unimportant to Hermitian eigenvalues
             shard.isPhaseDirty = false;
         }
     }
@@ -2524,8 +2524,11 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         if (abs(ProbBase(target) - (ONE_R1 / 2)) < min_norm) {
             TransformBasis(!shard.isPlusMinus, target);
         }
-        // Since the probability cache is correct, and we have one separated qubit, phase is clean.
-        shard.isPhaseDirty = false;
+        // Since the probability cache is correct, and we have one separated qubit, phase is clean if we are in a
+        // natural basis eigenstate.
+        if (CACHED_CLASSICAL(shard)) {
+            shard.isPhaseDirty = false;
+        }
 
         // The shard is already separated.
         return;
