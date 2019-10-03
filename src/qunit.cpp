@@ -600,6 +600,9 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
             } else if (norm(shard.amp1) < min_norm) {
                 SeparateBit(false, qubit);
             }
+        } else {
+            // 1 qubit, therefore phase is unimportant to Hermitian eigenvalues
+            shard.isPhaseDirty = false;
         }
     }
 
