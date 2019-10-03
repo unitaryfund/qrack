@@ -2510,12 +2510,11 @@ void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
     }
 
     freezeBasis = true;
-
     H(i);
     shards[i].isPlusMinus = toPlusMinus;
-    TrySeparate(i);
-
     freezeBasis = false;
+
+    TrySeparate(i);
 }
 
 bool QUnit::CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
@@ -2534,7 +2533,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || shard.unit->GetQubitCount() == 1U) {
+    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
         return;
     }
 
