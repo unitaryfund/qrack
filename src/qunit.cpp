@@ -14,7 +14,7 @@
 // Based on experimentation, QUnit is designed to avoid increasing representational
 // entanglement for its primary action, and only try to decrease it when inquiries
 // about probability need to be made otherwise anyway. Avoiding introducing the cost of
-// any basically any entanglement whatsoever, rather than exponentially costly "garbage
+// basically any entanglement whatsoever, rather than exponentially costly "garbage
 // collection," should be the first and ultimate concern, in the authors' experience.
 //
 // Licensed under the GNU Lesser General Public License V3.
@@ -1013,6 +1013,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex& bottomLeft, const complex& topRight, const bool& anti)
 {
+    // Returns:
     // "true" if successfully handled/consumed,
     // "false" if needs general handling
 
