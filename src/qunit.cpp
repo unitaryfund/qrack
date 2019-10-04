@@ -1074,7 +1074,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             CNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
             std::swap(cShard.amp0, cShard.amp1);
-            if (cShard.unit->GetQubitCount() == 1) {
+            if (cShard.unit->GetQubitCount() == 1U) {
                 cShard.isEmulated = true;
             } else {
                 cShard.unit->X(cShard.mapped);
@@ -1097,7 +1097,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
             AntiCNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
             std::swap(cShard.amp0, cShard.amp1);
-            if (cShard.unit->GetQubitCount() == 1) {
+            if (cShard.unit->GetQubitCount() == 1U) {
                 cShard.isEmulated = true;
             } else {
                 cShard.unit->X(cShard.mapped);
@@ -1137,11 +1137,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
-    complex iTest[4] = { topLeft, 0, 0, bottomRight };
-    if (IsIdentity(iTest)) {
-        return;
-    }
-
     QEngineShard& shard = shards[target];
 
     if (!shard.isPlusMinus) {
@@ -1221,12 +1216,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
         return;
     }
 
-    // Identity operator has no effect.
-    complex iTest[4] = { topLeft, 0, 0, bottomRight };
-    if (IsIdentity(iTest)) {
-        return;
-    }
-
     bitLenInt* lcontrols = new bitLenInt[controlLen];
     bitLenInt ltarget;
     if (controlLen == 1 && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
@@ -1258,11 +1247,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
-        complex iTest[4] = { topLeft, 0, 0, bottomRight };
-        if (IsIdentity(iTest)) {
-            return;
-        }
-
         bitLenInt* lcontrols = new bitLenInt[controlLen];
         bitLenInt ltarget;
 
@@ -1286,10 +1270,6 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    if (IsIdentity(mtrx)) {
-        return;
-    }
-
     QEngineShard& shard = shards[target];
 
     complex trnsMtrx[4];
@@ -1366,7 +1346,6 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    CheckShardSeparable(controls[i]);                                                                                  \
     bitProb = Prob(controls[i]);                                                                                       \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
