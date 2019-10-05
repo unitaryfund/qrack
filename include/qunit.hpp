@@ -447,6 +447,9 @@ protected:
         }
     }
 
+    bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+        const complex& bottomLeft, const complex& topRight, const bool& anti);
+
     /* Debugging and diagnostic routines. */
     void DumpShards();
     QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
