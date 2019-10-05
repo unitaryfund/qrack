@@ -871,7 +871,7 @@ void QUnit::H(bitLenInt target)
     shard.amp0 = ((real1)M_SQRT1_2) * (shard.amp0 + shard.amp1);
     shard.amp1 = tempAmp1;
 
-    if (shard.unit->GetQubitCount() > 1) {
+    if (shard.unit->GetQubitCount() > 1U) {
         if (norm(shard.amp0) < min_norm) {
             SeparateBit(true, target);
         } else if (norm(shard.amp1) < min_norm) {
@@ -895,7 +895,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
-        if (shard.unit->GetQubitCount() == 1) {
+        if (shard.unit->GetQubitCount() == 1U) {
             shard.isEmulated = true;
         } else {
             shard.unit->X(shard.mapped);
@@ -2252,9 +2252,11 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip()
 {
-    if (PHASE_MATTERS(shards[0])) {
+    QEngineShard& shard = shards[0];
+    if (PHASE_MATTERS(shard)) {
         TransformBasis(false, 0);
-        shards[0].unit->PhaseFlip();
+        shard.unit->PhaseFlip();
+        shard.amp1 = -shard.amp1;
     }
 }
 
