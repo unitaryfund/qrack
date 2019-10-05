@@ -1406,6 +1406,10 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
+    // TODO: If controls that survive the "first order" check above start out entangled,
+    // then it might be worth checking whether there is any intra-unit chance of control bits
+    // being conditionally all 0 or all 1, in any unit, due to entanglement.
+
     // If we've made it this far, we have to form the entangled representation and apply the gate.
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
@@ -1417,15 +1421,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit;
-    if (targets.size() == 1) {
-        // Avoid changing basis, if unnecessary
-        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    } else {
-        unit = Entangle(ebits);
-    }
+    QInterfacePtr unit = Entangle(ebits);
 
-    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
+    std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
         shards[controlVec[i]].isPhaseDirty = true;
