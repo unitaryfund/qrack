@@ -89,6 +89,15 @@ void QInterface::H(bitLenInt qubit)
     ApplySingleBit(had, true, qubit);
 }
 
+/// Square root of Hadamard gate
+void QInterface::SqrtH(bitLenInt qubit)
+{
+    const complex sqrtHad[4] = { complex((ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (-ONE_R1 + M_SQRT2) / (2 * M_SQRT2)),
+        complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2), complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2),
+        complex((-ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (ONE_R1 + M_SQRT2) / (2 * M_SQRT2)) };
+    ApplySingleBit(sqrtHad, true, qubit);
+}
+
 /// Apply 1/4 phase rotation
 void QInterface::S(bitLenInt qubit)
 {
@@ -123,6 +132,22 @@ void QInterface::X(bitLenInt qubit)
 void QInterface::Y(bitLenInt qubit)
 {
     ApplySingleInvert(complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1), false, qubit);
+}
+
+/// Square root of NOT gate
+void QInterface::SqrtX(bitLenInt qubit)
+{
+    const complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    ApplySingleBit(mtrx, true, qubit);
+}
+
+/// Apply Pauli Y matrix to bit
+void QInterface::SqrtY(bitLenInt qubit)
+{
+    const complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2),
+        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    ApplySingleBit(mtrx, true, qubit);
 }
 
 /// Apply Pauli Z matrix to bit

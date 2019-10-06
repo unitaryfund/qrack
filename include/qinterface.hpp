@@ -572,6 +572,13 @@ public:
     virtual void H(bitLenInt qubitIndex);
 
     /**
+     * Square root of Hadamard gate
+     *
+     * Applies the square root of the Hadamard gate on qubit at "qubitIndex."
+     */
+    virtual void SqrtH(bitLenInt qubitIndex);
+
+    /**
      * Measurement gate
      *
      * Measures the qubit at "qubitIndex" and returns either "true" or "false."
@@ -679,6 +686,23 @@ public:
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
     virtual void Z(bitLenInt qubitIndex);
+
+    /**
+     * Square root of X gate
+     *
+     * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void SqrtX(bitLenInt qubitIndex);
+
+    /**
+     * Square root of Y gate
+     *
+     * Applies the square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * effects.
+     */
+    virtual void SqrtY(bitLenInt qubitIndex);
 
     /**
      * Controlled Y gate
@@ -991,6 +1015,9 @@ public:
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
 
+    /** Bitwise square root of Hadamard */
+    virtual void SqrtH(bitLenInt start, bitLenInt length);
+
     /** Bitwise S operator (1/4 phase rotation) */
     virtual void S(bitLenInt start, bitLenInt length);
 
@@ -1008,6 +1035,12 @@ public:
 
     /** Bitwise Pauli Y operator */
     virtual void Y(bitLenInt start, bitLenInt length);
+
+    /** Bitwise square root of Pauli X operator */
+    virtual void SqrtX(bitLenInt start, bitLenInt length);
+
+    /** Bitwise square root of Pauli Y operator */
+    virtual void SqrtY(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Z operator */
     virtual void Z(bitLenInt start, bitLenInt length);

@@ -114,6 +114,15 @@ void QInterface::X(bitLenInt start, bitLenInt length)
     }
 }
 
+// Apply square root of X gate to each bit in "length," starting from bit index
+// "start"
+void QInterface::SqrtX(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        SqrtX(start + bit);
+    }
+}
+
 // Single register instructions:
 
 /// Apply general unitary gate to each bit in "length," starting from bit index "start"
@@ -140,11 +149,27 @@ void QInterface::H(bitLenInt start, bitLenInt length)
     }
 }
 
+/// Apply square root of Hadamard gate to each bit in "length," starting from bit index "start"
+void QInterface::SqrtH(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        SqrtH(start + bit);
+    }
+}
+
 /// Apply Pauli Y matrix to each bit
 void QInterface::Y(bitLenInt start, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         Y(start + bit);
+    }
+}
+
+/// Apply square root of Pauli Y matrix to each bit
+void QInterface::SqrtY(bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        SqrtY(start + bit);
     }
 }
 
