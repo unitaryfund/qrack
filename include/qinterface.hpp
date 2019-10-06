@@ -696,6 +696,14 @@ public:
     virtual void SqrtX(bitLenInt qubitIndex);
 
     /**
+     * Inverse square root of X gate
+     *
+     * Applies the (by convention) inverse square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void ISqrtX(bitLenInt qubitIndex);
+
+    /**
      * Square root of Y gate
      *
      * Applies the square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
@@ -703,6 +711,15 @@ public:
      * effects.
      */
     virtual void SqrtY(bitLenInt qubitIndex);
+
+    /**
+     * Square root of Y gate
+     *
+     * Applies the (by convention) inverse square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * effects.
+     */
+    virtual void ISqrtY(bitLenInt qubitIndex);
 
     /**
      * Controlled Y gate
@@ -1039,8 +1056,14 @@ public:
     /** Bitwise square root of Pauli X operator */
     virtual void SqrtX(bitLenInt start, bitLenInt length);
 
+    /** Bitwise inverse square root of Pauli X operator */
+    virtual void ISqrtX(bitLenInt start, bitLenInt length);
+
     /** Bitwise square root of Pauli Y operator */
     virtual void SqrtY(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse square root of Pauli Y operator */
+    virtual void ISqrtY(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Z operator */
     virtual void Z(bitLenInt start, bitLenInt length);

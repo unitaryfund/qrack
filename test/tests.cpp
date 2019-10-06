@@ -745,6 +745,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isqrtx")
+{
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->ISqrtX(19);
+    qftReg->ISqrtX(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    qftReg->ISqrtX(19);
+    qftReg->ISqrtX(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx_reg")
 {
     qftReg->SetPermutation(0x13);
@@ -754,6 +766,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
     qftReg->SqrtX(4, 1);
     qftReg->SqrtX(4, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isqrtx_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ISqrtX(1, 4);
+    qftReg->ISqrtX(1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+    qftReg->ISqrtX(4, 1);
+    qftReg->ISqrtX(4, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
 }
 
@@ -806,6 +830,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrty")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isqrty")
+{
+    qftReg->SetReg(0, 8, 0x03);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+    qftReg->ISqrtY(1);
+    qftReg->ISqrtY(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->SqrtH(1);
+    qftReg->SqrtH(1);
+    qftReg->ISqrtY(1);
+    qftReg->ISqrtY(1);
+    qftReg->SqrtH(1);
+    qftReg->SqrtH(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrty_reg")
 {
     qftReg->SetReg(0, 8, 0x13);
@@ -820,6 +863,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrty_reg")
     qftReg->SqrtH(1, 2);
     qftReg->SqrtY(1, 2);
     qftReg->SqrtY(1, 2);
+    qftReg->SqrtH(1, 2);
+    qftReg->SqrtH(1, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isqrty_reg")
+{
+    qftReg->SetReg(0, 8, 0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->ISqrtY(1, 4);
+    qftReg->ISqrtY(1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->SqrtH(1, 2);
+    qftReg->SqrtH(1, 2);
+    qftReg->ISqrtY(1, 2);
+    qftReg->ISqrtY(1, 2);
     qftReg->SqrtH(1, 2);
     qftReg->SqrtH(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));

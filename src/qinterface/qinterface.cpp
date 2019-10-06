@@ -14,6 +14,14 @@
 
 namespace Qrack {
 
+#define REG_GATE_1(gate)                                                                                               \
+    void QInterface::gate(bitLenInt start, bitLenInt length)                                                           \
+    {                                                                                                                  \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(start + bit);                                                                                         \
+        }                                                                                                              \
+    }
+
 template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
 {
     // For length-wise application of controlled gates, there's no point in having normalization on, up to the last
@@ -74,54 +82,28 @@ void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 }
 
 // Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
-void QInterface::S(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        S(start + bit);
-    }
-}
+REG_GATE_1(S);
 
 // Apply inverse S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
-void QInterface::IS(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        IS(start + bit);
-    }
-}
+REG_GATE_1(IS);
 
 // Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
-void QInterface::T(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        T(start + bit);
-    }
-}
+REG_GATE_1(T);
 
 // Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
-void QInterface::IT(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        IT(start + bit);
-    }
-}
+REG_GATE_1(IT);
 
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
-void QInterface::X(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        X(start + bit);
-    }
-}
+REG_GATE_1(X);
 
 // Apply square root of X gate to each bit in "length," starting from bit index
 // "start"
-void QInterface::SqrtX(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        SqrtX(start + bit);
-    }
-}
+REG_GATE_1(SqrtX);
+
+// Apply inverse square root of X gate to each bit in "length," starting from bit index
+// "start"
+REG_GATE_1(ISqrtX);
 
 // Single register instructions:
 
@@ -142,44 +124,22 @@ void QInterface::U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda)
 }
 
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
-void QInterface::H(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        H(start + bit);
-    }
-}
+REG_GATE_1(H);
 
 /// Apply square root of Hadamard gate to each bit in "length," starting from bit index "start"
-void QInterface::SqrtH(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        SqrtH(start + bit);
-    }
-}
+REG_GATE_1(SqrtH);
 
 /// Apply Pauli Y matrix to each bit
-void QInterface::Y(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        Y(start + bit);
-    }
-}
+REG_GATE_1(Y);
 
 /// Apply square root of Pauli Y matrix to each bit
-void QInterface::SqrtY(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        SqrtY(start + bit);
-    }
-}
+REG_GATE_1(SqrtY);
+
+/// Apply square root of Pauli Y matrix to each bit
+REG_GATE_1(ISqrtY);
 
 /// Apply Pauli Z matrix to each bit
-void QInterface::Z(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        Z(start + bit);
-    }
-}
+REG_GATE_1(Z);
 
 /// Apply controlled Pauli Y matrix to each bit
 void QInterface::CY(bitLenInt control, bitLenInt target, bitLenInt length)

@@ -142,11 +142,27 @@ void QInterface::SqrtX(bitLenInt qubit)
     ApplySingleBit(mtrx, true, qubit);
 }
 
+/// Inverse square root of NOT gate
+void QInterface::ISqrtX(bitLenInt qubit)
+{
+    const complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
+        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+    ApplySingleBit(mtrx, true, qubit);
+}
+
 /// Apply Pauli Y matrix to bit
 void QInterface::SqrtY(bitLenInt qubit)
 {
     const complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2),
         complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    ApplySingleBit(mtrx, true, qubit);
+}
+
+/// Apply Pauli Y matrix to bit
+void QInterface::ISqrtY(bitLenInt qubit)
+{
+    const complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+        complex(-ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
     ApplySingleBit(mtrx, true, qubit);
 }
 
