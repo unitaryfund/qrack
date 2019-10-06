@@ -1118,6 +1118,14 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
+    if (!CACHED_CLASSICAL(shards[control]) && CACHED_CLASSICAL(shards[target])) {
+        std::swap(control, target);
+    }
+
+    if (!PHASE_MATTERS(shards[target])) {
+        return;
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
@@ -1126,6 +1134,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
+
+    if (!PHASE_MATTERS(shard)) {
+        return;
+    }
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
@@ -2242,7 +2254,7 @@ void QUnit::PhaseFlip()
     QEngineShard& shard = shards[0];
     if (PHASE_MATTERS(shard)) {
         TransformBasis(false, 0);
-        shard.unit->PhaseFlip();
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
     }
 }
