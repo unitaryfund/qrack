@@ -6,6 +6,17 @@
 // See https://arxiv.org/abs/1710.05867
 // (The makers of Qrack have no affiliation with the authors of that paper.)
 //
+// When we allocate a quantum register, all bits are in a (re)set state. At this point,
+// we know they are separable, in the sense of full Schmidt decomposability into qubits
+// in the "natural" or "permutation" basis of the register. Many operations can be
+// traced in terms of fewer qubits that the full "Schr\{"o}dinger representation."
+//
+// Based on experimentation, QUnit is designed to avoid increasing representational
+// entanglement for its primary action, and only try to decrease it when inquiries
+// about probability need to be made otherwise anyway. Avoiding introducing the cost of
+// basically any entanglement whatsoever, rather than exponentially costly "garbage
+// collection," should be the first and ultimate concern, in the authors' experience.
+//
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
@@ -18,13 +29,10 @@
 #include "qunit.hpp"
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
-#define CACHED_CLASSICAL(shard)                                                                                        \
-    (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty &&                                             \
-        ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
-#define PHASE_MATTERS(shard)                                                                                           \
-    (!randGlobalPhase || shard.isPlusMinus || shard.fourier2Partner || shard.isProbDirty ||                            \
-        !((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
-#define DIRTY(shard) (shard.isProbDirty || shard.isPhaseDirty)
+#define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
+#define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+#define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
+#define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
 namespace Qrack {
 
@@ -99,6 +107,7 @@ void QUnit::GetQuantumState(complex* outputState)
 
 void QUnit::GetProbs(real1* outputProbs)
 {
+    ToPermBasisAll();
     EndAllEmulation();
 
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
@@ -265,6 +274,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
     ToPermBasis(start, length);
 
     if (length == 1) {
+        EndEmulation(start);
         return shards[start].unit;
     }
 
@@ -745,10 +755,15 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
+
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
+        return;
+    }
+
+    EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
@@ -764,10 +779,15 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
+
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
+        return;
+    }
+
+    EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
@@ -848,9 +868,7 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
-    EndEmulation(shard);
-
-    shard.unit->H(shard.mapped);
+    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->H(shard.mapped); });
 
     if (DIRTY(shard)) {
         shard.isProbDirty = true;
@@ -862,7 +880,7 @@ void QUnit::H(bitLenInt target)
     shard.amp0 = ((real1)M_SQRT1_2) * (shard.amp0 + shard.amp1);
     shard.amp1 = tempAmp1;
 
-    if (shard.unit->GetQubitCount() > 1) {
+    if (shard.unit->GetQubitCount() > 1U) {
         if (norm(shard.amp0) < min_norm) {
             SeparateBit(true, target);
         } else if (norm(shard.amp1) < min_norm) {
@@ -886,11 +904,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
-        if (shard.unit->GetQubitCount() == 1) {
-            shard.isEmulated = true;
-        } else {
-            shard.unit->X(shard.mapped);
-        }
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
         std::swap(shard.amp0, shard.amp1);
     } else {
         ZBase(target);
@@ -902,8 +916,7 @@ void QUnit::Z(bitLenInt target)
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
-            EndEmulation(shard);
-            shard.unit->Z(shard.mapped);
+            ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
             shard.amp1 = -shard.amp1;
         }
     } else {
@@ -1001,6 +1014,60 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
+bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex& bottomLeft, const complex& topRight, const bool& anti)
+{
+    // Returns:
+    // "true" if successfully handled/consumed,
+    // "false" if needs general handling
+
+    bitLenInt rControl = 0;
+    bitLenInt rControlLen = 0;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        QEngineShard& shard = shards[controls[i]];
+        if (CACHED_CLASSICAL(shard)) {
+            if ((!anti && norm(shard.amp1) < min_norm) || (anti && norm(shard.amp0) < min_norm)) {
+                return true;
+            }
+        } else {
+            rControl = controls[i];
+            rControlLen++;
+            if (rControlLen > 1U) {
+                break;
+            }
+        }
+    }
+
+    if (rControlLen == 0U) {
+        ApplySingleInvert(topRight, bottomLeft, true, target);
+        return true;
+    } else if (rControlLen == 1U) {
+        complex iTest[4] = { bottomLeft, 0, 0, topRight };
+        if (IsIdentity(iTest)) {
+            if (anti) {
+                AntiCNOT(rControl, target);
+            } else {
+                CNOT(rControl, target);
+            }
+            return true;
+        }
+
+        QEngineShard& cShard = shards[rControl];
+        QEngineShard& tShard = shards[target];
+        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
+            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm)) && !PHASE_MATTERS(tShard)) {
+            if (!tShard.isPlusMinus) {
+                CNOT(target, rControl);
+            } else {
+                CNOT(rControl, target);
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& cShard = shards[control];
@@ -1009,12 +1076,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         if (!tShard.isPlusMinus) {
             CNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
+            ApplyOrEmulate(cShard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
             std::swap(cShard.amp0, cShard.amp1);
-            if (cShard.unit->GetQubitCount() == 1) {
-                cShard.isEmulated = true;
-            } else {
-                cShard.unit->X(cShard.mapped);
-            }
         }
         return;
     }
@@ -1032,13 +1095,11 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         if (!tShard.isPlusMinus) {
             AntiCNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
+            ApplyOrEmulate(cShard, [&](QEngineShard& shard) {
+                shard.unit->X(shard.mapped);
+                shard.unit->PhaseFlip();
+            });
             std::swap(cShard.amp0, cShard.amp1);
-            if (cShard.unit->GetQubitCount() == 1) {
-                cShard.isEmulated = true;
-            } else {
-                cShard.unit->X(cShard.mapped);
-                cShard.unit->PhaseFlip();
-            }
             tShard.amp0 *= -1;
             tShard.amp1 *= -1;
         }
@@ -1105,11 +1166,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
-    complex iTest[4] = { topLeft, 0, 0, bottomRight };
-    if (IsIdentity(iTest)) {
-        return;
-    }
-
     QEngineShard& shard = shards[target];
 
     if (shard.isPlusMinus) {
@@ -1139,6 +1195,23 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
+
+    if (!PHASE_MATTERS(shard)) {
+        X(target);
+        return;
+    }
+
+    real1 phaseDiff = arg(topRight) - arg(bottomLeft);
+    if (phaseDiff > M_PI) {
+        phaseDiff -= 2U * M_PI;
+    } else if (phaseDiff < -M_PI) {
+        phaseDiff += 2U * M_PI;
+    }
+    if ((abs(phaseDiff) < min_norm) &&
+        (randGlobalPhase || ((imag(topRight) < min_norm) && (real(topRight) > ZERO_R1)))) {
+        X(target);
+        return;
+    }
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(shard, [&](QEngineShard& shard) {
@@ -1209,8 +1282,10 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, true, target), false);
+    if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
+        CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySingleInvert(topRight, bottomLeft, true, target), false);
+    }
 }
 
 void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -1219,11 +1294,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
-        complex iTest[4] = { topLeft, 0, 0, bottomRight };
-        if (IsIdentity(iTest)) {
-            return;
-        }
-
         bitLenInt* lcontrols = new bitLenInt[controlLen];
         bitLenInt ltarget;
 
@@ -1239,16 +1309,14 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, true, target), true);
+    if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, true)) {
+        CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySingleInvert(topRight, bottomLeft, true, target), true);
+    }
 }
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    if (IsIdentity(mtrx)) {
-        return;
-    }
-
     QEngineShard& shard = shards[target];
 
     complex trnsMtrx[4];
@@ -1259,7 +1327,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         Transform2x2(mtrx, trnsMtrx);
     }
 
-    shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);
+    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped); });
 
     if (DIRTY(shard)) {
         shard.isProbDirty = true;
@@ -1386,6 +1454,10 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
+    // TODO: If controls that survive the "first order" check above start out entangled,
+    // then it might be worth checking whether there is any intra-unit chance of control bits
+    // being conditionally all 0 or all 1, in any unit, due to entanglement.
+
     // If we've made it this far, we have to form the entangled representation and apply the gate.
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
@@ -1397,15 +1469,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit;
-    if (targets.size() == 1) {
-        // Avoid changing basis, if unnecessary
-        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    } else {
-        unit = Entangle(ebits);
-    }
+    QInterfacePtr unit = Entangle(ebits);
 
-    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
+    std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
         shards[controlVec[i]].isPhaseDirty = true;
@@ -2171,7 +2237,7 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     if (CheckBitsPermutation(start, length)) {
         if (GetCachedPermutation(start, length) == 0) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
-            shards[start].unit->PhaseFlip();
+            ApplyOrEmulate(shards[start], [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         }
         return;
     }
@@ -2188,7 +2254,7 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
     if (CheckBitsPermutation(start, length)) {
         if (GetCachedPermutation(start, length) < greaterPerm) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
-            shards[start].unit->PhaseFlip();
+            ApplyOrEmulate(shards[start], [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         }
         return;
     }
@@ -2232,9 +2298,11 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip()
 {
-    if (PHASE_MATTERS(shards[0])) {
+    QEngineShard& shard = shards[0];
+    if (PHASE_MATTERS(shard)) {
         ToPermBasis(0);
-        shards[0].unit->PhaseFlip();
+        shard.unit->PhaseFlip();
+        shard.amp1 = -shard.amp1;
     }
 }
 
@@ -2469,12 +2537,11 @@ void QUnit::TransformBasis1(const bool& toPlusMinus, const bitLenInt& i)
     }
 
     freezeBasis = true;
-
     H(i);
     shard.isPlusMinus = toPlusMinus;
-    TrySeparate(i);
-
     freezeBasis = false;
+
+    TrySeparate(i);
 }
 
 void QUnit::RevertBasis2(bitLenInt i)
@@ -2518,7 +2585,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1)) {
+    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
         return;
     }
 
@@ -2526,8 +2593,6 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         SeparateBit(true, target);
     } else if (norm(shard.amp1) < min_norm) {
         SeparateBit(false, target);
-    } else if (abs(norm(shard.amp1) - (ONE_R1 / 2)) < min_norm) {
-        TransformBasis1(!shard.isPlusMinus, target);
     }
 }
 

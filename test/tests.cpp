@@ -3397,6 +3397,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
     cl_free(toLoad);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_amplitude_amplification")
+{
+    int i;
+
+    // Grover's search inverts the function of a black box subroutine.
+    // Our subroutine returns true for an input of 000... or 110...
+
+    int optIter = M_PI / (4.0 * asin(2.0 / sqrt(1U << 8U)));
+
+    // Our input to the subroutine "oracle" is 8 bits.
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+
+    for (i = 0; i < optIter; i++) {
+        // Our "oracle" is true for an input of "000..." or "110..." and false for all other inputs.
+        qftReg->CNOT(0, 1);
+        qftReg->H(0);
+        qftReg->ZeroPhaseFlip(0, 8);
+        qftReg->H(0);
+        qftReg->CNOT(0, 1);
+        // This ends the "oracle."
+        qftReg->H(0, 8);
+        qftReg->ZeroPhaseFlip(0, 8);
+        qftReg->H(0, 8);
+        qftReg->PhaseFlip();
+    }
+
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_set_reg")
 {
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
