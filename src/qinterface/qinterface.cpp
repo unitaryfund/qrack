@@ -618,27 +618,13 @@ real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 // Returns probability of permutation of the mask
 real1 QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    real1 prob = ONE_R1;
-    bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
-    bitLenInt length; // c accumulates the total bits set in v
-    bitCapInt power;
-    std::vector<bitLenInt> bits;
-    std::vector<bool> bitsSet;
-    for (length = 0; v; length++) {
-        oldV = v;
-        v &= v - 1; // clear the least significant bit set
-        power = (v ^ oldV) & oldV;
-        bits.push_back(log2(power));
-        bitsSet.push_back(!(!(power & permutation)));
-    }
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        if (bitsSet[bit]) {
-            prob *= Prob(bits[bit]);
-        } else {
-            prob *= (ONE_R1 - Prob(bits[bit]));
+    real1 prob = ZERO_R1;
+    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
+        if ((lcv & mask) == permutation) {
+            prob += ProbAll(lcv);
         }
     }
+
     return prob;
 }
 
