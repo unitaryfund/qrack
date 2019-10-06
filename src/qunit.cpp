@@ -32,7 +32,7 @@
 #define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
 #define CACHED_CLASSICAL(shard) ((!shard.isPlusMinus) && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
-#define DIRTY(shard) (shard.isProbDirty || shard.isPhaseDirty)
+#define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
 namespace Qrack {
 
@@ -274,6 +274,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
     TransformBasis(false, start, length);
 
     if (length == 1) {
+        EndEmulation(start);
         return shards[start].unit;
     }
 
@@ -858,9 +859,7 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
-    EndEmulation(shard);
-
-    shard.unit->H(shard.mapped);
+    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->H(shard.mapped); });
 
     if (DIRTY(shard)) {
         shard.isProbDirty = true;
@@ -896,11 +895,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
-        if (shard.unit->GetQubitCount() == 1U) {
-            shard.isEmulated = true;
-        } else {
-            shard.unit->X(shard.mapped);
-        }
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
         std::swap(shard.amp0, shard.amp1);
     } else {
         ZBase(target);
@@ -912,8 +907,7 @@ void QUnit::Z(bitLenInt target)
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
-            EndEmulation(shard);
-            shard.unit->Z(shard.mapped);
+            ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
             shard.amp1 = -shard.amp1;
         }
     } else {
@@ -1073,12 +1067,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         if (!tShard.isPlusMinus) {
             CNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
+            ApplyOrEmulate(cShard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
             std::swap(cShard.amp0, cShard.amp1);
-            if (cShard.unit->GetQubitCount() == 1U) {
-                cShard.isEmulated = true;
-            } else {
-                cShard.unit->X(cShard.mapped);
-            }
         }
         return;
     }
@@ -1096,13 +1086,11 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         if (!tShard.isPlusMinus) {
             AntiCNOT(target, control);
         } else if (norm(tShard.amp0) < min_norm) {
+            ApplyOrEmulate(cShard, [&](QEngineShard& shard) {
+                shard.unit->X(shard.mapped);
+                shard.unit->PhaseFlip();
+            });
             std::swap(cShard.amp0, cShard.amp1);
-            if (cShard.unit->GetQubitCount() == 1U) {
-                cShard.isEmulated = true;
-            } else {
-                cShard.unit->X(cShard.mapped);
-                cShard.unit->PhaseFlip();
-            }
             tShard.amp0 *= -1;
             tShard.amp1 *= -1;
         }
@@ -1280,7 +1268,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         Transform2x2(mtrx, trnsMtrx);
     }
 
-    shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped);
+    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, doCalcNorm, shard.mapped); });
 
     if (DIRTY(shard)) {
         shard.isProbDirty = true;
@@ -2190,7 +2178,7 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     if (CheckBitsPermutation(start, length)) {
         if (GetCachedPermutation(start, length) == 0) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
-            shards[start].unit->PhaseFlip();
+            ApplyOrEmulate(shards[start], [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         }
         return;
     }
@@ -2207,7 +2195,7 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
     if (CheckBitsPermutation(start, length)) {
         if (GetCachedPermutation(start, length) < greaterPerm) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
-            shards[start].unit->PhaseFlip();
+            ApplyOrEmulate(shards[start], [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         }
         return;
     }

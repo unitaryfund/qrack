@@ -3397,8 +3397,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_amplitude_amplification")
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
 
-    // std::cout << "Iterations:" << std::endl;
-    // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < optIter; i++) {
         // Our "oracle" is true for an input of "000..." or "110..." and false for all other inputs.
         qftReg->CNOT(0, 1);

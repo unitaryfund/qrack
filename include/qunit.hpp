@@ -412,7 +412,8 @@ protected:
     void EndEmulation(QEngineShard& shard)
     {
         if (shard.isEmulated) {
-            shard.unit->SetBit(shard.mapped, norm(shard.amp0) < (ONE_R1 / 2));
+            complex bitState[2] = { shard.amp0, shard.amp1 };
+            shard.unit->SetQuantumState(bitState);
             shard.isEmulated = false;
         }
     }
@@ -439,10 +440,9 @@ protected:
 
     template <typename F> void ApplyOrEmulate(QEngineShard& shard, F payload)
     {
-        if (shard.unit->GetQubitCount() == 1) {
+        if ((shard.unit->GetQubitCount() == 1) && !shard.isProbDirty && !shard.isPhaseDirty) {
             shard.isEmulated = true;
         } else {
-            EndEmulation(shard);
             payload(shard);
         }
     }
