@@ -1159,6 +1159,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         }
     }
 
+    if (!CACHED_CLASSICAL(shards[control]) && CACHED_CLASSICAL(shards[target])) {
+        std::swap(control, target);
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
@@ -1167,6 +1171,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
+
+    if (!PHASE_MATTERS(shard)) {
+        return;
+    }
 
     if (shard.isPlusMinus) {
         complex mtrx[4];
@@ -2301,7 +2309,7 @@ void QUnit::PhaseFlip()
     QEngineShard& shard = shards[0];
     if (PHASE_MATTERS(shard)) {
         ToPermBasis(0);
-        shard.unit->PhaseFlip();
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
     }
 }

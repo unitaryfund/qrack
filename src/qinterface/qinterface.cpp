@@ -14,6 +14,46 @@
 
 namespace Qrack {
 
+#define REG_GATE_1(gate)                                                                                               \
+    void QInterface::gate(bitLenInt start, bitLenInt length)                                                           \
+    {                                                                                                                  \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(start + bit);                                                                                         \
+        }                                                                                                              \
+    }
+
+#define REG_GATE_2(gate)                                                                                               \
+    void QInterface::gate(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)                                        \
+    {                                                                                                                  \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(qubit1 + bit, qubit2 + bit);                                                                          \
+        }                                                                                                              \
+    }
+
+#define REG_GATE_3B(gate)                                                                                              \
+    void QInterface::gate(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)    \
+    {                                                                                                                  \
+        for (bitLenInt i = 0; i < length; i++) {                                                                       \
+            gate(qInputStart + i, bitSlice(i, classicalInput), outputStart + i);                                       \
+        }                                                                                                              \
+    }
+
+#define REG_GATE_1R(gate)                                                                                              \
+    void QInterface::gate(real1 radians, bitLenInt start, bitLenInt length)                                            \
+    {                                                                                                                  \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(radians, start + bit);                                                                                \
+        }                                                                                                              \
+    }
+
+#define REG_GATE_1D(gate)                                                                                              \
+    void QInterface::gate(int numerator, int denominator, bitLenInt start, bitLenInt length)                           \
+    {                                                                                                                  \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(numerator, denominator, start + bit);                                                                 \
+        }                                                                                                              \
+    }
+
 template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
 {
     // For length-wise application of controlled gates, there's no point in having normalization on, up to the last
@@ -29,28 +69,13 @@ template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt le
 }
 
 // Bit-wise apply swap to two registers
-void QInterface::Swap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        Swap(qubit1 + bit, qubit2 + bit);
-    }
-}
+REG_GATE_2(Swap);
 
 // Bit-wise apply square root of swap to two registers
-void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        SqrtSwap(qubit1 + bit, qubit2 + bit);
-    }
-}
+REG_GATE_2(SqrtSwap);
 
 // Bit-wise apply inverse square root of swap to two registers
-void QInterface::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ISqrtSwap(qubit1 + bit, qubit2 + bit);
-    }
-}
+REG_GATE_2(ISqrtSwap);
 
 // Bit-wise apply "anti-"controlled-not to three registers
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
@@ -74,45 +99,28 @@ void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 }
 
 // Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
-void QInterface::S(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        S(start + bit);
-    }
-}
+REG_GATE_1(S);
 
 // Apply inverse S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
-void QInterface::IS(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        IS(start + bit);
-    }
-}
+REG_GATE_1(IS);
 
 // Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
-void QInterface::T(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        T(start + bit);
-    }
-}
+REG_GATE_1(T);
 
 // Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
-void QInterface::IT(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        IT(start + bit);
-    }
-}
+REG_GATE_1(IT);
 
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
-void QInterface::X(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        X(start + bit);
-    }
-}
+REG_GATE_1(X);
+
+// Apply square root of X gate to each bit in "length," starting from bit index
+// "start"
+REG_GATE_1(SqrtX);
+
+// Apply inverse square root of X gate to each bit in "length," starting from bit index
+// "start"
+REG_GATE_1(ISqrtX);
 
 // Single register instructions:
 
@@ -133,28 +141,22 @@ void QInterface::U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda)
 }
 
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
-void QInterface::H(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        H(start + bit);
-    }
-}
+REG_GATE_1(H);
+
+/// Apply square root of Hadamard gate to each bit in "length," starting from bit index "start"
+REG_GATE_1(SqrtH);
 
 /// Apply Pauli Y matrix to each bit
-void QInterface::Y(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        Y(start + bit);
-    }
-}
+REG_GATE_1(Y);
+
+/// Apply square root of Pauli Y matrix to each bit
+REG_GATE_1(SqrtY);
+
+/// Apply square root of Pauli Y matrix to each bit
+REG_GATE_1(ISqrtY);
 
 /// Apply Pauli Z matrix to each bit
-void QInterface::Z(bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        Z(start + bit);
-    }
-}
+REG_GATE_1(Z);
 
 /// Apply controlled Pauli Y matrix to each bit
 void QInterface::CY(bitLenInt control, bitLenInt target, bitLenInt length)
@@ -170,36 +172,15 @@ void QInterface::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
 
 /// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
-void QInterface::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
-        CLAND(qInputStart + i, cBit, outputStart + i);
-    }
-}
+REG_GATE_3B(CLAND);
 
 /// "OR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
-void QInterface::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
-        CLOR(qInputStart + i, cBit, outputStart + i);
-    }
-}
+REG_GATE_3B(CLOR);
 
 /// "XOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
-void QInterface::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
-        CLXOR(qInputStart + i, cBit, outputStart + i);
-    }
-}
+REG_GATE_3B(CLXOR);
 
 /// Arithmetic shift left, with last 2 bits as sign and carry
 void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
@@ -320,12 +301,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 }
 
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-void QInterface::RT(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RT(radians, start + bit);
-    }
-}
+REG_GATE_1R(RT);
 
 /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
 void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -334,20 +310,10 @@ void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
-void QInterface::RTDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RTDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(RTDyad)
 
 /// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
-void QInterface::Exp(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        Exp(radians, start + bit);
-    }
-}
+REG_GATE_1R(Exp)
 
 /// Dyadic fraction (identity) exponentiation gate - Applies exponentiation of the identity operator
 void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -356,20 +322,10 @@ void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
-void QInterface::ExpDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(ExpDyad)
 
 /// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
-void QInterface::ExpX(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpX(radians, start + bit);
-    }
-}
+REG_GATE_1R(ExpX)
 
 /// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
 void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -378,20 +334,10 @@ void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
-void QInterface::ExpXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpXDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(ExpXDyad)
 
 /// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
-void QInterface::ExpY(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpY(radians, start + bit);
-    }
-}
+REG_GATE_1R(ExpY)
 
 /// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
 void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -400,12 +346,7 @@ void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
-void QInterface::ExpYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpYDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(ExpYDyad)
 
 /// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
 void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -416,28 +357,13 @@ void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
 /**
  * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
  */
-void QInterface::ExpZ(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpZ(radians, start + bit);
-    }
-}
+REG_GATE_1R(ExpZ)
 
 /// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
-void QInterface::ExpZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        ExpZDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(ExpZDyad)
 
 /// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
-void QInterface::RX(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RX(radians, start + bit);
-    }
-}
+REG_GATE_1R(RX)
 
 /// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
 void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -446,20 +372,10 @@ void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction x axis rotation gate - Rotates around Pauli x
-void QInterface::RXDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RXDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(RXDyad)
 
 /// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
-void QInterface::RY(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RY(radians, start + bit);
-    }
-}
+REG_GATE_1R(RY)
 
 /// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
 void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -468,20 +384,10 @@ void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
-void QInterface::RYDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RYDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(RYDyad)
 
 /// z axis rotation gate - Rotates each bit around Pauli z axis
-void QInterface::RZ(real1 radians, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RZ(radians, start + bit);
-    }
-}
+REG_GATE_1R(RZ)
 
 /// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
 void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit)
@@ -490,12 +396,7 @@ void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
-void QInterface::RZDyad(int numerator, int denominator, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        RZDyad(numerator, denominator, start + bit);
-    }
-}
+REG_GATE_1D(RZDyad)
 
 /// Controlled "phase shift gate"
 void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
