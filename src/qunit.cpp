@@ -727,12 +727,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if ((shard1.fourier2Partner && (*(shard1.fourier2Partner) != shard2)) ||
-        (shard2.fourier2Partner && (*(shard2.fourier2Partner) != shard1))) {
-        RevertBasis2(qubit1);
-        RevertBasis2(qubit2);
-    }
-
     // Swap the bit mapping.
     std::swap(shard1, shard2);
     // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
@@ -1140,26 +1134,34 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         if (!tShard.fourier2Partner && !cShard.fourier2Partner) {
+            tShard.isPlusMinus = !tShard.isPlusMinus;
+            cShard.isPlusMinus = !cShard.isPlusMinus;
             tShard.fourier2Partner = &cShard;
             cShard.fourier2Partner = &tShard;
             tShard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
+        } else {
+            if (*(tShard.fourier2Partner) != cShard) {
+                if (tShard.fourier2Partner) {
+                    tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
+                    tShard.fourier2Partner->fourier2Partner = NULL;
+                    tShard.fourier2Partner->mapped = 0U;
+                }
+                if (cShard.fourier2Partner) {
+                    cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
+                    cShard.fourier2Partner->fourier2Partner = NULL;
+                    cShard.fourier2Partner->mapped = 0U;
+                }
+            }
 
             tShard.isPlusMinus = !tShard.isPlusMinus;
             cShard.isPlusMinus = !cShard.isPlusMinus;
-
-            return;
-        } else if (F2_CANCEL(tShard, cShard) || F2_CANCEL(cShard, tShard)) {
             tShard.fourier2Partner = NULL;
             cShard.fourier2Partner = NULL;
             tShard.fourier2Mapped = 0U;
             cShard.fourier2Mapped = 0U;
-
-            tShard.isPlusMinus = !tShard.isPlusMinus;
-            cShard.isPlusMinus = !cShard.isPlusMinus;
-
-            return;
         }
+        return;
     }
 
     if (!CACHED_CLASSICAL(shards[control]) && CACHED_CLASSICAL(shards[target])) {
