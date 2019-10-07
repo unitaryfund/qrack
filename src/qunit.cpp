@@ -34,6 +34,8 @@
     (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
+#define F2_CANCEL(tShard, cShard)                                                                                      \
+    (tShard.fourier2Partner && (!cShard.fourier2Partner || (*(cShard.fourier2Partner) == tShard)))
 
 namespace Qrack {
 
@@ -1128,32 +1130,32 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    QEngineShard& shard = shards[target];
+    QEngineShard& tShard = shards[target];
 
-    if (!PHASE_MATTERS(shard)) {
+    if (!PHASE_MATTERS(tShard)) {
         return;
     }
 
     QEngineShard& cShard = shards[control];
 
     if (!freezeBasis) {
-        if (!shard.fourier2Partner && !cShard.fourier2Partner) {
-            shard.fourier2Partner = &cShard;
-            cShard.fourier2Partner = &shard;
-            shard.fourier2Mapped = 1U;
+        if (!tShard.fourier2Partner && !cShard.fourier2Partner) {
+            tShard.fourier2Partner = &cShard;
+            cShard.fourier2Partner = &tShard;
+            tShard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
 
-            shard.isPlusMinus = !shard.isPlusMinus;
+            tShard.isPlusMinus = !tShard.isPlusMinus;
             cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
-        } else if (shard.fourier2Partner && (!cShard.fourier2Partner || (*(cShard.fourier2Partner) == shard))) {
-            shard.fourier2Partner = NULL;
+        } else if (F2_CANCEL(tShard, cShard) || F2_CANCEL(cShard, tShard)) {
+            tShard.fourier2Partner = NULL;
             cShard.fourier2Partner = NULL;
-            shard.fourier2Mapped = 0U;
+            tShard.fourier2Mapped = 0U;
             cShard.fourier2Mapped = 0U;
 
-            shard.isPlusMinus = !shard.isPlusMinus;
+            tShard.isPlusMinus = !tShard.isPlusMinus;
             cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
