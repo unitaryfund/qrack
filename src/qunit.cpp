@@ -1144,13 +1144,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             if (tShard.fourier2Partner && (*(tShard.fourier2Partner) != cShard)) {
                 if (tShard.fourier2Partner) {
                     tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
-                    tShard.fourier2Partner->fourier2Partner = NULL;
                     tShard.fourier2Partner->mapped = 0U;
+                    tShard.fourier2Partner->fourier2Partner = NULL;
                 }
                 if (cShard.fourier2Partner) {
                     cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
-                    cShard.fourier2Partner->fourier2Partner = NULL;
                     cShard.fourier2Partner->mapped = 0U;
+                    cShard.fourier2Partner->fourier2Partner = NULL;
                 }
             }
 
