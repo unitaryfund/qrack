@@ -1118,12 +1118,12 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    if (!CACHED_CLASSICAL(shards[control]) && CACHED_CLASSICAL(shards[target])) {
-        std::swap(control, target);
+    if (!PHASE_MATTERS(shards[target]) || !PHASE_MATTERS(shards[control])) {
+        return;
     }
 
-    if (!PHASE_MATTERS(shards[target])) {
-        return;
+    if (!CACHED_CLASSICAL(shards[control]) && CACHED_CLASSICAL(shards[target])) {
+        std::swap(control, target);
     }
 
     bitLenInt controls[1] = { control };
