@@ -30,7 +30,8 @@
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
-#define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_CLASSICAL(shard)                                                                                        \
+    (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
@@ -1146,7 +1147,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.isPlusMinus = !cShard.isPlusMinus;
 
             return;
-        } else if (shard.fourier2Partner && (*(shard.fourier2Partner) == cShard)) {
+        } else if (shard.fourier2Partner && (!cShard.fourier2Partner || (*(cShard.fourier2Partner) == shard))) {
             shard.fourier2Partner = NULL;
             cShard.fourier2Partner = NULL;
             shard.fourier2Mapped = 0U;
