@@ -2554,7 +2554,7 @@ void QUnit::TransformBasis1(const bool& toPlusMinus, const bitLenInt& i)
     shard.isPlusMinus = toPlusMinus;
     freezeBasis = false;
 
-    TrySeparate(i);
+    // TrySeparate(i);
 }
 
 void QUnit::RevertBasis2(bitLenInt i)
