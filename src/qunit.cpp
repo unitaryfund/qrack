@@ -683,6 +683,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     ToPermBasis(qubit);
     QEngineShard& shard = shards[qubit];
 
+    Finish();
+
     bool result;
     if (CACHED_CLASSICAL(shard)) {
         result = SHARD_STATE(shard);

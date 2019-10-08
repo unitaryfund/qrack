@@ -422,3 +422,48 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         },
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
+TEST_CASE("test_fourier_2", "[fourier2]")
+{
+    benchmarkLoop(
+        [](QInterfacePtr qftReg, int n) {
+            bitLenInt i;
+            real1 r;
+            bitLenInt m;
+            for (m = 0; m < 20; m++) {
+                for (i = 0; i < n; i++) {
+                    r = qftReg->Rand();
+                    // Square root of Pauli X, Pauli Y, and H (Walsh-Hadamard) on single bits.
+                    if (r < (ONE_R1 / 3)) {
+                        qftReg->SqrtX(i);
+                    } else if (r < (2 * ONE_R1 / 3)) {
+                        qftReg->SqrtY(i);
+                    } else {
+                        qftReg->SqrtH(i);
+                    }
+                }
+                bitLenInt c, t;
+                for (i = 0; i < n; i++) {
+                    c = qftReg->Rand() * n;
+                    t = qftReg->Rand() * (n - 1);
+                    if (t >= c) {
+                        t++;
+                    }
+                    r = qftReg->Rand();
+                    if (r < (ONE_R1 / 2)) {
+                        // Swap can be left up to an auxiliary classical mapper.
+                        // Bits are swapped on "wires," except |0>/|1> vs. |+>/|-> basis property is not.
+                        qftReg->Swap(c, t);
+                    } else {
+                        // Higher Fourier basis orders should encompass higher n of (+/-1)^(1/n).
+                        // H is first order, and second is H and CZ, (2 bit Fourier transform gates).
+                        qftReg->CZ(c, t);
+                    }
+                }
+            }
+
+            for (m = 0; m < n; m++) {
+                qftReg->M(m);
+            }
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
