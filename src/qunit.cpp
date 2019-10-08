@@ -1144,6 +1144,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.fourier2Mapped = 0U;
         } else {
             if (tShard.fourier2Partner && (*(tShard.fourier2Partner) != cShard)) {
+                if (!randGlobalPhase && tShard.fourier2Mapped == 0U) {
+                    PhaseFlip();
+                }
                 if (tShard.fourier2Partner) {
                     tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
                     tShard.fourier2Partner->mapped = 0U;
