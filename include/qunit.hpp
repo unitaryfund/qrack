@@ -475,6 +475,16 @@ protected:
         }
     }
 
+    bitLenInt FindShardIndex(const QEngineShard& shard)
+    {
+        for (bitLenInt i = 0; i < shards.size(); i++) {
+            if (shards[i] == shard) {
+                return i;
+            }
+        }
+        return shards.size();
+    }
+
     bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex& bottomLeft, const complex& topRight, const bool& anti);
 

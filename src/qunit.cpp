@@ -1136,31 +1136,58 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         if (!tShard.fourier2Partner && !cShard.fourier2Partner) {
+            // Neither element has a partner.
             tShard.isPlusMinus = !tShard.isPlusMinus;
             cShard.isPlusMinus = !cShard.isPlusMinus;
             tShard.fourier2Partner = &cShard;
             cShard.fourier2Partner = &tShard;
             tShard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
+        } else if (!tShard.fourier2Partner || !cShard.fourier2Partner) {
+            // One is entangled, while the other is not.
+            QEngineShard& entangledShard = cShard.fourier2Partner ? cShard : tShard;
+            QEngineShard& separatedShard = cShard.fourier2Partner ? tShard : cShard;
+
+            entangledShard.fourier2Partner->fourier2Partner = NULL;
+            entangledShard.fourier2Partner->fourier2Mapped = 0U;
+            entangledShard.fourier2Partner = &separatedShard;
+            separatedShard.fourier2Partner = &entangledShard;
+            separatedShard.fourier2Mapped = 0U;
+
+            if (cShard.fourier2Partner && cShard.fourier2Mapped == 0U) {
+                tShard.isPlusMinus = !tShard.isPlusMinus;
+            } else if (tShard.fourier2Partner && tShard.fourier2Mapped == 1U) {
+                cShard.isPlusMinus = !cShard.isPlusMinus;
+            }
         } else {
-            bool doShuffle = false;
-            if (!randGlobalPhase && tShard.fourier2Partner && (*(tShard.fourier2Partner) == cShard) &&
-                (tShard.fourier2Mapped == 0U)) {
-                doShuffle = true;
-            } else if (tShard.fourier2Partner && (*(tShard.fourier2Partner) != cShard)) {
-                if (!randGlobalPhase && tShard.fourier2Mapped == cShard.fourier2Mapped) {
-                    doShuffle = true;
+            // If target and control are inverted, we need to "reverse" the elements.
+            bool doReverse = false;
+
+            if (tShard.fourier2Partner && (*(tShard.fourier2Partner) == cShard)) {
+                // Acting on original partner - undoes entangling operation
+
+                // Must reverse elements if opposite direction from original order
+                doReverse = (tShard.fourier2Mapped == 0U);
+            } else if (tShard.fourier2Partner && cShard.fourier2Partner && (*(tShard.fourier2Partner) != cShard)) {
+                // Both entangled, but acting between two independent "quarts"
+
+                // Must reverse elements in half of cases
+                doReverse = (tShard.fourier2Mapped == 1U);
+
+                if (cShard.fourier2Mapped == tShard.fourier2Mapped) {
+                    if (doReverse) {
+                        // Both targets
+                        tShard.fourier2Partner->fourier2Mapped = 1U;
+                        tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
+                    } else {
+                        // Both controls
+                        cShard.fourier2Partner->fourier2Mapped = 0U;
+                        cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
+                    }
                 }
-                if (tShard.fourier2Partner) {
-                    tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
-                    tShard.fourier2Partner->mapped = 0U;
-                    tShard.fourier2Partner->fourier2Partner = NULL;
-                }
-                if (cShard.fourier2Partner) {
-                    cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
-                    cShard.fourier2Partner->mapped = 0U;
-                    cShard.fourier2Partner->fourier2Partner = NULL;
-                }
+
+                cShard.fourier2Partner->fourier2Partner = &tShard;
+                tShard.fourier2Partner->fourier2Partner = &cShard;
             }
 
             tShard.isPlusMinus = !tShard.isPlusMinus;
@@ -1170,9 +1197,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             tShard.fourier2Mapped = 0U;
             cShard.fourier2Mapped = 0U;
 
-            if (doShuffle) {
-                CNOT(control, target);
+            if (doReverse) {
                 Swap(control, target);
+                CNOT(control, target);
             }
         }
         return;
@@ -2580,12 +2607,7 @@ void QUnit::RevertBasis2(bitLenInt i)
         return;
     }
 
-    bitLenInt j;
-    for (j = 0; j < shards.size(); j++) {
-        if (shards[j] == *(shard.fourier2Partner)) {
-            break;
-        }
-    }
+    bitLenInt j = FindShardIndex(*(shard.fourier2Partner));
 
     QEngineShard& pShard = shards[j];
 
