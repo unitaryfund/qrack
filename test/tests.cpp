@@ -947,6 +947,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
     qftReg->CZ(7, 3);
     qftReg->H(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+    qftReg->QFT(0, 2);
+    qftReg->QFT(2, 2);
+    qftReg->H(1);
+    qftReg->CZ(1, 2);
+    qftReg->H(2);
+    qftReg->H(3);
+    qftReg->CZ(3, 0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz_reg")
