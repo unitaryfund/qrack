@@ -1145,30 +1145,30 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.fourier2Mapped = 0U;
         } else if (!tShard.fourier2Partner || !cShard.fourier2Partner) {
             // One is entangled, while the other is not.
+            if (cShard.fourier2Partner && (cShard.fourier2Mapped == 0U)) {
+                tShard.isPlusMinus = !tShard.isPlusMinus;
+            } else if (tShard.fourier2Partner && (tShard.fourier2Mapped == 1U)) {
+                cShard.isPlusMinus = !cShard.isPlusMinus;
+            }
+
             QEngineShard& entangledShard = cShard.fourier2Partner ? cShard : tShard;
             QEngineShard& separatedShard = cShard.fourier2Partner ? tShard : cShard;
 
-            entangledShard.fourier2Partner->fourier2Partner = NULL;
             entangledShard.fourier2Partner->fourier2Mapped = 0U;
+            entangledShard.fourier2Partner->fourier2Partner = NULL;
             entangledShard.fourier2Partner = &separatedShard;
             separatedShard.fourier2Partner = &entangledShard;
-            separatedShard.fourier2Mapped = 0U;
-
-            if (cShard.fourier2Partner && cShard.fourier2Mapped == 0U) {
-                tShard.isPlusMinus = !tShard.isPlusMinus;
-            } else if (tShard.fourier2Partner && tShard.fourier2Mapped == 1U) {
-                cShard.isPlusMinus = !cShard.isPlusMinus;
-            }
+            separatedShard.fourier2Mapped = (entangledShard.fourier2Mapped == 1U) ? 0U : 1U;
         } else {
             // If target and control are inverted, we need to "reverse" the elements.
             bool doReverse = false;
 
-            if (tShard.fourier2Partner && (*(tShard.fourier2Partner) == cShard)) {
+            if (*(tShard.fourier2Partner) == cShard) {
                 // Acting on original partner - undoes entangling operation
 
                 // Must reverse elements if opposite direction from original order
                 doReverse = (tShard.fourier2Mapped == 0U);
-            } else if (tShard.fourier2Partner && cShard.fourier2Partner && (*(tShard.fourier2Partner) != cShard)) {
+            } else {
                 // Both entangled, but acting between two independent "quarts"
 
                 // Must reverse elements in half of cases
