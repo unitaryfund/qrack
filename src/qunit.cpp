@@ -1143,12 +1143,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             tShard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
         } else {
+            bool doShuffle = false;
             if (!randGlobalPhase && tShard.fourier2Partner && (*(tShard.fourier2Partner) == cShard) &&
                 (tShard.fourier2Mapped == 0U)) {
-                PhaseFlip();
+                doShuffle = true;
             } else if (tShard.fourier2Partner && (*(tShard.fourier2Partner) != cShard)) {
                 if (!randGlobalPhase && tShard.fourier2Mapped == cShard.fourier2Mapped) {
-                    PhaseFlip();
+                    doShuffle = true;
                 }
                 if (tShard.fourier2Partner) {
                     tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
@@ -1168,6 +1169,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.fourier2Partner = NULL;
             tShard.fourier2Mapped = 0U;
             cShard.fourier2Mapped = 0U;
+
+            if (doShuffle) {
+                CNOT(control, target);
+                Swap(control, target);
+            }
         }
         return;
     }
