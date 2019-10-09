@@ -1177,11 +1177,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
                 if (cShard.fourier2Mapped == tShard.fourier2Mapped) {
                     if (doReverse) {
                         // Both targets
-                        tShard.fourier2Partner->fourier2Mapped = 1U;
+                        tShard.fourier2Partner->fourier2Mapped = 0U;
                         tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
                     } else {
                         // Both controls
-                        cShard.fourier2Partner->fourier2Mapped = 0U;
+                        cShard.fourier2Partner->fourier2Mapped = 1U;
                         cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
                     }
                 }
