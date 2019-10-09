@@ -950,11 +950,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 
     qftReg->SetReg(0, 8, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+    // Create 2 independent 2-qubit (inverse) Fourier-transformed units:
     qftReg->QFT(0, 2);
     qftReg->QFT(2, 2);
+    // This should effectively revert the two middle bits and leave 0 and 3 as if under QFT.
     qftReg->H(1);
     qftReg->CZ(1, 2);
     qftReg->H(2);
+    // This is an inverse 2-qubit QFT on bits 0 and 3.
     qftReg->H(3);
     qftReg->CZ(3, 0);
     qftReg->H(0);
