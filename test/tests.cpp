@@ -281,7 +281,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
         REQUIRE_THAT(qftReg, HasProbability(0x55F00));
     }
 }
-
+#endif
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qengine_getmaxqpower")
 {
     // Assuming default engine has 20 qubits:
@@ -934,7 +934,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cy_reg")
     qftReg->CY(4, 0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
-#endif
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 {
     qftReg->SetReg(0, 8, 0x35);
@@ -954,7 +954,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 
     qftReg->SetReg(0, 8, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
-    // Create 2 independent 2-qubit (inverse) Fourier-transformed units:
     qftReg->H(2);
     qftReg->QFT(0, 2);
     qftReg->H(1);
@@ -965,6 +964,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
     qftReg->H(2);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 6));
+
+    qftReg->SetReg(0, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 4));
+    qftReg->H(2);
+    qftReg->QFT(0, 2);
+    qftReg->H(1);
+    qftReg->CZ(1, 2);
+    qftReg->H(1);
+    qftReg->H(0);
+    qftReg->CZ(0, 2);
+    qftReg->H(2);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 4));
 
     qftReg->SetReg(0, 8, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));

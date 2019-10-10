@@ -1143,15 +1143,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             cShard.fourier2Partner = &tShard;
             tShard.fourier2Mapped = 1U;
             cShard.fourier2Mapped = 0U;
-
-            return;
         } else if (!tShard.fourier2Partner || !cShard.fourier2Partner) {
             // One is entangled, while the other is not.
 
             QEngineShard& entangledShard = cShard.fourier2Partner ? cShard : tShard;
             QEngineShard& separatedShard = cShard.fourier2Partner ? tShard : cShard;
-
-            X(FindShardIndex(entangledShard));
+            bitLenInt pBit = FindShardIndex(*(entangledShard.fourier2Partner));
+            bitLenInt eBit = FindShardIndex(entangledShard);
 
             if (cShard.fourier2Partner && (cShard.fourier2Mapped == 0U)) {
                 tShard.isPlusMinus = !tShard.isPlusMinus;
@@ -1166,7 +1164,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             separatedShard.fourier2Partner = &entangledShard;
             separatedShard.fourier2Mapped = (entangledShard.fourier2Mapped == 1U) ? 0U : 1U;
 
-            return;
+            CNOT(pBit, eBit);
         } else {
             // If target and control are inverted, we need to "reverse" the elements.
             bool doReverse = false;
