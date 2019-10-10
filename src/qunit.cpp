@@ -670,6 +670,12 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     shards[qubit].isPhaseDirty = false;
     shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
     shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+    shards[qubit].isPlusMinus = origShard.isPlusMinus;
+    if (origShard.fourier2Partner) {
+        origShard.fourier2Partner->fourier2Partner = &shards[qubit];
+        shards[qubit].fourier2Partner = origShard.fourier2Partner;
+    }
+        
 
     for (auto&& testShard : shards) {
         if (testShard.unit == origShard.unit && testShard.mapped > origShard.mapped) {
@@ -1126,98 +1132,95 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (!PHASE_MATTERS(tShard) || (CACHED_CLASSICAL(shards[control]) && !SHARD_STATE(shards[control]))) {
+    if (!PHASE_MATTERS(tShard) || (CACHED_CLASSICAL(cShard) && !SHARD_STATE(cShard))) {
         return;
     }
 
-    QEngineShard& cShard = shards[control];
-
-    if (!freezeBasis) {
-        if (!tShard.fourier2Partner && !cShard.fourier2Partner) {
-            // Neither element has a partner.
-            tShard.isPlusMinus = !tShard.isPlusMinus;
-            cShard.isPlusMinus = !cShard.isPlusMinus;
-            tShard.fourier2Partner = &cShard;
-            cShard.fourier2Partner = &tShard;
-            tShard.fourier2Mapped = 1U;
-            cShard.fourier2Mapped = 0U;
-        } else if (!tShard.fourier2Partner || !cShard.fourier2Partner) {
-            // One is entangled, while the other is not.
-
-            QEngineShard& entangledShard = cShard.fourier2Partner ? cShard : tShard;
-            QEngineShard& separatedShard = cShard.fourier2Partner ? tShard : cShard;
-            bitLenInt pBit = FindShardIndex(*(entangledShard.fourier2Partner));
-            bitLenInt eBit = FindShardIndex(entangledShard);
-
-            if (cShard.fourier2Partner && (cShard.fourier2Mapped == 0U)) {
-                tShard.isPlusMinus = !tShard.isPlusMinus;
-            } else if (tShard.fourier2Partner && (tShard.fourier2Mapped == 1U)) {
-                cShard.isPlusMinus = !cShard.isPlusMinus;
-            }
-
-            entangledShard.fourier2Partner->fourier2Mapped = 0U;
-            entangledShard.fourier2Partner->isPlusMinus = !entangledShard.fourier2Partner->isPlusMinus;
-            entangledShard.fourier2Partner->fourier2Partner = NULL;
-            entangledShard.fourier2Partner = &separatedShard;
-            separatedShard.fourier2Partner = &entangledShard;
-            separatedShard.fourier2Mapped = (entangledShard.fourier2Mapped == 1U) ? 0U : 1U;
-
-            CNOT(pBit, eBit);
-        } else {
-            // If target and control are inverted, we need to "reverse" the elements.
-            bool doReverse = false;
-
-            if (*(tShard.fourier2Partner) == cShard) {
-                // Acting on original partner - undoes entangling operation
-
-                // Must reverse elements if opposite direction from original order
-                doReverse = (tShard.fourier2Mapped == 0U);
-            } else {
-                // Both entangled, but acting between two independent "quarts"
-
-                // Must reverse elements in half of cases
-                doReverse = (tShard.fourier2Mapped == 1U);
-
-                if (cShard.fourier2Mapped == tShard.fourier2Mapped) {
-                    if (doReverse) {
-                        // Both targets
-                        tShard.fourier2Partner->fourier2Mapped = 0U;
-                        tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
-                    } else {
-                        // Both controls
-                        cShard.fourier2Partner->fourier2Mapped = 0U;
-                        cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
-                    }
-                }
-
-                cShard.fourier2Partner->fourier2Partner = &tShard;
-                tShard.fourier2Partner->fourier2Partner = &cShard;
-            }
-
-            tShard.isPlusMinus = !tShard.isPlusMinus;
-            cShard.isPlusMinus = !cShard.isPlusMinus;
-            tShard.fourier2Partner = NULL;
-            cShard.fourier2Partner = NULL;
-            tShard.fourier2Mapped = 0U;
-            cShard.fourier2Mapped = 0U;
-
-            if (doReverse) {
-                Swap(control, target);
-                CNOT(control, target);
-            }
+    if (freezeBasis) {
+        if (!CACHED_CLASSICAL(cShard) && CACHED_CLASSICAL(tShard)) {
+            std::swap(control, target);
         }
+
+        bitLenInt controls[1] = { control };
+        bitLenInt controlLen = 1;
+        CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
+
         return;
     }
 
-    if (!CACHED_CLASSICAL(shards[control]) && CACHED_CLASSICAL(shards[target])) {
-        std::swap(control, target);
-    }
+    if (!tShard.fourier2Partner && !cShard.fourier2Partner) {
+        // Neither element has a partner.
+        tShard.isPlusMinus = !tShard.isPlusMinus;
+        cShard.isPlusMinus = !cShard.isPlusMinus;
+        tShard.fourier2Partner = &cShard;
+        cShard.fourier2Partner = &tShard;
+        tShard.fourier2Mapped = 1U;
+        cShard.fourier2Mapped = 0U;
+    } else if (!tShard.fourier2Partner || !cShard.fourier2Partner) {
+        // One is entangled, while the other is not.
 
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
+        QEngineShard& partnerShard = (cShard.fourier2Partner ? cShard : tShard);
+        QEngineShard& entangledShard = *(partnerShard.fourier2Partner);
+        QEngineShard& separatedShard = (cShard.fourier2Partner ? tShard : cShard);
+
+        if ((cShard.fourier2Partner && (cShard.fourier2Mapped == 0U)) ||
+            (tShard.fourier2Partner && (tShard.fourier2Mapped == 1U))) {
+            entangledShard.isPlusMinus = !entangledShard.isPlusMinus;
+        }
+
+        partnerShard.fourier2Mapped = 0U;
+        partnerShard.fourier2Partner = NULL;
+        entangledShard.fourier2Partner = &separatedShard;
+        separatedShard.fourier2Partner = &entangledShard;
+        separatedShard.fourier2Mapped = (entangledShard.fourier2Mapped == 1U) ? 0U : 1U;
+    } else {
+        // If target and control are inverted, we need to "reverse" the elements.
+        bool doReverse = false;
+
+        if (*(tShard.fourier2Partner) == cShard) {
+            // Acting on original partner - undoes entangling operation
+
+            // Must reverse elements if opposite direction from original order
+            doReverse = (tShard.fourier2Mapped == 0U);
+        } else {
+            // Both entangled, but acting between two independent "quarts"
+
+            // Must reverse elements in half of cases
+            doReverse = (tShard.fourier2Mapped == 1U);
+
+            if (cShard.fourier2Mapped == tShard.fourier2Mapped) {
+                if (doReverse) {
+                    // Both targets
+                    tShard.fourier2Partner->fourier2Mapped = 0U;
+                    tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
+                } else {
+                    // Both controls
+                    cShard.fourier2Partner->fourier2Mapped = 0U;
+                    cShard.fourier2Partner->isPlusMinus = !cShard.fourier2Partner->isPlusMinus;
+                }
+            }
+
+            QEngineShard* cPartner = cShard.fourier2Partner;
+            QEngineShard* tPartner = tShard.fourier2Partner;
+            cPartner->fourier2Partner = tPartner;
+            tPartner->fourier2Partner = cPartner;
+        }
+
+        tShard.isPlusMinus = !tShard.isPlusMinus;
+        cShard.isPlusMinus = !cShard.isPlusMinus;
+        tShard.fourier2Partner = NULL;
+        cShard.fourier2Partner = NULL;
+        tShard.fourier2Mapped = 0U;
+        cShard.fourier2Mapped = 0U;
+
+        if (doReverse) {
+            Swap(control, target);
+            CNOT(control, target);
+        }
+    }
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
