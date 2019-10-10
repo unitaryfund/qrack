@@ -1128,7 +1128,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (!PHASE_MATTERS(tShard)) {
+    if (!PHASE_MATTERS(tShard) || (CACHED_CLASSICAL(shards[control]) && !SHARD_STATE(shards[control]))) {
         return;
     }
 
