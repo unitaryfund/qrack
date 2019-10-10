@@ -79,6 +79,26 @@ struct QEngineShard {
     {
         if (unit)
             unit->Finish();
+        if (fourier2Partner) {
+            fourier2Partner->unit->Finish();
+            fourier2Partner->fourier2Partner = NULL;
+        }
+    }
+
+    void RemoveFourier2Partner() {
+        if (fourier2Partner) {
+            fourier2Mapped = 0U;
+            fourier2Partner->fourier2Mapped = 0U;
+            fourier2Partner->fourier2Partner = NULL;
+        }
+        fourier2Partner = NULL;
+    }
+
+    void AddFourier2Partner(QEngineShard* p) {
+        RemoveFourier2Partner();
+
+        fourier2Partner = p;
+        p->fourier2Partner = this;
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }

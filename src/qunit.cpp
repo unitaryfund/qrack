@@ -672,8 +672,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
     shards[qubit].isPlusMinus = origShard.isPlusMinus;
     if (origShard.fourier2Partner) {
-        origShard.fourier2Partner->fourier2Partner = &shards[qubit];
-        shards[qubit].fourier2Partner = origShard.fourier2Partner;
+        shards[qubit].AddFourier2Partner(origShard.fourier2Partner);
     }
         
 
@@ -1155,8 +1154,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         // Neither element has a partner.
         tShard.isPlusMinus = !tShard.isPlusMinus;
         cShard.isPlusMinus = !cShard.isPlusMinus;
-        tShard.fourier2Partner = &cShard;
-        cShard.fourier2Partner = &tShard;
+        tShard.AddFourier2Partner(&cShard);
         tShard.fourier2Mapped = 1U;
         cShard.fourier2Mapped = 0U;
     } else if (!tShard.fourier2Partner || !cShard.fourier2Partner) {
@@ -1171,10 +1169,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             entangledShard.isPlusMinus = !entangledShard.isPlusMinus;
         }
 
-        partnerShard.fourier2Mapped = 0U;
-        partnerShard.fourier2Partner = NULL;
-        entangledShard.fourier2Partner = &separatedShard;
-        separatedShard.fourier2Partner = &entangledShard;
+        partnerShard.RemoveFourier2Partner();
+        entangledShard.AddFourier2Partner(&separatedShard);
         separatedShard.fourier2Mapped = (entangledShard.fourier2Mapped == 1U) ? 0U : 1U;
     } else {
         // If target and control are inverted, we need to "reverse" the elements.
@@ -1203,18 +1199,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
                 }
             }
 
-            QEngineShard* cPartner = cShard.fourier2Partner;
-            QEngineShard* tPartner = tShard.fourier2Partner;
-            cPartner->fourier2Partner = tPartner;
-            tPartner->fourier2Partner = cPartner;
+            cShard.fourier2Partner->AddFourier2Partner(tShard.fourier2Partner);
         }
 
         tShard.isPlusMinus = !tShard.isPlusMinus;
         cShard.isPlusMinus = !cShard.isPlusMinus;
-        tShard.fourier2Partner = NULL;
-        cShard.fourier2Partner = NULL;
-        tShard.fourier2Mapped = 0U;
-        cShard.fourier2Mapped = 0U;
+        tShard.RemoveFourier2Partner();
+        cShard.RemoveFourier2Partner();
 
         if (doReverse) {
             Swap(control, target);
@@ -2628,10 +2619,7 @@ void QUnit::RevertBasis2(bitLenInt i)
     CZ(i, j);
     freezeBasis = false;
 
-    shard.fourier2Mapped = 0U;
-    pShard.fourier2Mapped = 0U;
-    shard.fourier2Partner = NULL;
-    pShard.fourier2Partner = NULL;
+    shard.RemoveFourier2Partner();
     shard.isPlusMinus = !shard.isPlusMinus;
     pShard.isPlusMinus = !pShard.isPlusMinus;
 
