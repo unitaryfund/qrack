@@ -502,27 +502,12 @@ void QUnit::OrderContiguous(QInterfacePtr unit)
 /* Sort a container of bits, calling Swap() on each. */
 void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high)
 {
-    bool internalSwap;
     bitLenInt i = low, j = high;
     if (i == (j - 1)) {
         if (bits[j] < bits[i]) {
-            QEngineShard& shard1 = shards[bits[i].bit];
-            QEngineShard& shard2 = shards[bits[j].bit];
-            QEngineShard* pShard1 = shard1.fourier2Partner;
-            QEngineShard* pShard2 = shard2.fourier2Partner;
-
-            internalSwap = (pShard1 && (pShard1 == &shard2));
-
             unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
-            std::swap(shard1.mapped, shard2.mapped); /* Change the global mapping. */
+            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
-
-            if (internalSwap) {
-                shards[bits[i].bit].AddFourier2Partner(&(shards[bits[j].bit]));
-            } else {
-                shards[bits[j].bit].AddFourier2Partner(pShard1);
-                shards[bits[i].bit].AddFourier2Partner(pShard2);
-            }
         }
         return;
     }
@@ -536,24 +521,9 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
             j--;
         }
         if (i < j) {
-            QEngineShard& shard1 = shards[bits[i].bit];
-            QEngineShard& shard2 = shards[bits[j].bit];
-            QEngineShard* pShard1 = shard1.fourier2Partner;
-            QEngineShard* pShard2 = shard2.fourier2Partner;
-
-            internalSwap = (pShard1 && (pShard1 == &shard2));
-
             unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
-            std::swap(shard1.mapped, shard2.mapped); /* Change the global mapping. */
+            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
-
-            if (internalSwap) {
-                shards[bits[i].bit].AddFourier2Partner(&(shards[bits[j].bit]));
-            } else {
-                shards[bits[j].bit].AddFourier2Partner(pShard1);
-                shards[bits[i].bit].AddFourier2Partner(pShard2);
-            }
-
             i++;
             j--;
         } else if (i == j) {
