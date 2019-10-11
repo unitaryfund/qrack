@@ -502,12 +502,27 @@ void QUnit::OrderContiguous(QInterfacePtr unit)
 /* Sort a container of bits, calling Swap() on each. */
 void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high)
 {
+    bool internalSwap;
     bitLenInt i = low, j = high;
     if (i == (j - 1)) {
         if (bits[j] < bits[i]) {
+            QEngineShard& shard1 = shards[bits[i].bit];
+            QEngineShard& shard2 = shards[bits[j].bit];
+            QEngineShard* pShard1 = shard1.fourier2Partner;
+            QEngineShard* pShard2 = shard2.fourier2Partner;
+
+            internalSwap = (pShard1 && (pShard1 == &shard2));
+
             unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
-            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
+            std::swap(shard1.mapped, shard2.mapped); /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
+
+            if (internalSwap) {
+                shards[bits[i].bit].AddFourier2Partner(&(shards[bits[j].bit]));
+            } else {
+                shards[bits[i].bit].AddFourier2Partner(pShard1);
+                shards[bits[j].bit].AddFourier2Partner(pShard2);
+            }
         }
         return;
     }
@@ -521,9 +536,24 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
             j--;
         }
         if (i < j) {
+            QEngineShard& shard1 = shards[bits[i].bit];
+            QEngineShard& shard2 = shards[bits[j].bit];
+            QEngineShard* pShard1 = shard1.fourier2Partner;
+            QEngineShard* pShard2 = shard2.fourier2Partner;
+
+            internalSwap = (pShard1 && (pShard1 == &shard2));
+
             unit->Swap(bits[i].mapped, bits[j].mapped); /* Change the location in the QE itself. */
-            std::swap(shards[bits[i].bit].mapped, shards[bits[j].bit].mapped); /* Change the global mapping. */
+            std::swap(shard1.mapped, shard2.mapped); /* Change the global mapping. */
             std::swap(bits[i].mapped, bits[j].mapped); /* Change the contents of the sorting array. */
+
+            if (internalSwap) {
+                shards[bits[i].bit].AddFourier2Partner(&(shards[bits[j].bit]));
+            } else {
+                shards[bits[i].bit].AddFourier2Partner(pShard1);
+                shards[bits[j].bit].AddFourier2Partner(pShard2);
+            }
+
             i++;
             j--;
         } else if (i == j) {
@@ -674,7 +704,6 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     if (origShard.fourier2Partner) {
         shards[qubit].AddFourier2Partner(origShard.fourier2Partner);
     }
-        
 
     for (auto&& testShard : shards) {
         if (testShard.unit == origShard.unit && testShard.mapped > origShard.mapped) {
@@ -733,12 +762,23 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
+    QEngineShard* pShard1 = shard1.fourier2Partner;
+    QEngineShard* pShard2 = shard2.fourier2Partner;
+
+    bool internalSwap = (pShard1 && (pShard1 == &shard2));
 
     // Swap the bit mapping.
     std::swap(shard1, shard2);
     // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
     // on the other bit.
     std::swap(shard1.isPlusMinus, shard2.isPlusMinus);
+
+    if (internalSwap) {
+        shards[qubit1].AddFourier2Partner(&(shards[qubit2]));
+    } else {
+        shards[qubit1].AddFourier2Partner(pShard1);
+        shards[qubit2].AddFourier2Partner(pShard2);
+    }
 
     QInterfacePtr unit = shard1.unit;
     if (unit == shard2.unit) {

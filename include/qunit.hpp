@@ -85,7 +85,8 @@ struct QEngineShard {
         }
     }
 
-    void RemoveFourier2Partner() {
+    void RemoveFourier2Partner()
+    {
         if (fourier2Partner) {
             fourier2Mapped = 0U;
             fourier2Partner->fourier2Mapped = 0U;
@@ -94,11 +95,14 @@ struct QEngineShard {
         fourier2Partner = NULL;
     }
 
-    void AddFourier2Partner(QEngineShard* p) {
+    void AddFourier2Partner(QEngineShard* p)
+    {
         RemoveFourier2Partner();
 
         fourier2Partner = p;
-        p->fourier2Partner = this;
+        if (p) {
+            p->fourier2Partner = this;
+        }
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
