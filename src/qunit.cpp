@@ -520,8 +520,8 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
             if (internalSwap) {
                 shards[bits[i].bit].AddFourier2Partner(&(shards[bits[j].bit]));
             } else {
-                shards[bits[i].bit].AddFourier2Partner(pShard1);
-                shards[bits[j].bit].AddFourier2Partner(pShard2);
+                shards[bits[j].bit].AddFourier2Partner(pShard1);
+                shards[bits[i].bit].AddFourier2Partner(pShard2);
             }
         }
         return;
@@ -550,8 +550,8 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
             if (internalSwap) {
                 shards[bits[i].bit].AddFourier2Partner(&(shards[bits[j].bit]));
             } else {
-                shards[bits[i].bit].AddFourier2Partner(pShard1);
-                shards[bits[j].bit].AddFourier2Partner(pShard2);
+                shards[bits[j].bit].AddFourier2Partner(pShard1);
+                shards[bits[i].bit].AddFourier2Partner(pShard2);
             }
 
             i++;
@@ -776,8 +776,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     if (internalSwap) {
         shards[qubit1].AddFourier2Partner(&(shards[qubit2]));
     } else {
-        shards[qubit1].AddFourier2Partner(pShard1);
-        shards[qubit2].AddFourier2Partner(pShard2);
+        shards[qubit2].AddFourier2Partner(pShard1);
+        shards[qubit1].AddFourier2Partner(pShard2);
     }
 
     QInterfacePtr unit = shard1.unit;
