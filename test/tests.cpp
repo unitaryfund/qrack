@@ -2783,7 +2783,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft")
     qftReg->QFT(2, 2);
     qftReg->QFT(1, 2);
     qftReg->Swap(3, 1);
-    qftReg->QFT(0, 2);
+    qftReg->IQFT(0, 2);
     qftReg->Swap(3, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
 }
