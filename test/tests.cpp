@@ -993,6 +993,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 
     qftReg->SetReg(0, 8, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+    qftReg->H(2);
+    qftReg->QFT(0, 2);
+    qftReg->H(1);
+    qftReg->CZ(1, 2);
+    qftReg->H(1);
+    qftReg->H(0);
+    qftReg->CZ(0, 2);
+    qftReg->H(2);
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 6));
+
+    qftReg->SetReg(0, 8, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
     // Create 2 independent 2-qubit (inverse) Fourier-transformed units:
     qftReg->QFT(0, 2);
     qftReg->QFT(2, 2);
@@ -2742,7 +2755,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (27 << 8)));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft")
 {
     bitCapInt randPerm = qftReg->Rand() * 256U;
     qftReg->SetPermutation(randPerm);
@@ -2761,6 +2774,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
         qftReg->H(i);
     }
 
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
+
+    randPerm = qftReg->Rand() * 16U;
+    qftReg->SetReg(0, 8, randPerm);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
+    qftReg->QFT(0, 2);
+    qftReg->QFT(2, 2);
+    qftReg->QFT(1, 2);
+    qftReg->Swap(3, 1);
+    qftReg->QFT(0, 2);
+    qftReg->Swap(3, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
 }
 
