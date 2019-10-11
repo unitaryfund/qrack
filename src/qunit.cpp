@@ -1184,18 +1184,19 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         separatedShard.fourier2Mapped = (entangledShard.fourier2Mapped == 1U) ? 0U : 1U;
     } else {
         // If target and control are inverted, we need to "reverse" the elements.
-        bool doReverse = false;
 
         if (*(tShard.fourier2Partner) == cShard) {
             // Acting on original partner - undoes entangling operation
 
             // Must reverse elements if opposite direction from original order
-            doReverse = (tShard.fourier2Mapped == 0U);
+            if (tShard.fourier2Mapped == 0U) {
+                std::swap(cShard.fourier2Mapped, tShard.fourier2Mapped);
+            }
         } else {
             // Both entangled, but acting between two independent "quarts"
 
             // Must reverse elements in half of cases
-            doReverse = (tShard.fourier2Mapped == 1U);
+            bool doReverse = (tShard.fourier2Mapped == 1U);
 
             if (cShard.fourier2Mapped == tShard.fourier2Mapped) {
                 if (doReverse) {
@@ -1209,6 +1210,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
                 }
             }
 
+            if (doReverse) {
+                std::swap(cShard.fourier2Mapped, tShard.fourier2Mapped);
+            }
             cShard.fourier2Partner->AddFourier2Partner(tShard.fourier2Partner);
         }
 
@@ -1216,11 +1220,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         cShard.isPlusMinus = !cShard.isPlusMinus;
         tShard.RemoveFourier2Partner();
         cShard.RemoveFourier2Partner();
-
-        if (doReverse) {
-            Swap(control, target);
-            CNOT(control, target);
-        }
     }
 }
 
