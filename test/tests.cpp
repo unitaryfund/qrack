@@ -2775,17 +2775,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft")
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
-
-    randPerm = qftReg->Rand() * 16U;
-    qftReg->SetReg(0, 8, randPerm);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
-    qftReg->QFT(0, 2);
-    qftReg->QFT(2, 2);
-    qftReg->QFT(1, 2);
-    qftReg->Swap(3, 1);
-    qftReg->IQFT(0, 2);
-    qftReg->Swap(3, 1);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished") { REQUIRE(qftReg->isFinished()); }

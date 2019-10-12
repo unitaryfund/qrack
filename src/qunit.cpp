@@ -1193,6 +1193,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
                 std::swap(cShard.fourier2Mapped, tShard.fourier2Mapped);
             }
         } else {
+            // TODO: This case out of all is likely wrong:
             // Both entangled, but acting between two independent "quarts"
 
             // Must reverse elements in half of cases
@@ -1201,7 +1202,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             if (cShard.fourier2Mapped == tShard.fourier2Mapped) {
                 if (doReverse) {
                     // Both targets
-                    tShard.fourier2Partner->fourier2Mapped = 0U;
+                    tShard.fourier2Partner->fourier2Mapped = 1U;
                     tShard.fourier2Partner->isPlusMinus = !tShard.fourier2Partner->isPlusMinus;
                 } else {
                     // Both controls
