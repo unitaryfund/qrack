@@ -1068,8 +1068,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
         QEngineShard& cShard = shards[rControl];
         QEngineShard& tShard = shards[target];
-        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
-            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm)) && !PHASE_MATTERS(tShard)) {
+        if (cShard.isPlusMinus && !DIRTY(cShard) && (norm(tShard.amp0) < min_norm) && !PHASE_MATTERS(tShard)) {
             if (!tShard.isPlusMinus) {
                 CNOT(target, rControl);
             } else {
@@ -1144,7 +1143,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (!PHASE_MATTERS(tShard) || (CACHED_CLASSICAL(cShard) && !SHARD_STATE(cShard))) {
+    if (!PHASE_MATTERS(shards[target]) && (!SHARD_STATE(shards[target]) || CACHED_CLASSICAL(shards[control]))) {
         return;
     }
 
@@ -1305,17 +1304,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(shard)) {
-        // Has no measurable effect
-        return;
-    }
-
-    complex iTest[4] = { topLeft, 0, 0, bottomRight };
-    if (IsIdentity(iTest)) {
-        // Identity operator has no effect
-        return;
-    }
-
     bitLenInt* lcontrols = new bitLenInt[controlLen];
     bitLenInt ltarget;
 
@@ -1357,17 +1345,19 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitL
 {
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (PHASE_MATTERS(shard)) {
-        bitLenInt* lcontrols = new bitLenInt[controlLen];
-        bitLenInt ltarget;
-
-        ltarget = target;
-        std::copy(controls, controls + controlLen, lcontrols);
-        CTRLED_PHASE_WRAP(ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySinglePhase(topLeft, bottomRight, true, target), true);
-
-        delete[] lcontrols;
+    if (!PHASE_MATTERS(shard) && SHARD_STATE(shard)) {
+        return;
     }
+
+    bitLenInt* lcontrols = new bitLenInt[controlLen];
+    bitLenInt ltarget;
+
+    ltarget = target;
+    std::copy(controls, controls + controlLen, lcontrols);
+    CTRLED_PHASE_WRAP(ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
+        ApplySinglePhase(topLeft, bottomRight, true, target), true);
+
+    delete[] lcontrols;
 }
 
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -2363,7 +2353,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 void QUnit::PhaseFlip()
 {
     QEngineShard& shard = shards[0];
-    if (PHASE_MATTERS(shard)) {
+    if (!randGlobalPhase) {
         ToPermBasis(0);
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
