@@ -29,6 +29,7 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
+    QEngineShard* czPartner;
 
     QEngineShard()
         : unit(NULL)
@@ -39,6 +40,7 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , czPartner(NULL)
     {
     }
 
@@ -49,6 +51,7 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
+        , czPartner(NULL)
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -64,6 +67,7 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , czPartner(NULL)
     {
     }
 
@@ -71,6 +75,28 @@ struct QEngineShard {
     {
         if (unit)
             unit->Finish();
+        if (czPartner) {
+            czPartner->unit->Finish();
+            czPartner->czPartner = NULL;
+        }
+    }
+
+    void RemoveCzPartner()
+    {
+        if (czPartner) {
+            czPartner->czPartner = NULL;
+        }
+        czPartner = NULL;
+    }
+
+    void AddCzPartner(QEngineShard* p)
+    {
+        RemoveCzPartner();
+
+        czPartner = p;
+        if (p) {
+            p->czPartner = this;
+        }
     }
 };
 
@@ -373,17 +399,33 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i);
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
+    void TransformBasis1(const bool& toPlusMinus, const bitLenInt& i);
+
+    void RevertBasis2(bitLenInt i);
+
+    void RevertBasis2(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toPlusMinus, start + i);
+            RevertBasis2(start + i);
         }
     }
-    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
 
-    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus);
-
+    void ToPermBasis(const bitLenInt& i)
+    {
+        if (shards[i].isPlusMinus) {
+            TransformBasis1(false, i);
+        }
+        if (shards[i].czPartner) {
+            RevertBasis2(i);
+        }
+    }
+    void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            ToPermBasis(start + i);
+        }
+    }
+    void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
     void CheckShardSeparable(const bitLenInt& target);
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
@@ -445,6 +487,16 @@ protected:
         } else {
             payload(shard);
         }
+    }
+
+    bitLenInt FindShardIndex(const QEngineShard& shard)
+    {
+        for (bitLenInt i = 0; i < shards.size(); i++) {
+            if (&(shards[i]) == &shard) {
+                return i;
+            }
+        }
+        return shards.size();
     }
 
     bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
