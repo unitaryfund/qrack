@@ -861,9 +861,8 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2(target);
-
     if (!freezeBasis) {
+        RevertBasis2(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
@@ -2288,8 +2287,6 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    ToPermBasis(flagIndex);
-
     // Keep the bits separate, if cheap to do so:
     if (!shards[flagIndex].isProbDirty) {
         real1 prob = Prob(flagIndex);
@@ -2319,9 +2316,9 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 
 void QUnit::PhaseFlip()
 {
-    QEngineShard& shard = shards[0];
     if (!randGlobalPhase) {
         ToPermBasis(0);
+        QEngineShard& shard = shards[0];
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
     }
@@ -2581,9 +2578,6 @@ void QUnit::RevertBasis2(bitLenInt i)
         bitLenInt controls[1] = { i };
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
-        if (phaseShard->second.anti) {
-            std::swap(polar0, polar1);
-        }
 
         freezeBasis = true;
         ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
