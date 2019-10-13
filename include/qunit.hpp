@@ -21,6 +21,7 @@ namespace Qrack {
 
 /** Caches controlled gate phase between shards. */
 struct PhaseShard {
+    bool anti;
     real1 angle0;
     real1 angle1;
 };
@@ -153,6 +154,16 @@ struct QEngineShard {
             p->phaseShards[this].angle0 = nAngle0;
             phaseShards[p].angle1 = nAngle1;
             p->phaseShards[this].angle1 = nAngle1;
+        }
+    }
+
+    void FlipPhaseAnti(QEngineShardPtr p) { phaseShards[p].anti = !phaseShards[p].anti; }
+
+    void FlipAllPhaseAnti()
+    {
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
+        for (phaseShard = phaseShards.begin(); phaseShard != phaseShards.end(); phaseShard++) {
+            phaseShard->second.anti = !phaseShard->second.anti;
         }
     }
 

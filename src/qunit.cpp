@@ -902,9 +902,10 @@ void QUnit::ZBase(const bitLenInt& target)
 
 void QUnit::X(bitLenInt target)
 {
-    RevertBasis2(target);
-
     QEngineShard& shard = shards[target];
+
+    shard.FlipAllPhaseAnti();
+
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
         std::swap(shard.amp0, shard.amp1);
@@ -1185,8 +1186,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt target)
 {
-    RevertBasis2(target);
-
     QEngineShard& shard = shards[target];
 
     if (!PHASE_MATTERS(shard)) {
@@ -1205,6 +1204,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         X(target);
         return;
     }
+
+    shard.FlipAllPhaseAnti();
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(shard, [&](QEngineShard& shard) {
@@ -1305,6 +1306,14 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
+    if ((norm(mtrx[1]) < min_norm) && (norm(mtrx[2]) < min_norm)) {
+        ApplySinglePhase(mtrx[0], mtrx[3], doCalcNorm, target);
+        return;
+    } else if ((norm(mtrx[0]) < min_norm) && (norm(mtrx[3]) < min_norm)) {
+        ApplySingleInvert(mtrx[1], mtrx[2], doCalcNorm, target);
+        return;
+    }
+
     RevertBasis2(target);
 
     QEngineShard& shard = shards[target];
@@ -2570,9 +2579,14 @@ void QUnit::RevertBasis2(bitLenInt i)
         bitLenInt j = FindShardIndex(*partner);
 
         bitLenInt controls[1] = { i };
+        complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+        complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+        if (phaseShard->second.anti) {
+            std::swap(polar0, polar1);
+        }
+
         freezeBasis = true;
-        ApplyControlledSinglePhase(controls, 1U, j, std::polar(ONE_R1, phaseShard->second.angle0 / 2),
-            std::polar(ONE_R1, phaseShard->second.angle1 / 2));
+        ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
         freezeBasis = false;
 
         shard.RemovePhasePartner(partner);
