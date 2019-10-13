@@ -31,6 +31,8 @@
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
 #define CACHED_CLASSICAL(shard) ((!shard.isPlusMinus) && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
+#define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
@@ -1117,7 +1119,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    if (!PHASE_MATTERS(shards[target]) && (!SHARD_STATE(shards[target]) || CACHED_CLASSICAL(shards[control]))) {
+    if (CACHED_ZERO(shards[target]) || CACHED_ZERO(shards[control])) {
         return;
     }
 
