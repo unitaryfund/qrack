@@ -31,7 +31,7 @@
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
 #define CACHED_CLASSICAL(shard)                                                                                        \
-    (!shard.isPlusMinus && !shard.czPartner && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+    (!shard.isPlusMinus && (shard.phaseShards.size() == 0) && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
 #define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
@@ -657,23 +657,20 @@ real1 QUnit::ProbAll(bitCapInt perm)
 void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard origShard = shards[qubit];
+    QEngineShard& shard = shards[qubit];
 
     QInterfacePtr dest = MakeEngine(1, value ? 1 : 0);
 
     origShard.unit->Dispose(origShard.mapped, 1);
 
     /* Update the mappings. */
-    shards[qubit].unit = dest;
-    shards[qubit].mapped = 0;
-    shards[qubit].isEmulated = false;
-    shards[qubit].isProbDirty = false;
-    shards[qubit].isPhaseDirty = false;
-    shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
-    shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
-    shards[qubit].isPlusMinus = origShard.isPlusMinus;
-    if (origShard.czPartner) {
-        shards[qubit].AddCzPartner(origShard.czPartner);
-    }
+    shard.unit = dest;
+    shard.mapped = 0;
+    shard.isEmulated = false;
+    shard.isProbDirty = false;
+    shard.isPhaseDirty = false;
+    shard.amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
+    shard.amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
 
     for (auto&& testShard : shards) {
         if (testShard.unit == origShard.unit && testShard.mapped > origShard.mapped) {
@@ -730,23 +727,12 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
-    QEngineShard* pShard1 = shard1.czPartner;
-    QEngineShard* pShard2 = shard2.czPartner;
-
-    bool internalSwap = (pShard1 && (pShard1 == &shard2));
 
     // Swap the bit mapping.
     std::swap(shard1, shard2);
     // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
     // on the other bit.
     std::swap(shard1.isPlusMinus, shard2.isPlusMinus);
-
-    if (internalSwap) {
-        shards[qubit1].AddCzPartner(&(shards[qubit2]));
-    } else {
-        shards[qubit2].AddCzPartner(pShard1);
-        shards[qubit1].AddCzPartner(pShard2);
-    }
 
     QInterfacePtr unit = shards[qubit1].unit;
     if (unit == shards[qubit2].unit) {
@@ -929,7 +915,7 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    // Commutes with CZ optimizations
+    // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
@@ -1156,18 +1142,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis) {
-        // TODO: Apply commutation rules for H.
-        if (tShard.czPartner == &cShard) {
-            tShard.RemoveCzPartner();
-            return;
-        } else if (!tShard.isPlusMinus && !tShard.czPartner && !cShard.isPlusMinus && !cShard.czPartner) {
-            tShard.AddCzPartner(&cShard);
-            return;
-        } else {
-            RevertBasis2(target);
-            RevertBasis2(control);
-        }
+    // TODO: Apply commutation rules for H.
+    if (!freezeBasis && !tShard.isPlusMinus && !cShard.isPlusMinus) {
+        tShard.AddPhaseAngles(&cShard, ZERO_R1, (real1)(2 * M_PI));
+        return;
     }
 
     bitLenInt controls[1] = { control };
@@ -1177,7 +1155,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
-    // Commutes with CZ optimization
+    // Commutes with controlled phase optimization
 
     QEngineShard& shard = shards[target];
 
@@ -1254,9 +1232,16 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topLeft, const complex bottomRight)
 {
-    // Commutes with CZ optimizations
+    // Commutes with controlled phase optimizations
 
     QEngineShard& shard = shards[target];
+
+    // TODO: Apply commutation rules for H.
+    if (!freezeBasis && (controlLen == 1U) && !shard.isPlusMinus && !shards[controls[0]].isPlusMinus &&
+        (abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+        shard.AddPhaseAngles(&shards[controls[0]], (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
+        return;
+    }
 
     bitLenInt* lcontrols = new bitLenInt[controlLen];
     bitLenInt ltarget;
@@ -1288,7 +1273,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
-    // Commutes with CZ optimizations
+    // Commutes with controlled phase optimizations
 
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
@@ -2574,18 +2559,24 @@ void QUnit::RevertBasis2(bitLenInt i)
 {
     QEngineShard& shard = shards[i];
 
-    if (freezeBasis || !shard.czPartner) {
+    if (freezeBasis || (shard.phaseShards.size() == 0)) {
         // Recursive and idempotent calls stop here
         return;
     }
 
-    bitLenInt j = FindShardIndex(*(shard.czPartner));
+    std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
+    for (phaseShard = shard.phaseShards.begin(); phaseShard != shard.phaseShards.end(); phaseShard++) {
+        QEngineShard* partner = phaseShard->first;
+        bitLenInt j = FindShardIndex(*partner);
 
-    freezeBasis = true;
-    CZ(i, j);
-    freezeBasis = false;
+        bitLenInt controls[1] = { i };
+        freezeBasis = true;
+        ApplyControlledSinglePhase(controls, 1U, j, std::polar(ONE_R1, phaseShard->second.angle0 / 2),
+            std::polar(ONE_R1, phaseShard->second.angle1 / 2));
+        freezeBasis = false;
 
-    shard.RemoveCzPartner();
+        shard.RemovePhasePartner(partner);
+    }
 
     // TrySeparate(i);
     // TrySeparate(j);

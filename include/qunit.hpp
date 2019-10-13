@@ -19,6 +19,15 @@
 
 namespace Qrack {
 
+/** Caches controlled gate phase between shards. */
+struct PhaseShard {
+    real1 angle0;
+    real1 angle1;
+};
+
+struct QEngineShard;
+typedef QEngineShard* QEngineShardPtr;
+
 /** Associates a QInterface object with a set of bits. */
 struct QEngineShard {
     QInterfacePtr unit;
@@ -29,7 +38,7 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
-    QEngineShard* czPartner;
+    std::map<QEngineShardPtr, PhaseShard> phaseShards;
 
     QEngineShard()
         : unit(NULL)
@@ -40,7 +49,7 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , czPartner(NULL)
+        , phaseShards()
     {
     }
 
@@ -51,7 +60,7 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
-        , czPartner(NULL)
+        , phaseShards()
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -67,37 +76,88 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , czPartner(NULL)
+        , phaseShards()
     {
     }
 
     ~QEngineShard()
     {
-        if (unit)
+        if (unit) {
             unit->Finish();
-        if (czPartner) {
-            czPartner->unit->Finish();
-            czPartner->czPartner = NULL;
+        }
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
+        for (phaseShard = phaseShards.begin(); phaseShard != phaseShards.end(); phaseShard++) {
+            QEngineShardPtr partner = phaseShard->first;
+            partner->unit->Finish();
+
+            std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
+            for (remoteShard = partner->phaseShards.begin(); remoteShard != partner->phaseShards.end(); remoteShard++) {
+                if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
+                    partner->phaseShards.erase(remoteShard);
+                    break;
+                }
+            }
         }
     }
 
-    void RemoveCzPartner()
+    void RemovePhasePartner(QEngineShardPtr p)
     {
-        if (czPartner) {
-            czPartner->czPartner = NULL;
+        unit->Finish();
+        p->unit->Finish();
+        std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
+        for (remoteShard = p->phaseShards.begin(); remoteShard != p->phaseShards.end(); remoteShard++) {
+            if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
+                p->phaseShards.erase(remoteShard);
+                break;
+            }
         }
-        czPartner = NULL;
     }
 
-    void AddCzPartner(QEngineShard* p)
+    void AddPhasePartner(QEngineShardPtr p)
     {
-        RemoveCzPartner();
+        if (p && (phaseShards.find(p) != phaseShards.end())) {
+            PhaseShard ps;
+            phaseShards[p] = ps;
 
-        czPartner = p;
-        if (p) {
-            p->czPartner = this;
+            p->AddPhasePartner(this);
         }
     }
+
+    void AddPhaseAngles(QEngineShardPtr p, real1 angle0Diff, real1 angle1Diff)
+    {
+        if (phaseShards.find(p) == phaseShards.end() &&
+            ((abs(angle0Diff) > (4 * M_PI * min_norm)) || (abs(angle1Diff) > (4 * M_PI * min_norm)))) {
+            AddPhasePartner(p);
+        }
+
+        real1 nAngle0 = phaseShards[p].angle0 + angle0Diff;
+        while (nAngle0 < (2 * M_PI)) {
+            nAngle0 += 4 * M_PI;
+        }
+        while (nAngle0 >= (2 * M_PI)) {
+            nAngle0 -= 4 * M_PI;
+        }
+
+        real1 nAngle1 = phaseShards[p].angle1 + angle1Diff;
+        while (nAngle1 < (2 * M_PI)) {
+            nAngle1 += 4 * M_PI;
+        }
+        while (nAngle1 >= (2 * M_PI)) {
+            nAngle1 -= 4 * M_PI;
+        }
+
+        if ((abs(nAngle0 - nAngle1) < min_norm) && (!(unit->randGlobalPhase) || (abs(nAngle0) < min_norm))) {
+            RemovePhasePartner(p);
+        } else {
+            phaseShards[p].angle0 = nAngle0;
+            p->phaseShards[this].angle0 = nAngle0;
+            phaseShards[p].angle1 = nAngle1;
+            p->phaseShards[this].angle1 = nAngle1;
+        }
+    }
+
+    bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
+    bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
 
 class QUnit;
@@ -415,7 +475,7 @@ protected:
         if (shards[i].isPlusMinus) {
             TransformBasis1(false, i);
         }
-        if (shards[i].czPartner) {
+        if (shards[i].phaseShards.size()) {
             RevertBasis2(i);
         }
     }
@@ -492,7 +552,7 @@ protected:
     bitLenInt FindShardIndex(const QEngineShard& shard)
     {
         for (bitLenInt i = 0; i < shards.size(); i++) {
-            if (&(shards[i]) == &shard) {
+            if (shards[i] == shard) {
                 return i;
             }
         }

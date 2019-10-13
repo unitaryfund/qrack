@@ -104,7 +104,6 @@ protected:
     std::uniform_real_distribution<real1> rand_distribution;
     std::shared_ptr<RdRandWrapper::RdRandom> hardware_rand_generator;
     bool doNormalize;
-    bool randGlobalPhase;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -157,6 +156,8 @@ protected:
     bool IsIdentity(const complex* mtrx);
 
 public:
+    bool randGlobalPhase;
+
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true)
         : rand_distribution(0.0, 1.0)
