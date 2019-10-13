@@ -32,10 +32,10 @@
 #define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
 #define CACHED_CLASSICAL(shard)                                                                                        \
     (!shard.isPlusMinus && !shard.fourier2Partner && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
+#define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define F2_CANCEL(tShard, cShard)                                                                                      \
-    (tShard.fourier2Partner && (!cShard.fourier2Partner || (*(cShard.fourier2Partner) == tShard)))
 
 namespace Qrack {
 
@@ -1143,7 +1143,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (!PHASE_MATTERS(shards[target]) && (!SHARD_STATE(shards[target]) || CACHED_CLASSICAL(shards[control]))) {
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
         return;
     }
 
