@@ -38,7 +38,10 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
-    std::map<QEngineShardPtr, PhaseShard> phaseShards;
+    // Shards which this shard controls
+    std::map<QEngineShardPtr, PhaseShard> controlsShards;
+    // Shards of which this shard is a target
+    std::map<QEngineShardPtr, PhaseShard> targetOfShards;
 
     QEngineShard()
         : unit(NULL)
@@ -49,7 +52,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , phaseShards()
+        , controlsShards()
+        , targetOfShards()
     {
     }
 
@@ -60,7 +64,8 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
-        , phaseShards()
+        , controlsShards()
+        , targetOfShards()
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -76,7 +81,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
-        , phaseShards()
+        , controlsShards()
+        , targetOfShards()
     {
     }
 
@@ -85,52 +91,70 @@ struct QEngineShard {
         if (unit) {
             unit->Finish();
         }
-        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
-        for (phaseShard = phaseShards.begin(); phaseShard != phaseShards.end(); phaseShard++) {
-            QEngineShardPtr partner = phaseShard->first;
-            partner->unit->Finish();
 
-            std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
-            for (remoteShard = partner->phaseShards.begin(); remoteShard != partner->phaseShards.end(); remoteShard++) {
-                if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
-                    partner->phaseShards.erase(remoteShard);
-                    break;
-                }
-            }
+        while (targetOfShards.size() > 0) {
+            RemovePhaseTarget(targetOfShards.begin()->first);
+        }
+        while (controlsShards.size() > 0) {
+            RemovePhaseControl(controlsShards.begin()->first);
         }
     }
 
-    void RemovePhasePartner(QEngineShardPtr p)
+    void RemovePhaseControl(QEngineShardPtr p)
     {
-        unit->Finish();
-        p->unit->Finish();
         std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
-        for (remoteShard = p->phaseShards.begin(); remoteShard != p->phaseShards.end(); remoteShard++) {
+
+        for (remoteShard = p->controlsShards.begin(); remoteShard != p->controlsShards.end(); remoteShard++) {
             if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
-                p->phaseShards.erase(remoteShard);
+                p->controlsShards.erase(remoteShard);
+                targetOfShards.erase(targetOfShards.find(p));
                 break;
             }
         }
     }
 
-    void AddPhasePartner(QEngineShardPtr p)
+    void RemovePhaseTarget(QEngineShardPtr p)
     {
-        if (p && (phaseShards.find(p) != phaseShards.end())) {
-            PhaseShard ps;
-            phaseShards[p] = ps;
+        std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
 
-            p->AddPhasePartner(this);
+        for (remoteShard = p->targetOfShards.begin(); remoteShard != p->targetOfShards.end(); remoteShard++) {
+            if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
+                p->targetOfShards.erase(remoteShard);
+                controlsShards.erase(controlsShards.find(p));
+                break;
+            }
         }
     }
 
-    void AddPhaseAngles(QEngineShardPtr p, real1 angle0Diff, real1 angle1Diff)
+    void MakePhaseControlledBy(QEngineShardPtr p)
     {
-        if (phaseShards.find(p) == phaseShards.end() &&
-            ((abs(angle0Diff) > (4 * M_PI * min_norm)) || (abs(angle1Diff) > (4 * M_PI * min_norm)))) {
-            AddPhasePartner(p);
+        if (p && (targetOfShards.find(p) != targetOfShards.end())) {
+            PhaseShard ps;
+            ps.angle0 = ZERO_R1;
+            ps.angle1 = ZERO_R1;
+            targetOfShards[p] = ps;
+            p->MakePhaseControlOf(this);
+        }
+    }
+
+    void MakePhaseControlOf(QEngineShardPtr p)
+    {
+        if (p && (controlsShards.find(p) != controlsShards.end())) {
+            PhaseShard ps;
+            ps.angle0 = ZERO_R1;
+            ps.angle1 = ZERO_R1;
+            controlsShards[p] = ps;
+            p->MakePhaseControlledBy(this);
+        }
+    }
+
+    void AddPhaseAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
+    {
+        if (targetOfShards.find(control) == targetOfShards.end()) {
+            MakePhaseControlledBy(control);
         }
 
-        real1 nAngle0 = phaseShards[p].angle0 + angle0Diff;
+        real1 nAngle0 = targetOfShards[control].angle0 + angle0Diff;
         while (nAngle0 < (2 * M_PI)) {
             nAngle0 += 4 * M_PI;
         }
@@ -138,7 +162,7 @@ struct QEngineShard {
             nAngle0 -= 4 * M_PI;
         }
 
-        real1 nAngle1 = phaseShards[p].angle1 + angle1Diff;
+        real1 nAngle1 = targetOfShards[control].angle1 + angle1Diff;
         while (nAngle1 < (2 * M_PI)) {
             nAngle1 += 4 * M_PI;
         }
@@ -147,22 +171,22 @@ struct QEngineShard {
         }
 
         if ((abs(nAngle0 - nAngle1) < min_norm) && (!(unit->randGlobalPhase) || (abs(nAngle0) < min_norm))) {
-            RemovePhasePartner(p);
+            RemovePhaseControl(control);
         } else {
-            phaseShards[p].angle0 = nAngle0;
-            p->phaseShards[this].angle0 = nAngle0;
-            phaseShards[p].angle1 = nAngle1;
-            p->phaseShards[this].angle1 = nAngle1;
+            targetOfShards[control].angle0 = nAngle0;
+            control->controlsShards[this].angle0 = nAngle0;
+            targetOfShards[control].angle1 = nAngle1;
+            control->controlsShards[this].angle1 = nAngle1;
         }
     }
 
-    void FlipPhaseAnti(QEngineShardPtr p) { std::swap(phaseShards[p].angle0, phaseShards[p].angle1); }
-
-    void FlipAllPhaseAnti()
+    void FlipPhaseAnti()
     {
         std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
-        for (phaseShard = phaseShards.begin(); phaseShard != phaseShards.end(); phaseShard++) {
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second.angle0, phaseShard->second.angle1);
+            PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
+            std::swap(remotePhase.angle0, remotePhase.angle1);
         }
     }
 
