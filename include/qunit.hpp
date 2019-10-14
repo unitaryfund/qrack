@@ -170,6 +170,12 @@ struct QEngineShard {
             nAngle1 -= 4 * M_PI;
         }
 
+        if ((controlsShards.find(control) != controlsShards.end()) &&
+            (abs(targetOfShards[control].angle1 + controlsShards[control].angle1) < min_norm)) {
+            targetOfShards[control].angle1 = ZERO_R1;
+            controlsShards[control].angle1 = ZERO_R1;
+        }
+
         if ((abs(nAngle0) < min_norm) && (abs(nAngle1) < min_norm)) {
             RemovePhaseControl(control);
         } else {
