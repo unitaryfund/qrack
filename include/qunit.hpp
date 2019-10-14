@@ -102,27 +102,19 @@ struct QEngineShard {
 
     void RemovePhaseControl(QEngineShardPtr p)
     {
-        std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
-
-        for (remoteShard = p->controlsShards.begin(); remoteShard != p->controlsShards.end(); remoteShard++) {
-            if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
-                p->controlsShards.erase(remoteShard);
-                targetOfShards.erase(targetOfShards.find(p));
-                break;
-            }
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = targetOfShards.find(p);
+        if (phaseShard != targetOfShards.end()) {
+            targetOfShards.erase(phaseShard);
+            phaseShard->first->RemovePhaseTarget(this);
         }
     }
 
     void RemovePhaseTarget(QEngineShardPtr p)
     {
-        std::map<QEngineShardPtr, PhaseShard>::iterator remoteShard;
-
-        for (remoteShard = p->targetOfShards.begin(); remoteShard != p->targetOfShards.end(); remoteShard++) {
-            if ((remoteShard->first->unit == unit) && remoteShard->first->mapped == mapped) {
-                p->targetOfShards.erase(remoteShard);
-                controlsShards.erase(controlsShards.find(p));
-                break;
-            }
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = controlsShards.find(p);
+        if (phaseShard != controlsShards.end()) {
+            controlsShards.erase(phaseShard);
+            phaseShard->first->RemovePhaseControl(this);
         }
     }
 
