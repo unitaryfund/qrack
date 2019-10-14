@@ -482,12 +482,8 @@ protected:
 
     void ToPermBasis(const bitLenInt& i)
     {
-        if (shards[i].phaseShards.size()) {
-            RevertBasis2(i);
-        }
-        if (shards[i].isPlusMinus) {
-            TransformBasis1(false, i);
-        }
+        RevertBasis2(i);
+        TransformBasis1(false, i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
