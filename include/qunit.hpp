@@ -171,14 +171,17 @@ struct QEngineShard {
         }
 
         if (controlsShards.find(control) != controlsShards.end()) {
-            controlsShards[control].angle1 += nAngle1;
-            nAngle1 = ZERO_R1;
-            if ((abs(controlsShards[control].angle1) < min_norm) && (abs(controlsShards[control].angle0) < min_norm)) {
+            if (abs(controlsShards[control].angle0) < min_norm) {
+                nAngle1 += controlsShards[control].angle1;
+                controlsShards[control].angle1 = ZERO_R1;
                 RemovePhaseTarget(control);
+            } else {
+                controlsShards[control].angle1 += nAngle1;
+                nAngle1 = ZERO_R1;
             }
         }
 
-        if ((abs(nAngle0) < min_norm) && (abs(nAngle1) < min_norm)) {
+        if ((abs(nAngle1) < min_norm) && (abs(nAngle0) < min_norm)) {
             RemovePhaseControl(control);
         } else {
             targetOfShards[control].angle0 = nAngle0;
