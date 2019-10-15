@@ -980,9 +980,10 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         },                                                                                                             \
         [&]() { bare; }, inCurrentBasis);
 
-#define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
+#define CTRLED_CALL_WRAP(ctrld, bare, anti, inCurrentBasis)                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; },              \
+        inCurrentBasis)
 #define CTRLED2_CALL_WRAP(ctrld2, ctrld1, bare, anti)                                                                  \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
@@ -1077,7 +1078,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CNOT(CTRL_1_ARGS), X(target), false);
+    CTRLED_CALL_WRAP(CNOT(CTRL_1_ARGS), X(target), false, false);
 }
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -1101,7 +1102,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true);
+    CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true, false);
 }
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1144,7 +1145,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
+    CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false, true);
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
@@ -1365,7 +1366,7 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = Prob(controls[i]);                                                                                       \
+    bitProb = inCurrentBasis ? ProbBase(controls[i]) : Prob(controls[i]);                                              \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1413,7 +1414,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             if (isSeparated) {
                 CHECK_BREAK_AND_TRIM();
             } else {
-                TransformBasis(false, controls[i]);
                 controlVec.push_back(controls[i]);
             }
         }
