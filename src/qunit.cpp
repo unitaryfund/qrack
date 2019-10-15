@@ -21,6 +21,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -978,7 +980,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         },                                                                                                             \
         [&]() { bare; });
 
-#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti)                                                                \
+#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti, inCurrentBasis)                                                \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             if (!shards[target].isPlusMinus) {                                                                         \
@@ -989,7 +991,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; });
+        [&]() { bare; }, inCurrentBasis);
 
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
@@ -1134,8 +1136,22 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     // TODO: Apply commutation rules for H.
-    if (!freezeBasis && !tShard.isPlusMinus && !cShard.isPlusMinus) {
-        tShard.AddPhaseAngles(&cShard, ZERO_R1, (real1)(2 * M_PI));
+    if (!freezeBasis && !cShard.isPlusMinus) {
+        if (tShard.isPlusMinus) {
+            RevertBasis2(target);
+
+            bitLenInt controls[1] = { control };
+            bitLenInt controlLen = 1;
+            complex topRight = complex(ONE_R1, ZERO_R1);
+            complex bottomLeft = complex(-ONE_R1, ZERO_R1);
+            CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(controls, 1U, target, topRight, bottomLeft),
+                ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleInvert(topRight, bottomLeft, false, target), false,
+                true);
+
+            std::cout << (shards[target].isPlusMinus ? "true" : "false") << std::endl;
+        } else {
+            tShard.AddPhaseAngles(&cShard, ZERO_R1, (real1)(2 * M_PI));
+        }
         return;
     }
 
@@ -1254,7 +1270,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
         CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, true, target), false);
+            ApplySingleInvert(topRight, bottomLeft, true, target), false, false);
     }
 }
 
@@ -1285,7 +1301,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, true)) {
         CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, true, target), true);
+            ApplySingleInvert(topRight, bottomLeft, true, target), true, false);
     }
 }
 
@@ -1396,7 +1412,7 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, bool inCurrentBasis)
 {
     bitLenInt i, j;
 
@@ -1453,7 +1469,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit;
+    if (inCurrentBasis) {
+        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
+    } else {
+        unit = Entangle(ebits);
+    }
 
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
