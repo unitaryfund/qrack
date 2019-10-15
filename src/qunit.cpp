@@ -1219,17 +1219,24 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     const complex topLeft, const complex bottomRight)
 {
     QEngineShard& shard = shards[target];
-    // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (!PHASE_MATTERS(shard)) {
-        return;
-    }
 
     bitLenInt* lcontrols = new bitLenInt[controlLen];
     bitLenInt ltarget;
-    if (controlLen == 1 && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
+
+    if (controlLen == 1U && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
         ltarget = controls[0];
         lcontrols[0] = target;
     } else {
+
+        bool isZ = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm) &&
+            (real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm);
+        if (isZ && controlLen == 1U) {
+            // Optimized case
+            CZ(controls[0], target);
+            delete[] lcontrols;
+            return;
+        }
+
         ltarget = target;
         std::copy(controls, controls + controlLen, lcontrols);
     }
