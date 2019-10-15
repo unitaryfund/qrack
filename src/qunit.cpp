@@ -1130,7 +1130,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    // TODO: Apply commutation rules for H.
     if (tShard.isPlusMinus != cShard.isPlusMinus) {
         if (cShard.isPlusMinus) {
             std::swap(control, target);
@@ -1230,20 +1229,22 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     bitLenInt* lcontrols = new bitLenInt[controlLen];
     bitLenInt ltarget;
 
-    if (controlLen == 1U && CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
-        ltarget = controls[0];
-        lcontrols[0] = target;
-    } else {
-
+    if (controlLen == 1U) {
         bool isZ = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm) &&
             (real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm);
-        if (isZ && controlLen == 1U) {
+        if (isZ) {
             // Optimized case
             CZ(controls[0], target);
             delete[] lcontrols;
             return;
+        } else if (CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
+            ltarget = controls[0];
+            lcontrols[0] = target;
+        } else {
+            ltarget = target;
+            lcontrols[0] = controls[0];
         }
-
+    } else {
         ltarget = target;
         std::copy(controls, controls + controlLen, lcontrols);
     }
