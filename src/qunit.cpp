@@ -1128,7 +1128,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     // TODO: Apply commutation rules for H.
-    if (tShard.isPlusMinus) {
+    if (tShard.isPlusMinus != cShard.isPlusMinus) {
+        if (cShard.isPlusMinus) {
+            std::swap(control, target);
+        }
+
         bitLenInt controls[1] = { control };
         bitLenInt controlLen = 1;
         complex topRight = complex(ONE_R1, ZERO_R1);
