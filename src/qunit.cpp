@@ -33,6 +33,8 @@
 #define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
 #define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
+#define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
+#define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
@@ -1132,6 +1134,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     if (tShard.isPlusMinus != cShard.isPlusMinus) {
         if (cShard.isPlusMinus) {
             std::swap(control, target);
+        }
+
+        if (UNSAFE_CACHED_ZERO(cShard)) {
+            return;
         }
 
         bitLenInt controls[1] = { control };
