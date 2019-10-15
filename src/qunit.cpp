@@ -21,8 +21,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <iostream>
-
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -1144,11 +1142,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             bitLenInt controlLen = 1;
             complex topRight = complex(ONE_R1, ZERO_R1);
             complex bottomLeft = complex(-ONE_R1, ZERO_R1);
-            CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(controls, 1U, target, topRight, bottomLeft),
-                ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleInvert(topRight, bottomLeft, false, target), false,
+            CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleInvert(topRight, bottomLeft, false, target), false,
                 true);
-
-            std::cout << (shards[target].isPlusMinus ? "true" : "false") << std::endl;
         } else {
             tShard.AddPhaseAngles(&cShard, ZERO_R1, (real1)(2 * M_PI));
         }
