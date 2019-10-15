@@ -30,7 +30,9 @@
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
-#define CACHED_CLASSICAL(shard) ((!shard.isPlusMinus) && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
+#define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
@@ -965,7 +967,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         },                                                                                                             \
         [&]() { bare; });
 
-#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti)                                                                \
+#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti, inCurrentBasis)                                                \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             if (!shards[target].isPlusMinus) {                                                                         \
@@ -976,7 +978,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; });
+        [&]() { bare; }, inCurrentBasis);
 
 #define CTRLED_CALL_WRAP(ctrld, bare, anti)                                                                            \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
@@ -1118,6 +1120,24 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+        return;
+    }
+
+    // TODO: Apply commutation rules for H.
+    if (tShard.isPlusMinus) {
+        bitLenInt controls[1] = { control };
+        bitLenInt controlLen = 1;
+        complex topRight = complex(ONE_R1, ZERO_R1);
+        complex bottomLeft = complex(-ONE_R1, ZERO_R1);
+        CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
+            ApplySingleInvert(topRight, bottomLeft, false, target), false, true);
+        return;
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false);
@@ -1225,7 +1245,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
         CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, true, target), false);
+            ApplySingleInvert(topRight, bottomLeft, true, target), false, false);
     }
 }
 
@@ -1252,7 +1272,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, true)) {
         CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, true, target), true);
+            ApplySingleInvert(topRight, bottomLeft, true, target), true, false);
     }
 }
 
@@ -1353,7 +1373,7 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
 {
     bitLenInt i, j;
 
@@ -1410,7 +1430,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit;
+    if (inCurrentBasis) {
+        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
+    } else {
+        unit = Entangle(ebits);
+    }
 
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
