@@ -148,6 +148,10 @@ public:
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     using QInterface::CZ;
     virtual void CZ(bitLenInt control, bitLenInt target);
+    using QInterface::CS;
+    virtual void CS(bitLenInt control, bitLenInt target);
+    using QInterface::CIS;
+    virtual void CIS(bitLenInt control, bitLenInt target);
 
     virtual void ApplySinglePhase(
         const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);

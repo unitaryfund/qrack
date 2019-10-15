@@ -214,6 +214,20 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
     ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
 }
 
+/// Apply controlled S gate to bit
+void QInterface::CS(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ONE_R1));
+}
+
+/// Apply controlled IS gate to bit
+void QInterface::CIS(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1));
+}
+
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)

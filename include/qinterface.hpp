@@ -737,6 +737,22 @@ public:
      */
     virtual void CZ(bitLenInt control, bitLenInt target);
 
+    /**
+     * Controlled S gate
+     *
+     * If the "control" bit is set to 1, then the S gate is applied
+     * to "target."
+     */
+    virtual void CS(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled inverse S gate
+     *
+     * If the "control" bit is set to 1, then the inverse S gate is applied
+     * to "target."
+     */
+    virtual void CIS(bitLenInt control, bitLenInt target);
+
     /** @} */
 
     /**
@@ -1303,6 +1319,22 @@ public:
      * to "target."
      */
     virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled S gate
+     *
+     * If the "control" bit is set to 1, then the S gate is applied
+     * to "target."
+     */
+    virtual void CS(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled inverse S gate
+     *
+     * If the "control" bit is set to 1, then the inverse S gate is applied
+     * to "target."
+     */
+    virtual void CIS(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
 

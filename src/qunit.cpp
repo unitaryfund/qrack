@@ -943,7 +943,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     mtrxOut[3] = (ONE_R1 / 2) * -(bottomLeft + topRight);
 }
 
-#define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
+#define CTRLED_GEN_WRAP(ctrld, bare, anti, inCurrentBasis)                                                             \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             complex trnsMtrx[4];                                                                                       \
@@ -954,7 +954,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
             }                                                                                                          \
             unit->ctrld;                                                                                               \
         },                                                                                                             \
-        [&]() { bare; });
+        [&]() { bare; }, inCurrentBasis);
 
 #define CTRLED_PHASE_WRAP(ctrld, ctrldgen, bare, anti)                                                                 \
     ApplyEitherControlled(lcontrols, controlLen, { ltarget }, anti,                                                    \
@@ -1149,6 +1149,60 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false, true);
 }
 
+void QUnit::CS(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+        return;
+    }
+
+    if (tShard.isPlusMinus != cShard.isPlusMinus) {
+        if (cShard.isPlusMinus) {
+            std::swap(control, target);
+        }
+
+        bitLenInt controls[1] = { control };
+        bitLenInt controlLen = 1;
+        complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+            complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
+        return;
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    CTRLED_CALL_WRAP(CS(CTRL_1_ARGS), S(target), false, true);
+}
+
+void QUnit::CIS(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+        return;
+    }
+
+    if (tShard.isPlusMinus != cShard.isPlusMinus) {
+        if (cShard.isPlusMinus) {
+            std::swap(control, target);
+        }
+
+        bitLenInt controls[1] = { control };
+        bitLenInt controlLen = 1;
+        complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
+            complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
+        return;
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    CTRLED_CALL_WRAP(CS(CTRL_1_ARGS), S(target), false, true);
+}
+
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
@@ -1230,14 +1284,29 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     bitLenInt ltarget;
 
     if (controlLen == 1U) {
-        bool isZ = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm) &&
-            (real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm);
-        if (isZ) {
-            // Optimized case
-            CZ(controls[0], target);
-            delete[] lcontrols;
-            return;
-        } else if (CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
+        bool canBeZorS = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm);
+        if (canBeZorS) {
+            if ((real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm)) {
+                // CZ Optimized case
+                CZ(controls[0], target);
+                delete[] lcontrols;
+                return;
+            } else if (abs(real(bottomRight)) < min_norm) {
+                if (imag(bottomRight) > (ONE_R1 - min_norm)) {
+                    // CS Optimized case
+                    CS(controls[0], target);
+                    delete[] lcontrols;
+                    return;
+                } else if (imag(bottomRight) < -(ONE_R1 - min_norm)) {
+                    // CIS Optimized case
+                    CIS(controls[0], target);
+                    delete[] lcontrols;
+                    return;
+                }
+            }
+        }
+
+        if (CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
             ltarget = controls[0];
             lcontrols[0] = target;
         } else {
@@ -1322,13 +1391,13 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
+    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true);
+    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true, false);
 }
 
 void QUnit::CSwap(
