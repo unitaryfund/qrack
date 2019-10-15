@@ -1136,10 +1136,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             std::swap(control, target);
         }
 
-        if (UNSAFE_CACHED_ZERO(cShard)) {
-            return;
-        }
-
         bitLenInt controls[1] = { control };
         bitLenInt controlLen = 1;
         complex topRight = complex(ONE_R1, ZERO_R1);
