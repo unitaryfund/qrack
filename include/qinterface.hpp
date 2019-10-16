@@ -753,6 +753,22 @@ public:
      */
     virtual void CIS(bitLenInt control, bitLenInt target);
 
+    /**
+     * Controlled T gate
+     *
+     * If the "control" bit is set to 1, then the T gate is applied
+     * to "target."
+     */
+    virtual void CT(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled inverse T gate
+     *
+     * If the "control" bit is set to 1, then the inverse T gate is applied
+     * to "target."
+     */
+    virtual void CIT(bitLenInt control, bitLenInt target);
+
     /** @} */
 
     /**
@@ -1335,6 +1351,22 @@ public:
      * to "target."
      */
     virtual void CIS(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled T gate
+     *
+     * If the "control" bit is set to 1, then the T gate is applied
+     * to "target."
+     */
+    virtual void CT(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled inverse T gate
+     *
+     * If the "control" bit is set to 1, then the inverse T gate is applied
+     * to "target."
+     */
+    virtual void CIT(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
 

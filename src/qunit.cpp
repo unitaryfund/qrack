@@ -1203,6 +1203,62 @@ void QUnit::CIS(bitLenInt control, bitLenInt target)
     CTRLED_CALL_WRAP(CS(CTRL_1_ARGS), S(target), false, true);
 }
 
+void QUnit::CT(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+        return;
+    }
+
+    if (tShard.isPlusMinus != cShard.isPlusMinus) {
+        if (cShard.isPlusMinus) {
+            std::swap(control, target);
+        }
+
+        bitLenInt controls[1] = { control };
+        bitLenInt controlLen = 1;
+        complex mtrx[4] = { complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2),
+            complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2), complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2),
+            complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2) };
+        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
+        return;
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    CTRLED_CALL_WRAP(CT(CTRL_1_ARGS), S(target), false, true);
+}
+
+void QUnit::CIT(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+        return;
+    }
+
+    if (tShard.isPlusMinus != cShard.isPlusMinus) {
+        if (cShard.isPlusMinus) {
+            std::swap(control, target);
+        }
+
+        bitLenInt controls[1] = { control };
+        bitLenInt controlLen = 1;
+        complex mtrx[4] = { complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2),
+            complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2), complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2),
+            complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2) };
+        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
+        return;
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    CTRLED_CALL_WRAP(CIT(CTRL_1_ARGS), S(target), false, true);
+}
+
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
@@ -1284,25 +1340,33 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     bitLenInt ltarget;
 
     if (controlLen == 1U) {
-        bool canBeZorS = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm);
-        if (canBeZorS) {
+        bool canBeUnityRoot = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm);
+        if (canBeUnityRoot) {
             if ((real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm)) {
                 // CZ Optimized case
                 CZ(controls[0], target);
                 delete[] lcontrols;
                 return;
             } else if (abs(real(bottomRight)) < min_norm) {
-                if (imag(bottomRight) > (ONE_R1 - min_norm)) {
+                if (imag(bottomRight) > ZERO_R1) {
                     // CS Optimized case
                     CS(controls[0], target);
-                    delete[] lcontrols;
-                    return;
-                } else if (imag(bottomRight) < -(ONE_R1 - min_norm)) {
+                } else {
                     // CIS Optimized case
                     CIS(controls[0], target);
-                    delete[] lcontrols;
-                    return;
                 }
+                delete[] lcontrols;
+                return;
+            } else if ((real(bottomRight) > 0) && ((abs(real(bottomRight)) - abs(imag(bottomRight))) < min_norm)) {
+                if (imag(bottomRight) > ZERO_R1) {
+                    // CT Optimized case
+                    CT(controls[0], target);
+                } else {
+                    // CIT Optimized case
+                    CIT(controls[0], target);
+                }
+                delete[] lcontrols;
+                return;
             }
         }
 

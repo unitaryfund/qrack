@@ -12,6 +12,19 @@
 
 #include "qinterface.hpp"
 
+#define SINGLE_PHASE(gate, topLeft, bottomRight, doNorm)                                                               \
+    void QInterface::gate(bitLenInt qubit) { ApplySinglePhase(topLeft, bottomRight, doNorm, qubit); }
+
+#define SINGLE_INVERT(gate, topRight, bottomLeft, doNorm)                                                              \
+    void QInterface::gate(bitLenInt qubit) { ApplySingleInvert(topRight, bottomLeft, doNorm, qubit); }
+
+#define SINGLE_BIT(gate, mtrx00, mtrx01, mtrx10, mtrx11, doNorm)                                                       \
+    void QInterface::gate(bitLenInt qubit)                                                                             \
+    {                                                                                                                  \
+        const complex mtrx[4] = { mtrx00, mtrx01, mtrx10, mtrx11 };                                                    \
+        ApplySingleBit(mtrx, doNorm, qubit);                                                                           \
+    }
+
 namespace Qrack {
 
 /// Set individual bit to pure |0> (false) or |1> (true) state
@@ -82,95 +95,50 @@ void QInterface::U(bitLenInt target, real1 theta, real1 phi, real1 lambda)
 }
 
 /// Hadamard gate
-void QInterface::H(bitLenInt qubit)
-{
-    const complex had[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
-        complex(-M_SQRT1_2, ZERO_R1) };
-    ApplySingleBit(had, true, qubit);
-}
+SINGLE_BIT(H, complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
+    complex(-M_SQRT1_2, ZERO_R1), true);
 
 /// Square root of Hadamard gate
-void QInterface::SqrtH(bitLenInt qubit)
-{
-    const complex sqrtHad[4] = { complex((ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (-ONE_R1 + M_SQRT2) / (2 * M_SQRT2)),
-        complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2), complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2),
-        complex((-ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (ONE_R1 + M_SQRT2) / (2 * M_SQRT2)) };
-    ApplySingleBit(sqrtHad, true, qubit);
-}
+SINGLE_BIT(SqrtH, complex((ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (-ONE_R1 + M_SQRT2) / (2 * M_SQRT2)),
+    complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2), complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2),
+    complex((-ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (ONE_R1 + M_SQRT2) / (2 * M_SQRT2)), true);
 
 /// Apply 1/4 phase rotation
-void QInterface::S(bitLenInt qubit)
-{
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ONE_R1), false, qubit);
-}
+SINGLE_PHASE(S, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ONE_R1), false);
 
 /// Apply inverse 1/4 phase rotation
-void QInterface::IS(bitLenInt qubit)
-{
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), false, qubit);
-}
+SINGLE_PHASE(IS, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), false);
 
 /// Apply 1/8 phase rotation
-void QInterface::T(bitLenInt qubit)
-{
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, M_SQRT1_2), true, qubit);
-}
+SINGLE_PHASE(T, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, M_SQRT1_2), true);
 
 /// Apply inverse 1/8 phase rotation
-void QInterface::IT(bitLenInt qubit)
-{
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, -M_SQRT1_2), true, qubit);
-}
+SINGLE_PHASE(IT, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, -M_SQRT1_2), true);
 
 /// NOT gate, which is also Pauli x matrix
-void QInterface::X(bitLenInt qubit)
-{
-    ApplySingleInvert(complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), false, qubit);
-}
+SINGLE_INVERT(X, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), false);
 
 /// Apply Pauli Y matrix to bit
-void QInterface::Y(bitLenInt qubit)
-{
-    ApplySingleInvert(complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1), false, qubit);
-}
+SINGLE_INVERT(Y, complex(ZERO_R1, -ONE_R1), complex(ZERO_R1, ONE_R1), false);
 
 /// Square root of NOT gate
-void QInterface::SqrtX(bitLenInt qubit)
-{
-    const complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
-    ApplySingleBit(mtrx, true, qubit);
-}
+SINGLE_BIT(SqrtX, complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+    complex(ONE_R1 / 2, ONE_R1 / 2), true);
 
 /// Inverse square root of NOT gate
-void QInterface::ISqrtX(bitLenInt qubit)
-{
-    const complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
-    ApplySingleBit(mtrx, true, qubit);
-}
+SINGLE_BIT(ISqrtX, complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
+    complex(ONE_R1 / 2, -ONE_R1 / 2), true);
 
 /// Apply Pauli Y matrix to bit
-void QInterface::SqrtY(bitLenInt qubit)
-{
-    const complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2),
-        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
-    ApplySingleBit(mtrx, true, qubit);
-}
+SINGLE_BIT(SqrtY, complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
+    complex(ONE_R1 / 2, ONE_R1 / 2), true);
 
 /// Apply Pauli Y matrix to bit
-void QInterface::ISqrtY(bitLenInt qubit)
-{
-    const complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-        complex(-ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
-    ApplySingleBit(mtrx, true, qubit);
-}
+SINGLE_BIT(ISqrtY, complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(-ONE_R1 / 2, ONE_R1 / 2),
+    complex(ONE_R1 / 2, -ONE_R1 / 2), true);
 
 /// Apply Pauli Z matrix to bit
-void QInterface::Z(bitLenInt qubit)
-{
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1), false, qubit);
-}
+SINGLE_PHASE(Z, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1), false);
 
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -226,6 +194,20 @@ void QInterface::CIS(bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
     ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1));
+}
+
+/// Apply controlled T gate to bit
+void QInterface::CT(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, M_SQRT1_2));
+}
+
+/// Apply controlled IT gate to bit
+void QInterface::CIT(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, -M_SQRT1_2));
 }
 
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

@@ -182,6 +182,18 @@ void QInterface::CIS(bitLenInt control, bitLenInt target, bitLenInt length)
     ControlledLoopFixture(length, [&](bitLenInt bit) { CIS(control + bit, target + bit); });
 }
 
+/// Apply controlled T gate to each bit
+void QInterface::CT(bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CT(control + bit, target + bit); });
+}
+
+/// Apply controlled IT gate to each bit
+void QInterface::CIT(bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CIT(control + bit, target + bit); });
+}
+
 /// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
 REG_GATE_3B(CLAND);

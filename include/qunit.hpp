@@ -152,6 +152,10 @@ public:
     virtual void CS(bitLenInt control, bitLenInt target);
     using QInterface::CIS;
     virtual void CIS(bitLenInt control, bitLenInt target);
+    using QInterface::CT;
+    virtual void CT(bitLenInt control, bitLenInt target);
+    using QInterface::CIT;
+    virtual void CIT(bitLenInt control, bitLenInt target);
 
     virtual void ApplySinglePhase(
         const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
