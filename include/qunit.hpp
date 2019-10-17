@@ -148,10 +148,6 @@ public:
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
     using QInterface::CZ;
     virtual void CZ(bitLenInt control, bitLenInt target);
-    using QInterface::CPhaseRootN;
-    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
-    using QInterface::CIPhaseRootN;
-    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     virtual void ApplySinglePhase(
         const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
@@ -329,7 +325,6 @@ protected:
     bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
-    void CGenPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp);
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
