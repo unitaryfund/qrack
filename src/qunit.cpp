@@ -943,7 +943,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     mtrxOut[3] = (ONE_R1 / 2) * -(bottomLeft + topRight);
 }
 
-#define CTRLED_GEN_WRAP(ctrld, bare, anti, inCurrentBasis)                                                             \
+#define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             complex trnsMtrx[4];                                                                                       \
@@ -954,7 +954,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
             }                                                                                                          \
             unit->ctrld;                                                                                               \
         },                                                                                                             \
-        [&]() { bare; }, inCurrentBasis);
+        [&]() { bare; });
 
 #define CTRLED_PHASE_WRAP(ctrld, ctrldgen, bare, anti)                                                                 \
     ApplyEitherControlled(lcontrols, controlLen, { ltarget }, anti,                                                    \
@@ -969,7 +969,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         },                                                                                                             \
         [&]() { bare; });
 
-#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti, inCurrentBasis)                                                \
+#define CTRLED_INVERT_WRAP(ctrld, ctrldgen, bare, anti)                                                                \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             if (!shards[target].isPlusMinus) {                                                                         \
@@ -980,12 +980,8 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; }, inCurrentBasis);
+        [&]() { bare; });
 
-#define CTRLED_CALL_WRAP(ctrld, bare, anti, inCurrentBasis)                                                            \
-    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; },              \
-        inCurrentBasis)
 #define CTRLED2_CALL_WRAP(ctrld2, ctrld1, bare, anti)                                                                  \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
@@ -1081,7 +1077,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CNOT(CTRL_1_ARGS), X(target), false, false);
+    complex topRight = ONE_R1;
+    complex bottomLeft = ONE_R1;
+
+    CTRLED_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false);
 }
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -1105,7 +1104,10 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(AntiCNOT(CTRL_1_ARGS), X(target), true, false);
+    complex topRight = ONE_R1;
+    complex bottomLeft = ONE_R1;
+
+    CTRLED_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true);
 }
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1127,17 +1129,25 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (tShard.isPlusMinus != cShard.isPlusMinus) {
-        CPhaseRootN(1U, control, target);
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
         return;
     }
 
-    bitLenInt controls[1] = { control };
+    if (cShard.isPlusMinus && !tShard.isPlusMinus) {
+        std::swap(control, target);
+    }
+
+    bitLenInt lcontrols[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false, false);
+    bitLenInt ltarget = target;
+
+    complex topLeft = ONE_R1;
+    complex bottomRight = -ONE_R1;
+
+    CTRLED_PHASE_WRAP(CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false);
 }
 
-void QUnit::CPRN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp)
+void QUnit::CGenPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp)
 {
     if (n == 0) {
         return;
@@ -1150,40 +1160,30 @@ void QUnit::CPRN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp
         return;
     }
 
-    if (tShard.isPlusMinus != cShard.isPlusMinus) {
-        if (cShard.isPlusMinus) {
-            std::swap(control, target);
-        }
+    if (cShard.isPlusMinus && !tShard.isPlusMinus) {
+        std::swap(control, target);
     }
 
-    bitLenInt controls[1] = { control };
+    bitLenInt lcontrols[1] = { control };
     bitLenInt controlLen = 1;
+    bitLenInt ltarget = target;
 
-    if (tShard.isPlusMinus != cShard.isPlusMinus) {
-
-        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), (isNegExp ? -ONE_R1 : ONE_R1) / (ONE_BCI << (n - 1U)));
-        complex p = (ONE_R1 / 2) * (ONE_R1 + iRoot);
-        complex m = (ONE_R1 / 2) * (ONE_R1 - iRoot);
-        complex mtrx[4] = { p, m, m, p };
-
-        complex origMtrx[4] = { ONE_R1, ZERO_R1, ZERO_R1, iRoot };
-
-        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(origMtrx, true, target), false, true);
-        return;
-    }
+    complex topLeft = ONE_R1;
+    complex bottomRight = pow(complex(-ONE_R1, ZERO_R1), (isNegExp ? -ONE_R1 : ONE_R1) / (ONE_BCI << (n - 1U)));
 
     // TODO: Handle both bits |+>/|-> case
-
     if (isNegExp) {
-        CTRLED_CALL_WRAP(CIPhaseRootN(CTRL_N_ARGS), IPhaseRootN(n, target), false, false);
+        CTRLED_PHASE_WRAP(
+            CIPhaseRootN(CTRL_N_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), IPhaseRootN(n, target), false);
     } else {
-        CTRLED_CALL_WRAP(CPhaseRootN(CTRL_N_ARGS), PhaseRootN(n, target), false, false);
+        CTRLED_PHASE_WRAP(
+            CPhaseRootN(CTRL_N_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), PhaseRootN(n, target), false);
     }
 }
 
-void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target) { CPRN(n, control, target, false); }
+void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target) { CGenPhaseRootN(n, control, target, false); }
 
-void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target) { CPRN(n, control, target, true); }
+void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target) { CGenPhaseRootN(n, control, target, true); }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
@@ -1293,7 +1293,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
         CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, true, target), false, false);
+            ApplySingleInvert(topRight, bottomLeft, true, target), false);
     }
 }
 
@@ -1320,7 +1320,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, true)) {
         CTRLED_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, true, target), true, false);
+            ApplySingleInvert(topRight, bottomLeft, true, target), true);
     }
 }
 
@@ -1355,13 +1355,13 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, false);
+    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true, false);
+    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true);
 }
 
 void QUnit::CSwap(
@@ -1402,7 +1402,7 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = inCurrentBasis ? ProbBase(controls[i]) : Prob(controls[i]);                                              \
+    bitProb = Prob(controls[i]);                                                                                       \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1416,12 +1416,13 @@ void QUnit::AntiCISqrtSwap(
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
     } else {                                                                                                           \
+        TransformBasis(false, controls[i]);                                                                            \
         controlVec.push_back(controls[i]);                                                                             \
     }
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
 {
     bitLenInt i, j;
 
@@ -1450,6 +1451,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             if (isSeparated) {
                 CHECK_BREAK_AND_TRIM();
             } else {
+                TransformBasis(false, controls[i]);
                 controlVec.push_back(controls[i]);
             }
         }
@@ -1477,12 +1479,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit;
-    if (inCurrentBasis) {
-        unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    } else {
-        unit = Entangle(ebits);
-    }
+    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {

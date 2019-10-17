@@ -329,7 +329,7 @@ protected:
     bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
-    void CPRN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp);
+    void CGenPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp);
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
@@ -369,7 +369,7 @@ protected:
 
     template <typename CF, typename F>
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f, const bool& inCurrentBasis = false);
+        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f);
 
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
