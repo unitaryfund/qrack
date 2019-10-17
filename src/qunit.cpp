@@ -1175,15 +1175,16 @@ void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         bitLenInt controlLen = 1;
 
         complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ONE_R1), ONE_R1 / n);
+        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (1U << n));
         complex p = (ONE_R1 / 2) * (cOne + iRoot);
         complex m = (ONE_R1 / 2) * (cOne - iRoot);
         complex mtrx[4] = { p, m, m, p };
 
-        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
+        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, false);
         return;
     }
 
+    // TODO: Handle both bits |+>/|-> case
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     CTRLED_CALL_WRAP(CPhaseRootN(CTRL_N_ARGS), PhaseRootN(n, target), false, true);
@@ -1214,7 +1215,7 @@ void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         bitLenInt controlLen = 1;
 
         complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ONE_R1), -ONE_R1 / n);
+        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (1U << n));
         complex p = (ONE_R1 / 2) * (cOne + iRoot);
         complex m = (ONE_R1 / 2) * (cOne - iRoot);
         complex mtrx[4] = { p, m, m, p };
@@ -1223,9 +1224,10 @@ void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
+    // TODO: Handle both bits |+>/|-> case
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CIPhaseRootN(CTRL_N_ARGS), IPhaseRootN(n, target), false, true);
+    CTRLED_CALL_WRAP(CIPhaseRootN(CTRL_N_ARGS), IPhaseRootN(n, target), false, false);
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
