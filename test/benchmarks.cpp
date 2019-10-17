@@ -391,7 +391,7 @@ TEST_CASE("test_grover", "[grover]")
         qftReg->MReg(0, n);
     });
 }
-#if 0
+
 TEST_CASE("test_qft_ideal_init", "[qft]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, false, false);
@@ -412,7 +412,7 @@ TEST_CASE("test_qft_permutation_round_trip_entangled", "[qft]")
         },
         true, false, testEngineType == QINTERFACE_QUNIT);
 }
-#endif
+
 TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 {
     benchmarkLoop(
