@@ -1214,10 +1214,10 @@ void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         bitLenInt controlLen = 1;
 
         complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ONE_R1), ONE_R1 / n);
+        complex iRoot = pow(complex(-ONE_R1, ONE_R1), -ONE_R1 / n);
         complex p = (ONE_R1 / 2) * (cOne + iRoot);
         complex m = (ONE_R1 / 2) * (cOne - iRoot);
-        complex mtrx[4] = { m, p, p, m };
+        complex mtrx[4] = { p, m, m, p };
 
         CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
         return;
