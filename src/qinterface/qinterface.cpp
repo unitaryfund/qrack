@@ -217,7 +217,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
     if (n == 0) {
         return;
     } else if (n == 1) {
-        CZ(control, target);
+        CZ(control, target, length);
         return;
     }
 
@@ -230,7 +230,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, 
     if (n == 0) {
         return;
     } else if (n == 1) {
-        CZ(control, target);
+        CZ(control, target, length);
         return;
     }
 

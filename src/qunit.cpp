@@ -1127,35 +1127,19 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
-        return;
-    }
-
     if (tShard.isPlusMinus != cShard.isPlusMinus) {
-        if (cShard.isPlusMinus) {
-            std::swap(control, target);
-        }
-
-        bitLenInt controls[1] = { control };
-        bitLenInt controlLen = 1;
-        complex topRight = complex(ONE_R1, ZERO_R1);
-        complex bottomLeft = complex(-ONE_R1, ZERO_R1);
-        CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-            ApplySingleInvert(topRight, bottomLeft, false, target), false, true);
+        CPhaseRootN(1U, control, target);
         return;
     }
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false, true);
+    CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false, false);
 }
 
-void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+void QUnit::CPRN(bitLenInt n, bitLenInt control, bitLenInt target, bool isNegExp)
 {
     if (n == 0) {
-        return;
-    } else if (n == 1) {
-        CZ(control, target);
         return;
     }
 
@@ -1170,65 +1154,36 @@ void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         if (cShard.isPlusMinus) {
             std::swap(control, target);
         }
-
-        bitLenInt controls[1] = { control };
-        bitLenInt controlLen = 1;
-
-        complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (ONE_BCI << n));
-        complex p = (ONE_R1 / 2) * (cOne + iRoot);
-        complex m = (ONE_R1 / 2) * (cOne - iRoot);
-        complex mtrx[4] = { p, m, m, p };
-
-        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, false);
-        return;
     }
 
-    // TODO: Handle both bits |+>/|-> case
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CPhaseRootN(CTRL_N_ARGS), PhaseRootN(n, target), false, true);
-}
-
-void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
-{
-    if (n == 0) {
-        return;
-    } else if (n == 1) {
-        CZ(control, target);
-        return;
-    }
-
-    QEngineShard& tShard = shards[target];
-    QEngineShard& cShard = shards[control];
-
-    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
-        return;
-    }
 
     if (tShard.isPlusMinus != cShard.isPlusMinus) {
-        if (cShard.isPlusMinus) {
-            std::swap(control, target);
-        }
 
-        bitLenInt controls[1] = { control };
-        bitLenInt controlLen = 1;
-
-        complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (ONE_BCI << n));
-        complex p = (ONE_R1 / 2) * (cOne + iRoot);
-        complex m = (ONE_R1 / 2) * (cOne - iRoot);
+        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), (isNegExp ? -ONE_R1 : ONE_R1) / (ONE_BCI << (n - 1U)));
+        complex p = (ONE_R1 / 2) * (ONE_R1 + iRoot);
+        complex m = (ONE_R1 / 2) * (ONE_R1 - iRoot);
         complex mtrx[4] = { p, m, m, p };
 
-        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
+        complex origMtrx[4] = { ONE_R1, ZERO_R1, ZERO_R1, iRoot };
+
+        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(origMtrx, true, target), false, true);
         return;
     }
 
     // TODO: Handle both bits |+>/|-> case
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CIPhaseRootN(CTRL_N_ARGS), IPhaseRootN(n, target), false, false);
+
+    if (isNegExp) {
+        CTRLED_CALL_WRAP(CIPhaseRootN(CTRL_N_ARGS), IPhaseRootN(n, target), false, false);
+    } else {
+        CTRLED_CALL_WRAP(CPhaseRootN(CTRL_N_ARGS), PhaseRootN(n, target), false, false);
+    }
 }
+
+void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target) { CPRN(n, control, target, false); }
+
+void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target) { CPRN(n, control, target, true); }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
