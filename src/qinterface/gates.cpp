@@ -122,7 +122,8 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (1U << (n - 1U))), true, qubit);
+    ApplySinglePhase(
+        complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (ONE_BCI << (n - 1U))), true, qubit);
 }
 
 /// Apply inverse 1/(2^N) phase rotation
@@ -132,7 +133,8 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (1U << (n - 1U))), true, qubit);
+    ApplySinglePhase(
+        complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (ONE_BCI << (n - 1U))), true, qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix

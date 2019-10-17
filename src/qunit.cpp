@@ -1175,7 +1175,7 @@ void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         bitLenInt controlLen = 1;
 
         complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (1U << n));
+        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (ONE_BCI << n));
         complex p = (ONE_R1 / 2) * (cOne + iRoot);
         complex m = (ONE_R1 / 2) * (cOne - iRoot);
         complex mtrx[4] = { p, m, m, p };
@@ -1215,7 +1215,7 @@ void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         bitLenInt controlLen = 1;
 
         complex cOne = complex(ONE_R1, ZERO_R1);
-        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (1U << n));
+        complex iRoot = pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (ONE_BCI << n));
         complex p = (ONE_R1 / 2) * (cOne + iRoot);
         complex m = (ONE_R1 / 2) * (cOne - iRoot);
         complex mtrx[4] = { p, m, m, p };
