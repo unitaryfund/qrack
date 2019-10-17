@@ -214,12 +214,26 @@ void QInterface::CIT(bitLenInt control, bitLenInt target, bitLenInt length)
 /// Apply controlled "PhaseRootN" gate to each bit
 void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
 {
+    if (n == 0) {
+        return;
+    } else if (n == 1) {
+        CZ(control, target);
+        return;
+    }
+
     ControlledLoopFixture(length, [&](bitLenInt bit) { CPhaseRootN(n, control + bit, target + bit); });
 }
 
 /// Apply controlled IT gate to each bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
 {
+    if (n == 0) {
+        return;
+    } else if (n == 1) {
+        CZ(control, target);
+        return;
+    }
+
     ControlledLoopFixture(length, [&](bitLenInt bit) { CIPhaseRootN(n, control + bit, target + bit); });
 }
 

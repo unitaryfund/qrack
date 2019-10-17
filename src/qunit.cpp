@@ -1152,6 +1152,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
+    if (n == 0) {
+        return;
+    } else if (n == 1) {
+        CZ(control, target);
+        return;
+    }
+
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
@@ -1169,7 +1176,9 @@ void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 
         complex cOne = complex(ONE_R1, ZERO_R1);
         complex iRoot = pow(complex(-ONE_R1, ONE_R1), ONE_R1 / n);
-        complex mtrx[4] = { cOne + iRoot, cOne - iRoot, cOne - iRoot, cOne + iRoot };
+        complex p = (ONE_R1 / 2) * (cOne + iRoot);
+        complex m = (ONE_R1 / 2) * (cOne - iRoot);
+        complex mtrx[4] = { p, m, m, p };
 
         CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
         return;
@@ -1182,6 +1191,13 @@ void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 
 void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
+    if (n == 0) {
+        return;
+    } else if (n == 1) {
+        CZ(control, target);
+        return;
+    }
+
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
@@ -1199,7 +1215,9 @@ void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 
         complex cOne = complex(ONE_R1, ZERO_R1);
         complex iRoot = pow(complex(-ONE_R1, ONE_R1), ONE_R1 / n);
-        complex mtrx[4] = { cOne - iRoot, cOne + iRoot, cOne + iRoot, cOne - iRoot };
+        complex p = (ONE_R1 / 2) * (cOne + iRoot);
+        complex m = (ONE_R1 / 2) * (cOne - iRoot);
+        complex mtrx[4] = { m, p, p, m };
 
         CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
         return;
@@ -1213,6 +1231,10 @@ void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
+
+    if (!PHASE_MATTERS(shard)) {
+        return;
+    }
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
