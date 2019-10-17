@@ -2543,9 +2543,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 
     qftReg->IQFT(0, 8);
 
-    for (i = 0; i < 8; i++) {
-        qftReg->TrySeparate(i);
-    }
+    // for (i = 0; i < 8; i++) {
+    //    qftReg->TrySeparate(i);
+    //}
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
 }

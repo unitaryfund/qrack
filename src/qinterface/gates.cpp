@@ -104,16 +104,28 @@ SINGLE_BIT(SqrtH, complex((ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (-ONE_R1 + M_SQRT2
     complex((-ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (ONE_R1 + M_SQRT2) / (2 * M_SQRT2)), true);
 
 /// Apply 1/4 phase rotation
-SINGLE_PHASE(S, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ONE_R1), false);
+void QInterface::S(bitLenInt qubit) { PhaseRootN(2U, qubit); }
 
 /// Apply inverse 1/4 phase rotation
-SINGLE_PHASE(IS, complex(ONE_R1, ZERO_R1), complex(ZERO_R1, -ONE_R1), false);
+void QInterface::IS(bitLenInt qubit) { IPhaseRootN(2U, qubit); }
 
 /// Apply 1/8 phase rotation
-SINGLE_PHASE(T, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, M_SQRT1_2), true);
+void QInterface::T(bitLenInt qubit) { PhaseRootN(3U, qubit); }
 
 /// Apply inverse 1/8 phase rotation
-SINGLE_PHASE(IT, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, -M_SQRT1_2), true);
+void QInterface::IT(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
+
+/// Apply 1/(2^N) phase rotation
+void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
+{
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / n), true, qubit);
+}
+
+/// Apply inverse 1/(2^N) phase rotation
+void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
+{
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / n), true, qubit);
+}
 
 /// NOT gate, which is also Pauli x matrix
 SINGLE_INVERT(X, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), false);
@@ -208,6 +220,22 @@ void QInterface::CIT(bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
     ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1), complex(M_SQRT1_2, -M_SQRT1_2));
+}
+
+/// Apply controlled "PhaseRootN" gate to bit
+void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyControlledSinglePhase(
+        controls, 1, target, complex(ONE_R1, ZERO_R1), complex(cos(M_PI / (ONE_BCI << n)), sin(M_PI / (ONE_BCI << n))));
+}
+
+/// Apply controlled "IPhaseRootN" gate to bit
+void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1),
+        complex(cos(M_PI / (ONE_BCI << n)), -sin(M_PI / (ONE_BCI << n))));
 }
 
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

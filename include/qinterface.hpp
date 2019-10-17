@@ -663,6 +663,20 @@ public:
     virtual void IT(bitLenInt qubitIndex);
 
     /**
+     * "PhaseRootN" gate
+     *
+     * Applies a 1/(2^N) phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void PhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+
+    /**
+     * Inverse "PhaseRootN" gate
+     *
+     * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void IPhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+
+    /**
      * X gate
      *
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
@@ -768,6 +782,22 @@ public:
      * to "target."
      */
     virtual void CIT(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled inverse "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -1079,6 +1109,12 @@ public:
     /** Bitwise inverse T operator (1/8 phase rotation) */
     virtual void IT(bitLenInt start, bitLenInt length);
 
+    /** Bitwise "PhaseRootN" operator (1/(2^N) phase rotation) */
+    virtual void PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse "PhaseRootN" operator (1/(2^N) phase rotation) */
+    virtual void IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length);
+
     /** Bitwise Pauli X (or logical "NOT") operator */
     virtual void X(bitLenInt start, bitLenInt length);
 
@@ -1367,6 +1403,22 @@ public:
      * to "target."
      */
     virtual void CIT(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled inverse "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
 

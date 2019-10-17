@@ -93,22 +93,39 @@ void QInterface::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length)
     ControlledLoopFixture(length, [&](bitLenInt bit) { AntiCNOT(control + bit, target + bit); });
 }
 
+/// Apply CNOT gate for "length" starting from "control" and "target," respectively
 void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
 {
     ControlledLoopFixture(length, [&](bitLenInt bit) { CNOT(control + bit, target + bit); });
 }
 
-// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
+/// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
 REG_GATE_1(S);
 
-// Apply inverse S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
+/// Apply inverse S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
 REG_GATE_1(IS);
 
-// Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
+/// Apply T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
 REG_GATE_1(T);
 
-// Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
+/// Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
 REG_GATE_1(IT);
+
+/// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
+void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        PhaseRootN(n, start + bit);
+    }
+}
+
+/// Apply inverse "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
+void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        IPhaseRootN(n, start + bit);
+    }
+}
 
 // Apply X ("not") gate to each bit in "length," starting from bit index
 // "start"
@@ -194,6 +211,18 @@ void QInterface::CIT(bitLenInt control, bitLenInt target, bitLenInt length)
     ControlledLoopFixture(length, [&](bitLenInt bit) { CIT(control + bit, target + bit); });
 }
 
+/// Apply controlled "PhaseRootN" gate to each bit
+void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CPhaseRootN(n, control + bit, target + bit); });
+}
+
+/// Apply controlled IT gate to each bit
+void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CIPhaseRootN(n, control + bit, target + bit); });
+}
+
 /// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
 REG_GATE_3B(CLAND);
@@ -276,7 +305,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     for (i = 0; i < length; i++) {
         H(end - i);
         for (j = 0; j < ((length - 1U) - i); j++) {
-            CRT((-M_PI * 2) / intPow(2, j + 2), (end - i) - (j + 1U), end - i);
+            CIPhaseRootN(j + 2U, (end - i) - (j + 1U), end - i);
         }
 
         if (trySeparate) {
@@ -295,7 +324,7 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
     bitLenInt i, j;
     for (i = 0; i < length; i++) {
         for (j = 0; j < i; j++) {
-            CRT((M_PI * 2) / intPow(2, j + 2), (start + i) - (j + 1U), start + i);
+            CPhaseRootN(j + 2U, (start + i) - (j + 1U), start + i);
         }
         H(start + i);
 
@@ -330,6 +359,16 @@ REG_GATE_1R(RT);
 /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
 void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
 {
+    if (denomPower > 1) {
+        if (numerator == 1) {
+            PhaseRootN(denomPower - 1, qubit);
+            return;
+        } else if (numerator == -1) {
+            IPhaseRootN(denomPower - 1, qubit);
+            return;
+        }
+    }
+
     RT((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
 }
 

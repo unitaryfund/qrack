@@ -1005,6 +1005,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
 #define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, mtrx
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
+#define CTRL_N_ARGS n, mappedControls[0], shards[target].mapped
 #define CTRL_2_ARGS mappedControls[0], mappedControls[1], shards[target].mapped
 #define CTRL_S_ARGS &(mappedControls[0]), mappedControls.size(), shards[qubit1].mapped, shards[qubit2].mapped
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
@@ -1149,7 +1150,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     CTRLED_CALL_WRAP(CZ(CTRL_1_ARGS), Z(target), false, true);
 }
 
-void QUnit::CS(bitLenInt control, bitLenInt target)
+void QUnit::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
@@ -1165,18 +1166,21 @@ void QUnit::CS(bitLenInt control, bitLenInt target)
 
         bitLenInt controls[1] = { control };
         bitLenInt controlLen = 1;
-        complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-            complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+
+        complex cOne = complex(ONE_R1, ZERO_R1);
+        complex iRoot = pow(complex(-ONE_R1, ONE_R1), ONE_R1 / n);
+        complex mtrx[4] = { cOne + iRoot, cOne - iRoot, cOne - iRoot, cOne + iRoot };
+
         CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
         return;
     }
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CS(CTRL_1_ARGS), S(target), false, true);
+    CTRLED_CALL_WRAP(CPhaseRootN(CTRL_N_ARGS), PhaseRootN(n, target), false, true);
 }
 
-void QUnit::CIS(bitLenInt control, bitLenInt target)
+void QUnit::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
@@ -1192,71 +1196,18 @@ void QUnit::CIS(bitLenInt control, bitLenInt target)
 
         bitLenInt controls[1] = { control };
         bitLenInt controlLen = 1;
-        complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-            complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+
+        complex cOne = complex(ONE_R1, ZERO_R1);
+        complex iRoot = pow(complex(-ONE_R1, ONE_R1), ONE_R1 / n);
+        complex mtrx[4] = { cOne - iRoot, cOne + iRoot, cOne + iRoot, cOne - iRoot };
+
         CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
         return;
     }
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CS(CTRL_1_ARGS), S(target), false, true);
-}
-
-void QUnit::CT(bitLenInt control, bitLenInt target)
-{
-    QEngineShard& tShard = shards[target];
-    QEngineShard& cShard = shards[control];
-
-    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
-        return;
-    }
-
-    if (tShard.isPlusMinus != cShard.isPlusMinus) {
-        if (cShard.isPlusMinus) {
-            std::swap(control, target);
-        }
-
-        bitLenInt controls[1] = { control };
-        bitLenInt controlLen = 1;
-        complex mtrx[4] = { complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2),
-            complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2), complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2),
-            complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2) };
-        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
-        return;
-    }
-
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CT(CTRL_1_ARGS), S(target), false, true);
-}
-
-void QUnit::CIT(bitLenInt control, bitLenInt target)
-{
-    QEngineShard& tShard = shards[target];
-    QEngineShard& cShard = shards[control];
-
-    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
-        return;
-    }
-
-    if (tShard.isPlusMinus != cShard.isPlusMinus) {
-        if (cShard.isPlusMinus) {
-            std::swap(control, target);
-        }
-
-        bitLenInt controls[1] = { control };
-        bitLenInt controlLen = 1;
-        complex mtrx[4] = { complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2),
-            complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2), complex((ONE_R1 - M_SQRT1_2) / 2, -M_SQRT1_2 / 2),
-            complex((ONE_R1 + M_SQRT1_2) / 2, M_SQRT1_2 / 2) };
-        CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false, true);
-        return;
-    }
-
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    CTRLED_CALL_WRAP(CIT(CTRL_1_ARGS), S(target), false, true);
+    CTRLED_CALL_WRAP(CIPhaseRootN(CTRL_N_ARGS), IPhaseRootN(n, target), false, true);
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
@@ -1340,36 +1291,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenIn
     bitLenInt ltarget;
 
     if (controlLen == 1U) {
-        bool canBeUnityRoot = (real(topLeft) > (ONE_R1 - min_norm)) && (abs(imag(topLeft)) < min_norm);
-        if (canBeUnityRoot) {
-            if ((real(bottomRight) < -(ONE_R1 - min_norm)) && (abs(imag(bottomRight)) < min_norm)) {
-                // CZ Optimized case
-                CZ(controls[0], target);
-                delete[] lcontrols;
-                return;
-            } else if (abs(real(bottomRight)) < min_norm) {
-                if (imag(bottomRight) > ZERO_R1) {
-                    // CS Optimized case
-                    CS(controls[0], target);
-                } else {
-                    // CIS Optimized case
-                    CIS(controls[0], target);
-                }
-                delete[] lcontrols;
-                return;
-            } else if ((real(bottomRight) > 0) && ((abs(real(bottomRight)) - abs(imag(bottomRight))) < min_norm)) {
-                if (imag(bottomRight) > ZERO_R1) {
-                    // CT Optimized case
-                    CT(controls[0], target);
-                } else {
-                    // CIT Optimized case
-                    CIT(controls[0], target);
-                }
-                delete[] lcontrols;
-                return;
-            }
-        }
-
         if (CACHED_CLASSICAL(shard) && !CACHED_CLASSICAL(shards[controls[0]])) {
             ltarget = controls[0];
             lcontrols[0] = target;
