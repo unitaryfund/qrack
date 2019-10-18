@@ -1225,18 +1225,16 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenInt& controlLen,
     const bitLenInt& cTarget, const complex topLeft, const complex bottomRight)
 {
-    QEngineShard& shard = shards[cTarget];
-
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
     if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
-        if (CACHED_ZERO(shard)) {
+        if (CACHED_ZERO(shards[target])) {
             return;
         }
 
-        if (!shard.isPlusMinus) {
+        if (!shards[target].isPlusMinus) {
             for (bitLenInt i = 0; i < controlLen; i++) {
                 if (shards[controls[i]].isPlusMinus) {
                     std::swap(controls[i], target);
@@ -1246,7 +1244,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
+    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shards[target])) {
         return;
     }
 
