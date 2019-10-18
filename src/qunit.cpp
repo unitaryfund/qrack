@@ -2281,7 +2281,7 @@ void QUnit::PhaseFlip()
     QEngineShard& shard = shards[0];
     if (PHASE_MATTERS(shard)) {
         TransformBasis(false, 0);
-        shard.unit->PhaseFlip();
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
     }
 }
