@@ -1231,11 +1231,17 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if (!shard.isPlusMinus && (imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
-        for (bitLenInt i = 0; i < controlLen; i++) {
-            if (shards[controls[i]].isPlusMinus) {
-                std::swap(controls[i], target);
-                break;
+    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+        if (CACHED_ZERO(shard)) {
+            return;
+        }
+
+        if (!shard.isPlusMinus) {
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                if (shards[controls[i]].isPlusMinus) {
+                    std::swap(controls[i], target);
+                    break;
+                }
             }
         }
     }
@@ -1264,12 +1270,9 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if (!shard.isPlusMinus && (imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
-        for (bitLenInt i = 0; i < controlLen; i++) {
-            if (shards[controls[i]].isPlusMinus) {
-                std::swap(controls[i], target);
-                break;
-            }
+    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+        if (CACHED_ZERO(shard)) {
+            return;
         }
     }
 
