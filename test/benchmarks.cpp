@@ -416,10 +416,7 @@ TEST_CASE("test_qft_permutation_round_trip_entangled", "[qft]")
 TEST_CASE("test_qft_superposition_one_way", "[qft]")
 {
     benchmarkLoop(
-        [](QInterfacePtr qftReg, int n) {
-            qftReg->QFT(0, n, false);
-        },
-        true, true, testEngineType == QINTERFACE_QUNIT);
+        [](QInterfacePtr qftReg, int n) { qftReg->QFT(0, n, false); }, true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
 TEST_CASE("test_qft_superposition_round_trip", "[qft]")
