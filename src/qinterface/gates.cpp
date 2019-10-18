@@ -237,15 +237,15 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
     ApplyControlledSinglePhase(
-        controls, 1, target, complex(ONE_R1, ZERO_R1), complex(cos(M_PI / (ONE_BCI << n)), sin(M_PI / (ONE_BCI << n))));
+        controls, 1, target, complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (ONE_BCI << (n - 1U))));
 }
 
 /// Apply controlled "IPhaseRootN" gate to bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
-    ApplyControlledSinglePhase(controls, 1, target, complex(ONE_R1, ZERO_R1),
-        complex(cos(M_PI / (ONE_BCI << n)), -sin(M_PI / (ONE_BCI << n))));
+    ApplyControlledSinglePhase(
+        controls, 1, target, complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), -ONE_R1 / (ONE_BCI << (n - 1U))));
 }
 
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
