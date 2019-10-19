@@ -104,6 +104,7 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
+    TransformBasisAll(false);
     EndAllEmulation();
 
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
