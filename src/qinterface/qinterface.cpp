@@ -189,20 +189,7 @@ REG_GATE_3B(CLXOR);
 REG_GATE_1R(RT);
 
 /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
-void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    if (denomPower > 0) {
-        if (numerator == 1) {
-            PhaseRootN(denomPower + 1, qubit);
-            return;
-        } else if (numerator == -1) {
-            IPhaseRootN(denomPower + 1, qubit);
-            return;
-        }
-    }
-
-    RT(dyadAngle(numerator, denomPower), qubit);
-}
+void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit) { RT(dyadAngle(numerator, denomPower), qubit); }
 
 /// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
 REG_GATE_1D(RTDyad);
