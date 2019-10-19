@@ -1471,21 +1471,23 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 }
 
+template <typename F>
+void QUnit::CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
+    const bitLenInt& length, F fn)
+{
+    bool cBit;
+    for (bitLenInt i = 0; i < length; i++) {
+        cBit = bitSlice(i, classicalInput);
+        fn(qInputStart + i, cBit, outputStart + i);
+    }
+}
+
 void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
     if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
         for (bitLenInt i = 0; i < length; i++) {
             AND(inputStart1 + i, inputStart2 + i, outputStart + i);
         }
-    }
-}
-
-void QUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
-        CLAND(qInputStart + i, cBit, outputStart + i);
     }
 }
 
@@ -1498,15 +1500,6 @@ void QUnit::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputSta
     }
 }
 
-void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
-        CLOR(qInputStart + i, cBit, outputStart + i);
-    }
-}
-
 void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
 {
     for (bitLenInt i = 0; i < length; i++) {
@@ -1514,13 +1507,22 @@ void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputSt
     }
 }
 
+void QUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+{
+    CBoolReg(qInputStart, classicalInput, outputStart, length,
+        [&](bitLenInt qb, bool cb, bitLenInt l) { CLAND(qb, cb, l); });
+}
+
+void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
+{
+    CBoolReg(
+        qInputStart, classicalInput, outputStart, length, [&](bitLenInt qb, bool cb, bitLenInt l) { CLOR(qb, cb, l); });
+}
+
 void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
 {
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
-        CLXOR(qInputStart + i, cBit, outputStart + i);
-    }
+    CBoolReg(qInputStart, classicalInput, outputStart, length,
+        [&](bitLenInt qb, bool cb, bitLenInt l) { CLXOR(qb, cb, l); });
 }
 
 bool QUnit::CArithmeticOptimize(
@@ -2412,42 +2414,33 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
     return toRet;
 }
 
-void QUnit::UpdateRunningNorm()
+template <typename F> void QUnit::ParallelUnitApply(F fn)
 {
-    EndAllEmulation();
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
-            toFind->UpdateRunningNorm();
+            fn(toFind);
         }
     }
+}
+
+void QUnit::UpdateRunningNorm()
+{
+    EndAllEmulation();
+    ParallelUnitApply([](QInterfacePtr unit) { unit->UpdateRunningNorm(); });
 }
 
 void QUnit::NormalizeState(real1 nrm)
 {
     EndAllEmulation();
-    std::vector<QInterfacePtr> units;
-    for (bitLenInt i = 0; i < shards.size(); i++) {
-        QInterfacePtr toFind = shards[i].unit;
-        if (find(units.begin(), units.end(), toFind) == units.end()) {
-            units.push_back(toFind);
-            toFind->NormalizeState(nrm);
-        }
-    }
+    ParallelUnitApply([nrm](QInterfacePtr unit) { unit->NormalizeState(nrm); });
 }
 
 void QUnit::Finish()
 {
-    std::vector<QInterfacePtr> units;
-    for (bitLenInt i = 0; i < shards.size(); i++) {
-        QInterfacePtr toFind = shards[i].unit;
-        if (find(units.begin(), units.end(), toFind) == units.end()) {
-            units.push_back(toFind);
-            toFind->Finish();
-        }
-    }
+    ParallelUnitApply([](QInterfacePtr unit) { unit->Finish(); });
 }
 
 bool QUnit::isFinished()

@@ -326,6 +326,10 @@ protected:
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
 
+    template <typename F>
+    void CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
+        const bitLenInt& length, F fn);
+
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
@@ -345,6 +349,7 @@ protected:
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
+    template <typename F> void ParallelUnitApply(F fn);
 
     virtual void SeparateBit(bool value, bitLenInt qubit);
 
