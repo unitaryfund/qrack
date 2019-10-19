@@ -550,7 +550,7 @@ bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurre
     if (!inCurrentBasis) {
         TransformBasis(false, qubitIndex);
     }
-    if (CACHED_CLASSICAL(shards[qubitIndex])) {
+    if (UNSAFE_CACHED_CLASSICAL(shards[qubitIndex])) {
         return true;
     } else {
         return false;
