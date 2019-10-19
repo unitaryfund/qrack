@@ -2414,49 +2414,40 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
     return toRet;
 }
 
-template <typename F> void QUnit::ParallelUnitApply(F fn)
+template <typename F> bool QUnit::ParallelUnitApply(F fn)
 {
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
-            fn(toFind);
+            if (!fn(toFind)) return false;
         }
     }
+
+    return true;
 }
 
 void QUnit::UpdateRunningNorm()
 {
     EndAllEmulation();
-    ParallelUnitApply([](QInterfacePtr unit) { unit->UpdateRunningNorm(); });
+    ParallelUnitApply([](QInterfacePtr unit) { unit->UpdateRunningNorm(); return true; });
 }
 
 void QUnit::NormalizeState(real1 nrm)
 {
     EndAllEmulation();
-    ParallelUnitApply([nrm](QInterfacePtr unit) { unit->NormalizeState(nrm); });
+    ParallelUnitApply([nrm](QInterfacePtr unit) { unit->NormalizeState(nrm); return true; });
 }
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit) { unit->Finish(); });
+    ParallelUnitApply([](QInterfacePtr unit) { unit->Finish(); return true; });
 }
 
 bool QUnit::isFinished()
 {
-    std::vector<QInterfacePtr> units;
-    for (bitLenInt i = 0; i < shards.size(); i++) {
-        QInterfacePtr toFind = shards[i].unit;
-        if (find(units.begin(), units.end(), toFind) == units.end()) {
-            units.push_back(toFind);
-            if (!(toFind->isFinished())) {
-                return false;
-            }
-        }
-    }
-
-    return true;
+    return ParallelUnitApply([](QInterfacePtr unit) { return unit->isFinished(); });
 }
 
 bool QUnit::ApproxCompare(QUnitPtr toCompare)

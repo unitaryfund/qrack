@@ -349,7 +349,7 @@ protected:
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
-    template <typename F> void ParallelUnitApply(F fn);
+    template <typename F> bool ParallelUnitApply(F fn);
 
     virtual void SeparateBit(bool value, bitLenInt qubit);
 
