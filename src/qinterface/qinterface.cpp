@@ -466,7 +466,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     for (i = 0; i < length; i++) {
         H(end - i);
         for (j = 0; j < ((length - 1U) - i); j++) {
-            CIPhaseRootN(j + 2U, (end - i) - (j + 1U), end - i);
+            CPhaseRootN(j + 2U, (end - i) - (j + 1U), end - i);
         }
 
         if (trySeparate) {
@@ -485,7 +485,7 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
     bitLenInt i, j;
     for (i = 0; i < length; i++) {
         for (j = 0; j < i; j++) {
-            CPhaseRootN(j + 2U, (start + i) - (j + 1U), start + i);
+            CIPhaseRootN(j + 2U, (start + i) - (j + 1U), start + i);
         }
         H(start + i);
 
