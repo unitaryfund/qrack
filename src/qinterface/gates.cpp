@@ -121,6 +121,9 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
     if (n == 0) {
         return;
     }
+    if (n == 1) {
+        Z(qubit);
+    }
 
     ApplySinglePhase(
         complex(ONE_R1, ZERO_R1), pow(complex(-ONE_R1, ZERO_R1), ONE_R1 / (ONE_BCI << (n - 1U))), true, qubit);
@@ -131,6 +134,9 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
 {
     if (n == 0) {
         return;
+    }
+    if (n == 1) {
+        Z(qubit);
     }
 
     ApplySinglePhase(

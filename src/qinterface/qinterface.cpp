@@ -54,6 +54,33 @@ namespace Qrack {
         }                                                                                                              \
     }
 
+#define REG_GATE_C1_1(gate)                                                                                            \
+    void QInterface::gate(bitLenInt control, bitLenInt target, bitLenInt length)                                       \
+    {                                                                                                                  \
+        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(control + bit, target + bit); });                      \
+    }
+
+#define REG_GATE_C2_1(gate)                                                                                            \
+    void QInterface::gate(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)                  \
+    {                                                                                                                  \
+        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(control1 + bit, control2 + bit, target + bit); });     \
+    }
+
+#define REG_GATE_C1_1R(gate)                                                                                           \
+    void QInterface::gate(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)                        \
+    {                                                                                                                  \
+        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(radians, control + bit, target + bit); });             \
+    }
+
+#define REG_GATE_C1_1D(gate)                                                                                           \
+    void QInterface::gate(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)       \
+    {                                                                                                                  \
+        ControlledLoopFixture(                                                                                         \
+            length, [&](bitLenInt bit) { gate(numerator, denominator, control + bit, target + bit); });                \
+    }
+
+inline real1 dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
+
 template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
 {
     // For length-wise application of controlled gates, there's no point in having normalization on, up to the last
@@ -68,36 +95,26 @@ template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt le
     gate(length - 1);
 }
 
-// Bit-wise apply swap to two registers
+/// Bit-wise apply swap to two registers
 REG_GATE_2(Swap);
 
-// Bit-wise apply square root of swap to two registers
+/// Bit-wise apply square root of swap to two registers
 REG_GATE_2(SqrtSwap);
 
-// Bit-wise apply inverse square root of swap to two registers
+/// Bit-wise apply inverse square root of swap to two registers
 REG_GATE_2(ISqrtSwap);
 
-// Bit-wise apply "anti-"controlled-not to three registers
-void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { AntiCCNOT(control1 + bit, control2 + bit, target + bit); });
-}
+/// Bit-wise apply "anti-"controlled-not to two control registers and one target register
+REG_GATE_C2_1(AntiCCNOT);
 
-void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CCNOT(control1 + bit, control2 + bit, target + bit); });
-}
+/// Bit-wise apply controlled-not to two control registers and one target register
+REG_GATE_C2_1(CCNOT);
 
-void QInterface::AntiCNOT(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { AntiCNOT(control + bit, target + bit); });
-}
+/// Apply "Anti-"CNOT gate for "length" starting from "control" and "target," respectively
+REG_GATE_C1_1(AntiCNOT);
 
 /// Apply CNOT gate for "length" starting from "control" and "target," respectively
-void QInterface::CNOT(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CNOT(control + bit, target + bit); });
-}
+REG_GATE_C1_1(CNOT);
 
 /// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
 REG_GATE_1(S);
@@ -111,51 +128,14 @@ REG_GATE_1(T);
 /// Apply inverse T gate (1/8 phase rotation)  to each bit in "length," starting from bit index "start"
 REG_GATE_1(IT);
 
-/// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
-void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        PhaseRootN(n, start + bit);
-    }
-}
-
-/// Apply inverse "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
-void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        IPhaseRootN(n, start + bit);
-    }
-}
-
-// Apply X ("not") gate to each bit in "length," starting from bit index
-// "start"
+/// Apply X ("not") gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(X);
 
-// Apply square root of X gate to each bit in "length," starting from bit index
-// "start"
+/// Apply square root of X gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(SqrtX);
 
-// Apply inverse square root of X gate to each bit in "length," starting from bit index
-// "start"
+/// Apply inverse square root of X gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(ISqrtX);
-
-// Single register instructions:
-
-/// Apply general unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        U(start + bit, theta, phi, lambda);
-    }
-}
-
-/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        U2(start + bit, phi, lambda);
-    }
-}
 
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(H);
@@ -176,66 +156,22 @@ REG_GATE_1(ISqrtY);
 REG_GATE_1(Z);
 
 /// Apply controlled Pauli Y matrix to each bit
-void QInterface::CY(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CY(control + bit, target + bit); });
-}
+REG_GATE_C1_1(CY);
 
 /// Apply controlled Pauli Z matrix to each bit
-void QInterface::CZ(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CZ(control + bit, target + bit); });
-}
+REG_GATE_C1_1(CZ);
 
 /// Apply controlled S gate to each bit
-void QInterface::CS(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CS(control + bit, target + bit); });
-}
+REG_GATE_C1_1(CS);
 
 /// Apply controlled IS gate to each bit
-void QInterface::CIS(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CIS(control + bit, target + bit); });
-}
+REG_GATE_C1_1(CIS);
 
 /// Apply controlled T gate to each bit
-void QInterface::CT(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CT(control + bit, target + bit); });
-}
+REG_GATE_C1_1(CT);
 
 /// Apply controlled IT gate to each bit
-void QInterface::CIT(bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CIT(control + bit, target + bit); });
-}
-
-/// Apply controlled "PhaseRootN" gate to each bit
-void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    if (n == 0) {
-        return;
-    } else if (n == 1) {
-        CZ(control, target, length);
-        return;
-    }
-
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CPhaseRootN(n, control + bit, target + bit); });
-}
-
-/// Apply controlled IT gate to each bit
-void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    if (n == 0) {
-        return;
-    } else if (n == 1) {
-        CZ(control, target, length);
-        return;
-    }
-
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CIPhaseRootN(n, control + bit, target + bit); });
-}
+REG_GATE_C1_1(CIT);
 
 /// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
@@ -248,6 +184,217 @@ REG_GATE_3B(CLOR);
 /// "XOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
 REG_GATE_3B(CLXOR);
+
+///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
+REG_GATE_1R(RT);
+
+/// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
+void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    if (denomPower > 1) {
+        if (numerator == 1) {
+            PhaseRootN(denomPower - 1, qubit);
+            return;
+        } else if (numerator == -1) {
+            IPhaseRootN(denomPower - 1, qubit);
+            return;
+        }
+    }
+
+    RT(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
+REG_GATE_1D(RTDyad);
+
+/// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
+REG_GATE_1R(Exp);
+
+/// Dyadic fraction (identity) exponentiation gate - Applies exponentiation of the identity operator
+void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    Exp(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+REG_GATE_1D(ExpDyad);
+
+/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+REG_GATE_1R(ExpX);
+
+/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
+void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    ExpX(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
+REG_GATE_1D(ExpXDyad);
+
+/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+REG_GATE_1R(ExpY);
+
+/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
+void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    ExpY(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
+REG_GATE_1D(ExpYDyad);
+
+/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
+void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    ExpZ(dyadAngle(numerator, denomPower), qubit);
+}
+
+/**
+ * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+ */
+REG_GATE_1R(ExpZ);
+
+/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
+REG_GATE_1D(ExpZDyad);
+
+/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
+REG_GATE_1R(RX);
+
+/// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
+void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit) { RX(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction x axis rotation gate - Rotates around Pauli x
+REG_GATE_1D(RXDyad);
+
+/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
+REG_GATE_1R(RY);
+
+/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit) { RY(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
+REG_GATE_1D(RYDyad);
+
+/// z axis rotation gate - Rotates each bit around Pauli z axis
+REG_GATE_1R(RZ);
+
+/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit) { RZ(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
+REG_GATE_1D(RZDyad)
+
+/// Controlled "phase shift gate"
+REG_GATE_C1_1R(CRT);
+
+/// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
+/// 2^denomPower) around |1> state
+void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRT(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction "phase shift gate"
+REG_GATE_C1_1D(CRTDyad);
+
+/// Controlled x axis rotation
+REG_GATE_C1_1R(CRX);
+
+/// Controlled dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
+void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRX(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+REG_GATE_C1_1D(CRXDyad);
+
+/// Controlled y axis rotation
+REG_GATE_C1_1R(CRY);
+
+/// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRY(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+REG_GATE_C1_1D(CRYDyad);
+
+/// Controlled z axis rotation
+REG_GATE_C1_1R(CRZ);
+
+/// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
+void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRZ(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+REG_GATE_C1_1D(CRZDyad);
+
+/// Apply general unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U(start + bit, theta, phi, lambda);
+    }
+}
+
+/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U2(start + bit, phi, lambda);
+    }
+}
+
+/// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
+void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        PhaseRootN(n, start + bit);
+    }
+}
+
+/// Apply inverse "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
+void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        IPhaseRootN(n, start + bit);
+    }
+}
+
+/// Apply controlled "PhaseRootN" gate to each bit
+void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        CZ(control, target, length);
+        return;
+    }
+
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CPhaseRootN(n, control + bit, target + bit); });
+}
+
+/// Apply controlled IT gate to each bit
+void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
+{
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        CZ(control, target, length);
+        return;
+    }
+
+    ControlledLoopFixture(length, [&](bitLenInt bit) { CIPhaseRootN(n, control + bit, target + bit); });
+}
 
 /// Arithmetic shift left, with last 2 bits as sign and carry
 void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
@@ -367,191 +514,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     }
 }
 
-///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-REG_GATE_1R(RT);
-
-/// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
-void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    if (denomPower > 1) {
-        if (numerator == 1) {
-            PhaseRootN(denomPower - 1, qubit);
-            return;
-        } else if (numerator == -1) {
-            IPhaseRootN(denomPower - 1, qubit);
-            return;
-        }
-    }
-
-    RT((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
-REG_GATE_1D(RTDyad)
-
-/// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
-REG_GATE_1R(Exp)
-
-/// Dyadic fraction (identity) exponentiation gate - Applies exponentiation of the identity operator
-void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    Exp((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
-REG_GATE_1D(ExpDyad)
-
-/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
-REG_GATE_1R(ExpX)
-
-/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
-void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    ExpX((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
-REG_GATE_1D(ExpXDyad)
-
-/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
-REG_GATE_1R(ExpY)
-
-/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
-void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    ExpY((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
-REG_GATE_1D(ExpYDyad)
-
-/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
-void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    ExpZ((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/**
- * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
- */
-REG_GATE_1R(ExpZ)
-
-/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
-REG_GATE_1D(ExpZDyad)
-
-/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
-REG_GATE_1R(RX)
-
-/// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
-void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    RX((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction x axis rotation gate - Rotates around Pauli x
-REG_GATE_1D(RXDyad)
-
-/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
-REG_GATE_1R(RY)
-
-/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    RY((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
-REG_GATE_1D(RYDyad)
-
-/// z axis rotation gate - Rotates each bit around Pauli z axis
-REG_GATE_1R(RZ)
-
-/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    RZ((-M_PI * numerator * 2) / pow(2, denomPower), qubit);
-}
-
-/// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
-REG_GATE_1D(RZDyad)
-
-/// Controlled "phase shift gate"
-void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRT(radians, control + bit, target + bit); });
-}
-
-/// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
-/// 2^denomPower) around |1> state
-void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRT((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction "phase shift gate"
-void QInterface::CRTDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRTDyad(numerator, denominator, control + bit, target + bit); });
-}
-
-/// Controlled x axis rotation
-void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRX(radians, control + bit, target + bit); });
-}
-
-/// Controlled dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
-void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRX((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
-/// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
-void QInterface::CRXDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRXDyad(numerator, denominator, control + bit, target + bit); });
-}
-
-/// Controlled y axis rotation
-void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRY(radians, control + bit, target + bit); });
-}
-
-/// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRY((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
-/// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-void QInterface::CRYDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRYDyad(numerator, denominator, control + bit, target + bit); });
-}
-
-/// Controlled z axis rotation
-void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRZ(radians, control + bit, target + bit); });
-}
-
-/// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
-void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRZ((-M_PI * numerator * 2) / pow(2, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
-/// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
-void QInterface::CRZDyad(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)
-{
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CRZDyad(numerator, denominator, control + bit, target + bit); });
-}
-
-// Bit-wise apply measurement gate to a register
+/// Bit-wise apply measurement gate to a register
 bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
     bitCapInt res = 0;
@@ -563,7 +526,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
     return res;
 }
 
-// Bit-wise apply measurement gate to a register
+/// Bit-wise apply measurement gate to a register
 bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
 {
     bitCapInt result = 0;
@@ -579,7 +542,7 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
     return result;
 }
 
-// Returns probability of permutation of the register
+/// Returns probability of permutation of the register
 real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
     real1 prob = ONE_R1;
@@ -593,7 +556,7 @@ real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     return prob;
 }
 
-// Returns probability of permutation of the mask
+/// Returns probability of permutation of the mask
 real1 QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     real1 prob = ZERO_R1;

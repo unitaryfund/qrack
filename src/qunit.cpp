@@ -29,8 +29,10 @@
 #include "qunit.hpp"
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
-#define UNSAFE_CACHED_CLASSICAL(shard) ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm))
-#define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && !shard.isProbDirty && UNSAFE_CACHED_CLASSICAL(shard))
+/* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
+#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+    (!shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+#define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && UNSAFE_CACHED_CLASSICAL(shard))
 #define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
@@ -1231,6 +1233,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
         if (CACHED_ZERO(shards[target])) {
+            delete[] controls;
             return;
         }
 
@@ -1245,6 +1248,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shards[target])) {
+        delete[] controls;
         return;
     }
 
@@ -1273,9 +1277,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     bitLenInt target = cTarget;
 
     if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
+        delete[] controls;
         return;
     }
     if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
+        delete[] controls;
         return;
     }
 
