@@ -191,12 +191,12 @@ REG_GATE_1R(RT);
 /// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
 void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit)
 {
-    if (denomPower > 1) {
+    if (denomPower > 0) {
         if (numerator == 1) {
-            IPhaseRootN(denomPower - 1, qubit);
+            PhaseRootN(denomPower + 1, qubit);
             return;
         } else if (numerator == -1) {
-            PhaseRootN(denomPower - 1, qubit);
+            IPhaseRootN(denomPower + 1, qubit);
             return;
         }
     }
