@@ -1643,7 +1643,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_add_1")
     qftReg->SetPermutation(0);
     qftReg->QFT(0, 2);
     qftReg->RTDyad(1, 0, 0);
-    qftReg->RTDyad(1, 1, 1);
+    qftReg->RTDyad(1, 0, 1);
     qftReg->IQFT(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
