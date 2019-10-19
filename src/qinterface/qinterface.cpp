@@ -79,7 +79,7 @@ namespace Qrack {
             length, [&](bitLenInt bit) { gate(numerator, denominator, control + bit, target + bit); });                \
     }
 
-inline real1 dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
+inline real1 dyadAngle(int numerator, int denomPower) { return (M_PI * numerator * 2) / pow(2, denomPower); };
 
 template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
 {
@@ -216,10 +216,10 @@ void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
     Exp(dyadAngle(numerator, denomPower), qubit);
 }
 
-/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{i * \pi * numerator * I / 2^denomPower} \f$,
 REG_GATE_1D(ExpDyad);
 
-/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
 REG_GATE_1R(ExpX);
 
 /// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
@@ -231,7 +231,7 @@ void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
 /// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
 REG_GATE_1D(ExpXDyad);
 
-/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
 REG_GATE_1R(ExpY);
 
 /// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
@@ -250,7 +250,7 @@ void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
 }
 
 /**
- * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+ * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
  */
 REG_GATE_1R(ExpZ);
 

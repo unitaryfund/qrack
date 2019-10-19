@@ -57,6 +57,10 @@ typedef double real1;
 #define min_norm 1e-30
 #endif
 
+#define ONE_CMPLX complex(ONE_R1, ZERO_R1)
+#define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
+#define I_CMPLX complex(ZERO_R1, ONE_R1)
+
 // approxcompare_error is the maximum acceptable sum of probability amplitude difference for ApproxCompare to return
 // "true." When TrySeparate or TryDecohere is applied after the QFT followed by its inverse on a permutation, the sum of
 // square errors of probability is generally less than 10^-11, for float accuracy. (A small number of trials return many
