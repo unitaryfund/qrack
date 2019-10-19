@@ -2924,7 +2924,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
     qftReg->SetPermutation(0xb);
     qftReg->H(0, 4);
     qftReg->CNOT(0, 4, 4);
-    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == (testEngineType == QINTERFACE_QUNIT));
+    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == false);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")

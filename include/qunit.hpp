@@ -286,6 +286,8 @@ public:
     virtual void Finish();
     virtual bool isFinished();
 
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+
     virtual QInterfacePtr Clone();
 
     /** @} */
@@ -353,8 +355,6 @@ protected:
 
     virtual void SeparateBit(bool value, bitLenInt qubit);
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
-
     void OrderContiguous(QInterfacePtr unit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest);
@@ -369,7 +369,7 @@ protected:
 
     template <typename CF, typename F>
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f);
+        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f, const bool& inCurrentBasis = false);
 
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);

@@ -1047,18 +1047,6 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
             }
             return true;
         }
-
-        QEngineShard& cShard = shards[rControl];
-        QEngineShard& tShard = shards[target];
-        if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard) &&
-            (!tShard.isPlusMinus || (norm(tShard.amp0) < min_norm)) && !PHASE_MATTERS(tShard)) {
-            if (!tShard.isPlusMinus) {
-                CNOT(target, rControl);
-            } else {
-                CNOT(rControl, target);
-            }
-            return true;
-        }
     }
 
     return false;
@@ -1066,22 +1054,27 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
-    QEngineShard& cShard = shards[control];
-    QEngineShard& tShard = shards[target];
-    if (cShard.isPlusMinus && !DIRTY(cShard) && !DIRTY(tShard)) {
-        if (!tShard.isPlusMinus) {
-            CNOT(target, control);
-        } else if (norm(tShard.amp0) < min_norm) {
-            ApplyOrEmulate(cShard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
-            std::swap(cShard.amp0, cShard.amp1);
-        }
-        return;
-    }
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     complex topRight = ONE_R1;
     complex bottomLeft = ONE_R1;
+
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+    if (cShard.isPlusMinus && tShard.isPlusMinus) {
+        ApplyEitherControlled(controls, controlLen, { target }, false,
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+                if (!shards[target].isPlusMinus) {
+                    unit->CNOT(CTRL_1_ARGS);
+                } else {
+                    complex trnsMtrx[4];
+                    TransformInvert(topRight, bottomLeft, trnsMtrx);
+                    unit->ApplyControlledSingleBit(CTRL_GEN_ARGS);
+                }
+            },
+            [&]() { X(target); }, true);
+        return;
+    }
 
     CTRLED_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false);
 }
@@ -1379,7 +1372,7 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = Prob(controls[i]);                                                                                       \
+    bitProb = inCurrentBasis ? ProbBase(controls[i]) : Prob(controls[i]);                                              \
     if (bitProb < min_norm) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1393,13 +1386,15 @@ void QUnit::AntiCISqrtSwap(
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
     } else {                                                                                                           \
-        TransformBasis(false, controls[i]);                                                                            \
+        if (!inCurrentBasis) {                                                                                         \
+            TransformBasis(false, controls[i]);                                                                        \
+        }                                                                                                              \
         controlVec.push_back(controls[i]);                                                                             \
     }
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn)
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
 {
     bitLenInt i, j;
 
@@ -1428,7 +1423,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             if (isSeparated) {
                 CHECK_BREAK_AND_TRIM();
             } else {
-                TransformBasis(false, controls[i]);
+                if (!inCurrentBasis) {
+                    TransformBasis(false, controls[i]);
+                }
                 controlVec.push_back(controls[i]);
             }
         }
@@ -2422,7 +2419,8 @@ template <typename F> bool QUnit::ParallelUnitApply(F fn)
         QInterfacePtr toFind = shards[i].unit;
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
-            if (!fn(toFind)) return false;
+            if (!fn(toFind))
+                return false;
         }
     }
 
@@ -2432,18 +2430,27 @@ template <typename F> bool QUnit::ParallelUnitApply(F fn)
 void QUnit::UpdateRunningNorm()
 {
     EndAllEmulation();
-    ParallelUnitApply([](QInterfacePtr unit) { unit->UpdateRunningNorm(); return true; });
+    ParallelUnitApply([](QInterfacePtr unit) {
+        unit->UpdateRunningNorm();
+        return true;
+    });
 }
 
 void QUnit::NormalizeState(real1 nrm)
 {
     EndAllEmulation();
-    ParallelUnitApply([nrm](QInterfacePtr unit) { unit->NormalizeState(nrm); return true; });
+    ParallelUnitApply([nrm](QInterfacePtr unit) {
+        unit->NormalizeState(nrm);
+        return true;
+    });
 }
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit) { unit->Finish(); return true; });
+    ParallelUnitApply([](QInterfacePtr unit) {
+        unit->Finish();
+        return true;
+    });
 }
 
 bool QUnit::isFinished()
