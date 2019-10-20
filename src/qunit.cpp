@@ -1070,21 +1070,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is invariant. We just let ApplyEitherControlled() know to leave the current basis alone, by way of the last
     // optional "true" argument in the call.
-    if (cShard.isPlusMinus) {
-        if (tShard.isPlusMinus) {
-            ApplyEitherControlled(controls, controlLen, { target }, false,
-                [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-                [&]() { X(target); }, true);
-            return;
-        }// else {
-            // If tShard is in |0>/|1> basis, though, we can use the truth table in yet a third basis.
-            // You can check by hand, if we flip the bit phase and reverse the control and target,
-            // we get the same result. This is cheaper, given our controlled gate optimizations.
-            // std::swap(controls[0], target);
-            // ApplyControlledSinglePhase(controls, 1U, target, -ONE_CMPLX, -ONE_CMPLX);
-            // CNOT(controls[0], target);
-            // return;
-        //}    
+    if (cShard.isPlusMinus && tShard.isPlusMinus) {
+        ApplyEitherControlled(controls, controlLen, { target }, false,
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
+            [&]() { X(target); }, true);
+        return;
     }
 
     CTRLED_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false);
