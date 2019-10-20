@@ -1070,11 +1070,21 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is invariant. We just let ApplyEitherControlled() know to leave the current basis alone, by way of the last
     // optional "true" argument in the call.
-    if (cShard.isPlusMinus && tShard.isPlusMinus) {
-        ApplyEitherControlled(controls, controlLen, { target }, false,
-            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-            [&]() { X(target); }, true);
-        return;
+    if (cShard.isPlusMinus) {
+        if (tShard.isPlusMinus) {
+            ApplyEitherControlled(controls, controlLen, { target }, false,
+                [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
+                [&]() { X(target); }, true);
+            return;
+        }// else {
+            // If tShard is in |0>/|1> basis, though, we can use the truth table in yet a third basis.
+            // You can check by hand, if we flip the bit phase and reverse the control and target,
+            // we get the same result. This is cheaper, given our controlled gate optimizations.
+            // std::swap(controls[0], target);
+            // ApplyControlledSinglePhase(controls, 1U, target, -ONE_CMPLX, -ONE_CMPLX);
+            // CNOT(controls[0], target);
+            // return;
+        //}    
     }
 
     CTRLED_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false);
@@ -1399,8 +1409,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 {
     bitLenInt i, j;
 
-    // If the controls start entirely separated from the targets, it's probably worth checking to see if the have total
-    // or no probability of altering the targets, such that we can still keep them separate.
+    // If the controls start entirely separated from the targets, it's probably worth checking to see if the have
+    // total or no probability of altering the targets, such that we can still keep them separate.
 
     std::vector<bitLenInt> controlVec;
 
@@ -1409,7 +1419,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
-            // This might determine that we can just skip out of the whole gate, in which case it returns this method:
+            // This might determine that we can just skip out of the whole gate, in which case it returns this
+            // method:
             CHECK_BREAK_AND_TRIM();
         } else {
             isSeparated = true;
@@ -1794,9 +1805,9 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 break;
             }
 
-            // We're blocked by needing to add 1 to a bit in an indefinite state, which would superpose the carry-out.
-            // However, if we hit another index where the qubit is known and toAdd == inReg, the carry-out is guaranteed
-            // not to be superposed.
+            // We're blocked by needing to add 1 to a bit in an indefinite state, which would superpose the
+            // carry-out. However, if we hit another index where the qubit is known and toAdd == inReg, the
+            // carry-out is guaranteed not to be superposed.
 
             // Load the first bit:
             bitCapInt bitMask = ONE_BCI;
@@ -1816,8 +1827,8 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
                 partStart = start + partLength - ONE_BCI;
                 if (!CheckBitPermutation(partStart)) {
-                    // If the quantum bit at this position is superposed, then we can't determine that the carry won't
-                    // be superposed. Advance the loop.
+                    // If the quantum bit at this position is superposed, then we can't determine that the carry
+                    // won't be superposed. Advance the loop.
                     continue;
                 }
 
