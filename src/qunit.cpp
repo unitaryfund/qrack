@@ -1072,15 +1072,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // optional "true" argument in the call.
     if (cShard.isPlusMinus && tShard.isPlusMinus) {
         ApplyEitherControlled(controls, controlLen, { target }, false,
-            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-                if (!shards[target].isPlusMinus) {
-                    unit->CNOT(CTRL_1_ARGS);
-                } else {
-                    complex trnsMtrx[4];
-                    TransformInvert(topRight, bottomLeft, trnsMtrx);
-                    unit->ApplyControlledSingleBit(CTRL_GEN_ARGS);
-                }
-            },
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { X(target); }, true);
         return;
     }
