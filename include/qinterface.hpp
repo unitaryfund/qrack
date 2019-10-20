@@ -572,6 +572,13 @@ public:
     virtual void H(bitLenInt qubitIndex);
 
     /**
+     * Square root of Hadamard gate
+     *
+     * Applies the square root of the Hadamard gate on qubit at "qubitIndex."
+     */
+    virtual void SqrtH(bitLenInt qubitIndex);
+
+    /**
      * Measurement gate
      *
      * Measures the qubit at "qubitIndex" and returns either "true" or "false."
@@ -656,6 +663,20 @@ public:
     virtual void IT(bitLenInt qubitIndex);
 
     /**
+     * "PhaseRootN" gate
+     *
+     * Applies a 1/(2^N) phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void PhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+
+    /**
+     * Inverse "PhaseRootN" gate
+     *
+     * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."
+     */
+    virtual void IPhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+
+    /**
      * X gate
      *
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
@@ -681,6 +702,40 @@ public:
     virtual void Z(bitLenInt qubitIndex);
 
     /**
+     * Square root of X gate
+     *
+     * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void SqrtX(bitLenInt qubitIndex);
+
+    /**
+     * Inverse square root of X gate
+     *
+     * Applies the (by convention) inverse square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
+     * "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void ISqrtX(bitLenInt qubitIndex);
+
+    /**
+     * Square root of Y gate
+     *
+     * Applies the square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * effects.
+     */
+    virtual void SqrtY(bitLenInt qubitIndex);
+
+    /**
+     * Square root of Y gate
+     *
+     * Applies the (by convention) inverse square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
+     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * effects.
+     */
+    virtual void ISqrtY(bitLenInt qubitIndex);
+
+    /**
      * Controlled Y gate
      *
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
@@ -695,6 +750,54 @@ public:
      * to "target."
      */
     virtual void CZ(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled S gate
+     *
+     * If the "control" bit is set to 1, then the S gate is applied
+     * to "target."
+     */
+    virtual void CS(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled inverse S gate
+     *
+     * If the "control" bit is set to 1, then the inverse S gate is applied
+     * to "target."
+     */
+    virtual void CIS(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled T gate
+     *
+     * If the "control" bit is set to 1, then the T gate is applied
+     * to "target."
+     */
+    virtual void CT(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled inverse T gate
+     *
+     * If the "control" bit is set to 1, then the inverse T gate is applied
+     * to "target."
+     */
+    virtual void CIT(bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+
+    /**
+     * Controlled inverse "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -991,6 +1094,9 @@ public:
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
 
+    /** Bitwise square root of Hadamard */
+    virtual void SqrtH(bitLenInt start, bitLenInt length);
+
     /** Bitwise S operator (1/4 phase rotation) */
     virtual void S(bitLenInt start, bitLenInt length);
 
@@ -1003,11 +1109,29 @@ public:
     /** Bitwise inverse T operator (1/8 phase rotation) */
     virtual void IT(bitLenInt start, bitLenInt length);
 
+    /** Bitwise "PhaseRootN" operator (1/(2^N) phase rotation) */
+    virtual void PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse "PhaseRootN" operator (1/(2^N) phase rotation) */
+    virtual void IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length);
+
     /** Bitwise Pauli X (or logical "NOT") operator */
     virtual void X(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Y operator */
     virtual void Y(bitLenInt start, bitLenInt length);
+
+    /** Bitwise square root of Pauli X operator */
+    virtual void SqrtX(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse square root of Pauli X operator */
+    virtual void ISqrtX(bitLenInt start, bitLenInt length);
+
+    /** Bitwise square root of Pauli Y operator */
+    virtual void SqrtY(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse square root of Pauli Y operator */
+    virtual void ISqrtY(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Z operator */
     virtual void Z(bitLenInt start, bitLenInt length);
@@ -1247,6 +1371,54 @@ public:
      * to "target."
      */
     virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled S gate
+     *
+     * If the "control" bit is set to 1, then the S gate is applied
+     * to "target."
+     */
+    virtual void CS(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled inverse S gate
+     *
+     * If the "control" bit is set to 1, then the inverse S gate is applied
+     * to "target."
+     */
+    virtual void CIS(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled T gate
+     *
+     * If the "control" bit is set to 1, then the T gate is applied
+     * to "target."
+     */
+    virtual void CT(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled inverse T gate
+     *
+     * If the "control" bit is set to 1, then the inverse T gate is applied
+     * to "target."
+     */
+    virtual void CIT(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled inverse "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
 

@@ -286,6 +286,8 @@ public:
     virtual void Finish();
     virtual bool isFinished();
 
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+
     virtual QInterfacePtr Clone();
 
     /** @} */
@@ -326,6 +328,10 @@ protected:
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
 
+    template <typename F>
+    void CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
+        const bitLenInt& length, F fn);
+
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
@@ -346,9 +352,10 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
-    virtual void SeparateBit(bool value, bitLenInt qubit);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1 param = ZERO_R1);
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+    virtual void SeparateBit(bool value, bitLenInt qubit);
 
     void OrderContiguous(QInterfacePtr unit);
 
@@ -364,7 +371,7 @@ protected:
 
     template <typename CF, typename F>
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f);
+        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f, const bool& inCurrentBasis = false);
 
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
