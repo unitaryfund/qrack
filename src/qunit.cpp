@@ -2397,14 +2397,14 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
     return toRet;
 }
 
-template <typename F> bool QUnit::ParallelUnitApply(F fn)
+bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param)
 {
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
-            if (!fn(toFind))
+            if (!fn(toFind, param))
                 return false;
         }
     }
@@ -2415,7 +2415,7 @@ template <typename F> bool QUnit::ParallelUnitApply(F fn)
 void QUnit::UpdateRunningNorm()
 {
     EndAllEmulation();
-    ParallelUnitApply([](QInterfacePtr unit) {
+    ParallelUnitApply([](QInterfacePtr unit, real1 unused) {
         unit->UpdateRunningNorm();
         return true;
     });
@@ -2424,15 +2424,17 @@ void QUnit::UpdateRunningNorm()
 void QUnit::NormalizeState(real1 nrm)
 {
     EndAllEmulation();
-    ParallelUnitApply([nrm](QInterfacePtr unit) {
-        unit->NormalizeState(nrm);
-        return true;
-    });
+    ParallelUnitApply(
+        [](QInterfacePtr unit, real1 nrm) {
+            unit->NormalizeState(nrm);
+            return true;
+        },
+        nrm);
 }
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit) {
+    ParallelUnitApply([](QInterfacePtr unit, real1 unused) {
         unit->Finish();
         return true;
     });
@@ -2440,7 +2442,7 @@ void QUnit::Finish()
 
 bool QUnit::isFinished()
 {
-    return ParallelUnitApply([](QInterfacePtr unit) { return unit->isFinished(); });
+    return ParallelUnitApply([](QInterfacePtr unit, real1 unused) { return unit->isFinished(); });
 }
 
 bool QUnit::ApproxCompare(QUnitPtr toCompare)
