@@ -2925,6 +2925,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
     qftReg->H(0, 4);
     qftReg->CNOT(0, 4, 4);
     REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == false);
+
+    qftReg->CNOT(0, 4, 4);
+    qftReg->H(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xb));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
