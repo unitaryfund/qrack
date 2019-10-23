@@ -1080,7 +1080,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     // If tShard is not in |+>/|-> basis, we can transform it, first, but let's not if we definitely know the bit will
     // become entangled.
-    if (cShard.isPlusMinus && (tShard.isPlusMinus || !CACHED_CLASSICAL(tShard))) {
+    if (cShard.isPlusMinus && !CACHED_CLASSICAL(tShard)) {
         if (!tShard.isPlusMinus) {
             TransformBasis(true, target);
         }
