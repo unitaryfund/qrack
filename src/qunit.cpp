@@ -21,6 +21,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -1077,25 +1079,12 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is invariant. We just let ApplyEitherControlled() know to leave the current basis alone, by way of the last
     // optional "true" argument in the call.
-    if (cShard.isPlusMinus) {
-        if (tShard.isPlusMinus) {
-            ApplyEitherControlled(controls, controlLen, { target }, false,
-                [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-                [&]() { ZBase(target); }, true);
-            return;
-        } else {
-            bool isHandled = false;
-            ApplyEitherControlled(controls, controlLen, { target }, false,
-                [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { isHandled = false; },
-                [&]() {
-                    XBase(target);
-                    isHandled = true;
-                },
-                true);
-            if (isHandled) {
-                return;
-            }
-        }
+    if (cShard.isPlusMinus && tShard.isPlusMinus) {
+        std::swap(controls[0], target);
+        ApplyEitherControlled(controls, controlLen, { target }, false,
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
+            [&]() { XBase(target); }, true);
+        return;
     }
 
     CTRLED_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false);
@@ -2525,8 +2514,6 @@ void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
     H(i);
     shards[i].isPlusMinus = toPlusMinus;
     freezeBasis = false;
-
-    TrySeparate(i);
 }
 
 bool QUnit::CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)
