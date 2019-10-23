@@ -428,3 +428,54 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         },
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
+
+TEST_CASE("test_quantum_supremacy", "[supreme]")
+{
+    const int depth = 20;
+    benchmarkLoop([](QInterfacePtr qReg, int n) {
+        int rowLen = std::sqrt(n);
+        real1 gateRand;
+        int b1, b2;
+        bitLenInt i;
+
+        for (i = 0; i < n; i++) {
+            gateRand = qReg->Rand();
+
+            if (gateRand < (ONE_R1 / 3)) {
+                qReg->SqrtX(i);
+            } else if (gateRand < (2 * ONE_R1 / 3)) {
+                qReg->SqrtY(i);
+            } else {
+                qReg->SqrtH(i);
+            }
+        }
+
+        for (i = 0; i < n; i++) {
+            gateRand = qReg->Rand();
+
+            b1 = i;
+            b2 = i;
+            // Next row, or loop
+            b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+            // Next column, or loop
+            b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1U : -1U);
+
+            while (b2 >= n) {
+                b2 -= n;
+            }
+            while (b2 < 0) {
+                b2 += n;
+            }
+
+            if (qReg->Rand() < (ONE_R1 / 2)) {
+                std::swap(b1, b2);
+            }
+
+            if (gateRand < (ONE_R1 / 2)) {
+                qReg->Swap(b1, b2);
+            } else {
+                qReg->CZ(b1, b2);
+            }
+        }
+    });
+}
