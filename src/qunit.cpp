@@ -1071,13 +1071,19 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
     // |++> -> |++>
-    // |+-> -> |+->
-    // |-+> -> |-->
-    // |--> -> |-+>
+    // |+-> -> |-->
+    // |-+> -> |-+>
+    // |--> -> |+->
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
-    // is invariant. We just let ApplyEitherControlled() know to leave the current basis alone, by way of the last
-    // optional "true" argument in the call.
-    if (cShard.isPlusMinus && tShard.isPlusMinus) {
+    // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
+    // alone, by way of the last optional "true" argument in the call.
+
+    // If tShard is not in |+>/|-> basis, we can transform it, first, but let's not if we definitely know the bit will
+    // become entangled.
+    if (cShard.isPlusMinus && (tShard.isPlusMinus || !CACHED_CLASSICAL(tShard))) {
+        if (!tShard.isPlusMinus) {
+            TransformBasis(true, target);
+        }
         std::swap(controls[0], target);
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
