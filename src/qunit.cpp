@@ -37,7 +37,7 @@
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
-#define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
+#define PHASE_MATTERS(shard) (randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
 namespace Qrack {
@@ -672,6 +672,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     shards[qubit].isEmulated = false;
     shards[qubit].isProbDirty = false;
     shards[qubit].isPhaseDirty = false;
+    shards[qubit].isPlusMinus = origShard.isPlusMinus;
     shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
     shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
 
@@ -887,6 +888,13 @@ void QUnit::H(bitLenInt target)
     }
 }
 
+void QUnit::XBase(const bitLenInt& target)
+{
+    QEngineShard& shard = shards[target];
+    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
+    std::swap(shard.amp0, shard.amp1);
+}
+
 void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
@@ -902,8 +910,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
     if (!shard.isPlusMinus) {
-        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
-        std::swap(shard.amp0, shard.amp1);
+        XBase(target);
     } else {
         ZBase(target);
     }
@@ -918,7 +925,7 @@ void QUnit::Z(bitLenInt target)
             shard.amp1 = -shard.amp1;
         }
     } else {
-        QInterface::Z(target);
+        XBase(target);
     }
 }
 
@@ -1064,16 +1071,23 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
     // |++> -> |++>
-    // |+-> -> |+->
-    // |-+> -> |-->
-    // |--> -> |-+>
+    // |+-> -> |-->
+    // |-+> -> |-+>
+    // |--> -> |+->
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
-    // is invariant. We just let ApplyEitherControlled() know to leave the current basis alone, by way of the last
-    // optional "true" argument in the call.
-    if (cShard.isPlusMinus && tShard.isPlusMinus) {
+    // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
+    // alone, by way of the last optional "true" argument in the call.
+
+    // If tShard is not in |+>/|-> basis, we can transform it, first, but let's not if we definitely know the bit will
+    // become entangled.
+    if (cShard.isPlusMinus && !CACHED_CLASSICAL(tShard)) {
+        if (!tShard.isPlusMinus) {
+            TransformBasis(true, target);
+        }
+        std::swap(controls[0], target);
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-            [&]() { X(target); }, true);
+            [&]() { XBase(target); }, true);
         return;
     }
 
@@ -2504,8 +2518,6 @@ void QUnit::TransformBasis(const bool& toPlusMinus, const bitLenInt& i)
     H(i);
     shards[i].isPlusMinus = toPlusMinus;
     freezeBasis = false;
-
-    TrySeparate(i);
 }
 
 bool QUnit::CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus)

@@ -293,6 +293,7 @@ public:
     /** @} */
 
 protected:
+    virtual void XBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
     virtual real1 ProbBase(const bitLenInt& qubit);
 
