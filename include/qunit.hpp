@@ -19,6 +19,15 @@
 
 namespace Qrack {
 
+/** Caches controlled gate phase between shards. */
+struct PhaseShard {
+    real1 angle0;
+    real1 angle1;
+};
+
+struct QEngineShard;
+typedef QEngineShard* QEngineShardPtr;
+
 /** Associates a QInterface object with a set of bits. */
 struct QEngineShard {
     QInterfacePtr unit;
@@ -29,6 +38,10 @@ struct QEngineShard {
     complex amp0;
     complex amp1;
     bool isPlusMinus;
+    // Shards which this shard controls
+    std::map<QEngineShardPtr, PhaseShard> controlsShards;
+    // Shards of which this shard is a target
+    std::map<QEngineShardPtr, PhaseShard> targetOfShards;
 
     QEngineShard()
         : unit(NULL)
@@ -39,6 +52,8 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , controlsShards()
+        , targetOfShards()
     {
     }
 
@@ -49,6 +64,8 @@ struct QEngineShard {
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
+        , controlsShards()
+        , targetOfShards()
     {
         amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
@@ -64,14 +81,120 @@ struct QEngineShard {
         , amp0(complex(ONE_R1, ZERO_R1))
         , amp1(complex(ZERO_R1, ZERO_R1))
         , isPlusMinus(false)
+        , controlsShards()
+        , targetOfShards()
     {
     }
 
     ~QEngineShard()
     {
-        if (unit)
+        if (unit) {
             unit->Finish();
+        }
+
+        while (targetOfShards.size() > 0) {
+            RemovePhaseTarget(targetOfShards.begin()->first);
+        }
+        while (controlsShards.size() > 0) {
+            RemovePhaseControl(controlsShards.begin()->first);
+        }
     }
+
+    void RemovePhaseControl(QEngineShardPtr p)
+    {
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = targetOfShards.find(p);
+        if (phaseShard != targetOfShards.end()) {
+            targetOfShards.erase(phaseShard);
+            phaseShard->first->RemovePhaseTarget(this);
+        }
+    }
+
+    void RemovePhaseTarget(QEngineShardPtr p)
+    {
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = controlsShards.find(p);
+        if (phaseShard != controlsShards.end()) {
+            controlsShards.erase(phaseShard);
+            phaseShard->first->RemovePhaseControl(this);
+        }
+    }
+
+    void MakePhaseControlledBy(QEngineShardPtr p)
+    {
+        if (p && (targetOfShards.find(p) != targetOfShards.end())) {
+            PhaseShard ps;
+            ps.angle0 = ZERO_R1;
+            ps.angle1 = ZERO_R1;
+            targetOfShards[p] = ps;
+            p->MakePhaseControlOf(this);
+        }
+    }
+
+    void MakePhaseControlOf(QEngineShardPtr p)
+    {
+        if (p && (controlsShards.find(p) != controlsShards.end())) {
+            PhaseShard ps;
+            ps.angle0 = ZERO_R1;
+            ps.angle1 = ZERO_R1;
+            controlsShards[p] = ps;
+            p->MakePhaseControlledBy(this);
+        }
+    }
+
+    void AddPhaseAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
+    {
+        if (targetOfShards.find(control) == targetOfShards.end()) {
+            MakePhaseControlledBy(control);
+        }
+
+        real1 nAngle0 = targetOfShards[control].angle0 + angle0Diff;
+        while (nAngle0 < (2 * M_PI)) {
+            nAngle0 += 4 * M_PI;
+        }
+        while (nAngle0 >= (2 * M_PI)) {
+            nAngle0 -= 4 * M_PI;
+        }
+
+        real1 nAngle1 = targetOfShards[control].angle1 + angle1Diff;
+        while (nAngle1 < (2 * M_PI)) {
+            nAngle1 += 4 * M_PI;
+        }
+        while (nAngle1 >= (2 * M_PI)) {
+            nAngle1 -= 4 * M_PI;
+        }
+
+        if (controlsShards.find(control) != controlsShards.end()) {
+            if (abs(controlsShards[control].angle0) < min_norm) {
+                nAngle1 += controlsShards[control].angle1;
+                controlsShards[control].angle1 = ZERO_R1;
+                RemovePhaseTarget(control);
+            } else {
+                controlsShards[control].angle1 += nAngle1;
+                nAngle1 = ZERO_R1;
+            }
+        }
+
+        if ((abs(nAngle1) < min_norm) && (abs(nAngle0) < min_norm)) {
+            RemovePhaseControl(control);
+        } else {
+            targetOfShards[control].angle0 = nAngle0;
+            control->controlsShards[this].angle0 = nAngle0;
+            targetOfShards[control].angle1 = nAngle1;
+            control->controlsShards[this].angle1 = nAngle1;
+        }
+    }
+
+    void FlipPhaseAnti()
+    {
+        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            std::swap(phaseShard->second.angle0, phaseShard->second.angle1);
+            PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
+            std::swap(remotePhase.angle0, remotePhase.angle1);
+        }
+    }
+
+    bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
+    bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
 
 class QUnit;
@@ -381,17 +504,29 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& i);
-    void TransformBasis(const bool& toPlusMinus, const bitLenInt& start, const bitLenInt& length)
+    void TransformBasis1(const bool& toPlusMinus, const bitLenInt& i);
+
+    void RevertBasis2(bitLenInt i);
+
+    void RevertBasis2(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            TransformBasis(toPlusMinus, start + i);
+            RevertBasis2(start + i);
         }
     }
-    void TransformBasisAll(const bool& toPlusMinus) { TransformBasis(toPlusMinus, 0, qubitCount); }
 
-    bool CheckRangeInBasis(const bitLenInt& start, const bitLenInt& length, const bitLenInt& plusMinus);
-
+    void ToPermBasis(const bitLenInt& i)
+    {
+        RevertBasis2(i);
+        TransformBasis1(false, i);
+    }
+    void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            ToPermBasis(start + i);
+        }
+    }
+    void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
     void CheckShardSeparable(const bitLenInt& target);
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
@@ -453,6 +588,16 @@ protected:
         } else {
             payload(shard);
         }
+    }
+
+    bitLenInt FindShardIndex(const QEngineShard& shard)
+    {
+        for (bitLenInt i = 0; i < shards.size(); i++) {
+            if (shards[i] == shard) {
+                return i;
+            }
+        }
+        return shards.size();
     }
 
     bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
