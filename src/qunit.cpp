@@ -1463,6 +1463,11 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             }
         }
     }
+
+    for (i = 0; i < targets.size(); i++) {
+        RevertBasis2(targets[i]);
+    }
+
     if (controlVec.size() == 0) {
         // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
         // avoiding an entangled representation.
