@@ -76,6 +76,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     }
 
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
+
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
             0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
         avgt = 0.0;
@@ -431,17 +432,27 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
+    // This is a rough approximation to the circuit argued to establish quantum supremacy.
+    // Nearest neighbors are only +/-1 index instead of on 2D grid, in this case, because it is difficult to factor the
+    // qubit count into a representatively rectangular mapping. See the comments.
+
     const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
-        int rowLen = std::sqrt(n);
+        // int rowLen = std::sqrt(n);
         real1 gateRand;
         int b1, b2;
         bitLenInt i, d;
 
+        // We repeat the entire prepartion for "depth" iterations.
+        // At very low depths, with only nearest neighbor entanglement, we can avoid entangling the representation of
+        // the entire state as a single Schr{\"o}dinger method unit.
         for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 gateRand = qReg->Rand();
 
+                // Each individual bit has one of these 3 gates applied at random.
+                // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants are
+                // handled as general single bit gates.
                 if (gateRand < (ONE_R1 / 3)) {
                     qReg->SqrtX(i);
                 } else if (gateRand < (2 * ONE_R1 / 3)) {
@@ -456,10 +467,15 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
                 b1 = i;
                 b2 = i;
+
+                // Unless n is a perfect square, the "row length" would have to be factored into a rectangular shape.
+                // This isn't simple if "n" is prime or decomposes awkwardly.
+
                 // Next row, or loop
-                b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+                // b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+
                 // Next column, or loop
-                b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1U : -1U);
+                b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1 : -1);
 
                 while (b2 >= n) {
                     b2 -= n;
@@ -473,11 +489,18 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 }
 
                 if (gateRand < (ONE_R1 / 2)) {
+                    // "iSWAP" is read to indicate a phase factor of "i" times swap.
+                    // Constant global phase factors have no effect on Hermitian expectation values.
                     qReg->Swap(b1, b2);
                 } else {
+                    // "1/6 of CZ" is read to indicate the 6th root, but we use a full CZ.
+                    // Either way, this could be the only "inefficient" gate in the set.
+                    // If removed, the rest of the circuit would avoid entanglement.
                     qReg->CZ(b1, b2);
                 }
             }
         }
+
+        qReg->MReg(0, n);
     });
 }
