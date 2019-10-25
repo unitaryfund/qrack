@@ -2578,7 +2578,7 @@ void QUnit::RevertBasis2(bitLenInt i)
 {
     QEngineShard& shard = shards[i];
 
-    if (freezeBasis || (shard.targetOfShards.size() == 0)) {
+    if (freezeBasis || ((shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0))) {
         // Recursive and idempotent calls stop here
         return;
     }
@@ -2597,6 +2597,21 @@ void QUnit::RevertBasis2(bitLenInt i)
         freezeBasis = false;
 
         shard.RemovePhaseControl(partner);
+    }
+
+    for (phaseShard = shard.controlsShards.begin(); phaseShard != shard.controlsShards.end(); phaseShard++) {
+        QEngineShard* partner = phaseShard->first;
+        bitLenInt j = FindShardIndex(*partner);
+
+        bitLenInt controls[1] = { i };
+        complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+        complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+
+        freezeBasis = true;
+        ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
+        freezeBasis = false;
+
+        shard.RemovePhaseTarget(partner);
     }
 
     // TrySeparate(i);
