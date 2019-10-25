@@ -867,8 +867,7 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!freezeBasis) {
-        RevertBasis2(target);
+    if (!freezeBasis && (shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0)) {
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
