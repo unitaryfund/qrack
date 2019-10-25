@@ -91,13 +91,6 @@ struct QEngineShard {
         if (unit) {
             unit->Finish();
         }
-
-        while (targetOfShards.size() > 0) {
-            RemovePhaseTarget(targetOfShards.begin()->first);
-        }
-        while (controlsShards.size() > 0) {
-            RemovePhaseControl(controlsShards.begin()->first);
-        }
     }
 
     void RemovePhaseControl(QEngineShardPtr p)

@@ -867,7 +867,8 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!freezeBasis && (shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0)) {
+    if (!freezeBasis) {
+        RevertBasis2(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
@@ -1142,6 +1143,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
+    if (!freezeBasis && !tShard.isPlusMinus && !cShard.isPlusMinus) {
+        tShard.AddPhaseAngles(&cShard, 0, (real1)(2 * M_PI));
+        return;
+    }
+
     if (cShard.isPlusMinus && !tShard.isPlusMinus) {
         std::swap(control, target);
     }
@@ -1238,7 +1244,19 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenInt& controlLen,
     const bitLenInt& cTarget, const complex topLeft, const complex bottomRight)
 {
+    if (controlLen == 0) {
+        ApplySinglePhase(topLeft, bottomRight, true, cTarget);
+        return;
+    }
+
     // Commutes with controlled phase optimizations
+    QEngineShard& tShard = shards[cTarget];
+    QEngineShard& cShard = shards[cControls[0]];
+
+    if (!freezeBasis && (controlLen == 1U) && !tShard.isPlusMinus && !cShard.isPlusMinus) {
+        tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
+        return;
+    }
 
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
