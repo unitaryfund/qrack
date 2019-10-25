@@ -1375,14 +1375,14 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    if ((norm(mtrx[1]) < min_norm) && (norm(mtrx[2]) < min_norm)) {
-        ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-        return;
-    }
-    if ((norm(mtrx[0]) < min_norm) && (norm(mtrx[3]) < min_norm)) {
-        ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-        return;
-    }
+    // if ((norm(mtrx[1]) < min_norm) && (norm(mtrx[2]) < min_norm)) {
+    //     ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+    //     return;
+    // }
+    // if ((norm(mtrx[0]) < min_norm) && (norm(mtrx[3]) < min_norm)) {
+    //     ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+    //     return;
+    // }
 
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
 }
