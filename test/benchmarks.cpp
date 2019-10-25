@@ -461,7 +461,7 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                     qReg->Y(i);
                 } else {
                     // NOTE: H does not yet efficiently commute with CZ!
-                    qReg->Z(i);
+                    qReg->H(i);
                 }
             }
 
