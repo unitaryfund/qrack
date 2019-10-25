@@ -460,7 +460,8 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                 } else if (gateRand < (2 * ONE_R1 / 3)) {
                     qReg->Y(i);
                 } else {
-                    qReg->H(i);
+                    // NOTE: H does not yet efficiently commute with CZ!
+                    qReg->Z(i);
                 }
             }
 
