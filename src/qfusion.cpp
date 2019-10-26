@@ -92,6 +92,7 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
             }
         }
     }
+    bitBuffers[qubitIndex] = NULL;
 }
 
 void QFusion::DiscardBit(const bitLenInt& qubitIndex)
@@ -114,13 +115,15 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
             }
         }
         // If we are discarding this bit, it is no longer controlled by any other bit.
-        std::vector<bitLenInt>::iterator found;
-        bitLenInt control;
-        for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
-            control = bfr->controls[i];
-            found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
-            if (found != bitControls[control].end()) {
-                bitControls[control].erase(found);
+        if (bfr->controls.size() > 0) {
+            std::vector<bitLenInt>::iterator found;
+            bitLenInt control;
+            for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
+                control = bfr->controls[i];
+                found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
+                if (found != bitControls[control].end()) {
+                    bitControls[control].erase(found);
+                }
             }
         }
     }
