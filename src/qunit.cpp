@@ -935,6 +935,7 @@ void QUnit::Z(bitLenInt target)
 {
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
+
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
             ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
@@ -1082,11 +1083,12 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     complex topRight = ONE_R1;
     complex bottomLeft = ONE_R1;
 
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+
     RevertBasis2(control);
     RevertBasis2(target);
 
-    QEngineShard& cShard = shards[control];
-    QEngineShard& tShard = shards[target];
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
     // |++> -> |++>
@@ -1115,9 +1117,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    RevertBasis2(control);
-    RevertBasis2(target);
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
     complex topRight = ONE_R1;
@@ -1171,9 +1170,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
-    // Commutes with controlled phase optimization
-
     QEngineShard& shard = shards[target];
+
+    RevertBasis2(target);
 
     if (!PHASE_MATTERS(shard)) {
         return;
@@ -1252,12 +1251,12 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenInt& controlLen,
     const bitLenInt& cTarget, const complex topLeft, const complex bottomRight)
 {
+    // Commutes with controlled phase optimizations
     if (controlLen == 0) {
         ApplySinglePhase(topLeft, bottomRight, true, cTarget);
         return;
     }
 
-    // Commutes with controlled phase optimizations
     QEngineShard& tShard = shards[cTarget];
     QEngineShard& cShard = shards[cControls[0]];
 
@@ -1358,9 +1357,9 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         return;
     }
 
-    RevertBasis2(target);
-
     QEngineShard& shard = shards[target];
+
+    RevertBasis2(target);
 
     complex trnsMtrx[4];
 
@@ -1389,15 +1388,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    // if ((norm(mtrx[1]) < min_norm) && (norm(mtrx[2]) < min_norm)) {
-    //     ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-    //     return;
-    // }
-    // if ((norm(mtrx[0]) < min_norm) && (norm(mtrx[3]) < min_norm)) {
-    //     ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-    //     return;
-    // }
-
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
 }
 
