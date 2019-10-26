@@ -432,8 +432,6 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 
 TEST_CASE("test_solved_circuit", "[supreme]")
 {
-    // WARNING: CZ with H commutation is still experimental and may be incorrect.
-
     // This is a "solved circuit," in that it is "classically efficient."
     // Qualitatively, this is reasonably representative of how "close" we can get to the quantum supremacy benchmark,
     // without exponentially exploding overhead.
@@ -519,8 +517,7 @@ TEST_CASE("test_solved_circuit", "[supreme]")
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
     // This is a rough approximation to the circuit argued to establish quantum supremacy.
-    // Nearest neighbors are only +/-1 index instead of on 2D grid, in this case, because it is difficult to factor the
-    // qubit count into a representatively rectangular mapping. See the comments.
+    // See the comments.
 
     const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
