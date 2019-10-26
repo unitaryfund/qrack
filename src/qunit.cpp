@@ -2617,28 +2617,12 @@ void QUnit::RevertBasis2(bitLenInt i)
 
         controls[0] = j;
 
-        // Combine targets and controls, where both exist.
-        std::map<QEngineShardPtr, PhaseShard>::iterator partnerShard = shard.controlsShards.find(partner);
-        if (partnerShard != shard.controlsShards.end()) {
-            if (phaseShard->second.angle0 < (4 * M_PI * min_norm)) {
-                real1 angle1 = phaseShard->second.angle1;
-                partner->AddPhaseAngles(&shard, 0, angle1);
-                partner->AddPhaseAngles(&shard, 0, -angle1);
-            } else if (partnerShard->second.angle0 < (4 * M_PI * min_norm)) {
-                real1 angle1 = partnerShard->second.angle1;
-                partner->AddPhaseAngles(&shard, 0, -angle1);
-                partner->AddPhaseAngles(&shard, 0, angle1);
-            }
-        }
-
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
-        if ((abs(polar0 - ONE_R1) > min_norm) || (abs(polar1 - ONE_R1) > min_norm)) {
-            freezeBasis = true;
-            ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
-            freezeBasis = false;
-        }
+        freezeBasis = true;
+        ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
+        freezeBasis = false;
 
         shard.RemovePhaseControl(partner);
     }
@@ -2652,11 +2636,9 @@ void QUnit::RevertBasis2(bitLenInt i)
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
-        if ((abs(polar0 - ONE_R1) > min_norm) || (abs(polar1 - ONE_R1) > min_norm)) {
-            freezeBasis = true;
-            ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
-            freezeBasis = false;
-        }
+        freezeBasis = true;
+        ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
+        freezeBasis = false;
 
         shard.RemovePhaseTarget(partner);
     }
