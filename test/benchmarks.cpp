@@ -478,13 +478,15 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                 // Unless n is a perfect square, the "row length" would have to be factored into a rectangular shape.
                 // This isn't simple if "n" is prime or decomposes awkwardly.
 
-                // Next row, or loop
-                if (rowLen > 1) {
-                    b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
-                }
+                bitLenInt rand4 = ((rowLen > 1) ? 4U : 2U) * qReg->Rand();
 
-                // Next column, or loop
-                b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1 : -1);
+                if (rand4 & 2U) {
+                    // Next row, or loop
+                    b2 += (rand4 & 1U) ? rowLen : -rowLen;
+                } else {
+                    // Next column, or loop
+                    b2 += (rand4 & 1U) ? 1 : -1;
+                }
 
                 while (b2 >= n) {
                     b2 -= n;
@@ -559,13 +561,15 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 // Unless n is a perfect square, the "row length" would have to be factored into a rectangular shape.
                 // This isn't simple if "n" is prime or decomposes awkwardly.
 
-                // Next row, or loop
-                if (rowLen > 1) {
-                    b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
-                }
+                bitLenInt rand4 = ((rowLen > 1) ? 4U : 2U) * qReg->Rand();
 
-                // Next column, or loop
-                b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1 : -1);
+                if (rand4 & 2U) {
+                    // Next row, or loop
+                    b2 += (rand4 & 1U) ? rowLen : -rowLen;
+                } else {
+                    // Next column, or loop
+                    b2 += (rand4 & 1U) ? 1 : -1;
+                }
 
                 while (b2 >= n) {
                     b2 -= n;
