@@ -148,28 +148,13 @@ struct QEngineShard {
             nAngle1 -= 4 * M_PI;
         }
 
-        if ((nAngle0 < (4 * M_PI * min_norm)) && (nAngle1 < (4 * M_PI * min_norm))) {
+        if ((abs(nAngle0) < (4 * M_PI * min_norm)) && (abs(nAngle1) < (4 * M_PI * min_norm))) {
             RemovePhaseControl(control);
         } else {
             targetOfShards[control].angle0 = nAngle0;
             control->controlsShards[this].angle0 = nAngle0;
             targetOfShards[control].angle1 = nAngle1;
             control->controlsShards[this].angle1 = nAngle1;
-        }
-
-        std::map<QEngineShardPtr, PhaseShard>::iterator controlShard = controlsShards.find(control);
-        if (controlShard == controlsShards.end()) {
-            return;
-        }
-
-        real1 cAngle1 = controlShard->second.angle1;
-
-        if (nAngle0 < (2 * M_PI * min_norm)) {
-            RemovePhaseTarget(control);
-            control->AddPhaseAngles(this, ZERO_R1, nAngle0);
-        } else if (controlShard->second.angle0 < (2 * M_PI * min_norm)) {
-            control->RemovePhaseControl(this);
-            AddPhaseAngles(control, ZERO_R1, cAngle1);
         }
     }
 
