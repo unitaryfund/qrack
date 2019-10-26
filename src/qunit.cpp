@@ -2599,6 +2599,7 @@ void QUnit::RevertBasis2(bitLenInt i)
         bitLenInt j = FindShardIndex(*partner);
 
         bitLenInt controls[1] = { j };
+
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 

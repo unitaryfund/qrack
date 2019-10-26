@@ -23,6 +23,12 @@ namespace Qrack {
 struct PhaseShard {
     real1 angle0;
     real1 angle1;
+
+    PhaseShard()
+        : angle0(ZERO_R1)
+        , angle1(ZERO_R1)
+    {
+    }
 };
 
 struct QEngineShard;
@@ -115,8 +121,6 @@ struct QEngineShard {
     {
         if (p && (targetOfShards.find(p) != targetOfShards.end())) {
             PhaseShard ps;
-            ps.angle0 = ZERO_R1;
-            ps.angle1 = ZERO_R1;
             targetOfShards[p] = ps;
             p->MakePhaseControlOf(this);
         }
@@ -126,8 +130,6 @@ struct QEngineShard {
     {
         if (p && (controlsShards.find(p) != controlsShards.end())) {
             PhaseShard ps;
-            ps.angle0 = ZERO_R1;
-            ps.angle1 = ZERO_R1;
             controlsShards[p] = ps;
             p->MakePhaseControlledBy(this);
         }
@@ -166,7 +168,7 @@ struct QEngineShard {
             }
         }
 
-        if ((abs(nAngle1) < min_norm) && (abs(nAngle0) < min_norm)) {
+        if ((abs(nAngle1) < (4 * M_PI * min_norm)) && (abs(nAngle0) < (4 * M_PI * min_norm))) {
             RemovePhaseControl(control);
         } else {
             targetOfShards[control].angle0 = nAngle0;
@@ -510,8 +512,8 @@ protected:
 
     void ToPermBasis(const bitLenInt& i)
     {
-        RevertBasis2(i);
         TransformBasis1(false, i);
+        RevertBasis2(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
