@@ -440,7 +440,12 @@ TEST_CASE("test_solved_circuit", "[supreme]")
 
     const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
-        // int rowLen = std::sqrt(n);
+
+        int rowLen = std::sqrt(n);
+        while (((n / rowLen) * rowLen) != n) {
+            rowLen--;
+        }
+
         real1 gateRand;
         int b1, b2;
         bitLenInt i, d;
@@ -461,7 +466,7 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                     qReg->Y(i);
                 } else {
                     // NOTE: H does not yet efficiently commute with CZ!
-                    //qReg->H(i);
+                    // qReg->H(i);
                     qReg->Z(i);
                 }
             }
@@ -476,7 +481,9 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                 // This isn't simple if "n" is prime or decomposes awkwardly.
 
                 // Next row, or loop
-                // b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+                if (rowLen > 1) {
+                    b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+                }
 
                 // Next column, or loop
                 b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1 : -1);
@@ -517,7 +524,12 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
     const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
-        // int rowLen = std::sqrt(n);
+
+        int rowLen = std::sqrt(n);
+        while (((n / rowLen) * rowLen) != n) {
+            rowLen--;
+        }
+
         real1 gateRand;
         int b1, b2;
         bitLenInt i, d;
@@ -551,7 +563,9 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 // This isn't simple if "n" is prime or decomposes awkwardly.
 
                 // Next row, or loop
-                // b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+                if (rowLen > 1) {
+                    b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? rowLen : -rowLen);
+                }
 
                 // Next column, or loop
                 b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? 1 : -1);
