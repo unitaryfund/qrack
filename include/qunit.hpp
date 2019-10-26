@@ -92,19 +92,12 @@ struct QEngineShard {
     {
     }
 
-    ~QEngineShard()
-    {
-        if (unit) {
-            unit->Finish();
-        }
-    }
-
     void RemovePhaseControl(QEngineShardPtr p)
     {
         std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = targetOfShards.find(p);
         if (phaseShard != targetOfShards.end()) {
+            phaseShard->first->controlsShards.erase(this);
             targetOfShards.erase(phaseShard);
-            phaseShard->first->RemovePhaseTarget(this);
         }
     }
 
@@ -112,34 +105,32 @@ struct QEngineShard {
     {
         std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = controlsShards.find(p);
         if (phaseShard != controlsShards.end()) {
+            phaseShard->first->targetOfShards.erase(this);
             controlsShards.erase(phaseShard);
-            phaseShard->first->RemovePhaseControl(this);
         }
     }
 
     void MakePhaseControlledBy(QEngineShardPtr p)
     {
-        if (p && (targetOfShards.find(p) != targetOfShards.end())) {
+        if (p && (targetOfShards.find(p) == targetOfShards.end())) {
             PhaseShard ps;
             targetOfShards[p] = ps;
-            p->MakePhaseControlOf(this);
+            p->controlsShards[this] = ps;
         }
     }
 
     void MakePhaseControlOf(QEngineShardPtr p)
     {
-        if (p && (controlsShards.find(p) != controlsShards.end())) {
+        if (p && (controlsShards.find(p) == controlsShards.end())) {
             PhaseShard ps;
             controlsShards[p] = ps;
-            p->MakePhaseControlledBy(this);
+            p->targetOfShards[this] = ps;
         }
     }
 
     void AddPhaseAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
     {
-        if (targetOfShards.find(control) == targetOfShards.end()) {
-            MakePhaseControlledBy(control);
-        }
+        MakePhaseControlledBy(control);
 
         real1 nAngle0 = targetOfShards[control].angle0 + angle0Diff;
         while (nAngle0 < (2 * M_PI)) {
@@ -157,25 +148,10 @@ struct QEngineShard {
             nAngle1 -= 4 * M_PI;
         }
 
-        if (controlsShards.find(control) != controlsShards.end()) {
-            if (abs(controlsShards[control].angle0) < min_norm) {
-                nAngle1 += controlsShards[control].angle1;
-                controlsShards[control].angle1 = ZERO_R1;
-                RemovePhaseTarget(control);
-            } else {
-                controlsShards[control].angle1 += nAngle1;
-                nAngle1 = ZERO_R1;
-            }
-        }
-
-        if ((abs(nAngle1) < (4 * M_PI * min_norm)) && (abs(nAngle0) < (4 * M_PI * min_norm))) {
-            RemovePhaseControl(control);
-        } else {
-            targetOfShards[control].angle0 = nAngle0;
-            control->controlsShards[this].angle0 = nAngle0;
-            targetOfShards[control].angle1 = nAngle1;
-            control->controlsShards[this].angle1 = nAngle1;
-        }
+        targetOfShards[control].angle0 = nAngle0;
+        control->controlsShards[this].angle0 = nAngle0;
+        targetOfShards[control].angle1 = nAngle1;
+        control->controlsShards[this].angle1 = nAngle1;
     }
 
     void FlipPhaseAnti()
@@ -512,6 +488,8 @@ protected:
 
     void ToPermBasis(const bitLenInt& i)
     {
+        // Currently, both basis changes will never be active at the same time, so we could transform back in either
+        // order.
         TransformBasis1(false, i);
         RevertBasis2(i);
     }

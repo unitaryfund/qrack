@@ -438,7 +438,7 @@ TEST_CASE("test_solved_circuit", "[supreme]")
     // Qualitatively, this is reasonably representative of how "close" we can get to the quantum supremacy benchmark,
     // without exponentially exploding overhead.
 
-    const int depth = 15;
+    const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
         // int rowLen = std::sqrt(n);
         real1 gateRand;

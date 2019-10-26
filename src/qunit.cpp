@@ -29,12 +29,11 @@
 #include "qunit.hpp"
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
+#define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
-#define CACHED_CLASSICAL(shard)                                                                                        \
-    (!shard.isPlusMinus && (shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0) &&                 \
-        UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_CLASSICAL(shard) (!shard.isPlusMinus && !QUEUED_PHASE(shard) && UNSAFE_CACHED_CLASSICAL(shard))
 #define CACHED_ONE(shard) (CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
@@ -206,6 +205,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         unit->Dispose(mapped, length);
     }
 
+    unit->Finish();
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 
@@ -666,7 +666,11 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 
     QInterfacePtr dest = MakeEngine(1, value ? 1 : 0);
 
-    origShard.unit->Dispose(origShard.mapped, 1);
+    if (origShard.unit->GetQubitCount() > 1) {
+        origShard.unit->Dispose(origShard.mapped, 1);
+    } else {
+        origShard.unit->Finish();
+    }
 
     /* Update the mappings. */
     shards[qubit].unit = dest;
@@ -1143,7 +1147,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis && !tShard.isPlusMinus && !cShard.isPlusMinus) {
+    if (!freezeBasis) {
+        TransformBasis1(false, target);
+        TransformBasis1(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)(2 * M_PI));
         return;
     }
@@ -1253,7 +1259,9 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     QEngineShard& tShard = shards[cTarget];
     QEngineShard& cShard = shards[cControls[0]];
 
-    if (!freezeBasis && (controlLen == 1U) && !tShard.isPlusMinus && !cShard.isPlusMinus) {
+    if (!freezeBasis && (controlLen == 1U)) {
+        TransformBasis1(false, cTarget);
+        TransformBasis1(false, cControls[0]);
         tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
         return;
     }
@@ -1302,6 +1310,10 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     const bitLenInt& cTarget, const complex topLeft, const complex bottomRight)
 {
     // Commutes with controlled phase optimizations
+    if (controlLen == 0) {
+        ApplySinglePhase(topLeft, bottomRight, true, cTarget);
+        return;
+    }
 
     QEngineShard& shard = shards[cTarget];
 
@@ -2588,39 +2600,61 @@ void QUnit::RevertBasis2(bitLenInt i)
 {
     QEngineShard& shard = shards[i];
 
-    if (freezeBasis || ((shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0))) {
+    if (freezeBasis || !QUEUED_PHASE(shard)) {
         // Recursive and idempotent calls stop here
         return;
     }
 
+    bitLenInt controls[1];
+
     std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
-    for (phaseShard = shard.targetOfShards.begin(); phaseShard != shard.targetOfShards.end(); phaseShard++) {
-        QEngineShard* partner = phaseShard->first;
+    while (shard.targetOfShards.size() > 0) {
+        phaseShard = shard.targetOfShards.begin();
+        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
-        bitLenInt controls[1] = { j };
+        controls[0] = j;
+
+        // Combine targets and controls, where both exist.
+        std::map<QEngineShardPtr, PhaseShard>::iterator partnerShard = shard.controlsShards.find(partner);
+        if (partnerShard != shard.controlsShards.end()) {
+            if (phaseShard->second.angle0 < (4 * M_PI * min_norm)) {
+                real1 angle1 = phaseShard->second.angle1;
+                partner->AddPhaseAngles(&shard, 0, angle1);
+                partner->AddPhaseAngles(&shard, 0, -angle1);
+            } else if (partnerShard->second.angle0 < (4 * M_PI * min_norm)) {
+                real1 angle1 = partnerShard->second.angle1;
+                partner->AddPhaseAngles(&shard, 0, -angle1);
+                partner->AddPhaseAngles(&shard, 0, angle1);
+            }
+        }
 
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
-        freezeBasis = true;
-        ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
-        freezeBasis = false;
+        if ((abs(polar0 - ONE_R1) > min_norm) || (abs(polar1 - ONE_R1) > min_norm)) {
+            freezeBasis = true;
+            ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
+            freezeBasis = false;
+        }
 
         shard.RemovePhaseControl(partner);
     }
 
-    for (phaseShard = shard.controlsShards.begin(); phaseShard != shard.controlsShards.end(); phaseShard++) {
+    controls[0] = i;
+    while (shard.controlsShards.size() > 0) {
+        phaseShard = shard.controlsShards.begin();
         QEngineShard* partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
-        bitLenInt controls[1] = { i };
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
-        freezeBasis = true;
-        ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
-        freezeBasis = false;
+        if ((abs(polar0 - ONE_R1) > min_norm) || (abs(polar1 - ONE_R1) > min_norm)) {
+            freezeBasis = true;
+            ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
+            freezeBasis = false;
+        }
 
         shard.RemovePhaseTarget(partner);
     }
