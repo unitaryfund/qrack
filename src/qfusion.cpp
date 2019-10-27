@@ -104,7 +104,6 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
             EraseControls(qubitIndex);
         }
     }
-    bitBuffers[qubitIndex] = NULL;
 }
 
 void QFusion::DiscardBit(const bitLenInt& qubitIndex)
