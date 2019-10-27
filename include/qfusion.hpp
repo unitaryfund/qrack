@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <set>
+
 #include "bitbuffer.hpp"
 #include "qinterface.hpp"
 
@@ -34,7 +36,7 @@ protected:
     bool doNormalize;
 
     std::vector<BitBufferPtr> bitBuffers;
-    std::vector<std::vector<bitLenInt>> bitControls;
+    std::vector<std::set<bitLenInt>> bitControls;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -224,10 +226,11 @@ protected:
         }
     }
 
-    void FlushVec(const std::vector<bitLenInt> bitList)
+    void FlushSet(std::set<bitLenInt> bitList)
     {
-        for (bitLenInt i = 0; i < bitList.size(); i++) {
-            FlushBit(bitList[i]);
+        std::set<bitLenInt>::iterator it;
+        for (it = bitList.begin(); it != bitList.end(); it++) {
+            FlushBit(*it);
         }
     }
 

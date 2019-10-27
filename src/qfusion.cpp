@@ -67,11 +67,11 @@ QFusion::QFusion(QInterfacePtr target)
 
 void QFusion::EraseControls(std::vector<bitLenInt> controls, bitLenInt qubitIndex)
 {
-    std::vector<bitLenInt>::iterator found;
+    std::set<bitLenInt>::iterator found;
     bitLenInt control;
     for (bitLenInt i = 0; i < controls.size(); i++) {
         control = controls[i];
-        found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
+        found = bitControls[control].find(qubitIndex);
         if (found != bitControls[control].end()) {
             bitControls[control].erase(found);
         }
@@ -140,7 +140,7 @@ void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qub
         return;
     }
 
-    FlushVec(bitControls[qubitIndex]);
+    FlushSet(bitControls[qubitIndex]);
 
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
@@ -185,7 +185,7 @@ void QFusion::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     FlushArray(controls, controlLen);
-    FlushVec(bitControls[target]);
+    FlushSet(bitControls[target]);
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
@@ -206,7 +206,7 @@ void QFusion::ApplyControlledSingleBit(
     // We record that this bit is controlled by the bits in its control list.
     if (bitBuffers[target] == NULL) {
         for (bitLenInt i = 0; i < controlLen; i++) {
-            bitControls[controls[i]].push_back(target);
+            bitControls[controls[i]].insert(target);
         }
     }
 
@@ -241,7 +241,7 @@ void QFusion::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLen
     // We record that this bit is controlled by the bits in its control list.
     if (bitBuffers[target] == NULL) {
         for (bitLenInt i = 0; i < controlLen; i++) {
-            bitControls[controls[i]].push_back(target);
+            bitControls[controls[i]].insert(target);
         }
     }
 
@@ -273,7 +273,7 @@ void QFusion::ApplyAntiControlledSingleBit(
     // We record that this bit is controlled by the bits in its control list.
     if (bitBuffers[target] == NULL) {
         for (bitLenInt i = 0; i < controlLen; i++) {
-            bitControls[controls[i]].push_back(target);
+            bitControls[controls[i]].insert(target);
         }
     }
 
@@ -308,7 +308,7 @@ void QFusion::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bi
     // We record that this bit is controlled by the bits in its control list.
     if (bitBuffers[target] == NULL) {
         for (bitLenInt i = 0; i < controlLen; i++) {
-            bitControls[controls[i]].push_back(target);
+            bitControls[controls[i]].insert(target);
         }
     }
 
@@ -357,6 +357,9 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+        for (bitLenInt i = 0; i < length; i++) {
+            bitControls[start + i].clear();
+        }
         bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     }
     SetQubitCount(qReg->GetQubitCount());
@@ -383,6 +386,9 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     // "Dispose,") we can just throw the corresponding buffers away:
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+        for (bitLenInt i = 0; i < length; i++) {
+            bitControls[start + i].clear();
+        }
         bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     }
 
@@ -589,7 +595,7 @@ void QFusion::BufferArithmetic(
 
     if (toCheck == NULL) {
         for (i = 0; i < controlLen; i++) {
-            bitControls[controls[i]].push_back(inOutStart);
+            bitControls[controls[i]].insert(inOutStart);
         }
     }
 }
