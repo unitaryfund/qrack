@@ -433,9 +433,7 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 
 TEST_CASE("test_solved_circuit", "[supreme]")
 {
-    // This is a "solved circuit," in that it is (more-or-less) "classically efficient."
-    // Qualitatively, this is reasonably representative of how "close" we can get to the quantum supremacy benchmark,
-    // without exponentially exploding overhead.
+    // This is a "solved circuit," in that it is "classically efficient."
 
     const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
@@ -460,11 +458,13 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                 // Qrack has optimizations for gates including X, Y, and particularly H, but "Sqrt" variants would be
                 // handled as general single bit gates.
                 if (gateRand < (ONE_R1 / 3)) {
-                    qReg->SqrtX(i);
+                    qReg->X(i);
                 } else if (gateRand < (2 * ONE_R1 / 3)) {
-                    qReg->SqrtY(i);
+                    qReg->Y(i);
                 } else {
-                    qReg->SqrtH(i);
+                    // H(i) would likely be preferable for generality of our algebra, but it does not yet commute
+                    // efficiently with CZ.
+                    qReg->Z(i);
                 }
 
                 // This a QUnit specific optimization attempt method that can "compress" the representation without
@@ -472,41 +472,46 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                 qReg->TrySeparate(i);
             }
 
-            for (i = 0; i < n; i++) {
-                gateRand = qReg->Rand();
+            std::set<bitLenInt> usedBits;
 
-                b1 = i;
-                b2 = i;
+            for (i = 0; i < (n - rowLen); i++) {
+                if (usedBits.find(i) != usedBits.end()) {
+                    continue;
+                }
 
                 // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                // In this test, the boundaries of the rectangle are periodic, (looped back to the other side when
-                // crossing an edge.) One 2 bit gate is applied for every bit, (as many gates as the number of bits).
-                // (Unless n is a perfect square, the "row length" has to be factored into a rectangular shape, and "n"
-                // is sometimes prime or factors awkwardly.)
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
+                // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
+                // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
 
-                if (rowLen == 1) {
-                    b2 += ((qReg->Rand() < (ONE_R1 / 2)) ? -1 : 1);
-                } else {
-                    bitLenInt rand4 = 4U * qReg->Rand();
-                    // Next row, or loop
-                    b2 += (rand4 & 2U) ? rowLen : -rowLen;
-                    // Next column, or loop
-                    b2 += (rand4 & 1U) ? 0 : ((((i / rowLen) % 2) == 0) ? -1 : 1);
-                }
+                b1 = i;
+                // Next row
+                b2 = i + rowLen;
 
-                // Orbifold the edges of the "chip."
-                while (b2 >= n) {
-                    b2 -= n;
-                }
-                while (b2 < 0) {
-                    b2 += n;
+                if (qReg->Rand() < (ONE_R1 / 2)) {
+                    // Next column
+                    // (Stop at boundaries of rectangle)
+                    if (((i / rowLen) % 2) == 0) {
+                        if (b2 > 0) {
+                            b2--;
+                        }
+                    } else {
+                        if (b2 < (n - 1)) {
+                            b2++;
+                        }
+                    }
                 }
 
                 // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different. We use a SWAP instead.
+                // different. Our "SWAP" is much better optimized.
                 qReg->Swap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root. We use a full CZ instead.
+                // "1/6 of CZ" is read to indicate the 6th root. Our full CZ is much better optimized.
                 qReg->CZ(b1, b2);
+                // Note that these gates are both symmetric under exchange of "b1" and "b2".
+
+                usedBits.insert(b1);
+                usedBits.insert(b2);
             }
         }
 
