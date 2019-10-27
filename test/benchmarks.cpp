@@ -46,7 +46,6 @@ double formatTime(double t, bool logNormal)
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true,
     bool hadamardRandomBits = false, bool logNormal = false)
 {
-
     const int ITERATIONS = 100;
 
     std::cout << std::endl;

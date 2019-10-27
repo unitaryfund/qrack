@@ -14,6 +14,7 @@
 #include <random>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 #include "qfactory.hpp"
 
@@ -43,6 +44,7 @@ int main(int argc, char* argv[])
     bool qunit_qfusion = false;
     bool cpu = false;
     bool opencl_single = false;
+    std::string output_file("");
 
     int mxQbts = 24;
 
@@ -67,7 +69,8 @@ int main(int argc, char* argv[])
         Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)") |
         Opt(mxQbts, "max-qubits")["-m"]["--max-qubits"](
             "Maximum qubits for test (default value 24, enter \"-1\" for automatic selection)") |
-        Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests");
+        Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests") |
+        Opt(output_file, "output")["-o"]["--output"]("File to write output to (default is stdout)");
 
     session.cli(cli);
 
@@ -82,14 +85,6 @@ int main(int argc, char* argv[])
     int returnCode = session.applyCommandLine(argc, argv);
     if (returnCode != 0) {
         return returnCode;
-    }
-
-    session.config().stream() << "Random Seed: " << session.configData().rngSeed;
-
-    if (disable_hardware_rng) {
-        session.config().stream() << std::endl;
-    } else {
-        session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
     }
 
     if (!qengine && !qfusion && !qunit && !qunit_qfusion) {
@@ -131,6 +126,22 @@ int main(int argc, char* argv[])
         }
     } else {
         max_qubits = mxQbts;
+    }
+
+    std::ofstream outFileStream;
+    if (output_file.compare("")) {
+        session.config().stream() << "Writing to file " << output_file << "..." << std::endl;
+        outFileStream.open(output_file);
+        std::cout.rdbuf(outFileStream.rdbuf());
+        session.config().stream().rdbuf(outFileStream.rdbuf());
+    }
+
+    session.config().stream() << "Random Seed: " << session.configData().rngSeed;
+
+    if (disable_hardware_rng) {
+        session.config().stream() << std::endl;
+    } else {
+        session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
     }
 
     int num_failed = 0;
@@ -215,6 +226,10 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 #endif
+    }
+
+    if (output_file.compare("")) {
+        outFileStream.close();
     }
 
     return num_failed;
