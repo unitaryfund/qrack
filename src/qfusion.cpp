@@ -82,6 +82,7 @@ void QFusion::EraseControls(bitLenInt qubitIndex)
             bitControls[control].erase(found);
         }
     }
+    bfr->controls = std::vector<bitLenInt>();
 }
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
