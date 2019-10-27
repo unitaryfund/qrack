@@ -367,7 +367,6 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
-        bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     }
     SetQubitCount(qReg->GetQubitCount());
     dest->SetQubitCount(length);
@@ -393,7 +392,6 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     // "Dispose,") we can just throw the corresponding buffers away:
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
-        bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     }
 
     // If the Dispose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
