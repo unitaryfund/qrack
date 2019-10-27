@@ -159,6 +159,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 

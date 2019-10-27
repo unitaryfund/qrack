@@ -91,6 +91,8 @@ public:
 
     using QInterface::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
+    using QInterface::ISwap;
+    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::SqrtSwap;
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::ISqrtSwap;

@@ -363,6 +363,22 @@ void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
     Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
 }
 
+/// Swap values of two bits in register, applying a phase factor of i if swapped
+void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ONE_R1), complex(ZERO_R1, ONE_R1),
+        complex(ZERO_R1, ZERO_R1) };
+    bitCapInt qPowersSorted[2];
+    qPowersSorted[0] = pow2(qubit1);
+    qPowersSorted[1] = pow2(qubit2);
+    std::sort(qPowersSorted, qPowersSorted + 2);
+    Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
+}
+
 /// Square root of swap gate
 void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {

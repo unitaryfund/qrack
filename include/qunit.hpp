@@ -378,6 +378,7 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
+    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
 

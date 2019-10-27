@@ -900,6 +900,15 @@ void QFusion::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     }
 }
 
+void QFusion::ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    if (qubitIndex1 != qubitIndex2) {
+        FlushBit(qubitIndex1);
+        FlushBit(qubitIndex2);
+        qReg->ISwap(qubitIndex1, qubitIndex2);
+    }
+}
+
 void QFusion::SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
     if (qubitIndex1 != qubitIndex2) {

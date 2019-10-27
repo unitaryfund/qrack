@@ -763,6 +763,38 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 #define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
 #define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
 
+void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubit1 == qubit2) {
+        return;
+    }
+
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2)) {
+        // We can avoid dirtying the cache and entangling, since the bits are classical.
+        if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
+            // Under the preconditions, this has no effect on Hermitian expectation values, but we track it, if the
+            // QUnit is tracking arbitrary numerical phase.
+            Swap(qubit1, qubit2);
+            if (!randGlobalPhase) {
+                ApplySinglePhase(I_CMPLX, I_CMPLX, false, 0);
+            }
+        }
+        return;
+    }
+
+    EntangleAndCallMember(PTR2(ISwap), qubit1, qubit2);
+
+    // TODO: If we multiply out cached amplitudes, we can optimize this.
+
+    shard1.isProbDirty = true;
+    shard1.isPhaseDirty = true;
+    shard2.isProbDirty = true;
+    shard2.isPhaseDirty = true;
+}
+
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
     if (qubit1 == qubit2) {
