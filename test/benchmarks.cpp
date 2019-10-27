@@ -586,12 +586,12 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     std::swap(b1, b2);
                 }
 
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                qReg->ISwap(b1, b2);
                 // "1/6 of CZ" is read to indicate the 6th root.
                 controls[0] = b1;
                 qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0)));
+                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                // different.
+                qReg->ISwap(b1, b2);
             }
         }
 
