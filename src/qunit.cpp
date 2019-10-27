@@ -775,10 +775,10 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
-            // Under the preconditions, this has no effect on Hermitian expectation values, but we track it, if the
-            // QUnit is tracking arbitrary numerical phase.
             Swap(qubit1, qubit2);
             if (!randGlobalPhase) {
+                // Under the preconditions, this has no effect on Hermitian expectation values, but we track it, if the
+                // QUnit is tracking arbitrary numerical phase.
                 ApplySinglePhase(I_CMPLX, I_CMPLX, false, 0);
             }
         }

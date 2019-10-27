@@ -587,7 +587,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 }
 
                 if (gateRand < (ONE_R1 / 2)) {
-                    // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are swapped.
+                    // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                    // different.
                     qReg->ISwap(b1, b2);
                 } else {
                     // "1/6 of CZ" is read to indicate the 6th root, but we use a full CZ.

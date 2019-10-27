@@ -363,7 +363,7 @@ void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
     Apply2x2(qPowersSorted[0], qPowersSorted[1], pauliX, 2, qPowersSorted, false);
 }
 
-/// Swap values of two bits in register, applying a phase factor of i if swapped
+/// Swap values of two bits in register, applying a phase factor of i if bits are different
 void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
     if (qubit1 == qubit2) {
