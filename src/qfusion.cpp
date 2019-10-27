@@ -65,24 +65,17 @@ QFusion::QFusion(QInterfacePtr target)
  * methods of QInterface to flush or discard the buffers as necessary.
  */
 
-void QFusion::EraseControls(bitLenInt qubitIndex)
+void QFusion::EraseControls(std::vector<bitLenInt> controls, bitLenInt qubitIndex)
 {
-    BitBufferPtr bfr = bitBuffers[qubitIndex];
-
-    if (bfr == NULL) {
-        return;
-    }
-
     std::vector<bitLenInt>::iterator found;
     bitLenInt control;
-    for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
-        control = bfr->controls[i];
+    for (bitLenInt i = 0; i < controls.size(); i++) {
+        control = controls[i];
         found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
         if (found != bitControls[control].end()) {
             bitControls[control].erase(found);
         }
     }
-    bfr->controls = std::vector<bitLenInt>();
 }
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
@@ -102,7 +95,7 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
         if (bfr->controls.size() > 0) {
             // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
             // controlled by another bit.
-            EraseControls(qubitIndex);
+            EraseControls(bfr->controls, qubitIndex);
         }
     }
 }
@@ -128,7 +121,7 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
         }
         // If we are discarding this bit, it is no longer controlled by any other bit.
         if (bfr->controls.size() > 0) {
-            EraseControls(qubitIndex);
+            EraseControls(bfr->controls, qubitIndex);
         }
     }
     bitBuffers[qubitIndex] = NULL;

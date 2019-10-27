@@ -265,6 +265,6 @@ protected:
     /** Method to compose arithmetic gates */
     void BufferArithmetic(bitLenInt* controls, bitLenInt controlLen, int toAdd, bitLenInt inOutStart, bitLenInt length);
 
-    void EraseControls(bitLenInt qubitIndex);
+    void EraseControls(std::vector<bitLenInt> controls, bitLenInt qubitIndex);
 };
 } // namespace Qrack
