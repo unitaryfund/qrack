@@ -551,6 +551,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->SqrtH(i);
                 }
 
+                // This a QUnit specific optimization attempt method that can "compress" the representation without
+                // changing the logical state of the QUnit, up to float error:
                 qReg->TrySeparate(i);
             }
 
