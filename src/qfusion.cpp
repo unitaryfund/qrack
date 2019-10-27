@@ -64,6 +64,29 @@ QFusion::QFusion(QInterfacePtr target)
  * buffered (and doesn't "commute") and before output from qubits. The rest of the engine simply wraps the other public
  * methods of QInterface to flush or discard the buffers as necessary.
  */
+
+void QFusion::EraseControls(bitLenInt qubitIndex)
+{
+    BitBufferPtr bfr = bitBuffers[qubitIndex];
+
+    if (bfr == NULL) {
+        return;
+    }
+
+    std::vector<bitLenInt>::iterator found;
+    bitLenInt control;
+    for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
+        control = bfr->controls[i];
+        if (control < bitControls.size()) {
+            found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
+            if (found != bitControls[control].end()) {
+                bitControls[control].erase(found);
+            }
+        }
+    }
+    bfr->controls = std::vector<bitLenInt>();
+}
+
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
     // If we ended up with a buffer that's (approximately or exactly) equal to identity operator, we can discard it
@@ -81,15 +104,7 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
         if (bfr->controls.size() > 0) {
             // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
             // controlled by another bit.
-            std::vector<bitLenInt>::iterator found;
-            bitLenInt control;
-            for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
-                control = bfr->controls[i];
-                found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
-                if (found != bitControls[control].end()) {
-                    bitControls[control].erase(found);
-                }
-            }
+            EraseControls(qubitIndex);
         }
     }
     bitBuffers[qubitIndex] = NULL;
@@ -116,15 +131,7 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
         }
         // If we are discarding this bit, it is no longer controlled by any other bit.
         if (bfr->controls.size() > 0) {
-            std::vector<bitLenInt>::iterator found;
-            bitLenInt control;
-            for (bitLenInt i = 0; i < bfr->controls.size(); i++) {
-                control = bfr->controls[i];
-                found = std::find(bitControls[control].begin(), bitControls[control].end(), qubitIndex);
-                if (found != bitControls[control].end()) {
-                    bitControls[control].erase(found);
-                }
-            }
+            EraseControls(qubitIndex);
         }
     }
     bitBuffers[qubitIndex] = NULL;
@@ -360,6 +367,7 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+        bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     }
     SetQubitCount(qReg->GetQubitCount());
     dest->SetQubitCount(length);
@@ -385,6 +393,7 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     // "Dispose,") we can just throw the corresponding buffers away:
     if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
+        bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     }
 
     // If the Dispose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application

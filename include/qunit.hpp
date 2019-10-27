@@ -55,8 +55,8 @@ struct QEngineShard {
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , amp0(complex(ONE_R1, ZERO_R1))
-        , amp1(complex(ZERO_R1, ZERO_R1))
+        , amp0(ONE_CMPLX)
+        , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
         , targetOfShards()
@@ -69,12 +69,14 @@ struct QEngineShard {
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
+        , amp0(ONE_CMPLX)
+        , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
         , targetOfShards()
     {
-        amp0 = set ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
-        amp1 = set ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+        amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
+        amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
     }
 
     // Dirty state constructor:
@@ -84,8 +86,8 @@ struct QEngineShard {
         , isEmulated(false)
         , isProbDirty(true)
         , isPhaseDirty(true)
-        , amp0(complex(ONE_R1, ZERO_R1))
-        , amp1(complex(ZERO_R1, ZERO_R1))
+        , amp0(ONE_CMPLX)
+        , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
         , targetOfShards()

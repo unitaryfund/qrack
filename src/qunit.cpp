@@ -979,7 +979,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
-            complex trnsMtrx[4];                                                                                       \
+            complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                  \
             if (!shards[target].isPlusMinus) {                                                                         \
                 std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
             } else {                                                                                                   \
@@ -995,7 +995,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
             if (!shards[target].isPlusMinus) {                                                                         \
                 unit->ctrld;                                                                                           \
             } else {                                                                                                   \
-                complex trnsMtrx[4];                                                                                   \
+                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
                 TransformPhase(topLeft, bottomRight, trnsMtrx);                                                        \
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
@@ -1008,7 +1008,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
             if (!shards[target].isPlusMinus) {                                                                         \
                 unit->ctrld;                                                                                           \
             } else {                                                                                                   \
-                complex trnsMtrx[4];                                                                                   \
+                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
                 TransformInvert(topRight, bottomLeft, trnsMtrx);                                                       \
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
@@ -1194,7 +1194,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             shard.amp1 *= bottomRight;
         }
     } else {
-        complex mtrx[4];
+        complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformPhase(topLeft, bottomRight, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped); });
@@ -1240,7 +1240,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
     } else {
-        complex mtrx[4];
+        complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformInvert(topRight, bottomLeft, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, doCalcNorm, shard.mapped); });
