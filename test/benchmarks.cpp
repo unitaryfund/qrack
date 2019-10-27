@@ -550,6 +550,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 } else {
                     qReg->SqrtH(i);
                 }
+
+                qReg->TrySeparate(i);
             }
 
             for (i = 0; i < n; i++) {

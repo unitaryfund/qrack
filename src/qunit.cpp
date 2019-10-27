@@ -447,7 +447,13 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         OrderContiguous(shards[start].unit);
     } else {
         // If length == 1, this is usually all that's worth trying:
-        real1 prob = ProbBase(start);
+        QEngineShard& shard = shards[start];
+        real1 prob;
+        if (shard.isPlusMinus || QUEUED_PHASE(shard)) {
+            prob = ProbBase(start);
+        } else {
+            prob = Prob(start);
+        }
         return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
     }
 
@@ -2632,9 +2638,6 @@ void QUnit::RevertBasis2(bitLenInt i)
 
         shard.RemovePhaseTarget(partner);
     }
-
-    // TrySeparate(i);
-    // TrySeparate(j);
 }
 
 void QUnit::CheckShardSeparable(const bitLenInt& target)
