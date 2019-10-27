@@ -431,6 +431,95 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
+TEST_CASE("test_quantum_supremacy", "[supreme]")
+{
+    // This is a rough approximation to the circuit argued to establish quantum supremacy.
+    // See the comments.
+
+    const int depth = 20;
+    benchmarkLoop([](QInterfacePtr qReg, int n) {
+
+        int rowLen = std::sqrt(n);
+        while (((n / rowLen) * rowLen) != n) {
+            rowLen--;
+        }
+
+        real1 gateRand;
+        int b1, b2;
+        bitLenInt i, d;
+
+        bitLenInt controls[1];
+
+        // We repeat the entire prepartion for "depth" iterations.
+        // At very low depths, with only nearest neighbor entanglement, we can avoid entangling the representation of
+        // the entire state as a single Schr{\"o}dinger method unit.
+        for (d = 0; d < depth; d++) {
+            for (i = 0; i < n; i++) {
+                gateRand = qReg->Rand();
+
+                // Each individual bit has one of these 3 gates applied at random.
+                // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants are
+                // handled as general single bit gates.
+                if (gateRand < (ONE_R1 / 3)) {
+                    qReg->SqrtX(i);
+                } else if (gateRand < (2 * ONE_R1 / 3)) {
+                    qReg->SqrtY(i);
+                } else {
+                    qReg->SqrtH(i);
+                }
+
+                // This a QUnit specific optimization attempt method that can "compress" the representation without
+                // changing the logical state of the QUnit, up to float error:
+                qReg->TrySeparate(i);
+            }
+
+            std::set<bitLenInt> usedBits;
+
+            for (i = 0; i < (n - rowLen); i++) {
+                if (usedBits.find(i) != usedBits.end()) {
+                    continue;
+                }
+
+                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                // In this test, the boundaries of the rectangle have no couplers.
+                // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
+                // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
+                // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
+
+                b1 = i;
+                // Next row
+                b2 = i + rowLen;
+
+                if (qReg->Rand() < (ONE_R1 / 2)) {
+                    // Next column
+                    // (Stop at boundaries of rectangle)
+                    if (((i / rowLen) % 2) == 0) {
+                        if (b2 > 0) {
+                            b2--;
+                        }
+                    } else {
+                        if (b2 < (n - 1)) {
+                            b2++;
+                        }
+                    }
+                }
+
+                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                // different.
+                qReg->ISwap(b1, b2);
+                // "1/6 of CZ" is read to indicate the 6th root.
+                controls[0] = b1;
+                qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0)));
+
+                usedBits.insert(b1);
+                usedBits.insert(b2);
+            }
+        }
+
+        qReg->MReg(0, n);
+    });
+}
+
 TEST_CASE("test_solved_circuit", "[supreme]")
 {
     // This is a "solved circuit," in that it is (more-or-less) "classically efficient."
@@ -516,8 +605,7 @@ TEST_CASE("test_solved_circuit", "[supreme]")
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
-    // This is a rough approximation to the circuit argued to establish quantum supremacy.
-    // See the comments.
+    // This is an attempt to simulate the circuit argued to establish quantum supremacy.
 
     const int depth = 20;
     benchmarkLoop([](QInterfacePtr qReg, int n) {
@@ -551,8 +639,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->SqrtH(i);
                 }
 
-                // This a QUnit specific optimization attempt method that can "compress" the representation without
-                // changing the logical state of the QUnit, up to float error:
+                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose") the
+                // representation without changing the logical state of the QUnit, up to float error:
                 qReg->TrySeparate(i);
             }
 
@@ -593,6 +681,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 // "1/6 of CZ" is read to indicate the 6th root.
                 controls[0] = b1;
                 qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0)));
+                // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                 usedBits.insert(b1);
                 usedBits.insert(b2);
