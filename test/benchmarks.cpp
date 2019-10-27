@@ -533,6 +533,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         int b1, b2;
         bitLenInt i, d;
 
+        bitLenInt controls[1];
+
         // We repeat the entire prepartion for "depth" iterations.
         // At very low depths, with only nearest neighbor entanglement, we can avoid entangling the representation of
         // the entire state as a single Schr{\"o}dinger method unit.
@@ -557,8 +559,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
             }
 
             for (i = 0; i < n; i++) {
-                gateRand = qReg->Rand();
-
                 b1 = i;
                 b2 = i;
 
@@ -586,16 +586,12 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     std::swap(b1, b2);
                 }
 
-                if (gateRand < (ONE_R1 / 2)) {
-                    // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                    // different.
-                    qReg->ISwap(b1, b2);
-                } else {
-                    // "1/6 of CZ" is read to indicate the 6th root, but we use a full CZ.
-                    // Either way, this could be the only "inefficient" gate in the set.
-                    // If removed, the rest of the circuit would avoid entanglement.
-                    qReg->CZ(b1, b2);
-                }
+                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                // different.
+                qReg->ISwap(b1, b2);
+                // "1/6 of CZ" is read to indicate the 6th root.
+                controls[0] = b1;
+                qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0)));
             }
         }
 
