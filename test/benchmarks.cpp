@@ -466,10 +466,6 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                     // efficiently with CZ.
                     qReg->Z(i);
                 }
-
-                // This a QUnit specific optimization attempt method that can "compress" the representation without
-                // changing the logical state of the QUnit, up to float error:
-                qReg->TrySeparate(i);
             }
 
             std::set<bitLenInt> usedBits;
@@ -534,6 +530,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         real1 gateRand;
         int b1, b2;
         bitLenInt i, d;
+        bitLenInt row, col;
 
         bitLenInt controls[1];
 
@@ -591,6 +588,18 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     }
                 }
 
+                usedBits.insert(b1);
+                usedBits.insert(b2);
+
+                // For the efficiency of QUnit's mapper, we transpose the row and column.
+                col = b1 / rowLen;
+                row = b1 - (col * rowLen);
+                b1 = (row * rowLen) + col;
+
+                col = b2 / rowLen;
+                row = b2 - (col * rowLen);
+                b1 = (row * rowLen) + col;
+
                 // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                 // different.
                 qReg->ISwap(b1, b2);
@@ -598,9 +607,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 controls[0] = b1;
                 qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0)));
                 // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                usedBits.insert(b1);
-                usedBits.insert(b2);
             }
         }
 
