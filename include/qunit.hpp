@@ -94,6 +94,13 @@ struct QEngineShard {
     {
     }
 
+    ~QEngineShard()
+    {
+        if (unit) {
+            unit->Finish();
+        }
+    }
+
     void RemovePhaseControl(QEngineShardPtr p)
     {
         std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = targetOfShards.find(p);

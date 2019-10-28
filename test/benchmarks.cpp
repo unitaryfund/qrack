@@ -656,10 +656,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 } else {
                     qReg->SqrtH(i);
                 }
-
-                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose") the
-                // representation without changing the logical state of the QUnit, up to float error:
-                qReg->TrySeparate(i);
             }
 
             std::set<bitLenInt> usedBits;
