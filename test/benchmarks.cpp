@@ -571,34 +571,40 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
 
                 b1 = i;
-                // Next row
-                b2 = i + rowLen;
+                if (rowLen == 1U) {
+                    b2 = i + 1;
+                    usedBits.insert(b1);
+                    usedBits.insert(b2);
+                } else {
+                    // Next row
+                    b2 = i + rowLen;
 
-                if (qReg->Rand() < (ONE_R1 / 2)) {
-                    // Next column
-                    // (Stop at boundaries of rectangle)
-                    if (((i / rowLen) % 2) == 0) {
-                        if (b2 > 0) {
-                            b2--;
-                        }
-                    } else {
-                        if (b2 < (n - 1)) {
-                            b2++;
+                    if (qReg->Rand() < (ONE_R1 / 2)) {
+                        // Next column
+                        // (Stop at boundaries of rectangle)
+                        if (((i / rowLen) % 2) == 0) {
+                            if (b2 > 0) {
+                                b2--;
+                            }
+                        } else {
+                            if (b2 < (n - 1)) {
+                                b2++;
+                            }
                         }
                     }
+
+                    usedBits.insert(b1);
+                    usedBits.insert(b2);
+
+                    // For the efficiency of QUnit's mapper, we transpose the row and column.
+                    col = b1 / rowLen;
+                    row = b1 - (col * rowLen);
+                    b1 = (row * rowLen) + col;
+
+                    col = b2 / rowLen;
+                    row = b2 - (col * rowLen);
+                    b2 = (row * rowLen) + col;
                 }
-
-                usedBits.insert(b1);
-                usedBits.insert(b2);
-
-                // For the efficiency of QUnit's mapper, we transpose the row and column.
-                col = b1 / rowLen;
-                row = b1 - (col * rowLen);
-                b1 = (row * rowLen) + col;
-
-                col = b2 / rowLen;
-                row = b2 - (col * rowLen);
-                b2 = (row * rowLen) + col;
 
                 // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                 // different.
