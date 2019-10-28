@@ -96,7 +96,7 @@ struct QEngineShard {
 
     ~QEngineShard()
     {
-        if (unit) {
+        if (unit && (mapped == 0)) {
             unit->Finish();
         }
     }

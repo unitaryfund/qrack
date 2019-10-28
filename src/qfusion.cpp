@@ -80,14 +80,15 @@ void QFusion::EraseControls(std::vector<bitLenInt> controls, bitLenInt qubitInde
 
 void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
+    BitBufferPtr bfr = bitBuffers[qubitIndex];
+
     // If we ended up with a buffer that's (approximately or exactly) equal to identity operator, we can discard it
     // instead of applying it.
-    if (bitBuffers[qubitIndex] && bitBuffers[qubitIndex]->IsIdentity()) {
+    if (bfr && bfr->IsIdentity()) {
         DiscardBit(qubitIndex);
         return;
     }
 
-    BitBufferPtr bfr = bitBuffers[qubitIndex];
     if (bfr) {
         // First, we flush this bit.
         bfr->Apply(qReg, qubitIndex, &bitBuffers);
@@ -103,6 +104,12 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 void QFusion::DiscardBit(const bitLenInt& qubitIndex)
 {
     BitBufferPtr bfr = bitBuffers[qubitIndex];
+
+    // Only discard if this operator doesn't control anything or is the identity operator
+    if (bfr && (bitControls[qubitIndex].size() > 0) && !(bfr->IsIdentity())) {
+        FlushBit(qubitIndex);
+    }
+
     if (bfr) {
         // If this is an arithmetic buffer, it has side-effects for other bits.
         if (bfr->isArithmetic) {
