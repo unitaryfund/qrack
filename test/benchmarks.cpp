@@ -598,7 +598,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
                 col = b2 / rowLen;
                 row = b2 - (col * rowLen);
-                b1 = (row * rowLen) + col;
+                b2 = (row * rowLen) + col;
 
                 // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                 // different.
