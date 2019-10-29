@@ -13,6 +13,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <list>
 #include <set>
 #include <stdio.h>
 #include <stdlib.h>
@@ -431,211 +432,38 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_solved_circuit", "[supreme]")
-{
-    // This is a "solved circuit," in that it is "classically efficient."
-
-    const int depth = 20;
-    benchmarkLoop([](QInterfacePtr qReg, int n) {
-
-        int rowLen = std::sqrt(n);
-        while (((n / rowLen) * rowLen) != n) {
-            rowLen--;
-        }
-
-        real1 gateRand;
-        int b1, b2;
-        bitLenInt i, d;
-
-        // We repeat the entire prepartion for "depth" iterations.
-        // At very low depths, with only nearest neighbor entanglement, we can avoid entangling the representation of
-        // the entire state as a single Schr{\"o}dinger method unit.
-        for (d = 0; d < depth; d++) {
-            for (i = 0; i < n; i++) {
-                gateRand = qReg->Rand();
-
-                // Each individual bit has one of these 3 gates applied at random.
-                // Qrack has optimizations for gates including X, Y, and particularly H, but "Sqrt" variants are
-                // handled as general single bit gates.
-                if (gateRand < (ONE_R1 / 3)) {
-                    qReg->X(i);
-                } else if (gateRand < (2 * ONE_R1 / 3)) {
-                    qReg->Y(i);
-                } else {
-                    // H(i) would likely be preferable for generality of our algebra, but it does not yet commute
-                    // efficiently with CZ.
-                    qReg->Z(i);
-                }
-            }
-
-            std::set<bitLenInt> usedBits;
-
-            for (i = 0; i < (n - rowLen); i++) {
-                if (usedBits.find(i) != usedBits.end()) {
-                    continue;
-                }
-
-                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                // In this test, the boundaries of the rectangle have no couplers.
-                // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
-                // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
-                // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
-
-                b1 = i;
-                // Next row
-                b2 = i + rowLen;
-
-                if (qReg->Rand() < (ONE_R1 / 2)) {
-                    // Next column
-                    // (Stop at boundaries of rectangle)
-                    if (((i / rowLen) % 2) == 0) {
-                        if ((b2 % rowLen) > 0) {
-                            b2--;
-                        }
-                    } else {
-                        if ((b2 % rowLen) < (rowLen - 1)) {
-                            b2++;
-                        }
-                    }
-                }
-
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different. Our "SWAP" is much better optimized.
-                qReg->Swap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root. Our full CZ is much better optimized.
-                qReg->CZ(b1, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                usedBits.insert(b1);
-                usedBits.insert(b2);
-            }
-        }
-
-        qReg->MReg(0, n);
-    });
-}
-
-TEST_CASE("test_polynomial", "[supreme]")
-{
-    // This is the closest an author of qrack can come to an efficient simulation of the benchmark argued to show
-    // quantum supremacy.
-
-    const int depth = 20;
-    benchmarkLoop([](QInterfacePtr qReg, int n) {
-
-        int rowLen = std::sqrt(n);
-        while (((n / rowLen) * rowLen) != n) {
-            rowLen--;
-        }
-
-        real1 gateRand;
-        int b1, b2;
-        bitLenInt i, d;
-        bitLenInt row, col;
-
-        // We repeat the entire prepartion for "depth" iterations.
-        // At very low depths, with only nearest neighbor entanglement, we can avoid entangling the representation of
-        // the entire state as a single Schr{\"o}dinger method unit.
-        for (d = 0; d < depth; d++) {
-            for (i = 0; i < n; i++) {
-                gateRand = qReg->Rand();
-
-                // Each individual bit has one of these 3 gates applied at random.
-                // Qrack has optimizations for gates including X, Y, and particularly H, but "Sqrt" variants are
-                // handled as general single bit gates.
-                if (gateRand < (ONE_R1 / 3)) {
-                    qReg->X(i);
-                } else if (gateRand < (2 * ONE_R1 / 3)) {
-                    qReg->Y(i);
-                } else {
-                    qReg->H(i);
-                }
-
-                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose") the
-                // representation without changing the logical state of the QUnit, up to float error:
-                qReg->TrySeparate(i);
-            }
-
-            std::set<bitLenInt> usedBits;
-
-            for (i = 0; i < (n - rowLen); i++) {
-                if (usedBits.find(i) != usedBits.end()) {
-                    continue;
-                }
-
-                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                // In this test, the boundaries of the rectangle have no couplers.
-                // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
-                // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
-                // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
-
-                b1 = i;
-                if (rowLen == 1U) {
-                    b2 = i + 1;
-                    usedBits.insert(b1);
-                    usedBits.insert(b2);
-                } else {
-                    // Next row
-                    b2 = i + rowLen;
-
-                    if (qReg->Rand() < (ONE_R1 / 2)) {
-                        // Next column
-                        // (Stop at boundaries of rectangle)
-                        if (((i / rowLen) & 1) == 0) {
-                            if ((b2 % rowLen) > 0) {
-                                b2--;
-                            }
-                        } else {
-                            if ((b2 % rowLen) < (rowLen - 1)) {
-                                b2++;
-                            }
-                        }
-                    }
-
-                    usedBits.insert(b1);
-                    usedBits.insert(b2);
-
-                    // For the efficiency of QUnit's mapper, we transpose the row and column.
-                    col = b1 / rowLen;
-                    row = b1 - (col * rowLen);
-                    b1 = (row * rowLen) + col;
-
-                    col = b2 / rowLen;
-                    row = b2 - (col * rowLen);
-                    b2 = (row * rowLen) + col;
-                }
-
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different. We use a QUnit SWAP instead, which is very well optimized.
-                qReg->Swap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root. We use a full CZ instead.
-                qReg->CZ(b1, b2);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
-            }
-        }
-
-        qReg->MReg(0, n);
-    });
-}
-
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
 
     const int depth = 20;
+
     benchmarkLoop([](QInterfacePtr qReg, int n) {
+
+        std::list<bitLenInt> gateSequence = { 0, 3, 1, 2, 1, 2, 0, 3 };
+
+        std::map<bitLenInt, bitLenInt> sequenceRowStart;
+        sequenceRowStart[0] = 1;
+        sequenceRowStart[1] = 1;
+        sequenceRowStart[2] = 0;
+        sequenceRowStart[3] = 0;
 
         int rowLen = std::sqrt(n);
         while (((n / rowLen) * rowLen) != n) {
             rowLen--;
         }
+        int colLen = n / rowLen;
 
         complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
 
         real1 gateRand;
+        bitLenInt gate;
         int b1, b2;
         bitLenInt i, d;
-        bitLenInt row, col;
+        int row, col;
+        int tempRow, tempCol;
+
+        bool startsEvenRow;
 
         bitLenInt controls[1];
 
@@ -656,64 +484,61 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 } else {
                     qReg->SqrtH(i);
                 }
+
+                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose") the
+                // representation without changing the logical state of the QUnit, up to float error:
+                // qReg->TrySeparate(i);
             }
 
-            std::set<bitLenInt> usedBits;
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
 
-            for (i = 0; i < (n - rowLen); i++) {
-                if (usedBits.find(i) != usedBits.end()) {
-                    continue;
-                }
+            startsEvenRow = ((sequenceRowStart[gate] & 1U) == 0U);
 
-                // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                // In this test, the boundaries of the rectangle have no couplers.
-                // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
-                // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
-                // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
+            for (row = sequenceRowStart[gate]; row < (n / rowLen); row += 2) {
+                for (col = 0; col < (n / colLen); col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
+                    // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
+                    // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
 
-                b1 = i;
-                if (rowLen == 1U) {
-                    b2 = i + 1;
-                    usedBits.insert(b1);
-                    usedBits.insert(b2);
-                } else {
-                    // Next row
-                    b2 = i + rowLen;
+                    tempRow = row;
+                    tempCol = col;
 
-                    if (qReg->Rand() < (ONE_R1 / 2)) {
-                        // Next column
-                        // (Stop at boundaries of rectangle)
-                        if (((i / rowLen) & 1) == 0) {
-                            if ((b2 % rowLen) > 0) {
-                                b2--;
-                            }
-                        } else {
-                            if ((b2 % rowLen) < (rowLen - 1)) {
-                                b2++;
-                            }
-                        }
+                    tempRow += ((gate & 2U) ? 1 : -1);
+
+                    if (startsEvenRow) {
+                        tempCol += ((gate & 1U) ? 0 : -1);
+                    } else {
+                        tempCol += ((gate & 1U) ? 1 : 0);
                     }
 
-                    usedBits.insert(b1);
-                    usedBits.insert(b2);
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
+                        continue;
+                    }
+
+                    b1 = row * rowLen + col;
+                    b2 = tempRow * rowLen + tempCol;
 
                     // For the efficiency of QUnit's mapper, we transpose the row and column.
-                    col = b1 / rowLen;
-                    row = b1 - (col * rowLen);
-                    b1 = (row * rowLen) + col;
+                    tempCol = b1 / rowLen;
+                    tempRow = b1 - (tempCol * rowLen);
+                    b1 = (tempRow * rowLen) + tempCol;
 
-                    col = b2 / rowLen;
-                    row = b2 - (col * rowLen);
-                    b2 = (row * rowLen) + col;
+                    tempCol = b2 / rowLen;
+                    tempRow = b2 - (tempCol * rowLen);
+                    b2 = (tempRow * rowLen) + tempCol;
+
+                    // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
+                    // different.
+                    qReg->ISwap(b1, b2);
+                    // "1/6 of CZ" is read to indicate the 6th root.
+                    controls[0] = b1;
+                    qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
+                    // Note that these gates are both symmetric under exchange of "b1" and "b2".
                 }
-
-                // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
-                // different.
-                qReg->ISwap(b1, b2);
-                // "1/6 of CZ" is read to indicate the 6th root.
-                controls[0] = b1;
-                qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
-                // Note that these gates are both symmetric under exchange of "b1" and "b2".
             }
         }
 
