@@ -435,6 +435,7 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
+    // See https://doi.org/10.1038/s41586-019-1666-5
 
     const int depth = 20;
 
