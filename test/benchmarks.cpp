@@ -476,7 +476,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         bitLenInt controls[1];
 
         // We repeat the entire prepartion for "depth" iterations.
-        // We can avoid entangling the representation of the entire state as a single Schr{\"o}dinger method unit.
+        // We can avoid maximal representational entanglement of the state as a single Schr{\"o}dinger method unit.
+        // See https://arxiv.org/abs/1710.05867
         for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 gateRand = qReg->Rand();
