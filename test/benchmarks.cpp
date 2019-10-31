@@ -440,20 +440,27 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
     benchmarkLoop([](QInterfacePtr qReg, int n) {
 
+        // The test runs 2 bit gates according to a tiling sequence.
+        // The 1 bit indicates +/- column offset.
+        // The 2 bit indicates +/- row offset.
         std::list<bitLenInt> gateSequence = { 0, 3, 1, 2, 1, 2, 0, 3 };
 
+        // Depending on which element of the sequential tiling we're running, per depth iteration,
+        // we need to start either with row "0" or row "1".
         std::map<bitLenInt, bitLenInt> sequenceRowStart;
         sequenceRowStart[0] = 1;
         sequenceRowStart[1] = 1;
         sequenceRowStart[2] = 0;
         sequenceRowStart[3] = 0;
 
+        // We factor the qubit count into two integers, as close to a perfect square as we can.
         int rowLen = std::sqrt(n);
         while (((n / rowLen) * rowLen) != n) {
             rowLen--;
         }
         int colLen = n / rowLen;
 
+        // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
         complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
 
         real1 gateRand;
@@ -468,8 +475,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         bitLenInt controls[1];
 
         // We repeat the entire prepartion for "depth" iterations.
-        // At very low depths, with only nearest neighbor entanglement, we can avoid entangling the representation of
-        // the entire state as a single Schr{\"o}dinger method unit.
+        // We can avoid entangling the representation of the entire state as a single Schr{\"o}dinger method unit.
         for (d = 0; d < depth; d++) {
             for (i = 0; i < n; i++) {
                 gateRand = qReg->Rand();
@@ -482,6 +488,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 } else if (gateRand < (2 * ONE_R1 / 3)) {
                     qReg->SqrtY(i);
                 } else {
+                    // "Square root of W" is understood to be the square root of the Walsh-Hadamard transform,
+                    // (a.k.a "H" gate).
                     qReg->SqrtH(i);
                 }
 
@@ -500,9 +508,9 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 for (col = 0; col < (n / colLen); col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
-                    // In the interior bulk, one 2 bit gate is applied for every pair of bits, (as many gates as 1/2 the
-                    // number of bits). (Unless n is a perfect square, the "row length" has to be factored into a
-                    // rectangular shape, and "n" is sometimes prime or factors awkwardly.)
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits, (as
+                    // many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length" has to be
+                    // factored into a rectangular shape, and "n" is sometimes prime or factors awkwardly.)
 
                     tempRow = row;
                     tempCol = col;
@@ -542,6 +550,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
             }
         }
 
+        // We measure all bits once, after the circuit is run.
         qReg->MReg(0, n);
     });
 }
