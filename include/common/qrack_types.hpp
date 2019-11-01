@@ -24,7 +24,7 @@
 #define ONE_BCI 1ULL
 #else
 #define bitCapInt uint64_t
-#define ONE_BCI 1ULLL
+#define ONE_BCI 1ULL
 #endif
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
