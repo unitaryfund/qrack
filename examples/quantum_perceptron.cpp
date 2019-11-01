@@ -42,7 +42,7 @@ int main()
     bitCapInt perm;
     std::cout << "Learning (to recognize powers of 2)..." << std::endl;
     for (perm = 0; perm < ControlPower; perm++) {
-        std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
+        std::cout << "Epoch " << (uint64_t)(perm + 1U) << " out of " << (uint64_t)ControlPower << std::endl;
         qReg->SetPermutation(perm);
         isPowerOf2 = ((perm != 0) && ((perm & (perm - 1U)) == 0));
         qPerceptron->LearnPermutation(isPowerOf2, eta);

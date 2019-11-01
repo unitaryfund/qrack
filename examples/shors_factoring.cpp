@@ -58,7 +58,8 @@ real1 calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* nu
 
 int main()
 {
-    bitCapInt toFactor, base;
+    uint64_t toFactor;
+    bitCapInt base;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -73,7 +74,7 @@ int main()
 
     bitCapInt testFactor = gcd(toFactor, base);
     if (testFactor != 1) {
-        std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+        std::cout << "Chose non- relative prime: " << (uint64_t)testFactor << " * " << (uint64_t)(toFactor / testFactor) << std::endl;
         return 0;
     }
 
@@ -118,7 +119,7 @@ int main()
     if (r & 1U) {
         r *= 2;
     }
-    bitCapInt apowrhalf = (int)pow(base, r >> 1) % toFactor;
+    bitCapInt apowrhalf = ((bitCapInt)pow((double)base, (double)(r >> 1U))) % toFactor;
     bitCapInt f1 = gcd(apowrhalf + 1, toFactor);
     bitCapInt f2 = gcd(apowrhalf - 1, toFactor);
     bitCapInt res1 = f1;
@@ -129,9 +130,9 @@ int main()
         res2 = toFactor / (f1 * f2);
     }
     if (((res1 * res2) == toFactor) && (res1 > 1) && (res2 > 1)) {
-        std::cout << "Success: Found " << res1 << " * " << res2 << " = " << toFactor << std::endl;
+        std::cout << "Success: Found " << (uint64_t)res1 << " * " << (uint64_t)res2 << " = " << (uint64_t)toFactor << std::endl;
     } else {
-        std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
+        std::cout << "Failure: Found " << (uint64_t)res1 << " and " << (uint64_t)res2 << std::endl;
     }
 
     return 0;

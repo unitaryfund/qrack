@@ -19,9 +19,12 @@
 #if ENABLE_PURE32
 #define bitCapInt uint32_t
 #define ONE_BCI 1U
+#elif ENABLE_UINT128
+#define bitCapInt __uint128_t
+#define ONE_BCI 1ULL
 #else
 #define bitCapInt uint64_t
-#define ONE_BCI 1ULL
+#define ONE_BCI 1ULLL
 #endif
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64

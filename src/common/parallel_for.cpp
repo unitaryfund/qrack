@@ -16,6 +16,10 @@
 #include <future>
 #include <math.h>
 
+#if ENABLE_UINT128
+#include <mutex>
+#endif
+
 #include "common/parallel_for.hpp"
 
 namespace Qrack {
@@ -61,13 +65,29 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
             futures[cpu].get();
         }
     } else {
+#if ENABLE_UINT128
+        std::mutex idxLock;
+        bitCapInt idx;
+#else
         std::atomic<bitCapInt> idx;
+#endif
         idx = 0;
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
+#if ENABLE_UINT128
+            futures[cpu] = std::async(std::launch::async, [cpu, &idx, &idxLock, begin, itemCount, inc, fn]() {
+#else
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, begin, itemCount, inc, fn]() {
-                bitCapInt j, k, l;
-                for (bitCapInt i = idx++; true; i = idx++) {
+#endif
+                bitCapInt i, j, k, l;
+                for (;;) {
+#if ENABLE_UINT128
+                    idxLock.lock();
+                    i = idx++;
+                    idxLock.unlock();
+#else
+                    i = idx++;
+#endif
                     l = i * PSTRIDE;
                     for (j = 0; j < PSTRIDE; j++) {
                         k = j + l;
@@ -224,16 +244,31 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
             nrmSqr += futures[cpu].get();
         }
     } else {
+#if ENABLE_UINT128
+        std::mutex idxLock;
+        bitCapInt idx;
+#else
         std::atomic<bitCapInt> idx;
+#endif
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
+#if ENABLE_UINT128
+            futures[cpu] = std::async(std::launch::async, [&idx, &idxLock, maxQPower, stateArray]() {
+#else
             futures[cpu] = std::async(std::launch::async, [&idx, maxQPower, stateArray]() {
+#endif
                 real1 sqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {
+#if ENABLE_UINT128
+                    idxLock.lock();
                     i = idx++;
+                    idxLock.unlock();
+#else
+                    i = idx++;
+#endif
                     for (j = 0; j < PSTRIDE; j++) {
                         k = i * PSTRIDE + j;
                         if (k >= maxQPower)
