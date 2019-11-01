@@ -21,10 +21,10 @@
 #define ONE_BCI 1U
 #elif ENABLE_UINT128
 #define bitCapInt __uint128_t
-#define ONE_BCI 1ULL
+#define ONE_BCI ((__uint128_t)1U)
 #else
 #define bitCapInt uint64_t
-#define ONE_BCI ((uint64_t)1U)
+#define ONE_BCI 1ULL
 #endif
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
