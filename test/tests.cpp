@@ -174,7 +174,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     const int NUM_ENTRIES = 2000;
-    const int NUM_CALLS = 1000;
+    // const int NUM_CALLS = 1000;
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -203,7 +203,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     const int NUM_ENTRIES = 2000;
-    const int NUM_CALLS = 512; // 2048 >> 2, masked off so all bits are set.
+    // const int NUM_CALLS = 512; // 2048 >> 2, masked off so all bits are set.
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -2514,8 +2514,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 {
-    int i;
-
     qftReg->SetPermutation(65);
     qftReg->MULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (69 << 8)));
@@ -2529,8 +2527,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
 {
-    int i;
-
     qftReg->SetPermutation(6);
     qftReg->POWModNOut(3, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 6 | (217 << 8)));
@@ -2589,8 +2585,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
 {
-    int i;
-
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(1);
@@ -2604,8 +2598,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
 {
-    int i;
-
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(1);
@@ -3822,10 +3814,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
 {
     bitLenInt controls[2] = { 1, 2 };
     real1 angles[4] = { 3.0, 0.8, 1.2, 0.7 };
-
-    complex amps[8] = { complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0, rng);
     qftReg->SetPermutation(2);

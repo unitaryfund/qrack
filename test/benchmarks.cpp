@@ -116,6 +116,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             if (async_time) {
                 qftReg->Finish();
             }
+
+            if (mOutputFileName.compare("")) {
+                bitCapInt result = qftReg->MReg(0, numBits);
+                mOutputFile.write(reinterpret_cast<char*>(&result), sizeof(bitCapInt));
+            }
         }
         avgt /= ITERATIONS;
 

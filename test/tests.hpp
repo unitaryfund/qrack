@@ -12,8 +12,10 @@
 
 #pragma once
 
+#include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <string>
 
 #include "qfactory.hpp"
 
@@ -34,6 +36,8 @@ extern bool async_time;
 extern int device_id;
 extern bitLenInt max_qubits;
 extern bool single_qubit_run;
+extern std::string mOutputFileName;
+extern std::ofstream mOutputFile;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
