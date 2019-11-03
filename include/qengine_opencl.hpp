@@ -134,11 +134,6 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false);
 
-    QEngineOCL()
-    {
-        // Intentionally left blank
-    }
-
     virtual ~QEngineOCL()
     {
         Finish();

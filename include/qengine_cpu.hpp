@@ -43,11 +43,6 @@ public:
         complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
         bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false);
 
-    QEngineCPU()
-    {
-        // Intentionally left blank
-    }
-
     virtual ~QEngineCPU()
     {
         // Intentionally left blank

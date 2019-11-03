@@ -45,7 +45,7 @@ void print_bin(int bits, int d)
 }
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
-#if 0
+
 TEST_CASE("test_complex")
 {
     bool test;
@@ -2633,7 +2633,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
     qftReg->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (27 << 8)));
 }
-#endif
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
     bitCapInt randPerm = qftReg->Rand() * 256U;

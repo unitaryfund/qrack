@@ -9,7 +9,7 @@ include ("cmake/Format.cmake")
 
 include_directories ("include" "include/common")
 
-set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops")
+set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops (must be power of 2)")
 
 # Declare the library
 add_library (qrack STATIC

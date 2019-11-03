@@ -121,6 +121,14 @@ public:
 
     void copy(StateVectorArrayPtr toCopy)
     {
+        if (!toCopy) {
+            return;
+        }
+        if (capacity != toCopy->capacity) {
+            Free();
+            capacity = toCopy->capacity;
+            Alloc(capacity);
+        }
         std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes);
     }
 

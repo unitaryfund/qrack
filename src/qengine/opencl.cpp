@@ -1095,10 +1095,7 @@ void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest
     DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
-{
-    DecomposeDispose(start, length, (QEngineOCLPtr) NULL);
-}
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineOCLPtr)NULL); }
 
 real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {
