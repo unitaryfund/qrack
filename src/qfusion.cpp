@@ -365,8 +365,8 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
         return;
     }
 
-    FlushReg(start, length);
-    dest->DiscardReg(0, length);
+    FlushAll();
+    dest->FlushAll();
 
     qReg->Decompose(start, length, dest->qReg);
 
@@ -379,12 +379,6 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
     }
     SetQubitCount(qReg->GetQubitCount());
     dest->SetQubitCount(dest->GetQubitCount());
-
-    // If the Decompose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
-    // gets:
-    if (qubitCount < MIN_FUSION_BITS) {
-        FlushAll();
-    }
 }
 
 // "Dispose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "disposed"
@@ -395,7 +389,8 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
-    DiscardReg(start, length);
+    FlushAll();
+
     qReg->Dispose(start, length);
 
     // Since we're disposing bits, (and since we assume that the programmer knows that they're separable before calling
@@ -407,13 +402,7 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
         bitBuffers.clear();
         bitControls.clear();
     }
-
-    // If the Dispose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
-    // gets:
     SetQubitCount(qReg->GetQubitCount());
-    if (qubitCount < MIN_FUSION_BITS) {
-        FlushAll();
-    }
 }
 
 bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)

@@ -41,7 +41,7 @@ protected:
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
-        maxQPower = 1 << qubitCount;
+        maxQPower = pow2(qb);
         bitBuffers.resize(qb);
         bitControls.resize(qb);
     }
