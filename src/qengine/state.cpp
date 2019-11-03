@@ -495,18 +495,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         NormalizeState();
     }
 
-    if (length == qubitCount) {
-        if (destination != NULL) {
-            destination->ResetStateVec(stateVec);
-            stateVec = NULL;
-        }
-        // This will be cleared by the destructor:
-        ResetStateVec(AllocStateVec(2));
-        SetQubitCount(1);
-        SetPermutation(0);
-        return;
-    }
-
     bitLenInt nLength = qubitCount - length;
 
     bitCapInt partPower = pow2(length);
@@ -575,8 +563,13 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
     }
 
-    SetQubitCount(nLength);
-    ResetStateVec(AllocStateVec(maxQPower));
+    if (nLength == 0) {
+        SetQubitCount(1);
+    } else {
+        SetQubitCount(nLength);
+    }
+    StateVectorPtr nStateVec = AllocStateVec(maxQPower);
+    ResetStateVec(nStateVec);
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec->write(lcv,

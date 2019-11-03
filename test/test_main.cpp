@@ -145,12 +145,12 @@ int main(int argc, char* argv[])
 
     if (num_failed == 0 && qunit) {
         testEngineType = QINTERFACE_QUNIT;
-        /*if (num_failed == 0 && cpu) {
+        if (num_failed == 0 && cpu) {
             session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
             testSubEngineType = QINTERFACE_CPU;
             testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
-        }*/
+        }
 
         if (num_failed == 0 && cpu) {
             session.config().stream() << "############ QUnit -> QEngine -> CPU (Sparse) ############" << std::endl;

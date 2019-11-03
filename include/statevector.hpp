@@ -217,6 +217,9 @@ public:
 
     void copy(StateVectorSparsePtr toCopy)
     {
+        if (!toCopy) {
+            return;
+        }
         mtx.lock();
         capacity = toCopy->capacity;
         amplitudes = toCopy->amplitudes;
