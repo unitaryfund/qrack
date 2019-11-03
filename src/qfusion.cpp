@@ -93,14 +93,14 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
         return;
     }
 
-    // First, we flush this bit.
-    bfr->Apply(qReg, qubitIndex, &bitBuffers);
-
     if (bfr->controls.size() > 0) {
-        // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
+        // First, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
         // controlled by another bit.
         EraseControls(bfr->controls, qubitIndex);
     }
+
+    // Finally, we flush this bit.
+    bfr->Apply(qReg, qubitIndex, &bitBuffers);
 }
 
 void QFusion::DiscardBit(const bitLenInt& qubitIndex)
