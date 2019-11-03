@@ -116,14 +116,16 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
         if (bfr->IsIdentity()) {
             // If the buffer is adding 0, we can throw it away.
             ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(bfr.get());
+            std::vector<bitLenInt> controls = aBfr->controls;
             for (bitLenInt i = 0; i < (aBfr->length); i++) {
                 bitBuffers[aBfr->start + i] = NULL;
+                EraseControls(bfr->controls, qubitIndex);
             }
         } else {
             // If the buffer is adding or subtracting a nonzero value, it has side-effects for other bits.
             FlushBit(qubitIndex);
-            return;
         }
+        return;
     }
 
     // If we are discarding this bit, it is no longer controlled by any other bit.
@@ -354,12 +356,17 @@ bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start)
 // qubit, so it's definitely cheaper to maintain our buffers until after the Decompose.
 void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
+    if (dest == NULL) {
+        Dispose(start, length);
+        return;
+    }
+
     if (length == 0) {
         return;
     }
 
     FlushReg(start, length);
-    dest->FlushReg(0, length);
+    dest->DiscardReg(0, length);
 
     qReg->Decompose(start, length, dest->qReg);
 

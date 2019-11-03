@@ -66,8 +66,9 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
             futures[cpu] = std::async(std::launch::async, [cpu, &idx, begin, itemCount, inc, fn]() {
-                bitCapInt j, k, l;
-                for (bitCapInt i = idx++; true; i = idx++) {
+                bitCapInt i, j, k, l;
+                for (;;) {
+                    i = idx++;
                     l = i * PSTRIDE;
                     for (j = 0; j < PSTRIDE; j++) {
                         k = j + l;

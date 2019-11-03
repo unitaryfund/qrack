@@ -483,12 +483,34 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
+    if ((start + length) > qubitCount) {
+        throw "ERROR: Decompose/Dispose exceeds QEngine bounds!";
+    }
+
+    if (destination && (destination->GetQubitCount() != length)) {
+        throw "ERROR: Decompose/Dispose destination must equal 'length'!";
+    }
+
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }
 
+    if (length == qubitCount) {
+        if (destination != NULL) {
+            destination->ResetStateVec(stateVec);
+            stateVec = NULL;
+        }
+        // This will be cleared by the destructor:
+        ResetStateVec(AllocStateVec(2));
+        SetQubitCount(1);
+        SetPermutation(0);
+        return;
+    }
+
+    bitLenInt nLength = qubitCount - length;
+
     bitCapInt partPower = pow2(length);
-    bitCapInt remainderPower = pow2(qubitCount - length);
+    bitCapInt remainderPower = pow2(nLength);
 
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower]();
@@ -546,12 +568,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         }
     });
 
-    if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1);
-    } else {
-        SetQubitCount(qubitCount - length);
-    }
-
     if (destination != nullptr) {
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec->write(lcv,
@@ -559,6 +575,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
     }
 
+    SetQubitCount(nLength);
     ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
@@ -580,7 +597,7 @@ void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
 {
-    DecomposeDispose(start, length, (QEngineCPUPtr) nullptr);
+    DecomposeDispose(start, length, (QEngineCPUPtr) NULL);
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state

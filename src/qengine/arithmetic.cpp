@@ -103,7 +103,7 @@ void QEngineCPU::CINC(
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | controlMask);
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
-    nStateVec->copy(*stateVec);
+    nStateVec->copy(stateVec);
 
     par_for_mask(0, maxQPower, controlPowers, controlLen, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
