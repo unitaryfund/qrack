@@ -2637,7 +2637,7 @@ void QUnit::RevertBasis2(bitLenInt i)
 
     bitLenInt controls[1];
 
-    std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
+    ShardToPhaseMap::iterator phaseShard;
     while (shard.targetOfShards.size() > 0) {
         phaseShard = shard.targetOfShards.begin();
         QEngineShardPtr partner = phaseShard->first;

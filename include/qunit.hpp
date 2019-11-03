@@ -19,7 +19,19 @@
 
 namespace Qrack {
 
-/** Caches controlled gate phase between shards. */
+// "PhaseShard" optimizations are basically just a very specific "gate fusion" type optimization, where multiple gates
+// are composed into single product gates before application to the state vector, to reduce the total number of gates
+// that need to be applied. Rather than handling this as a "QFusion" layer optimization, which will typically sit
+// BETWEEN a base QEngine set of "shards" and a QUnit that owns them, this particular gate fusion optimization can be
+// amenable to avoiding representational entanglement in QUnit in the first place, which QFusion would not help with.
+// Firstly, another QFusion would have to be in place ABOVE the QUnit layer, (with QEngine "below,") for this to work.
+// Secondly, QFusion is designed to handle more general gate fusion, not specifically controlled phase gates, which are
+// entirely commuting among each other and possibly a jumping-off point for further general "Fourier basis"
+// optimizations which should probably reside in QUnit, analogous to the |+>/|-> basis changes QUnit takes advantage of
+// for "H" gates.
+
+/** Caches controlled gate phase between shards, (as a case of "gate fusion" optimization particularly useful to QUnit)
+ */
 struct PhaseShard {
     real1 angle0;
     real1 angle1;
@@ -33,6 +45,7 @@ struct PhaseShard {
 
 struct QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
+typedef std::map<QEngineShardPtr, PhaseShard> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
 struct QEngineShard {
@@ -45,9 +58,9 @@ struct QEngineShard {
     complex amp1;
     bool isPlusMinus;
     // Shards which this shard controls
-    std::map<QEngineShardPtr, PhaseShard> controlsShards;
+    ShardToPhaseMap controlsShards;
     // Shards of which this shard is a target
-    std::map<QEngineShardPtr, PhaseShard> targetOfShards;
+    ShardToPhaseMap targetOfShards;
 
     QEngineShard()
         : unit(NULL)
@@ -101,24 +114,27 @@ struct QEngineShard {
         }
     }
 
+    /// Remove another qubit as being a cached control of a phase gate buffer, for "this" as target bit.
     void RemovePhaseControl(QEngineShardPtr p)
     {
-        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = targetOfShards.find(p);
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(p);
         if (phaseShard != targetOfShards.end()) {
             phaseShard->first->controlsShards.erase(this);
             targetOfShards.erase(phaseShard);
         }
     }
 
+    /// Remove another qubit as being a cached target of a phase gate buffer, for "this" as control bit.
     void RemovePhaseTarget(QEngineShardPtr p)
     {
-        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard = controlsShards.find(p);
+        ShardToPhaseMap::iterator phaseShard = controlsShards.find(p);
         if (phaseShard != controlsShards.end()) {
             phaseShard->first->targetOfShards.erase(this);
             controlsShards.erase(phaseShard);
         }
     }
 
+    /// Initialize a phase gate buffer, with "this" as target bit and a another qubit "p" as control
     void MakePhaseControlledBy(QEngineShardPtr p)
     {
         if (p && (targetOfShards.find(p) == targetOfShards.end())) {
@@ -128,6 +144,7 @@ struct QEngineShard {
         }
     }
 
+    /// Initialize a phase gate buffer, with "this" as control bit and a another qubit "p" as target
     void MakePhaseControlOf(QEngineShardPtr p)
     {
         if (p && (controlsShards.find(p) == controlsShards.end())) {
@@ -137,6 +154,8 @@ struct QEngineShard {
         }
     }
 
+    /// "Fuse" phase gate buffer angles, (and initialize the buffer, if necessary,) for the buffer with "this" as target
+    /// bit and a another qubit as control
     void AddPhaseAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
     {
         MakePhaseControlledBy(control);
@@ -158,6 +177,7 @@ struct QEngineShard {
         }
 
         if ((abs(nAngle0) < (4 * M_PI * min_norm)) && (abs(nAngle1) < (4 * M_PI * min_norm))) {
+            // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
         } else {
@@ -167,11 +187,13 @@ struct QEngineShard {
             control->controlsShards[this].angle1 = nAngle1;
         }
 
-        std::map<QEngineShardPtr, PhaseShard>::iterator controlShard = controlsShards.find(control);
+        ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
         if (controlShard == controlsShards.end()) {
             return;
         }
 
+        // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
+        // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
         if (abs(nAngle0) < (2 * M_PI * min_norm)) {
             RemovePhaseControl(control);
             control->AddPhaseAngles(this, ZERO_R1, nAngle1);
@@ -182,9 +204,11 @@ struct QEngineShard {
         }
     }
 
+    /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
+    /// commute, instead of incurring the cost of applying the buffers.
     void FlipPhaseAnti()
     {
-        std::map<QEngineShardPtr, PhaseShard>::iterator phaseShard;
+        ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second.angle0, phaseShard->second.angle1);
             PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
