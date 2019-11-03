@@ -948,6 +948,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
                 std::copy(stateVec, stateVec + maxQPower, destination->stateVec);
                 destination->UnlockSync();
                 UnlockSync();
+                FreeStateVec();
             }
         } else {
             FreeStateVec();

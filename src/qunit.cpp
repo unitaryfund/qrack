@@ -668,29 +668,27 @@ real1 QUnit::ProbAll(bitCapInt perm)
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
-    QEngineShard origShard = shards[qubit];
+    QInterfacePtr unit = shards[qubit].unit;
+    bitLenInt mapped = shards[qubit].mapped;
 
-    QInterfacePtr dest = MakeEngine(1, value ? 1 : 0);
-
-    if (origShard.unit->GetQubitCount() > 1) {
-        origShard.unit->Dispose(origShard.mapped, 1);
-    } else {
-        origShard.unit->Finish();
-    }
-
-    /* Update the mappings. */
-    shards[qubit].unit = dest;
+    shards[qubit].unit = MakeEngine(1, value ? 1 : 0);
     shards[qubit].mapped = 0;
     shards[qubit].isEmulated = false;
     shards[qubit].isProbDirty = false;
     shards[qubit].isPhaseDirty = false;
-    shards[qubit].isPlusMinus = origShard.isPlusMinus;
     shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
     shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
 
-    for (auto&& testShard : shards) {
-        if (testShard.unit == origShard.unit && testShard.mapped > origShard.mapped) {
-            testShard.mapped--;
+    if (unit->GetQubitCount() == 1) {
+        return;
+    }
+
+    unit->Dispose(mapped, 1);
+
+    /* Update the mappings. */
+    for (auto&& shard : shards) {
+        if ((shard.unit == unit) && (shard.mapped > mapped)) {
+            shard.mapped--;
         }
     }
 }

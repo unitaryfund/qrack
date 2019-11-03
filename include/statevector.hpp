@@ -48,7 +48,7 @@ public:
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
     virtual void copy_out(complex* outArray) = 0;
-    virtual void copy(const StateVector& toCopy) = 0;
+    virtual void copy(StateVector& toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
     /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
@@ -117,9 +117,9 @@ public:
 
     void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + capacity, copyOut); }
 
-    void copy(const StateVector& toCopy) { copy((const StateVectorArray&)toCopy); }
+    void copy(StateVector& toCopy) { copy((StateVectorArray&)toCopy); }
 
-    void copy(const StateVectorArray& toCopy)
+    void copy(StateVectorArray& toCopy)
     {
         if (capacity != toCopy.capacity) {
             Free();
@@ -210,9 +210,9 @@ public:
         }
     }
 
-    void copy(const StateVector& toCopy) { copy((const StateVectorSparse&)toCopy); }
+    void copy(StateVector& toCopy) { copy((StateVectorSparse&)toCopy); }
 
-    void copy(const StateVectorSparse& toCopy)
+    void copy(StateVectorSparse& toCopy)
     {
         mtx.lock();
         capacity = toCopy.capacity;

@@ -67,14 +67,8 @@ QFusion::QFusion(QInterfacePtr target)
 
 void QFusion::EraseControls(std::vector<bitLenInt> controls, bitLenInt qubitIndex)
 {
-    std::set<bitLenInt>::iterator found;
-    bitLenInt control;
     for (bitLenInt i = 0; i < controls.size(); i++) {
-        control = controls[i];
-        found = bitControls[control].find(qubitIndex);
-        if (found != bitControls[control].end()) {
-            bitControls[control].erase(found);
-        }
+        bitControls[controls[i]].erase(qubitIndex);
     }
 }
 
@@ -93,14 +87,13 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
         return;
     }
 
-    if (bfr->controls.size() > 0) {
-        // First, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
-        // controlled by another bit.
-        EraseControls(bfr->controls, qubitIndex);
-    }
+    std::vector<bitLenInt> controls = bfr->controls;
 
-    // Finally, we flush this bit.
+    // First, we flush this bit.
     bfr->Apply(qReg, qubitIndex, &bitBuffers);
+    // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
+    // controlled by another bit.
+    EraseControls(controls, qubitIndex);
 }
 
 void QFusion::DiscardBit(const bitLenInt& qubitIndex)
@@ -114,6 +107,7 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
     // Only discard if this operator doesn't control anything or is the identity operator
     if ((bitControls[qubitIndex].size() > 0) && !(bfr->IsIdentity())) {
         FlushBit(qubitIndex);
+        return;
     }
 
     // If this is an arithmetic buffer, it has side-effects for other bits.
@@ -131,11 +125,9 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
             return;
         }
     }
-    // If we are discarding this bit, it is no longer controlled by any other bit.
-    if (bfr->controls.size() > 0) {
-        EraseControls(bfr->controls, qubitIndex);
-    }
 
+    // If we are discarding this bit, it is no longer controlled by any other bit.
+    EraseControls(bfr->controls, qubitIndex);
     bitBuffers[qubitIndex] = NULL;
 }
 
@@ -230,7 +222,8 @@ void QFusion::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLen
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
     FlushArray(controls, controlLen);
-    FlushSet(bitControls[target]);
+    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
+    // flush this bit as a control.
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
@@ -264,7 +257,6 @@ void QFusion::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     FlushArray(controls, controlLen);
-    FlushSet(bitControls[target]);
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
@@ -297,7 +289,8 @@ void QFusion::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bi
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
     FlushArray(controls, controlLen);
-    FlushSet(bitControls[target]);
+    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
+    // flush this bit as a control.
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
@@ -361,12 +354,16 @@ bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start)
 // qubit, so it's definitely cheaper to maintain our buffers until after the Decompose.
 void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
+    if (length == 0) {
+        return;
+    }
+
     FlushReg(start, length);
     dest->FlushReg(0, length);
 
     qReg->Decompose(start, length, dest->qReg);
 
-    if ((start + length) < qubitCount) {
+    if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
         bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     } else {
@@ -374,15 +371,12 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
         bitControls.clear();
     }
     SetQubitCount(qReg->GetQubitCount());
-    dest->SetQubitCount(length);
+    dest->SetQubitCount(dest->GetQubitCount());
 
     // If the Decompose caused us to fall below the MIN_FUSION_BITS threshold, this is the cheapest buffer application
     // gets:
     if (qubitCount < MIN_FUSION_BITS) {
         FlushAll();
-    }
-    if (dest->GetQubitCount() < MIN_FUSION_BITS) {
-        dest->FlushAll();
     }
 }
 
@@ -390,12 +384,16 @@ void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 // qubit, so it's definitely cheaper to maintain our buffers until after the Dispose.
 void QFusion::Dispose(bitLenInt start, bitLenInt length)
 {
+    if (length == 0) {
+        return;
+    }
+
     DiscardReg(start, length);
     qReg->Dispose(start, length);
 
     // Since we're disposing bits, (and since we assume that the programmer knows that they're separable before calling
     // "Dispose,") we can just throw the corresponding buffers away:
-    if ((start + length) < qubitCount) {
+    if (length < qubitCount) {
         bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
         bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
     } else {
