@@ -528,21 +528,21 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void TransformBasis1(const bool& toPlusMinus, const bitLenInt& i);
+    void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void RevertBasis2(bitLenInt i);
+    void RevertBasis2Qb(bitLenInt i);
 
-    void RevertBasis2(const bitLenInt& start, const bitLenInt& length)
+    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            RevertBasis2(start + i);
+            RevertBasis2Qb(start + i);
         }
     }
 
     void ToPermBasis(const bitLenInt& i)
     {
-        TransformBasis1(false, i);
-        RevertBasis2(i);
+        TransformBasis1Qb(false, i);
+        RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {

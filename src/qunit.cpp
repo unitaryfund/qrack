@@ -1124,8 +1124,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    RevertBasis2(control);
-    RevertBasis2(target);
+    RevertBasis2Qb(control);
+    RevertBasis2Qb(target);
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
@@ -1141,7 +1141,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // become entangled.
     if (cShard.isPlusMinus && !CACHED_CLASSICAL(tShard)) {
         if (!tShard.isPlusMinus) {
-            TransformBasis1(true, target);
+            TransformBasis1Qb(true, target);
         }
         std::swap(controls[0], target);
         ApplyEitherControlled(controls, controlLen, { target }, false,
@@ -1187,8 +1187,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        TransformBasis1(false, target);
-        TransformBasis1(false, control);
+        TransformBasis1Qb(false, target);
+        TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)(2 * M_PI));
         return;
     }
@@ -1210,7 +1210,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2(target);
+    RevertBasis2Qb(target);
 
     if (!PHASE_MATTERS(shard)) {
         return;
@@ -1299,8 +1299,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     QEngineShard& cShard = shards[cControls[0]];
 
     if (!freezeBasis && (controlLen == 1U)) {
-        TransformBasis1(false, cTarget);
-        TransformBasis1(false, cControls[0]);
+        TransformBasis1Qb(false, cTarget);
+        TransformBasis1Qb(false, cControls[0]);
         tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
         return;
     }
@@ -1397,7 +1397,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 
     QEngineShard& shard = shards[target];
 
-    RevertBasis2(target);
+    RevertBasis2Qb(target);
 
     complex trnsMtrx[4];
 
@@ -1534,7 +1534,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     for (i = 0; i < targets.size(); i++) {
-        RevertBasis2(targets[i]);
+        RevertBasis2Qb(targets[i]);
     }
 
     if (controlVec.size() == 0) {
@@ -2391,7 +2391,7 @@ void QUnit::PhaseFlip()
 {
     QEngineShard& shard = shards[0];
     if (PHASE_MATTERS(shard)) {
-        TransformBasis1(false, 0);
+        TransformBasis1Qb(false, 0);
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
     }
@@ -2612,7 +2612,7 @@ QInterfacePtr QUnit::Clone()
     return copyPtr;
 }
 
-void QUnit::TransformBasis1(const bool& toPlusMinus, const bitLenInt& i)
+void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
 {
     if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
         // Recursive call that should be blocked,
@@ -2626,7 +2626,7 @@ void QUnit::TransformBasis1(const bool& toPlusMinus, const bitLenInt& i)
     freezeBasis = false;
 }
 
-void QUnit::RevertBasis2(bitLenInt i)
+void QUnit::RevertBasis2Qb(bitLenInt i)
 {
     QEngineShard& shard = shards[i];
 
