@@ -232,8 +232,7 @@ void QFusion::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLen
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
     FlushArray(controls, controlLen);
-    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
-    // flush this bit as a control.
+    FlushSet(bitControls[target]);
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
@@ -267,6 +266,7 @@ void QFusion::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     FlushArray(controls, controlLen);
+    FlushSet(bitControls[target]);
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
@@ -299,8 +299,7 @@ void QFusion::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bi
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
     FlushArray(controls, controlLen);
-    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
-    // flush this bit as a control.
+    FlushSet(bitControls[target]);
 
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates. Each control bit reduces the complexity by a factor of two, and
