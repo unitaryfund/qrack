@@ -353,36 +353,24 @@ bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start)
 }
 
 // "Decompose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "decompose"
-// qubit, so it's definitely cheaper to maintain our buffers until after the Decompose.
+// qubit, so it's probably cheaper to maintain our buffers until after the Decompose. However, this requires re-indexing
+// cached gates, to account for the changes in bit indices at the tail past the decomposed segment.
 void QFusion::Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
-    if (dest == NULL) {
-        Dispose(start, length);
-        return;
-    }
-
     if (length == 0) {
         return;
     }
 
     FlushAll();
     dest->FlushAll();
-
     qReg->Decompose(start, length, dest->qReg);
-
-    if (length < qubitCount) {
-        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
-        bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
-    } else {
-        bitBuffers.clear();
-        bitControls.clear();
-    }
     SetQubitCount(qReg->GetQubitCount());
     dest->SetQubitCount(dest->GetQubitCount());
 }
 
 // "Dispose" will reduce the cost of application of every currently buffered gate a by a factor of 2 per "disposed"
-// qubit, so it's definitely cheaper to maintain our buffers until after the Dispose.
+// qubit, so it's probably cheaper to maintain our buffers until after the Dispose. However, this requires re-indexing
+// cached gates, to account for the changes in bit indices at the tail past the disposed segment.
 void QFusion::Dispose(bitLenInt start, bitLenInt length)
 {
     if (length == 0) {
@@ -390,18 +378,7 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     }
 
     FlushAll();
-
     qReg->Dispose(start, length);
-
-    // Since we're disposing bits, (and since we assume that the programmer knows that they're separable before calling
-    // "Dispose,") we can just throw the corresponding buffers away:
-    if (length < qubitCount) {
-        bitBuffers.erase(bitBuffers.begin() + start, bitBuffers.begin() + start + length);
-        bitControls.erase(bitControls.begin() + start, bitControls.begin() + start + length);
-    } else {
-        bitBuffers.clear();
-        bitControls.clear();
-    }
     SetQubitCount(qReg->GetQubitCount());
 }
 
