@@ -2524,8 +2524,9 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param)
         QInterfacePtr toFind = shards[i].unit;
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
-            if (!fn(toFind, param))
+            if (!fn(toFind, param)) {
                 return false;
+            }
         }
     }
 

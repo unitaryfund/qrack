@@ -193,7 +193,7 @@ public:
         qReg->Finish();
     }
 
-    virtual bool isFinished() { return qReg->isFinished(); }
+    virtual bool isFinished() { return (qReg == NULL) || qReg->isFinished(); }
 
     virtual QInterfacePtr Clone()
     {
