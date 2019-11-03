@@ -82,22 +82,24 @@ void QFusion::FlushBit(const bitLenInt& qubitIndex)
 {
     BitBufferPtr bfr = bitBuffers[qubitIndex];
 
+    if (!bfr) {
+        return;
+    }
+
     // If we ended up with a buffer that's (approximately or exactly) equal to identity operator, we can discard it
     // instead of applying it.
-    if (bfr && bfr->IsIdentity()) {
+    if (bfr->IsIdentity()) {
         DiscardBit(qubitIndex);
         return;
     }
 
-    if (bfr) {
-        // First, we flush this bit.
-        bfr->Apply(qReg, qubitIndex, &bitBuffers);
+    // First, we flush this bit.
+    bfr->Apply(qReg, qubitIndex, &bitBuffers);
 
-        if (bfr->controls.size() > 0) {
-            // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
-            // controlled by another bit.
-            EraseControls(bfr->controls, qubitIndex);
-        }
+    if (bfr->controls.size() > 0) {
+        // Finally, nothing controls this bit any longer, so we remove all bitControls entries indicating that it is
+        // controlled by another bit.
+        EraseControls(bfr->controls, qubitIndex);
     }
 }
 
@@ -105,32 +107,35 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
 {
     BitBufferPtr bfr = bitBuffers[qubitIndex];
 
+    if (!bfr) {
+        return;
+    }
+
     // Only discard if this operator doesn't control anything or is the identity operator
-    if (bfr && (bitControls[qubitIndex].size() > 0) && !(bfr->IsIdentity())) {
+    if ((bitControls[qubitIndex].size() > 0) && !(bfr->IsIdentity())) {
         FlushBit(qubitIndex);
     }
 
-    if (bfr) {
-        // If this is an arithmetic buffer, it has side-effects for other bits.
-        if (bfr->isArithmetic) {
-            // In this branch, we definitely have an ArithmeticBuffer, so it's safe to cast.
-            if (bfr->IsIdentity()) {
-                // If the buffer is adding 0, we can throw it away.
-                ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(bfr.get());
-                for (bitLenInt i = 0; i < (aBfr->length); i++) {
-                    bitBuffers[aBfr->start + i] = NULL;
-                }
-            } else {
-                // If the buffer is adding or subtracting a nonzero value, it has side-effects for other bits.
-                FlushBit(qubitIndex);
-                return;
+    // If this is an arithmetic buffer, it has side-effects for other bits.
+    if (bfr->isArithmetic) {
+        // In this branch, we definitely have an ArithmeticBuffer, so it's safe to cast.
+        if (bfr->IsIdentity()) {
+            // If the buffer is adding 0, we can throw it away.
+            ArithmeticBuffer* aBfr = dynamic_cast<ArithmeticBuffer*>(bfr.get());
+            for (bitLenInt i = 0; i < (aBfr->length); i++) {
+                bitBuffers[aBfr->start + i] = NULL;
             }
-        }
-        // If we are discarding this bit, it is no longer controlled by any other bit.
-        if (bfr->controls.size() > 0) {
-            EraseControls(bfr->controls, qubitIndex);
+        } else {
+            // If the buffer is adding or subtracting a nonzero value, it has side-effects for other bits.
+            FlushBit(qubitIndex);
+            return;
         }
     }
+    // If we are discarding this bit, it is no longer controlled by any other bit.
+    if (bfr->controls.size() > 0) {
+        EraseControls(bfr->controls, qubitIndex);
+    }
+
     bitBuffers[qubitIndex] = NULL;
 }
 
