@@ -186,22 +186,6 @@ struct QEngineShard {
             targetOfShards[control].angle1 = nAngle1;
             control->controlsShards[this].angle1 = nAngle1;
         }
-
-        ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
-        if (controlShard == controlsShards.end()) {
-            return;
-        }
-
-        // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
-        // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
-        if (abs(nAngle0) < (2 * M_PI * min_norm)) {
-            RemovePhaseControl(control);
-            control->AddPhaseAngles(this, ZERO_R1, nAngle1);
-        } else if (abs(controlShard->second.angle0) < (2 * M_PI * min_norm)) {
-            real1 cAngle1 = controlShard->second.angle1;
-            RemovePhaseTarget(control);
-            AddPhaseAngles(control, ZERO_R1, cAngle1);
-        }
     }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
