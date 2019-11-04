@@ -955,7 +955,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
         SetQubitCount(1);
-        SetPermutation(0);
         return;
     }
 
