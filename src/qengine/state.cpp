@@ -483,14 +483,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
-    if ((start + length) > qubitCount) {
-        throw "ERROR: Decompose/Dispose exceeds QEngine bounds!";
-    }
-
-    if (destination && (destination->GetQubitCount() != length)) {
-        throw "ERROR: Decompose/Dispose destination must equal 'length'!";
-    }
-
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
     }

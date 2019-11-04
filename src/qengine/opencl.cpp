@@ -937,14 +937,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
-    if ((start + length) > qubitCount) {
-        throw "ERROR: Decompose/Dispose exceeds QEngine bounds!";
-    }
-
-    if (destination && (destination->GetQubitCount() != length)) {
-        throw "ERROR: Decompose/Dispose destination must equal 'length'!";
-    }
-
     if (length == qubitCount) {
         if (destination != NULL) {
             if (deviceID == destination->deviceID) {
