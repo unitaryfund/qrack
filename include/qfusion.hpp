@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <set>
+
 #include "bitbuffer.hpp"
 #include "qinterface.hpp"
 
@@ -34,12 +36,12 @@ protected:
     bool doNormalize;
 
     std::vector<BitBufferPtr> bitBuffers;
-    std::vector<std::vector<bitLenInt>> bitControls;
+    std::vector<std::set<bitLenInt>> bitControls;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         qubitCount = qb;
-        maxQPower = 1 << qubitCount;
+        maxQPower = pow2(qb);
         bitBuffers.resize(qb);
         bitControls.resize(qb);
     }
@@ -159,6 +161,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
@@ -190,7 +193,7 @@ public:
         qReg->Finish();
     }
 
-    virtual bool isFinished() { return qReg->isFinished(); }
+    virtual bool isFinished() { return (qReg == NULL) || qReg->isFinished(); }
 
     virtual QInterfacePtr Clone()
     {
@@ -223,10 +226,11 @@ protected:
         }
     }
 
-    void FlushVec(const std::vector<bitLenInt> bitList)
+    void FlushSet(std::set<bitLenInt> bitList)
     {
-        for (bitLenInt i = 0; i < bitList.size(); i++) {
-            FlushBit(bitList[i]);
+        std::set<bitLenInt>::iterator it;
+        for (it = bitList.begin(); it != bitList.end(); it++) {
+            FlushBit(*it);
         }
     }
 
@@ -263,5 +267,7 @@ protected:
 
     /** Method to compose arithmetic gates */
     void BufferArithmetic(bitLenInt* controls, bitLenInt controlLen, int toAdd, bitLenInt inOutStart, bitLenInt length);
+
+    void EraseControls(std::vector<bitLenInt> controls, bitLenInt qubitIndex);
 };
 } // namespace Qrack

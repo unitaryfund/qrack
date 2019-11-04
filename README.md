@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/114947047.svg)](https://zenodo.org/badge/latestdoi/114947047) [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
-This is a multithreaded framework for developing classically emulated virtual universal quantum processors. It has CPU, GPU, and multi-processor engine types.
+This is a multithreaded framework for developing classically emulated virtual universal quantum processors. It has CPU and GPU engine types.
 
 The intent of "Qrack" is to provide a framework for developing practical, computationally efficient, classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::QUnit." "Qrack::QEngineCPU" and "Qrack::QEngineOCL" represent fully entangled cases and underlie "Qrack::QUnit."
 
@@ -18,7 +18,7 @@ Qrack compiles like a library. To include in your project:
 
 1. In your source code:
 ```
-#include "qregister.hpp"
+#include "qfactory.hpp"
 ```
 
 2. On the command line, in the project directory
@@ -102,12 +102,12 @@ $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## Reduce accuracy from double to float
+## Increase accuracy from float to double
 
 ```
-$ cmake -DENABLE_COMPLEX8=ON ..
+$ cmake -DENABLE_COMPLEX8=OFF ..
 ```
-Reduce to float accuracy for complex numbers. Requires half as much RAM (1 additional qubit). Compatible with SSE 1.0 and single precision accelerator devices.
+By default, Qrack builds for float accuracy. Turning the above option off increases to double accuracy for complex numbers. Requires twice as much RAM (basically reducing maximum by 1 available qubit). Compatible with SSE 1.0 and single precision accelerator devices.
 
 ## On-Chip Hardware Random Number Generation 
 
@@ -121,7 +121,7 @@ Turn off the option to attempt using on-chip hardware random number generation, 
 ```
 $ cmake -DENABLE_PURE32=ON ..
 ```
-This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware). `-DENABLE_PURE32=ON` is necessary to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3. (Additionally, for that platform, the RDRAND instruction is not available, and you should `-DENABLE_RDRAND=OFF`.
+This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware, or in limited cases available for QUnit Schmidt decomposition). `-DENABLE_PURE32=ON` is necessary to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3. (Additionally, for that platform, the RDRAND instruction is not available, and you should `-DENABLE_RDRAND=OFF`. VC4CL for the VideoCore GPU is currently partially supported, but open an issue if you run into a particular case you need support for.)
 
 ## Precompiled OpenCL kernels
 
@@ -154,7 +154,7 @@ Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights res
 
 (The given DOI date is that of first "official release.")
 
-Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
 
 Licensed under the GNU Lesser General Public License V3.
 
