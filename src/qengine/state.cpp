@@ -560,8 +560,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     } else {
         SetQubitCount(nLength);
     }
-    StateVectorPtr nStateVec = AllocStateVec(maxQPower);
-    ResetStateVec(nStateVec);
+    ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec->write(lcv,

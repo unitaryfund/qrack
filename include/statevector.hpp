@@ -119,18 +119,7 @@ public:
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
-    void copy(StateVectorArrayPtr toCopy)
-    {
-        if (!toCopy) {
-            return;
-        }
-        if (capacity != toCopy->capacity) {
-            Free();
-            capacity = toCopy->capacity;
-            Alloc(capacity);
-        }
-        std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes);
-    }
+    void copy(StateVectorArrayPtr toCopy) { std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes); }
 
     void get_probs(real1* outArray) { std::transform(amplitudes, amplitudes + capacity, outArray, normHelper); }
 
@@ -217,11 +206,7 @@ public:
 
     void copy(StateVectorSparsePtr toCopy)
     {
-        if (!toCopy) {
-            return;
-        }
         mtx.lock();
-        capacity = toCopy->capacity;
         amplitudes = toCopy->amplitudes;
         mtx.unlock();
     }
