@@ -42,7 +42,7 @@ int main()
     bitCapInt perm;
     std::cout << "Learning (to recognize powers of 2)..." << std::endl;
     for (perm = 0; perm < ControlPower; perm++) {
-        std::cout << "Epoch " << (uint64_t)(perm + 1U) << " out of " << (uint64_t)ControlPower << std::endl;
+        std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
         qReg->SetPermutation(perm);
         isPowerOf2 = ((perm != 0) && ((perm & (perm - 1U)) == 0));
         qPerceptron->LearnPermutation(isPowerOf2, eta);
@@ -51,7 +51,7 @@ int main()
     std::cout << "Should be close to 1 for powers of two, and close to 0 for all else..." << std::endl;
     for (perm = 0; perm < ControlPower; perm++) {
         qReg->SetPermutation(perm);
-        std::cout << "Permutation: " << (int)perm << ", Probability: " << qPerceptron->Predict() << std::endl;
+        std::cout << "Permutation: " << perm << ", Probability: " << qPerceptron->Predict() << std::endl;
     }
 
     // Now, we prepare a superposition of all available powers of 2, to predict.

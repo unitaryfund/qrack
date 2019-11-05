@@ -243,4 +243,12 @@ bool QInterface::IsIdentity(const complex* mtrx)
     return true;
 }
 
+#if ENABLE_UINT128
+std::ostream& operator<<(std::ostream& left, const __uint128_t& right)
+{
+    left << (const uint64_t&)right;
+    return left;
+}
+#endif
+
 } // namespace Qrack

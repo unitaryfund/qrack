@@ -74,7 +74,8 @@ int main()
 
     bitCapInt testFactor = gcd(toFactor, base);
     if (testFactor != 1) {
-        std::cout << "Chose non- relative prime: " << (uint64_t)testFactor << " * " << (uint64_t)(toFactor / testFactor) << std::endl;
+        std::cout << "Chose non- relative prime: " << (uint64_t)testFactor << " * " << (uint64_t)(toFactor / testFactor)
+                  << std::endl;
         return 0;
     }
 
@@ -130,9 +131,9 @@ int main()
         res2 = toFactor / (f1 * f2);
     }
     if (((res1 * res2) == toFactor) && (res1 > 1) && (res2 > 1)) {
-        std::cout << "Success: Found " << (uint64_t)res1 << " * " << (uint64_t)res2 << " = " << (uint64_t)toFactor << std::endl;
+        std::cout << "Success: Found " << res1 << " * " << res2 << " = " << toFactor << std::endl;
     } else {
-        std::cout << "Failure: Found " << (uint64_t)res1 << " and " << (uint64_t)res2 << std::endl;
+        std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
     }
 
     return 0;

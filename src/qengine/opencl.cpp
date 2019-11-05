@@ -1636,8 +1636,8 @@ void QEngineOCL::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 void QEngineOCL::FullAdx(
     bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call)
 {
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (2U * ONE_BCI), pow2(inputBit1), pow2(inputBit2), pow2(carryInSumOut),
-        pow2(carryOut), 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (2U * ONE_BCI), pow2(inputBit1), pow2(inputBit2),
+        pow2(carryInSumOut), pow2(carryOut), 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();

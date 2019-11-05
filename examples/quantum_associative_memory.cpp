@@ -48,7 +48,7 @@ int main()
     bool bit;
     std::cout << "Learning (Two's complement)..." << std::endl;
     for (perm = 0; perm < InputPower; perm++) {
-        std::cout << "Epoch " << (uint64_t)(perm + 1U) << " out of " << (uint64_t)InputPower << std::endl;
+        std::cout << "Epoch " << (perm + 1U) << " out of " << InputPower << std::endl;
         comp = (~perm) + 1U;
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qReg->SetPermutation(perm);
@@ -64,6 +64,6 @@ int main()
             outputLayer[i]->Predict();
         }
         comp = qReg->MReg(InputCount, OutputCount);
-        std::cout << "Input: " << (int)perm << ", Output: " << (int)comp << std::endl;
+        std::cout << "Input: " << perm << ", Output: " << comp << std::endl;
     }
 }
