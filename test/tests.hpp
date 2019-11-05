@@ -38,6 +38,7 @@ extern bitLenInt max_qubits;
 extern bool single_qubit_run;
 extern std::string mOutputFileName;
 extern std::ofstream mOutputFile;
+extern bool isBinaryOutput;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {

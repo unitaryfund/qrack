@@ -34,6 +34,7 @@ bitLenInt max_qubits = 24;
 bool single_qubit_run = false;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
+bool isBinaryOutput = false;
 
 int main(int argc, char* argv[])
 {
@@ -71,7 +72,11 @@ int main(int argc, char* argv[])
             "Maximum qubits for test (default value 24, enter \"-1\" for automatic selection)") |
         Opt(mOutputFileName, "measure-output")["--measure-output"](
             "Specifies a file name for bit measurement outputs. If specificed, benchmark iterations will always be "
-            "concluded with a full measurement and written to the given file name as raw integral binary.") |
+            "concluded with a full measurement and written to the given file name, as human-readable or raw integral "
+            "binary depending on --binary-output") |
+        Opt(isBinaryOutput)["--binary-output"]("If included, specifies that the --measure-output file "
+                                               "type should be binary. (By default, it is "
+                                               "human-readable.)") |
         Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests");
 
     session.cli(cli);
@@ -139,7 +144,12 @@ int main(int argc, char* argv[])
 
     if (mOutputFileName.compare("")) {
         session.config().stream() << "Measurement results output file: " << mOutputFileName << std::endl;
-        mOutputFile.open(mOutputFileName, std::ios::out | std::ios::binary);
+        if (isBinaryOutput) {
+            mOutputFile.open(mOutputFileName, std::ios::out | std::ios::binary);
+        } else {
+            mOutputFile.open(mOutputFileName, std::ios::out);
+            mOutputFile << "TestName, QubitCount, MeasurementResult" << std::endl;
+        }
     }
 
     int num_failed = 0;
@@ -236,8 +246,6 @@ int main(int argc, char* argv[])
 QInterfaceTestFixture::QInterfaceTestFixture()
 {
     uint32_t rngSeed = Catch::getCurrentContext().getConfig()->rngSeed();
-
-    std::cout << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
 
     if (rngSeed == 0) {
         rngSeed = std::time(0);

@@ -33,6 +33,7 @@ bool sparse = false;
 int device_id = -1;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
+bool isBinaryOutput;
 
 int main(int argc, char* argv[])
 {

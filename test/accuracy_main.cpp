@@ -32,6 +32,7 @@ bool async_time = false;
 int device_id = -1;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
+bool isBinaryOutput;
 
 int main(int argc, char* argv[])
 {
@@ -189,8 +190,6 @@ int main(int argc, char* argv[])
 QInterfaceTestFixture::QInterfaceTestFixture()
 {
     uint32_t rngSeed = Catch::getCurrentContext().getConfig()->rngSeed();
-
-    std::cout << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
 
     if (rngSeed == 0) {
         rngSeed = std::time(0);

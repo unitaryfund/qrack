@@ -50,8 +50,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     const int ITERATIONS = 100;
 
     std::cout << std::endl;
-    std::cout << ITERATIONS << " iterations";
-    std::cout << std::endl;
+    std::cout << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
+    std::cout << ITERATIONS << " iterations" << std::endl;
     std::cout << "# of Qubits, ";
     std::cout << "Average Time (ms), ";
     std::cout << "Sample Std. Deviation (ms), ";
@@ -119,7 +119,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
             if (mOutputFileName.compare("")) {
                 bitCapInt result = qftReg->MReg(0, numBits);
-                mOutputFile.write(reinterpret_cast<char*>(&result), sizeof(bitCapInt));
+                if (isBinaryOutput) {
+                    mOutputFile.write(reinterpret_cast<char*>(&result), sizeof(bitCapInt));
+                } else {
+                    mOutputFile << Catch::getResultCapture().getCurrentTestName() << "," << (int)numBits << ","
+                                << (uint64_t)result << std::endl;
+                }
             }
         }
         avgt /= ITERATIONS;

@@ -40,7 +40,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     const int ITERATIONS = 100;
 
     std::cout << std::endl;
-    std::cout << ITERATIONS << " iterations";
+    std::cout << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
+    std::cout << ITERATIONS << " iterations" << std::endl;
     std::cout << std::endl;
     std::cout << "# of Qubits, ";
     std::cout << "Average Error, ";
