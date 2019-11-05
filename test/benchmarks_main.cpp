@@ -32,6 +32,9 @@ bool async_time = false;
 int device_id = -1;
 bitLenInt max_qubits = 24;
 bool single_qubit_run = false;
+std::string mOutputFileName;
+std::ofstream mOutputFile;
+bool isBinaryOutput = false;
 
 int main(int argc, char* argv[])
 {
@@ -67,13 +70,19 @@ int main(int argc, char* argv[])
         Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)") |
         Opt(mxQbts, "max-qubits")["-m"]["--max-qubits"](
             "Maximum qubits for test (default value 24, enter \"-1\" for automatic selection)") |
+        Opt(mOutputFileName, "measure-output")["--measure-output"](
+            "Specifies a file name for bit measurement outputs. If specificed, benchmark iterations will always be "
+            "concluded with a full measurement and written to the given file name, as human-readable or raw integral "
+            "binary depending on --binary-output") |
+        Opt(isBinaryOutput)["--binary-output"]("If included, specifies that the --measure-output file "
+                                               "type should be binary. (By default, it is "
+                                               "human-readable.)") |
         Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests");
 
     session.cli(cli);
 
     /* Set some defaults for convenience. */
     session.configData().useColour = Catch::UseColour::No;
-    session.configData().reporterNames = { "compact" };
     session.configData().rngSeed = std::time(0);
 
     // session.configData().abortAfter = 1;
@@ -131,6 +140,16 @@ int main(int argc, char* argv[])
         }
     } else {
         max_qubits = mxQbts;
+    }
+
+    if (mOutputFileName.compare("")) {
+        session.config().stream() << "Measurement results output file: " << mOutputFileName << std::endl;
+        if (isBinaryOutput) {
+            mOutputFile.open(mOutputFileName, std::ios::out | std::ios::binary);
+        } else {
+            mOutputFile.open(mOutputFileName, std::ios::out);
+            mOutputFile << "TestName, QubitCount, MeasurementResult" << std::endl;
+        }
     }
 
     int num_failed = 0;
@@ -215,6 +234,10 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 #endif
+    }
+
+    if (mOutputFileName.compare("")) {
+        mOutputFile.close();
     }
 
     return num_failed;

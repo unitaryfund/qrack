@@ -30,6 +30,9 @@ bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
 int device_id = -1;
+std::string mOutputFileName;
+std::ofstream mOutputFile;
+bool isBinaryOutput;
 
 int main(int argc, char* argv[])
 {
@@ -65,7 +68,6 @@ int main(int argc, char* argv[])
 
     /* Set some defaults for convenience. */
     session.configData().useColour = Catch::UseColour::No;
-    session.configData().reporterNames = { "compact" };
     session.configData().rngSeed = std::time(0);
 
     // session.configData().abortAfter = 1;
