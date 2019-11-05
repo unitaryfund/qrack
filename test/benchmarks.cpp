@@ -78,14 +78,14 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     }
 
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
-      
+
         if (isBinaryOutput) {
             mOutputFile << std::endl << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
             mOutputFile << ITERATIONS << " iterations" << std::endl;
             mOutputFile << (int)numBits << " qubits" << std::endl;
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
-      
+
         QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
             0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
         avgt = 0.0;

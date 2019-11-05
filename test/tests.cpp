@@ -174,7 +174,6 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     const int NUM_ENTRIES = 2000;
-    // const int NUM_CALLS = 1000;
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -203,7 +202,6 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
     const int NUM_ENTRIES = 2000;
-    // const int NUM_CALLS = 512; // 2048 >> 2, masked off so all bits are set.
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
