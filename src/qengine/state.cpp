@@ -487,8 +487,10 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         NormalizeState();
     }
 
+    bitLenInt nLength = qubitCount - length;
+
     bitCapInt partPower = pow2(length);
-    bitCapInt remainderPower = pow2(qubitCount - length);
+    bitCapInt remainderPower = pow2(nLength);
 
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower]();
@@ -546,12 +548,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         }
     });
 
-    if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1);
-    } else {
-        SetQubitCount(qubitCount - length);
-    }
-
     if (destination != nullptr) {
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec->write(lcv,
@@ -559,6 +555,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
     }
 
+    if (nLength == 0) {
+        SetQubitCount(1);
+    } else {
+        SetQubitCount(nLength);
+    }
     ResetStateVec(AllocStateVec(maxQPower));
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
@@ -578,10 +579,7 @@ void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest
     DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
-void QEngineCPU::Dispose(bitLenInt start, bitLenInt length)
-{
-    DecomposeDispose(start, length, (QEngineCPUPtr) nullptr);
-}
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineCPUPtr)NULL); }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)

@@ -938,10 +938,11 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
     if (length == qubitCount) {
-        if (destination != nullptr) {
+        if (destination != NULL) {
             if (deviceID == destination->deviceID) {
-                destination->stateVec = stateVec;
+                destination->ResetStateVec(stateVec);
                 destination->stateBuffer = stateBuffer;
+                stateVec = NULL;
             } else {
                 LockSync();
                 destination->LockSync();
@@ -949,20 +950,20 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
                 destination->UnlockSync();
                 UnlockSync();
             }
-        } else {
-            FreeStateVec();
         }
-        SetQubitCount(1);
         // This will be cleared by the destructor:
-        stateVec = AllocStateVec(2);
+        ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
+        SetQubitCount(1);
         return;
     }
+
+    bitLenInt nLength = qubitCount - length;
 
     OCLAPI api_call = OCL_API_DECOMPOSEPROB;
 
     bitCapInt partPower = pow2(length);
-    bitCapInt remainderPower = pow2(qubitCount - length);
+    bitCapInt remainderPower = pow2(nLength);
     bitCapInt bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -993,14 +994,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     WaitCall(api_call, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
 
-    if ((maxQPower - partPower) == 0) {
-        SetQubitCount(1);
-    } else {
-        SetQubitCount(qubitCount - length);
-    }
+    SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
-    if (destination != nullptr) {
+    if (destination != NULL) {
         destination->Finish();
 
         bciArgs[0] = partPower;
@@ -1089,10 +1086,7 @@ void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest
     DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
-void QEngineOCL::Dispose(bitLenInt start, bitLenInt length)
-{
-    DecomposeDispose(start, length, (QEngineOCLPtr) nullptr);
-}
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineOCLPtr)NULL); }
 
 real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {

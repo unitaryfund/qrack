@@ -48,7 +48,7 @@ public:
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
     virtual void copy_out(complex* outArray) = 0;
-    virtual void copy(const StateVector& toCopy) = 0;
+    virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
     /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
@@ -117,17 +117,9 @@ public:
 
     void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + capacity, copyOut); }
 
-    void copy(const StateVector& toCopy) { copy((const StateVectorArray&)toCopy); }
+    void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
-    void copy(const StateVectorArray& toCopy)
-    {
-        if (capacity != toCopy.capacity) {
-            Free();
-            capacity = toCopy.capacity;
-            Alloc(capacity);
-        }
-        std::copy(toCopy.amplitudes, toCopy.amplitudes + capacity, amplitudes);
-    }
+    void copy(StateVectorArrayPtr toCopy) { std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes); }
 
     void get_probs(real1* outArray) { std::transform(amplitudes, amplitudes + capacity, outArray, normHelper); }
 
@@ -210,13 +202,12 @@ public:
         }
     }
 
-    void copy(const StateVector& toCopy) { copy((const StateVectorSparse&)toCopy); }
+    void copy(const StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorSparse>(toCopy)); }
 
-    void copy(const StateVectorSparse& toCopy)
+    void copy(StateVectorSparsePtr toCopy)
     {
         mtx.lock();
-        capacity = toCopy.capacity;
-        amplitudes = toCopy.amplitudes;
+        amplitudes = toCopy->amplitudes;
         mtx.unlock();
     }
 

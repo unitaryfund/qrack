@@ -98,6 +98,9 @@ template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt le
 /// Bit-wise apply swap to two registers
 REG_GATE_2(Swap);
 
+/// Bit-wise apply iswap to two registers
+REG_GATE_2(ISwap);
+
 /// Bit-wise apply square root of swap to two registers
 REG_GATE_2(SqrtSwap);
 
