@@ -1675,23 +1675,13 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
         return;
     }
 
-    // All controls not optimized out are either in "isProbDirty" state or definitely true.
-    // If all are definitely true, we're better off using INC.
-    bool canSkip = true;
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        if (!CheckBitPermutation(controlVec[i])) {
-            canSkip = false;
-            break;
-        }
-    }
+    // All cached classical control bits have been removed from controlVec.
+    bitLenInt* lControls = new bitLenInt[controlVec.size()];
+    std::copy(controlVec.begin(), controlVec.end(), lControls);
 
-    if (canSkip) {
-        // INC is much better optimized
-        INC(toMod, start, length);
-        return;
-    }
+    INT(toMod, start, length, 0xFF, false, lControls, controlVec.size());
 
-    INT(toMod, start, length, 0xFF, false, controls, controlLen);
+    delete[] lControls;
 }
 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
