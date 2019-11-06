@@ -1691,30 +1691,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
         return;
     }
 
-    // Otherwise, we have to "dirty" the register.
-    std::vector<bitLenInt> bits(controlVec.size() + 1);
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        bits[i] = controlVec[i];
-    }
-    bits[controlVec.size()] = start;
-    std::sort(bits.begin(), bits.end());
-
-    std::vector<bitLenInt*> ebits(controlVec.size() + 1);
-    for (bitLenInt i = 0; i < (controlVec.size() + 1); i++) {
-        ebits[i] = &bits[i];
-    }
-
-    QInterfacePtr unit = Entangle(ebits);
-
-    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        controlsMapped[i] = shards[controlVec[i]].mapped;
-        shards[controlVec[i]].isPhaseDirty = true;
-    }
-
-    unit->CINC(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
-
-    DirtyShardRange(start, length);
+    INT(toMod, start, length, 0xFF, false, controls, controlLen);
 }
 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
@@ -1848,7 +1825,8 @@ bool QUnit::INTSCOptimize(
     return true;
 }
 
-void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry)
+void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
+    bitLenInt* controls, bitLenInt controlLen)
 {
     // Keep the bits separate, if cheap to do so:
     toMod &= pow2Mask(length);
@@ -1878,7 +1856,13 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             inReg = SHARD_STATE(shards[start]);
             total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
             if (inReg != (total & 1)) {
-                X(start);
+                if (controlLen == 1U) {
+                    CNOT(controls[0], start);
+                } else if (controlLen) {
+                    ApplyControlledSingleInvert(controls, controlLen, start, ONE_CMPLX, ONE_CMPLX);
+                } else {
+                    X(start);
+                }
             }
             carry = (total > 1);
 
@@ -1933,9 +1917,13 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
                 // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
                 // is independent of the superposed output value of the quantum bit.
-                EntangleRange(start, partLength);
-                shards[start].unit->INC(partMod, shards[start].mapped, partLength);
-                DirtyShardRange(start, partLength);
+                if (controlLen) {
+                    CINC(partMod, start, partLength, controls, controlLen);
+                } else {
+                    EntangleRange(start, partLength);
+                    DirtyShardRange(start, partLength);
+                    shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+                }
 
                 carry = toAdd;
                 toMod >>= partLength;
@@ -1952,20 +1940,37 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     if ((toMod == 0) && (length == 0)) {
         // We were able to avoid entangling the carry.
         if (hasCarry && carry) {
-            X(carryIndex);
+            if (controlLen == 1U) {
+                CNOT(controls[0], carryIndex);
+            } else if (controlLen) {
+                ApplyControlledSingleInvert(controls, controlLen, carryIndex, ONE_CMPLX, ONE_CMPLX);
+            } else {
+                X(carryIndex);
+            }
         }
         return;
     }
 
     // Otherwise, we have one unit left that needs to be entangled, plus carry bit.
     if (hasCarry) {
-        EntangleRange(start, length, carryIndex, 1);
-        shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
+        if (controlLen) {
+            // TODO: Implement this case.
+            throw "ERROR: Controlled-with-carry arithmetic is not implemented!";
+        } else {
+            EntangleRange(start, length, carryIndex, 1);
+            shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
+            DirtyShardRange(start, length);
+            DirtyShardRange(carryIndex, 1U);
+        }
     } else {
-        EntangleRange(start, length);
-        shards[start].unit->INC(toMod, shards[start].mapped, length);
+        if (controlLen) {
+            CINC(toMod, start, length, controls, controlLen);
+        } else {
+            EntangleRange(start, length);
+            DirtyShardRange(start, length);
+            shards[start].unit->INC(toMod, shards[start].mapped, length);
+        }
     }
-    DirtyShardRange(start, length);
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
