@@ -64,6 +64,6 @@ int main()
             outputLayer[i]->Predict();
         }
         comp = qReg->MReg(InputCount, OutputCount);
-        std::cout << "Input: " << (int)perm << ", Output: " << (int)comp << std::endl;
+        std::cout << "Input: " << perm << ", Output: " << comp << std::endl;
     }
 }

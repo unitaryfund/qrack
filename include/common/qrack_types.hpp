@@ -19,6 +19,9 @@
 #if ENABLE_PURE32
 #define bitCapInt uint32_t
 #define ONE_BCI 1U
+#elif ENABLE_UINT128
+#define bitCapInt __uint128_t
+#define ONE_BCI ((__uint128_t)1U)
 #else
 #define bitCapInt uint64_t
 #define ONE_BCI 1ULL

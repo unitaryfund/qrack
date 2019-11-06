@@ -58,7 +58,8 @@ real1 calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* nu
 
 int main()
 {
-    bitCapInt toFactor, base;
+    uint64_t toFactor;
+    bitCapInt base;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -118,7 +119,7 @@ int main()
     if (r & 1U) {
         r *= 2;
     }
-    bitCapInt apowrhalf = (int)pow(base, r >> 1) % toFactor;
+    bitCapInt apowrhalf = ((bitCapInt)pow((double)base, (double)(r >> 1U))) % toFactor;
     bitCapInt f1 = gcd(apowrhalf + 1, toFactor);
     bitCapInt f2 = gcd(apowrhalf - 1, toFactor);
     bitCapInt res1 = f1;

@@ -1,5 +1,3 @@
-option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
-
 set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD OpenCL SDK, if used")
 
 # Options used when building the project

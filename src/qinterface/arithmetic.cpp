@@ -163,14 +163,14 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
 
     FullAdd(input1, input2, carry, output);
 
-    if (length == 1) {
+    if (length == 1U) {
         Swap(carry, output);
         return;
     }
 
     // Otherwise, length > 1.
     bitLenInt end = length - 1U;
-    for (bitLenInt i = 1; i < end; i++) {
+    for (bitLenInt i = 1U; i < end; i++) {
         FullAdd(input1 + i, input2 + i, output + i, output + i + 1);
     }
     FullAdd(input1 + end, input2 + end, output + end, carry);
@@ -185,13 +185,13 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     bitLenInt end = length - 1U;
     IFullAdd(input1 + end, input2 + end, output + end, carry);
 
-    if (length == 1) {
+    if (length == 1U) {
         Swap(carry, output);
         return;
     }
 
     // Otherwise, length > 1.
-    for (bitLenInt i = (end - 1); i > 0; i--) {
+    for (bitLenInt i = (end - 1U); i > 0; i--) {
         IFullAdd(input1 + i, input2 + i, output + i, output + i + 1);
     }
     IFullAdd(input1, input2, carry, output);
