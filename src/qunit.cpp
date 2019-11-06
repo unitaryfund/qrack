@@ -1553,8 +1553,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
     std::sort(allBits.begin(), allBits.end());
 
-    std::vector<bitLenInt*> ebits(controlVec.size() + targets.size());
-    for (i = 0; i < allBits.size(); i++) {
+    std::vector<bitLenInt*> ebits(allBits.size());
+    for (i = 0; i < ebits.size(); i++) {
         ebits[i] = &allBits[i];
     }
 
@@ -1824,6 +1824,17 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
+    std::vector<bitLenInt> allBits(controlLen + 1U);
+    std::copy(controls, controls + controlLen, allBits.begin());
+    std::sort(allBits.begin(), allBits.begin() + 1U);
+
+    std::vector<bitLenInt*> ebits(allBits.size());
+    for (bitLenInt i = 0; i < (ebits.size() - 1U); i++) {
+        ebits[i] = &allBits[i];
+    }
+
+    bitLenInt* lControls = new bitLenInt[controlLen];
+
     // Try ripple addition, to avoid entanglement.
     bool toAdd, inReg;
     bool carry = false;
@@ -1907,11 +1918,15 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
                 // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
                 // is independent of the superposed output value of the quantum bit.
+                EntangleRange(start, partLength);
+                DirtyShardRange(start, partLength);
                 if (controlLen) {
-                    CINC(partMod, start, partLength, controls, controlLen);
+                    allBits[controlLen] = start;
+                    ebits[controlLen] = &allBits[controlLen];
+                    QInterfacePtr unit = Entangle(ebits);
+                    std::copy(allBits.begin(), allBits.begin() + controlLen, lControls);
+                    unit->CINC(partMod, shards[start].mapped, partLength, lControls, controlLen);
                 } else {
-                    EntangleRange(start, partLength);
-                    DirtyShardRange(start, partLength);
                     shards[start].unit->INC(partMod, shards[start].mapped, partLength);
                 }
 
@@ -1938,6 +1953,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 X(carryIndex);
             }
         }
+        delete[] lControls;
         return;
     }
 
@@ -1955,14 +1971,19 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             DirtyShardRange(carryIndex, 1U);
         }
     } else {
+        EntangleRange(start, length);
+        DirtyShardRange(start, length);
         if (controlLen) {
-            CINC(toMod, start, length, controls, controlLen);
+            allBits[controlLen] = start;
+            ebits[controlLen] = &allBits[controlLen];
+            QInterfacePtr unit = Entangle(ebits);
+            std::copy(allBits.begin(), allBits.begin() + controlLen, lControls);
+            unit->CINC(toMod, shards[start].mapped, length, lControls, controlLen);
         } else {
-            EntangleRange(start, length);
-            DirtyShardRange(start, length);
             shards[start].unit->INC(toMod, shards[start].mapped, length);
         }
     }
+    delete[] lControls;
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
