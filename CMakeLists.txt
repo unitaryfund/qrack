@@ -100,6 +100,10 @@ message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 
+if (ENABLE_UINT128 AND ENABLE_PURE32)
+    message(FATAL_ERROR "You cannot require both ENABLE_UINT128 and ENABLE_PURE32 at the same time! 128 bit and pure 32 bit modes are mutually exclusive.")
+endif (ENABLE_UINT128 AND ENABLE_PURE32)
+
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
     set(TEST_COMPILE_OPTS -std=c++11 -Wall)
