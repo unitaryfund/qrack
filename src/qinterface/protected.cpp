@@ -243,4 +243,13 @@ bool QInterface::IsIdentity(const complex* mtrx)
     return true;
 }
 
+#if ENABLE_UINT128
+std::ostream& operator<<(std::ostream& left, const __uint128_t& right)
+{
+    // TODO: As 128-bit simulation with QUnit becomes more practical, change this to print the full 128 bits as decimal.
+    left << (const uint64_t&)right;
+    return left;
+}
+#endif
+
 } // namespace Qrack

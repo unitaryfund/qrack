@@ -16,7 +16,28 @@
 #include <future>
 #include <math.h>
 
+#if ENABLE_UINT128
+#include <mutex>
+#endif
+
 #include "common/parallel_for.hpp"
+
+#if ENABLE_UINT128
+#define DECLARE_ATOMIC_BITCAPINT()                                                                                     \
+    std::mutex idxLock;                                                                                                \
+    bitCapInt idx;
+#define ATOMIC_ASYNC(...)                                                                                              \
+    std::async(std::launch::async, [__VA_ARGS__, &idxLock]()
+#define ATOMIC_INC()                                                                                                   \
+    idxLock.lock();                                                                                                    \
+    i = idx++;                                                                                                         \
+    idxLock.unlock();
+#else
+#define DECLARE_ATOMIC_BITCAPINT() std::atomic<bitCapInt> idx;
+#define ATOMIC_ASYNC(...)                                                                                              \
+    std::async(std::launch::async, [__VA_ARGS__]()
+#define ATOMIC_INC() i = idx++;
+#endif
 
 namespace Qrack {
 
@@ -61,14 +82,15 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
             futures[cpu].get();
         }
     } else {
-        std::atomic<bitCapInt> idx;
+        DECLARE_ATOMIC_BITCAPINT();
         idx = 0;
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = std::async(std::launch::async, [cpu, &idx, begin, itemCount, inc, fn]() {
+            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
+            {
                 bitCapInt i, j, k, l;
                 for (;;) {
-                    i = idx++;
+                    ATOMIC_INC();
                     l = i * PSTRIDE;
                     for (j = 0; j < PSTRIDE; j++) {
                         k = j + l;
@@ -225,16 +247,17 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
             nrmSqr += futures[cpu].get();
         }
     } else {
-        std::atomic<bitCapInt> idx;
+        DECLARE_ATOMIC_BITCAPINT();
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = std::async(std::launch::async, [&idx, maxQPower, stateArray]() {
+            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
+            {
                 real1 sqrNorm = 0.0;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {
-                    i = idx++;
+                    ATOMIC_INC();
                     for (j = 0; j < PSTRIDE; j++) {
                         k = i * PSTRIDE + j;
                         if (k >= maxQPower)

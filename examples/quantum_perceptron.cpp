@@ -51,7 +51,7 @@ int main()
     std::cout << "Should be close to 1 for powers of two, and close to 0 for all else..." << std::endl;
     for (perm = 0; perm < ControlPower; perm++) {
         qReg->SetPermutation(perm);
-        std::cout << "Permutation: " << (int)perm << ", Probability: " << qPerceptron->Predict() << std::endl;
+        std::cout << "Permutation: " << perm << ", Probability: " << qPerceptron->Predict() << std::endl;
     }
 
     // Now, we prepare a superposition of all available powers of 2, to predict.
