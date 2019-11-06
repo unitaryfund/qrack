@@ -561,6 +561,14 @@ protected:
         }
     }
 
+    void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
+    {
+        for (bitLenInt i = 0; i < bitIndices.size(); i++) {
+            shards[bitIndices[i]].isProbDirty = true;
+            shards[bitIndices[i]].isPhaseDirty = true;
+        }
+    }
+
     void EndEmulation(QEngineShard& shard)
     {
         if (shard.isEmulated) {

@@ -1826,7 +1826,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
     std::vector<bitLenInt> allBits(controlLen + 1U);
     std::copy(controls, controls + controlLen, allBits.begin());
-    std::sort(allBits.begin(), allBits.begin() + 1U);
+    std::sort(allBits.begin(), allBits.begin() + controlLen);
 
     std::vector<bitLenInt*> ebits(allBits.size());
     for (bitLenInt i = 0; i < (ebits.size() - 1U); i++) {
@@ -1924,7 +1924,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                     allBits[controlLen] = start;
                     ebits[controlLen] = &allBits[controlLen];
                     QInterfacePtr unit = Entangle(ebits);
-                    std::copy(allBits.begin(), allBits.begin() + controlLen, lControls);
+                    DirtyShardIndexVector(allBits);
+                    for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
+                        lControls[cIndex] = shards[cIndex].mapped;
+                    }
                     unit->CINC(partMod, shards[start].mapped, partLength, lControls, controlLen);
                 } else {
                     shards[start].unit->INC(partMod, shards[start].mapped, partLength);
@@ -1977,7 +1980,10 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             allBits[controlLen] = start;
             ebits[controlLen] = &allBits[controlLen];
             QInterfacePtr unit = Entangle(ebits);
-            std::copy(allBits.begin(), allBits.begin() + controlLen, lControls);
+            DirtyShardIndexVector(allBits);
+            for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
+                lControls[cIndex] = shards[cIndex].mapped;
+            }
             unit->CINC(toMod, shards[start].mapped, length, lControls, controlLen);
         } else {
             shards[start].unit->INC(toMod, shards[start].mapped, length);
