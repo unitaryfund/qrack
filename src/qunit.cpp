@@ -1954,7 +1954,9 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     // Otherwise, we have one unit left that needs to be entangled, plus carry bit.
     if (hasCarry) {
         if (controlLen) {
-            // TODO: Implement this case.
+            // NOTE: This case is not actually exposed by the public API. It would only become exposed if
+            // "CINCC"/"CDECC" were implemented in the public interface, in which case it would become "trivial" to
+            // implement, once the QEngine methods were in place.
             throw "ERROR: Controlled-with-carry arithmetic is not implemented!";
         } else {
             EntangleRange(start, length, carryIndex, 1);
@@ -2187,6 +2189,19 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
         SetReg(outStart, length, res);
+        return;
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (pow2(log2(modN)) == modN) {
+        SetReg(outStart, length, 0U);
+        bitCapInt toModPow = toMod;
+        bitLenInt controls[1];
+        for (bitLenInt i = 0; i < length; i++) {
+            controls[0] = inStart + i;
+            CINC(toModPow, outStart, length, controls, 1U);
+            toModPow *= toMod;
+        }
         return;
     }
 
