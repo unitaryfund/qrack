@@ -2203,19 +2203,25 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
-        SetReg(outStart, length, 0U);
-        bitCapInt lengthPow = pow2(length);
-        bitCapInt toModExp = toMod;
-        bitLenInt controls[1];
-        for (bitLenInt i = 0; i < length; i++) {
-            controls[0] = inStart + i;
-            CINC(toModExp, outStart, length, controls, 1U);
-            toModExp <<= 1U;
-            if ((toModExp == 0) || (toModExp >= lengthPow)) {
+        bool isFullyEntangled = true;
+        for (bitLenInt i = 1; i < length; i++) {
+            if (shards[inStart].unit != shards[inStart + i].unit) {
+                isFullyEntangled = false;
                 break;
             }
         }
-        return;
+
+        if (!isFullyEntangled) {
+            SetReg(outStart, length, 0U);
+            bitCapInt toModExp = toMod;
+            bitLenInt controls[1];
+            for (bitLenInt i = 0; i < length; i++) {
+                controls[0] = inStart + i;
+                CINC(toModExp, outStart, length, controls, 1U);
+                toModExp <<= 1U;
+            }
+            return;
+        }
     }
 
     // Otherwise, form the potentially entangled representation:
@@ -2236,23 +2242,28 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
-        bitCapInt lengthMask = pow2(length) - 1U;
-        bitCapInt toModExp;
-        bitLenInt controls[1];
-        for (bitLenInt i = 0; i < length; i++) {
-            toModExp = 0;
-            for (bitLenInt j = 0; j < length; j++) {
-                toModExp += (intPow(toMod, pow2(j)) << i);
+        bool isFullyEntangled = true;
+        for (bitLenInt i = 1; i < length; i++) {
+            if (shards[inStart].unit != shards[inStart + i].unit) {
+                isFullyEntangled = false;
+                break;
             }
-
-            if ((toModExp & lengthMask) == 0) {
-                continue;
-            }
-
-            controls[0] = inStart + i;
-            CINC(toModExp, outStart, length, controls, 1U);
         }
-        return;
+
+        if (!isFullyEntangled) {
+            bitCapInt toModExp;
+            bitLenInt controls[1];
+            for (bitLenInt i = 0; i < length; i++) {
+                toModExp = 0;
+                for (bitLenInt j = 0; j < length; j++) {
+                    toModExp += (intPow(toMod, pow2(j)) << i);
+                }
+
+                controls[0] = inStart + i;
+                CINC(toModExp, outStart, length, controls, 1U);
+            }
+            return;
+        }
     }
 
     // Otherwise, form the potentially entangled representation:
@@ -2366,20 +2377,26 @@ void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
-        bitCapInt lengthPow = pow2(length);
-        bitCapInt toModExp = toMod;
-        bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
-        std::copy(controlVec.begin(), controlVec.end(), lControls);
-        for (bitLenInt i = 0; i < length; i++) {
-            lControls[controlVec.size()] = inStart + i;
-            CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
-            toModExp <<= 1U;
-            if ((toModExp == 0) || (toModExp >= lengthPow)) {
+        bool isFullyEntangled = true;
+        for (bitLenInt i = 1; i < length; i++) {
+            if (shards[inStart].unit != shards[inStart + i].unit) {
+                isFullyEntangled = false;
                 break;
             }
         }
-        delete[] lControls;
-        return;
+
+        if (!isFullyEntangled) {
+            bitCapInt toModExp = toMod;
+            bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
+            std::copy(controlVec.begin(), controlVec.end(), lControls);
+            for (bitLenInt i = 0; i < length; i++) {
+                lControls[controlVec.size()] = inStart + i;
+                CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                toModExp <<= 1U;
+            }
+            delete[] lControls;
+            return;
+        }
     }
 
     CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
