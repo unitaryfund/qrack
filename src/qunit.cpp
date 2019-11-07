@@ -21,6 +21,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -2240,6 +2242,8 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
         return;
     }
 
+    SetReg(outStart, length, 0);
+
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
         bool isFullyEntangled = true;
@@ -2251,14 +2255,16 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
         }
 
         if (!isFullyEntangled) {
+            std::vector<bitLenInt> inBits(length);
+            for (bitLenInt i = 0; i < length; i++) {
+                inBits[i] = inStart + i;
+            }
+            ApplyAntiControlledSingleInvert(&(inBits[0]), length, outStart, ONE_CMPLX, ONE_CMPLX);
+
             bitCapInt toModExp;
             bitLenInt controls[1];
             for (bitLenInt i = 0; i < length; i++) {
-                toModExp = 0;
-                for (bitLenInt j = 0; j < length; j++) {
-                    toModExp += (intPow(toMod, pow2(j)) << i);
-                }
-
+                toModExp = intPow(toMod, pow2(i));
                 controls[0] = inStart + i;
                 CINC(toModExp, outStart, length, controls, 1U);
             }
