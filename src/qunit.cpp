@@ -2204,12 +2204,16 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
         SetReg(outStart, length, 0U);
-        bitCapInt toModGeo = toMod;
+        bitCapInt lengthPow = pow2(length);
+        bitCapInt toModExp = toMod;
         bitLenInt controls[1];
         for (bitLenInt i = 0; i < length; i++) {
             controls[0] = inStart + i;
-            CINC(toModGeo, outStart, length, controls, 1U);
-            toModGeo += toModGeo;
+            CINC(toModExp, outStart, length, controls, 1U);
+            toModExp <<= 1U;
+            if ((toModExp == 0) || (toModExp >= lengthPow)) {
+                break;
+            }
         }
         return;
     }
@@ -2228,6 +2232,24 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
         bitCapInt res = intPow(toMod, GetCachedPermutation(inStart, length)) % modN;
         SetReg(outStart, length, res);
         return;
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (pow2(log2(modN)) == modN) {
+        bitCapInt lengthPow = pow2(length);
+        bitCapInt toModExp;
+        bitLenInt controls[1];
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            toModExp = intPow(toMod, pow2(i));
+            for (bitLenInt j = 0; j < length; j++) {
+                controls[0] = inStart + j;
+                CINC(toModExp, outStart, length, controls, 1U);
+                toModExp <<= 1U;
+                if ((toModExp == 0) || (toModExp >= lengthPow)) {
+                    break;
+                }
+            }
+        }
     }
 
     // Otherwise, form the potentially entangled representation:
@@ -2341,13 +2363,17 @@ void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
-        bitCapInt toModGeo = toMod;
+        bitCapInt lengthPow = pow2(length);
+        bitCapInt toModExp = toMod;
         bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
         std::copy(controlVec.begin(), controlVec.end(), lControls);
         for (bitLenInt i = 0; i < length; i++) {
             lControls[controlVec.size()] = inStart + i;
-            CINC(toModGeo, outStart, length, lControls, controlVec.size() + 1U);
-            toModGeo += toModGeo;
+            CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+            toModExp <<= 1U;
+            if ((toModExp == 0) || (toModExp >= lengthPow)) {
+                break;
+            }
         }
         delete[] lControls;
         return;
@@ -2371,6 +2397,25 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
     if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire operation:
         return;
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (pow2(log2(modN)) == modN) {
+        bitCapInt lengthPow = pow2(length);
+        bitCapInt toModExp;
+        bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
+        std::copy(controlVec.begin(), controlVec.end(), lControls);
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            toModExp = intPow(toMod, pow2(i));
+            for (bitLenInt j = 0; j < length; j++) {
+                lControls[controlVec.size()] = inStart + j;
+                CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                toModExp <<= 1U;
+                if ((toModExp == 0) || (toModExp >= lengthPow)) {
+                    break;
+                }
+            }
+        }
     }
 
     CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
