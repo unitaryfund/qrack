@@ -2252,6 +2252,7 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
             controls[0] = inStart + i;
             CINC(toModExp, outStart, length, controls, 1U);
         }
+        return;
     }
 
     // Otherwise, form the potentially entangled representation:
@@ -2399,46 +2400,6 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
     if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire operation:
         return;
-    }
-
-    // If "modN" is a power of 2, we have an optimized way of handling this.
-    if (pow2(log2(modN)) == modN) {
-        bitCapInt lengthPow = pow2(length);
-        bitCapInt toModExp;
-        bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
-        std::copy(controlVec.begin(), controlVec.end(), lControls);
-        for (bitLenInt i = 0; i < length; i++) {
-            toModExp = intPow(toMod, pow2(i));
-            for (bitLenInt j = 0; j < length; j++) {
-                lControls[controlVec.size()] = inStart + j;
-                CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
-                toModExp <<= 1U;
-                if ((toModExp == 0) || (toModExp >= lengthPow)) {
-                    break;
-                }
-            }
-        }
-    }
-
-    // If "modN" is a power of 2, we have an optimized way of handling this.
-    if (pow2(log2(modN)) == modN) {
-        bitCapInt lengthMask = pow2(length) - 1U;
-        bitCapInt toModExp;
-        bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
-        std::copy(controlVec.begin(), controlVec.end(), lControls);
-        for (bitLenInt i = 0; i < length; i++) {
-            toModExp = 0;
-            for (bitLenInt j = 0; j < length; j++) {
-                toModExp += (intPow(toMod, pow2(j)) << i);
-            }
-
-            if ((toModExp & lengthMask) == 0) {
-                continue;
-            }
-
-            lControls[controlVec.size()] = inStart + i;
-            CINC(toModExp, outStart, length, controls, 1U);
-        }
     }
 
     CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
