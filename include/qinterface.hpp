@@ -40,7 +40,7 @@ bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
-std::ostream& operator<<(std::ostream& left, const __uint128_t& right);
+std::ostream& operator<<(std::ostream& left, __uint128_t right);
 inline bitCapInt pow2(const bitLenInt& p) { return 1ULL << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) { return (1ULL << p) - 1ULL; }
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (1ULL << bit) & source; }
