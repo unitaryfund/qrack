@@ -2236,19 +2236,21 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
-        bitCapInt lengthPow = pow2(length);
+        bitCapInt lengthMask = pow2(length) - 1U;
         bitCapInt toModExp;
         bitLenInt controls[1];
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            toModExp = intPow(toMod, pow2(i));
+        for (bitLenInt i = 0; i < length; i++) {
+            toModExp = 0;
             for (bitLenInt j = 0; j < length; j++) {
-                controls[0] = inStart + j;
-                CINC(toModExp, outStart, length, controls, 1U);
-                toModExp <<= 1U;
-                if ((toModExp == 0) || (toModExp >= lengthPow)) {
-                    break;
-                }
+                toModExp += (intPow(toMod, pow2(j)) << i);
             }
+
+            if ((toModExp & lengthMask) == 0) {
+                continue;
+            }
+
+            controls[0] = inStart + i;
+            CINC(toModExp, outStart, length, controls, 1U);
         }
     }
 
@@ -2405,7 +2407,7 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         bitCapInt toModExp;
         bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
         std::copy(controlVec.begin(), controlVec.end(), lControls);
-        for (bitLenInt i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             toModExp = intPow(toMod, pow2(i));
             for (bitLenInt j = 0; j < length; j++) {
                 lControls[controlVec.size()] = inStart + j;
@@ -2415,6 +2417,27 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
                     break;
                 }
             }
+        }
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (pow2(log2(modN)) == modN) {
+        bitCapInt lengthMask = pow2(length) - 1U;
+        bitCapInt toModExp;
+        bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
+        std::copy(controlVec.begin(), controlVec.end(), lControls);
+        for (bitLenInt i = 0; i < length; i++) {
+            toModExp = 0;
+            for (bitLenInt j = 0; j < length; j++) {
+                toModExp += (intPow(toMod, pow2(j)) << i);
+            }
+
+            if ((toModExp & lengthMask) == 0) {
+                continue;
+            }
+
+            lControls[controlVec.size()] = inStart + i;
+            CINC(toModExp, outStart, length, controls, 1U);
         }
     }
 
