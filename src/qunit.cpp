@@ -1628,8 +1628,7 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
         [&](bitLenInt qb, bool cb, bitLenInt l) { CLXOR(qb, cb, l); });
 }
 
-bool QUnit::CArithmeticOptimize(
-    bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
+bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
     for (bitLenInt i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
@@ -1639,23 +1638,16 @@ bool QUnit::CArithmeticOptimize(
         }
     }
 
-    // Otherwise, we have to entangle the register.
-    EntangleRange(start, length);
-
     controlVec->resize(controlLen);
     std::copy(controls, controls + controlLen, controlVec->begin());
     bitLenInt controlIndex = 0;
 
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
-            continue;
-        }
-
         real1 prob = Prob(controls[i]);
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
             return true;
-        } else if (((ONE_R1 - prob) < min_norm) && (shards[controls[i]].unit != shards[start].unit)) {
+        } else if ((ONE_R1 - prob) < min_norm) {
             // If any control has full probability, we can avoid entangling it.
             controlVec->erase(controlVec->begin() + controlIndex);
         } else {
@@ -1670,7 +1662,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire gate.
         return;
     }
@@ -2212,12 +2204,12 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     // If "modN" is a power of 2, we have an optimized way of handling this.
     if (pow2(log2(modN)) == modN) {
         SetReg(outStart, length, 0U);
-        bitCapInt toModPow = toMod;
+        bitCapInt toModGeo = toMod;
         bitLenInt controls[1];
         for (bitLenInt i = 0; i < length; i++) {
             controls[0] = inStart + i;
-            CINC(toModPow, outStart, length, controls, 1U);
-            toModPow *= toMod;
+            CINC(toModGeo, outStart, length, controls, 1U);
+            toModGeo += toModGeo;
         }
         return;
     }
@@ -2281,7 +2273,7 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire operation:
         return;
     }
@@ -2297,15 +2289,8 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 }
 
 void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
-    bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt length, std::vector<bitLenInt> controlVec)
 {
-    // Try to optimize away the whole gate, or as many controls as is opportune.
-    std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
-        return;
-    }
-
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
@@ -2345,7 +2330,30 @@ void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         return;
     }
 
-    CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controls, controlLen);
+    SetReg(outStart, length, 0U);
+
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (pow2(log2(modN)) == modN) {
+        bitCapInt toModGeo = toMod;
+        bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
+        std::copy(controlVec.begin(), controlVec.end(), lControls);
+        for (bitLenInt i = 0; i < length; i++) {
+            lControls[controlVec.size()] = inStart + i;
+            CINC(toModGeo, outStart, length, lControls, controlVec.size() + 1U);
+            toModGeo += toModGeo;
+        }
+        delete[] lControls;
+        return;
+    }
+
+    CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
 void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
@@ -2356,7 +2364,16 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         return;
     }
 
-    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controls, controlLen);
+    SetReg(outStart, length, 0U);
+
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
+    }
+
+    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
