@@ -2540,6 +2540,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8 | (16 << 8)));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
+{
+    qftReg->SetPermutation(65 | (69 << 8));
+    qftReg->IMULModNOut(5, 256U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
 {
     qftReg->SetPermutation(6);
@@ -2617,6 +2624,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
     qftReg->SetPermutation(3 | (1 << 16));
     qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (9 << 8)));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
+{
+    bitLenInt controls[1] = { 16 };
+
+    qftReg->SetPermutation(1);
+    qftReg->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    qftReg->CIMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 1));
+
+    qftReg->SetPermutation(3 | (1 << 16));
+    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    qftReg->CIMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3 | (1 << 16)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")

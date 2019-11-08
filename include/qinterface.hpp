@@ -1520,6 +1520,10 @@ public:
     virtual void MULModNOut(
         bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
 
+    /** Inverse: multiplication modulo N by integer, (out of place) */
+    virtual void IMULModNOut(
+        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+
     /** Raise a classical base to a quantum power, modulo N, (out of place) */
     virtual void POWModNOut(
         bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
@@ -1534,6 +1538,10 @@ public:
 
     /** Controlled multiplication modulo N by integer, (out of place) */
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
+
+    /** Inverse: controlled multiplication modulo N by integer, (out of place) */
+    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */

@@ -448,10 +448,8 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 }
 
 void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart,
-    const bitLenInt& outStart, const bitLenInt& length)
+    const bitLenInt& outStart, const bitLenInt& length, const bool& inverse)
 {
-    SetReg(outStart, length, 0);
-
     bitCapInt lowMask = pow2Mask(length);
     bitCapInt inMask = lowMask << inStart;
     bitCapInt outMask = lowMask << outStart;
@@ -464,7 +462,11 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
-        nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv));
+        if (inverse) {
+            nStateVec->write(lcv, stateVec->read(inRes | outRes | otherRes));
+        } else {
+            nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv));
+        }
     });
 
     ResetStateVec(nStateVec);
@@ -472,12 +474,22 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
 
 void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    SetReg(outStart, length, 0);
+
     if (toMod == 0) {
-        SetReg(outStart, length, 0);
         return;
     }
 
     ModNOut([&toMod](const bitCapInt& inInt) { return inInt * toMod; }, modN, inStart, outStart, length);
+}
+
+void QEngineCPU::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    if (toMod == 0) {
+        return;
+    }
+
+    ModNOut([&toMod](const bitCapInt& inInt) { return inInt * toMod; }, modN, inStart, outStart, length, true);
 }
 
 void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
@@ -486,10 +498,9 @@ void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
 }
 
 void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart,
-    const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen)
+    const bitLenInt& outStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen,
+    const bool& inverse)
 {
-    SetReg(outStart, length, 0);
-
     bitCapInt lowPower = pow2(length);
     bitCapInt lowMask = lowPower - ONE_BCI;
     bitCapInt inMask = lowMask << inStart;
@@ -518,7 +529,11 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
 
-        nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv | controlMask));
+        if (inverse) {
+            nStateVec->write(lcv | controlMask, stateVec->read(inRes | outRes | otherRes));
+        } else {
+            nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv | controlMask));
+        }
         nStateVec->write(lcv, stateVec->read(lcv));
 
         bitCapInt partControlMask;
@@ -547,8 +562,22 @@ void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
+    SetReg(outStart, length, 0);
+
     CModNOut([&toMod](const bitCapInt& inInt) { return inInt * toMod; }, modN, inStart, outStart, length, controls,
         controlLen);
+}
+
+void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        IMULModNOut(toMod, modN, inStart, outStart, length);
+        return;
+    }
+
+    CModNOut([&toMod](const bitCapInt& inInt) { return inInt * toMod; }, modN, inStart, outStart, length, controls,
+        controlLen, true);
 }
 
 void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,

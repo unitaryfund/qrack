@@ -2188,7 +2188,8 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     DirtyShardRange(carryStart, length);
 }
 
-void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QUnit::xMULModNOut(
+    bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bool inverse)
 {
     // Inexpensive edge case
     if (toMod == 0U) {
@@ -2197,10 +2198,15 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     }
 
     // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(inStart, length)) {
-        bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
-        SetReg(outStart, length, res);
-        return;
+
+    if (!inverse) {
+        if (CheckBitsPermutation(inStart, length)) {
+            bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
+            SetReg(outStart, length, res);
+            return;
+        }
+
+        SetReg(outStart, length, 0U);
     }
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
@@ -2214,12 +2220,15 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
         }
 
         if (!isFullyEntangled) {
-            SetReg(outStart, length, 0U);
             bitCapInt toModExp = toMod;
             bitLenInt controls[1];
             for (bitLenInt i = 0; i < length; i++) {
                 controls[0] = inStart + i;
-                CINC(toModExp, outStart, length, controls, 1U);
+                if (inverse) {
+                    CDEC(toModExp, outStart, length, controls, 1U);
+                } else {
+                    CINC(toModExp, outStart, length, controls, 1U);
+                }
                 toModExp <<= 1U;
             }
             return;
@@ -2228,9 +2237,23 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
-    shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+    if (inverse) {
+        shards[inStart].unit->IMULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+    } else {
+        shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+    }
     DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
+}
+
+void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    xMULModNOut(toMod, modN, inStart, outStart, length, false);
+}
+
+void QUnit::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    xMULModNOut(toMod, modN, inStart, outStart, length, true);
 }
 
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
@@ -2336,15 +2359,21 @@ void QUnit::CDIV(
     CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controls, controlLen);
 }
 
-void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen, bool inverse)
 {
     if (controlLen == 0U) {
-        MULModNOut(toMod, modN, inStart, outStart, length);
+        if (inverse) {
+            IMULModNOut(toMod, modN, inStart, outStart, length);
+        } else {
+            MULModNOut(toMod, modN, inStart, outStart, length);
+        }
         return;
     }
 
-    SetReg(outStart, length, 0U);
+    if (!inverse) {
+        SetReg(outStart, length, 0U);
+    }
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
@@ -2369,7 +2398,11 @@ void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
             std::copy(controlVec.begin(), controlVec.end(), lControls);
             for (bitLenInt i = 0; i < length; i++) {
                 lControls[controlVec.size()] = inStart + i;
-                CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                if (inverse) {
+                    CDEC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                } else {
+                    CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                }
                 toModExp <<= 1U;
             }
             delete[] lControls;
@@ -2377,7 +2410,23 @@ void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         }
     }
 
-    CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    if (inverse) {
+        CMULModx(&QInterface::CIMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    } else {
+        CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    }
+}
+
+void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CxMULModNOut(toMod, modN, inStart, outStart, length, controls, controlLen, false);
+}
+
+void QUnit::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CxMULModNOut(toMod, modN, inStart, outStart, length, controls, controlLen, true);
 }
 
 void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,

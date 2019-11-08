@@ -1134,34 +1134,43 @@ void kernel div(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global
     }
 }
 
+// The conditional in the body of kernel loop would majorly hurt performance:
+#define MODNOUT(indexIn, indexOut)                                                                       \
+    bitCapInt Nthreads, lcv;                                                                             \
+                                                                                                         \
+    Nthreads = get_global_size(0);                                                                       \
+    bitCapInt maxI = bitCapIntPtr[0];                                                                    \
+    bitCapInt toMul = bitCapIntPtr[1];                                                                   \
+    bitCapInt inMask = bitCapIntPtr[2];                                                                  \
+    bitCapInt outMask = bitCapIntPtr[3];                                                                 \
+    bitCapInt otherMask = bitCapIntPtr[4];                                                               \
+    bitCapInt len = bitCapIntPtr[5];                                                                     \
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;                                                      \
+    bitCapInt inStart = bitCapIntPtr[6];                                                                 \
+    bitCapInt outStart = bitCapIntPtr[7];                                                                \
+    bitCapInt skipMask = bitCapIntPtr[8];                                                                \
+    bitCapInt modN = bitCapIntPtr[9];                                                                    \
+    bitCapInt otherRes, inRes, outRes;                                                                   \
+    bitCapInt i, iHigh, iLow;                                                                            \
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {                                                        \
+        iHigh = lcv;                                                                                     \
+        iLow = iHigh & skipMask;                                                                         \
+        i = iLow | (iHigh ^ iLow) << len;                                                                \
+                                                                                                         \
+        otherRes = i & otherMask;                                                                        \
+        inRes = i & inMask;                                                                              \
+        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;                                      \
+        nStateVec[indexOut] = stateVec[indexIn];                                                         \
+    }
+
 void kernel mulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    MODNOUT(i, (inRes | outRes | otherRes));
+}
 
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toMul = bitCapIntPtr[1];
-    bitCapInt inMask = bitCapIntPtr[2];
-    bitCapInt outMask = bitCapIntPtr[3];
-    bitCapInt otherMask = bitCapIntPtr[4];
-    bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt inStart = bitCapIntPtr[6];
-    bitCapInt outStart = bitCapIntPtr[7];
-    bitCapInt skipMask = bitCapIntPtr[8];
-    bitCapInt modN = bitCapIntPtr[9];
-    bitCapInt otherRes, inRes, outRes;
-    bitCapInt i, iHigh, iLow;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & skipMask;
-        i = iLow | (iHigh ^ iLow) << len;
-
-        otherRes = i & otherMask;
-        inRes = i & inMask;
-        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
-        nStateVec[inRes | outRes | otherRes] = stateVec[i];
-    }
+void kernel imulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    MODNOUT((inRes | outRes | otherRes), i);
 }
 
 void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
@@ -1451,41 +1460,50 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
     }
 }
 
+// The conditional in the body of kernel loop would majorly hurt performance:
+#define CMODNOUT(indexIn, indexOut)                                                                      \
+    bitCapInt Nthreads, lcv;                                                                             \
+                                                                                                         \
+    Nthreads = get_global_size(0);                                                                       \
+    bitCapInt maxI = bitCapIntPtr[0];                                                                    \
+    bitCapInt toMul = bitCapIntPtr[1];                                                                   \
+    bitCapInt controlLen = bitCapIntPtr[2];                                                              \
+    bitCapInt controlMask = bitCapIntPtr[3];                                                             \
+    bitCapInt inMask = bitCapIntPtr[4];                                                                  \
+    bitCapInt outMask = bitCapIntPtr[5];                                                                 \
+    bitCapInt modN = bitCapIntPtr[6];                                                                    \
+    bitCapInt len = bitCapIntPtr[7];                                                                     \
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;                                                      \
+    bitCapInt inStart = bitCapIntPtr[8];                                                                 \
+    bitCapInt outStart = bitCapIntPtr[9];                                                                \
+                                                                                                         \
+    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);                           \
+    maxI >>= (controlLen + len);                                                                         \
+                                                                                                         \
+    bitCapInt otherRes, outRes, inRes;                                                                   \
+    bitCapInt i, iHigh, iLow, j;                                                                         \
+    bitLenInt p, k;                                                                                      \
+    bitCapInt partControlMask;                                                                           \
+                                                                                                         \
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {                                                        \
+        CMOD_START();                                                                                    \
+                                                                                                         \
+        otherRes = i & otherMask;                                                                        \
+        inRes = i & inMask;                                                                              \
+        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;                                      \
+        nStateVec[indexOut] = stateVec[indexIn];                                                         \
+                                                                                                         \
+        CMOD_FINISH();                                                                                   \
+    }
+
 void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    bitCapInt Nthreads, lcv;
+    CMODNOUT((i | controlMask), (inRes | outRes | otherRes));
+}
 
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toMul = bitCapIntPtr[1];
-    bitCapInt controlLen = bitCapIntPtr[2];
-    bitCapInt controlMask = bitCapIntPtr[3];
-    bitCapInt inMask = bitCapIntPtr[4];
-    bitCapInt outMask = bitCapIntPtr[5];
-    bitCapInt modN = bitCapIntPtr[6];
-    bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt inStart = bitCapIntPtr[8];
-    bitCapInt outStart = bitCapIntPtr[9];
-
-    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
-    maxI >>= (controlLen + len);
-
-    bitCapInt otherRes, outRes, inRes;
-    bitCapInt i, iHigh, iLow, j;
-    bitLenInt p, k;
-    bitCapInt partControlMask;
-
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        CMOD_START();
-
-        otherRes = i & otherMask;
-        inRes = i & inMask;
-        outRes = (((inRes >> inStart) * toMul) % modN) << outStart;
-        nStateVec[inRes | outRes | otherRes] = stateVec[i | controlMask];
-
-        CMOD_FINISH();
-    }
+void kernel cimulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
+{
+    CMODNOUT((inRes | outRes | otherRes), (i | controlMask));
 }
 
 void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)

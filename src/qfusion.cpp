@@ -732,6 +732,13 @@ void QFusion::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bit
     qReg->MULModNOut(toMul, modN, inStart, outStart, length);
 }
 
+void QFusion::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    FlushReg(inStart, length);
+    FlushReg(outStart, length);
+    qReg->IMULModNOut(toMul, modN, inStart, outStart, length);
+}
+
 void QFusion::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     FlushReg(inStart, length);
@@ -808,6 +815,15 @@ void QFusion::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
     FlushReg(inStart, length);
     FlushReg(outStart, length);
     qReg->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+}
+
+void QFusion::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    FlushArray(controls, controlLen);
+    FlushReg(inStart, length);
+    FlushReg(outStart, length);
+    qReg->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
 }
 
 void QFusion::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
