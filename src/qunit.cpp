@@ -1632,6 +1632,10 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
+    if (controlLen == 0) {
+        return false;
+    }
+
     for (bitLenInt i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
@@ -2199,13 +2203,17 @@ void QUnit::xMULModNOut(
 
     // Keep the bits separate, if cheap to do so:
 
-    if (!inverse) {
-        if (CheckBitsPermutation(inStart, length)) {
-            bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
+    if (CheckBitsPermutation(inStart, length)) {
+        bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
+        if (inverse) {
+            DEC(res, outStart, length);
+        } else {
             SetReg(outStart, length, res);
-            return;
         }
+        return;
+    }
 
+    if (!inverse) {
         SetReg(outStart, length, 0U);
     }
 
@@ -2362,7 +2370,14 @@ void QUnit::CDIV(
 void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen, bool inverse)
 {
-    if (controlLen == 0U) {
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
+    }
+
+    if (controlVec.size() == 0U) {
         if (inverse) {
             IMULModNOut(toMod, modN, inStart, outStart, length);
         } else {
@@ -2373,13 +2388,6 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
 
     if (!inverse) {
         SetReg(outStart, length, 0U);
-    }
-
-    // Try to optimize away the whole gate, or as many controls as is opportune.
-    std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
-        return;
     }
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
