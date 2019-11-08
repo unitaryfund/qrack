@@ -2551,6 +2551,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
     qftReg->POWModNOut(2, 256U, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1 << 8));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2 | (4 << 8)));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 2);
+    qftReg->POWModNOut(2, 256U, 0, 8, 8);
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(0 | (1 << 8)));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1 | (2 << 8)));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(2 | (4 << 8)));
+    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3 | (8 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")

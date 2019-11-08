@@ -2244,34 +2244,6 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     SetReg(outStart, length, 0);
 
-    // If "modN" is a power of 2, we have an optimized way of handling this.
-    if (pow2(log2(modN)) == modN) {
-        bool isFullyEntangled = true;
-        for (bitLenInt i = 1; i < length; i++) {
-            if (shards[inStart].unit != shards[inStart + i].unit) {
-                isFullyEntangled = false;
-                break;
-            }
-        }
-
-        if (!isFullyEntangled) {
-            std::vector<bitLenInt> inBits(length);
-            for (bitLenInt i = 0; i < length; i++) {
-                inBits[i] = inStart + i;
-            }
-            ApplyAntiControlledSingleInvert(&(inBits[0]), length, outStart, ONE_CMPLX, ONE_CMPLX);
-
-            bitCapInt toModExp;
-            bitLenInt controls[1];
-            for (bitLenInt i = 0; i < length; i++) {
-                toModExp = intPow(toMod, pow2(i));
-                controls[0] = inStart + i;
-                CINC(toModExp, outStart, length, controls, 1U);
-            }
-            return;
-        }
-    }
-
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
     shards[inStart].unit->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
