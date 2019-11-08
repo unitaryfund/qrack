@@ -2266,6 +2266,11 @@ void QUnit::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (toMod == ONE_BCI) {
+        SetReg(outStart, length, ONE_BCI);
+        return;
+    }
+
     // Keep the bits separate, if cheap to do so:
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = intPow(toMod, GetCachedPermutation(inStart, length)) % modN;

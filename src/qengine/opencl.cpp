@@ -1619,6 +1619,11 @@ void QEngineOCL::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 /** Raise a classical base to a quantum power, modulo N, (out of place) */
 void QEngineOCL::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (base == ONE_BCI) {
+        SetReg(outStart, length, ONE_BCI);
+        return;
+    }
+
     MULModx(OCL_API_POWMODN_OUT, base, modN, inStart, outStart, length);
 }
 
@@ -1743,10 +1748,6 @@ void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, 
     }
 
     SetReg(outStart, length, 0);
-
-    if (base == 0) {
-        return;
-    }
 
     CMULModx(OCL_API_CPOWMODN_OUT, base, modN, inStart, outStart, length, controls, controlLen);
 }
