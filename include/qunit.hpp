@@ -528,7 +528,6 @@ protected:
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
-    void TransformBasis1Qb(const bool& toPlusMinus, QEngineShard& shard);
 
     void RevertBasis2Qb(const bitLenInt& i);
     void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length)

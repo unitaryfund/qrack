@@ -2774,20 +2774,6 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
     freezeBasis = false;
 }
 
-void QUnit::TransformBasis1Qb(const bool& toPlusMinus, QEngineShard& shard)
-{
-    if (freezeBasis || (toPlusMinus == shard.isPlusMinus)) {
-        // Recursive call that should be blocked,
-        // or already in target basis.
-        return;
-    }
-
-    freezeBasis = true;
-    H(FindShardIndex(shard));
-    shard.isPlusMinus = toPlusMinus;
-    freezeBasis = false;
-}
-
 void QUnit::RevertBasis2Qb(const bitLenInt& i)
 {
     QEngineShard& shard = shards[i];
