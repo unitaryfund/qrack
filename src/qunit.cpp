@@ -965,7 +965,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    PopStackedBasis2Qb(target);
+    PopHBasis2Qb(target);
 
     shard.FlipPhaseAnti();
 
@@ -981,7 +981,7 @@ void QUnit::Z(bitLenInt target)
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
 
-    PopStackedBasis2Qb(target);
+    PopHBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
@@ -1249,7 +1249,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    PopStackedBasis2Qb(target);
+    PopHBasis2Qb(target);
 
     if (!PHASE_MATTERS(shard)) {
         X(target);
@@ -1305,9 +1305,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     QEngineShard& tShard = shards[cTarget];
     QEngineShard& cShard = shards[cControls[0]];
 
-    PopStackedBasis2Qb(cTarget);
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        PopStackedBasis2Qb(cControls[i]);
+    if (!freezeBasis || (controlLen != 1U)) {
+        PopHBasis2Qb(cTarget);
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            PopHBasis2Qb(cControls[i]);
+        }
     }
 
     if (!freezeBasis && (controlLen == 1U)) {

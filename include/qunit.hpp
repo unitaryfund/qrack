@@ -548,7 +548,7 @@ protected:
         }
     }
     void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
-    void PopStackedBasis2Qb(const bitLenInt& i)
+    void PopHBasis2Qb(const bitLenInt& i)
     {
         QEngineShard& shard = shards[i];
         if (shard.isPlusMinus && ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))) {
