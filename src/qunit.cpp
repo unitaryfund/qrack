@@ -1302,21 +1302,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
-    QEngineShard& tShard = shards[cTarget];
-    QEngineShard& cShard = shards[cControls[0]];
-
-    if (!freezeBasis || (controlLen != 1U)) {
-        PopHBasis2Qb(cTarget);
-        for (bitLenInt i = 0; i < controlLen; i++) {
-            PopHBasis2Qb(cControls[i]);
-        }
-    }
-
-    if (!freezeBasis && (controlLen == 1U)) {
-        tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
-        return;
-    }
-
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
@@ -1339,6 +1324,21 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shards[target])) {
         delete[] controls;
+        return;
+    }
+
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[controls[0]];
+
+    if (!freezeBasis || (controlLen != 1U)) {
+        PopHBasis2Qb(target);
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            PopHBasis2Qb(controls[i]);
+        }
+    }
+
+    if (!freezeBasis && (controlLen == 1U)) {
+        tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
         return;
     }
 
