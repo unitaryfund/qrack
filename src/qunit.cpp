@@ -1208,8 +1208,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target);
-
     if (!PHASE_MATTERS(shard)) {
         return;
     }
