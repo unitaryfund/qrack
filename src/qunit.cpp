@@ -1553,8 +1553,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
     std::sort(allBits.begin(), allBits.end());
 
-    std::vector<bitLenInt*> ebits(controlVec.size() + targets.size());
-    for (i = 0; i < allBits.size(); i++) {
+    std::vector<bitLenInt*> ebits(allBits.size());
+    for (i = 0; i < ebits.size(); i++) {
         ebits[i] = &allBits[i];
     }
 
@@ -1628,9 +1628,12 @@ void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt out
         [&](bitLenInt qb, bool cb, bitLenInt l) { CLXOR(qb, cb, l); });
 }
 
-bool QUnit::CArithmeticOptimize(
-    bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
+bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
+    if (controlLen == 0) {
+        return false;
+    }
+
     for (bitLenInt i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
@@ -1639,23 +1642,16 @@ bool QUnit::CArithmeticOptimize(
         }
     }
 
-    // Otherwise, we have to entangle the register.
-    EntangleRange(start, length);
-
     controlVec->resize(controlLen);
     std::copy(controls, controls + controlLen, controlVec->begin());
     bitLenInt controlIndex = 0;
 
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (shards[controls[i]].isProbDirty && (shards[controls[i]].unit == shards[start].unit)) {
-            continue;
-        }
-
         real1 prob = Prob(controls[i]);
         if (prob < min_norm) {
             // If any control has zero probability, this gate will do nothing.
             return true;
-        } else if (((ONE_R1 - prob) < min_norm) && (shards[controls[i]].unit != shards[start].unit)) {
+        } else if ((ONE_R1 - prob) < min_norm) {
             // If any control has full probability, we can avoid entangling it.
             controlVec->erase(controlVec->begin() + controlIndex);
         } else {
@@ -1670,51 +1666,18 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire gate.
         return;
     }
 
-    // All controls not optimized out are either in "isProbDirty" state or definitely true.
-    // If all are definitely true, we're better off using INC.
-    bool canSkip = true;
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        if (!CheckBitPermutation(controlVec[i])) {
-            canSkip = false;
-            break;
-        }
-    }
+    // All cached classical control bits have been removed from controlVec.
+    bitLenInt* lControls = new bitLenInt[controlVec.size()];
+    std::copy(controlVec.begin(), controlVec.end(), lControls);
 
-    if (canSkip) {
-        // INC is much better optimized
-        INC(toMod, start, length);
-        return;
-    }
+    INT(toMod, start, length, 0xFF, false, lControls, controlVec.size());
 
-    // Otherwise, we have to "dirty" the register.
-    std::vector<bitLenInt> bits(controlVec.size() + 1);
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        bits[i] = controlVec[i];
-    }
-    bits[controlVec.size()] = start;
-    std::sort(bits.begin(), bits.end());
-
-    std::vector<bitLenInt*> ebits(controlVec.size() + 1);
-    for (bitLenInt i = 0; i < (controlVec.size() + 1); i++) {
-        ebits[i] = &bits[i];
-    }
-
-    QInterfacePtr unit = Entangle(ebits);
-
-    std::vector<bitLenInt> controlsMapped(controlVec.size() == 0 ? 1 : controlVec.size());
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        controlsMapped[i] = shards[controlVec[i]].mapped;
-        shards[controlVec[i]].isPhaseDirty = true;
-    }
-
-    unit->CINC(toMod, shards[start].mapped, length, &(controlsMapped[0]), controlVec.size());
-
-    DirtyShardRange(start, length);
+    delete[] lControls;
 }
 
 /// Collapse the carry bit in an optimal way, before carry arithmetic.
@@ -1848,13 +1811,25 @@ bool QUnit::INTSCOptimize(
     return true;
 }
 
-void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry)
+void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
+    bitLenInt* controls, bitLenInt controlLen)
 {
     // Keep the bits separate, if cheap to do so:
     toMod &= pow2Mask(length);
     if (toMod == 0) {
         return;
     }
+
+    std::vector<bitLenInt> allBits(controlLen + 1U);
+    std::copy(controls, controls + controlLen, allBits.begin());
+    std::sort(allBits.begin(), allBits.begin() + controlLen);
+
+    std::vector<bitLenInt*> ebits(allBits.size());
+    for (bitLenInt i = 0; i < (ebits.size() - 1U); i++) {
+        ebits[i] = &allBits[i];
+    }
+
+    bitLenInt* lControls = new bitLenInt[controlLen];
 
     // Try ripple addition, to avoid entanglement.
     bool toAdd, inReg;
@@ -1878,7 +1853,13 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             inReg = SHARD_STATE(shards[start]);
             total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
             if (inReg != (total & 1)) {
-                X(start);
+                if (controlLen == 1U) {
+                    CNOT(controls[0], start);
+                } else if (controlLen) {
+                    ApplyControlledSingleInvert(controls, controlLen, start, ONE_CMPLX, ONE_CMPLX);
+                } else {
+                    X(start);
+                }
             }
             carry = (total > 1);
 
@@ -1934,8 +1915,19 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
                 // is independent of the superposed output value of the quantum bit.
                 EntangleRange(start, partLength);
-                shards[start].unit->INC(partMod, shards[start].mapped, partLength);
                 DirtyShardRange(start, partLength);
+                if (controlLen) {
+                    allBits[controlLen] = start;
+                    ebits[controlLen] = &allBits[controlLen];
+                    QInterfacePtr unit = Entangle(ebits);
+                    DirtyShardIndexVector(allBits);
+                    for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
+                        lControls[cIndex] = shards[cIndex].mapped;
+                    }
+                    unit->CINC(partMod, shards[start].mapped, partLength, lControls, controlLen);
+                } else {
+                    shards[start].unit->INC(partMod, shards[start].mapped, partLength);
+                }
 
                 carry = toAdd;
                 toMod >>= partLength;
@@ -1952,20 +1944,48 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     if ((toMod == 0) && (length == 0)) {
         // We were able to avoid entangling the carry.
         if (hasCarry && carry) {
-            X(carryIndex);
+            if (controlLen == 1U) {
+                CNOT(controls[0], carryIndex);
+            } else if (controlLen) {
+                ApplyControlledSingleInvert(controls, controlLen, carryIndex, ONE_CMPLX, ONE_CMPLX);
+            } else {
+                X(carryIndex);
+            }
         }
+        delete[] lControls;
         return;
     }
 
     // Otherwise, we have one unit left that needs to be entangled, plus carry bit.
     if (hasCarry) {
-        EntangleRange(start, length, carryIndex, 1);
-        shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
+        if (controlLen) {
+            // NOTE: This case is not actually exposed by the public API. It would only become exposed if
+            // "CINCC"/"CDECC" were implemented in the public interface, in which case it would become "trivial" to
+            // implement, once the QEngine methods were in place.
+            throw "ERROR: Controlled-with-carry arithmetic is not implemented!";
+        } else {
+            EntangleRange(start, length, carryIndex, 1);
+            shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
+            DirtyShardRange(start, length);
+            DirtyShardRange(carryIndex, 1U);
+        }
     } else {
         EntangleRange(start, length);
-        shards[start].unit->INC(toMod, shards[start].mapped, length);
+        DirtyShardRange(start, length);
+        if (controlLen) {
+            allBits[controlLen] = start;
+            ebits[controlLen] = &allBits[controlLen];
+            QInterfacePtr unit = Entangle(ebits);
+            DirtyShardIndexVector(allBits);
+            for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
+                lControls[cIndex] = shards[cIndex].mapped;
+            }
+            unit->CINC(toMod, shards[start].mapped, length, lControls, controlLen);
+        } else {
+            shards[start].unit->INC(toMod, shards[start].mapped, length);
+        }
     }
-    DirtyShardRange(start, length);
+    delete[] lControls;
 }
 
 void QUnit::INC(bitCapInt toMod, bitLenInt start, bitLenInt length) { INT(toMod, start, length, 0xFF, false); }
@@ -2170,7 +2190,8 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     DirtyShardRange(carryStart, length);
 }
 
-void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+void QUnit::xMULModNOut(
+    bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bool inverse)
 {
     // Inexpensive edge case
     if (toMod == 0U) {
@@ -2181,25 +2202,80 @@ void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     // Keep the bits separate, if cheap to do so:
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
-        SetReg(outStart, length, res);
+        if (inverse) {
+            DEC(res, outStart, length);
+        } else {
+            SetReg(outStart, length, res);
+        }
         return;
+    }
+
+    if (!inverse) {
+        SetReg(outStart, length, 0U);
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (isPowerOfTwo(modN)) {
+        bool isFullyEntangled = true;
+        for (bitLenInt i = 1; i < length; i++) {
+            if (shards[inStart].unit != shards[inStart + i].unit) {
+                isFullyEntangled = false;
+                break;
+            }
+        }
+
+        if (!isFullyEntangled) {
+            bitCapInt toModExp = toMod;
+            bitLenInt controls[1];
+            for (bitLenInt i = 0; i < length; i++) {
+                controls[0] = inStart + i;
+                if (inverse) {
+                    CDEC(toModExp, outStart, length, controls, 1U);
+                } else {
+                    CINC(toModExp, outStart, length, controls, 1U);
+                }
+                toModExp <<= 1U;
+            }
+            return;
+        }
     }
 
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
-    shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+    if (inverse) {
+        shards[inStart].unit->IMULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+    } else {
+        shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+    }
     DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
 }
 
+void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    xMULModNOut(toMod, modN, inStart, outStart, length, false);
+}
+
+void QUnit::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    xMULModNOut(toMod, modN, inStart, outStart, length, true);
+}
+
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (toMod == ONE_BCI) {
+        SetReg(outStart, length, ONE_BCI);
+        return;
+    }
+
     // Keep the bits separate, if cheap to do so:
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = intPow(toMod, GetCachedPermutation(inStart, length)) % modN;
         SetReg(outStart, length, res);
         return;
     }
+
+    SetReg(outStart, length, 0);
 
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
@@ -2244,7 +2320,7 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
         // We've determined we can skip the entire operation:
         return;
     }
@@ -2260,15 +2336,8 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
 }
 
 void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
-    bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+    bitLenInt length, std::vector<bitLenInt> controlVec)
 {
-    // Try to optimize away the whole gate, or as many controls as is opportune.
-    std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(start, length, controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
-        return;
-    }
-
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
@@ -2300,15 +2369,74 @@ void QUnit::CDIV(
     CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controls, controlLen);
 }
 
-void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen, bool inverse)
 {
-    if (controlLen == 0U) {
-        MULModNOut(toMod, modN, inStart, outStart, length);
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
         return;
     }
 
-    CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controls, controlLen);
+    if (controlVec.size() == 0U) {
+        if (inverse) {
+            IMULModNOut(toMod, modN, inStart, outStart, length);
+        } else {
+            MULModNOut(toMod, modN, inStart, outStart, length);
+        }
+        return;
+    }
+
+    if (!inverse) {
+        SetReg(outStart, length, 0U);
+    }
+
+    // If "modN" is a power of 2, we have an optimized way of handling this.
+    if (isPowerOfTwo(modN)) {
+        bool isFullyEntangled = true;
+        for (bitLenInt i = 1; i < length; i++) {
+            if (shards[inStart].unit != shards[inStart + i].unit) {
+                isFullyEntangled = false;
+                break;
+            }
+        }
+
+        if (!isFullyEntangled) {
+            bitCapInt toModExp = toMod;
+            bitLenInt* lControls = new bitLenInt[controlVec.size() + 1U];
+            std::copy(controlVec.begin(), controlVec.end(), lControls);
+            for (bitLenInt i = 0; i < length; i++) {
+                lControls[controlVec.size()] = inStart + i;
+                if (inverse) {
+                    CDEC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                } else {
+                    CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
+                }
+                toModExp <<= 1U;
+            }
+            delete[] lControls;
+            return;
+        }
+    }
+
+    if (inverse) {
+        CMULModx(&QInterface::CIMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    } else {
+        CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    }
+}
+
+void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CxMULModNOut(toMod, modN, inStart, outStart, length, controls, controlLen, false);
+}
+
+void QUnit::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CxMULModNOut(toMod, modN, inStart, outStart, length, controls, controlLen, true);
 }
 
 void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
@@ -2319,7 +2447,16 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         return;
     }
 
-    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controls, controlLen);
+    SetReg(outStart, length, 0U);
+
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
+        // We've determined we can skip the entire operation:
+        return;
+    }
+
+    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)

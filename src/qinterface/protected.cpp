@@ -244,10 +244,24 @@ bool QInterface::IsIdentity(const complex* mtrx)
 }
 
 #if ENABLE_UINT128
-std::ostream& operator<<(std::ostream& left, const __uint128_t& right)
+std::ostream& operator<<(std::ostream& left, __uint128_t right)
 {
-    // TODO: As 128-bit simulation with QUnit becomes more practical, change this to print the full 128 bits as decimal.
-    left << (const uint64_t&)right;
+    // 39 decimal digits in 2^128
+    unsigned char digits[39];
+    int i;
+    for (i = 0; i < 39; i++) {
+        digits[i] = right % 10U;
+        right /= 10U;
+    }
+
+    bool hasFirstDigit = false;
+    for (i = 38; i >= 0; i--) {
+        if (hasFirstDigit || (digits[i] > 0)) {
+            left << (int)digits[i];
+            hasFirstDigit = true;
+        }
+    }
+
     return left;
 }
 #endif

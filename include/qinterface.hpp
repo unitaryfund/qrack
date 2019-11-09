@@ -40,13 +40,18 @@ bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
-std::ostream& operator<<(std::ostream& left, const __uint128_t& right);
-inline bitCapInt pow2(const bitLenInt& p) { return 1ULL << p; }
-inline bitCapInt pow2Mask(const bitLenInt& p) { return (1ULL << p) - 1ULL; }
-inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (1ULL << bit) & source; }
+std::ostream& operator<<(std::ostream& left, __uint128_t right);
+inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
+inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
-    return ((1ULL << length) - 1ULL) << start;
+    return ((ONE_BCI << length) - ONE_BCI) << start;
+}
+// Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+inline bool isPowerOfTwo (const bitCapInt& x)
+{
+  return ((x != 0U) && !(x & (x - ONE_BCI)));
 }
 
 class QInterface;
@@ -1520,6 +1525,10 @@ public:
     virtual void MULModNOut(
         bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
 
+    /** Inverse: multiplication modulo N by integer, (out of place) */
+    virtual void IMULModNOut(
+        bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
+
     /** Raise a classical base to a quantum power, modulo N, (out of place) */
     virtual void POWModNOut(
         bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length) = 0;
@@ -1534,6 +1543,10 @@ public:
 
     /** Controlled multiplication modulo N by integer, (out of place) */
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        bitLenInt* controls, bitLenInt controlLen) = 0;
+
+    /** Inverse: controlled multiplication modulo N by integer, (out of place) */
+    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */

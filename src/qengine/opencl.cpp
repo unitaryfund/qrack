@@ -1606,17 +1606,24 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
 /** Multiplication modulo N by integer, (out of place) */
 void QEngineOCL::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (toMul == 0) {
-        SetReg(outStart, length, 0);
-        return;
-    }
+    SetReg(outStart, length, 0);
 
     MULModx(OCL_API_MULMODN_OUT, toMul, modN, inStart, outStart, length);
+}
+
+void QEngineOCL::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    MULModx(OCL_API_IMULMODN_OUT, toMul, modN, inStart, outStart, length);
 }
 
 /** Raise a classical base to a quantum power, modulo N, (out of place) */
 void QEngineOCL::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    if (base == ONE_BCI) {
+        SetReg(outStart, length, ONE_BCI);
+        return;
+    }
+
     MULModx(OCL_API_POWMODN_OUT, base, modN, inStart, outStart, length);
 }
 
@@ -1714,6 +1721,23 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     CMULModx(OCL_API_CMULMODN_OUT, toMul, modN, inStart, outStart, length, controls, controlLen);
 }
 
+void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    if (controlLen == 0) {
+        IMULModNOut(toMul, modN, inStart, outStart, length);
+        return;
+    }
+
+    bitCapInt lowPower = pow2(length);
+    toMul &= (lowPower - ONE_BCI);
+    if (toMul == 0) {
+        return;
+    }
+
+    CMULModx(OCL_API_CIMULMODN_OUT, toMul, modN, inStart, outStart, length, controls, controlLen);
+}
+
 /** Controlled multiplication modulo N by integer, (out of place) */
 void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
@@ -1724,10 +1748,6 @@ void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, 
     }
 
     SetReg(outStart, length, 0);
-
-    if (base == 0) {
-        return;
-    }
 
     CMULModx(OCL_API_CPOWMODN_OUT, base, modN, inStart, outStart, length, controls, controlLen);
 }
@@ -1775,7 +1795,9 @@ void QEngineOCL::MULx(
 void QEngineOCL::MULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inStart,
     const bitLenInt outStart, const bitLenInt length)
 {
-    SetReg(outStart, length, 0);
+    if (toMod == 0) {
+        return;
+    }
 
     bitCapInt lowMask = pow2Mask(length);
     bitCapInt inMask = lowMask << inStart;

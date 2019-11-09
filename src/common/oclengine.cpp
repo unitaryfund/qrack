@@ -91,10 +91,12 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_MUL, "mul"),
     OCLKernelHandle(OCL_API_DIV, "div"),
     OCLKernelHandle(OCL_API_MULMODN_OUT, "mulmodnout"),
+    OCLKernelHandle(OCL_API_IMULMODN_OUT, "imulmodnout"),
     OCLKernelHandle(OCL_API_POWMODN_OUT, "powmodnout"),
     OCLKernelHandle(OCL_API_CMUL, "cmul"),
     OCLKernelHandle(OCL_API_CDIV, "cdiv"),
     OCLKernelHandle(OCL_API_CMULMODN_OUT, "cmulmodnout"),
+    OCLKernelHandle(OCL_API_CIMULMODN_OUT, "cimulmodnout"),
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
     OCLKernelHandle(OCL_API_IFULLADD, "ifulladd")

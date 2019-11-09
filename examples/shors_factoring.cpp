@@ -81,7 +81,7 @@ int main()
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
     QInterfacePtr qReg =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, qubitCount * 4, 0);
+        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, qubitCount * 2, 0);
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
