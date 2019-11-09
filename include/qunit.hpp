@@ -528,18 +528,18 @@ protected:
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
+    void TransformBasis1Qb(const bool& toPlusMinus, QEngineShard& shard);
 
-    void RevertBasis2Qb(bitLenInt i);
-
+    void RevertBasis2Qb(const bitLenInt& i);
     void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length)
     {
         for (bitLenInt i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
         }
     }
-
     void ToPermBasis(const bitLenInt& i)
     {
+        PopStackedBasis2Qb(i);
         TransformBasis1Qb(false, i);
         RevertBasis2Qb(i);
     }
@@ -550,6 +550,14 @@ protected:
         }
     }
     void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
+    void PopStackedBasis2Qb(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
+        if (shard.isPlusMinus && ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))) {
+            TransformBasis1Qb(false, i);
+        }
+    }
+
     void CheckShardSeparable(const bitLenInt& target);
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
