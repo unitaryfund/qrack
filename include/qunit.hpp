@@ -539,7 +539,6 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
-        PopStackedBasis2Qb(i);
         TransformBasis1Qb(false, i);
         RevertBasis2Qb(i);
     }

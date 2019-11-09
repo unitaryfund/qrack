@@ -1133,9 +1133,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    PopStackedBasis2Qb(control);
     RevertBasis2Qb(control);
-    PopStackedBasis2Qb(control);
     RevertBasis2Qb(target);
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
@@ -1409,7 +1407,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 
     QEngineShard& shard = shards[target];
 
-    PopStackedBasis2Qb(target);
     RevertBasis2Qb(target);
 
     complex trnsMtrx[4];
@@ -1547,7 +1544,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     for (i = 0; i < targets.size(); i++) {
-        PopStackedBasis2Qb(targets[i]);
         RevertBasis2Qb(targets[i]);
     }
 
