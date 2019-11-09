@@ -1193,9 +1193,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    PopStackedBasis2Qb(target);
-    PopStackedBasis2Qb(control);
-
     if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
         return;
     }
@@ -1221,8 +1218,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-
-    PopStackedBasis2Qb(target);
 
     if (!PHASE_MATTERS(shard)) {
         return;
