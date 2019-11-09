@@ -2200,7 +2200,6 @@ void QUnit::xMULModNOut(
     }
 
     // Keep the bits separate, if cheap to do so:
-
     if (CheckBitsPermutation(inStart, length)) {
         bitCapInt res = (GetCachedPermutation(inStart, length) * toMod) % modN;
         if (inverse) {
@@ -2216,7 +2215,7 @@ void QUnit::xMULModNOut(
     }
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
-    if (pow2(log2(modN)) == modN) {
+    if (isPowerOfTwo(modN)) {
         bool isFullyEntangled = true;
         for (bitLenInt i = 1; i < length; i++) {
             if (shards[inStart].unit != shards[inStart + i].unit) {
@@ -2394,7 +2393,7 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
     }
 
     // If "modN" is a power of 2, we have an optimized way of handling this.
-    if (pow2(log2(modN)) == modN) {
+    if (isPowerOfTwo(modN)) {
         bool isFullyEntangled = true;
         for (bitLenInt i = 1; i < length; i++) {
             if (shards[inStart].unit != shards[inStart + i].unit) {
