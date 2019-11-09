@@ -161,14 +161,22 @@ struct QEngineShard {
         MakePhaseControlledBy(control);
 
         real1 nAngle0 = targetOfShards[control].angle0 + angle0Diff;
+        real1 nAngle1 = targetOfShards[control].angle1 + angle1Diff;
+
+        // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
+        // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
+        ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
+        if ((controlShard != controlsShards.end()) && (abs(controlShard->second.angle0) < (2 * M_PI * min_norm))) {
+            nAngle1 += controlShard->second.angle1;
+            RemovePhaseTarget(control);
+        }
+
         while (nAngle0 < (-2 * M_PI)) {
             nAngle0 += 4 * M_PI;
         }
         while (nAngle0 >= (2 * M_PI)) {
             nAngle0 -= 4 * M_PI;
         }
-
-        real1 nAngle1 = targetOfShards[control].angle1 + angle1Diff;
         while (nAngle1 < (-2 * M_PI)) {
             nAngle1 += 4 * M_PI;
         }
