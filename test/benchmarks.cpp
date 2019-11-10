@@ -612,18 +612,18 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // for a closed universe; the time to maximum entropy for "n" available qubits should be "n" Planck time steps on
     // average. We limit to the 1 spatial + 1 time dimension case.
     //
-    // If the (inverse) DFT is truly maximally entangling, it might not be appropriate to iterate it as a time-step,
-    // because this then consumes the entire entropy budget of the Hubble sphere in one step. Further, deterministic
-    // progression toward higher entanglement, and therefore higher effective entropy, assumes a fixed direction for the
-    // "arrow of time." Given the time symmetry of unitary evolution, hopefully, the thermodynamic arrow of time would
-    // be emergent in a very-early-universe model, rather than assumed to be fixed. As such, suppose that there is
-    // locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in a step, represented by randomly
-    // choosing QFT or inverse on a local region. Further, initially indepedent regions cannot be causally influenced by
-    // distant regions faster than the speed of light, where the light cone grows at a rate of one Planck distance per
-    // Planck time. Locality implies that, in any time step, a 2 qubit (inverse) DFT can be acted between each
-    // nearest-neighbor pair. However, we assume that causally disconnected regions develop local entanglement in
-    // parallel. (We must acknowledge, it is apparent to us that this is a problem that can be made relatively easy for
-    // Qrack::QUnit.)
+    // If the (inverse) DFT is truly maximally entangling, it might not be appropriate to iterate the full-width,
+    // monotonic DFT as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in one
+    // step. Further, deterministic progression toward higher entanglement, and therefore higher effective entropy,
+    // assumes a fixed direction for the "arrow of time." Given the time symmetry of unitary evolution, hopefully, the
+    // thermodynamic arrow of time would be emergent in a very-early-universe model, rather than assumed to be fixed. As
+    // such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in a step,
+    // represented by randomly choosing QFT or inverse on a local region. Further, initially indepedent regions cannot
+    // be causally influenced by distant regions faster than the speed of light, where the light cone grows at a rate of
+    // one Planck distance per Planck time. Locality implies that, in any time step, a 2 qubit (inverse) DFT can be
+    // acted between each nearest-neighbor pair. However, we assume that causally disconnected regions develop local
+    // entanglement in parallel. (We must acknowledge, it is apparent to us that this is a problem that can be made
+    // relatively easy for Qrack::QUnit.)
 
     const bool tDepth = false;
     const int depth = 8;
