@@ -617,3 +617,34 @@ TEST_CASE("test_cosmology", "[cosmos]")
         },
         false, false, false, true);
 }
+
+TEST_CASE("test_cosmology_2", "[cosmos]")
+{
+    // Inspired by https://arxiv.org/abs/1702.06959
+    // This is "scratch work." If the (inverse) DFT is truly maximally entangling, it might not be appropriate to
+    // iterate it as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in one step.
+    // Further, deterministic progression toward higher entanglement, and therefore higher effective entropy, assumes a
+    // fixed direction for the "arrow of time." Given the time symmetry of unitary evolution, hopefully, the
+    // thermodynamic arrow of time would be emergent in a very-early-universe model, rather than assumed to be fixed. As
+    // such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in step,
+    // represented by randomly choosing QFT or inverse on a local region. Further, initially indepedent regions cannot
+    // be causally influenced by distant regions faster than the speed of light, where the light cone grows at a rate of
+    // one Planck distance per Planck time. However, we assume that causally disconnected regions develop local
+    // entanglement in parallel. (We must acknowledge, it is apparent to us that this is a significantly easier problem
+    // for Qrack::QUnit.)
+
+    benchmarkLoop(
+        [](QInterfacePtr qUniverse, int n) {
+            int t, x;
+            for (t = 1; t < n; t++) {
+                for (x = 0; x < (n / t); x++) {
+                    if (qUniverse->Rand() < (ONE_R1 / 2)) {
+                        qUniverse->QFT(x * t, t);
+                    } else {
+                        qUniverse->IQFT(x * t, t);
+                    }
+                }
+            }
+        },
+        false, false, false, true);
+}
