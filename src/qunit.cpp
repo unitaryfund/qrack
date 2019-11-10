@@ -1092,7 +1092,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if (CACHED_CLASSICAL(shard)) {
-            if ((!anti && norm(shard.amp1) < min_norm) || (anti && norm(shard.amp0) < min_norm)) {
+            if ((!anti && (norm(shard.amp1) < min_norm)) || (anti && (norm(shard.amp0) < min_norm))) {
                 return true;
             }
         } else {
@@ -1109,7 +1109,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
         return true;
     } else if (rControlLen == 1U) {
         complex iTest[4] = { bottomLeft, 0, 0, topRight };
-        if (IsIdentity(iTest)) {
+        if (IsIdentity(iTest, true)) {
             if (anti) {
                 AntiCNOT(rControl, target);
             } else {
@@ -1257,14 +1257,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    real1 phaseDiff = arg(topRight) - arg(bottomLeft);
-    if (phaseDiff > M_PI) {
-        phaseDiff -= 2U * M_PI;
-    } else if (phaseDiff < -M_PI) {
-        phaseDiff += 2U * M_PI;
-    }
-    if ((abs(phaseDiff) < min_norm) &&
-        (randGlobalPhase || ((abs(imag(topRight)) < min_norm) && (real(topRight) > (ONE_R1 - min_norm))))) {
+    complex testMatrix[4] = { topRight, ZERO_CMPLX, ZERO_CMPLX, bottomLeft };
+    if (IsIdentity(testMatrix, false)) {
         X(target);
         return;
     }

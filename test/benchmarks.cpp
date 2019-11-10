@@ -53,7 +53,7 @@ QInterfacePtr MakeRandQubit()
     real1 prob = qubit->Rand();
     complex phaseFactor = std::polar(ONE_R1, (real1)(2 * M_PI * qubit->Rand()));
 
-    complex state[2] = { (real1)sqrt(ONE_R1 - prob), ((real1)sqrt(prob)) * phaseFactor };
+    complex state[2] = { ((real1)sqrt(ONE_R1 - prob)) * ONE_CMPLX, ((real1)sqrt(prob)) * phaseFactor };
     qubit->SetQuantumState(state);
 
     return qubit;
@@ -625,6 +625,20 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // entanglement in parallel. (We must acknowledge, it is apparent to us that this is a problem that can be made
     // relatively easy for Qrack::QUnit.)
 
+    // "randInit" -
+    // true - initialize all qubits with completely random (single qubit, separable) states
+    // false - initialize entire register as |0>
+    //
+    // Setting a totally random eigenstate for each bit simulates the limits of causality, since qubits have not had
+    // time to interact with each other and reach homogeneity. However, if the initial state of each region is an
+    // eigenstate, then maybe we can call each initial state the local |0> state, by convention. (This might not
+    // actually be self-consistent; the limitation on causality and homogeneity might preempt the validity of this
+    // initialization. It might still be an interesting case to consider, and to debug with.)
+    const bool randInit = true;
+
+    // "tDepth"
+    // true - for "n" qubits, simulate time to depth "n"
+    // false - simulate to at most "depth" time steps
     const bool tDepth = false;
     const int depth = 8;
 
@@ -655,5 +669,5 @@ TEST_CASE("test_cosmology", "[cosmos]")
                 qUniverse->H(high);
             }
         },
-        false, false, false, true);
+        false, false, false, randInit);
 }

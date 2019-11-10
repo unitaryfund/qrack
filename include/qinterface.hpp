@@ -161,7 +161,7 @@ protected:
         toFree = NULL;
     }
 
-    bool IsIdentity(const complex* mtrx);
+    bool IsIdentity(const complex* mtrx, const bool isControlled = false);
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
