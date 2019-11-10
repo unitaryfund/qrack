@@ -40,6 +40,7 @@
 #define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
+#define IS_POSITIVE_REAL(c) (abs(imag(c)) < min_norm) && (real(c) > (ONE_R1 - min_norm))
 
 namespace Qrack {
 
@@ -1305,7 +1306,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+    if (IS_POSITIVE_REAL(topLeft)) {
         if (CACHED_ZERO(shards[target])) {
             delete[] controls;
             return;
@@ -1321,8 +1322,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if ((abs(imag(bottomRight)) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) &&
-        CACHED_ONE(shards[target])) {
+    if (IS_POSITIVE_REAL(bottomRight) && CACHED_ONE(shards[target])) {
         delete[] controls;
         return;
     }
@@ -1357,11 +1357,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
-        delete[] controls;
-        return;
-    }
-    if ((abs(imag(bottomRight)) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
+    if ((IS_POSITIVE_REAL(topLeft) && CACHED_ZERO(shard)) || (IS_POSITIVE_REAL(bottomRight) && CACHED_ONE(shard))) {
         delete[] controls;
         return;
     }
