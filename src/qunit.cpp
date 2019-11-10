@@ -1264,7 +1264,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         phaseDiff += 2U * M_PI;
     }
     if ((abs(phaseDiff) < min_norm) &&
-        (randGlobalPhase || ((imag(topRight) < min_norm) && (real(topRight) > ZERO_R1)))) {
+        (randGlobalPhase || ((abs(imag(topRight)) < min_norm) && (abs(real(topRight)) > min_norm)))) {
         X(target);
         return;
     }
