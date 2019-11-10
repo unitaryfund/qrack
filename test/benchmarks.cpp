@@ -637,7 +637,8 @@ TEST_CASE("test_cosmology_2", "[cosmos]")
         [](QInterfacePtr qUniverse, int n) {
             int t, x;
             for (t = 1; t < n; t++) {
-                for (x = 0; x < n; x++) {
+                // TODO: We hit an array boundary, so we use (n-t), but orbifold this
+                for (x = 0; x < (n-t); x++) {
                     if (qUniverse->Rand() < (ONE_R1 / 2)) {
                         qUniverse->QFT(x, t);
                     } else {
