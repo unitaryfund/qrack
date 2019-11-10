@@ -102,15 +102,16 @@ void QUnit::SetQuantumState(const complex* inputState)
         shards[idx] = QEngineShard(unit, idx);
     }
 
-    if (qubitCount == 1U) {
-        QEngineShard& shard = shards[0];
-        shard.isEmulated = true;
-        shard.isProbDirty = false;
-        shard.isPhaseDirty = false;
-        shard.amp0 = inputState[0];
-        shard.amp1 = inputState[1];
-        shard.isPlusMinus = false;
-    }
+    // TODO: Don't know why this doesn't work for ProjectQ:
+    // if (qubitCount == 1U) {
+    //     QEngineShard& shard = shards[0];
+    //     shard.isEmulated = true;
+    //     shard.isProbDirty = false;
+    //     shard.isPhaseDirty = false;
+    //     shard.amp0 = inputState[0];
+    //     shard.amp1 = inputState[1];
+    //     shard.isPlusMinus = false;
+    // }
 }
 
 void QUnit::GetQuantumState(complex* outputState)
