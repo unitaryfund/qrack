@@ -38,7 +38,7 @@
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
-#define PHASE_MATTERS(shard) (randGlobalPhase || !CACHED_CLASSICAL(shard))
+#define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
 namespace Qrack {
@@ -102,16 +102,15 @@ void QUnit::SetQuantumState(const complex* inputState)
         shards[idx] = QEngineShard(unit, idx);
     }
 
-    // TODO: Don't know why this doesn't work for ProjectQ:
-    // if (qubitCount == 1U) {
-    //     QEngineShard& shard = shards[0];
-    //     shard.isEmulated = true;
-    //     shard.isProbDirty = false;
-    //     shard.isPhaseDirty = false;
-    //     shard.amp0 = inputState[0];
-    //     shard.amp1 = inputState[1];
-    //     shard.isPlusMinus = false;
-    // }
+    if (qubitCount == 1U) {
+        QEngineShard& shard = shards[0];
+        shard.isEmulated = false;
+        shard.isProbDirty = false;
+        shard.isPhaseDirty = false;
+        shard.amp0 = inputState[0];
+        shard.amp1 = inputState[1];
+        shard.isPlusMinus = false;
+    }
 }
 
 void QUnit::GetQuantumState(complex* outputState)
@@ -1253,13 +1252,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(shard)) {
-        X(target);
-        return;
-    }
-
-    complex testMatrix[4] = { topRight, ZERO_CMPLX, ZERO_CMPLX, bottomLeft };
-    if (IsIdentity(testMatrix, false)) {
+    if (!PHASE_MATTERS(shard) || (randGlobalPhase && (norm(topRight - bottomLeft) < min_norm))) {
         X(target);
         return;
     }
