@@ -53,7 +53,7 @@ QInterfacePtr MakeRandQubit()
     real1 prob = qubit->Rand();
     complex phaseFactor = std::polar(ONE_R1, (real1)(2 * M_PI * qubit->Rand()));
 
-    complex state[2] = { sqrt(ONE_R1 - prob), sqrt(prob) * phaseFactor };
+    complex state[2] = { (real1)sqrt(ONE_R1 - prob), ((real1)sqrt(prob)) * phaseFactor };
     qubit->SetQuantumState(state);
 
     return qubit;
