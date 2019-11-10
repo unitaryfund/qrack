@@ -644,14 +644,8 @@ TEST_CASE("test_cosmology_2", "[cosmos]")
                     } else {
                         qUniverse->IQFT(0, t);
                     }
-                    // We do observe a preferred accelerated frame. There is an asymmetry between ROR and ROL which
-                    // breaks this symmetry. As such, we average ROR and ROL. ("Universal spin" could resemble randomly
-                    // selecting between these two in a time step, but we're getting carried away, right at the get-go.)
-                    if (t & 1U) {
-                        qUniverse->ROL(1U, 0, n);
-                    } else {
-                        qUniverse->ROR(1U, 0, n);
-                    }
+                    // We're shifting the entire array right, while the QFT window grows toward the left. This should tend to keep to a "preferred accelerated frame."
+                    qUniverse->ROR(1U, 0, n);
                 }
             }
         },
