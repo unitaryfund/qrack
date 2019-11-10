@@ -39,7 +39,7 @@
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
-#define PHASE_MATTERS(shard) (randGlobalPhase || !CACHED_CLASSICAL(shard))
+#define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 
 namespace Qrack {
@@ -1103,7 +1103,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if (CACHED_CLASSICAL(shard)) {
-            if ((!anti && norm(shard.amp1) < min_norm) || (anti && norm(shard.amp0) < min_norm)) {
+            if ((!anti && (norm(shard.amp1) < min_norm)) || (anti && (norm(shard.amp0) < min_norm))) {
                 return true;
             }
         } else {
@@ -1120,7 +1120,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
         return true;
     } else if (rControlLen == 1U) {
         complex iTest[4] = { bottomLeft, 0, 0, topRight };
-        if (IsIdentity(iTest)) {
+        if (IsIdentity(iTest, true)) {
             if (anti) {
                 AntiCNOT(rControl, target);
             } else {
@@ -1259,21 +1259,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    PopHBasis2Qb(target);
-
-    if (!PHASE_MATTERS(shard)) {
-        X(target);
-        return;
-    }
-
-    real1 phaseDiff = arg(topRight) - arg(bottomLeft);
-    if (phaseDiff > M_PI) {
-        phaseDiff -= 2U * M_PI;
-    } else if (phaseDiff < -M_PI) {
-        phaseDiff += 2U * M_PI;
-    }
-    if ((abs(phaseDiff) < min_norm) &&
-        (randGlobalPhase || ((imag(topRight) < min_norm) && (real(topRight) > ZERO_R1)))) {
+    if (!PHASE_MATTERS(shard) || (randGlobalPhase && (norm(topRight - bottomLeft) < min_norm))) {
         X(target);
         return;
     }
@@ -1316,7 +1302,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+    if ((abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
         if (CACHED_ZERO(shards[target])) {
             delete[] controls;
             return;
@@ -1332,7 +1318,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shards[target])) {
+    if ((abs(imag(bottomRight)) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) &&
+        CACHED_ONE(shards[target])) {
         delete[] controls;
         return;
     }
@@ -1382,11 +1369,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
+    if ((abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
         delete[] controls;
         return;
     }
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
+    if ((abs(imag(bottomRight)) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
         delete[] controls;
         return;
     }

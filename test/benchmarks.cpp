@@ -53,7 +53,7 @@ QInterfacePtr MakeRandQubit()
     real1 prob = qubit->Rand();
     complex phaseFactor = std::polar(ONE_R1, (real1)(2 * M_PI * qubit->Rand()));
 
-    complex state[2] = { (real1)sqrt(ONE_R1 - prob), ((real1)sqrt(prob)) * phaseFactor };
+    complex state[2] = { ((real1)sqrt(ONE_R1 - prob)) * ONE_CMPLX, ((real1)sqrt(prob)) * phaseFactor };
     qubit->SetQuantumState(state);
 
     return qubit;
@@ -600,52 +600,74 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
 TEST_CASE("test_cosmology", "[cosmos]")
 {
-    // Inspired by https://arxiv.org/abs/1702.06959
-    // We assume that the treatment is valid for a bipartite system that has a pure state, entire between interior and
-    // (event horizon) boundary degrees of freedom for the Hilbert space. We start with each qubit region subsystem with
-    // only internal entanglement between its two internal degrees of freedom, (effectively such that one is interior
-    // and the other is boundary, in a totally random basis). We do not explicitly partition between boundary and
-    // interior, in part because entanglement can occur internally. We assume the DFT or its inverse is the maximally
-    // entangling operation across the ensemble of initially Planck scale separable subsystems. (The finite number of
-    // subsystems is only due to resource limit for our model, not any deeper theoretical reason.)
-
-    benchmarkLoop(
-        [](QInterfacePtr qUniverse, int n) {
-            for (bitLenInt i = 0; i < n; i++) {
-                qUniverse->QFT(0, n);
-            }
-        },
-        false, false, false, true);
-}
-
-TEST_CASE("test_cosmology_2", "[cosmos]")
-{
-    // Inspired by https://arxiv.org/abs/1702.06959
-    // This is "scratch work." If the (inverse) DFT is truly maximally entangling, it might not be appropriate to
-    // iterate it as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in one step.
-    // Further, deterministic progression toward higher entanglement, and therefore higher effective entropy, assumes a
-    // fixed direction for the "arrow of time." Given the time symmetry of unitary evolution, hopefully, the
+    // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
+    //
+    // We assume that the treatment of that work is valid for a bipartite system that has a pure state, entire between
+    // interior and (event horizon) boundary degrees of freedom for the Hilbert space. We start with each qubit region
+    // subsystem with only internal entanglement between its two internal degrees of freedom, (effectively such that one
+    // is interior and the other is boundary, in a totally random basis). We do not explicitly partition between
+    // boundary and interior, in part because entanglement can occur internally. We assume the DFT or its inverse is the
+    // maximally entangling operation across the ensemble of initially Planck scale separable subsystems. The finite
+    // number of subsystems is due to resource limit for our model, but it might effectively represent an entropy budget
+    // for a closed universe; the time to maximum entropy for "n" available qubits should be "n" Planck time steps on
+    // average. We limit to the 1 spatial + 1 time dimension case.
+    //
+    // If the (inverse) DFT is truly maximally entangling, it might not be appropriate to iterate the full-width,
+    // monotonic DFT as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in one
+    // step. Further, deterministic progression toward higher entanglement, and therefore higher effective entropy,
+    // assumes a fixed direction for the "arrow of time." Given the time symmetry of unitary evolution, hopefully, the
     // thermodynamic arrow of time would be emergent in a very-early-universe model, rather than assumed to be fixed. As
-    // such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in step,
+    // such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in a step,
     // represented by randomly choosing QFT or inverse on a local region. Further, initially indepedent regions cannot
     // be causally influenced by distant regions faster than the speed of light, where the light cone grows at a rate of
-    // one Planck distance per Planck time. However, we assume that causally disconnected regions develop local
-    // entanglement in parallel. (We must acknowledge, it is apparent to us that this is a significantly easier problem
-    // for Qrack::QUnit.)
+    // one Planck distance per Planck time. Locality implies that, in any time step, a 2 qubit (inverse) DFT can be
+    // acted between each nearest-neighbor pair. However, we assume that causally disconnected regions develop local
+    // entanglement in parallel. (We must acknowledge, it is apparent to us that this is a problem that can be made
+    // relatively easy for Qrack::QUnit.)
+
+    // "randInit" -
+    // true - initialize all qubits with completely random (single qubit, separable) states
+    // false - initialize entire register as |0>
+    //
+    // Setting a totally random eigenstate for each bit simulates the limits of causality, since qubits have not had
+    // time to interact with each other and reach homogeneity. However, if the initial state of each region is an
+    // eigenstate, then maybe we can call each initial state the local |0> state, by convention. (This might not
+    // actually be self-consistent; the limitation on causality and homogeneity might preempt the validity of this
+    // initialization. It might still be an interesting case to consider, and to debug with.)
+    const bool randInit = true;
+
+    // "tDepth"
+    // true - for "n" qubits, simulate time to depth "n"
+    // false - simulate to at most "depth" time steps
+    const bool tDepth = true;
+    const int depth = 8;
 
     benchmarkLoop(
-        [](QInterfacePtr qUniverse, int n) {
+        [&](QInterfacePtr qUniverse, int n) {
             int t, x;
-            for (t = 1; t < n; t++) {
-                // TODO: We hit an array boundary, so we use (n-t), but orbifold this
-                for (x = 0; x < (n-t); x++) {
+            int tMax = (tDepth || (depth > n)) ? n : depth;
+            bitLenInt low, high;
+
+            for (t = 1; t < tMax; t++) {
+                for (x = 0; x < (n - 1); x++) {
                     if (qUniverse->Rand() < (ONE_R1 / 2)) {
-                        qUniverse->QFT(x, t);
+                        qUniverse->QFT(x, 2);
                     } else {
-                        qUniverse->IQFT(x, t);
+                        qUniverse->IQFT(x, 2);
                     }
                 }
+                // Orbifold the last and first bit.
+                if (qUniverse->Rand() < (ONE_R1 / 2)) {
+                    low = n - 1U;
+                    high = 0;
+                } else {
+                    low = 0;
+                    high = n - 1U;
+                }
+                qUniverse->H(low);
+                qUniverse->CZ(low, high);
+                qUniverse->H(high);
             }
         },
-        false, false, false, true);
+        false, false, false, randInit);
 }

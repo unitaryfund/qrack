@@ -207,7 +207,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
     return i;
 }
 
-bool QInterface::IsIdentity(const complex* mtrx)
+bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
@@ -215,7 +215,7 @@ bool QInterface::IsIdentity(const complex* mtrx)
         return false;
     }
 
-    if (randGlobalPhase) {
+    if (randGlobalPhase && !isControlled) {
         // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
         // the user's purposes.
         real1 toTest = norm(mtrx[0]);
@@ -230,11 +230,11 @@ bool QInterface::IsIdentity(const complex* mtrx)
         // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
         // offset (but shouldn't).
         complex toTest = mtrx[0];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+        if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
             return false;
         }
         toTest = mtrx[3];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+        if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
             return false;
         }
     }
