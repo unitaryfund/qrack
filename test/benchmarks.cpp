@@ -51,9 +51,9 @@ QInterfacePtr MakeRandQubit()
         rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
 
     real1 prob = qubit->Rand();
-    real1 angle = 2 * M_PI * qubit->Rand();
+    complex phaseFactor = std::polar(ONE_R1, (real1)(2 * M_PI * qubit->Rand()));
 
-    complex state[2] = { sqrt(ONE_R1 - prob), sqrt(prob) * angle };
+    complex state[2] = { sqrt(ONE_R1 - prob), sqrt(prob) * phaseFactor };
     qubit->SetQuantumState(state);
 
     return qubit;
