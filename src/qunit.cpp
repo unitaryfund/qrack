@@ -1103,7 +1103,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if (CACHED_CLASSICAL(shard)) {
-            if ((!anti && (norm(shard.amp1) < min_norm)) || (anti && (norm(shard.amp0) < min_norm))) {
+            if ((!anti && !SHARD_STATE(shard)) || (anti && SHARD_STATE(shard))) {
                 return true;
             }
         } else {
@@ -1119,7 +1119,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
         ApplySingleInvert(topRight, bottomLeft, true, target);
         return true;
     } else if (rControlLen == 1U) {
-        complex iTest[4] = { bottomLeft, 0, 0, topRight };
+        complex iTest[4] = { topRight, 0, 0, bottomLeft };
         if (IsIdentity(iTest, true)) {
             if (anti) {
                 AntiCNOT(rControl, target);
