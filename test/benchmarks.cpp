@@ -615,5 +615,5 @@ TEST_CASE("test_cosmology", "[cosmos]")
                 qUniverse->QFT(0, n);
             }
         },
-        false, false, false, false);
+        false, false, false, true);
 }
