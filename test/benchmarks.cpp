@@ -625,7 +625,7 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // that can be made relatively easy for Qrack::QUnit.)
 
     const bool tDepth = false;
-    const int depth = ;
+    const int depth = 8;
 
     benchmarkLoop(
         [&](QInterfacePtr qUniverse, int n) {
