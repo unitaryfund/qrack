@@ -79,7 +79,7 @@ struct QEngineShard {
     QEngineShard(QInterfacePtr u, const bool& set)
         : unit(u)
         , mapped(0)
-        , isEmulated(false)
+        , isEmulated(true)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)

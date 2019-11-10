@@ -104,7 +104,7 @@ void QUnit::SetQuantumState(const complex* inputState)
 
     if (qubitCount == 1U) {
         QEngineShard& shard = shards[0];
-        shard.isEmulated = false;
+        shard.isEmulated = true;
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
         shard.amp0 = inputState[0];
@@ -683,7 +683,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 
     shards[qubit].unit = MakeEngine(1, value ? 1 : 0);
     shards[qubit].mapped = 0;
-    shards[qubit].isEmulated = false;
+    shards[qubit].isEmulated = true;
     shards[qubit].isProbDirty = false;
     shards[qubit].isPhaseDirty = false;
     shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
@@ -718,6 +718,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     if (shard.unit->GetQubitCount() == 1) {
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
+        shard.isEmulated = true;
         shard.amp0 = result ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         shard.amp1 = result ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
 
