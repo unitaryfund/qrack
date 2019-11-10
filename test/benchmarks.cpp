@@ -608,9 +608,12 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // is interior and the other is boundary, in a totally random basis). We do not explicitly partition between
     // boundary and interior, in part because entanglement can occur internally. We assume the DFT or its inverse is the
     // maximally entangling operation across the ensemble of initially Planck scale separable subsystems. The finite
-    // number of subsystems is due to resource limit for our model, but it might effectively represent an entropy budget
-    // for a closed universe; the time to maximum entropy for "n" available qubits should be "n" Planck time steps on
-    // average. We limit to the 1 spatial + 1 time dimension case.
+    // number of subsystems is due to resource limit for our model, but it might effectively represent an entanglement
+    // or "entropy" budget for a closed universe; the time to maximum entanglement for "n" available qubits should be
+    // "n" Planck time steps on average. (The von Neumann entropy actually remains 0, in this entire simulation, as the
+    // state is pure and involves in a unitary fashion, but, if unitary evolution holds for the entire real physical
+    // cosmological system of our universe, then this entangling action gives rise to the appearance of non-zero von
+    // Neumann entropy of a mixed state.)  We limit to the 1 spatial + 1 time dimension case.
     //
     // If the (inverse) DFT is truly maximally entangling, it might not be appropriate to iterate the full-width,
     // monotonic DFT as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in one
@@ -620,12 +623,15 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in a step,
     // represented by randomly choosing QFT or inverse on a local region. Further, initially indepedent regions cannot
     // be causally influenced by distant regions faster than the speed of light, where the light cone grows at a rate of
-    // one Planck distance per Planck time. Locality implies that, in any time step, a 2 qubit (inverse) DFT can be
-    // acted between each nearest-neighbor pair. However, we assume that causally disconnected regions develop local
-    // entanglement in parallel. (We must acknowledge, it is apparent to us that this is a problem that can be made
-    // relatively easy for Qrack::QUnit.)
+    // one Planck distance per Planck time. Locality implies that, in one Planck time step, a 2 qubit (inverse) DFT can
+    // be acted between each nearest-neighbor pair. We also assume that causally disconnected regions develop local
+    // entanglement in parallel. However, if we took a longer time step, an integer multiple of the Planck time, then
+    // higher order QFTs would be needed to simulate the step. Probably, the most accurate simulation would take the
+    // "squarest" possible time step by space step, but then this is simply a single QFT or its inverse for the entire
+    // "entropy budget" of the space. (We must acknowledge, it is apparent to us that this simulation we choose is a
+    // problem that can be made relatively easy for Qrack::QUnit.)
 
-    // "randInit" -
+    // "RandInit" -
     // true - initialize all qubits with completely random (single qubit, separable) states
     // false - initialize entire register as |0>
     //
@@ -636,37 +642,40 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // initialization. It might still be an interesting case to consider, and to debug with.)
     const bool RandInit = true;
 
-    // "tDepth"
+    // "UseTDepth"
     // true - for "n" qubits, simulate time to depth "n"
     // false - simulate to "depth" time steps
-    const bool TDepth = true;
-    const int Depth = 8;
+    const bool UseTDepth = true;
+    const int TDepth = 8;
+    // Time step of simulation, (in "Planck times")
+    const bitLenInt TStep = 2;
+    // If true, loop the parallel local evolution back around on the boundaries of the qubit array.
+    const bool DoOrbifold = true;
 
     benchmarkLoop(
         [&](QInterfacePtr qUniverse, int n) {
             int t, x;
-            int tMax = TDepth ? n : Depth;
-            bitLenInt low, high;
+            int tMax = UseTDepth ? n : TDepth;
 
-            for (t = 1; t < tMax; t++) {
-                for (x = 0; x < (n - 1); x++) {
+            for (t = 1; t < tMax; t += TStep) {
+                for (x = 0; x < (n - TStep); x++) {
                     if (qUniverse->Rand() < (ONE_R1 / 2)) {
-                        qUniverse->QFT(x, 2);
+                        qUniverse->QFT(x, TStep + 1U);
                     } else {
-                        qUniverse->IQFT(x, 2);
+                        qUniverse->IQFT(x, TStep + 1U);
                     }
                 }
-                // Orbifold the last and first bit.
-                if (qUniverse->Rand() < (ONE_R1 / 2)) {
-                    low = n - 1U;
-                    high = 0;
-                } else {
-                    low = 0;
-                    high = n - 1U;
+
+                if (!DoOrbifold) {
+                    continue;
                 }
-                qUniverse->H(low);
-                qUniverse->CZ(low, high);
-                qUniverse->H(high);
+
+                // Orbifold the last and first bits.
+                qUniverse->ROL(TStep, 0, n);
+                for (x = 0; x < TStep; x++) {
+                    qUniverse->QFT(x, TStep + 1U);
+                }
+                qUniverse->ROR(TStep, 0, n);
             }
         },
         false, false, false, RandInit);
