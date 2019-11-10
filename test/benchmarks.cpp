@@ -639,7 +639,7 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // "tDepth"
     // true - for "n" qubits, simulate time to depth "n"
     // false - simulate to at most "depth" time steps
-    const bool tDepth = false;
+    const bool tDepth = true;
     const int depth = 8;
 
     benchmarkLoop(

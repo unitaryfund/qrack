@@ -1311,7 +1311,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+    if ((abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
         if (CACHED_ZERO(shards[target])) {
             delete[] controls;
             return;
@@ -1327,7 +1327,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shards[target])) {
+    if ((abs(imag(bottomRight)) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) &&
+        CACHED_ONE(shards[target])) {
         delete[] controls;
         return;
     }
@@ -1362,11 +1363,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
+    if ((abs(imag(topLeft)) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
         delete[] controls;
         return;
     }
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
+    if ((abs(imag(bottomRight)) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
         delete[] controls;
         return;
     }
