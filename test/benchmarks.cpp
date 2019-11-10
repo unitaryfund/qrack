@@ -45,8 +45,22 @@ double formatTime(double t, bool logNormal)
     }
 }
 
+QInterfacePtr MakeRandQubit()
+{
+    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, ONE_BCI, 0,
+        rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+
+    real1 prob = qubit->Rand();
+    real1 angle = 2 * M_PI * qubit->Rand();
+
+    complex state[2] = { sqrt(ONE_R1 - prob), sqrt(prob) * angle };
+    qubit->SetQuantumState(state);
+
+    return qubit;
+}
+
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt mxQbts, bool resetRandomPerm = true,
-    bool hadamardRandomBits = false, bool logNormal = false)
+    bool hadamardRandomBits = false, bool logNormal = false, bool qUniverse = false)
 {
 
     const int ITERATIONS = 100;
@@ -86,21 +100,31 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
 
-        QInterfacePtr qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits,
-            0, rng, complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng);
+        QInterfacePtr qftReg = NULL;
+        if (!qUniverse) {
+            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
+                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+        }
         avgt = 0.0;
 
         for (i = 0; i < ITERATIONS; i++) {
-            if (resetRandomPerm) {
-                qftReg->SetPermutation(qftReg->Rand() * qftReg->GetMaxQPower());
-            } else {
-                qftReg->SetPermutation(0);
-            }
-            if (hadamardRandomBits) {
-                for (j = 0; j < numBits; j++) {
-                    if (qftReg->Rand() >= ONE_R1 / 2) {
-                        qftReg->H(j);
+            if (!qUniverse) {
+                if (resetRandomPerm) {
+                    qftReg->SetPermutation(qftReg->Rand() * qftReg->GetMaxQPower());
+                } else {
+                    qftReg->SetPermutation(0);
+                }
+                if (hadamardRandomBits) {
+                    for (j = 0; j < numBits; j++) {
+                        if (qftReg->Rand() >= ONE_R1 / 2) {
+                            qftReg->H(j);
+                        }
                     }
+                }
+            } else {
+                qftReg = MakeRandQubit();
+                for (bitLenInt i = 1; i < numBits; i++) {
+                    qftReg->Compose(MakeRandQubit());
                 }
             }
             qftReg->Finish();
@@ -176,9 +200,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, int)> fn, bool resetRandomPerm = true,
-    bool hadamardRandomBits = false, bool logNormal = false)
+    bool hadamardRandomBits = false, bool logNormal = false, bool qUniverse = false)
 {
-    benchmarkLoopVariable(fn, max_qubits, resetRandomPerm, hadamardRandomBits, logNormal);
+    benchmarkLoopVariable(fn, max_qubits, resetRandomPerm, hadamardRandomBits, logNormal, qUniverse);
 }
 
 TEST_CASE("test_cnot_single", "[gates]")
@@ -572,4 +596,24 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // We measure all bits once, after the circuit is run.
         qReg->MReg(0, n);
     });
+}
+
+TEST_CASE("test_cosmology", "[cosmos]")
+{
+    // Inspired by https://arxiv.org/abs/1702.06959
+    // We assume that the treatment is valid for a bipartite system that has a pure state, entire between interior and
+    // (event horizon) boundary degrees of freedom for the Hilbert space. We start with each qubit region subsystem with
+    // only internal entanglement between its two internal degrees of freedom, (effectively such that one is interior
+    // and the other is boundary, in a totally random basis). We do not explicitly partition between boundary and
+    // interior, in part because entanglement can occur internally. We assume the DFT or its inverse is the maximally
+    // entangling operation across the ensemble of initially Planck scale separable subsystems. (The finite number of
+    // subsystems is only due to resource limit for our model, not any deeper theoretical reason.)
+
+    benchmarkLoop(
+        [](QInterfacePtr qUniverse, int n) {
+            for (bitLenInt i = 0; i < n; i++) {
+                qUniverse->QFT(0, n);
+            }
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
 }
