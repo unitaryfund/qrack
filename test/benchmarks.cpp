@@ -47,8 +47,8 @@ double formatTime(double t, bool logNormal)
 
 QInterfacePtr MakeRandQubit()
 {
-    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, ONE_BCI, 0,
-        rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
 
     real1 prob = qubit->Rand();
     complex phaseFactor = std::polar(ONE_R1, (real1)(2 * M_PI * qubit->Rand()));
