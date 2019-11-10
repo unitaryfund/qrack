@@ -644,8 +644,9 @@ TEST_CASE("test_cosmology_2", "[cosmos]")
                     } else {
                         qUniverse->IQFT(0, t);
                     }
-                    // We're shifting the entire array right, while the QFT window grows toward the left. This should tend to keep to a "preferred accelerated frame."
-                    qUniverse->ROR(1U, 0, n);
+                    // We're shifting the entire array left, while the QFT window also grows toward the left. This
+                    // should tend to keep to a "preferred accelerated frame."
+                    qUniverse->ROL(1U, 0, n);
                 }
             }
         },
