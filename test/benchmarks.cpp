@@ -631,21 +631,28 @@ TEST_CASE("test_cosmology", "[cosmos]")
     benchmarkLoop(
         [&](QInterfacePtr qUniverse, int n) {
             int t, x;
-
             int tMax = (tDepth || (depth > n)) ? n : depth;
+            bitLenInt low, high;
 
             for (t = 1; t < tMax; t++) {
-                for (x = 0; x < n; x++) {
-                    // WARNING: This shifting is only reasonable for QUnit:
+                for (x = 0; x < (n - 1); x++) {
                     if (qUniverse->Rand() < (ONE_R1 / 2)) {
-                        qUniverse->QFT(0, 2);
+                        qUniverse->QFT(x, 2);
                     } else {
-                        qUniverse->IQFT(0, 2);
+                        qUniverse->IQFT(x, 2);
                     }
-                    // We're shifting the entire array left, while the QFT window also grows toward the left. This
-                    // should tend to keep to a "preferred accelerated frame."
-                    qUniverse->ROL(1U, 0, n);
                 }
+                // Orbifold the last and first bit.
+                if (qUniverse->Rand() < (ONE_R1 / 2)) {
+                    low = n - 1U;
+                    high = 0;
+                } else {
+                    low = 0;
+                    high = n - 1U;
+                }
+                qUniverse->H(low);
+                qUniverse->CZ(low, high);
+                qUniverse->H(high);
             }
         },
         false, false, false, true);
