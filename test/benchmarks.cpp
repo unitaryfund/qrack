@@ -655,7 +655,7 @@ TEST_CASE("test_cosmology", "[cosmos]")
     benchmarkLoop(
         [&](QInterfacePtr qUniverse, int n) {
             int t, x;
-            int tMax = UseTDepth ? n : TDepth;
+            int tMax = UseTDepth ? TDepth : n;
 
             for (t = 1; t < tMax; t += TStep) {
                 for (x = 0; x < (n - TStep); x++) {
