@@ -611,7 +611,7 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // number of subsystems is due to resource limit for our model, but it might effectively represent an entanglement
     // or "entropy" budget for a closed universe; the time to maximum entanglement for "n" available qubits should be
     // "n" Planck time steps on average. (The von Neumann entropy actually remains 0, in this entire simulation, as the
-    // state is pure and involves in a unitary fashion, but, if unitary evolution holds for the entire real physical
+    // state is pure and evolves in a unitary fashion, but, if unitary evolution holds for the entire real physical
     // cosmological system of our universe, then this entangling action gives rise to the appearance of non-zero von
     // Neumann entropy of a mixed state.)  We limit to the 1 spatial + 1 time dimension case.
     //
@@ -628,7 +628,7 @@ TEST_CASE("test_cosmology", "[cosmos]")
     // entanglement in parallel. However, if we took a longer time step, an integer multiple of the Planck time, then
     // higher order QFTs would be needed to simulate the step. Probably, the most accurate simulation would take the
     // "squarest" possible time step by space step, but then this is simply a single QFT or its inverse for the entire
-    // "entropy budget" of the space. (We must acknowledge, it is apparent to us that this simulation we choose is a
+    // entropy budget of the space. (We must acknowledge, it is apparent to us that this simulation we choose is a
     // problem that can be made relatively easy for Qrack::QUnit.)
 
     // "RandInit" -
@@ -673,7 +673,11 @@ TEST_CASE("test_cosmology", "[cosmos]")
                 // Orbifold the last and first bits.
                 qUniverse->ROL(TStep, 0, n);
                 for (x = 0; x < TStep; x++) {
-                    qUniverse->QFT(x, TStep + 1U);
+                    if (qUniverse->Rand() < (ONE_R1 / 2)) {
+                        qUniverse->QFT(x, TStep + 1U);
+                    } else {
+                        qUniverse->IQFT(x, TStep + 1U);
+                    }
                 }
                 qUniverse->ROR(TStep, 0, n);
             }
