@@ -217,6 +217,11 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    if (testSubEngineType == testSubSubEngineType) {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 20, 0, rng, ONE_CMPLX, enable_normalization,
+            true, false, device_id, !disable_hardware_rng, sparse);
+    } else {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, ONE_CMPLX,
+            enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    }
 }
