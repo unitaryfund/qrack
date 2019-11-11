@@ -648,7 +648,7 @@ TEST_CASE("test_cosmology", "[cosmos]")
     const bool UseTDepth = true;
     const int TDepth = 8;
     // Time step of simulation, (in "Planck times")
-    const bitLenInt TStep = 2;
+    const bitLenInt TStep = 1;
     // If true, loop the parallel local evolution back around on the boundaries of the qubit array.
     const bool DoOrbifold = true;
 
@@ -683,4 +683,19 @@ TEST_CASE("test_cosmology", "[cosmos]")
             }
         },
         false, false, false, RandInit);
+}
+
+TEST_CASE("test_qft_cosmology", "[cosmos]")
+{
+    // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
+    //
+    // Per the notes in the previous test, this is probably our most accurate possible simulation of a cosmos: one QFT
+    // (or inverse) to consume the entire "entropy" budget.
+    //
+    // Note that, when choosing between QFT and inverse QFT, AKA inverse DFT and DFT respectively, the choice of the QFT
+    // over the IQFT is not entirely arbitrary: we are mapping from a single phase in the phase space of potential
+    // universes to a single coordinate. Remember that we initialize as a collection of entirely random, single,
+    // separable qubits.
+
+    benchmarkLoop([&](QInterfacePtr qUniverse, int n) { qUniverse->QFT(0, n); }, false, false, false, true);
 }
