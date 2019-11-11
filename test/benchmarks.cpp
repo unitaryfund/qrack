@@ -694,7 +694,7 @@ TEST_CASE("test_qft_cosmology", "[cosmos]")
     //
     // Note that, when choosing between QFT and inverse QFT, AKA inverse DFT and DFT respectively, the choice of the QFT
     // over the IQFT is not entirely arbitrary: we are mapping from a single phase in the phase space of potential
-    // universes to a single coordinate. Remember that we initialize as a collection of entirely random, single,
+    // universes to a single configuration. Remember that we initialize as a collection of entirely random, single,
     // separable qubits.
 
     benchmarkLoop([&](QInterfacePtr qUniverse, int n) { qUniverse->QFT(0, n); }, false, false, false, true);
