@@ -111,7 +111,7 @@ public:
         amplitudes[i2] = c2;
     };
 
-    void clear() { std::fill(amplitudes, amplitudes + capacity, complex(ZERO_R1, ZERO_R1)); }
+    void clear() { std::fill(amplitudes, amplitudes + capacity, ZERO_CMPLX); }
 
     void copy_in(const complex* copyIn) { std::copy(copyIn, copyIn + capacity, amplitudes); }
 
@@ -152,7 +152,7 @@ public:
         std::map<bitCapInt, complex>::const_iterator it = amplitudes.find(i);
         if (it == amplitudes.end()) {
             mtx.unlock();
-            toRet = complex(ZERO_R1, ZERO_R1);
+            toRet = ZERO_CMPLX;
         } else {
             toRet = it->second;
             mtx.unlock();

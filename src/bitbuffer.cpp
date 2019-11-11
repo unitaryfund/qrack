@@ -142,11 +142,11 @@ bool GateBuffer::IsIdentity()
     // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
     // offset (but shouldn't).
     complex toTest = matrix.get()[0];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+    if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
         return false;
     }
     toTest = matrix.get()[3];
-    if ((real(toTest) < (ONE_R1 - min_norm)) || (imag(toTest) > min_norm)) {
+    if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
         return false;
     }
 

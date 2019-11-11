@@ -49,10 +49,7 @@ inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
     return ((ONE_BCI << length) - ONE_BCI) << start;
 }
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo (const bitCapInt& x)
-{
-  return ((x != 0U) && !(x & (x - ONE_BCI)));
-}
+inline bool isPowerOfTwo(const bitCapInt& x) { return ((x != 0U) && !(x & (x - ONE_BCI))); }
 
 class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
@@ -164,7 +161,7 @@ protected:
         toFree = NULL;
     }
 
-    bool IsIdentity(const complex* mtrx);
+    bool IsIdentity(const complex* mtrx, const bool isControlled = false);
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,

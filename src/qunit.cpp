@@ -30,6 +30,7 @@
 
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
+#define QUEUED_H_PHASE(shard) (shard.isPlusMinus && QUEUED_PHASE(shard))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
@@ -38,8 +39,9 @@
 #define CACHED_ZERO(shard) (CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (UNSAFE_CACHED_CLASSICAL(shard) && SHARD_STATE(shard))
 #define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
-#define PHASE_MATTERS(shard) (randGlobalPhase || !CACHED_CLASSICAL(shard))
+#define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
+#define IS_POSITIVE_REAL(c) (abs(imag(c)) < min_norm) && (real(c) > (ONE_R1 - min_norm))
 
 namespace Qrack {
 
@@ -100,6 +102,16 @@ void QUnit::SetQuantumState(const complex* inputState)
 
     for (bitLenInt idx = 0; idx < qubitCount; idx++) {
         shards[idx] = QEngineShard(unit, idx);
+    }
+
+    if (qubitCount == 1U) {
+        QEngineShard& shard = shards[0];
+        shard.isEmulated = false;
+        shard.isProbDirty = false;
+        shard.isPhaseDirty = false;
+        shard.amp0 = inputState[0];
+        shard.amp1 = inputState[1];
+        shard.isPlusMinus = false;
     }
 }
 
@@ -175,6 +187,12 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
     /* TODO: This method should compose the bits for the destination without cohering the length first */
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (QUEUED_PHASE(shards[start + i])) {
+            ToPermBasis(start + i);
+        }
+    }
 
     QInterfacePtr destEngine;
     if (length > 1) {
@@ -958,6 +976,8 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    PopHBasis2Qb(target);
+
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -971,6 +991,8 @@ void QUnit::Z(bitLenInt target)
 {
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
+
+    PopHBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
@@ -1082,7 +1104,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if (CACHED_CLASSICAL(shard)) {
-            if ((!anti && norm(shard.amp1) < min_norm) || (anti && norm(shard.amp0) < min_norm)) {
+            if ((!anti && !SHARD_STATE(shard)) || (anti && SHARD_STATE(shard))) {
                 return true;
             }
         } else {
@@ -1098,8 +1120,8 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
         ApplySingleInvert(topRight, bottomLeft, true, target);
         return true;
     } else if (rControlLen == 1U) {
-        complex iTest[4] = { bottomLeft, 0, 0, topRight };
-        if (IsIdentity(iTest)) {
+        complex iTest[4] = { topRight, 0, 0, bottomLeft };
+        if (IsIdentity(iTest, true)) {
             if (anti) {
                 AntiCNOT(rControl, target);
             } else {
@@ -1185,8 +1207,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, target);
-        TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)(2 * M_PI));
         return;
     }
@@ -1207,8 +1227,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
-
-    RevertBasis2Qb(target);
 
     if (!PHASE_MATTERS(shard)) {
         return;
@@ -1242,19 +1260,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(shard)) {
-        X(target);
-        return;
-    }
-
-    real1 phaseDiff = arg(topRight) - arg(bottomLeft);
-    if (phaseDiff > M_PI) {
-        phaseDiff -= 2U * M_PI;
-    } else if (phaseDiff < -M_PI) {
-        phaseDiff += 2U * M_PI;
-    }
-    if ((abs(phaseDiff) < min_norm) &&
-        (randGlobalPhase || ((imag(topRight) < min_norm) && (real(topRight) > ZERO_R1)))) {
+    if (!PHASE_MATTERS(shard) || (randGlobalPhase && (norm(topRight - bottomLeft) < min_norm))) {
         X(target);
         return;
     }
@@ -1293,21 +1299,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
-    QEngineShard& tShard = shards[cTarget];
-    QEngineShard& cShard = shards[cControls[0]];
-
-    if (!freezeBasis && (controlLen == 1U)) {
-        TransformBasis1Qb(false, cTarget);
-        TransformBasis1Qb(false, cControls[0]);
-        tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
-        return;
-    }
-
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm))) {
+    if (IS_POSITIVE_REAL(topLeft)) {
         if (CACHED_ZERO(shards[target])) {
             delete[] controls;
             return;
@@ -1323,8 +1319,23 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shards[target])) {
+    if (IS_POSITIVE_REAL(bottomRight) && CACHED_ONE(shards[target])) {
         delete[] controls;
+        return;
+    }
+
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[controls[0]];
+
+    if (!freezeBasis || (controlLen != 1U)) {
+        PopHBasis2Qb(target);
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            PopHBasis2Qb(controls[i]);
+        }
+    }
+
+    if (!freezeBasis && (controlLen == 1U)) {
+        tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
         return;
     }
 
@@ -1358,11 +1369,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((imag(topLeft) < min_norm) && (real(topLeft) > (ONE_R1 - min_norm)) && CACHED_ZERO(shard)) {
-        delete[] controls;
-        return;
-    }
-    if ((imag(bottomRight) < min_norm) && (real(bottomRight) > (ONE_R1 - min_norm)) && CACHED_ONE(shard)) {
+    if ((IS_POSITIVE_REAL(topLeft) && CACHED_ZERO(shard)) || (IS_POSITIVE_REAL(bottomRight) && CACHED_ONE(shard))) {
         delete[] controls;
         return;
     }
@@ -2762,12 +2769,18 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
     freezeBasis = false;
 }
 
-void QUnit::RevertBasis2Qb(bitLenInt i)
+void QUnit::RevertBasis2Qb(const bitLenInt& i)
 {
     QEngineShard& shard = shards[i];
 
-    if (freezeBasis || !QUEUED_PHASE(shard)) {
-        // Recursive and idempotent calls stop here
+    if (!QUEUED_PHASE(shard)) {
+        return;
+    }
+
+    TransformBasis1Qb(false, i);
+
+    if (freezeBasis) {
+        // Recursive calls stop here
         return;
     }
 
@@ -2779,6 +2792,7 @@ void QUnit::RevertBasis2Qb(bitLenInt i)
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
+        TransformBasis1Qb(false, j);
         controls[0] = j;
 
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
@@ -2796,6 +2810,8 @@ void QUnit::RevertBasis2Qb(bitLenInt i)
         phaseShard = shard.controlsShards.begin();
         QEngineShard* partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
+
+        TransformBasis1Qb(false, j);
 
         complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
         complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
