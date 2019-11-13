@@ -3053,7 +3053,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
     bitCapInt randPerm = qftReg->Rand() * 256U;
     qftReg->SetPermutation(randPerm);
 
-    int i;
+    bitLenInt i;
 
     for (i = 0; i < 8; i += 2) {
         qftReg->H(i);
@@ -3076,7 +3076,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
     qftReg->SetPermutation(85);
 
-    int i;
+    bitLenInt i;
 
     qftReg->QFT(0, 8);
 
