@@ -1173,6 +1173,29 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootn_reg")
 
     qftReg->SetReg(0, 8, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->H(0, 2);
+    qftReg->PhaseRootN(0, 0, 2);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->H(0, 2);
+    qftReg->PhaseRootN(2, 0, 2);
+    qftReg->PhaseRootN(2, 0, 2);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+    qftReg->H(0, 2);
+    qftReg->IPhaseRootN(2, 0, 2);
+    qftReg->IPhaseRootN(2, 0, 2);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetReg(0, 8, 0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
     qftReg->H(0);
     qftReg->PhaseRootN(2, 0);
     qftReg->PhaseRootN(2, 0);
@@ -1207,6 +1230,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaserootn_reg")
     qftReg->H(0, 2);
     qftReg->CPhaseRootN(1, 4, 0);
     qftReg->CIPhaseRootN(1, 4, 0);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
+
+    qftReg->SetReg(0, 16, 0x12);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
+    qftReg->H(0, 2);
+    qftReg->CPhaseRootN(1, 4, 0, 1);
+    qftReg->CIPhaseRootN(1, 4, 0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
+
+    qftReg->SetReg(0, 16, 0x12);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
+    qftReg->H(0, 2);
+    qftReg->CPhaseRootN(0, 4, 0, 1);
+    qftReg->CIPhaseRootN(0, 4, 0, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x12));
 }

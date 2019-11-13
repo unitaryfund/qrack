@@ -57,9 +57,6 @@ int main(int argc, char* argv[])
         Opt(qunit_qfusion)["--layer-qunit-qfusion"]("Enable gate fusion tests under the QUnit layer") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
-        Opt(enable_normalization)["--enable-normalization"](
-            "Enable state vector normalization. (Usually not "
-            "necessary, though might benefit accuracy at very high circuit depth.)") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
@@ -184,6 +181,14 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && cpu) {
+            enable_normalization = true;
+            session.config().stream() << "############ QUnit -> QFusion -> CPU (Normalized) ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+            enable_normalization = false;
+        }
+
+        if (num_failed == 0 && cpu) {
             session.config().stream() << "############ QUnit -> QFusion -> CPU (Sparse) ############" << std::endl;
             testSubSubEngineType = QINTERFACE_CPU;
             sparse = true;
@@ -197,6 +202,16 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
+        }
+
+        if (num_failed == 0 && opencl_single) {
+            enable_normalization = true;
+            session.config().stream() << "############ QUnit -> QFusion -> OpenCL (Normalized) ############"
+                                      << std::endl;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+            enable_normalization = false;
         }
 #endif
     }
