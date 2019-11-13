@@ -772,5 +772,10 @@ StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)
     }
 }
 
-void QEngineCPU::ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
+void QEngineCPU::ResetStateVec(StateVectorPtr sv)
+{
+    // Removing this first line would not be a leak, but it's good to have the internal interface:
+    FreeStateVec();
+    stateVec = sv;
+}
 } // namespace Qrack
