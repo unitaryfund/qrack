@@ -2730,7 +2730,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
     int i;
-    int start = 0x08;
+    bitCapInt start = 0x08;
 
     qftReg->SetPermutation(2);
     qftReg->CDEC(1, 0, 8, NULL, 0);
