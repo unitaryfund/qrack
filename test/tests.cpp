@@ -617,6 +617,42 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_invert")
+{
+    complex topRight = ONE_CMPLX;
+    complex bottomLeft = ONE_CMPLX;
+    bitLenInt controls[3] = { 0, 1, 3 };
+    qftReg->SetPermutation(0x80000);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
+    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(3);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->ApplyControlledSingleInvert(NULL, 0, 0, topRight, bottomLeft);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
+
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    qftReg->H(0);
+    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->H(1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_invert")
 {
     qftReg->SetPermutation(0x01);
@@ -2643,10 +2679,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    qftReg->CNOT(0, 1);
-    qftReg->INCSC(1, 0, 2, 3, 2);
+    qftReg->H(9);
+    qftReg->INCSC(1, 0, 8, 9, 8);
+    qftReg->H(9);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(4));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
@@ -2969,6 +3006,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
     qftReg->SetPermutation(3 | (1 << 16));
     qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (9 << 8)));
+
+    qftReg->SetPermutation(3);
+    qftReg->H(16);
+    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")

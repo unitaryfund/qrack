@@ -41,7 +41,7 @@
 #define UNSAFE_CACHED_ZERO(shard) (UNSAFE_CACHED_CLASSICAL(shard) && !SHARD_STATE(shard))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_POSITIVE_REAL(c) (abs(imag(c)) < min_norm) && (real(c) > (ONE_R1 - min_norm))
+#define IS_POSITIVE_REAL(c) ((abs(imag(c)) < min_norm) && (abs(ONE_R1 - real(c)) < min_norm))
 
 namespace Qrack {
 
@@ -158,7 +158,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     }
 
     if (shards[0].unit->GetQubitCount() > 1) {
-        if (norm(result) > (ONE_R1 - min_norm)) {
+        if (abs(ONE_R1 - norm(result)) < min_norm) {
             SetPermutation(perm);
         }
     }
@@ -676,7 +676,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if (result > (ONE_R1 - min_norm)) {
+    if (abs(ONE_R1 - result) < min_norm) {
         SetPermutation(perm);
         return ONE_R1;
     }
