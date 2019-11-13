@@ -3040,6 +3040,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
     qftReg->SetPermutation(3 | (1 << 16));
     qftReg->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (27 << 8)));
+
+    qftReg->SetPermutation(3);
+    qftReg->H(16);
+    qftReg->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3 | (27 << 8) | (1 << 16)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
