@@ -2730,7 +2730,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
 {
     int i;
-    bitCapInt start = 0x08;
+    int start = 0x08;
 
     qftReg->SetPermutation(2);
     qftReg->CDEC(1, 0, 8, NULL, 0);
@@ -3487,7 +3487,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
 
-    const int TARGET_PROB = 100;
+    const bitCapInt TARGET_PROB = 100;
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
@@ -3527,8 +3527,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     const bitLenInt indexLength = 8;
     const bitLenInt valueLength = 8;
     const bitLenInt carryIndex = indexLength + valueLength;
-    const int TARGET_VALUE = 100;
-    const int TARGET_KEY = 230;
+    const bitCapInt TARGET_VALUE = 100;
+    const bitCapInt TARGET_KEY = 230;
 
     unsigned char* toLoad = cl_alloc(1 << indexLength);
     for (i = 0; i < (1 << indexLength); i++) {
@@ -3570,7 +3570,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
     // Grover's search inverts the function of a black box subroutine.
     // Our subroutine returns true only for an input of 100.
     const bitLenInt length = 10;
-    const int TARGET_PROB = 100;
+    const bitCapInt TARGET_PROB = 100;
     bitLenInt i;
     bitLenInt partStart;
     // Start in a superposition of all inputs.
@@ -3610,8 +3610,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
     const bitLenInt carryIndex = 19;
-    const int TARGET_VALUE = 6;
-    const int TARGET_KEY = 18;
+    const bitCapInt TARGET_VALUE = 6;
+    const bitCapInt TARGET_KEY = 18;
 
     bool foundPerm = false;
 
@@ -3775,8 +3775,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
     const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
     const bitLenInt carryIndex = 19;
-    const int TARGET_VALUE = 6;
-    const int TARGET_KEY = 5;
+    const bitCapInt TARGET_VALUE = 6;
+    const bitCapInt TARGET_KEY = 5;
 
     bool foundPerm = false;
 
