@@ -3407,14 +3407,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
     // We're trying to hit a hardware-specific case of the method, by allocating 1 qubit, but it might not work if the
     // maximum work item count is extremely small.
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1, 0, rng);
-    REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
-    REQUIRE(qftReg->ProbMask(1, 1) < 0.01);
+    real1 probs1[2];
+    qftReg->ProbMaskAll(1U, probs1);
+    REQUIRE(probs1[0] > 0.99);
+    REQUIRE(probs1[1] < 0.01);
 
     // Similarly, we're trying to hit another hardware-specific case with the maximum.
     if (testEngineType == QINTERFACE_OPENCL) {
         qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, max_qubits, 0, rng);
+        real1* probsN = new real1[pow2(max_qubits)];
+        qftReg->ProbMaskAll(pow2(max_qubits) - ONE_BCI, probsN);
         REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
-        REQUIRE(qftReg->ProbMask(1, 1) < 0.01);
+        delete[] probsN;
     }
 }
 

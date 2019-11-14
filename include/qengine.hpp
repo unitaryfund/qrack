@@ -101,7 +101,6 @@ public:
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
-    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
