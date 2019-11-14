@@ -31,6 +31,7 @@ bool disable_hardware_rng = false;
 bool async_time = false;
 bool sparse = false;
 int device_id = -1;
+bitLenInt max_qubits = 24;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
@@ -75,6 +76,31 @@ int main(int argc, char* argv[])
     if (returnCode != 0) {
         return returnCode;
     }
+
+        // If we're talking about a particular OpenCL device,
+        // we have an API designed to tell us device capabilities and limitations,
+        // like maximum RAM allocation.
+#if ENABLE_OPENCL
+    if (opencl_single) {
+        // Make sure the context singleton is initialized.
+        CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();
+
+        DeviceContextPtr device_context = OCLEngine::Instance()->GetDeviceContextPtr(device_id);
+        size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>() / sizeof(complex);
+        size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() / sizeof(complex);
+
+        // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
+        max_qubits = log2(maxAlloc);
+        if ((3U * pow2(max_qubits)) > maxMem) {
+            max_qubits = log2(maxMem / 3U);
+        }
+    }
+#else
+        // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.
+        // If we're not talking about the OpenCL resources of a single device,
+        // maximum allocation becomes a notoriously thorny matter.
+        // For any case besides the above, we just use the default.
+#endif
 
     session.config().stream() << "Random Seed: " << session.configData().rngSeed;
 

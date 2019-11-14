@@ -3409,6 +3409,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1, 0, rng);
     REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
     REQUIRE(qftReg->ProbMask(1, 1) < 0.01);
+
+    // Similarly, we're trying to hit another hardware-specific case with the maximum.
+    if (testEngineType == QINTERFACE_OPENCL) {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, max_qubits, 0, rng);
+        REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
+        REQUIRE(qftReg->ProbMask(1, 1) < 0.01);
+    }
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
