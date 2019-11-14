@@ -636,51 +636,6 @@ void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, g
     }
 }
 
-void kernel probmaskall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, constant bitCapInt* qPowersMask, constant bitCapInt* qPowersSkip)
-{
-    bitCapInt Nthreads, lcv1, lcv2;
-
-    Nthreads = get_global_size(0);
-
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt maxI = args.x;
-    bitCapInt maxJ = args.y;
-    bitCapInt maskLen = args.z;
-    bitCapInt skipLen = args.w;
-
-    real1 oneChancePart;
-    cmplx amp;
-    bitCapInt perm;
-    bitCapInt i, iHigh, iLow, p;
-
-    for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
-        iHigh = lcv1;
-        perm = 0U;
-        for (p = 0U; p < skipLen; p++) {
-            iLow = iHigh & (qPowersSkip[p] - ONE_BCI);
-            perm |= iLow;
-            iHigh = (iHigh ^ iLow) << ONE_BCI;
-        }
-        perm |= iHigh;
-
-        oneChancePart = ZERO_R1;
-        for (lcv2 = 0U; lcv2 < maxJ; lcv2++) {
-            iHigh = lcv2;
-            i = 0U;
-            for (p = 0U; p < maskLen; p++) {
-                iLow = iHigh & (qPowersMask[p] - ONE_BCI);
-                i |= iLow;
-                iHigh = (iHigh ^ iLow) << ONE_BCI;
-            }
-            i |= iHigh;
-
-            amp = stateVec[i | perm];
-            oneChancePart += dot(amp, amp);
-        }
-        oneChanceBuffer[lcv1] = oneChancePart;
-    }
-}
-
 void kernel rol(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     bitCapInt Nthreads, lcv;
