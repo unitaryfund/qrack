@@ -214,6 +214,7 @@ public:
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     virtual void PhaseFlip();
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
