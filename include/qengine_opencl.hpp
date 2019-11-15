@@ -112,6 +112,8 @@ protected:
     bool unlockHostMem;
 
 public:
+    /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
+    /// design of the QEngine.
     static const bitCapInt OclMemDenom = 3U;
 
     /**
