@@ -112,6 +112,8 @@ protected:
     bool unlockHostMem;
 
 public:
+    static const bitCapInt OclMemDenom = 3U;
+
     /**
      * Initialize a Qrack::QEngineOCL object. Specify the number of qubits and an initial permutation state.
      * Additionally, optionally specify a pointer to a random generator engine object, a device ID from the list of

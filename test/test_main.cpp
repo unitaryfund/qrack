@@ -91,15 +91,10 @@ int main(int argc, char* argv[])
 
         // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
         max_qubits = log2(maxAlloc);
-        if ((3U * pow2(max_qubits)) > maxMem) {
-            max_qubits = log2(maxMem / 3U);
+        if ((QEngineOCL::OclMemDenom * pow2(max_qubits)) > maxMem) {
+            max_qubits = log2(maxMem / QEngineOCL::OclMemDenom);
         }
     }
-#else
-        // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.
-        // If we're not talking about the OpenCL resources of a single device,
-        // maximum allocation becomes a notoriously thorny matter.
-        // For any case besides the above, we just use the default.
 #endif
 
     session.config().stream() << "Random Seed: " << session.configData().rngSeed;
@@ -207,9 +202,9 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && cpu) {
-            enable_normalization = true;
             session.config().stream() << "############ QUnit -> QFusion -> CPU (Normalized) ############" << std::endl;
             testSubSubEngineType = QINTERFACE_CPU;
+            enable_normalization = true;
             num_failed = session.run();
             enable_normalization = false;
         }
@@ -231,11 +226,11 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && opencl_single) {
-            enable_normalization = true;
             session.config().stream() << "############ QUnit -> QFusion -> OpenCL (Normalized) ############"
                                       << std::endl;
             testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            enable_normalization = true;
             num_failed = session.run();
             enable_normalization = false;
         }
