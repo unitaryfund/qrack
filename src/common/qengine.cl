@@ -1498,12 +1498,12 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, globa
 
 void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    CMODNOUT((i | controlMask), (inRes | outRes | otherRes));
+    CMODNOUT((i | controlMask), (inRes | outRes | otherRes | controlMask));
 }
 
 void kernel cimulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    CMODNOUT((inRes | outRes | otherRes), (i | controlMask));
+    CMODNOUT((inRes | outRes | otherRes | controlMask), (i | controlMask));
 }
 
 void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
@@ -1547,7 +1547,7 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
 
         outRes = (powRes % modN) << outStart;
 
-        nStateVec[inRes | outRes | otherRes] = stateVec[i | controlMask];
+        nStateVec[inRes | outRes | otherRes | controlMask] = stateVec[i | controlMask];
 
         CMOD_FINISH();
     }

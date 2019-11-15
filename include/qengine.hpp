@@ -101,7 +101,6 @@ public:
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
-    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
@@ -117,8 +116,6 @@ public:
     virtual void NormalizeState(real1 nrm = -999.0) = 0;
 
 protected:
-    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
-
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,

@@ -112,6 +112,10 @@ protected:
     bool unlockHostMem;
 
 public:
+    /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
+    /// design of the QEngine.
+    static const bitCapInt OclMemDenom = 3U;
+
     /**
      * Initialize a Qrack::QEngineOCL object. Specify the number of qubits and an initial permutation state.
      * Additionally, optionally specify a pointer to a random generator engine object, a device ID from the list of
@@ -250,7 +254,6 @@ protected:
     virtual void ResetStateVec(complex* sv);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
-    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);

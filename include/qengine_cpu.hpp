@@ -131,8 +131,6 @@ public:
      * @{
      */
 
-    virtual StateVectorPtr GetStateVector();
-    virtual void SetStateVector(StateVectorPtr sv);
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
@@ -150,7 +148,6 @@ public:
 protected:
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
-    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

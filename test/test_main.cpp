@@ -31,6 +31,7 @@ bool disable_hardware_rng = false;
 bool async_time = false;
 bool sparse = false;
 int device_id = -1;
+bitLenInt max_qubits = 24;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
@@ -57,9 +58,6 @@ int main(int argc, char* argv[])
         Opt(qunit_qfusion)["--layer-qunit-qfusion"]("Enable gate fusion tests under the QUnit layer") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
-        Opt(enable_normalization)["--enable-normalization"](
-            "Enable state vector normalization. (Usually not "
-            "necessary, though might benefit accuracy at very high circuit depth.)") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
@@ -78,6 +76,26 @@ int main(int argc, char* argv[])
     if (returnCode != 0) {
         return returnCode;
     }
+
+        // If we're talking about a particular OpenCL device,
+        // we have an API designed to tell us device capabilities and limitations,
+        // like maximum RAM allocation.
+#if ENABLE_OPENCL
+    if (opencl_single) {
+        // Make sure the context singleton is initialized.
+        CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();
+
+        DeviceContextPtr device_context = OCLEngine::Instance()->GetDeviceContextPtr(device_id);
+        size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>() / sizeof(complex);
+        size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() / sizeof(complex);
+
+        // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
+        max_qubits = log2(maxAlloc);
+        if ((QEngineOCL::OclMemDenom * pow2(max_qubits)) > maxMem) {
+            max_qubits = log2(maxMem / QEngineOCL::OclMemDenom);
+        }
+    }
+#endif
 
     session.config().stream() << "Random Seed: " << session.configData().rngSeed;
 
@@ -184,6 +202,14 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && cpu) {
+            session.config().stream() << "############ QUnit -> QFusion -> CPU (Normalized) ############" << std::endl;
+            testSubSubEngineType = QINTERFACE_CPU;
+            enable_normalization = true;
+            num_failed = session.run();
+            enable_normalization = false;
+        }
+
+        if (num_failed == 0 && cpu) {
             session.config().stream() << "############ QUnit -> QFusion -> CPU (Sparse) ############" << std::endl;
             testSubSubEngineType = QINTERFACE_CPU;
             sparse = true;
@@ -197,6 +223,16 @@ int main(int argc, char* argv[])
             testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
+        }
+
+        if (num_failed == 0 && opencl_single) {
+            session.config().stream() << "############ QUnit -> QFusion -> OpenCL (Normalized) ############"
+                                      << std::endl;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            enable_normalization = true;
+            num_failed = session.run();
+            enable_normalization = false;
         }
 #endif
     }
@@ -217,6 +253,11 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    if (testSubEngineType == testSubSubEngineType) {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 20, 0, rng, ONE_CMPLX, enable_normalization,
+            true, false, device_id, !disable_hardware_rng, sparse);
+    } else {
+        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, ONE_CMPLX,
+            enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    }
 }

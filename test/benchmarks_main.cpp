@@ -128,8 +128,8 @@ int main(int argc, char* argv[])
 
             // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
             max_qubits = log2(maxAlloc);
-            if ((3U * pow2(max_qubits)) > maxMem) {
-                max_qubits = log2(maxMem / 3U);
+            if ((QEngineOCL::OclMemDenom * pow2(max_qubits)) > maxMem) {
+                max_qubits = log2(maxMem / QEngineOCL::OclMemDenom);
             }
 #else
         // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.

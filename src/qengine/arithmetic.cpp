@@ -535,9 +535,9 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
 
         if (inverse) {
-            nStateVec->write(lcv | controlMask, stateVec->read(inRes | outRes | otherRes));
+            nStateVec->write(lcv | controlMask, stateVec->read(inRes | outRes | otherRes | controlMask));
         } else {
-            nStateVec->write(inRes | outRes | otherRes, stateVec->read(lcv | controlMask));
+            nStateVec->write(inRes | outRes | otherRes | controlMask, stateVec->read(lcv | controlMask));
         }
         nStateVec->write(lcv, stateVec->read(lcv));
 

@@ -82,26 +82,6 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
     runningNorm = ONE_R1;
 }
 
-real1 QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
-{
-    real1 average = ZERO_R1;
-    real1 prob;
-    real1 totProb = ZERO_R1;
-    bitCapInt i, outputInt;
-    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(stateVec->read(i));
-        totProb += prob;
-        average += prob * outputInt;
-    }
-    if (totProb > ZERO_R1) {
-        average /= totProb;
-    }
-
-    return average;
-}
-
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
@@ -792,5 +772,10 @@ StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)
     }
 }
 
-void QEngineCPU::ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
+void QEngineCPU::ResetStateVec(StateVectorPtr sv)
+{
+    // Removing this first line would not be a leak, but it's good to have the internal interface:
+    FreeStateVec();
+    stateVec = sv;
+}
 } // namespace Qrack

@@ -1861,6 +1861,16 @@ public:
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     /**
+     * Direct measure of masked permutation probability
+     *
+     * "mask" masks the bits to check the probability of. The probabilities of all permutations of the masked bits, from
+     * left/low to right/high are returned in the "probsArray" argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+
+    /**
      * Set individual bit to pure |0> (false) or |1> (true) state
      *
      * To set a bit, the bit is first measured. If the result of measurement

@@ -14,10 +14,6 @@
 
 namespace Qrack {
 
-StateVectorPtr QEngineCPU::GetStateVector() { return stateVec; }
-
-void QEngineCPU::SetStateVector(StateVectorPtr sv) { stateVec = sv; }
-
 QInterfacePtr QEngineCPU::Clone()
 {
     QInterfacePtr clone =
