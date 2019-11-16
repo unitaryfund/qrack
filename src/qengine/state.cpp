@@ -569,17 +569,19 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     }
 
     bitCapInt qPower = pow2(qubit);
-    bitCapInt qMask = qPower - ONE_BCI;
     real1 oneChance = 0;
 
     int numCores = GetConcurrencyLevel();
     real1* oneChanceBuff = new real1[numCores]();
 
-    par_for(0, maxQPower >> ONE_BCI, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt i = lcv & qMask;
-        i |= ((lcv ^ i) << ONE_BCI) | qPower;
-        oneChanceBuff[cpu] += norm(stateVec->read(i));
-    });
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+        oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+    };
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(qPower, qPower, qPower), fn);
+    } else {
+        par_for_skip(0, maxQPower, qPower, 1U, fn);
+    }
 
     for (int i = 0; i < numCores; i++) {
         oneChance += oneChanceBuff[i];
@@ -612,8 +614,12 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
     bitCapInt perm = permutation << start;
 
-    par_for_skip(0, maxQPower, pow2(start), length,
-        [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | perm)); });
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | perm)); };
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(0, bitRegMask(start, length), perm), fn);
+    } else {
+        par_for_skip(0, maxQPower, pow2(start), length, fn);
+    }
 
     real1 prob = ZERO_R1;
     for (int thrd = 0; thrd < num_threads; thrd++) {
