@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <functional>
 #include <vector>
 
 /* Needed for bitCapInt typedefs. */
@@ -37,10 +36,6 @@ public:
     /*
      * Parallelization routines for spreading work across multiple cores.
      */
-
-    /** Called once per value between begin and end. */
-    typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
-    typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
 
     /**
      * Iterate through the permutations a maximum of end-begin times, allowing

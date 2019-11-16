@@ -33,6 +33,7 @@ extern qrack_rand_gen_ptr rng;
 extern bool enable_normalization;
 extern bool disable_hardware_rng;
 extern bool async_time;
+extern bool sparse;
 extern int device_id;
 extern bitLenInt max_qubits;
 extern bool single_qubit_run;
