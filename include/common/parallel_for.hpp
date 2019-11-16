@@ -64,6 +64,10 @@ public:
     /** Iterate over a sparse state vector. */
     void par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn);
 
+    /** Iterate over the power set of 2 sparse state vectors. */
+    void par_for_sparse_compose(const std::set<bitCapInt>& lowSet, const std::set<bitCapInt>& highSet,
+        const bitLenInt& highStart, ParallelFunc fn);
+
     /** Calculate the normal for the array. */
     real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };

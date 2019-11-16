@@ -329,6 +329,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 {
+    // TODO: Sparse optimization
     bitLenInt result = qubitCount;
 
     if (doNormalize && (runningNorm != ONE_R1)) {
@@ -346,9 +347,14 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
 
-    par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         nStateVec->write(lcv, stateVec->read(lcv & startMask) * toCopy->stateVec->read((lcv & endMask) >> qubitCount));
-    });
+    };
+    if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
+        par_for_sparse_compose(stateVec->iterable(0, 0, 0), toCopy->stateVec->iterable(0, 0, 0), qubitCount, fn);
+    } else {
+        par_for(0, nMaxQPower, fn);
+    }
 
     SetQubitCount(nQubitCount);
 
