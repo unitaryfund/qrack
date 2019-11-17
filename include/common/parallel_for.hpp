@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <functional>
 #include <vector>
 
 /* Needed for bitCapInt typedefs. */
@@ -37,10 +36,6 @@ public:
     /*
      * Parallelization routines for spreading work across multiple cores.
      */
-
-    /** Called once per value between begin and end. */
-    typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
-    typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
 
     /**
      * Iterate through the permutations a maximum of end-begin times, allowing
@@ -68,6 +63,10 @@ public:
 
     /** Iterate over a sparse state vector. */
     void par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn);
+
+    /** Iterate over the power set of 2 sparse state vectors. */
+    void par_for_sparse_compose(const std::set<bitCapInt>& lowSet, const std::set<bitCapInt>& highSet,
+        const bitLenInt& highStart, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
     real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray);

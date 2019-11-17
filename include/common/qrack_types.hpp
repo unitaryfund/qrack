@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <random>
 
@@ -72,6 +73,10 @@ typedef double real1;
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
+
+/** Called once per value between begin and end. */
+typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
+typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
 
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);

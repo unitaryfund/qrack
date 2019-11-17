@@ -29,6 +29,7 @@ qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
+bool sparse = false;
 int device_id = -1;
 bitLenInt max_qubits = 24;
 bool single_qubit_run = false;
@@ -77,7 +78,9 @@ int main(int argc, char* argv[])
         Opt(isBinaryOutput)["--binary-output"]("If included, specifies that the --measure-output file "
                                                "type should be binary. (By default, it is "
                                                "human-readable.)") |
-        Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests");
+        Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests") |
+        Opt(sparse)["--sparse"](
+            "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.");
 
     session.cli(cli);
 
@@ -200,7 +203,11 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qunit) {
         testEngineType = QINTERFACE_QUNIT;
         if (num_failed == 0 && cpu) {
-            session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
+            if (sparse) {
+                session.config().stream() << "############ QUnit -> QEngine -> CPU (Sparse) ############" << std::endl;
+            } else {
+                session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
+            }
             testSubEngineType = QINTERFACE_CPU;
             testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
@@ -221,7 +228,11 @@ int main(int argc, char* argv[])
         testEngineType = QINTERFACE_QUNIT;
         testSubEngineType = QINTERFACE_QFUSION;
         if (num_failed == 0 && cpu) {
-            session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+            if (sparse) {
+                session.config().stream() << "############ QUnit -> QFusion -> CPU (Sparse) ############" << std::endl;
+            } else {
+                session.config().stream() << "############ QUnit -> QFusion -> CPU ############" << std::endl;
+            }
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }

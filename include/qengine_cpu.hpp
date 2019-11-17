@@ -12,13 +12,11 @@
 
 #pragma once
 
-#include <algorithm>
 #include <memory>
 
+#include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
-
-#include "common/parallel_for.hpp"
 
 namespace Qrack {
 

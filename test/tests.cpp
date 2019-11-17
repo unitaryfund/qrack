@@ -4339,3 +4339,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
         REQUIRE(comp == test);
     }
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_n_bell")
+{
+    int i;
+
+    qftReg->SetPermutation(10);
+
+    qftReg->H(0);
+    for (i = 0; i <= 18; i++) {
+        qftReg->CNOT(i, i + 1U);
+    }
+    for (i = 18; i >= 0; i--) {
+        qftReg->CNOT(i, i + 1U);
+    }
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
+}

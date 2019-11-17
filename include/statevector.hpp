@@ -226,7 +226,6 @@ public:
     {
         bitCapInt unsetMask = ~setMask;
         bitCapInt unfilterMask = ~filterMask;
-        bitCapInt val;
         std::set<bitCapInt> toRet;
 
         mtx.lock();
@@ -234,10 +233,7 @@ public:
         std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
         while (it != amplitudes.end()) {
             if ((it->first & filterMask) == filterValues) {
-                val = (it->first & unsetMask & unfilterMask);
-                if (toRet.find(val) == toRet.end()) {
-                    toRet.insert(val);
-                }
+                toRet.insert(it->first & unsetMask & unfilterMask);
             }
             it++;
         }
