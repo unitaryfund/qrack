@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <memory>
 
 #include "common/parallel_for.hpp"
