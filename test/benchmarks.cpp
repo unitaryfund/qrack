@@ -704,8 +704,18 @@ TEST_CASE("test_n_bell", "[stabilizer]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, int n) {
         qftReg->H(0);
-        for (bitLenInt i = 0; i < n; i++) {
-            qftReg->CNOT(0, i);
+        for (bitLenInt i = 0; i < (n - 1); i++) {
+            qftReg->CNOT(i, i + 1U);
+        }
+    });
+}
+
+TEST_CASE("test_repeat_h_cnot", "[stabilizer]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, int n) {
+        for (bitLenInt i = 0; i < (n - 1); i++) {
+            qftReg->H(i);
+            qftReg->CNOT(i, i + 1U);
         }
     });
 }
