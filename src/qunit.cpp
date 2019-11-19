@@ -1168,6 +1168,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true);
         return;
+    } else if (isSparse && cShard.isPlusMinus && !tShard.isPlusMinus) {
+        H(target);
+        CZ(control, target);
+        return;
     }
 
     CTRLED_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false);
