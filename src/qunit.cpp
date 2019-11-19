@@ -1156,9 +1156,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
-
-    // If tShard is not in |+>/|-> basis, we can transform it, first, but let's not if we definitely know the bit will
-    // become entangled.
     if (cShard.isPlusMinus && tShard.isPlusMinus) {
         std::swap(controls[0], target);
         ApplyEitherControlled(controls, controlLen, { target }, false,
