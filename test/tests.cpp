@@ -4356,3 +4356,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_n_bell")
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
+{
+    int i;
+
+    qftReg->SetPermutation(10);
+
+    for (i = 0; i <= 3; i++) {
+        qftReg->H(i);
+        qftReg->CNOT(i, i + 1U);
+    }
+    for (i = 3; i >= 0; i--) {
+        qftReg->CNOT(i, i + 1U);
+        qftReg->H(i);
+    }
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
+}

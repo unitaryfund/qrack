@@ -1159,7 +1159,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     // If tShard is not in |+>/|-> basis, we can transform it, first, but let's not if we definitely know the bit will
     // become entangled.
-    if (cShard.isPlusMinus && !CACHED_CLASSICAL(tShard)) {
+    if (cShard.isPlusMinus && (isSparse || !CACHED_CLASSICAL(tShard))) {
         if (!tShard.isPlusMinus) {
             TransformBasis1Qb(true, target);
         }
@@ -1167,10 +1167,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true);
-        return;
-    } else if (isSparse && cShard.isPlusMinus && !tShard.isPlusMinus) {
-        H(target);
-        CZ(control, target);
         return;
     }
 
