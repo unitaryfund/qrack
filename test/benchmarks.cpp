@@ -473,6 +473,73 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
+TEST_CASE("test_solved_circuit", "[supreme]")
+{
+    const int GateCount1Qb = 3;
+    const int GateCount2Qb = 3;
+    const int Depth = 20;
+
+    benchmarkLoop([](QInterfacePtr qReg, int n) {
+
+        int d;
+        bitLenInt i;
+        real1 gateRand;
+        bitLenInt bitRand, b1, b2;
+
+        for (d = 0; d < Depth; d++) {
+
+            for (i = 0; i < n; i++) {
+                gateRand = qReg->Rand();
+                if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                    qReg->X(i);
+                } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                    qReg->Y(i);
+                } else {
+                    qReg->PhaseRootN(4U, i);
+                }
+            }
+
+            std::set<bitLenInt> unusedBits;
+            for (i = 0; i < n; i++) {
+                unusedBits.insert(unusedBits.end(), i);
+            }
+
+            std::set<bitLenInt>::iterator bitIterator;
+            while (unusedBits.size() > 1) {
+
+                bitIterator = unusedBits.begin();
+                bitRand = unusedBits.size() * qReg->Rand();
+                if (bitRand >= unusedBits.size()) {
+                    bitRand = unusedBits.size() - 1;
+                }
+                std::advance(bitIterator, bitRand);
+                b1 = *bitIterator;
+                unusedBits.erase(bitIterator);
+
+                bitIterator = unusedBits.begin();
+                bitRand = unusedBits.size() * qReg->Rand();
+                if (bitRand >= unusedBits.size()) {
+                    bitRand = unusedBits.size() - 1;
+                }
+                std::advance(bitIterator, bitRand);
+                b2 = *bitIterator;
+                unusedBits.erase(bitIterator);
+
+                gateRand = qReg->Rand();
+                if (gateRand < (ONE_R1 / GateCount2Qb)) {
+                    qReg->Swap(b1, b2);
+                } else if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
+                    qReg->CNOT(b1, b2);
+                } else {
+                    qReg->CY(b1, b2);
+                }
+            }
+        }
+
+        qReg->MReg(0, n);
+    });
+}
+
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
@@ -524,8 +591,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 gateRand = qReg->Rand();
 
                 // Each individual bit has one of these 3 gates applied at random.
-                // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants are
-                // handled as general single bit gates.
+                // Qrack has optimizations for gates including X, Y, and particularly H, but these "Sqrt" variants
+                // are handled as general single bit gates.
                 if (gateRand < (ONE_R1 / 3)) {
                     qReg->SqrtX(i);
                 } else if (gateRand < (2 * ONE_R1 / 3)) {
@@ -536,8 +603,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->SqrtH(i);
                 }
 
-                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose") the
-                // representation without changing the logical state of the QUnit, up to float error:
+                // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose")
+                // the representation without changing the logical state of the QUnit, up to float error:
                 // qReg->TrySeparate(i);
             }
 
@@ -551,9 +618,10 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 for (col = 0; col < (n / colLen); col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
-                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits, (as
-                    // many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length" has to be
-                    // factored into a rectangular shape, and "n" is sometimes prime or factors awkwardly.)
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
 
                     tempRow = row;
                     tempCol = col;
@@ -602,34 +670,36 @@ TEST_CASE("test_cosmology", "[cosmos]")
 {
     // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
     //
-    // We assume that the treatment of that work is valid for a bipartite system that has a pure state, entire between
-    // interior and (event horizon) boundary degrees of freedom for the Hilbert space. We start with each qubit region
-    // subsystem with only internal entanglement between its two internal degrees of freedom, (effectively such that one
-    // is interior and the other is boundary, in a totally random basis). We do not explicitly partition between
-    // boundary and interior, in part because entanglement can occur internally. We assume the DFT or its inverse is the
-    // maximally entangling operation across the ensemble of initially Planck scale separable subsystems. The finite
-    // number of subsystems is due to resource limit for our model, but it might effectively represent an entanglement
-    // or "entropy" budget for a closed universe; the time to maximum entanglement for "n" available qubits should be
-    // "n" Planck time steps on average. (The von Neumann entropy actually remains 0, in this entire simulation, as the
-    // state is pure and evolves in a unitary fashion, but, if unitary evolution holds for the entire real physical
-    // cosmological system of our universe, then this entangling action gives rise to the appearance of non-zero von
-    // Neumann entropy of a mixed state.)  We limit to the 1 spatial + 1 time dimension case.
+    // We assume that the treatment of that work is valid for a bipartite system that has a pure state, entire
+    // between interior and (event horizon) boundary degrees of freedom for the Hilbert space. We start with each
+    // qubit region subsystem with only internal entanglement between its two internal degrees of freedom,
+    // (effectively such that one is interior and the other is boundary, in a totally random basis). We do not
+    // explicitly partition between boundary and interior, in part because entanglement can occur internally. We
+    // assume the DFT or its inverse is the maximally entangling operation across the ensemble of initially Planck
+    // scale separable subsystems. The finite number of subsystems is due to resource limit for our model, but it
+    // might effectively represent an entanglement or "entropy" budget for a closed universe; the time to maximum
+    // entanglement for "n" available qubits should be "n" Planck time steps on average. (The von Neumann entropy
+    // actually remains 0, in this entire simulation, as the state is pure and evolves in a unitary fashion, but, if
+    // unitary evolution holds for the entire real physical cosmological system of our universe, then this
+    // entangling action gives rise to the appearance of non-zero von Neumann entropy of a mixed state.)  We limit
+    // to the 1 spatial + 1 time dimension case.
     //
     // If the (inverse) DFT is truly maximally entangling, it might not be appropriate to iterate the full-width,
-    // monotonic DFT as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in one
-    // step. Further, deterministic progression toward higher entanglement, and therefore higher effective entropy,
-    // assumes a fixed direction for the "arrow of time." Given the time symmetry of unitary evolution, hopefully, the
-    // thermodynamic arrow of time would be emergent in a very-early-universe model, rather than assumed to be fixed. As
-    // such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction of apparent time in a step,
-    // represented by randomly choosing QFT or inverse on a local region. Further, initially indepedent regions cannot
-    // be causally influenced by distant regions faster than the speed of light, where the light cone grows at a rate of
-    // one Planck distance per Planck time. Locality implies that, in one Planck time step, a 2 qubit (inverse) DFT can
-    // be acted between each nearest-neighbor pair. We also assume that causally disconnected regions develop local
-    // entanglement in parallel. However, if we took a longer time step, an integer multiple of the Planck time, then
-    // higher order QFTs would be needed to simulate the step. Probably, the most accurate simulation would take the
-    // "squarest" possible time step by space step, but then this is simply a single QFT or its inverse for the entire
-    // entropy budget of the space. (We must acknowledge, it is apparent to us that this simulation we choose is a
-    // problem that can be made relatively easy for Qrack::QUnit.)
+    // monotonic DFT as a time-step, because this then consumes the entire entropy budget of the Hubble sphere in
+    // one step. Further, deterministic progression toward higher entanglement, and therefore higher effective
+    // entropy, assumes a fixed direction for the "arrow of time." Given the time symmetry of unitary evolution,
+    // hopefully, the thermodynamic arrow of time would be emergent in a very-early-universe model, rather than
+    // assumed to be fixed. As such, suppose that there is locally a 0.5/0.5 of 1.0 probability for either direction
+    // of apparent time in a step, represented by randomly choosing QFT or inverse on a local region. Further,
+    // initially indepedent regions cannot be causally influenced by distant regions faster than the speed of light,
+    // where the light cone grows at a rate of one Planck distance per Planck time. Locality implies that, in one
+    // Planck time step, a 2 qubit (inverse) DFT can be acted between each nearest-neighbor pair. We also assume
+    // that causally disconnected regions develop local entanglement in parallel. However, if we took a longer time
+    // step, an integer multiple of the Planck time, then higher order QFTs would be needed to simulate the step.
+    // Probably, the most accurate simulation would take the "squarest" possible time step by space step, but then
+    // this is simply a single QFT or its inverse for the entire entropy budget of the space. (We must acknowledge,
+    // it is apparent to us that this simulation we choose is a problem that can be made relatively easy for
+    // Qrack::QUnit.)
 
     // "RandInit" -
     // true - initialize all qubits with completely random (single qubit, separable) states
@@ -689,13 +759,13 @@ TEST_CASE("test_qft_cosmology", "[cosmos]")
 {
     // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
     //
-    // Per the notes in the previous test, this is probably our most accurate possible simulation of a cosmos: one QFT
-    // (or inverse) to consume the entire "entropy" budget.
+    // Per the notes in the previous test, this is probably our most accurate possible simulation of a cosmos: one
+    // QFT (or inverse) to consume the entire "entropy" budget.
     //
-    // Note that, when choosing between QFT and inverse QFT, AKA inverse DFT and DFT respectively, the choice of the QFT
-    // over the IQFT is not entirely arbitrary: we are mapping from a single phase in the phase space of potential
-    // universes to a single configuration. Remember that we initialize as a collection of entirely random, single,
-    // separable qubits.
+    // Note that, when choosing between QFT and inverse QFT, AKA inverse DFT and DFT respectively, the choice of the
+    // QFT over the IQFT is not entirely arbitrary: we are mapping from a single phase in the phase space of
+    // potential universes to a single configuration. Remember that we initialize as a collection of entirely
+    // random, single, separable qubits.
 
     benchmarkLoop([&](QInterfacePtr qUniverse, int n) { qUniverse->QFT(0, n); }, false, false, false, true);
 }
