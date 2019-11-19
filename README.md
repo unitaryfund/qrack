@@ -156,7 +156,7 @@ Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights res
 
 (The given DOI date is that of first "official release.")
 
-Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum simulator software! (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum computer simulator software! (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
 
 Licensed under the GNU Lesser General Public License V3.
 
