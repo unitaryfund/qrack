@@ -135,14 +135,14 @@ void ParallelFor::par_for_sparse_compose(
     bitCapInt lowSize = lowSet.size();
     par_for_inc(0, lowSize * highSet.size(),
         [&lowSize, &highStart, &lowSet, &highSet](const bitCapInt i, int cpu) {
-            bitCapInt lowPerm = i % lowSet.size();
-            bitCapInt highPerm = (i - lowPerm) / lowSet.size();
+            bitCapInt lowPerm = i % lowSize;
+            bitCapInt highPerm = (i - lowPerm) / lowSize;
             auto it = lowSet.begin();
             std::advance(it, lowPerm);
             bitCapInt perm = *it;
             it = highSet.begin();
             std::advance(it, highPerm);
-            perm |= *it << highStart;
+            perm |= (*it) << highStart;
             return perm;
         },
         fn);

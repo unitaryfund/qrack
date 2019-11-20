@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/114947047.svg)](https://zenodo.org/badge/latestdoi/114947047) [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
+[![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
+
 This is a multithreaded framework for developing classically emulated virtual universal quantum processors. It has CPU and GPU engine types.
 
 The intent of "Qrack" is to provide a framework for developing practical, computationally efficient, classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::QUnit." "Qrack::QEngineCPU" and "Qrack::QEngineOCL" represent fully entangled cases and underlie "Qrack::QUnit."
@@ -27,7 +29,7 @@ Qrack compiles like a library. To include in your project:
 $ mkdir _build && cd _build && cmake .. && make all install
 ```
 
-Instantiate a Qrack::QUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) QUnits can be "cohered" and "decohered" with each other, to simulate coherence and loss of coherence of separable subsystems between distinct quantum bit registers. Both single quantum gate commands and register-like multi-bit commands are available.
+Instantiate a Qrack::QUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) QUnits can be (Schmidt) "composed" and "decomposed" with and from each other, to join and separate the representations of qubit "registers" that are not entangled at the point (de)composition. Both single quantum gate commands and register-like multi-bit commands are available.
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
@@ -148,13 +150,13 @@ $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
 ```
 Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
 
-## Copyright and License
+## Copyright, License, and Acknowledgements
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
 
 (The given DOI date is that of first "official release.")
 
-Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum computer simulator software! (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
 
 Licensed under the GNU Lesser General Public License V3.
 
