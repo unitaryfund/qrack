@@ -926,9 +926,7 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasis) {
-        if (QUEUED_PHASE(shard)) {
-            ToPermBasis(target);
-        }
+        RevertBasis2Qb(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
