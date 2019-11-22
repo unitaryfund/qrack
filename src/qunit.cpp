@@ -926,9 +926,7 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasis) {
-        if (QUEUED_PHASE(shard)) {
-            ToPermBasis(target);
-        }
+        RevertBasis2Qb(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
@@ -2767,18 +2765,15 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
 {
     QEngineShard& shard = shards[i];
 
-    if (!QUEUED_PHASE(shard)) {
-        return;
-    }
-
-    TransformBasis1Qb(false, i);
-
-    if (freezeBasis) {
-        // Recursive calls stop here
+    if (freezeBasis || !QUEUED_PHASE(shard)) {
+        // Recursive call that should be blocked,
+        // or already in target basis.
         return;
     }
 
     bitLenInt controls[1];
+    complex polar0, polar1;
+    complex mtrx[4];
 
     ShardToPhaseMap::iterator phaseShard;
     while (shard.targetOfShards.size() > 0) {
@@ -2786,15 +2781,27 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
-        TransformBasis1Qb(false, j);
         controls[0] = j;
 
-        complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
-        complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+        polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+        polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
-        freezeBasis = true;
-        ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
-        freezeBasis = false;
+        if (shards[i].isPlusMinus) {
+            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+            mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
+            mtrx[2] = mtrx[1];
+            mtrx[3] = mtrx[0];
+
+            shards[i].isPlusMinus = false;
+            freezeBasis = true;
+            ApplyControlledSingleBit(controls, 1U, i, mtrx);
+            freezeBasis = false;
+            shards[i].isPlusMinus = true;
+        } else {
+            freezeBasis = true;
+            ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
+            freezeBasis = false;
+        }
 
         shard.RemovePhaseControl(partner);
     }
@@ -2805,14 +2812,25 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
         QEngineShard* partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
-        TransformBasis1Qb(false, j);
+        polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+        polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
-        complex polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
-        complex polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+        if (shards[j].isPlusMinus) {
+            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+            mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
+            mtrx[2] = mtrx[1];
+            mtrx[3] = mtrx[0];
 
-        freezeBasis = true;
-        ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
-        freezeBasis = false;
+            shards[j].isPlusMinus = false;
+            freezeBasis = true;
+            ApplyControlledSingleBit(controls, 1U, j, mtrx);
+            freezeBasis = false;
+            shards[j].isPlusMinus = true;
+        } else {
+            freezeBasis = true;
+            ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
+            freezeBasis = false;
+        }
 
         shard.RemovePhaseTarget(partner);
     }
