@@ -1301,6 +1301,12 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
+        if ((controlLen == 1U) && IS_POSITIVE_REAL(-bottomRight)) {
+            CZ(controls[0], target);
+            delete[] controls;
+            return;
+        }
+
         if (!shards[target].isPlusMinus) {
             for (bitLenInt i = 0; i < controlLen; i++) {
                 if (shards[controls[i]].isPlusMinus) {
@@ -1328,6 +1334,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if (!freezeBasis && (controlLen == 1U)) {
         tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
+        delete[] controls;
         return;
     }
 
