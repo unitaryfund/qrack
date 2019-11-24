@@ -1434,9 +1434,6 @@ public:
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
-     * \todo Many of these have performance that can be improved in QUnit via
-     *       implementations with more intelligently chosen Compose/Decompose
-     *       patterns.
      * @{
      */
 
