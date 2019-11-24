@@ -479,7 +479,7 @@ TEST_CASE("test_solved_circuit", "[supreme]")
     const int GateCount2Qb = 3;
     const int Depth = 20;
 
-    benchmarkLoop([](QInterfacePtr qReg, int n) {
+    benchmarkLoop([&](QInterfacePtr qReg, int n) {
 
         int d;
         bitLenInt i;
