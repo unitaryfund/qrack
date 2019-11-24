@@ -547,7 +547,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
     const int depth = 20;
 
-    benchmarkLoop([](QInterfacePtr qReg, int n) {
+    benchmarkLoop([&](QInterfacePtr qReg, int n) {
 
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
