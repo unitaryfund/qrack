@@ -562,7 +562,7 @@ public:
      * General unitary gate
      *
      * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit
-     * unitary gates.
+     * unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation values).
      */
     virtual void U(bitLenInt target, real1 theta, real1 phi, real1 lambda);
 
