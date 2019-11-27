@@ -208,6 +208,27 @@ struct QEngineShard {
         }
     }
 
+    bool TryHCommute()
+    {
+        complex polar0, polar1;
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+            polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+            if (norm(polar0 - polar1) >= min_norm) {
+                return false;
+            }
+        }
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+            polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+            if (norm(polar0 - polar1) >= min_norm) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
     bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
