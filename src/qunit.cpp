@@ -2796,10 +2796,17 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
         polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
         if (shards[i].isPlusMinus) {
-            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-            mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
-            mtrx[2] = mtrx[1];
-            mtrx[3] = mtrx[0];
+            if (phaseShard->second.isInvert) {
+                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+                mtrx[1] = (-polar0 + polar1) / (ONE_R1 * 2);
+                mtrx[2] = (polar0 - polar1) / (ONE_R1 * 2);
+                mtrx[3] = (-polar0 - polar1) / (ONE_R1 * 2);
+            } else {
+                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+                mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
+                mtrx[2] = mtrx[1];
+                mtrx[3] = mtrx[0];
+            }
 
             shards[i].isPlusMinus = false;
             freezeBasis = true;
@@ -2808,7 +2815,11 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
             shards[i].isPlusMinus = true;
         } else {
             freezeBasis = true;
-            ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
+            if (phaseShard->second.isInvert) {
+                ApplyControlledSingleInvert(controls, 1U, i, polar0, polar1);
+            } else {
+                ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
+            }
             freezeBasis = false;
         }
 
@@ -2825,10 +2836,17 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
         polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
 
         if (shards[j].isPlusMinus) {
-            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-            mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
-            mtrx[2] = mtrx[1];
-            mtrx[3] = mtrx[0];
+            if (phaseShard->second.isInvert) {
+                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+                mtrx[1] = (-polar0 + polar1) / (ONE_R1 * 2);
+                mtrx[2] = (polar0 - polar1) / (ONE_R1 * 2);
+                mtrx[3] = (-polar0 - polar1) / (ONE_R1 * 2);
+            } else {
+                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+                mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
+                mtrx[2] = mtrx[1];
+                mtrx[3] = mtrx[0];
+            }
 
             shards[j].isPlusMinus = false;
             freezeBasis = true;
@@ -2837,7 +2855,11 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i)
             shards[j].isPlusMinus = true;
         } else {
             freezeBasis = true;
-            ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
+            if (phaseShard->second.isInvert) {
+                ApplyControlledSingleInvert(controls, 1U, j, polar0, polar1);
+            } else {
+                ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
+            }
             freezeBasis = false;
         }
 

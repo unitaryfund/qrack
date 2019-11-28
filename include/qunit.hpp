@@ -35,6 +35,7 @@ namespace Qrack {
 struct PhaseShard {
     real1 angle0;
     real1 angle1;
+    bool isInvert;
 
     PhaseShard()
         : angle0(ZERO_R1)
@@ -45,6 +46,7 @@ struct PhaseShard {
 
 struct QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
+typedef PhaseShard* PhaseShardPtr;
 typedef std::map<QEngineShardPtr, PhaseShard> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
@@ -212,20 +214,50 @@ struct QEngineShard {
     {
         complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
-            polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
-            if (norm(polar0 - polar1) >= min_norm) {
-                return false;
-            }
-        }
+
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
             polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
-            if (norm(polar0 - polar1) >= min_norm) {
+            if (norm(polar0 - polar1) < min_norm) {
+                if (phaseShard->second.isInvert) {
+                    return false;
+                }
+            } else if (norm(polar0 + polar1) < min_norm) {
+                if (!phaseShard->second.isInvert) {
+                    return false;
+                }
+            } else {
                 return false;
             }
         }
+
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
+            polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+            if (norm(polar0 - polar1) < min_norm) {
+                if (phaseShard->second.isInvert) {
+                    // targetsOfToFlip.push_back(phaseShard);
+                    return false;
+                }
+            } else if (norm(polar0 + polar1) < min_norm) {
+                if (!phaseShard->second.isInvert) {
+                    polar0 = (polar0 + polar1) / (2 * ONE_R1);
+                    polar1 = polar0;
+
+                    phaseShard->second.isInvert = !phaseShard->second.isInvert;
+                    phaseShard->second.angle0 = ((2 * ONE_R1) * arg(polar0));
+                    phaseShard->second.angle1 = ((2 * ONE_R1) * arg(polar1));
+
+                    PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
+                    remotePhase.isInvert = !remotePhase.isInvert;
+                    remotePhase.angle0 = phaseShard->second.angle0;
+                    remotePhase.angle1 = phaseShard->second.angle1;
+                }
+            } else {
+                return false;
+            }
+        }
+
         return true;
     }
 
