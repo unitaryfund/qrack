@@ -473,9 +473,9 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_solved_circuit", "[supreme]")
+TEST_CASE("test_solved_universal_circuit", "[supreme]")
 {
-    const int GateCount1Qb = 3;
+    const int GateCount1Qb = 4;
     const int GateCount2Qb = 3;
     const int Depth = 20;
 
@@ -494,6 +494,8 @@ TEST_CASE("test_solved_circuit", "[supreme]")
                     qReg->X(i);
                 } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
                     qReg->Y(i);
+                } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                    qReg->H(i);
                 } else {
                     qReg->PhaseRootN(4U, i);
                 }
