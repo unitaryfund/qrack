@@ -473,9 +473,9 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_universal_circuit", "[supreme]")
+TEST_CASE("test_solved_universal_circuit", "[supreme]")
 {
-    const int GateCount1Qb = 4;
+    const int GateCount1Qb = 3;
     const int GateCount2Qb = 3;
     const int Depth = 20;
 
@@ -486,18 +486,26 @@ TEST_CASE("test_universal_circuit", "[supreme]")
         real1 gateRand;
         bitLenInt bitRand, b1, b2;
 
+        complex polar0, polar1;
+        real1 angleRand;
+
+        bitLenInt controls[1];
+
         for (d = 0; d < Depth; d++) {
 
             for (i = 0; i < n; i++) {
                 gateRand = qReg->Rand();
                 if (gateRand < (ONE_R1 / GateCount1Qb)) {
-                    qReg->X(i);
-                } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                    qReg->Y(i);
-                } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
                     qReg->H(i);
                 } else {
-                    qReg->PhaseRootN(4U, i);
+                    angleRand = 2 * M_PI * qReg->Rand();
+                    polar0 = std::polar(ONE_R1, angleRand);
+
+                    if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                        qReg->ApplySinglePhase(ONE_CMPLX, polar0, false, i);
+                    } else {
+                        qReg->ApplySingleInvert(ONE_CMPLX, polar0, false, i);
+                    }
                 }
             }
 
@@ -530,10 +538,18 @@ TEST_CASE("test_universal_circuit", "[supreme]")
                 gateRand = qReg->Rand();
                 if (gateRand < (ONE_R1 / GateCount2Qb)) {
                     qReg->Swap(b1, b2);
-                } else if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
-                    qReg->CNOT(b1, b2);
                 } else {
-                    qReg->CY(b1, b2);
+                    controls[0] = b1;
+                    angleRand = 2 * M_PI * qReg->Rand();
+                    polar0 = std::polar(ONE_R1, angleRand);
+                    angleRand = 2 * M_PI * qReg->Rand();
+                    polar1 = std::polar(ONE_R1, angleRand);
+
+                    if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
+                        qReg->ApplyControlledSinglePhase(controls, 1U, b2, polar0, polar1);
+                    } else {
+                        qReg->ApplyControlledSingleInvert(controls, 1U, b2, polar0, polar1);
+                    }
                 }
             }
         }
