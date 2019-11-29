@@ -4378,7 +4378,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
 {
     // Using any gate in this test, with a control index array of length 0 or 1, with any phase arguments, should
-    // form a classically "efficient" algebra for QUnit.
+    // form a universal algebra for QUnit.
 
     bitLenInt controls[1] = { 1U };
 

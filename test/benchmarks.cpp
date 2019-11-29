@@ -473,89 +473,91 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_solved_universal_circuit", "[supreme]")
+TEST_CASE("test_universal_circuit", "[supreme]")
 {
     const int GateCount1Qb = 3;
     const int GateCount2Qb = 3;
     const int Depth = 20;
 
-    benchmarkLoop([&](QInterfacePtr qReg, int n) {
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, int n) {
 
-        int d;
-        bitLenInt i;
-        real1 gateRand;
-        bitLenInt bitRand, b1, b2;
+            int d;
+            bitLenInt i;
+            real1 gateRand;
+            bitLenInt bitRand, b1, b2;
 
-        complex polar0, polar1;
-        real1 angleRand;
+            complex polar0, polar1;
+            real1 angleRand;
 
-        bitLenInt controls[1];
+            bitLenInt controls[1];
 
-        for (d = 0; d < Depth; d++) {
+            for (d = 0; d < Depth; d++) {
 
-            for (i = 0; i < n; i++) {
-                gateRand = qReg->Rand();
-                if (gateRand < (ONE_R1 / GateCount1Qb)) {
-                    qReg->H(i);
-                } else {
-                    angleRand = 2 * M_PI * qReg->Rand();
-                    polar0 = std::polar(ONE_R1, angleRand);
-
-                    if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        qReg->ApplySinglePhase(ONE_CMPLX, polar0, false, i);
+                for (i = 0; i < n; i++) {
+                    gateRand = qReg->Rand();
+                    if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                        qReg->H(i);
                     } else {
-                        qReg->ApplySingleInvert(ONE_CMPLX, polar0, false, i);
+                        angleRand = 2 * M_PI * qReg->Rand();
+                        polar0 = std::polar(ONE_R1, angleRand);
+
+                        if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                            qReg->ApplySinglePhase(ONE_CMPLX, polar0, false, i);
+                        } else {
+                            qReg->ApplySingleInvert(ONE_CMPLX, polar0, false, i);
+                        }
+                    }
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                std::set<bitLenInt>::iterator bitIterator;
+                while (unusedBits.size() > 1) {
+
+                    bitIterator = unusedBits.begin();
+                    bitRand = unusedBits.size() * qReg->Rand();
+                    if (bitRand >= unusedBits.size()) {
+                        bitRand = unusedBits.size() - 1;
+                    }
+                    std::advance(bitIterator, bitRand);
+                    b1 = *bitIterator;
+                    unusedBits.erase(bitIterator);
+
+                    bitIterator = unusedBits.begin();
+                    bitRand = unusedBits.size() * qReg->Rand();
+                    if (bitRand >= unusedBits.size()) {
+                        bitRand = unusedBits.size() - 1;
+                    }
+                    std::advance(bitIterator, bitRand);
+                    b2 = *bitIterator;
+                    unusedBits.erase(bitIterator);
+
+                    gateRand = qReg->Rand();
+                    if (gateRand < (ONE_R1 / GateCount2Qb)) {
+                        qReg->Swap(b1, b2);
+                    } else {
+                        controls[0] = b1;
+                        angleRand = 2 * M_PI * qReg->Rand();
+                        polar0 = std::polar(ONE_R1, angleRand);
+                        angleRand = 2 * M_PI * qReg->Rand();
+                        polar1 = std::polar(ONE_R1, angleRand);
+
+                        if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
+                            qReg->ApplyControlledSinglePhase(controls, 1U, b2, polar0, polar1);
+                        } else {
+                            qReg->ApplyControlledSingleInvert(controls, 1U, b2, polar0, polar1);
+                        }
                     }
                 }
             }
 
-            std::set<bitLenInt> unusedBits;
-            for (i = 0; i < n; i++) {
-                unusedBits.insert(unusedBits.end(), i);
-            }
-
-            std::set<bitLenInt>::iterator bitIterator;
-            while (unusedBits.size() > 1) {
-
-                bitIterator = unusedBits.begin();
-                bitRand = unusedBits.size() * qReg->Rand();
-                if (bitRand >= unusedBits.size()) {
-                    bitRand = unusedBits.size() - 1;
-                }
-                std::advance(bitIterator, bitRand);
-                b1 = *bitIterator;
-                unusedBits.erase(bitIterator);
-
-                bitIterator = unusedBits.begin();
-                bitRand = unusedBits.size() * qReg->Rand();
-                if (bitRand >= unusedBits.size()) {
-                    bitRand = unusedBits.size() - 1;
-                }
-                std::advance(bitIterator, bitRand);
-                b2 = *bitIterator;
-                unusedBits.erase(bitIterator);
-
-                gateRand = qReg->Rand();
-                if (gateRand < (ONE_R1 / GateCount2Qb)) {
-                    qReg->Swap(b1, b2);
-                } else {
-                    controls[0] = b1;
-                    angleRand = 2 * M_PI * qReg->Rand();
-                    polar0 = std::polar(ONE_R1, angleRand);
-                    angleRand = 2 * M_PI * qReg->Rand();
-                    polar1 = std::polar(ONE_R1, angleRand);
-
-                    if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
-                        qReg->ApplyControlledSinglePhase(controls, 1U, b2, polar0, polar1);
-                    } else {
-                        qReg->ApplyControlledSingleInvert(controls, 1U, b2, polar0, polar1);
-                    }
-                }
-            }
-        }
-
-        qReg->MReg(0, n);
-    });
+            qReg->MReg(0, n);
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
