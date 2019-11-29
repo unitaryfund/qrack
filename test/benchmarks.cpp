@@ -494,7 +494,7 @@ TEST_CASE("test_solved_universal_circuit", "[supreme]")
                     qReg->X(i);
                 } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
                     qReg->Y(i);
-                } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
                     qReg->H(i);
                 } else {
                     qReg->PhaseRootN(4U, i);
