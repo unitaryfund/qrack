@@ -20,7 +20,7 @@
 #include "qfactory.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
-#define QRACK_TEST_EPSILON 0.5
+#define QRACK_TEST_EPSILON 0.9
 
 /*
  * Default engine type to run the tests with. Global because catch doesn't
