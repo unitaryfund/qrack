@@ -1144,6 +1144,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
+    // if (!freezeBasis) {
+    //    tShard.AddInversionAngles(&cShard, 0, 0);
+    //    return;
+    //}
+
     RevertBasis2Qb(control);
     RevertBasis2Qb(target);
 
@@ -1350,6 +1355,12 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     const complex topRight, const complex bottomLeft)
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
+
+        // if (!freezeBasis && (controlLen == 1U)) {
+        //    shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)(2 * arg(topRight)), (real1)(2 *
+        //    arg(bottomLeft))); return;
+        //}
+
         CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
             ApplySingleInvert(topRight, bottomLeft, true, target), false);
     }

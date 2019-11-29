@@ -168,7 +168,8 @@ struct QEngineShard {
         // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
         // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
         ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
-        if ((controlShard != controlsShards.end()) && (abs(controlShard->second.angle0) < (4 * M_PI * min_norm))) {
+        if (!targetOfShards[control].isInvert && (controlShard != controlsShards.end()) &&
+            (abs(controlShard->second.angle0) < (4 * M_PI * min_norm))) {
             nAngle1 += controlShard->second.angle1;
             RemovePhaseTarget(control);
         }
@@ -186,7 +187,8 @@ struct QEngineShard {
             nAngle1 -= 4 * M_PI;
         }
 
-        if ((abs(nAngle0) < (4 * M_PI * min_norm)) && (abs(nAngle1) < (4 * M_PI * min_norm))) {
+        if (!targetOfShards[control].isInvert && (abs(nAngle0) < (4 * M_PI * min_norm)) &&
+            (abs(nAngle1) < (4 * M_PI * min_norm))) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
@@ -196,6 +198,13 @@ struct QEngineShard {
             targetOfShards[control].angle1 = nAngle1;
             control->controlsShards[this].angle1 = nAngle1;
         }
+    }
+
+    void AddInversionAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
+    {
+        targetOfShards[control].isInvert = !targetOfShards[control].isInvert;
+        control->controlsShards[this].isInvert = !control->controlsShards[this].isInvert;
+        AddPhaseAngles(control, angle0Diff, angle1Diff);
     }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
