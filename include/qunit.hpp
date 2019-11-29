@@ -215,6 +215,18 @@ struct QEngineShard {
         AddPhaseAngles(control, angle0Diff, angle1Diff);
     }
 
+    bool isInvertControl()
+    {
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            if (phaseShard->second.isInvert) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
     /// commute, instead of incurring the cost of applying the buffers.
     void FlipPhaseAnti()
