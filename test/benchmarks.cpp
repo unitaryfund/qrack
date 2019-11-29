@@ -487,26 +487,16 @@ TEST_CASE("test_universal_circuit", "[supreme]")
             real1 gateRand;
             bitLenInt bitRand, b1, b2;
 
-            complex polar0, polar1;
-            real1 angleRand;
-
-            bitLenInt controls[1];
-
             for (d = 0; d < Depth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                        qReg->ApplySinglePhase(ONE_CMPLX, 2 * M_PI * qReg->Rand(), false, i);
                     } else {
-                        angleRand = 2 * M_PI * qReg->Rand();
-                        polar0 = std::polar(ONE_R1, angleRand);
-
-                        if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                            qReg->ApplySinglePhase(ONE_CMPLX, polar0, false, i);
-                        } else {
-                            qReg->ApplySingleInvert(ONE_CMPLX, polar0, false, i);
-                        }
+                        qReg->ApplySingleInvert(ONE_CMPLX, 2 * M_PI * qReg->Rand(), false, i);
                     }
                 }
 
@@ -539,18 +529,10 @@ TEST_CASE("test_universal_circuit", "[supreme]")
                     gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount2Qb)) {
                         qReg->Swap(b1, b2);
+                    } else if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
+                        qReg->CZ(b1, b2);
                     } else {
-                        controls[0] = b1;
-                        angleRand = 2 * M_PI * qReg->Rand();
-                        polar0 = std::polar(ONE_R1, angleRand);
-                        angleRand = 2 * M_PI * qReg->Rand();
-                        polar1 = std::polar(ONE_R1, angleRand);
-
-                        if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
-                            qReg->ApplyControlledSinglePhase(controls, 1U, b2, polar0, polar1);
-                        } else {
-                            qReg->ApplyControlledSingleInvert(controls, 1U, b2, polar0, polar1);
-                        }
+                        qReg->CNOT(b1, b2);
                     }
                 }
             }

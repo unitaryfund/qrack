@@ -4377,10 +4377,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
 {
-    // Using any gate in this test, with a control index array of length 0 or 1, with any phase arguments, should
-    // form a universal algebra for QUnit.
-
-    bitLenInt controls[1] = { 1U };
+    // Using any gate in this test, with any phase arguments, should form a universal algebra.
 
     qftReg->SetPermutation(0);
 
@@ -4391,11 +4388,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
 
     qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, false, 1);
     qftReg->H(0);
-    qftReg->ApplyControlledSinglePhase(controls, 1U, 0, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->CZ(1, 0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 2));
 
-    qftReg->ApplyControlledSingleInvert(controls, 1U, 0, ONE_CMPLX, ONE_CMPLX);
+    qftReg->CNOT(1, 0);
     qftReg->MReg(0, 20);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
