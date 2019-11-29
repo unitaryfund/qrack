@@ -202,8 +202,16 @@ struct QEngineShard {
 
     void AddInversionAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
     {
-        targetOfShards[control].isInvert = !targetOfShards[control].isInvert;
-        control->controlsShards[this].isInvert = !control->controlsShards[this].isInvert;
+        MakePhaseControlledBy(control);
+
+        PhaseShard& targetOfShard = targetOfShards[control];
+        targetOfShard.isInvert = !targetOfShard.isInvert;
+        std::swap(targetOfShard.angle0, targetOfShard.angle1);
+
+        PhaseShard& controlShard = control->controlsShards[this];
+        controlShard.isInvert = !controlShard.isInvert;
+        std::swap(controlShard.angle0, controlShard.angle1);
+
         AddPhaseAngles(control, angle0Diff, angle1Diff);
     }
 

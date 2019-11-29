@@ -1136,11 +1136,6 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-    complex topRight = ONE_R1;
-    complex bottomLeft = ONE_R1;
-
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
@@ -1148,6 +1143,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     //    tShard.AddInversionAngles(&cShard, 0, 0);
     //    return;
     //}
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+    complex topRight = ONE_R1;
+    complex bottomLeft = ONE_R1;
 
     RevertBasis2Qb(control);
     RevertBasis2Qb(target);
@@ -2742,6 +2742,9 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
 
 QInterfacePtr QUnit::Clone()
 {
+    bitLenInt i;
+    ShardToPhaseMap::iterator phaseShard;
+
     EndAllEmulation();
 
     QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
@@ -2751,7 +2754,7 @@ QInterfacePtr QUnit::Clone()
     std::vector<QInterfacePtr> dupeEngines;
     std::vector<QInterfacePtr>::iterator origEngine;
     bitLenInt engineIndex;
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (i = 0; i < qubitCount; i++) {
         if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
             shardEngines.push_back(shards[i].unit);
             dupeEngines.push_back(shards[i].unit->Clone());
@@ -2762,6 +2765,22 @@ QInterfacePtr QUnit::Clone()
 
         copyPtr->shards[i] = QEngineShard(shards[i]);
         copyPtr->shards[i].unit = dupeEngines[engineIndex];
+    }
+
+    for (i = 0; i < qubitCount; i++) {
+        ShardToPhaseMap targetOfShards;
+        for (phaseShard = copyPtr->shards[i].targetOfShards.begin();
+             phaseShard != copyPtr->shards[i].targetOfShards.end(); phaseShard++) {
+            targetOfShards[&(copyPtr->shards[FindShardIndex(*(phaseShard->first))])] = phaseShard->second;
+        }
+        copyPtr->shards[i].targetOfShards = targetOfShards;
+
+        ShardToPhaseMap controlsShards;
+        for (phaseShard = copyPtr->shards[i].controlsShards.begin();
+             phaseShard != copyPtr->shards[i].controlsShards.end(); phaseShard++) {
+            controlsShards[&(copyPtr->shards[FindShardIndex(*(phaseShard->first))])] = phaseShard->second;
+        }
+        copyPtr->shards[i].controlsShards = controlsShards;
     }
 
     return copyPtr;
