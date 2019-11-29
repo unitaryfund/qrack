@@ -4374,3 +4374,28 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
+{
+    // Using any gate in this test, with a control index array of length 0 or 1, with any phase arguments, should
+    // form a classically "efficient" algebra for QUnit.
+
+    bitLenInt controls[1] = { 1U };
+
+    qftReg->SetPermutation(0);
+
+    qftReg->H(0);
+    qftReg->ApplySinglePhase(ONE_CMPLX, -ONE_CMPLX, false, 0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+
+    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, false, 1);
+    qftReg->H(0);
+    qftReg->ApplyControlledSinglePhase(controls, 1U, 0, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 2));
+
+    qftReg->ApplyControlledSingleInvert(controls, 1U, 0, ONE_CMPLX, ONE_CMPLX);
+    qftReg->MReg(0, 20);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+}
