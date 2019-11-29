@@ -17,6 +17,8 @@
 
 #include "qinterface.hpp"
 
+#define ANGLE_MIN_NORM (4 * M_PI * min_norm)
+
 namespace Qrack {
 
 // "PhaseShard" optimizations are basically just a very specific "gate fusion" type optimization, where multiple gates
@@ -169,7 +171,7 @@ struct QEngineShard {
         // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
         ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
         if (!targetOfShards[control].isInvert && (controlShard != controlsShards.end()) &&
-            (abs(controlShard->second.angle0) < (4 * M_PI * min_norm))) {
+            (abs(controlShard->second.angle0) < ANGLE_MIN_NORM)) {
             nAngle1 += controlShard->second.angle1;
             RemovePhaseTarget(control);
         }
@@ -187,8 +189,7 @@ struct QEngineShard {
             nAngle1 -= 4 * M_PI;
         }
 
-        if (!targetOfShards[control].isInvert && (abs(nAngle0) < (4 * M_PI * min_norm)) &&
-            (abs(nAngle1) < (4 * M_PI * min_norm))) {
+        if (!targetOfShards[control].isInvert && (abs(nAngle0) < ANGLE_MIN_NORM) && (abs(nAngle1) < ANGLE_MIN_NORM)) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
