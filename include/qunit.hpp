@@ -231,30 +231,36 @@ struct QEngineShard {
             }
         }
 
+        bool didFlip;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
             polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+            didFlip = false;
             if (norm(polar0 - polar1) < min_norm) {
                 if (phaseShard->second.isInvert) {
-                    // targetsOfToFlip.push_back(phaseShard);
-                    return false;
+                    polar0 = (polar0 + polar1) / (2 * ONE_R1);
+                    polar1 = -polar0;
+                    didFlip = true;
                 }
             } else if (norm(polar0 + polar1) < min_norm) {
                 if (!phaseShard->second.isInvert) {
                     polar0 = (polar0 + polar1) / (2 * ONE_R1);
                     polar1 = polar0;
-
-                    phaseShard->second.isInvert = !phaseShard->second.isInvert;
-                    phaseShard->second.angle0 = ((2 * ONE_R1) * arg(polar0));
-                    phaseShard->second.angle1 = ((2 * ONE_R1) * arg(polar1));
-
-                    PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
-                    remotePhase.isInvert = !remotePhase.isInvert;
-                    remotePhase.angle0 = phaseShard->second.angle0;
-                    remotePhase.angle1 = phaseShard->second.angle1;
+                    didFlip = true;
                 }
             } else {
                 return false;
+            }
+
+            if (didFlip) {
+                phaseShard->second.isInvert = !phaseShard->second.isInvert;
+                phaseShard->second.angle0 = ((2 * ONE_R1) * arg(polar0));
+                phaseShard->second.angle1 = ((2 * ONE_R1) * arg(polar1));
+
+                PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
+                remotePhase.isInvert = !remotePhase.isInvert;
+                remotePhase.angle0 = phaseShard->second.angle0;
+                remotePhase.angle1 = phaseShard->second.angle1;
             }
         }
 
