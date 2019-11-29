@@ -473,7 +473,7 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_solved_universal_circuit", "[supreme]")
+TEST_CASE("test_universal_circuit", "[supreme]")
 {
     const int GateCount1Qb = 4;
     const int GateCount2Qb = 3;
