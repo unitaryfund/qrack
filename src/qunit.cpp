@@ -976,8 +976,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    PopHBasis2Qb(target);
-
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -991,8 +989,6 @@ void QUnit::Z(bitLenInt target)
 {
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
-
-    PopHBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(shard)) {
@@ -1306,13 +1302,13 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     bitLenInt target = cTarget;
 
     if (IS_POSITIVE_REAL(topLeft)) {
-        if (CACHED_ZERO(shards[target])) {
+        if ((controlLen == 1U) && IS_POSITIVE_REAL(-bottomRight)) {
+            CZ(controls[0], target);
             delete[] controls;
             return;
         }
 
-        if ((controlLen == 1U) && IS_POSITIVE_REAL(-bottomRight)) {
-            CZ(controls[0], target);
+        if (CACHED_ZERO(shards[target])) {
             delete[] controls;
             return;
         }
@@ -1336,7 +1332,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     QEngineShard& cShard = shards[controls[0]];
 
     if (!freezeBasis || (controlLen != 1U)) {
-        PopHBasis2Qb(target);
         for (bitLenInt i = 0; i < controlLen; i++) {
             PopHBasis2Qb(controls[i]);
         }
