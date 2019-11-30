@@ -486,6 +486,8 @@ TEST_CASE("test_universal_circuit", "[supreme]")
             bitLenInt i;
             real1 gateRand;
             bitLenInt bitRand, b1, b2;
+            bitLenInt control[1];
+            complex polar0, polar1;
 
             for (d = 0; d < Depth; d++) {
 
@@ -529,10 +531,15 @@ TEST_CASE("test_universal_circuit", "[supreme]")
                     gateRand = qReg->Rand();
                     if (gateRand < (ONE_R1 / GateCount2Qb)) {
                         qReg->Swap(b1, b2);
-                    } else if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
-                        qReg->CZ(b1, b2);
                     } else {
-                        qReg->CNOT(b1, b2);
+                        control[0] = b1;
+                        polar0 = std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand()));
+                        polar1 = (qReg->Rand() < (ONE_R1 / 2)) ? polar0 : -polar0;
+                        if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
+                            qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, polar1);
+                        } else {
+                            qReg->ApplyControlledSingleInvert(control, 1U, b2, polar0, polar1);
+                        }
                     }
                 }
             }
