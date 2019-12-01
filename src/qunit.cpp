@@ -1189,45 +1189,9 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if ((CACHED_1QB(control1) && (Prob(control1) < min_norm)) ||
-        (CACHED_1QB(control2) && (Prob(control2) < min_norm))) {
-        return;
-    }
-
-    if ((CACHED_1QB(control1) && ((ONE_R1 - Prob(control1)) < min_norm))) {
-        CNOT(control2, target);
-        return;
-    }
-
-    if ((CACHED_1QB(control2) && ((ONE_R1 - Prob(control2)) < min_norm))) {
-        CNOT(control1, target);
-        return;
-    }
-
-    QEngineShard& c1Shard = shards[control1];
-    QEngineShard& c2Shard = shards[control2];
-    QEngineShard& tShard = shards[target];
-
-    if ((c1Shard.unit == c2Shard.unit) && (c1Shard.unit == tShard.unit)) {
-        tShard.unit->CCNOT(c1Shard.mapped, c2Shard.mapped, tShard.mapped);
-        return;
-    }
-
-    H(target);
-    CNOT(control2, target);
-    IT(target);
-    CNOT(control1, target);
-    T(target);
-    CNOT(control2, target);
-    IT(target);
-    CNOT(control1, target);
-    T(target);
-    T(control2);
-    H(target);
-    CNOT(control1, control2);
-    T(control1);
-    IT(control2);
-    CNOT(control1, control2);
+    bitLenInt controls[2] = { control1, control2 };
+    bitLenInt controlLen = 2;
+    CTRLED2_CALL_WRAP(CCNOT(CTRL_2_ARGS), CNOT(CTRL_1_ARGS), X(target), false);
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
