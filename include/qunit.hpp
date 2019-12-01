@@ -618,11 +618,12 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvertControls = false);
-    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvertControls = false)
+    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& targetInvert = false);
+    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvert = false,
+        const bool& targetInvert = false)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i, onlyInvertControls);
+            RevertBasis2Qb(start + i, onlyInvert, targetInvert);
         }
     }
     void ToPermBasis(const bitLenInt& i)
