@@ -1141,7 +1141,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         if (tShard.isInvertControl()) {
-            RevertBasis2Qb(target, true);
+            RevertBasis2Qb(target, true, false);
         }
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
@@ -1270,6 +1270,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
+    RevertBasis2Qb(target, true, true);
+
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
         if (PHASE_MATTERS(target)) {
@@ -1347,15 +1349,17 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (IS_POSITIVE_REAL(topLeft)) {
-        if ((controlLen == 1U) && IS_POSITIVE_REAL(-bottomRight)) {
-            CZ(controls[0], target);
+        if (CACHED_ZERO(target)) {
             delete[] controls;
             return;
         }
 
-        if (CACHED_ZERO(target)) {
-            delete[] controls;
-            return;
+        if (controlLen == 1U) {
+            if (IS_POSITIVE_REAL(-bottomRight)) {
+                CZ(controls[0], target);
+                delete[] controls;
+                return;
+            }
         }
 
         if (!shards[target].isPlusMinus) {
@@ -1396,7 +1400,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         if (!freezeBasis && (controlLen == 1U)) {
             QEngineShard& tShard = shards[target];
             if (tShard.isInvertControl()) {
-                RevertBasis2Qb(target, true);
+                RevertBasis2Qb(target, true, false);
             }
             tShard.AddInversionAngles(&(shards[controls[0]]), (real1)(2 * arg(topRight)), (real1)(2 * arg(bottomLeft)));
             return;
@@ -2839,7 +2843,7 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
     freezeBasis = false;
 }
 
-void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvertControls)
+void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const bool& targetInvert)
 {
     QEngineShard& shard = shards[i];
 
@@ -2855,12 +2859,15 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvertControls)
 
     ShardToPhaseMap::iterator phaseShard;
     controls[0] = i;
-    ShardToPhaseMap controlsShards = shard.controlsShards;
+    ShardToPhaseMap controlsShards;
+    if (!targetInvert) {
+        controlsShards = shard.controlsShards;
+    }
     while (controlsShards.size() > 0) {
         phaseShard = controlsShards.begin();
         controlsShards.erase(phaseShard);
 
-        if (onlyInvertControls && !phaseShard->second.isInvert) {
+        if (onlyInvert && !phaseShard->second.isInvert) {
             continue;
         }
 
@@ -2901,12 +2908,19 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvertControls)
         shard.RemovePhaseTarget(partner);
     }
 
-    if (onlyInvertControls) {
+    if (targetInvert) {
         return;
     }
 
-    while (shard.targetOfShards.size() > 0) {
-        phaseShard = shard.targetOfShards.begin();
+    ShardToPhaseMap targetOfShards = shard.targetOfShards;
+    while (targetOfShards.size() > 0) {
+        phaseShard = targetOfShards.begin();
+        targetOfShards.erase(phaseShard);
+
+        if (onlyInvert && !phaseShard->second.isInvert) {
+            continue;
+        }
+
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
