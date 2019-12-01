@@ -991,10 +991,10 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    RevertBasis2Qb(target, true, true);
-
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
+
+    shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(target)) {
@@ -1230,13 +1230,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
-    RevertBasis2Qb(target, true, true);
-
     QEngineShard& shard = shards[target];
 
     if (!PHASE_MATTERS(target)) {
         return;
     }
+
+    shard.CommutePhase(topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.

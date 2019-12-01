@@ -240,6 +240,25 @@ struct QEngineShard {
         }
     }
 
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    {
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            if (!phaseShard->second.isInvert) {
+                continue;
+            }
+
+            phaseShard->second.angle0 =
+                2 * std::arg(std::polar(ONE_R1, phaseShard->second.angle0 / 2) * topLeft / bottomRight);
+            phaseShard->second.angle1 =
+                2 * std::arg(std::polar(ONE_R1, phaseShard->second.angle1 / 2) * bottomRight / topLeft);
+
+            PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
+            remotePhase.angle0 = phaseShard->second.angle0;
+            remotePhase.angle1 = phaseShard->second.angle1;
+        }
+    }
+
     bool TryHCommute()
     {
         complex polar0, polar1;
