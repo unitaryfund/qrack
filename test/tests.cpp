@@ -4396,3 +4396,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     qftReg->MReg(0, 20);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
+{
+    qftReg->SetPermutation(2);
+    qftReg->H(0);
+    
+    // This should be equivalent to CZ:
+    qftReg->CNOT(1, 0);
+    qftReg->IS(0);
+    qftReg->CNOT(1, 0);
+    qftReg->S(0);
+    qftReg->S(1);
+
+    qftReg->H(0);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+}
