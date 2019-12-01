@@ -1264,13 +1264,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt target)
 {
+    RevertBasis2Qb(target, true, true);
+
     QEngineShard& shard = shards[target];
 
     if (!PHASE_MATTERS(target)) {
         return;
     }
-
-    RevertBasis2Qb(target, true, true);
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
@@ -2908,7 +2908,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
         shard.RemovePhaseTarget(partner);
     }
 
-    if (targetInvert) {
+    if (onlyInvert && !targetInvert) {
         return;
     }
 

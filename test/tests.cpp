@@ -4401,7 +4401,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
 {
     qftReg->SetPermutation(2);
     qftReg->H(0);
-    
+
     // This should be equivalent to CZ:
     qftReg->CNOT(1, 0);
     qftReg->IS(0);
