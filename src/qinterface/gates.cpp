@@ -203,23 +203,8 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    H(target);
-    CNOT(control2, target);
-    IT(target);
-    CNOT(control1, target);
-    T(target);
-    CNOT(control2, target);
-    IT(target);
-    CNOT(control1, target);
-    T(target);
-    T(control2);
-    H(target);
-    CNOT(control1, control2);
-    IT(control2);
-    T(control1);
-    CNOT(control1, control2);
-    /*bitLenInt controls[2] = { control1, control2 };
-    ApplyControlledSingleInvert(controls, 2, target, ONE_CMPLX, ONE_CMPLX);*/
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyControlledSingleInvert(controls, 2, target, ONE_CMPLX, ONE_CMPLX);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
