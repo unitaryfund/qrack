@@ -1332,6 +1332,20 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
                 delete[] controls;
                 return;
             }
+
+            // This should be equivalent to ApplyControlledSinglePhase:
+            /*if (!freezeBasis && (shards[controls[0]].unit != shards[target].unit)) {
+                complex phaseSqrt = std::sqrt(bottomRight);
+
+                CNOT(controls[0], target);
+                ApplySinglePhase(ONE_CMPLX, ONE_CMPLX / phaseSqrt, true, target);
+                CNOT(controls[0], target);
+                ApplySinglePhase(ONE_CMPLX, phaseSqrt, true, controls[0]);
+                ApplySinglePhase(ONE_CMPLX, phaseSqrt, true, target);
+
+                delete[] controls;
+                return;
+            }*/
         }
 
         if (!shards[target].isPlusMinus) {
