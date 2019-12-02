@@ -489,7 +489,7 @@ TEST_CASE("test_universal_circuit", "[supreme]")
             bitLenInt control[1];
             complex polar0;
             bool canDo3;
-            real1 gateThreshold;
+            int gateThreshold, gateMax;
 
             for (d = 0; d < Depth; d++) {
 
@@ -534,10 +534,16 @@ TEST_CASE("test_universal_circuit", "[supreme]")
                     unusedBits.erase(bitIterator);
 
                     canDo3 = (unusedBits.size() > 0);
-                    gateThreshold = canDo3 ? (3 * ONE_R1 / GateCountMultiQb) : (2 * ONE_R1 / (GateCountMultiQb - 1));
+                    if (canDo3) {
+                        gateThreshold = 3;
+                        gateMax = GateCountMultiQb;
+                    } else {
+                        gateThreshold = 2;
+                        gateMax = GateCountMultiQb - 1;
+                    }
 
                     gateRand = qReg->Rand();
-                    if (gateRand < (ONE_R1 / GateCountMultiQb)) {
+                    if (gateRand < (ONE_R1 / gateMax)) {
                         qReg->Swap(b1, b2);
                     } else if (canDo3 && (gateRand < (2 * ONE_R1 / GateCountMultiQb))) {
                         bitIterator = unusedBits.begin();
@@ -553,7 +559,7 @@ TEST_CASE("test_universal_circuit", "[supreme]")
                     } else {
                         control[0] = b1;
                         polar0 = std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand()));
-                        if (gateRand < gateThreshold) {
+                        if (gateRand < (gateThreshold * ONE_R1 / gateMax)) {
                             qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, -polar0);
                         } else {
                             qReg->ApplyControlledSingleInvert(control, 1U, b2, polar0, polar0);
