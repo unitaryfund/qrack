@@ -1144,13 +1144,13 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (!freezeBasis) {
+    /*if (!freezeBasis) {
         if (tShard.isInvertControl()) {
             RevertBasis2Qb(target, true, false);
         }
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
-    }
+    }*/
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
@@ -1195,6 +1195,24 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     bitLenInt controls[2] = { control1, control2 };
     bitLenInt controlLen = 2;
     CTRLED2_CALL_WRAP(CCNOT(CTRL_2_ARGS), CNOT(CTRL_1_ARGS), X(target), false);
+
+    /* TODO: Use this decomposition if and when efficient:
+    H(target);
+    CNOT(control2, target);
+    IT(target);
+    CNOT(control1, target);
+    T(target);
+    CNOT(control2, target);
+    IT(target);
+    CNOT(control1, target);
+    T(target);
+    T(control2);
+    H(target);
+    CNOT(control1, control2);
+    IT(control2);
+    T(control1);
+    CNOT(control1, control2);
+    */
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1383,14 +1401,14 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     const complex topRight, const complex bottomLeft)
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
-        if (!freezeBasis && (controlLen == 1U)) {
+        /*if (!freezeBasis && (controlLen == 1U)) {
             QEngineShard& tShard = shards[target];
             if (tShard.isInvertControl()) {
                 RevertBasis2Qb(target, true, false);
             }
             tShard.AddInversionAngles(&(shards[controls[0]]), (real1)(2 * arg(topRight)), (real1)(2 * arg(bottomLeft)));
             return;
-        }
+        }*/
 
         CTRLED_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
             ApplySingleInvert(topRight, bottomLeft, true, target), false);

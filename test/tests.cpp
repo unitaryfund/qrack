@@ -4412,4 +4412,30 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     qftReg->H(0);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+
+    // This should be equivalent to a register-spanning CCNOT:
+    const bitLenInt control1 = 16;
+    const bitLenInt control2 = 12;
+    const bitLenInt target = 8;
+    for (bitLenInt i = 0; i < 4; i++) {
+        qftReg->H(target + i);
+        qftReg->CNOT(control2 + i, target + i);
+        qftReg->IT(target + i);
+        qftReg->CNOT(control1 + i, target + i);
+        qftReg->T(target + i);
+        qftReg->CNOT(control2 + i, target + i);
+        qftReg->IT(target + i);
+        qftReg->CNOT(control1 + i, target + i);
+        qftReg->T(target + i);
+        qftReg->T(control2 + i);
+        qftReg->H(target + i);
+        qftReg->CNOT(control1 + i, control2 + i);
+        qftReg->IT(control2 + i);
+        qftReg->T(control1 + i);
+        qftReg->CNOT(control1 + i, control2 + i);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0xCA400));
 }
