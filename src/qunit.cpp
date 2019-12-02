@@ -1241,9 +1241,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    if (QUEUED_PHASE(shard)) {
-        TransformBasis1Qb(false, target);
-    }
     shard.CommutePhase(topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
