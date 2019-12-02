@@ -1197,24 +1197,6 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     bitLenInt controls[2] = { control1, control2 };
     bitLenInt controlLen = 2;
     CTRLED2_CALL_WRAP(CCNOT(CTRL_2_ARGS), CNOT(CTRL_1_ARGS), X(target), false);
-
-    /* TODO: Use this decomposition if and when efficient:
-    H(target);
-    CNOT(control2, target);
-    IT(target);
-    CNOT(control1, target);
-    T(target);
-    CNOT(control2, target);
-    IT(target);
-    CNOT(control1, target);
-    T(target);
-    T(control2);
-    H(target);
-    CNOT(control1, control2);
-    IT(control2);
-    T(control1);
-    CNOT(control1, control2);
-    */
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
