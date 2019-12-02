@@ -476,7 +476,7 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 TEST_CASE("test_universal_circuit", "[supreme]")
 {
     const int GateCount1Qb = 3;
-    const int GateCount2Qb = 3;
+    const int GateCountMultiQb = 4;
     const int Depth = 20;
 
     benchmarkLoop(
@@ -485,9 +485,11 @@ TEST_CASE("test_universal_circuit", "[supreme]")
             int d;
             bitLenInt i;
             real1 gateRand;
-            bitLenInt bitRand, b1, b2;
+            bitLenInt bitRand, b1, b2, b3;
             bitLenInt control[1];
             complex polar0;
+            bool canDo3;
+            real1 gateThreshold;
 
             for (d = 0; d < Depth; d++) {
 
@@ -531,13 +533,27 @@ TEST_CASE("test_universal_circuit", "[supreme]")
                     b2 = *bitIterator;
                     unusedBits.erase(bitIterator);
 
+                    canDo3 = (unusedBits.size() > 0);
+                    gateThreshold = canDo3 ? (3 * ONE_R1 / GateCountMultiQb) : (2 * ONE_R1 / (GateCountMultiQb - 1));
+
                     gateRand = qReg->Rand();
-                    if (gateRand < (ONE_R1 / GateCount2Qb)) {
+                    if (gateRand < (ONE_R1 / GateCountMultiQb)) {
                         qReg->Swap(b1, b2);
+                    } else if (canDo3 && (gateRand < (2 * ONE_R1 / GateCountMultiQb))) {
+                        bitIterator = unusedBits.begin();
+                        bitRand = unusedBits.size() * qReg->Rand();
+                        if (bitRand >= unusedBits.size()) {
+                            bitRand = unusedBits.size() - 1;
+                        }
+                        std::advance(bitIterator, bitRand);
+                        b3 = *bitIterator;
+                        unusedBits.erase(bitIterator);
+
+                        qReg->CCNOT(b1, b2, b3);
                     } else {
                         control[0] = b1;
                         polar0 = std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand()));
-                        if (gateRand < (2 * ONE_R1 / GateCount2Qb)) {
+                        if (gateRand < gateThreshold) {
                             qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, -polar0);
                         } else {
                             qReg->ApplyControlledSingleInvert(control, 1U, b2, polar0, polar0);
