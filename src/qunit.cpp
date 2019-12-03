@@ -1192,8 +1192,25 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
-    bitLenInt controlLen = 2;
-    CTRLED2_CALL_WRAP(CCNOT(CTRL_2_ARGS), CNOT(CTRL_1_ARGS), X(target), false);
+
+    ApplyEitherControlled(controls, 2, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                if (mappedControls.size() == 2) {
+                    unit->ApplyControlledSinglePhase(
+                        &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+                } else {
+                    unit->CZ(CTRL_1_ARGS);
+                }
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->CCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->CNOT(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { X(target); });
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)

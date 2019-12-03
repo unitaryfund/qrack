@@ -362,6 +362,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
     REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
     qftReg->CCNOT(16, 12, 8, 4);
     REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0, 3);
+    qftReg->CCNOT(0, 1, 2);
+    qftReg->H(2);
+    qftReg->ApplyControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
