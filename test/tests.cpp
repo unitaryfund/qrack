@@ -380,6 +380,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
     REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
     qftReg->AntiCCNOT(16, 12, 8, 4);
     REQUIRE_THAT(qftReg, HasProbability(0xCAD00));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 3);
+    qftReg->AntiCCNOT(0, 1, 2);
+    qftReg->H(2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")

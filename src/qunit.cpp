@@ -1069,16 +1069,6 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         },                                                                                                             \
         [&]() { bare; });
 
-#define CTRLED2_CALL_WRAP(ctrld2, ctrld1, bare, anti)                                                                  \
-    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
-            if (mappedControls.size() == 2) {                                                                          \
-                unit->ctrld2;                                                                                          \
-            } else {                                                                                                   \
-                unit->ctrld1;                                                                                          \
-            }                                                                                                          \
-        },                                                                                                             \
-        [&]() { bare; })
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
         return;                                                                                                        \
@@ -1216,8 +1206,21 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
-    bitLenInt controlLen = 2;
-    CTRLED2_CALL_WRAP(AntiCCNOT(CTRL_2_ARGS), AntiCNOT(CTRL_1_ARGS), X(target), true);
+
+    ApplyEitherControlled(controls, 2, { target }, true,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                unit->ApplyAntiControlledSinglePhase(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->AntiCCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->AntiCNOT(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { X(target); });
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
