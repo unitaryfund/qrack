@@ -162,7 +162,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     }
 
     if (shards[0].unit->GetQubitCount() > 1) {
-        if (abs(ONE_R1 - norm(result)) < min_norm) {
+        if (norm(result) >= (ONE_R1 - min_norm)) {
             SetPermutation(perm);
         }
     }
