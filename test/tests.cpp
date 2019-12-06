@@ -362,6 +362,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
     REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
     qftReg->CCNOT(16, 12, 8, 4);
     REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0, 3);
+    qftReg->CCNOT(0, 1, 2);
+    qftReg->H(2);
+    qftReg->ApplyControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
@@ -370,6 +380,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
     REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
     qftReg->AntiCCNOT(16, 12, 8, 4);
     REQUIRE_THAT(qftReg, HasProbability(0xCAD00));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 3);
+    qftReg->AntiCCNOT(0, 1, 2);
+    qftReg->H(2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
@@ -4373,4 +4393,69 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
+{
+    // Using any gate in this test, with any phase arguments, should form a universal algebra.
+
+    qftReg->SetPermutation(0);
+
+    qftReg->H(0);
+    qftReg->ApplySinglePhase(ONE_CMPLX, -ONE_CMPLX, false, 0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+
+    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, false, 1);
+    qftReg->H(0);
+    qftReg->CZ(1, 0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 2));
+
+    qftReg->CNOT(1, 0);
+    qftReg->MReg(0, 20);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
+{
+    qftReg->SetPermutation(2);
+    qftReg->H(0);
+
+    // This should be equivalent to CZ:
+    qftReg->CNOT(1, 0);
+    qftReg->IS(0);
+    qftReg->CNOT(1, 0);
+    qftReg->S(0);
+    qftReg->S(1);
+
+    qftReg->H(0);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+
+    // This should be equivalent to a register-spanning CCNOT:
+    const bitLenInt control1 = 16;
+    const bitLenInt control2 = 12;
+    const bitLenInt target = 8;
+    for (bitLenInt i = 0; i < 4; i++) {
+        qftReg->H(target + i);
+        qftReg->CNOT(control2 + i, target + i);
+        qftReg->IT(target + i);
+        qftReg->CNOT(control1 + i, target + i);
+        qftReg->T(target + i);
+        qftReg->CNOT(control2 + i, target + i);
+        qftReg->IT(target + i);
+        qftReg->CNOT(control1 + i, target + i);
+        qftReg->T(target + i);
+        qftReg->T(control2 + i);
+        qftReg->H(target + i);
+        qftReg->CNOT(control1 + i, control2 + i);
+        qftReg->IT(control2 + i);
+        qftReg->T(control1 + i);
+        qftReg->CNOT(control1 + i, control2 + i);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0xCA400));
 }

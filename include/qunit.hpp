@@ -228,6 +228,26 @@ struct QEngineShard {
         return false;
     }
 
+    bool isInvertTarget()
+    {
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            if (phaseShard->second.isInvert) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool isInvert()
+    {
+        if (isInvertControl()) {
+            return true;
+        }
+        return isInvertTarget();
+    }
+
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
     /// commute, instead of incurring the cost of applying the buffers.
     void FlipPhaseAnti()
@@ -237,6 +257,25 @@ struct QEngineShard {
             std::swap(phaseShard->second.angle0, phaseShard->second.angle1);
             PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
             std::swap(remotePhase.angle0, remotePhase.angle1);
+        }
+    }
+
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    {
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            if (!phaseShard->second.isInvert) {
+                continue;
+            }
+
+            phaseShard->second.angle0 =
+                2 * std::arg(std::polar(ONE_R1, phaseShard->second.angle0 / 2) * topLeft / bottomRight);
+            phaseShard->second.angle1 =
+                2 * std::arg(std::polar(ONE_R1, phaseShard->second.angle1 / 2) * bottomRight / topLeft);
+
+            PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
+            remotePhase.angle0 = phaseShard->second.angle0;
+            remotePhase.angle1 = phaseShard->second.angle1;
         }
     }
 
@@ -618,11 +657,11 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void RevertBasis2Qb(const bitLenInt& i);
-    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length)
+    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false);
+    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvert = false)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i);
+            RevertBasis2Qb(start + i, onlyInvert);
         }
     }
     void ToPermBasis(const bitLenInt& i)
