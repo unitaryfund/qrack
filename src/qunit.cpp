@@ -1468,12 +1468,40 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
 void QUnit::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    if (norm(mtrx[1]) < min_norm && norm(mtrx[2]) < min_norm) {
+        ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+        return;
+    }
+
+    if (norm(mtrx[0]) < min_norm && norm(mtrx[3]) < min_norm) {
+        ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+        return;
+    }
+
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    if (norm(mtrx[1]) < min_norm && norm(mtrx[2]) < min_norm) {
+        ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+        return;
+    }
+
+    if (norm(mtrx[0]) < min_norm && norm(mtrx[3]) < min_norm) {
+        ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+        return;
+    }
+
     CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true);
 }
 
@@ -2869,13 +2897,11 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert)
                 mtrx[3] = mtrx[0];
             }
 
-            if (!IsIdentity(mtrx, true)) {
-                shards[j].isPlusMinus = false;
-                freezeBasis = true;
-                ApplyControlledSingleBit(controls, 1U, j, mtrx);
-                freezeBasis = false;
-                shards[j].isPlusMinus = true;
-            }
+            shards[j].isPlusMinus = false;
+            freezeBasis = true;
+            ApplyControlledSingleBit(controls, 1U, j, mtrx);
+            freezeBasis = false;
+            shards[j].isPlusMinus = true;
         } else {
             freezeBasis = true;
             if (phaseShard->second.isInvert) {
@@ -2919,13 +2945,11 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert)
                 mtrx[3] = mtrx[0];
             }
 
-            if (!IsIdentity(mtrx, true)) {
-                shards[i].isPlusMinus = false;
-                freezeBasis = true;
-                ApplyControlledSingleBit(controls, 1U, i, mtrx);
-                freezeBasis = false;
-                shards[i].isPlusMinus = true;
-            }
+            shards[i].isPlusMinus = false;
+            freezeBasis = true;
+            ApplyControlledSingleBit(controls, 1U, i, mtrx);
+            freezeBasis = false;
+            shards[i].isPlusMinus = true;
         } else {
             freezeBasis = true;
             if (phaseShard->second.isInvert) {
