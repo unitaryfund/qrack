@@ -42,6 +42,7 @@ struct PhaseShard {
     PhaseShard()
         : angle0(ZERO_R1)
         , angle1(ZERO_R1)
+        , isInvert(false)
     {
     }
 };
