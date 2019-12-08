@@ -112,13 +112,6 @@ struct QEngineShard {
     {
     }
 
-    ~QEngineShard()
-    {
-        if (unit && (mapped == 0)) {
-            unit->Finish();
-        }
-    }
-
     /// Remove another qubit as being a cached control of a phase gate buffer, for "this" as target bit.
     void RemovePhaseControl(QEngineShardPtr p)
     {
@@ -172,7 +165,7 @@ struct QEngineShard {
         // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
         ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
         if (!targetOfShards[control].isInvert && (controlShard != controlsShards.end()) &&
-            (abs(controlShard->second.angle0) < ANGLE_MIN_NORM)) {
+            !controlShard->second.isInvert && (abs(controlShard->second.angle0) < ANGLE_MIN_NORM)) {
             nAngle1 += controlShard->second.angle1;
             RemovePhaseTarget(control);
         }
