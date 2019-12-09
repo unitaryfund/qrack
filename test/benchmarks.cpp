@@ -528,19 +528,19 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                     b1 = pickRandomBit(qReg, &unusedBits);
                     b2 = pickRandomBit(qReg, &unusedBits);
 
-                    gateRand = qReg->Rand();
-
                     if (unusedBits.size() > 0) {
                         maxGates = GateCountMultiQb;
                     } else {
                         maxGates = GateCountMultiQb - 1U;
                     }
 
-                    if (gateRand < (ONE_R1 / maxGates)) {
+                    gateRand = maxGates * qReg->Rand();
+
+                    if (gateRand < ONE_R1) {
                         qReg->Swap(b1, b2);
-                    } else if (gateRand < (2 * ONE_R1 / maxGates)) {
+                    } else if (gateRand < (2 * ONE_R1)) {
                         qReg->CZ(b1, b2);
-                    } else if (maxGates == GateCountMultiQb || (gateRand < (3 * ONE_R1 / maxGates))) {
+                    } else if ((maxGates != GateCountMultiQb) || gateRand < (3 * ONE_R1)) {
                         qReg->CNOT(b1, b2);
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
