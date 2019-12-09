@@ -540,7 +540,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                         qReg->Swap(b1, b2);
                     } else if (gateRand < (2 * ONE_R1)) {
                         qReg->CZ(b1, b2);
-                    } else if ((maxGates != GateCountMultiQb) || gateRand < (3 * ONE_R1)) {
+                    } else if ((unusedBits.size() == 0) || (gateRand < (3 * ONE_R1))) {
                         qReg->CNOT(b1, b2);
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
@@ -566,7 +566,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
             int d;
             bitLenInt i;
             real1 gateRand;
-            bitLenInt bitRand, b1, b2, b3;
+            bitLenInt b1, b2, b3;
             bitLenInt control[1];
             complex polar0;
             bool canDo3;
@@ -593,26 +593,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     unusedBits.insert(unusedBits.end(), i);
                 }
 
-                std::set<bitLenInt>::iterator bitIterator;
                 while (unusedBits.size() > 1) {
-
-                    bitIterator = unusedBits.begin();
-                    bitRand = unusedBits.size() * qReg->Rand();
-                    if (bitRand >= unusedBits.size()) {
-                        bitRand = unusedBits.size() - 1;
-                    }
-                    std::advance(bitIterator, bitRand);
-                    b1 = *bitIterator;
-                    unusedBits.erase(bitIterator);
-
-                    bitIterator = unusedBits.begin();
-                    bitRand = unusedBits.size() * qReg->Rand();
-                    if (bitRand >= unusedBits.size()) {
-                        bitRand = unusedBits.size() - 1;
-                    }
-                    std::advance(bitIterator, bitRand);
-                    b2 = *bitIterator;
-                    unusedBits.erase(bitIterator);
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
 
                     canDo3 = (unusedBits.size() > 0);
                     if (canDo3) {
@@ -627,15 +610,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     if (gateRand < (ONE_R1 / gateMax)) {
                         qReg->Swap(b1, b2);
                     } else if (canDo3 && (gateRand < (2 * ONE_R1 / GateCountMultiQb))) {
-                        bitIterator = unusedBits.begin();
-                        bitRand = unusedBits.size() * qReg->Rand();
-                        if (bitRand >= unusedBits.size()) {
-                            bitRand = unusedBits.size() - 1;
-                        }
-                        std::advance(bitIterator, bitRand);
-                        b3 = *bitIterator;
-                        unusedBits.erase(bitIterator);
-
+                        b3 = pickRandomBit(qReg, &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
                     } else {
                         control[0] = b1;
