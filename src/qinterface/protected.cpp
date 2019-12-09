@@ -200,7 +200,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
     for (p = 0; p < skipPowersCount; p++) {
         iLow = iHigh & (skipPowers[p] - ONE_BCI);
         i |= iLow;
-        iHigh = (iHigh ^ iLow) << 1U;
+        iHigh = (iHigh ^ iLow) << ONE_BCI;
     }
     i |= iHigh;
 
@@ -225,7 +225,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
     // the global phase offset (but shouldn't).
 
-    if ((!randGlobalPhase || isControlled) && (abs(imag(mtrx[0])) > min_norm)) {
+    if ((!randGlobalPhase || isControlled) && (abs(imag(mtrx[0])) >= min_norm)) {
         return false;
     }
 
