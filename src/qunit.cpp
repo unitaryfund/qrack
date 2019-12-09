@@ -1473,14 +1473,17 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-        ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-        return;
-    }
+    // Special case probability checks could disturb (arbitrary) phase
+    if (randGlobalPhase) {
+        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            return;
+        }
 
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-        ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-        return;
+        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+            return;
+        }
     }
 
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
@@ -1493,14 +1496,17 @@ void QUnit::ApplyAntiControlledSingleBit(
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-        ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-        return;
-    }
+    // Special case probability checks could disturb (arbitrary) phase
+    if (randGlobalPhase) {
+        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            return;
+        }
 
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-        ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-        return;
+        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+            return;
+        }
     }
 
     CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true);
