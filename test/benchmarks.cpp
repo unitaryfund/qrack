@@ -473,10 +473,22 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
         true, true, testEngineType == QINTERFACE_QUNIT);
 }
 
+bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
+{
+    std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
+    bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
+    if (bitRand >= unusedBitsPtr->size()) {
+        bitRand = unusedBitsPtr->size() - 1;
+    }
+    std::advance(bitIterator, bitRand);
+    unusedBitsPtr->erase(bitIterator);
+    return *bitIterator;
+}
+
 TEST_CASE("test_universal_circuit_digital", "[supreme]")
 {
     const int GateCount1Qb = 4;
-    const int GateCountMultiQb = 3;
+    const int GateCountMultiQb = 4;
     const int Depth = 20;
 
     benchmarkLoop(
@@ -485,8 +497,9 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
             int d;
             bitLenInt i;
             real1 gateRand;
-            bitLenInt bitRand, b1, b2;
+            bitLenInt b1, b2, b3;
             complex polar0;
+            int maxGates;
 
             for (d = 0; d < Depth; d++) {
 
@@ -511,35 +524,27 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                     unusedBits.insert(unusedBits.end(), i);
                 }
 
-                std::set<bitLenInt>::iterator bitIterator;
                 while (unusedBits.size() > 1) {
-
-                    bitIterator = unusedBits.begin();
-                    bitRand = unusedBits.size() * qReg->Rand();
-                    if (bitRand >= unusedBits.size()) {
-                        bitRand = unusedBits.size() - 1;
-                    }
-                    std::advance(bitIterator, bitRand);
-                    b1 = *bitIterator;
-                    unusedBits.erase(bitIterator);
-
-                    bitIterator = unusedBits.begin();
-                    bitRand = unusedBits.size() * qReg->Rand();
-                    if (bitRand >= unusedBits.size()) {
-                        bitRand = unusedBits.size() - 1;
-                    }
-                    std::advance(bitIterator, bitRand);
-                    b2 = *bitIterator;
-                    unusedBits.erase(bitIterator);
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
 
                     gateRand = qReg->Rand();
 
-                    if (gateRand < (ONE_R1 / GateCountMultiQb)) {
-                        qReg->Swap(b1, b2);
-                    } else if (gateRand < (2 * ONE_R1 / GateCountMultiQb)) {
-                        qReg->CZ(b1, b2);
+                    if (unusedBits.size() > 0) {
+                        maxGates = GateCountMultiQb;
                     } else {
+                        maxGates = GateCountMultiQb - 1U;
+                    }
+
+                    if (gateRand < (ONE_R1 / maxGates)) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateRand < (2 * ONE_R1 / maxGates)) {
+                        qReg->CZ(b1, b2);
+                    } else if (maxGates == GateCountMultiQb || (gateRand < (3 * ONE_R1 / maxGates))) {
                         qReg->CNOT(b1, b2);
+                    } else {
+                        b3 = pickRandomBit(qReg, &unusedBits);
+                        qReg->CCNOT(b1, b2, b3);
                     }
                 }
             }
@@ -582,8 +587,8 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 
                 std::set<bitLenInt> unusedBits;
                 for (i = 0; i < n; i++) {
-                    // TrySeparate hurts average time, in this case, but it majorly benefits statistically common worse
-                    // cases, on these random circuits.
+                    // TrySeparate hurts average time, in this case, but it majorly benefits statistically common
+                    // worse cases, on these random circuits.
                     qReg->TrySeparate(i);
                     unusedBits.insert(unusedBits.end(), i);
                 }
