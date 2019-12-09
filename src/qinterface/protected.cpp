@@ -211,11 +211,11 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((norm(mtrx[1]) >= min_norm) || (norm(mtrx[2]) >= min_norm)) {
+    if ((norm(mtrx[1]) > 0) || (norm(mtrx[2]) > 0)) {
         return false;
     }
 
-    if (norm(mtrx[0] - mtrx[3]) >= min_norm) {
+    if (norm(mtrx[0] - mtrx[3]) > min_norm) {
         return false;
     }
 
@@ -225,7 +225,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
     // the global phase offset (but shouldn't).
 
-    if ((!randGlobalPhase || isControlled) && (abs(imag(mtrx[0])) >= min_norm)) {
+    if ((isControlled || !randGlobalPhase) && (abs(imag(mtrx[0])) > 0)) {
         return false;
     }
 
