@@ -45,7 +45,7 @@
 #define CACHED_ZERO(shardIndex) (CACHED_PROB(shardIndex) && (Prob(shardIndex) < min_norm))
 #define PHASE_MATTERS(shardIndex) (!randGlobalPhase || !CACHED_CLASSICAL(shardIndex))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_POSITIVE_REAL(c) ((abs(imag(c)) < min_norm) && (abs(ONE_R1 - real(c)) < min_norm))
+#define IS_POSITIVE_REAL(c) ((abs(imag(c)) == 0) && (real(c) == ONE_R1))
 
 namespace Qrack {
 
@@ -162,7 +162,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     }
 
     if (shards[0].unit->GetQubitCount() > 1) {
-        if (norm(result) >= (ONE_R1 - min_norm)) {
+        if ((ONE_R1 - norm(result)) < min_norm) {
             SetPermutation(perm);
         }
     }
@@ -678,7 +678,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if (result >= (ONE_R1 - min_norm)) {
+    if ((ONE_R1 - result) < min_norm) {
         SetPermutation(perm);
         return ONE_R1;
     }
@@ -1428,11 +1428,15 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt target)
 {
-    if ((norm(mtrx[1]) < min_norm) && (norm(mtrx[2]) < min_norm)) {
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
         ApplySinglePhase(mtrx[0], mtrx[3], doCalcNorm, target);
         return;
     }
-    if ((norm(mtrx[0]) < min_norm) && (norm(mtrx[3]) < min_norm)) {
+    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
         ApplySingleInvert(mtrx[1], mtrx[2], doCalcNorm, target);
         return;
     }
