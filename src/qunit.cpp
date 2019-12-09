@@ -1085,7 +1085,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if (CACHED_CLASSICAL(controls[i])) {
-            if ((anti && SHARD_STATE(shard) || (!anti && !SHARD_STATE(shard)))) {
+            if ((anti && SHARD_STATE(shard)) || (!anti && !SHARD_STATE(shard))) {
                 return true;
             }
         } else {
