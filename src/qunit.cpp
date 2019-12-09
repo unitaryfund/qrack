@@ -45,7 +45,7 @@
 #define CACHED_ZERO(shardIndex) (CACHED_PROB(shardIndex) && (Prob(shardIndex) < min_norm))
 #define PHASE_MATTERS(shardIndex) (!randGlobalPhase || !CACHED_CLASSICAL(shardIndex))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_POSITIVE_REAL(c) ((imag(c) == 0) && (real(c) == ONE_R1))
+#define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 
 namespace Qrack {
 
@@ -161,10 +161,8 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         result *= qi.first->GetAmplitude(qi.second);
     }
 
-    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1)) {
-        if (norm(result) == ONE_R1) {
-            SetPermutation(perm);
-        }
+    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1)) {
+        SetPermutation(perm);
     }
 
     return result;
@@ -678,10 +676,8 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1)) {
-        if (result == ONE_R1) {
-            SetPermutation(perm);
-        }
+    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1) && (result == ONE_R1)) {
+        SetPermutation(perm);
     }
 
     return clampProb(result);
@@ -1089,7 +1085,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if (CACHED_CLASSICAL(controls[i])) {
-            if ((!anti && !SHARD_STATE(shard)) || (anti && SHARD_STATE(shard))) {
+            if ((anti && SHARD_STATE(shard) || (!anti && !SHARD_STATE(shard)))) {
                 return true;
             }
         } else {
@@ -1320,19 +1316,19 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if (IS_POSITIVE_REAL(bottomRight) && CACHED_ONE(target)) {
+    if (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(target)) {
         delete[] controls;
         return;
     }
 
-    if (IS_POSITIVE_REAL(topLeft)) {
+    if (IS_ONE_CMPLX(topLeft)) {
         if (CACHED_ZERO(target)) {
             delete[] controls;
             return;
         }
 
         if (controlLen == 1U) {
-            if (IS_POSITIVE_REAL(-bottomRight)) {
+            if (IS_ONE_CMPLX(-bottomRight)) {
                 CZ(controls[0], target);
                 delete[] controls;
                 return;
@@ -1406,7 +1402,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((IS_POSITIVE_REAL(topLeft) && CACHED_ZERO(cTarget)) || (IS_POSITIVE_REAL(bottomRight) && CACHED_ONE(cTarget))) {
+    if ((IS_ONE_CMPLX(topLeft) && CACHED_ZERO(cTarget)) || (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(cTarget))) {
         delete[] controls;
         return;
     }

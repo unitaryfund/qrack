@@ -211,15 +211,11 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((norm(mtrx[1]) != 0) || (norm(mtrx[2]) != 0)) {
+    if ((mtrx[0] != mtrx[3]) || (norm(mtrx[1]) != 0) || (norm(mtrx[2]) != 0)) {
         return false;
     }
 
-    if (mtrx[0] != mtrx[3]) {
-        return false;
-    }
-
-    // Now, we now that mtrx[1] and mtrx[2] are effectively 0 and mtrx[0] and mtrx[3] are effectively equal.
+    // Now, we now that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
 
     // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
@@ -229,7 +225,8 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
         return false;
     }
 
-    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
+    // If we haven't returned false by now, we're buffering an identity operator (exactly or up to an arbitrary global
+    // phase factor).
     return true;
 }
 
