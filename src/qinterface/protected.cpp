@@ -215,7 +215,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
         return false;
     }
 
-    if (norm(mtrx[0] - mtrx[3]) > min_norm) {
+    if (norm(mtrx[0] - mtrx[3]) > 0) {
         return false;
     }
 

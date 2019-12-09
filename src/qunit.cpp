@@ -1276,7 +1276,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(target) || (randGlobalPhase && (norm(topRight - bottomLeft) < min_norm))) {
+    if (!PHASE_MATTERS(target) || (randGlobalPhase && (norm(topRight - bottomLeft) == 0))) {
         X(target);
         return;
     }
