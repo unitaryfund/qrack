@@ -211,32 +211,22 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((norm(mtrx[1]) > min_norm) || (norm(mtrx[2]) > min_norm)) {
+    if ((norm(mtrx[1]) >= min_norm) || (norm(mtrx[2]) >= min_norm)) {
         return false;
     }
 
-    if (randGlobalPhase && !isControlled) {
-        // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
-        // the user's purposes.
-        real1 toTest = norm(mtrx[0]);
-        if (toTest < (ONE_R1 - min_norm)) {
-            return false;
-        }
-        toTest = norm(mtrx[0] - mtrx[3]);
-        if (toTest > min_norm) {
-            return false;
-        }
-    } else {
-        // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
-        // offset (but shouldn't).
-        complex toTest = mtrx[0];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
-            return false;
-        }
-        toTest = mtrx[3];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
-            return false;
-        }
+    if (norm(mtrx[0] - mtrx[3]) >= min_norm) {
+        return false;
+    }
+
+    // Now, we now that mtrx[1] and mtrx[2] are effectively 0 and mtrx[0] and mtrx[3] are effectively equal.
+
+    // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
+    // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
+    // the global phase offset (but shouldn't).
+
+    if ((!randGlobalPhase || isControlled) && (abs(imag(mtrx[0])) > min_norm)) {
+        return false;
     }
 
     // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
