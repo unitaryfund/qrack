@@ -45,7 +45,7 @@
 #define CACHED_ZERO(shardIndex) (CACHED_PROB(shardIndex) && (Prob(shardIndex) < min_norm))
 #define PHASE_MATTERS(shardIndex) (!randGlobalPhase || !CACHED_CLASSICAL(shardIndex))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_POSITIVE_REAL(c) ((abs(imag(c)) == 0) && (real(c) == ONE_R1))
+#define IS_POSITIVE_REAL(c) ((imag(c) == 0) && (real(c) == ONE_R1))
 
 namespace Qrack {
 
@@ -162,7 +162,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     }
 
     if (shards[0].unit->GetQubitCount() > 1) {
-        if ((ONE_R1 - norm(result)) < min_norm) {
+        if (norm(result) == ONE_R1) {
             SetPermutation(perm);
         }
     }
@@ -678,9 +678,10 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if ((ONE_R1 - result) < min_norm) {
-        SetPermutation(perm);
-        return ONE_R1;
+    if (shards[0].unit->GetQubitCount() > 1) {
+        if (result == ONE_R1) {
+            SetPermutation(perm);
+        }
     }
 
     return clampProb(result);
@@ -1276,7 +1277,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(target) || (randGlobalPhase && (norm(topRight - bottomLeft) == 0))) {
+    if (!PHASE_MATTERS(target) || (randGlobalPhase && (topRight == bottomLeft))) {
         X(target);
         return;
     }

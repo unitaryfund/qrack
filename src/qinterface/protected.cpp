@@ -71,9 +71,9 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 
     // Diagonal matrices are a special case.
     bool isDiag = true;
-    if (norm(matrix2x2[1]) > min_norm) {
+    if (norm(matrix2x2[1]) != 0) {
         isDiag = false;
-    } else if (norm(matrix2x2[2]) > min_norm) {
+    } else if (norm(matrix2x2[2]) != 0) {
         isDiag = false;
     }
 
@@ -211,11 +211,11 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((norm(mtrx[1]) > 0) || (norm(mtrx[2]) > 0)) {
+    if ((norm(mtrx[1]) != 0) || (norm(mtrx[2]) != 0)) {
         return false;
     }
 
-    if (norm(mtrx[0] - mtrx[3]) > 0) {
+    if (mtrx[0] != mtrx[3]) {
         return false;
     }
 
@@ -225,7 +225,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
     // the global phase offset (but shouldn't).
 
-    if ((isControlled || !randGlobalPhase) && (abs(imag(mtrx[0])) > 0)) {
+    if ((isControlled || !randGlobalPhase) && (imag(mtrx[0]) != 0)) {
         return false;
     }
 
