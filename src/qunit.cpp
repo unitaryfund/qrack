@@ -161,7 +161,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         result *= qi.first->GetAmplitude(qi.second);
     }
 
-    if (shards[0].unit->GetQubitCount() > 1) {
+    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1)) {
         if (norm(result) == ONE_R1) {
             SetPermutation(perm);
         }
@@ -678,7 +678,7 @@ real1 QUnit::ProbAll(bitCapInt perm)
         result *= qi.first->ProbAll(qi.second);
     }
 
-    if (shards[0].unit->GetQubitCount() > 1) {
+    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1)) {
         if (result == ONE_R1) {
             SetPermutation(perm);
         }
