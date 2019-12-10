@@ -71,9 +71,9 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 
     // Diagonal matrices are a special case.
     bool isDiag = true;
-    if (norm(matrix2x2[1]) > min_norm) {
+    if (norm(matrix2x2[1]) != 0) {
         isDiag = false;
-    } else if (norm(matrix2x2[2]) > min_norm) {
+    } else if (norm(matrix2x2[2]) != 0) {
         isDiag = false;
     }
 
@@ -200,7 +200,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
     for (p = 0; p < skipPowersCount; p++) {
         iLow = iHigh & (skipPowers[p] - ONE_BCI);
         i |= iLow;
-        iHigh = (iHigh ^ iLow) << 1U;
+        iHigh = (iHigh ^ iLow) << ONE_BCI;
     }
     i |= iHigh;
 
@@ -211,35 +211,22 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((norm(mtrx[1]) > min_norm) || (norm(mtrx[2]) > min_norm)) {
+    if ((mtrx[0] != mtrx[3]) || (norm(mtrx[1]) != 0) || (norm(mtrx[2]) != 0)) {
         return false;
     }
 
-    if (randGlobalPhase && !isControlled) {
-        // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
-        // the user's purposes.
-        real1 toTest = norm(mtrx[0]);
-        if (toTest < (ONE_R1 - min_norm)) {
-            return false;
-        }
-        toTest = norm(mtrx[0] - mtrx[3]);
-        if (toTest > min_norm) {
-            return false;
-        }
-    } else {
-        // If the global phase offset has not been randomized, user code might explicitly depend on the global phase
-        // offset (but shouldn't).
-        complex toTest = mtrx[0];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
-            return false;
-        }
-        toTest = mtrx[3];
-        if ((real(toTest) < (ONE_R1 - min_norm)) || (abs(imag(toTest)) > min_norm)) {
-            return false;
-        }
+    // Now, we now that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
+
+    // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
+    // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
+    // the global phase offset (but shouldn't).
+
+    if ((isControlled || !randGlobalPhase) && (imag(mtrx[0]) != 0)) {
+        return false;
     }
 
-    // If we haven't returned false by now, we're buffering (approximately or exactly) an identity operator.
+    // If we haven't returned false by now, we're buffering an identity operator (exactly or up to an arbitrary global
+    // phase factor).
     return true;
 }
 
