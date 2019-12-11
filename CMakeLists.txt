@@ -110,7 +110,7 @@ if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
     set(TEST_COMPILE_OPTS -std=c++11 -Wall)
 else (MSVC)
-    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
+    set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
     set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
 endif(MSVC)
 
