@@ -12,7 +12,7 @@ include_directories ("include" "include/common")
 set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops (must be power of 2)")
 
 # Declare the library
-add_library (qrack STATIC
+add_library (qrack SHARED
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
     src/qinterface/arithmetic.cpp
@@ -30,6 +30,8 @@ add_library (qrack STATIC
     src/qfusion.cpp
     src/qunit.cpp
     )
+
+set_target_properties(qrack PROPERTIES VERSION 3.1 SOVERSION 1 PUBLIC_HEADER include/qfactory.hpp)
 
 if (MSVC)
     set(QRACK_LIBS qrack)
@@ -171,7 +173,7 @@ install (FILES
 
 # Install the archive
 install (TARGETS qrack
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
