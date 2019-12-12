@@ -1122,6 +1122,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         RevertBasis2Qb(target, true);
+
+        if (CACHED_ZERO(control)) {
+            return;
+        }
+
         if (cShard.isInvert()) {
             TransformBasis1Qb(false, control);
             RevertBasis2Qb(control, true);
