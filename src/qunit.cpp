@@ -1447,6 +1447,11 @@ void QUnit::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt targe
         ApplySingleInvert(mtrx[1], mtrx[2], doCalcNorm, target);
         return;
     }
+    if ((randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
+        (mtrx[2] == -mtrx[3])) {
+        H(target);
+        return;
+    }
 
     QEngineShard& shard = shards[target];
 
