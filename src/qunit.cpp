@@ -1123,14 +1123,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     if (!freezeBasis) {
         RevertBasis2Qb(target, true);
 
-        if (CACHED_ZERO(control)) {
-            return;
-        }
-
         if (cShard.isInvert()) {
             TransformBasis1Qb(false, control);
             RevertBasis2Qb(control, true);
         }
+
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
     }
@@ -1175,6 +1172,10 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
 
+    if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, false)) {
+        return;
+    }
+
     ApplyEitherControlled(controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
             if (shards[target].isPlusMinus) {
@@ -1198,6 +1199,10 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
+
+    if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, true)) {
+        return;
+    }
 
     ApplyEitherControlled(controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
