@@ -654,34 +654,7 @@ real1 QUnit::Prob(bitLenInt qubit)
     return ProbBase(qubit);
 }
 
-real1 QUnit::ProbAll(bitCapInt perm)
-{
-    ToPermBasisAll();
-    EndAllEmulation();
-
-    real1 result = ONE_R1;
-
-    std::map<QInterfacePtr, bitCapInt> perms;
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (perms.find(shards[i].unit) == perms.end()) {
-            perms[shards[i].unit] = 0U;
-        }
-        if ((perm >> i) & ONE_BCI) {
-            perms[shards[i].unit] |= pow2(shards[i].mapped);
-        }
-    }
-
-    for (auto&& qi : perms) {
-        result *= qi.first->ProbAll(qi.second);
-    }
-
-    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1) && (result == ONE_R1)) {
-        SetPermutation(perm);
-    }
-
-    return clampProb(result);
-}
+real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
