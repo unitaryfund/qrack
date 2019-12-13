@@ -978,10 +978,10 @@ void QUnit::Z(bitLenInt target)
 
 void QUnit::Transform2x2(const complex* mtrxIn, complex* mtrxOut)
 {
-    mtrxOut[0] = (ONE_R1 / 2) * ((mtrxIn[0] + mtrxIn[1]) + (mtrxIn[2] + mtrxIn[3]));
-    mtrxOut[1] = (ONE_R1 / 2) * ((mtrxIn[0] - mtrxIn[1]) + (mtrxIn[2] - mtrxIn[3]));
-    mtrxOut[2] = (ONE_R1 / 2) * ((mtrxIn[0] + mtrxIn[1]) - (mtrxIn[2] + mtrxIn[3]));
-    mtrxOut[3] = (ONE_R1 / 2) * ((mtrxIn[0] - mtrxIn[1]) + (mtrxIn[2] + mtrxIn[3]));
+    mtrxOut[0] = (ONE_R1 / 2) * (mtrxIn[0] + mtrxIn[1] + mtrxIn[2] + mtrxIn[3]);
+    mtrxOut[1] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] + mtrxIn[2] - mtrxIn[3]);
+    mtrxOut[2] = (ONE_R1 / 2) * (mtrxIn[0] + mtrxIn[1] - mtrxIn[2] - mtrxIn[3]);
+    mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] - mtrxIn[2] + mtrxIn[3]);
 }
 
 void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
