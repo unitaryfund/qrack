@@ -1093,7 +1093,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (!freezeBasis) {
+    // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
+    if (randGlobalPhase && !freezeBasis) {
         RevertBasis2Qb(target, true);
 
         if (cShard.isInvert()) {
@@ -1328,19 +1329,22 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    QEngineShard& tShard = shards[target];
-    QEngineShard& cShard = shards[controls[0]];
+    // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
+    if (randGlobalPhase) {
+        QEngineShard& tShard = shards[target];
+        QEngineShard& cShard = shards[controls[0]];
 
-    if (!freezeBasis || (controlLen != 1U)) {
-        for (bitLenInt i = 0; i < controlLen; i++) {
-            PopHBasis2Qb(controls[i]);
+        if (!freezeBasis || (controlLen != 1U)) {
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                PopHBasis2Qb(controls[i]);
+            }
         }
-    }
 
-    if (!freezeBasis && (controlLen == 1U)) {
-        tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
-        delete[] controls;
-        return;
+        if (!freezeBasis && (controlLen == 1U)) {
+            tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
+            delete[] controls;
+            return;
+        }
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
@@ -1353,7 +1357,8 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     const complex topRight, const complex bottomLeft)
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
-        if (!freezeBasis && (controlLen == 1U)) {
+        // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
+        if (randGlobalPhase && !freezeBasis && (controlLen == 1U)) {
             QEngineShard& tShard = shards[target];
             QEngineShard& cShard = shards[controls[0]];
 
