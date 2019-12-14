@@ -1090,10 +1090,19 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
+    if (CACHED_PROB(control)) {
+        if (Prob(control) < min_norm) {
+            return;
+        }
+        if ((ONE_R1 - Prob(control)) < min_norm) {
+            X(target);
+            return;
+        }
+    }
+
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
     if (randGlobalPhase && !freezeBasis) {
         RevertBasis2Qb(target, true);
 
