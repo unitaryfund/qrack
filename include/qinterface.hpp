@@ -140,10 +140,10 @@ protected:
 
     static inline real1 clampProb(real1 toClamp)
     {
-        if (toClamp < min_norm) {
+        if (toClamp < ZERO_R1) {
             toClamp = ZERO_R1;
         }
-        if (toClamp > (ONE_R1 - min_norm)) {
+        if (toClamp > ONE_R1) {
             toClamp = ONE_R1;
         }
         return toClamp;
