@@ -1329,22 +1329,19 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
-    if (randGlobalPhase) {
-        QEngineShard& tShard = shards[target];
-        QEngineShard& cShard = shards[controls[0]];
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[controls[0]];
 
-        if (!freezeBasis || (controlLen != 1U)) {
-            for (bitLenInt i = 0; i < controlLen; i++) {
-                PopHBasis2Qb(controls[i]);
-            }
+    if (!freezeBasis || (controlLen != 1U)) {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            PopHBasis2Qb(controls[i]);
         }
+    }
 
-        if (!freezeBasis && (controlLen == 1U)) {
-            tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
-            delete[] controls;
-            return;
-        }
+    if (!freezeBasis && (controlLen == 1U)) {
+        tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
+        delete[] controls;
+        return;
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
