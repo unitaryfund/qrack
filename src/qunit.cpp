@@ -1103,13 +1103,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (randGlobalPhase && !freezeBasis) {
+    if (!freezeBasis) {
+        TransformBasis1Qb(false, control);
+        RevertBasis2Qb(control, true);
         RevertBasis2Qb(target, true);
-
-        if (cShard.isInvert()) {
-            TransformBasis1Qb(false, control);
-            RevertBasis2Qb(control, true);
-        }
 
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
@@ -1117,9 +1114,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-
-    RevertBasis2Qb(control);
-    RevertBasis2Qb(target);
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
@@ -1363,17 +1357,13 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     const complex topRight, const complex bottomLeft)
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
+
         if (!freezeBasis && (controlLen == 1U)) {
-            QEngineShard& tShard = shards[target];
-            QEngineShard& cShard = shards[controls[0]];
-
+            TransformBasis1Qb(false, controls[0]);
+            RevertBasis2Qb(controls[0], true);
             RevertBasis2Qb(target, true);
-            if (cShard.isInvert()) {
-                TransformBasis1Qb(false, controls[0]);
-                RevertBasis2Qb(controls[0], true);
-            }
 
-            tShard.AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
+            shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
             return;
         }
 
