@@ -1354,8 +1354,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     const complex topRight, const complex bottomLeft)
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
-        // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
-        if (randGlobalPhase && !freezeBasis && (controlLen == 1U)) {
+        if (!freezeBasis && (controlLen == 1U)) {
             QEngineShard& tShard = shards[target];
             QEngineShard& cShard = shards[controls[0]];
 
