@@ -23,10 +23,10 @@ namespace Qrack {
 // are composed into single product gates before application to the state vector, to reduce the total number of gates
 // that need to be applied. Rather than handling this as a "QFusion" layer optimization, which will typically sit
 // BETWEEN a base QEngine set of "shards" and a QUnit that owns them, this particular gate fusion optimization can be
-// amenable to avoiding representational entanglement in QUnit in the first place, which QFusion would not help with.
-// Firstly, another QFusion would have to be in place ABOVE the QUnit layer, (with QEngine "below,") for this to work.
-// Secondly, QFusion is designed to handle more general gate fusion, not specifically controlled phase gates, which are
-// entirely commuting among each other and possibly a jumping-off point for further general "Fourier basis"
+// avoid representational entanglement in QUnit in the first place, which QFusion would not help with. Alternatively,
+// another QFusion would have to be in place ABOVE the QUnit layer, (with QEngine "below,") for this to work.
+// Additionally, QFusion is designed to handle more general gate fusion, not specifically controlled phase gates, which
+// are entirely commuting among each other and possibly a jumping-off point for further general "Fourier basis"
 // optimizations which should probably reside in QUnit, analogous to the |+>/|-> basis changes QUnit takes advantage of
 // for "H" gates.
 
