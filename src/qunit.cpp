@@ -1203,7 +1203,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        tShard.AddPhaseAngles(&cShard, 0, (real1)(2 * M_PI));
+        tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
         return;
     }
 
@@ -1338,7 +1338,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (!freezeBasis && (controlLen == 1U)) {
-        tShard.AddPhaseAngles(&cShard, (real1)(2 * arg(topLeft)), (real1)(2 * arg(bottomRight)));
+        tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
         delete[] controls;
         return;
     }
@@ -1363,7 +1363,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
                 RevertBasis2Qb(controls[0], true);
             }
 
-            tShard.AddInversionAngles(&(shards[controls[0]]), (real1)(2 * arg(topRight)), (real1)(2 * arg(bottomLeft)));
+            tShard.AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
             return;
         }
 
@@ -1461,17 +1461,14 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
-    // Special case probability checks could disturb (arbitrary) phase
-    if (randGlobalPhase) {
-        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
+    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+        ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+        return;
+    }
 
-        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
+    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+        ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+        return;
     }
 
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), false);
@@ -1484,17 +1481,14 @@ void QUnit::ApplyAntiControlledSingleBit(
         return;
     }
 
-    // Special case probability checks could disturb (arbitrary) phase
-    if (randGlobalPhase) {
-        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
+    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+        ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+        return;
+    }
 
-        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
+    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+        ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+        return;
     }
 
     CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, true, target), true);
@@ -2876,8 +2870,8 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert)
         QEngineShard* partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
-        polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+        polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
+        polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
 
         if (shards[j].isPlusMinus) {
             if (phaseShard->second.isInvert) {
@@ -2924,8 +2918,8 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert)
 
         controls[0] = j;
 
-        polar0 = std::polar(ONE_R1, phaseShard->second.angle0 / 2);
-        polar1 = std::polar(ONE_R1, phaseShard->second.angle1 / 2);
+        polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
+        polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
 
         if (shards[i].isPlusMinus) {
             if (phaseShard->second.isInvert) {
