@@ -34,6 +34,10 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
         nrmlzr = ONE_R1 - oneChance;
     }
 
+    if (nrmlzr <= ZERO_R1) {
+        throw "ERROR: Forced a measurement result with 0 probability";
+    }
+
     bitCapInt qPower = pow2(qubit);
     ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
 

@@ -703,8 +703,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
         shard.isEmulated = true;
-        shard.amp0 = result ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
-        shard.amp1 = result ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+        shard.amp0 = result ? ZERO_CMPLX : ONE_CMPLX;
+        shard.amp1 = result ? ONE_CMPLX : ZERO_CMPLX;
 
         /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
         return result;
