@@ -658,6 +658,8 @@ real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
+    RevertBasis2Qb(qubit);
+
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
 
@@ -690,8 +692,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (!doForce && CACHED_CLASSICAL(qubit)) {
-        result = SHARD_STATE(shard);
+    if (CACHED_CLASSICAL(qubit)) {
+        result = doForce ? res : SHARD_STATE(shard);
     } else {
         EndEmulation(qubit);
         result = shard.unit->ForceM(shard.mapped, res, doForce);

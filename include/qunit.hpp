@@ -297,13 +297,13 @@ struct QEngineShard {
             didFlip = false;
             if (polar0 == polar1) {
                 if (phaseShard->second.isInvert) {
-                    polar0 = (polar0 + polar1) / (2 * ONE_R1);
+                    polar0 = (polar0 + polar1) / (real1)2;
                     polar1 = -polar0;
                     didFlip = true;
                 }
             } else if (polar0 == -polar1) {
                 if (!phaseShard->second.isInvert) {
-                    polar0 = (polar0 + polar1) / (2 * ONE_R1);
+                    polar0 = (polar0 + polar1) / (real1)2;
                     polar1 = polar0;
                     didFlip = true;
                 }
