@@ -182,16 +182,16 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
         return;
     }
 
-    bitLenInt end = length - 1U;
-    IFullAdd(input1 + end, input2 + end, output + end, carry);
-
     if (length == 1U) {
         Swap(carry, output);
+        IFullAdd(input1, input2, carry, output);
         return;
     }
 
     // Otherwise, length > 1.
-    for (bitLenInt i = (end - 1U); i > 0; i--) {
+    bitLenInt end = length - 1U;
+    IFullAdd(input1 + end, input2 + end, output + end, carry);
+    for (bitLenInt i = (end - 1); i > 0; i--) {
         IFullAdd(input1 + i, input2 + i, output + i, output + i + 1);
     }
     IFullAdd(input1, input2, carry, output);
@@ -226,15 +226,15 @@ void QInterface::CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt inpu
         return;
     }
 
-    bitLenInt end = length - 1U;
-    CIFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
-
-    if (length == 1) {
+    if (length == 1U) {
         CSwap(controls, controlLen, carry, output);
+        CIFullAdd(controls, controlLen, input1, input2, carry, output);
         return;
     }
 
     // Otherwise, length > 1.
+    bitLenInt end = length - 1U;
+    CIFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
     for (bitLenInt i = (end - 1); i > 0; i--) {
         CIFullAdd(controls, controlLen, input1 + i, input2 + i, output + i, output + i + 1);
     }
