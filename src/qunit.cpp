@@ -690,7 +690,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (CACHED_CLASSICAL(qubit)) {
+    if (!doForce && CACHED_CLASSICAL(qubit)) {
         result = SHARD_STATE(shard);
     } else {
         EndEmulation(qubit);
@@ -700,6 +700,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     if (shard.unit->GetQubitCount() == 1) {
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
+        shard.isEmulated = true;
         shard.amp0 = result ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
         shard.amp1 = result ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
 
