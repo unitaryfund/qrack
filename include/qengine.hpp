@@ -37,7 +37,7 @@ protected:
             real1 angle = Rand() * 2 * M_PI;
             return complex(cos(angle), sin(angle));
         } else {
-            return complex(ONE_R1, ZERO_R1);
+            return ONE_CMPLX;
         }
     }
 

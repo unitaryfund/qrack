@@ -739,7 +739,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
 
     // Load the integer kernel arguments buffer.
-    bitCapInt maxI = maxQPower >> 1;
+    bitCapInt maxI = maxQPower >> ONE_BCI;
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxI, pow2(qubitIndex), controlLen, mtrxSkipLen, mtrxSkipValueMask, 0, 0, 0, 0,
         0 };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 5, bciArgs);
@@ -806,7 +806,7 @@ void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
 {
     bitCapInt powerTest = result ? qPower : 0;
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, qPower, powerTest, 0, 0, 0, 0, 0, 0, 0 };
 
     ApplyMx(OCL_API_APPLYM, bciArgs, nrm);
 }
@@ -1642,7 +1642,7 @@ void QEngineOCL::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 void QEngineOCL::FullAdx(
     bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call)
 {
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (2U * ONE_BCI), pow2(inputBit1), pow2(inputBit2),
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> (bitCapInt)2U, pow2(inputBit1), pow2(inputBit2),
         pow2(carryInSumOut), pow2(carryOut), 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -1992,8 +1992,8 @@ void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 
 void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> 1, bitRegMask(start, length), greaterPerm, start, 0, 0, 0, 0, 0,
-        0 };
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> ONE_BCI, bitRegMask(start, length), greaterPerm, start, 0, 0, 0, 0,
+        0, 0 };
 
     PhaseFlipX(OCL_API_PHASEFLIPIFLESS, bciArgs);
 }

@@ -658,6 +658,8 @@ real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
+    RevertBasis2Qb(qubit);
+
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
 
@@ -691,7 +693,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 
     bool result;
     if (CACHED_CLASSICAL(qubit)) {
-        result = SHARD_STATE(shard);
+        result = doForce ? res : SHARD_STATE(shard);
     } else {
         EndEmulation(qubit);
         result = shard.unit->ForceM(shard.mapped, res, doForce);
@@ -700,8 +702,9 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     if (shard.unit->GetQubitCount() == 1) {
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
-        shard.amp0 = result ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
-        shard.amp1 = result ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+        shard.isEmulated = true;
+        shard.amp0 = result ? ZERO_CMPLX : ONE_CMPLX;
+        shard.amp1 = result ? ONE_CMPLX : ZERO_CMPLX;
 
         /* If we're keeping the bits, and they're already in their own unit, there's nothing to do. */
         return result;
@@ -1090,17 +1093,23 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
+    if (CACHED_PROB(control)) {
+        if (Prob(control) < min_norm) {
+            return;
+        }
+        if ((ONE_R1 - Prob(control)) < min_norm) {
+            X(target);
+            return;
+        }
+    }
+
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
-    if (randGlobalPhase && !freezeBasis) {
+    if (!freezeBasis) {
+        TransformBasis1Qb(false, control);
+        RevertBasis2Qb(control, true);
         RevertBasis2Qb(target, true);
-
-        if (cShard.isInvert()) {
-            TransformBasis1Qb(false, control);
-            RevertBasis2Qb(control, true);
-        }
 
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
@@ -1108,9 +1117,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-
-    RevertBasis2Qb(control);
-    RevertBasis2Qb(target);
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
@@ -1329,22 +1335,19 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
-    if (randGlobalPhase) {
-        QEngineShard& tShard = shards[target];
-        QEngineShard& cShard = shards[controls[0]];
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[controls[0]];
 
-        if (!freezeBasis || (controlLen != 1U)) {
-            for (bitLenInt i = 0; i < controlLen; i++) {
-                PopHBasis2Qb(controls[i]);
-            }
+    if (!freezeBasis || (controlLen != 1U)) {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            PopHBasis2Qb(controls[i]);
         }
+    }
 
-        if (!freezeBasis && (controlLen == 1U)) {
-            tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
-            delete[] controls;
-            return;
-        }
+    if (!freezeBasis && (controlLen == 1U)) {
+        tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
+        delete[] controls;
+        return;
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
@@ -1357,18 +1360,13 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     const complex topRight, const complex bottomLeft)
 {
     if (!TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
-        // TODO: Debug ProjectQ integration, to remove randGlobalPhase check
-        if (randGlobalPhase && !freezeBasis && (controlLen == 1U)) {
-            QEngineShard& tShard = shards[target];
-            QEngineShard& cShard = shards[controls[0]];
 
+        if (!freezeBasis && (controlLen == 1U)) {
+            TransformBasis1Qb(false, controls[0]);
+            RevertBasis2Qb(controls[0], true);
             RevertBasis2Qb(target, true);
-            if (cShard.isInvert()) {
-                TransformBasis1Qb(false, controls[0]);
-                RevertBasis2Qb(controls[0], true);
-            }
 
-            tShard.AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
+            shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
             return;
         }
 
