@@ -1630,8 +1630,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
-        if (hasPhaseFactor) {
-            shards[controlVec[i]].isPhaseDirty = true;
+        QEngineShard& shard = shards[controlVec[i]];
+        if (hasPhaseFactor || shard.isPlusMinus) {
+            shard.isPhaseDirty = true;
         }
     }
 
