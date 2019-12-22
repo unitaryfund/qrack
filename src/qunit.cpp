@@ -1627,12 +1627,19 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
+    bool isTargetPlusMinus = false;
+    for (i = 0; i < targets.size(); i++) {
+        if (shards[targets[i]].isPlusMinus) {
+            isTargetPlusMinus = true;
+            break;
+        }
+    }
+
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
-        QEngineShard& cShard = shards[controlVec[i]];
-        controlsMapped[i] = cShard.mapped;
-        if (hasPhaseFactor || cShard.isPlusMinus) {
-            cShard.isPhaseDirty = true;
+        controlsMapped[i] = shards[controlVec[i]].mapped;
+        if (hasPhaseFactor || isTargetPlusMinus) {
+            shards[controlVec[i]].isPhaseDirty = true;
         }
     }
 
