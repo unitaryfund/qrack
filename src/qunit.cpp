@@ -1014,7 +1014,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
             }                                                                                                          \
             unit->ctrld;                                                                                               \
         },                                                                                                             \
-        [&]() { bare; });
+        [&]() { bare; }, true);
 
 #define CTRLED_PHASE_INVERT_WRAP(ctrld, ctrldgen, bare, anti, isInvert, top, bottom)                                   \
     ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
@@ -1031,7 +1031,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; });
+        [&]() { bare; }, top != bottom && (randGlobalPhase || (top != ONE_R1)));
 
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
@@ -1040,7 +1040,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     TransformBasis1Qb(false, qubit1);                                                                                  \
     TransformBasis1Qb(false, qubit2);                                                                                  \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; }, true)
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
 #define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, mtrx
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
@@ -1131,7 +1131,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         std::swap(controls[0], target);
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-            [&]() { XBase(target); }, true);
+            [&]() { XBase(target); }, false, true);
         return;
     }
 
@@ -1173,7 +1173,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 }
             }
         },
-        [&]() { X(target); });
+        [&]() { X(target); }, false);
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1197,7 +1197,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 }
             }
         },
-        [&]() { X(target); });
+        [&]() { X(target); }, false);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
@@ -1559,7 +1559,8 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& hasPhaseFactor,
+    const bool& inCurrentBasis)
 {
     bitLenInt i, j;
 
@@ -1629,7 +1630,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
         controlsMapped[i] = shards[controlVec[i]].mapped;
-        shards[controlVec[i]].isPhaseDirty = true;
+        if (hasPhaseFactor) {
+            shards[controlVec[i]].isPhaseDirty = true;
+        }
     }
 
     cfn(unit, controlsMapped);
