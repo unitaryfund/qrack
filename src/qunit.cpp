@@ -2301,7 +2301,7 @@ void QUnit::xMULModNOut(
                 } else {
                     CINC(toModExp, outStart, length, controls, 1U);
                 }
-                toModExp <<= 1U;
+                toModExp <<= ONE_BCI;
             }
             return;
         }
@@ -2480,7 +2480,7 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
                 } else {
                     CINC(toModExp, outStart, length, lControls, controlVec.size() + 1U);
                 }
-                toModExp <<= 1U;
+                toModExp <<= ONE_BCI;
             }
             delete[] lControls;
             return;

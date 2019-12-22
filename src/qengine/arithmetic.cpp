@@ -616,7 +616,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     }
 
     bitCapInt inOutMask = bitRegMask(inOutStart, length);
-    bitCapInt otherMask = maxQPower - 1U;
+    bitCapInt otherMask = maxQPower - ONE_BCI;
     otherMask ^= inOutMask;
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();

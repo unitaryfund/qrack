@@ -48,9 +48,9 @@ void cl_free(void* toFree)
 bitCapInt intPow(bitCapInt base, bitCapInt power)
 {
     if (power == 0U) {
-        return 1U;
+        return ONE_BCI;
     }
-    if (power == 1U) {
+    if (power == ONE_BCI) {
         return base;
     }
     return base * intPow(base, power - 1);

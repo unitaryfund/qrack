@@ -212,7 +212,7 @@ void ParallelFor::par_for_mask(
         incFn = [&masks, maskLen](bitCapInt i, int cpu) {
             /* Push i apart, one mask at a time. */
             for (bitLenInt m = 0; m < maskLen; m++) {
-                i = ((i << 1U) & masks[m][1]) | (i & masks[m][0]);
+                i = ((i << ONE_BCI) & masks[m][1]) | (i & masks[m][0]);
             }
             return i;
         };
