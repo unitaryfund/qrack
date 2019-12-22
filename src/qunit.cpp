@@ -1628,10 +1628,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     bool isTargetPlusMinus = false;
-    for (i = 0; i < targets.size(); i++) {
-        if (shards[targets[i]].isPlusMinus) {
-            isTargetPlusMinus = true;
-            break;
+    if (!inCurrentBasis) {
+        for (i = 0; i < targets.size(); i++) {
+            if (shards[targets[i]].isPlusMinus) {
+                isTargetPlusMinus = true;
+                break;
+            }
         }
     }
 
