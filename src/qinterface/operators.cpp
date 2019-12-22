@@ -222,7 +222,11 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
         }
 
         if (op->uniform) {
-            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, op->expMtrx);
+            complex* expMtrx = new complex[maxJ];
+            for (bitCapInt j = 0; j < (1U << op->controlLen); j++) {
+                exp2x2(mtrx + (j * 4), expMtrx + (j * 4));
+            }
+            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);
             delete[] expMtrx;
         } else {
             Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
