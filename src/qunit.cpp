@@ -2527,17 +2527,12 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    if (qubitCount == 1U) {
-        shards[0].unit->ZeroPhaseFlip(0, 1);
-        return;
-    }
-
-    bitLenInt min1 = qubitCount - 1U;
+    bitLenInt min1 = length - 1U;
     bitLenInt* controls = new bitLenInt[min1];
     for (bitLenInt i = 0; i < min1; i++) {
-        controls[i] = i + 1U;
+        controls[i] = start + i + 1U;
     }
-    ApplyAntiControlledSinglePhase(controls, min1, 0, -ONE_CMPLX, ONE_CMPLX);
+    ApplyAntiControlledSinglePhase(controls, min1, start, -ONE_CMPLX, ONE_CMPLX);
     delete[] controls;
 }
 
