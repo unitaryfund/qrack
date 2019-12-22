@@ -427,7 +427,8 @@ TEST_CASE("test_grover", "[grover]")
             qftReg->H(0, n);
             qftReg->ZeroPhaseFlip(0, n);
             qftReg->H(0, n);
-            qftReg->PhaseFlip();
+            // Global phase flip has no physically measurable effect:
+            //qftReg->PhaseFlip();
         }
 
         REQUIRE_THAT(qftReg, HasProbability(0x3));

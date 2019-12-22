@@ -2534,10 +2534,18 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
-    // Otherwise, form the potentially entangled representation:
-    EntangleRange(start, length);
-    shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
-    DirtyShardRange(start, length);
+    if (qubitCount == 1U) {
+        shards[0].unit->ZeroPhaseFlip(0, 1);
+        return;
+    }
+
+    bitLenInt min1 = qubitCount - 1U;
+    bitLenInt* controls = new bitLenInt[min1];
+    for (bitLenInt i = 0; i < min1; i++) {
+        controls[i] = i + 1U;
+    }
+    ApplyAntiControlledSinglePhase(controls, min1, 0, -ONE_CMPLX, ONE_CMPLX);
+    delete[] controls;
 }
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
