@@ -1031,7 +1031,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
                 unit->ctrldgen;                                                                                        \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; }, top != bottom && (randGlobalPhase || (top != ONE_R1)));
+        [&]() { bare; }, (top != bottom) && (!randGlobalPhase || (top != ONE_R1)));
 
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
