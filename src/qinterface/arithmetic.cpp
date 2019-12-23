@@ -21,8 +21,8 @@ void QInterface::QFTINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
     for (bitLenInt i = 0; i < length; i++) {
         for (bitLenInt j = 0; j <= i; j++) {
-            if ((toAdd >> j) & 1U) {
-                RT((-M_PI * 2) / intPow(2, i - j), inOutStart + i);
+            if ((toAdd >> j) & ONE_BCI) {
+                RT((-M_PI * 2) / intPow(2U, i - j), inOutStart + i);
             }
         }
     }

@@ -42,7 +42,7 @@ public:
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
     QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
         : inputCount(inputCnt)
-        , inputPower(1U << inputCnt)
+        , inputPower(pow2(inputCnt))
         , outputIndex(outputIndx)
         , tolerance(tol)
     {
@@ -141,7 +141,7 @@ public:
 
         bitCapInt perm = 0;
         for (bitLenInt i = 0; i < inputCount; i++) {
-            perm |= qReg->M(inputIndices[i]) ? (1U << i) : 0;
+            perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0;
         }
 
         LearnInternal(expected, eta, perm, startProb, resetInit);

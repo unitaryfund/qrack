@@ -109,7 +109,7 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (ONE_BCI << (n - 1U))), true, qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (pow2(n - 1U))), true, qubit);
 }
 
 /// Apply inverse 1/(2^N) phase rotation
@@ -123,7 +123,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (ONE_BCI << (n - 1U))), true, qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (pow2(n - 1U))), true, qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -225,14 +225,14 @@ void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
-    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (ONE_BCI << (n - 1U))));
+    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (pow2(n - 1U))));
 }
 
 /// Apply controlled "IPhaseRootN" gate to bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
-    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (ONE_BCI << (n - 1U))));
+    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (pow2(n - 1U))));
 }
 
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

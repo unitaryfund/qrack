@@ -21,7 +21,7 @@
 // the identity operator. (That is, we check if [addend] % [maxInt] == 0, such that we are effectively adding or
 // subtracting 0.) If a method call is equivalent to the identity operator, it makes no difference, so we do not flush
 // for it or buffer it.
-#define MODLEN(arg, len) (arg & ((1U << len) - 1U))
+#define MODLEN(arg, len) (arg & (pow2(len) - ONE_BCI))
 
 namespace Qrack {
 
