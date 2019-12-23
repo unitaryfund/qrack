@@ -20,7 +20,7 @@ Qrack compiles like a library. To include in your project:
 
 1. In your source code:
 ```
-#include "qfactory.hpp"
+#include "qrack/qfactory.hpp"
 ```
 
 2. On the command line, in the project directory
