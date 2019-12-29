@@ -27,7 +27,7 @@ void QInterface::RX(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, -sine),
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
         complex(cosine, ZERO_R1) };
     ApplySingleBit(pauliRX, true, qubit);
 }
@@ -155,7 +155,7 @@ void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, -sine),
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
         complex(cosine, ZERO_R1) };
     bitLenInt controls[1] = { control };
     ApplyControlledSingleBit(controls, 1, target, pauliRX);
