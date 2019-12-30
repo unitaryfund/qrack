@@ -328,7 +328,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         throw "Error: State vector exceeds device maximum OpenCL allocation";
-    } else if (useHostRam || ((stateVecSize >= baseAlign) && ((OclMemDenom * stateVecSize) > maxMem))) {
+    } else if (useHostRam || (stateVecSize < baseAlign) || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
         usingHostRam = false;
