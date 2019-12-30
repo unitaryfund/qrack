@@ -3417,6 +3417,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probreg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
 {
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);
     qftReg->SetPermutation(0x21);
     REQUIRE(qftReg->ProbMask(0xF0, 0x20) > 0.99);
     REQUIRE(qftReg->ProbMask(0xF0, 0x40) < 0.01);
@@ -3439,6 +3440,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
         qftReg->ProbMaskAll(pow2(max_qubits) - ONE_BCI, probsN);
         REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
         delete[] probsN;
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);
+
+    bitCapInt qPowers[3] = { pow2(6), pow2(2), pow2(3) };
+
+    qftReg->SetPermutation(0);
+    qftReg->H(6);
+    qftReg->X(2);
+    qftReg->H(3);
+
+    const std::set<bitCapInt> possibleResults = { 2, 3, 6, 7 };
+
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 3U, 1000);
+    std::map<bitCapInt, int>::iterator it = results.begin();
+    while (it != results.end()) {
+        REQUIRE(possibleResults.find(it->first) != possibleResults.end());
+        it++;
     }
 }
 

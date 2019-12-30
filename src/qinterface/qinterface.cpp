@@ -656,30 +656,49 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
 {
+    bitLenInt i;
+    bitCapInt j;
+
+    bitCapInt* qPowersSorted = new bitCapInt[qPowerCount];
     bitCapInt mask = 0U;
-    for (bitLenInt i = 0; i < qPowerCount; i++) {
+    for (i = 0; i < qPowerCount; i++) {
         mask |= qPowers[i];
+        qPowersSorted[i] = qPowers[i];
+    }
+
+    std::sort(qPowersSorted, qPowersSorted + qPowerCount);
+    std::map<bitLenInt, bitCapInt> maskMap;
+    for (bitLenInt k = 0; k < qPowerCount; k++) {
+        for (i = 0; i < qPowerCount; i++) {
+            if (qPowersSorted[k] == qPowers[i]) {
+                maskMap[k] = pow2(i);
+                break;
+            }
+        }
     }
 
     bitCapInt subsetCap = pow2(qPowerCount);
-    bitCapInt subsetMask = subsetCap - ONE_BCI;
     real1* probsArray = new real1[subsetCap];
     ProbMaskAll(mask, probsArray);
 
-    std::map<bitCapInt, int> results;
+    real1 totProb = 0;
+    for (j = 0; j < subsetCap; j++) {
+        totProb += probsArray[j];
+    }
 
+    std::map<bitCapInt, int> results;
     real1 maskProb, cumProb;
     bitCapInt key;
     for (unsigned int shot = 0; shot < shots; shot++) {
         maskProb = Rand();
         cumProb = ZERO_R1;
-        for (bitCapInt j = 0; j < subsetCap; j++) {
+        for (j = 0; j < subsetCap; j++) {
             cumProb += probsArray[j];
-            if ((maskProb < cumProb) || (j == subsetMask)) {
+            if ((maskProb < cumProb) || (cumProb >= totProb)) {
                 key = 0;
-                for (bitLenInt i = 0; i < qPowerCount; i++) {
-                    if (j & qPowers[i]) {
-                        key |= pow2(i);
+                for (i = 0; i < qPowerCount; i++) {
+                    if (j & pow2(i)) {
+                        key |= maskMap[i];
                     }
                 }
                 results[key]++;
