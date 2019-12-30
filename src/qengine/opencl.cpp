@@ -2028,48 +2028,33 @@ void QEngineOCL::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    if (stateVec) {
-        LockSync(CL_MAP_READ);
-        std::copy(stateVec, stateVec + maxQPower, outputState);
-        UnlockSync();
-        return;
-    }
-
-    BufferPtr oStateBuffer = MakeStateVecBuffer(outputState);
-    WAIT_COPY(*stateBuffer, *oStateBuffer, sizeof(complex) * maxQPower);
-    queue.enqueueMapBuffer(*oStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower);
+    LockSync(CL_MAP_READ);
+    std::copy(stateVec, stateVec + maxQPower, outputState);
+    UnlockSync();
 }
 
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineOCL::GetProbs(real1* outputProbs)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_GETPROBS);
+    if (stateVec) {
+        LockSync(CL_MAP_READ);
+        std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
+        UnlockSync();
+        return;
+    }
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    complex* outputState = AllocStateVec(maxQPower, true);
+    BufferPtr oStateBuffer = MakeStateVecBuffer(outputState);
+    WAIT_COPY(*stateBuffer, *oStateBuffer, sizeof(complex) * maxQPower);
+    queue.enqueueMapBuffer(*oStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower);
 
-    EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
+    std::transform(outputState, outputState + maxQPower, outputProbs, normHelper);
 
-    cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs, writeArgsEvent);
-
-    // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
-    wait_refs.clear();
-
-    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    BufferPtr oProbBuffer = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * maxQPower, outputProbs);
-
-    QueueCall(OCL_API_GETPROBS, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, oProbBuffer }, sizeof(real1) * ngs);
-
-    queue.enqueueMapBuffer(*oProbBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * maxQPower);
+    FreeStateVec(outputState);
 }
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)

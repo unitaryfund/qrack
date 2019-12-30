@@ -1875,16 +1875,3 @@ void kernel phaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapIn
             stateVec[lcv] = -stateVec[lcv];
     }
 }
-
-void kernel getprobs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* probVec)
-{
-    bitCapInt Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapInt maxI = bitCapIntPtr[0];
-    cmplx amp;
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = stateVec[lcv];
-        probVec[lcv] = dot(amp, amp);
-    }
-}
