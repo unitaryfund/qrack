@@ -837,7 +837,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
 
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
-    if (!stateVec && (nStateVecSize > maxAlloc || (2 * nStateVecSize) > maxMem)) {
+    if (!stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
         complex* nSV = AllocStateVec(maxQPower, true);
         BufferPtr nSB = MakeStateVecBuffer(nSV);
 
@@ -1063,7 +1063,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ngs = FixGroupSize(ngc, nrmGroupSize);
 
     size_t nStateVecSize = maxQPower * sizeof(complex);
-    if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
+    if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
         clFinish();
         FreeStateVec();
     }
