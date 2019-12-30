@@ -146,16 +146,25 @@ public:
         FreeStateVec();
     }
 
-    virtual void FreeStateVec()
+    virtual void FreeStateVec(complex* sv = NULL)
     {
-        if (stateVec) {
+        bool doReset = false;
+        if (sv == NULL) {
+            sv = stateVec;
+            doReset = true;
+        }
+
+        if (sv) {
 #if defined(_WIN32)
-            _aligned_free(stateVec);
+            _aligned_free(sv);
 #else
-            free(stateVec);
+            free(sv);
 #endif
         }
-        stateVec = NULL;
+
+        if (doReset) {
+            stateVec = NULL;
+        }
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
