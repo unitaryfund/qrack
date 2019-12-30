@@ -1870,6 +1870,22 @@ public:
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     /**
+     * Statistical measure of masked permutation probability
+     *
+     * "qPowers" contains powers of 2^n representing bit n, to mask them in results in ascending order from qPowers[0]
+     * to qPowers[qPowerCount - 1]. "shots" specifies the number of samples to take as if totally re-preparing the
+     * pre-measurement state. This method returns a dictionary with key, (masked-order) measurement result, and value,
+     * number of "shots" which produced that measurement. This method does not "collapse" the state. (The idea is to
+     * efficiently simulate a potentially statistically random multiple re-preparations of the state right before
+     * measurement, and collect random measurement resutls, without forcing the user to re-prepare or "clone" the
+     * state.)
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual std::map<bitCapInt, int> MultiShotMeasureMask(
+        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
+
+    /**
      * Set individual bit to pure |0> (false) or |1> (true) state
      *
      * To set a bit, the bit is first measured. If the result of measurement

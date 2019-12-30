@@ -653,4 +653,44 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     }
 }
 
+std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
+    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+{
+    bitCapInt mask = 0U;
+    for (bitLenInt i = 0; i < qPowerCount; i++) {
+        mask |= qPowers[i];
+    }
+
+    bitCapInt subsetCap = pow2(qPowerCount);
+    bitCapInt subsetMask = subsetCap - ONE_BCI;
+    real1* probsArray = new real1[subsetCap];
+    ProbMaskAll(mask, probsArray);
+
+    std::map<bitCapInt, int> results;
+
+    real1 maskProb, cumProb;
+    bitCapInt key;
+    for (unsigned int shot = 0; shot < shots; shot++) {
+        maskProb = Rand();
+        cumProb = ZERO_R1;
+        for (bitCapInt j = 0; j < subsetCap; j++) {
+            cumProb += probsArray[j];
+            if ((maskProb < cumProb) || (j == subsetMask)) {
+                key = 0;
+                for (bitLenInt i = 0; i < qPowerCount; i++) {
+                    if (j & qPowers[i]) {
+                        key |= pow2(i);
+                    }
+                }
+                results[key]++;
+                break;
+            }
+        }
+    }
+
+    delete[] probsArray;
+
+    return results;
+}
+
 } // namespace Qrack
