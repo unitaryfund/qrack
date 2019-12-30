@@ -322,12 +322,13 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // anyway.
     maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    baseAlign = device_context->device.getInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>();
     size_t stateVecSize = maxQPower * sizeof(complex);
     bool usingHostRam;
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         throw "Error: State vector exceeds device maximum OpenCL allocation";
-    } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
+    } else if ((stateVecSize >= baseAlign) && (useHostRam || ((OclMemDenom * stateVecSize) > maxMem))) {
         usingHostRam = true;
     } else {
         usingHostRam = false;

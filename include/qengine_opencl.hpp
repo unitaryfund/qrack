@@ -108,6 +108,7 @@ protected:
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
+    size_t baseAlign;
     unsigned int procElemCount;
     bool unlockHostMem;
 
