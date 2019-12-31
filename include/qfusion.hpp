@@ -189,7 +189,7 @@ public:
     }
 
     virtual void UpdateRunningNorm();
-    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0);
     virtual void Finish()
     {
         FlushAll();

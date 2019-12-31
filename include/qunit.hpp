@@ -542,7 +542,7 @@ public:
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
     virtual void UpdateRunningNorm();
-    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_threshold = -999.0);
     virtual void Finish();
     virtual bool isFinished();
 
@@ -617,8 +617,8 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
-    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1 param = ZERO_R1);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);
 
     virtual void SeparateBit(bool value, bitLenInt qubit);
 

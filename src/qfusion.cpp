@@ -964,7 +964,7 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
 void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
 
 // Avoid calling this, when a QFusion layer is being used:
-void QFusion::NormalizeState(real1 nrm) { qReg->NormalizeState(nrm); }
+void QFusion::NormalizeState(real1 nrm, real1 norm_thresh) { qReg->NormalizeState(nrm, norm_thresh); }
 
 bool QFusion::TrySeparate(bitLenInt start, bitLenInt length)
 {

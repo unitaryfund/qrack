@@ -1921,7 +1921,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
 
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
+    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,

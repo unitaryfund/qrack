@@ -542,7 +542,7 @@ void QEngineOCL::Z(bitLenInt qubit)
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh)
 {
     bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
     bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
@@ -603,7 +603,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
-    cmplx[5] = min_norm;
+    cmplx[5] = norm_thresh;
 
     BufferPtr locCmplxBuffer;
     cl::Event writeGateEvent;
@@ -2131,7 +2131,7 @@ QInterfacePtr QEngineOCL::Clone()
     return copyPtr;
 }
 
-void QEngineOCL::NormalizeState(real1 nrm)
+void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     // We might have async execution of gates still happening.
     clFinish();
@@ -2143,9 +2143,13 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = min_norm;
+    }
+
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[2] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
+    real1 r1_args[2] = { norm_thresh, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
 

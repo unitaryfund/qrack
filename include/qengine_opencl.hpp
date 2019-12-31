@@ -249,7 +249,7 @@ public:
     }
     virtual bool ApproxCompare(QEngineOCLPtr toCompare);
 
-    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0);
     virtual void UpdateRunningNorm();
     virtual void Finish() { clFinish(); };
     virtual bool isFinished() { return (wait_queue_items.size() == 0); };
@@ -322,12 +322,12 @@ protected:
 
     using QEngine::Apply2x2;
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm)
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = -999.0)
     {
-        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE);
+        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE, norm_thresh);
     }
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh = -999.0);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

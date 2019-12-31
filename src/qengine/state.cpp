@@ -130,9 +130,13 @@ union ComplexUnion {
 };
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
     doCalcNorm &= doNormalize && (bitCount == 1);
+
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = min_norm;
+    }
 
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
@@ -150,14 +154,14 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 
             real1 dotMulRes = norm(qubit.cmplx[0]);
-            if (dotMulRes < min_norm) {
+            if (dotMulRes < norm_thresh) {
                 qubit.cmplx[0] = ZERO_CMPLX;
             } else {
                 rngNrm[cpu] += dotMulRes;
             }
 
             dotMulRes = norm(qubit.cmplx[1]);
-            if (dotMulRes < min_norm) {
+            if (dotMulRes < norm_thresh) {
                 qubit.cmplx[1] = ZERO_CMPLX;
             } else {
                 rngNrm[cpu] += dotMulRes;
@@ -206,9 +210,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #else
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
     doCalcNorm &= doNormalize && (bitCount == 1);
+
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = min_norm;
+    }
 
     int numCores = GetConcurrencyLevel();
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
@@ -228,14 +236,14 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
 
             real1 dotMulRes = norm(qubit[0]);
-            if (dotMulRes < min_norm) {
+            if (dotMulRes < norm_thresh) {
                 qubit[0] = ZERO_CMPLX;
             } else {
                 rngNrm[cpu] += dotMulRes;
             }
 
             dotMulRes = norm(qubit[1]);
-            if (dotMulRes < min_norm) {
+            if (dotMulRes < norm_thresh) {
                 qubit[1] = ZERO_CMPLX;
             } else {
                 rngNrm[cpu] += dotMulRes;
@@ -783,7 +791,7 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
     });
 }
 
-void QEngineCPU::NormalizeState(real1 nrm)
+void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
@@ -792,15 +800,26 @@ void QEngineCPU::NormalizeState(real1 nrm)
         return;
     }
 
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = min_norm;
+    }
+
     nrm = ONE_R1 / std::sqrt(nrm);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        complex amp = stateVec->read(lcv) * nrm;
-        if (norm(amp) < min_norm) {
-            amp = ZERO_CMPLX;
-        }
-        stateVec->write(lcv, amp);
-    });
+    if (norm_thresh == ZERO_R1) {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            complex amp = stateVec->read(lcv) * nrm;
+            stateVec->write(lcv, amp);
+        });
+    } else {
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            complex amp = stateVec->read(lcv) * nrm;
+            if (norm(amp) < norm_thresh) {
+                amp = ZERO_CMPLX;
+            }
+            stateVec->write(lcv, amp);
+        });
+    }
 
     runningNorm = ONE_R1;
 }

@@ -114,11 +114,11 @@ public:
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
+    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0) = 0;
 
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = -999.0) = 0;
     virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex* mtrx, bool doCalcNorm);
     virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,

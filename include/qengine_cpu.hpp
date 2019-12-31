@@ -133,7 +133,7 @@ public:
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
-    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
@@ -149,7 +149,7 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = -999.0);
     virtual void UpdateRunningNorm();
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
