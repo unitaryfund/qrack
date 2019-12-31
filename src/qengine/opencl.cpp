@@ -549,7 +549,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm &= doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec;

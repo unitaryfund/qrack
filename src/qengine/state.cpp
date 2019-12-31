@@ -133,7 +133,7 @@ union ComplexUnion {
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
-    doCalcNorm &= doNormalize && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
@@ -213,7 +213,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
-    doCalcNorm &= doNormalize && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
