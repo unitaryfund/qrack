@@ -72,7 +72,7 @@ public:
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
@@ -119,10 +119,10 @@ public:
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = -999.0) = 0;
-    virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex* mtrx, bool doCalcNorm);
+    virtual void ApplyControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     /**
      * Common driver method behind INCC and DECC

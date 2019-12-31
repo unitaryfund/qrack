@@ -19,7 +19,7 @@ namespace Qrack {
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
 void QInterface::RT(real1 radians, bitLenInt qubit)
 {
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(cos(radians / 2.0), sin(radians / 2.0)), true, qubit);
+    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(cos(radians / 2.0), sin(radians / 2.0)), qubit);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
@@ -29,7 +29,7 @@ void QInterface::RX(real1 radians, bitLenInt qubit)
     real1 sine = sin(radians / 2.0);
     complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
         complex(cosine, ZERO_R1) };
-    ApplySingleBit(pauliRX, true, qubit);
+    ApplySingleBit(pauliRX, qubit);
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
@@ -39,7 +39,7 @@ void QInterface::RY(real1 radians, bitLenInt qubit)
     real1 sine = sin(radians / 2.0);
     complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
         complex(cosine, ZERO_R1) };
-    ApplySingleBit(pauliRY, true, qubit);
+    ApplySingleBit(pauliRY, qubit);
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
@@ -47,7 +47,7 @@ void QInterface::RZ(real1 radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
-    ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), true, qubit);
+    ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qubit);
 }
 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
@@ -102,7 +102,7 @@ void QInterface::UniformlyControlledRZ(
 void QInterface::Exp(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySinglePhase(phaseFac, phaseFac, true, qubit);
+    ApplySinglePhase(phaseFac, phaseFac, qubit);
 }
 
 /// Imaginary exponentiate of arbitrary single bit gate
@@ -125,21 +125,21 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySingleInvert(phaseFac, phaseFac, true, qubit);
+    ApplySingleInvert(phaseFac, phaseFac, qubit);
 }
 
 /// Exponentiate Pauli Y operator
 void QInterface::ExpY(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySingleInvert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), true, qubit);
+    ApplySingleInvert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), qubit);
 }
 
 /// Exponentiate Pauli Z operator
 void QInterface::ExpZ(real1 radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySinglePhase(phaseFac, -phaseFac, true, qubit);
+    ApplySinglePhase(phaseFac, -phaseFac, qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state

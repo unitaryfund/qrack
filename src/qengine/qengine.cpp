@@ -149,11 +149,14 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     return result;
 }
 
-void QEngine::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit)
+void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
 {
     if (IsIdentity(mtrx)) {
         return;
     }
+
+    bool doCalcNorm = doNormalize &&
+        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
 
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
@@ -168,12 +171,16 @@ void QEngine::ApplyControlledSingleBit(
     }
 
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, true, target);
-    } else {
-        ApplyControlled2x2(controls, controlLen, target, mtrx, false);
-        if (doNormalize) {
-            UpdateRunningNorm();
-        }
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
+    bool doCalcNorm = doNormalize &&
+        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+
+    ApplyControlled2x2(controls, controlLen, target, mtrx);
+    if (doCalcNorm) {
+        UpdateRunningNorm();
     }
 }
 
@@ -185,12 +192,16 @@ void QEngine::ApplyAntiControlledSingleBit(
     }
 
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, true, target);
-    } else {
-        ApplyAntiControlled2x2(controls, controlLen, target, mtrx, false);
-        if (doNormalize) {
-            UpdateRunningNorm();
-        }
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
+    bool doCalcNorm = doNormalize &&
+        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+
+    ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
+    if (doCalcNorm) {
+        UpdateRunningNorm();
     }
 }
 
@@ -320,8 +331,8 @@ void QEngine::AntiCISqrtSwap(
     delete[] qPowersSorted;
 }
 
-void QEngine::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-    const complex* mtrx, bool doCalcNorm)
+void QEngine::ApplyControlled2x2(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
     bitCapInt fullMask = 0U;
@@ -334,12 +345,12 @@ void QEngine::ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& con
     qPowersSorted[controlLen] = pow2(target);
     fullMask |= pow2(target);
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
-    Apply2x2(controlMask, fullMask, mtrx, controlLen + 1U, qPowersSorted, doCalcNorm);
+    Apply2x2(controlMask, fullMask, mtrx, controlLen + 1U, qPowersSorted, false);
     delete[] qPowersSorted;
 }
 
-void QEngine::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-    const complex* mtrx, bool doCalcNorm)
+void QEngine::ApplyAntiControlled2x2(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
     for (bitLenInt i = 0U; i < controlLen; i++) {
@@ -347,7 +358,7 @@ void QEngine::ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt&
     }
     qPowersSorted[controlLen] = pow2(target);
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
-    Apply2x2(0U, pow2(target), mtrx, controlLen + 1U, qPowersSorted, doCalcNorm);
+    Apply2x2(0U, pow2(target), mtrx, controlLen + 1U, qPowersSorted, false);
     delete[] qPowersSorted;
 }
 

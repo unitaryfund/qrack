@@ -730,7 +730,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 {
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), true, qubitIndex);
+        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), qubitIndex);
         return;
     }
 
@@ -2151,7 +2151,7 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
 
     real1 r1_args[2] = { norm_thresh, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * 2, r1_args, writeRealArgsEvent);
 
     bitCapInt bciArgs[1] = { maxQPower };
     cl::Event writeBCIArgsEvent;
@@ -2177,28 +2177,36 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
     runningNorm = ONE_R1;
 }
 
-void QEngineOCL::UpdateRunningNorm()
+void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
 {
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = amplitudeFloor;
+    }
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
+
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    real1 r1_args[1] = { norm_thresh };
+    cl::Event writeRealArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1), r1_args, writeRealArgsEvent);
 
     runningNorm = ONE_R1;
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
-
-    cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs, writeArgsEvent);
-
-    // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
-    wait_refs.clear();
+    bitCapInt bciArgs[1] = { maxQPower };
+    cl::Event writeBCIArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
+    // Wait for buffer write from limited lifetime objects
+    writeRealArgsEvent.wait();
+    writeBCIArgsEvent.wait();
+    wait_refs.clear();
+
+    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer, nrmBuffer },
+        sizeof(real1) * ngs);
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 }

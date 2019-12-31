@@ -20,14 +20,14 @@
     void QInterface::gate(bitLenInt qubit)                                                                             \
     {                                                                                                                  \
         const complex mtrx[4] = { mtrx00, mtrx01, mtrx10, mtrx11 };                                                    \
-        ApplySingleBit(mtrx, true, qubit);                                                                             \
+        ApplySingleBit(mtrx, qubit);                                                                                   \
     }
 
 #define GATE_1_PHASE(gate, topLeft, bottomRight)                                                                       \
-    void QInterface::gate(bitLenInt qubit) { ApplySinglePhase(topLeft, bottomRight, false, qubit); }
+    void QInterface::gate(bitLenInt qubit) { ApplySinglePhase(topLeft, bottomRight, qubit); }
 
 #define GATE_1_INVERT(gate, topRight, bottomLeft)                                                                      \
-    void QInterface::gate(bitLenInt qubit) { ApplySingleInvert(topRight, bottomLeft, false, qubit); }
+    void QInterface::gate(bitLenInt qubit) { ApplySingleInvert(topRight, bottomLeft, qubit); }
 
 namespace Qrack {
 
@@ -40,19 +40,17 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
 }
 
 /// Apply a single bit transformation that only effects phase.
-void QInterface::ApplySinglePhase(
-    const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex)
+void QInterface::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
 {
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
+    ApplySingleBit(mtrx, qubitIndex);
 }
 
 /// Apply a single bit transformation that reverses bit probability and might effect phase.
-void QInterface::ApplySingleInvert(
-    const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex)
+void QInterface::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
 {
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
+    ApplySingleBit(mtrx, qubitIndex);
 }
 
 /// Apply a single bit transformation that only effects phase, with arbitrary control bits.
@@ -95,7 +93,7 @@ void QInterface::U(bitLenInt target, real1 theta, real1 phi, real1 lambda)
     real1 sin0 = sin(theta / 2);
     const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex(-cos(lambda), -sin(lambda)),
         sin0 * complex(cos(phi), sin(phi)), cos0 * complex(cos(phi + lambda), sin(phi + lambda)) };
-    ApplySingleBit(uGate, true, target);
+    ApplySingleBit(uGate, target);
 }
 
 /// Apply 1/(2^N) phase rotation
@@ -109,7 +107,7 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (pow2(n - 1U))), true, qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (pow2(n - 1U))), qubit);
 }
 
 /// Apply inverse 1/(2^N) phase rotation
@@ -123,7 +121,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (pow2(n - 1U))), true, qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (pow2(n - 1U))), qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix

@@ -151,7 +151,7 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = -999.0);
-    virtual void UpdateRunningNorm();
+    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     virtual void INCDECC(

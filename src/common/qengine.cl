@@ -1700,11 +1700,11 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     cmplx amp;
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        amp = nrm * stateVec[lcv];
+        amp = stateVec[lcv];
         if (dot(amp, amp) < norm_thresh) {
             amp = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        stateVec[lcv] = amp;
+        stateVec[lcv] = nrm * amp;
     }
 }
 
@@ -1714,18 +1714,19 @@ void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     real1 nrm = args_ptr[1];
     cmplx amp;
 
-    amp = nrm * stateVec[lcv];
+    amp = stateVec[lcv];
     if (dot(amp, amp) < norm_thresh) {
         amp = (cmplx)(ZERO_R1, ZERO_R1);
     }
-    stateVec[lcv] = amp;
+    stateVec[lcv] = nrm * amp;
 }
 
-void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
+void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr, global real1* norm_ptr, local real1* lProbBuffer) {
     bitCapInt Nthreads, lcv, locID, locNthreads;
     
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
+    real1 norm_thresh = args_ptr[0];
     cmplx amp;
     real1 nrm;
     real1 partNrm = ZERO_R1;
@@ -1734,6 +1735,9 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
+        if (nrm < norm_thresh) {
+            nrm = ZERO_R1;
+        }
         partNrm += nrm;
     }
 

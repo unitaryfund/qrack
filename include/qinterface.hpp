@@ -381,53 +381,33 @@ public:
 
     /**
      * Apply an arbitrary single bit unitary transformation.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
      * Apply a single bit transformation that only effects phase.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
-    virtual void ApplySinglePhase(
-        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
-    virtual void ApplySingleInvert(
-        const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
@@ -435,18 +415,12 @@ public:
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control
      * bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
@@ -454,9 +428,6 @@ public:
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
      * (anti-)control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
@@ -1918,7 +1889,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
 
-    virtual void UpdateRunningNorm() = 0;
+    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0) = 0;
 
     /**
      * Apply the normalization factor found by UpdateRunningNorm() or on the fly by a single bit gate. (On an actual

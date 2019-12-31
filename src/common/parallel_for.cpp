@@ -226,7 +226,7 @@ void ParallelFor::par_for_mask(
     delete[] masks;
 }
 
-real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray)
+real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh)
 {
     real1 nrmSqr = 0;
     if (maxQPower <= (bitCapInt)numCores) {
@@ -235,7 +235,13 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         uint32_t cpu;
         for (cpu = 0; cpu < maxQPower; cpu++) {
             j = cpu;
-            futures[cpu] = std::async(std::launch::async, [j, stateArray]() { return norm(stateArray->read(j)); });
+            futures[cpu] = std::async(std::launch::async, [j, stateArray, &norm_thresh]() {
+                real1 nrm = norm(stateArray->read(j));
+                if (nrm < norm_thresh) {
+                    nrm = ZERO_R1;
+                }
+                return nrm;
+            });
         }
         for (cpu = 0; cpu < maxQPower; cpu++) {
             nrmSqr += futures[cpu].get();
@@ -252,10 +258,14 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
                 workUnit++;
                 remainder--;
             }
-            futures[cpu] = std::async(std::launch::async, [workUnit, offset, stateArray]() {
+            futures[cpu] = std::async(std::launch::async, [workUnit, offset, stateArray, &norm_thresh]() {
                 real1 result = 0.0;
+                real1 nrm;
                 for (bitCapInt j = 0; j < workUnit; j++) {
-                    result += norm(stateArray->read(offset + j));
+                    nrm = norm(stateArray->read(offset + j));
+                    if (nrm >= norm_thresh) {
+                        result += nrm;
+                    }
                 }
                 return result;
             });
@@ -270,9 +280,10 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
+            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
             {
                 real1 sqrNorm = 0.0;
+                real1 nrm;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {
@@ -281,7 +292,11 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
                         k = i * PSTRIDE + j;
                         if (k >= maxQPower)
                             break;
-                        sqrNorm += norm(stateArray->read(k));
+
+                        nrm = norm(stateArray->read(k));
+                        if (nrm >= norm_thresh) {
+                            sqrNorm += nrm;
+                        }
                     }
                     if (k >= maxQPower)
                         break;

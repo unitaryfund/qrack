@@ -406,10 +406,8 @@ public:
     using QInterface::CZ;
     virtual void CZ(bitLenInt control, bitLenInt target);
 
-    virtual void ApplySinglePhase(
-        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
-    virtual void ApplySingleInvert(
-        const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -418,7 +416,7 @@ public:
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
@@ -542,7 +540,7 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
-    virtual void UpdateRunningNorm();
+    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0);
     virtual void NormalizeState(real1 nrm = -999.0, real1 norm_threshold = -999.0);
     virtual void Finish();
     virtual bool isFinished();

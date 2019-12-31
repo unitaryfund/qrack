@@ -580,9 +580,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        qReg->ApplySinglePhase(ONE_CMPLX, 2 * M_PI * qReg->Rand(), false, i);
+                        qReg->ApplySinglePhase(ONE_CMPLX, 2 * M_PI * qReg->Rand(), i);
                     } else {
-                        qReg->ApplySingleInvert(ONE_CMPLX, 2 * M_PI * qReg->Rand(), false, i);
+                        qReg->ApplySingleInvert(ONE_CMPLX, 2 * M_PI * qReg->Rand(), i);
                     }
                 }
 

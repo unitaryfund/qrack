@@ -294,7 +294,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 {
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), true, qubitIndex);
+        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), qubitIndex);
         return;
     }
 
@@ -807,25 +807,31 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
     nrm = ONE_R1 / std::sqrt(nrm);
 
-    if (norm_thresh == ZERO_R1) {
+    if (norm_thresh <= ZERO_R1) {
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
             complex amp = stateVec->read(lcv) * nrm;
             stateVec->write(lcv, amp);
         });
     } else {
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-            complex amp = stateVec->read(lcv) * nrm;
+            complex amp = stateVec->read(lcv);
             if (norm(amp) < norm_thresh) {
                 amp = ZERO_CMPLX;
             }
-            stateVec->write(lcv, amp);
+            stateVec->write(lcv, nrm * amp);
         });
     }
 
     runningNorm = ONE_R1;
 }
 
-void QEngineCPU::UpdateRunningNorm() { runningNorm = par_norm(maxQPower, stateVec); }
+void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
+{
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = amplitudeFloor;
+    }
+    runningNorm = par_norm(maxQPower, stateVec, norm_thresh);
+}
 
 StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)
 {
