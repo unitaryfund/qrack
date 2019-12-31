@@ -23,7 +23,7 @@
 #include "qengine.hpp"
 
 #define BCI_ARG_LEN 10
-#define CMPLX_NORM_LEN 5
+#define CMPLX_NORM_LEN 6
 #define REAL_ARG_LEN 2
 
 namespace Qrack {

@@ -603,11 +603,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
+    cmplx[5] = min_norm;
 
     BufferPtr locCmplxBuffer;
     cl::Event writeGateEvent;
     if (!isXGate && !isZGate) {
-        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 5, cmplx, writeGateEvent);
+        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * CMPLX_NORM_LEN, cmplx, writeGateEvent);
     }
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.

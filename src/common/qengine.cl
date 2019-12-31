@@ -47,6 +47,10 @@ inline real1 arg(const cmplx cmp)
                                                                                      \
     cmplx2 mulRes
 
+#define PREP_2X2_NORM()                                                              \
+    real1 norm_thresh = cmplxPtr[9];                                                 \
+    real1 dotMulRes
+
 #define PREP_SPECIAL_2X2()                                                           \
     bitCapInt lcv, i;                                                                \
     bitCapInt Nthreads = get_global_size(0);                                         \
@@ -115,7 +119,19 @@ inline real1 arg(const cmplx cmp)
                                                                                      \
     mulRes = zmatrixmul(nrm, mtrx, mulRes);                                          \
                                                                                      \
-    partNrm += dot(mulRes, mulRes);                                                  \
+    dotMulRes = dot(mulRes.lo, mulRes.lo);                                           \
+    if (dotMulRes < norm_thresh) {                                                   \
+        mulRes.lo = (cmplx)(ZERO_R1, ZERO_R1);                                       \
+    } else {                                                                         \
+        partNrm += dotMulRes;                                                        \
+    }                                                                                \
+                                                                                     \
+    dotMulRes = dot(mulRes.hi, mulRes.hi);                                           \
+    if (dotMulRes < norm_thresh) {                                                   \
+        mulRes.hi = (cmplx)(ZERO_R1, ZERO_R1);                                       \
+    } else {                                                                         \
+        partNrm += dotMulRes;                                                        \
+    }                                                                                \
                                                                                      \
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
     stateVec[i | OFFSET2_ARG] = mulRes.hi
@@ -198,6 +214,7 @@ void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr,
 void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
+    PREP_2X2_NORM();
 
     bitCapInt qMask = bitCapIntPtr[3];
 
@@ -216,6 +233,7 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
 void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
+    PREP_2X2_NORM();
 
     bitCapInt qMask = bitCapIntPtr[2];
 
@@ -1677,16 +1695,30 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
+    real1 norm_thresh = args_ptr[0];
     real1 nrm = args_ptr[1];
+    cmplx amp;
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        stateVec[lcv] = nrm * stateVec[lcv];
+        amp = nrm * stateVec[lcv];
+        if (dot(amp, amp) < norm_thresh) {
+            amp = (cmplx)(ZERO_R1, ZERO_R1);
+        }
+        stateVec[lcv] = amp;
     }
 }
 
 void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
     bitCapInt lcv = ID;
-    stateVec[lcv] = args_ptr[1] * stateVec[lcv];
+    real1 norm_thresh = args_ptr[0];
+    real1 nrm = args_ptr[1];
+    cmplx amp;
+
+    amp = nrm * stateVec[lcv];
+    if (dot(amp, amp) < norm_thresh) {
+        amp = (cmplx)(ZERO_R1, ZERO_R1);
+    }
+    stateVec[lcv] = amp;
 }
 
 void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {

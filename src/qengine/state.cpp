@@ -148,13 +148,26 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
             qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+            real1 dotMulRes = norm(qubit.cmplx[0]);
+            if (dotMulRes < min_norm) {
+                qubit.cmplx[0] = ZERO_CMPLX;
+            } else {
+                rngNrm[cpu] += dotMulRes;
+            }
+
+            dotMulRes = norm(qubit.cmplx[1]);
+            if (dotMulRes < min_norm) {
+                qubit.cmplx[1] = ZERO_CMPLX;
+            } else {
+                rngNrm[cpu] += dotMulRes;
+            }
+
 #if ENABLE_COMPLEX8
             stateVec->write(lcv + offset1, qubit.cmplx[0]);
             stateVec->write(lcv + offset2, qubit.cmplx[1]);
-            rngNrm[cpu] += norm(qubit.cmplx2);
 #else
             stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 #endif
         };
     } else {
@@ -213,7 +226,20 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
             qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
             qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
-            rngNrm[cpu] += norm(qubit[0]) + norm(qubit[1]);
+
+            real1 dotMulRes = norm(qubit[0]);
+            if (dotMulRes < min_norm) {
+                qubit[0] = ZERO_CMPLX;
+            } else {
+                rngNrm[cpu] += dotMulRes;
+            }
+
+            dotMulRes = norm(qubit[1]);
+            if (dotMulRes < min_norm) {
+                qubit[1] = ZERO_CMPLX;
+            } else {
+                rngNrm[cpu] += dotMulRes;
+            }
 
             stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
         };
@@ -768,7 +794,13 @@ void QEngineCPU::NormalizeState(real1 nrm)
 
     nrm = ONE_R1 / std::sqrt(nrm);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, stateVec->read(lcv) * nrm); });
+    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+        complex amp = stateVec->read(lcv) * nrm;
+        if (norm(amp) < min_norm) {
+            amp = ZERO_CMPLX;
+        }
+        stateVec->write(lcv, amp);
+    });
 
     runningNorm = ONE_R1;
 }
