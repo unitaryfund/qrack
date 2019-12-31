@@ -114,6 +114,7 @@ protected:
     std::shared_ptr<RdRandWrapper::RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
+    real1 amplitudeFloor;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -167,11 +168,12 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true)
+        bool randomGlobalPhase = true, real1 norm_thresh = -999.0)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
         , randGlobalPhase(randomGlobalPhase)
+        , amplitudeFloor(norm_thresh)
     {
         SetQubitCount(n);
 
@@ -188,6 +190,10 @@ public:
             SetRandomSeed(randomSeed);
         } else {
             rand_generator = rgp;
+        }
+
+        if (amplitudeFloor < 0) {
+            amplitudeFloor = min_norm;
         }
     }
 

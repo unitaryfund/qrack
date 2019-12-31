@@ -37,8 +37,9 @@ namespace Qrack {
  * phase usually makes sense only if they are initialized at the same time.
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG)
+    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
+    real1 norm_thresh)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
@@ -135,7 +136,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     doCalcNorm &= doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = min_norm;
+        norm_thresh = amplitudeFloor;
     }
 
     int numCores = GetConcurrencyLevel();
@@ -215,7 +216,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     doCalcNorm &= doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = min_norm;
+        norm_thresh = amplitudeFloor;
     }
 
     int numCores = GetConcurrencyLevel();
@@ -532,7 +533,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             nrm = norm(stateVec->read(l));
             remainderStateProb[lcv] += nrm;
 
-            if (nrm > min_norm) {
+            if (nrm > amplitudeFloor) {
                 currentAngle = arg(stateVec->read(l));
                 if (firstAngle < (-8 * M_PI)) {
                     firstAngle = currentAngle;
@@ -558,7 +559,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             nrm = norm(stateVec->read(l));
             partStateProb[lcv] += nrm;
 
-            if (nrm > min_norm) {
+            if (nrm > amplitudeFloor) {
                 currentAngle = arg(stateVec->read(l));
                 if (firstAngle < (-8 * M_PI)) {
                     firstAngle = currentAngle;
@@ -732,14 +733,14 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     bitCapInt basePerm;
     for (basePerm = 0; basePerm < maxQPower; basePerm++) {
         nrm = norm(stateVec->read(basePerm));
-        if (nrm > min_norm) {
+        if (nrm > amplitudeFloor) {
             basePhaseFac1 = (ONE_R1 / (real1)sqrt(nrm)) * stateVec->read(basePerm);
             break;
         }
     }
 
     nrm = norm(toCompare->stateVec->read(basePerm));
-    if (nrm < min_norm) {
+    if (nrm < amplitudeFloor) {
         // If the amplitude we sample for global phase offset correction doesn't match, we're done.
         return false;
     }
@@ -801,7 +802,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
     }
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = min_norm;
+        norm_thresh = amplitudeFloor;
     }
 
     nrm = ONE_R1 / std::sqrt(nrm);

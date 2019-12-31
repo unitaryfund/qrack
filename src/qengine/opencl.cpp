@@ -65,8 +65,8 @@ namespace Qrack {
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG)
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , deviceID(devID)
     , wait_refs()
     , nrmArray(NULL)
@@ -2144,7 +2144,7 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
     }
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = min_norm;
+        norm_thresh = amplitudeFloor;
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();

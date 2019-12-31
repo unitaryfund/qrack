@@ -21,15 +21,15 @@ namespace Qrack {
 
 QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
     complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
-    bool useSparseStateVec)
-    : QInterface(qBitCount, rgp, deviceID, useHardwareRNG, randomGlobalPhase)
+    bool useSparseStateVec, real1 norm_thresh)
+    : QInterface(qBitCount, rgp, deviceID, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
     qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, randomGlobalPhase,
-        useHostMem, deviceID, useHardwareRNG, useSparseStateVec);
+        useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh);
 }
 
 QFusion::QFusion(QInterfacePtr target)
