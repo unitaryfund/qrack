@@ -46,7 +46,7 @@ typedef float real1;
 #define PI_R1 (real1) M_PI
 // min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
 // the results of the tests in accuracy.cpp.
-#define min_norm 1e-13f
+#define min_norm 1e-14f
 #else
 //#include "complex16simd.hpp"
 namespace Qrack {
@@ -58,7 +58,7 @@ typedef double real1;
 #define PI_R1 M_PI
 // min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
 // the results of the tests in accuracy.cpp.
-#define min_norm 1e-30
+#define min_norm 1e-31
 #endif
 
 #define ONE_CMPLX complex(ONE_R1, ZERO_R1)
