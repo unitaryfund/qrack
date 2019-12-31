@@ -160,6 +160,9 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 
     for (auto&& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
+        if (norm(result) == ZERO_R1) {
+            break;
+        }
     }
 
     if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1)) {
