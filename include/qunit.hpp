@@ -436,6 +436,8 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     using QInterface::ForceM;
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
+    using QInterface::ForceMReg;
+    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     /** @} */
 
@@ -619,7 +621,7 @@ protected:
     typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
     bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);
 
-    virtual void SeparateBit(bool value, bitLenInt qubit);
+    virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
 
     void OrderContiguous(QInterfacePtr unit);
 

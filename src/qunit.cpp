@@ -660,7 +660,7 @@ real1 QUnit::Prob(bitLenInt qubit)
 
 real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
 
-void QUnit::SeparateBit(bool value, bitLenInt qubit)
+void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
     RevertBasis2Qb(qubit);
 
@@ -679,7 +679,9 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
         return;
     }
 
-    unit->Dispose(mapped, 1);
+    if (doDispose) {
+        unit->Dispose(mapped, 1);
+    }
 
     /* Update the mappings. */
     for (auto&& shard : shards) {
@@ -687,6 +689,79 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
             shard.mapped--;
         }
     }
+}
+
+bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+{
+    //"Collapsing" the register bit-by-bit is very costly. It's cheap to eventually recover the measurement from the
+    // single-bit method, but only once we collapse the state more efficiently.
+
+    bitLenInt i, j;
+    bitLenInt contigRegStart;
+    bitLenInt contigRegLength;
+    bitCapInt contigRegResult;
+
+    for (i = 0; i < length; i++) {
+        ToPermBasis(start + i);
+    }
+
+    std::map<QInterfacePtr, std::vector<bitLenInt>> perms;
+    std::map<QInterfacePtr, std::map<bitLenInt, bitLenInt>> invMap;
+    for (i = start; i < (start + length); i++) {
+        perms[shards[i].unit].push_back(shards[i].mapped);
+        invMap[shards[i].unit][shards[i].mapped] = i;
+    }
+
+    for (auto&& qi : perms) {
+        if (qi.second.size() == 1) {
+            continue;
+        }
+
+        std::sort(qi.second.begin(), qi.second.end());
+        i = 0;
+        std::map<bitLenInt, bitLenInt> toDispose;
+        std::vector<bitCapInt> partResults;
+        while (i < qi.second.size()) {
+            contigRegStart = qi.second[i];
+            contigRegLength = 1U;
+            i++;
+            while (qi.second[i] == contigRegStart + contigRegLength) {
+                contigRegLength++;
+                i++;
+            }
+            toDispose[contigRegStart] = contigRegLength;
+            if (doForce) {
+                contigRegResult = 0;
+                for (j = 0; j < contigRegLength; j++) {
+                    contigRegResult |= (result & pow2(invMap[qi.first][contigRegStart + j])) << (bitCapInt)j;
+                }
+                partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
+            } else {
+                partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
+            }
+        }
+
+        for (auto iter = toDispose.rbegin(); iter != toDispose.rend(); ++iter) {
+            contigRegResult = partResults.back();
+            partResults.pop_back();
+            for (i = iter->first; i < (iter->first + iter->second); i++) {
+                SeparateBit(contigRegResult & ONE_BCI, invMap[qi.first][i], false);
+                contigRegResult >>= ONE_BCI;
+            }
+            if (qi.first->GetQubitCount() > iter->second) {
+                qi.first->Dispose(iter->first, iter->second);
+            }
+        }
+    }
+
+    bitCapInt toRet = 0;
+    for (i = 0; i < length; i++) {
+        if (M(start + i)) {
+            toRet |= pow2(i);
+        }
+    }
+
+    return toRet;
 }
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
