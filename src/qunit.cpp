@@ -691,7 +691,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     }
 }
 
-/*bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
     //"Collapsing" the register bit-by-bit is very costly. It's cheap to eventually recover the measurement from the
     // single-bit method, but only once we collapse the state more efficiently.
@@ -703,13 +703,15 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 
     for (i = 0; i < length; i++) {
         ToPermBasis(start + i);
+        EndEmulation(start + i);
     }
 
     std::map<QInterfacePtr, std::vector<bitLenInt>> perms;
     std::map<QInterfacePtr, std::map<bitLenInt, bitLenInt>> invMap;
     for (i = start; i < (start + length); i++) {
-        perms[shards[i].unit].push_back(shards[i].mapped);
-        invMap[shards[i].unit][shards[i].mapped] = i;
+        QEngineShard& shard = shards[i];
+        perms[shard.unit].push_back(shard.mapped);
+        invMap[shard.unit][shard.mapped] = i;
     }
 
     for (auto&& qi : perms) {
@@ -725,7 +727,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
             contigRegStart = qi.second[i];
             contigRegLength = 1U;
             i++;
-            while (qi.second[i] == contigRegStart + contigRegLength) {
+            while (qi.second[i] == (contigRegStart + contigRegLength)) {
                 contigRegLength++;
                 i++;
             }
@@ -733,11 +735,21 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
             if (doForce) {
                 contigRegResult = 0;
                 for (j = 0; j < contigRegLength; j++) {
-                    contigRegResult |= (result & pow2(invMap[qi.first][contigRegStart + j])) << (bitCapInt)j;
+                    if (result & pow2(invMap[qi.first][contigRegStart + j] - start)) {
+                        contigRegResult |= pow2(j);
+                    }
                 }
                 partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
             } else {
                 partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
+            }
+        }
+
+        // This is critical: it's the "nonlocal correlation" of "wave function collapse".
+        for (j = 0; j < qubitCount; j++) {
+            if (shards[j].unit == qi.first) {
+                shards[j].isProbDirty = true;
+                shards[j].isPhaseDirty = true;
             }
         }
 
@@ -762,7 +774,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     }
 
     return toRet;
-}*/
+}
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 {
