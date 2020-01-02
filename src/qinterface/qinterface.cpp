@@ -511,7 +511,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
     bitCapInt power;
     for (bitLenInt bit = 0; bit < length; bit++) {
         power = pow2(bit);
-        res |= ForceM(start + bit, power & result, doForce) ? power : 0;
+        res |= ForceM(start + bit, (bool)(power & result), doForce) ? power : 0;
     }
     return res;
 }

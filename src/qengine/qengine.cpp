@@ -485,6 +485,8 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
             result = lcv;
             nrmlzr = probArray[lcv];
         }
+    } else {
+        nrmlzr = probArray[result];
     }
 
     delete[] probArray;
