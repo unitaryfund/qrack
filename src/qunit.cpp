@@ -756,7 +756,7 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 
     bitCapInt toRet = 0;
     for (i = 0; i < length; i++) {
-        if (ForceM(start + i, result & pow2(i), doForce)) {
+        if (ForceM(start + i, (bool)(result & pow2(i)), doForce)) {
             toRet |= pow2(i);
         }
     }

@@ -23,6 +23,8 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
             stateVec->write(i, complex(ZERO_R1, ZERO_R1));
         }
     });
+
+    runningNorm = ONE_R1;
 }
 
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU

@@ -802,6 +802,8 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
     writeNormEvent.wait();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
+
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
