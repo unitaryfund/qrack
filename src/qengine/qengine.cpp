@@ -450,20 +450,18 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         NormalizeState();
     }
 
-    real1 prob = Rand();
-    complex phase = GetNonunitaryPhase();
     bitCapInt lengthPower = pow2(length);
     bitCapInt regMask = (lengthPower - ONE_BCI) << (bitCapInt)start;
-    bitCapInt lcv;
-    real1 nrmlzr = ONE_R1;
+    real1 nrmlzr = ONE_BCI;
 
     if (doForce) {
         nrmlzr = ProbMask(regMask, result << (bitCapInt)start);
     } else {
+        bitCapInt lcv = 0;
         real1* probArray = new real1[lengthPower]();
         ProbRegAll(start, length, probArray);
 
-        lcv = 0;
+        real1 prob = Rand();
         real1 lowerProb = ZERO_R1;
         real1 largestProb = ZERO_R1;
         result = lengthPower - ONE_BCI;
@@ -492,7 +490,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     }
 
     bitCapInt resultPtr = result << (bitCapInt)start;
-    complex nrm = phase / (real1)(std::sqrt(nrmlzr));
+    complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
 
     ApplyM(regMask, resultPtr, nrm);
 
