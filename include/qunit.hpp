@@ -436,6 +436,7 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     using QInterface::ForceM;
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
