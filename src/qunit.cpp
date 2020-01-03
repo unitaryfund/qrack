@@ -718,7 +718,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if ((shards[i].unit == shard.unit) && (shards[i].mapped != shard.mapped)) {
+        if (shards[i].unit == shard.unit) {
             shards[i].isProbDirty = true;
             shards[i].isPhaseDirty = true;
         }
@@ -809,9 +809,6 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
 
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
-    //"Collapsing" the register bit-by-bit is very costly. It's cheap to eventually recover the measurement from the
-    // single-bit method, but only once we collapse the state more efficiently.
-
     bitLenInt i;
 
     bitLenInt* bits = new bitLenInt[length];
