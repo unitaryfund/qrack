@@ -858,14 +858,14 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    RevertBasis2Qb(qubit1);
+    RevertBasis2Qb(qubit2);
+
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    // Swap the bit mapping.
+    // Simply swap the bit mapping, so long as no 2-qubit gates are buffered.
     std::swap(shard1, shard2);
-    // Swap commutes with Hadamards on both bits, (and the identity,) but the commutator for a single H-ed bit is an H
-    // on the other bit.
-    std::swap(shard1.isPlusMinus, shard2.isPlusMinus);
 
     QInterfacePtr unit = shards[qubit1].unit;
     if (unit == shards[qubit2].unit) {
@@ -885,6 +885,9 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     if (qubit1 == qubit2) {
         return;
     }
+
+    RevertBasis2Qb(qubit1);
+    RevertBasis2Qb(qubit2);
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
@@ -918,6 +921,9 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    RevertBasis2Qb(qubit1);
+    RevertBasis2Qb(qubit2);
+
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
@@ -941,6 +947,9 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     if (qubit1 == qubit2) {
         return;
     }
+
+    RevertBasis2Qb(qubit1);
+    RevertBasis2Qb(qubit2);
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
