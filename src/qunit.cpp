@@ -1170,8 +1170,8 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     if (qubit1 == qubit2) {                                                                                            \
         return;                                                                                                        \
     }                                                                                                                  \
-    TransformBasis1Qb(false, qubit1);                                                                                  \
-    TransformBasis1Qb(false, qubit2);                                                                                  \
+    ToPermBasis(qubit1);                                                                                               \
+    ToPermBasis(qubit2);                                                                                               \
     ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
@@ -1342,11 +1342,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    /*if (!freezeBasis) {
+    if (!freezeBasis) {
         TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
         return;
-    }*/
+    }
 
     if (cShard.isPlusMinus && !tShard.isPlusMinus) {
         std::swap(control, target);
