@@ -23,7 +23,7 @@
 #include "qengine.hpp"
 
 #define BCI_ARG_LEN 10
-#define CMPLX_NORM_LEN 5
+#define CMPLX_NORM_LEN 6
 #define REAL_ARG_LEN 2
 
 namespace Qrack {
@@ -108,6 +108,7 @@ protected:
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
+    size_t baseAlign;
     unsigned int procElemCount;
     bool unlockHostMem;
 
@@ -135,8 +136,9 @@ public:
      */
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false);
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual ~QEngineOCL()
     {
@@ -145,19 +147,28 @@ public:
         FreeStateVec();
     }
 
-    virtual void FreeStateVec()
+    virtual void FreeStateVec(complex* sv = NULL)
     {
-        if (stateVec) {
+        bool doReset = false;
+        if (sv == NULL) {
+            sv = stateVec;
+            doReset = true;
+        }
+
+        if (sv) {
 #if defined(_WIN32)
-            _aligned_free(stateVec);
+            _aligned_free(sv);
 #else
-            free(stateVec);
+            free(sv);
 #endif
         }
-        stateVec = NULL;
+
+        if (doReset) {
+            stateVec = NULL;
+        }
     }
 
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -239,8 +250,8 @@ public:
     }
     virtual bool ApproxCompare(QEngineOCLPtr toCompare);
 
-    virtual void NormalizeState(real1 nrm = -999.0);
-    virtual void UpdateRunningNorm();
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
     virtual void Finish() { clFinish(); };
     virtual bool isFinished() { return (wait_queue_items.size() == 0); };
 
@@ -312,12 +323,12 @@ protected:
 
     using QEngine::Apply2x2;
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm)
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG)
     {
-        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE);
+        Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE, norm_thresh);
     }
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

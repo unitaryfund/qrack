@@ -356,18 +356,19 @@ protected:
 
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool doNorm = false,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
         bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false);
+        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false);
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true,
+        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
     virtual bitLenInt Compose(QUnitPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
@@ -405,10 +406,8 @@ public:
     using QInterface::CZ;
     virtual void CZ(bitLenInt control, bitLenInt target);
 
-    virtual void ApplySinglePhase(
-        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
-    virtual void ApplySingleInvert(
-        const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -417,7 +416,7 @@ public:
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
@@ -437,6 +436,9 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     using QInterface::ForceM;
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
+    using QInterface::ForceMReg;
+    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
 
     /** @} */
 
@@ -541,8 +543,8 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
-    virtual void UpdateRunningNorm();
-    virtual void NormalizeState(real1 nrm = -999.0);
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_threshold = REAL1_DEFAULT_ARG);
     virtual void Finish();
     virtual bool isFinished();
 
@@ -617,10 +619,10 @@ protected:
     template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
     template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
-    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1 param = ZERO_R1);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);
 
-    virtual void SeparateBit(bool value, bitLenInt qubit);
+    virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
 
     void OrderContiguous(QInterfacePtr unit);
 

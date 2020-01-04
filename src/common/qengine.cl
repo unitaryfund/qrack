@@ -45,16 +45,20 @@ inline real1 arg(const cmplx cmp)
     cmplx4 mtrx = vload8(0, cmplxPtr);                                               \
     real1 nrm = cmplxPtr[8];                                                         \
                                                                                      \
-    cmplx2 mulRes
+    cmplx2 mulRes;
+
+#define PREP_2X2_NORM()                                                              \
+    real1 norm_thresh = cmplxPtr[9];                                                 \
+    real1 dotMulRes;
 
 #define PREP_SPECIAL_2X2()                                                           \
     bitCapInt lcv, i;                                                                \
     bitCapInt Nthreads = get_global_size(0);                                         \
-    cmplx Y0
+    cmplx Y0;
 
 #define PREP_Z_2X2()                                                                 \
     bitCapInt lcv, i;                                                                \
-    bitCapInt Nthreads = get_global_size(0)
+    bitCapInt Nthreads = get_global_size(0);
 
 #define PUSH_APART_GEN()                                                             \
     iHigh = lcv;                                                                     \
@@ -64,17 +68,17 @@ inline real1 arg(const cmplx cmp)
         i |= iLow;                                                                   \
         iHigh = (iHigh ^ iLow) << ONE_BCI;                                           \
     }                                                                                \
-    i |= iHigh
+    i |= iHigh;
 
 #define PUSH_APART_1()                                                               \
     i = lcv & qMask;                                                                 \
-    i |= (lcv ^ i) << ONE_BCI
+    i |= (lcv ^ i) << ONE_BCI;
 
 #define PUSH_APART_2()                                                               \
     i = lcv & qMask1;                                                                \
     iHigh = (lcv ^ i) << ONE_BCI;                                                    \
     iLow = iHigh & qMask2;                                                           \
-    i |= iLow | ((iHigh ^ iLow) << ONE_BCI)
+    i |= iLow | ((iHigh ^ iLow) << ONE_BCI);
 
 #define APPLY_AND_OUT()                                                              \
     mulRes.lo = stateVec[i | OFFSET1_ARG];                                           \
@@ -83,15 +87,15 @@ inline real1 arg(const cmplx cmp)
     mulRes = zmatrixmul(nrm, mtrx, mulRes);                                          \
                                                                                      \
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
-    stateVec[i | OFFSET2_ARG] = mulRes.hi
+    stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
 #define APPLY_X()                                                                    \
     Y0 = stateVec[i];                                                                \
     stateVec[i] = stateVec[i | OFFSET2_ARG];                                         \
-    stateVec[i | OFFSET2_ARG] = Y0
+    stateVec[i | OFFSET2_ARG] = Y0;
 
 #define APPLY_Z()                                                                    \
-    stateVec[i | OFFSET2_ARG] = -stateVec[i | OFFSET2_ARG]
+    stateVec[i | OFFSET2_ARG] = -stateVec[i | OFFSET2_ARG];
 
 #define SUM_2X2()                                                                    \
     locID = get_local_id(0);                                                         \
@@ -115,10 +119,22 @@ inline real1 arg(const cmplx cmp)
                                                                                      \
     mulRes = zmatrixmul(nrm, mtrx, mulRes);                                          \
                                                                                      \
-    partNrm += dot(mulRes, mulRes);                                                  \
+    dotMulRes = dot(mulRes.lo, mulRes.lo);                                           \
+    if (dotMulRes < norm_thresh) {                                                   \
+        mulRes.lo = (cmplx)(ZERO_R1, ZERO_R1);                                       \
+    } else {                                                                         \
+        partNrm += dotMulRes;                                                        \
+    }                                                                                \
+                                                                                     \
+    dotMulRes = dot(mulRes.hi, mulRes.hi);                                           \
+    if (dotMulRes < norm_thresh) {                                                   \
+        mulRes.hi = (cmplx)(ZERO_R1, ZERO_R1);                                       \
+    } else {                                                                         \
+        partNrm += dotMulRes;                                                        \
+    }                                                                                \
                                                                                      \
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
-    stateVec[i | OFFSET2_ARG] = mulRes.hi
+    stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
 void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
@@ -198,6 +214,7 @@ void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr,
 void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
+    PREP_2X2_NORM();
 
     bitCapInt qMask = bitCapIntPtr[3];
 
@@ -216,6 +233,7 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
 void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
+    PREP_2X2_NORM();
 
     bitCapInt qMask = bitCapIntPtr[2];
 
@@ -1677,23 +1695,38 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, con
     
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
+    real1 norm_thresh = args_ptr[0];
     real1 nrm = args_ptr[1];
+    cmplx amp;
     
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        stateVec[lcv] = nrm * stateVec[lcv];
+        amp = stateVec[lcv];
+        if (dot(amp, amp) < norm_thresh) {
+            amp = (cmplx)(ZERO_R1, ZERO_R1);
+        }
+        stateVec[lcv] = nrm * amp;
     }
 }
 
 void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
     bitCapInt lcv = ID;
-    stateVec[lcv] = args_ptr[1] * stateVec[lcv];
+    real1 norm_thresh = args_ptr[0];
+    real1 nrm = args_ptr[1];
+    cmplx amp;
+
+    amp = stateVec[lcv];
+    if (dot(amp, amp) < norm_thresh) {
+        amp = (cmplx)(ZERO_R1, ZERO_R1);
+    }
+    stateVec[lcv] = nrm * amp;
 }
 
-void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
+void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr, global real1* norm_ptr, local real1* lProbBuffer) {
     bitCapInt Nthreads, lcv, locID, locNthreads;
     
     Nthreads = get_global_size(0);
     bitCapInt maxI = bitCapIntPtr[0];
+    real1 norm_thresh = args_ptr[0];
     cmplx amp;
     real1 nrm;
     real1 partNrm = ZERO_R1;
@@ -1702,6 +1735,9 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr,
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         amp = stateVec[lcv];
         nrm = dot(amp, amp);
+        if (nrm < norm_thresh) {
+            nrm = ZERO_R1;
+        }
         partNrm += nrm;
     }
 

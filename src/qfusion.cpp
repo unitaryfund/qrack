@@ -21,15 +21,15 @@ namespace Qrack {
 
 QFusion::QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
     complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
-    bool useSparseStateVec)
-    : QInterface(qBitCount, rgp, deviceID, useHardwareRNG, randomGlobalPhase)
+    bool useSparseStateVec, real1 norm_thresh)
+    : QInterface(qBitCount, rgp, deviceID, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
     , bitBuffers(qBitCount)
     , bitControls(qBitCount)
 {
     qReg = CreateQuantumInterface(eng, qBitCount, initState, rgp, phaseFactor, doNormalize, randomGlobalPhase,
-        useHostMem, deviceID, useHardwareRNG, useSparseStateVec);
+        useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh);
 }
 
 QFusion::QFusion(QInterfacePtr target)
@@ -135,48 +135,20 @@ void QFusion::DiscardBit(const bitLenInt& qubitIndex)
 
 // Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
 // discard the buffers.
-void QFusion::ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex)
+void QFusion::ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
 {
     // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
     // more expensive than directly applying the gates.
     if (qubitCount < (MIN_FUSION_BITS + ((bitBuffers[qubitIndex] == NULL) ? 0 : 1))) {
         // Directly apply the gate and return.
         FlushBit(qubitIndex);
-        qReg->ApplySingleBit(mtrx, doCalcNorm, qubitIndex);
+        qReg->ApplySingleBit(mtrx, qubitIndex);
         return;
     }
 
     FlushSet(bitControls[qubitIndex]);
 
     // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
-    GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
-    if (!(bfr->Combinable(bitBuffers[qubitIndex]))) {
-        // Flush the old buffer, if the buffered control bits don't match.
-        FlushBit(qubitIndex);
-    }
-
-    // Now, we're going to chain our buffered gates;
-    bitBuffers[qubitIndex] = bfr->LeftRightCompose(bitBuffers[qubitIndex]);
-}
-
-// Almost all additional methods, besides controlled variants of this one, just wrap operations with buffer flushes, or
-// discard the buffers.
-void QFusion::ApplySinglePhase(const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex)
-{
-    // MIN_FUSION_BITS might be 3 qubits, or more. If there are only 1 or 2 qubits in a QEngine, buffering is definitely
-    // more expensive than directly applying the gates.
-    if (qubitCount < (MIN_FUSION_BITS + ((bitBuffers[qubitIndex] == NULL) ? 0 : 1))) {
-        // Directly apply the gate and return.
-        FlushBit(qubitIndex);
-        qReg->ApplySinglePhase(topLeft, bottomRight, doCalcNorm, qubitIndex);
-        return;
-    }
-
-    // Unlike the general single bit variant, phase gates definitely commute with control bits, so there's no need to
-    // flush this bit as a control.
-
-    // If we pass the threshold number of qubits for buffering, we just do 2x2 complex matrix multiplication.
-    complex mtrx[4] = { topLeft, 0, 0, bottomRight };
     GateBufferPtr bfr = std::make_shared<GateBuffer>(false, (const bitLenInt*)NULL, 0, mtrx);
     if (!(bfr->Combinable(bitBuffers[qubitIndex]))) {
         // Flush the old buffer, if the buffered control bits don't match.
@@ -402,7 +374,7 @@ void QFusion::PhaseFlip()
     // We buffer the phase flip as a single bit operation in bit 0.
     complex pfm[4] = { complex(-ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
-    ApplySingleBit(pfm, false, 0);
+    ApplySingleBit(pfm, 0);
 }
 
 // Every other operation just wraps the QEngine with the appropriate buffer flushes.
@@ -961,10 +933,10 @@ bool QFusion::ApproxCompare(QFusionPtr toCompare)
 }
 
 // Avoid calling this, when a QFusion layer is being used:
-void QFusion::UpdateRunningNorm() { qReg->UpdateRunningNorm(); }
+void QFusion::UpdateRunningNorm(real1 norm_thresh) { qReg->UpdateRunningNorm(norm_thresh); }
 
 // Avoid calling this, when a QFusion layer is being used:
-void QFusion::NormalizeState(real1 nrm) { qReg->NormalizeState(nrm); }
+void QFusion::NormalizeState(real1 nrm, real1 norm_thresh) { qReg->NormalizeState(nrm, norm_thresh); }
 
 bool QFusion::TrySeparate(bitLenInt start, bitLenInt length)
 {

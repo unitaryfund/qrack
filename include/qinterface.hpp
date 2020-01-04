@@ -114,6 +114,7 @@ protected:
     std::shared_ptr<RdRandWrapper::RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
+    real1 amplitudeFloor;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -167,11 +168,12 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true)
+        bool randomGlobalPhase = true, real1 norm_thresh = REAL1_DEFAULT_ARG)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
         , randGlobalPhase(randomGlobalPhase)
+        , amplitudeFloor(norm_thresh)
     {
         SetQubitCount(n);
 
@@ -188,6 +190,10 @@ public:
             SetRandomSeed(randomSeed);
         } else {
             rand_generator = rgp;
+        }
+
+        if (amplitudeFloor < 0) {
+            amplitudeFloor = min_norm;
         }
     }
 
@@ -240,7 +246,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm) = 0;
 
     /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0)) = 0;
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -375,53 +381,33 @@ public:
 
     /**
      * Apply an arbitrary single bit unitary transformation.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubitIndex) = 0;
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
 
     /**
      * Apply a single bit transformation that only effects phase.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
-    virtual void ApplySinglePhase(
-        const complex topLeft, const complex bottomRight, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
-    virtual void ApplySingleInvert(
-        const complex topRight, const complex bottomLeft, bool doCalcNorm, bitLenInt qubitIndex);
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
@@ -429,18 +415,12 @@ public:
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control
      * bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
@@ -448,9 +428,6 @@ public:
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
      * (anti-)control bits.
-     *
-     * If float rounding from the application of the matrix might change the state vector norm, "doCalcNorm" should be
-     * set to true.
      */
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
@@ -1870,6 +1847,23 @@ public:
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     /**
+     * Statistical measure of masked permutation probability
+     *
+     * "qPowers" contains powers of 2^n, each representing QInterface bit "n." The order of these values defines a mask
+     * for the result bitCapInt, of 2^0 ~ qPowers[0] to 2^(qPowerCount - 1) ~ qPowers[qPowerCount - 1], in contiguous
+     * ascending order. "shots" specifies the number of samples to take as if totally re-preparing the pre-measurement
+     * state. This method returns a dictionary with keys, which are the (masked-order) measurement results, and values,
+     * which are the number of "shots" that produced that particular measurement result. This method does not "collapse"
+     * the state of this QInterface. (The idea is to efficiently simulate a potentially statistically random sample of
+     * multiple re-preparations of the state right before measurement, and to collect random measurement resutls,
+     * without forcing the user to re-prepare or "clone" the state.)
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual std::map<bitCapInt, int> MultiShotMeasureMask(
+        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
+
+    /**
      * Set individual bit to pure |0> (false) or |1> (true) state
      *
      * To set a bit, the bit is first measured. If the result of measurement
@@ -1896,7 +1890,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
 
-    virtual void UpdateRunningNorm() = 0;
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
      * Apply the normalization factor found by UpdateRunningNorm() or on the fly by a single bit gate. (On an actual
@@ -1905,7 +1899,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
 
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,

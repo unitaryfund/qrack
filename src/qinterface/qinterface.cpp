@@ -511,7 +511,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
     bitCapInt power;
     for (bitLenInt bit = 0; bit < length; bit++) {
         power = pow2(bit);
-        res |= ForceM(start + bit, power & result, doForce) ? power : 0;
+        res |= ForceM(start + bit, (bool)(power & result), doForce) ? power : 0;
     }
     return res;
 }
@@ -651,6 +651,65 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         i |= iHigh;
         probsArray[lcv] = ProbMask(mask, i);
     }
+}
+
+std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
+    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+{
+    bitLenInt i;
+    bitCapInt j;
+
+    bitCapInt* qPowersSorted = new bitCapInt[qPowerCount];
+    bitCapInt mask = 0U;
+    for (i = 0; i < qPowerCount; i++) {
+        mask |= qPowers[i];
+        qPowersSorted[i] = qPowers[i];
+    }
+
+    std::sort(qPowersSorted, qPowersSorted + qPowerCount);
+    std::map<bitLenInt, bitCapInt> maskMap;
+    for (bitLenInt k = 0; k < qPowerCount; k++) {
+        for (i = 0; i < qPowerCount; i++) {
+            if (qPowersSorted[k] == qPowers[i]) {
+                maskMap[k] = pow2(i);
+                break;
+            }
+        }
+    }
+
+    bitCapInt subsetCap = pow2(qPowerCount);
+    real1* probsArray = new real1[subsetCap];
+    ProbMaskAll(mask, probsArray);
+
+    real1 totProb = 0;
+    for (j = 0; j < subsetCap; j++) {
+        totProb += probsArray[j];
+    }
+
+    std::map<bitCapInt, int> results;
+    real1 maskProb, cumProb;
+    bitCapInt key;
+    for (unsigned int shot = 0; shot < shots; shot++) {
+        maskProb = Rand();
+        cumProb = ZERO_R1;
+        for (j = 0; j < subsetCap; j++) {
+            cumProb += probsArray[j];
+            if ((maskProb < cumProb) || (cumProb >= totProb)) {
+                key = 0;
+                for (i = 0; i < qPowerCount; i++) {
+                    if (j & pow2(i)) {
+                        key |= maskMap[i];
+                    }
+                }
+                results[key]++;
+                break;
+            }
+        }
+    }
+
+    delete[] probsArray;
+
+    return results;
 }
 
 } // namespace Qrack

@@ -24,7 +24,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
         }
     });
 
-    UpdateRunningNorm();
+    runningNorm = ONE_R1;
 }
 
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU

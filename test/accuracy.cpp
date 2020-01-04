@@ -76,7 +76,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
 
             testAmp2 = qftReg->GetAmplitude(0);
 
-            err = norm(testAmp1 - testAmp2);
+            err = norm(testAmp2 - testAmp1);
 
             // Collect interval data
             trialErrors[i] = err;

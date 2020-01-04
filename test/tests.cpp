@@ -545,9 +545,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
     complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplySingleBit(pauliX, false, 19);
+    qftReg->ApplySingleBit(pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
-    qftReg->ApplySingleBit(pauliX, false, 19);
+    qftReg->ApplySingleBit(pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
@@ -676,12 +676,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_invert
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_invert")
 {
     qftReg->SetPermutation(0x01);
-    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, false, 0);
+    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, 0);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0);
-    qftReg->ApplySingleInvert(ONE_CMPLX, -ONE_CMPLX, false, 0);
+    qftReg->ApplySingleInvert(ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 }
@@ -3417,6 +3417,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probreg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
 {
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);
     qftReg->SetPermutation(0x21);
     REQUIRE(qftReg->ProbMask(0xF0, 0x20) > 0.99);
     REQUIRE(qftReg->ProbMask(0xF0, 0x40) < 0.01);
@@ -3442,6 +3443,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);
+
+    bitCapInt qPowers[3] = { pow2(6), pow2(2), pow2(3) };
+
+    qftReg->SetPermutation(0);
+    qftReg->H(6);
+    qftReg->X(2);
+    qftReg->H(3);
+
+    const std::set<bitCapInt> possibleResults = { 2, 3, 6, 7 };
+
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 3U, 1000);
+    std::map<bitCapInt, int>::iterator it = results.begin();
+    while (it != results.end()) {
+        REQUIRE(possibleResults.find(it->first) != possibleResults.end());
+        it++;
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
 {
     qftReg->SetPermutation(0x0);
@@ -3460,6 +3482,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
 
     REQUIRE(qftReg->ProbMask(0x7, 0x2) > 0.99);
     REQUIRE_FLOAT(qftReg->ProbMask(0xF, 0x2), 0.5);
+
+    qftReg->SetPermutation(0x0);
+    qftReg->H(1);
+    qftReg->CNOT(1, 2);
+    qftReg->H(3);
+    qftReg->CNOT(3, 4);
+    qftReg->H(5);
+    qftReg->CNOT(5, 6);
+    qftReg->CNOT(5, 7);
+
+    qftReg->ForceMReg(2, 5, 0x19, true);
+    REQUIRE_THAT(qftReg, HasProbability(0xE6));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
@@ -4402,11 +4436,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     qftReg->SetPermutation(0);
 
     qftReg->H(0);
-    qftReg->ApplySinglePhase(ONE_CMPLX, -ONE_CMPLX, false, 0);
+    qftReg->ApplySinglePhase(ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
 
-    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, false, 1);
+    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, 1);
     qftReg->H(0);
     qftReg->CZ(1, 0);
     qftReg->H(0);

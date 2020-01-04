@@ -157,7 +157,7 @@ bool GateBuffer::IsIdentity()
 void GateBuffer::Apply(QInterfacePtr qReg, const bitLenInt& qubitIndex, std::vector<BitBufferPtr>* bitBuffers)
 {
     if (controls.size() == 0) {
-        qReg->ApplySingleBit(matrix.get(), true, qubitIndex);
+        qReg->ApplySingleBit(matrix.get(), qubitIndex);
     } else {
         bitLenInt* ctrls = new bitLenInt[controls.size()];
         std::copy(controls.begin(), controls.end(), ctrls);

@@ -65,8 +65,8 @@ namespace Qrack {
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG)
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , deviceID(devID)
     , wait_refs()
     , nrmArray(NULL)
@@ -322,12 +322,13 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // anyway.
     maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    baseAlign = device_context->device.getInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>();
     size_t stateVecSize = maxQPower * sizeof(complex);
     bool usingHostRam;
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         throw "Error: State vector exceeds device maximum OpenCL allocation";
-    } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
+    } else if (useHostRam || (stateVecSize < baseAlign) || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
         usingHostRam = false;
@@ -541,14 +542,14 @@ void QEngineOCL::Z(bitLenInt qubit)
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh)
 {
     bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
     bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm &= doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec;
@@ -602,11 +603,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
+    cmplx[5] = norm_thresh;
 
     BufferPtr locCmplxBuffer;
     cl::Event writeGateEvent;
     if (!isXGate && !isZGate) {
-        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 5, cmplx, writeGateEvent);
+        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * CMPLX_NORM_LEN, cmplx, writeGateEvent);
     }
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
@@ -728,7 +730,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 {
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), true, qubitIndex);
+        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), qubitIndex);
         return;
     }
 
@@ -800,6 +802,8 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm)
     writeNormEvent.wait();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
+
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -836,7 +840,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
 
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
-    if (!stateVec && (nStateVecSize > maxAlloc || (2 * nStateVecSize) > maxMem)) {
+    if (!stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
         complex* nSV = AllocStateVec(maxQPower, true);
         BufferPtr nSB = MakeStateVecBuffer(nSV);
 
@@ -1062,7 +1066,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ngs = FixGroupSize(ngc, nrmGroupSize);
 
     size_t nStateVecSize = maxQPower * sizeof(complex);
-    if (!useHostRam && stateVec && nStateVecSize <= maxAlloc && (2 * nStateVecSize) <= maxMem) {
+    if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
         clFinish();
         FreeStateVec();
     }
@@ -2035,13 +2039,25 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineOCL::GetProbs(real1* outputProbs)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
-    LockSync(CL_MAP_READ);
-    std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
-    UnlockSync();
+    if (stateVec) {
+        LockSync(CL_MAP_READ);
+        std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
+        UnlockSync();
+        return;
+    }
+
+    complex* outputState = AllocStateVec(maxQPower, true);
+    BufferPtr oStateBuffer = MakeStateVecBuffer(outputState);
+    WAIT_COPY(*stateBuffer, *oStateBuffer, sizeof(complex) * maxQPower);
+    queue.enqueueMapBuffer(*oStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower);
+
+    std::transform(outputState, outputState + maxQPower, outputProbs, normHelper);
+
+    FreeStateVec(outputState);
 }
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
@@ -2117,7 +2133,7 @@ QInterfacePtr QEngineOCL::Clone()
     return copyPtr;
 }
 
-void QEngineOCL::NormalizeState(real1 nrm)
+void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     // We might have async execution of gates still happening.
     clFinish();
@@ -2129,11 +2145,15 @@ void QEngineOCL::NormalizeState(real1 nrm)
         return;
     }
 
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = amplitudeFloor;
+    }
+
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[2] = { min_norm, (real1)ONE_R1 / std::sqrt(nrm) };
+    real1 r1_args[2] = { norm_thresh, (real1)ONE_R1 / std::sqrt(nrm) };
     cl::Event writeRealArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * REAL_ARG_LEN, r1_args, writeRealArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * 2, r1_args, writeRealArgsEvent);
 
     bitCapInt bciArgs[1] = { maxQPower };
     cl::Event writeBCIArgsEvent;
@@ -2159,28 +2179,36 @@ void QEngineOCL::NormalizeState(real1 nrm)
     runningNorm = ONE_R1;
 }
 
-void QEngineOCL::UpdateRunningNorm()
+void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
 {
+    if (norm_thresh < ZERO_R1) {
+        norm_thresh = amplitudeFloor;
+    }
+
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
+
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    real1 r1_args[1] = { norm_thresh };
+    cl::Event writeRealArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1), r1_args, writeRealArgsEvent);
 
     runningNorm = ONE_R1;
 
-    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
-
-    cl::Event writeArgsEvent;
-    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs, writeArgsEvent);
-
-    // Wait for buffer write from limited lifetime objects
-    writeArgsEvent.wait();
-    wait_refs.clear();
+    bitCapInt bciArgs[1] = { maxQPower };
+    cl::Event writeBCIArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
+    // Wait for buffer write from limited lifetime objects
+    writeRealArgsEvent.wait();
+    writeBCIArgsEvent.wait();
+    wait_refs.clear();
+
+    QueueCall(OCL_API_UPDATENORM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer, nrmBuffer },
+        sizeof(real1) * ngs);
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 }

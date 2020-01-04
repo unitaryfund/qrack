@@ -43,8 +43,8 @@ protected:
 
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, bool useHardwareRNG = true)
-        : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase)
+        bool useHostMem = false, bool useHardwareRNG = true, real1 norm_thresh = REAL1_DEFAULT_ARG)
+        : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
     {
@@ -72,7 +72,7 @@ public:
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;
 
-    virtual void ApplySingleBit(const complex* mtrx, bool doCalcNorm, bitLenInt qubit);
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
@@ -114,15 +114,15 @@ public:
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    virtual void NormalizeState(real1 nrm = -999.0) = 0;
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
 protected:
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm) = 0;
-    virtual void ApplyControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex* mtrx, bool doCalcNorm);
-    virtual void ApplyAntiControlled2x2(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex* mtrx, bool doCalcNorm);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void ApplyControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     /**
      * Common driver method behind INCC and DECC
