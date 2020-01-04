@@ -1030,6 +1030,11 @@ void QUnit::H(bitLenInt target)
         if (!shard.TryHCommute()) {
             RevertBasis2Qb(target);
         }
+        // for (bitLenInt i = 0; i < qubitCount; i++) {
+        //    if (shard.unit == shards[i].unit) {
+        //        ToPermBasis(target);
+        //    }
+        //}
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
@@ -1334,6 +1339,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
+        TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
         return;
     }

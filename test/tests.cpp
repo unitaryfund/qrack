@@ -4400,7 +4400,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_m")
     const std::set<bitCapInt> possibleResults = { 0, 3 };
 
     qftReg->SetPermutation(0);
-
     qftReg->H(0, 2);
     qftReg->CZ(0, 1);
     qftReg->H(0);
@@ -4411,6 +4410,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_m")
         it++;
     }
 
+    qftReg->SetPermutation(0);
     qftReg->H(0, 2);
     qftReg->CZ(0, 1);
     qftReg->H(1);
