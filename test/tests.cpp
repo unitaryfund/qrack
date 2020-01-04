@@ -4394,6 +4394,34 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_m")
+{
+    bitCapInt qPowers[2] = { 1, 2 };
+    const std::set<bitCapInt> possibleResults = { 0, 3 };
+
+    qftReg->SetPermutation(0);
+
+    qftReg->H(0, 2);
+    qftReg->CZ(0, 1);
+    qftReg->H(0);
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
+    std::map<bitCapInt, int>::iterator it = results.begin();
+    while (it != results.end()) {
+        REQUIRE(possibleResults.find(it->first) != possibleResults.end());
+        it++;
+    }
+
+    qftReg->H(0, 2);
+    qftReg->CZ(0, 1);
+    qftReg->H(1);
+    results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
+    it = results.begin();
+    while (it != results.end()) {
+        REQUIRE(possibleResults.find(it->first) != possibleResults.end());
+        it++;
+    }
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_n_bell")
 {
     int i;
