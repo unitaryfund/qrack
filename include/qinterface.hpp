@@ -168,7 +168,7 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true, real1 norm_thresh = -999.0)
+        bool randomGlobalPhase = true, real1 norm_thresh = REAL1_DEFAULT_ARG)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
@@ -246,7 +246,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm) = 0;
 
     /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0)) = 0;
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -1849,13 +1849,14 @@ public:
     /**
      * Statistical measure of masked permutation probability
      *
-     * "qPowers" contains powers of 2^n representing bit n, to mask them in results in ascending order from qPowers[0]
-     * to qPowers[qPowerCount - 1]. "shots" specifies the number of samples to take as if totally re-preparing the
-     * pre-measurement state. This method returns a dictionary with key, (masked-order) measurement result, and value,
-     * number of "shots" which produced that measurement. This method does not "collapse" the state. (The idea is to
-     * efficiently simulate a potentially statistically random multiple re-preparations of the state right before
-     * measurement, and collect random measurement resutls, without forcing the user to re-prepare or "clone" the
-     * state.)
+     * "qPowers" contains powers of 2^n, each representing QInterface bit "n." The order of these values defines a mask
+     * for the result bitCapInt, of 2^0 ~ qPowers[0] to 2^(qPowerCount - 1) ~ qPowers[qPowerCount - 1], in contiguous
+     * ascending order. "shots" specifies the number of samples to take as if totally re-preparing the pre-measurement
+     * state. This method returns a dictionary with keys, which are the (masked-order) measurement results, and values,
+     * which are the number of "shots" that produced that particular measurement result. This method does not "collapse"
+     * the state of this QInterface. (The idea is to efficiently simulate a potentially statistically random sample of
+     * multiple re-preparations of the state right before measurement, and to collect random measurement resutls,
+     * without forcing the user to re-prepare or "clone" the state.)
      *
      * \warning PSEUDO-QUANTUM
      */
@@ -1889,7 +1890,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
 
-    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0) = 0;
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
      * Apply the normalization factor found by UpdateRunningNorm() or on the fly by a single bit gate. (On an actual
@@ -1898,7 +1899,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
 
-    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0) = 0;
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,

@@ -38,9 +38,9 @@ protected:
 
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
-        bool ignored = false, int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = -999.0);
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
+        int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual ~QEngineCPU()
     {
@@ -111,7 +111,7 @@ public:
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
     virtual void PhaseFlip();
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -134,7 +134,7 @@ public:
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
-    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0);
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
@@ -150,8 +150,8 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = -999.0);
-    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     virtual void INCDECC(

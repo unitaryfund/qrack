@@ -356,19 +356,19 @@ protected:
 
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = complex(-999.0, -999.0), bool doNorm = true,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
         bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = -999.0);
+        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = true, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = -999.0);
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true,
+        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
     virtual bitLenInt Compose(QUnitPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
@@ -543,8 +543,8 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
     virtual bool ApproxCompare(QUnitPtr toCompare);
-    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0);
-    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_threshold = -999.0);
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_threshold = REAL1_DEFAULT_ARG);
     virtual void Finish();
     virtual bool isFinished();
 

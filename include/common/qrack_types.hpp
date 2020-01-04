@@ -47,6 +47,7 @@ typedef float real1;
 // min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
 // the results of the tests in accuracy.cpp.
 #define min_norm 1e-14f
+#define REAL1_DEFAULT_ARG -999.0f
 #else
 //#include "complex16simd.hpp"
 namespace Qrack {
@@ -59,11 +60,13 @@ typedef double real1;
 // min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
 // the results of the tests in accuracy.cpp.
 #define min_norm 1e-31
+#define REAL1_DEFAULT_ARG -999.0
 #endif
 
 #define ONE_CMPLX complex(ONE_R1, ZERO_R1)
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
+#define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
 
 // approxcompare_error is the maximum acceptable sum of probability amplitude difference for ApproxCompare to return
 // "true." When TrySeparate or TryDecohere is applied after the QFT followed by its inverse on a permutation, the sum of

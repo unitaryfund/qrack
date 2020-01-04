@@ -48,16 +48,16 @@ protected:
 
 public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = complex(-999.0, -999.0), bool doNorm = false, bool randomGlobalPhase = true,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = -999.0);
+        real1 norm_thresh = REAL1_DEFAULT_ARG);
     QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Compose;
@@ -187,8 +187,8 @@ public:
         return toRet;
     }
 
-    virtual void UpdateRunningNorm(real1 norm_thresh = -999.0);
-    virtual void NormalizeState(real1 nrm = -999.0, real1 norm_thresh = -999.0);
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
     virtual void Finish()
     {
         FlushAll();

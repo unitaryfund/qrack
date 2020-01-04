@@ -69,7 +69,7 @@ public:
         const bitLenInt& highStart, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
-    real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh = -999.0);
+    real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh = REAL1_DEFAULT_ARG);
 };
 
 } // namespace Qrack
