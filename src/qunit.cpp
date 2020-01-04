@@ -1342,14 +1342,14 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
+    if (cShard.isPlusMinus && !tShard.isPlusMinus) {
+        std::swap(control, target);
+    }
+
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
         return;
-    }
-
-    if (cShard.isPlusMinus && !tShard.isPlusMinus) {
-        std::swap(control, target);
     }
 
     bitLenInt controls[1] = { control };
