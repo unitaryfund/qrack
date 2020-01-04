@@ -1036,13 +1036,8 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasis) {
-        if (!shard.TryHCommute()) {
-            RevertBasis2Qb(target);
-        }
-        // for (bitLenInt i = 0; i < qubitCount; i++) {
-        //    if (shard.unit == shards[i].unit) {
-        //        ToPermBasis(target);
-        //    }
+        // if (!shard.TryHCommute()) {
+        RevertBasis2Qb(target);
         //}
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
@@ -1244,14 +1239,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    if (!freezeBasis) {
+    /*if (!freezeBasis) {
         TransformBasis1Qb(false, control);
         RevertBasis2Qb(control, true);
         RevertBasis2Qb(target, true);
 
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
-    }
+    }*/
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
@@ -1347,11 +1342,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis) {
+    /*if (!freezeBasis) {
         TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
         return;
-    }
+    }*/
 
     if (cShard.isPlusMinus && !tShard.isPlusMinus) {
         std::swap(control, target);
@@ -1472,20 +1467,15 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    QEngineShard& tShard = shards[target];
+    /*QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[controls[0]];
 
-    if (!freezeBasis || (controlLen != 1U)) {
-        for (bitLenInt i = 0; i < controlLen; i++) {
-            PopHBasis2Qb(controls[i]);
-        }
-    }
-
     if (!freezeBasis && (controlLen == 1U)) {
+        TransformBasis1Qb(false, controls[0]);
         tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
         delete[] controls;
         return;
-    }
+    }*/
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySinglePhase(topLeft, bottomRight, target), false, false, topLeft, bottomRight);
@@ -1500,14 +1490,14 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         return;
     }
 
-    if (!freezeBasis && (controlLen == 1U)) {
+    /*if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
         RevertBasis2Qb(controls[0], true);
         RevertBasis2Qb(target, true);
 
         shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
         return;
-    }
+    }*/
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
