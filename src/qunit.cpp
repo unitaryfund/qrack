@@ -1236,20 +1236,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    QEngineShard& cShard = shards[control];
-    QEngineShard& tShard = shards[target];
-
-    /*if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-        RevertBasis2Qb(control, true);
-        RevertBasis2Qb(target, true);
-
-        tShard.AddInversionAngles(&cShard, 0, 0);
-        return;
-    }*/
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
+
+    RevertBasis2Qb(control, true);
+    RevertBasis2Qb(target);
+
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
@@ -1265,6 +1259,16 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true);
+        return;
+    }
+
+    if (!freezeBasis) {
+        TransformBasis1Qb(false, control);
+
+        tShard.AddInversionAngles(&cShard, 0, 0);
+
+        // TODO: Remove. For testing/debugging purposes. All this ends up achieving is combining with any previous phase gates before flushing the buffer.
+        RevertBasis2Qb(target);
         return;
     }
 
