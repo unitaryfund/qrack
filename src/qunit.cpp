@@ -1086,7 +1086,8 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    shard.FlipPhaseAnti();
+    // shard.FlipPhaseAnti();
+    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         XBase(target);
@@ -1100,7 +1101,8 @@ void QUnit::Z(bitLenInt target)
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
 
-    shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    // shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         if (PHASE_MATTERS(target)) {
@@ -1239,9 +1241,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    RevertBasis2Qb(control, true);
-    RevertBasis2Qb(target);
-
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
@@ -1262,15 +1261,13 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    /*if (!freezeBasis) {
+    if (!freezeBasis) {
         TransformBasis1Qb(false, control);
-
+        RevertBasis2Qb(control, true);
+        RevertBasis2Qb(target, true);
         tShard.AddInversionAngles(&cShard, 0, 0);
-
-        // TODO: Remove. For testing/debugging purposes. All this ends up achieving is combining with any previous phase gates before flushing the buffer.
-        RevertBasis2Qb(target);
         return;
-    }*/
+    }
 
     CTRLED_PHASE_INVERT_WRAP(
         CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_R1, ONE_R1);
@@ -1371,7 +1368,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    shard.CommutePhase(topLeft, bottomRight);
+    // shard.CommutePhase(topLeft, bottomRight);
+    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
@@ -1405,7 +1403,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    shard.FlipPhaseAnti();
+    // shard.FlipPhaseAnti();
+    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
@@ -1477,10 +1476,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
         tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
-
-        // TODO: Remove. For testing/debugging purposes. All this ends up achieving is combining with any previous phase gates before flushing the buffer.
-        RevertBasis2Qb(target);
-
         delete[] controls;
         return;
     }
@@ -1498,14 +1493,14 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         return;
     }
 
-    /*if (!freezeBasis && (controlLen == 1U)) {
+    if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
         RevertBasis2Qb(controls[0], true);
         RevertBasis2Qb(target, true);
 
         shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
         return;
-    }*/
+    }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
