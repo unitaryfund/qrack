@@ -858,9 +858,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
