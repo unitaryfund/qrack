@@ -305,7 +305,7 @@ struct QEngineShard {
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
             polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
-            if ((polar0 != polar1) && !(polar0 == -polar1)) {
+            if ((polar0 != polar1) && (polar0 != -polar1)) {
                 return false;
             }
         }
