@@ -1370,8 +1370,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    // shard.CommutePhase(topLeft, bottomRight);
-    RevertBasis2Qb(target);
+    if (!shard.TryCommutePhase(topLeft, bottomRight)) {
+        RevertBasis2Qb(target);
+    }
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
