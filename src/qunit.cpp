@@ -1747,6 +1747,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
+    // (Incidentally, we sort for the efficiency of QUnit's limited "mapper," a 1 dimensional array of qubits without
+    // nearest neighbor restriction.)
     std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(allBits.size());
@@ -1763,6 +1765,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         cShard.isPhaseDirty = true;
     }
 
+    // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
+    // target bit in |+>/|-> basis and acting as if |0>/|1> basis by commutation).
     cfn(unit, controlsMapped);
 
     for (i = 0; i < targets.size(); i++) {
