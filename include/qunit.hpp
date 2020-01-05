@@ -161,12 +161,12 @@ struct QEngineShard {
 
         // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
         // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
-        /*ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
+        ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
         if (!targetOfShards[control].isInvert && (controlShard != controlsShards.end()) &&
             !controlShard->second.isInvert && (controlShard->second.angle0 == 0)) {
             nAngle1 += controlShard->second.angle1;
             RemovePhaseTarget(control);
-        }*/
+        }
 
         while (nAngle0 <= -M_PI) {
             nAngle0 += 2 * M_PI;
