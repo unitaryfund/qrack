@@ -154,28 +154,28 @@ GATE_1_BIT(SqrtY, ONE_PLUS_I_DIV_2, -ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLU
 GATE_1_BIT(ISqrtY, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, -ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2);
 
 /// Apply 1/4 phase rotation
-void QInterface::S(bitLenInt qubit) { PhaseRootN(2U, qubit); }
+void QInterface::S(bitLenInt qubit) { IPhaseRootN(2U, qubit); }
 
 /// Apply inverse 1/4 phase rotation
-void QInterface::IS(bitLenInt qubit) { IPhaseRootN(2U, qubit); }
+void QInterface::IS(bitLenInt qubit) { PhaseRootN(2U, qubit); }
 
 /// Apply 1/8 phase rotation
-void QInterface::T(bitLenInt qubit) { PhaseRootN(3U, qubit); }
+void QInterface::T(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
 
 /// Apply inverse 1/8 phase rotation
-void QInterface::IT(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
+void QInterface::IT(bitLenInt qubit) { PhaseRootN(3U, qubit); }
 
 /// Apply controlled S gate to bit
-void QInterface::CS(bitLenInt control, bitLenInt target) { CPhaseRootN(2U, control, target); }
+void QInterface::CS(bitLenInt control, bitLenInt target) { CIPhaseRootN(2U, control, target); }
 
 /// Apply controlled IS gate to bit
-void QInterface::CIS(bitLenInt control, bitLenInt target) { CIPhaseRootN(2U, control, target); }
+void QInterface::CIS(bitLenInt control, bitLenInt target) { CPhaseRootN(2U, control, target); }
 
 /// Apply controlled T gate to bit
-void QInterface::CT(bitLenInt control, bitLenInt target) { CPhaseRootN(3U, control, target); }
+void QInterface::CT(bitLenInt control, bitLenInt target) { CIPhaseRootN(3U, control, target); }
 
 /// Apply controlled IT gate to bit
-void QInterface::CIT(bitLenInt control, bitLenInt target) { CIPhaseRootN(3U, control, target); }
+void QInterface::CIT(bitLenInt control, bitLenInt target) { CPhaseRootN(3U, control, target); }
 
 /// Controlled not
 void QInterface::CNOT(bitLenInt control, bitLenInt target)

@@ -412,7 +412,7 @@ TEST_CASE("test_grover", "[grover]")
         int i;
         // Twelve iterations maximizes the probablity for 256 searched elements, for example.
         // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-        int optIter = M_PI / (4.0 * asin(1.0 / sqrt(pow2(n))));
+        int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1)pow2(n))));
 
         // Our input to the subroutine "oracle" is 8 bits.
         qftReg->SetPermutation(0);

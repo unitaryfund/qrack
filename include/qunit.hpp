@@ -181,7 +181,7 @@ struct QEngineShard {
             nAngle1 -= 2 * M_PI;
         }
 
-        if (!targetOfShards[control].isInvert && (nAngle0 == 0) && (nAngle1 == 0)) {
+        if ((nAngle0 == ZERO_R1) && (nAngle1 == ZERO_R1) && !targetOfShards[control].isInvert) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
@@ -242,18 +242,28 @@ struct QEngineShard {
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
     /// commute, instead of incurring the cost of applying the buffers.
-    void FlipPhaseAnti()
+    bool TryFlipPhaseAnti()
     {
+        if (controlsShards.size() > 0) {
+            return false;
+        }
+
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second.angle0, phaseShard->second.angle1);
             PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
             std::swap(remotePhase.angle0, remotePhase.angle1);
         }
+
+        return true;
     }
 
-    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    bool TryCommutePhase(const complex& topLeft, const complex& bottomRight)
     {
+        if (controlsShards.size() > 0) {
+            return false;
+        }
+
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (!phaseShard->second.isInvert) {
@@ -267,6 +277,8 @@ struct QEngineShard {
             remotePhase.angle0 = phaseShard->second.angle0;
             remotePhase.angle1 = phaseShard->second.angle1;
         }
+
+        return true;
     }
 
     bool TryHCommute()
@@ -286,6 +298,14 @@ struct QEngineShard {
                     return false;
                 }
             } else {
+                return false;
+            }
+        }
+
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
+            polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
+            if ((polar0 != polar1) && (polar0 != -polar1)) {
                 return false;
             }
         }
@@ -649,11 +669,12 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false);
-    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvert = false)
+    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false);
+    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvert = false,
+        const bool& onlyControlling = false)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i, onlyInvert);
+            RevertBasis2Qb(start + i, onlyInvert, onlyControlling);
         }
     }
     void ToPermBasis(const bitLenInt& i)
