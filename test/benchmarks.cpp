@@ -688,9 +688,9 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                 } else if (gateRand < (2 * ONE_R1 / 3)) {
                     qReg->SqrtY(i);
                 } else {
-                    // "Square root of W" is understood to be the square root of the Walsh-Hadamard transform,
-                    // (a.k.a "H" gate).
-                    qReg->SqrtH(i);
+                    // "Square root of W" appears to be equivalent to T.SqrtX.IT, looking at the definition in the
+                    // supplemental materials.
+                    qReg->SqrtXConjT(i);
                 }
 
                 // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose")
