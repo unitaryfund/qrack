@@ -704,6 +704,20 @@ public:
     virtual void ISqrtX(bitLenInt qubitIndex);
 
     /**
+     * Phased square root of X gate
+     *
+     * Applies T.SqrtX.IT to the qubit at "qubitIndex."
+     */
+    virtual void SqrtXConjT(bitLenInt qubitIndex);
+
+    /**
+     * Inverse phased square root of X gate
+     *
+     * Applies IT.ISqrtX.T to the qubit at "qubitIndex."
+     */
+    virtual void ISqrtXConjT(bitLenInt qubitIndex);
+
+    /**
      * Square root of Y gate
      *
      * Applies the square root of the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
@@ -1112,6 +1126,12 @@ public:
 
     /** Bitwise inverse square root of Pauli X operator */
     virtual void ISqrtX(bitLenInt start, bitLenInt length);
+
+    /** Bitwise phased square root of Pauli X operator */
+    virtual void SqrtXConjT(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse phased square root of Pauli X operator */
+    virtual void ISqrtXConjT(bitLenInt start, bitLenInt length);
 
     /** Bitwise square root of Pauli Y operator */
     virtual void SqrtY(bitLenInt start, bitLenInt length);

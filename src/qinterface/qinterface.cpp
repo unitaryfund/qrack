@@ -140,6 +140,12 @@ REG_GATE_1(SqrtX);
 /// Apply inverse square root of X gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(ISqrtX);
 
+/// Apply phased square root of X gate to each bit in "length," starting from bit index "start"
+REG_GATE_1(SqrtXConjT);
+
+/// Apply inverse phased square root of X gate to each bit in "length," starting from bit index "start"
+REG_GATE_1(ISqrtXConjT);
+
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(H);
 

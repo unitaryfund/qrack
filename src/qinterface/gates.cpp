@@ -13,6 +13,7 @@
 #include "qinterface.hpp"
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
+#define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 #define ONE_PLUS_I_DIV_2 complex(ONE_R1 / 2, ONE_R1 / 2)
 #define ONE_MINUS_I_DIV_2 complex(ONE_R1 / 2, -ONE_R1 / 2)
 
@@ -146,6 +147,12 @@ GATE_1_BIT(SqrtX, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PL
 
 /// Inverse square root of NOT gate
 GATE_1_BIT(ISqrtX, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2);
+
+/// Phased square root of NOT gate
+GATE_1_BIT(SqrtXConjT, ONE_PLUS_I_DIV_2, -C_I_SQRT1_2, C_SQRT1_2, ONE_PLUS_I_DIV_2);
+
+/// Inverse phased square root of NOT gate
+GATE_1_BIT(ISqrtXConjT, ONE_MINUS_I_DIV_2, C_SQRT1_2, C_I_SQRT1_2, ONE_MINUS_I_DIV_2);
 
 /// Apply Pauli Y matrix to bit
 GATE_1_BIT(SqrtY, ONE_PLUS_I_DIV_2, -ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2);
