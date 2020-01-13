@@ -1066,6 +1066,34 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtxconjt")
+{
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->SqrtXConjT(19);
+    qftReg->SqrtXConjT(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+
+    qftReg->SetPermutation(0x80001);
+    qftReg->SqrtXConjT(19);
+    qftReg->ISqrtXConjT(19);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtxconjt_reg")
+{
+    qftReg->SetPermutation(0x13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x13));
+    qftReg->SqrtXConjT(1, 4);
+    qftReg->SqrtXConjT(1, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0d));
+
+    qftReg->SetPermutation(0x1d);
+    qftReg->SqrtXConjT(0, 4);
+    qftReg->ISqrtXConjT(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_y")
 {
     qftReg->SetReg(0, 8, 0x03);
