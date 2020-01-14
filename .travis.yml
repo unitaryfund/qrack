@@ -17,7 +17,7 @@ script:
   - cd .. && sudo rm -r _build
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
   - ./unittest --proc-cpu
-  - cd .. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
+  - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
   - sudo python3 setup.py --with-qracksimulator install
   - cd build && export OMP_NUM_THREADS=1 && sudo python3 -m pytest .
   - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
@@ -26,3 +26,9 @@ script:
   - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
   - sudo -H pip3 install .
   - sudo python3 -m pytest .
+  - cd .. && git clone https://github.com/vm6502q/pennylane-qiskit.git && cd pennylane-qiskit
+  - sudo -H pip3 install .
+  - sudo python3 -m pytest .
+  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
+  - export PYTHONPATH=/home/travis/build/vm6502q/SimulaQron:$PYTHONPATH
+  - make verify
