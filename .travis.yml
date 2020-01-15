@@ -9,7 +9,7 @@ install:
   - sudo -H pip3 install --only-binary=numpy,scipy numpy scipy
   - sudo -H pip3 install dormouse pybind11 networkx
   - sudo -H pip3 install --upgrade numpy
-  - sudo -H pip3 install qiskit stestr cython cvxpy
+  - sudo -H pip3 install qiskit stestr Cython cvxpy
   - sudo -H pip3 install pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
