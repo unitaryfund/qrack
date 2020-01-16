@@ -642,6 +642,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
+        // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
+        // paper.
         std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // Depending on which element of the sequential tiling we're running, per depth iteration,
