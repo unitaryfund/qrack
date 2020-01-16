@@ -642,7 +642,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.
-        std::list<bitLenInt> gateSequence = { 0, 3, 1, 2, 1, 2, 0, 3 };
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // Depending on which element of the sequential tiling we're running, per depth iteration,
         // we need to start either with row "0" or row "1".
