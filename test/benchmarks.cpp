@@ -519,9 +519,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 
                 std::set<bitLenInt> unusedBits;
                 for (i = 0; i < n; i++) {
-                    // TrySeparate hurts average time, in this case, but it majorly benefits statistically common worse
-                    // cases, on these random circuits.
-                    qReg->TrySeparate(i);
+                    //qReg->TrySeparate(i);
                     unusedBits.insert(unusedBits.end(), i);
                 }
 
