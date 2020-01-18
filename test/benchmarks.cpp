@@ -519,9 +519,8 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 
                 std::set<bitLenInt> unusedBits;
                 for (i = 0; i < n; i++) {
-                    // TrySeparate hurts average time, in this case, but it majorly benefits statistically common worse
-                    // cases, on these random circuits.
-                    qReg->TrySeparate(i);
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
                     unusedBits.insert(unusedBits.end(), i);
                 }
 
@@ -577,12 +576,13 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
+                    polar0 = std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand()));
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        qReg->ApplySinglePhase(ONE_CMPLX, 2 * M_PI * qReg->Rand(), i);
+                        qReg->ApplySinglePhase(ONE_CMPLX, polar0, i);
                     } else {
-                        qReg->ApplySingleInvert(ONE_CMPLX, 2 * M_PI * qReg->Rand(), i);
+                        qReg->ApplySingleInvert(ONE_CMPLX, polar0, i);
                     }
                 }
 
