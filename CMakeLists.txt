@@ -32,9 +32,9 @@ add_library (qrack STATIC
     )
 
 if (MSVC)
-    set(QRACK_LIBS qrack)
+    set(QRACK_LIBS qrack atomic)
 else (MSVC)
-    set(QRACK_LIBS qrack pthread)
+    set(QRACK_LIBS qrack pthread atomic)
 endif (MSVC)
 
 # Declare the unittest executable
