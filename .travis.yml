@@ -16,9 +16,9 @@ script:
   - cd .. && sudo rm -r _build
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
   - ./unittest --proc-cpu
-  - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
+  - cd ../.. && git clone https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
   - python setup.py --with-qracksimulator install
-  - cd build && export OMP_NUM_THREADS=1 && python -m pytest .
+  - cd build && python -m pytest .
   - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
   - python -m stestr run
