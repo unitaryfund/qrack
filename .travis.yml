@@ -8,6 +8,7 @@ install:
   - python -m pip install --upgrade pip setuptools wheel pytest
   - python -m pip install --only-binary=numpy,scipy numpy scipy
   - python -m pip install dormouse pybind11
+  - sudo -H python3 -m pip install dormouse pybind11
   - python -m pip install qiskit stestr Cython cvxpy
   - python -m pip install pennylane
 script:
@@ -19,6 +20,7 @@ script:
   - cd ../.. && git clone https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
   - python setup.py --with-qracksimulator install
   - cd build && python -m pytest .
+  - sudo -H python3 setup.py --with-qracksimulator install
   - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
   - python -m stestr run
@@ -30,6 +32,6 @@ script:
   - python -m pytest .
   - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
   - export PYTHONPATH=/home/travis/build/vm6502q/SimulaQron:$PYTHONPATH
-  - python -m pip install .
-  - sudo apt install valgrind
-  - valgrind make PYTHON=python PIP=pip tests
+  - sudo -H python3 -m pip install .
+  - make lint
+  - make tests
