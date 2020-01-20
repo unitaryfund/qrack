@@ -30,4 +30,5 @@ script:
   - python -m pytest .
   - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
   - export PYTHONPATH=/home/travis/build/vm6502q/SimulaQron:$PYTHONPATH
+  - python -m pip install .
   - make PYTHON=python PIP=pip verify
