@@ -10,7 +10,7 @@ install:
   - python -m pip install dormouse pybind11
   - sudo -H python3 -m pip install --upgrade pip setuptools wheel pytest
   - sudo -H python3 -m pip install --only-binary=numpy,scipy numpy scipy
-  - sudo -H python3 -m pip install dormouse pybind11
+  - sudo -H python3 -m pip install dormouse pybind11 twisted cqc
   - python -m pip install qiskit stestr Cython cvxpy
   - python -m pip install pennylane
 script:
