@@ -4,17 +4,15 @@
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
-This is a multithreaded framework for developing classically emulated virtual universal quantum processors. It has CPU and GPU engine types.
+The open source vm6502q/qrack library and its associated plugins and projects under the vm6502q organization header comprise a framework for full-stack quantum computing development, via high performance and fundamentally optimized simulation. The intent of "Qrack" is provide maximum performance for the simulation of an ideal, virtually error-free quantum computer, across the broadest possible set of hardware and operating systems.
 
-The intent of "Qrack" is to provide a framework for developing practical, computationally efficient, classically emulated universal quantum virtual machines. In addition to quantum gates, Qrack provides optimized versions of multi-bit, register-wise, opcode-like "instructions." A chip-like quantum CPU (QCPU) is instantiated as a "Qrack::QUnit." "Qrack::QEngineCPU" and "Qrack::QEngineOCL" represent fully entangled cases and underlie "Qrack::QUnit."
+Using the C++11 standard, at base, Qrack has an external-dependency-free CPU simulator "engine," as well as a GPU simulator simulator engine that depends only on OpenCL. The "QUnit" layer provides novel, fundamental optimizations in the simulation algorithm, based on "[Schmidt decomposition](https://arxiv.org/abs/1710.05867)," transformation of basis, 2 qubit controlled gate buffer caching and "fusion," the physical nonobservability of arbitrary global phase factors on a state vector, and many other "synergistic" and incidental points of optimization between these approaches and in addition to them. "QUnit" can be placed "on top" of either CPU or GPU engine types, and an additional "QFusion" ("gate fusion") layer can sit between these, or in place of QUnit. Optimizations and hardware support are highly configurable, particularly at build time.
 
-A QUnit or QEngine can be thought of as like simply a one-dimensional array of qubits. Bits can manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
+A QUnit or QEngine can be thought of as like simply a one-dimensional array of qubits, in which any qubit has the capacity to directly and fully entangle with any other. Bits can be manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
-Qrack has already been integrated with a MOS 6502 emulator, (see https://github.com/vm6502q/vm6502q,) which demonstrates Qrack's primary purpose. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
+Qrack has already been integrated with a [MOS 6502 emulator](https://github.com/vm6502q/vm6502q), which demonstrates Qrack's original purpose, for use in developing chip-like quantum computer emulators. (The base 6502 emulator to which Qrack was added for that project is by Marek Karcz, many thanks to Marek! See https://github.com/makarcz/vm6502.)
 
-Virtual machines created with Qrack can be abstracted from the code that runs on them, and need not necessarily be packaged with each other. Qrack can be used to create a virtual machine that translates opcodes into instructions for a virtual quantum processor. Then, software that runs on the virtual machine could be abstracted from the machine itself as any higher-level software could. All that is necessary to run the quantum binary is any virtual machine with the same instruction set.
-
-Direct measurement of qubit probability and phase are implemented for debugging, but also for potential speed-up, by allowing the classical emulation to leverage nonphysical exceptions to quantum logic, like by cloning a quantum state. In practice, though, opcodes might not rely on this (nonphysical) functionality at all. (The MOS 6502 emulator referenced above does not.)
+A number of useful "pseudo-quantum" operations, which could not be carried out by a true hardware quantum computers at all, are included in the API for purposes like debugging, but also for potential speed-up, by allowing the classical emulation to leverage nonphysical exceptions to quantum logic, like by cloning a quantum state. In practice, though, quantum circuit programs might not rely on this (nonphysical) functionality at all. (The MOS 6502 emulator referenced above does not. It happens, many of these methods will not be exotic at all, to those familiar with other major quantum computing libraries. For example, notably, simply returning a full vector of probability amplitudes actually qualifies as "pseudo-quantum," in this sense.)
 
 Qrack compiles like a library. To include in your project:
 
@@ -65,7 +63,7 @@ Most platforms offer a standardized way of installing OpenCL, however for VMWare
 
 ## Installing OpenCL on Mac
 
-While the OpenCL framework is available by default on most modern Macs, the C++ header “cl.hpp” is usually not. One option for building for OpenCL is to download this header file and include it in include/OpenCL (as “cl.hpp”). The OpenCL C++ header can be found at the Khronos OpenCL registry:
+While the OpenCL framework is available by default on most modern Macs, the C++ header “cl.hpp” is usually not. One option for building for OpenCL on Mac is to download this header file and include it in the Qrack project folder under include/OpenCL (as “cl.hpp”). The OpenCL C++ header can be found at the Khronos OpenCL registry:
 
 https://www.khronos.org/registry/OpenCL/
 
@@ -75,7 +73,7 @@ Qrack supports building on Windows, but some special configuration is required. 
 
 Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadecimal format for building. `xxd` is not natively available on Windows systems, but Windows executables for it are provided by sources including the [Vim editor Windows port](https://www.vim.org/download.php).
 
-CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio). Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
+CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
 
 ```
     $ mkdir _build
@@ -109,7 +107,7 @@ Multiply complex numbers two at a time instead of one at a time. Requires AVX fo
 ```
 $ cmake -DENABLE_COMPLEX8=OFF ..
 ```
-By default, Qrack builds for float accuracy. Turning the above option off increases to double accuracy for complex numbers. Requires twice as much RAM (basically reducing maximum by 1 available qubit). Compatible with SSE 1.0 and single precision accelerator devices.
+By default, Qrack builds for float accuracy. Turning the above option off increases to double accuracy for complex numbers. Requires twice as much RAM (basically reducing maximum by 1 available qubit, for QEngine types). Compatible with SSE 1.0 and single precision accelerator devices.
 
 ## On-Chip Hardware Random Number Generation 
 
@@ -118,7 +116,7 @@ $ cmake -DENABLE_RDRAND=OFF ..
 ```
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
 
-## Pure 32 bit OpenCL kernels (including Raspberry Pi 3)
+## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
 ```
 $ cmake -DENABLE_PURE32=ON ..
@@ -152,7 +150,7 @@ Qrack was originally written so that the disassembler of VM6502Q should show the
 
 ## Copyright, License, and Acknowledgements
 
-Copyright (c) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+Copyright (c) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
 
 (The given DOI date is that of first "official release.")
 
