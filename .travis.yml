@@ -5,12 +5,12 @@ sudo: true
 install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake python3-pip python3-pytest
-  - sudo -H pip3 install --upgrade pip setuptools wheel pytest
-  - sudo -H pip3 install --only-binary=numpy,scipy numpy scipy
-  - sudo -H pip3 install dormouse pybind11 networkx
-  - sudo -H pip3 install --upgrade numpy zipp
-  - sudo -H pip3 install qiskit stestr Cython cvxpy
-  - sudo -H pip3 install pennylane
+  - python -m pip install --upgrade pip setuptools wheel pytest
+  - python -m pip install --only-binary=numpy,scipy numpy scipy
+  - python -m pip install dormouse pybind11 networkx
+  - python -m pip install --upgrade numpy zipp
+  - python -m pip install qiskit stestr Cython cvxpy
+  - python -m pip install pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - sudo make install
@@ -18,17 +18,18 @@ script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
   - ./unittest --proc-cpu
   - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
-  - sudo python3 setup.py --with-qracksimulator install
-  - cd build && export OMP_NUM_THREADS=1 && sudo python3 -m pytest .
+  - python setup.py --with-qracksimulator install
+  - cd build && export OMP_NUM_THREADS=1 && python -m pytest .
   - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
-  - sudo -H pip3 install .
-  - sudo python3 -m stestr run
+  - python -m pip install .
+  - sudo -H python3 -m pip install .
+  - python -m stestr run
   - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
-  - sudo -H pip3 install .
-  - sudo python3 -m pytest .
+  - python -m pip install .
+  - python -m pytest .
   - cd .. && git clone https://github.com/vm6502q/pennylane-qiskit.git && cd pennylane-qiskit
-  - sudo -H pip3 install .
-  - sudo python3 -m pytest .
+  - python -m pip install .
+  - python -m pytest .
   - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
   - export PYTHONPATH=/home/travis/build/vm6502q/SimulaQron:$PYTHONPATH
   - make verify
