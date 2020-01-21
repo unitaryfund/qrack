@@ -92,7 +92,7 @@ After CMake, the project must be built in Visual Studio.
     $ ./unittest
     $ make coverage
     $ cd coverage_results
-    $ python -m SimpleHTTPServer
+    $ python -m http.server
 ```
 
 ## Vectorization optimization
