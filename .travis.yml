@@ -8,7 +8,7 @@ install:
   - python -m pip install --upgrade pip setuptools wheel pytest
   - python -m pip install --only-binary=numpy,scipy numpy scipy
   - python -m pip install dormouse pybind11
-  - python -m pip install qiskit stestr Cython cvxpy
+  - python -m pip install qiskit stestr cython cvxpy
   - python -m pip install pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
