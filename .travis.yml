@@ -28,8 +28,7 @@ script:
   - cd .. && git clone https://github.com/vm6502q/pennylane-qiskit.git && cd pennylane-qiskit
   - python -m pip install .
   - python -m pytest .
-  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
-  - python -m pip install .
-  - echo "import simulaqron" > simulaqron_tests.py
-  - echo "simulaqron.tests()" >> simulaqron_tests.py
-  - python simulaqron_tests.py
+#  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
+#  - python -m pip install .
+#  - echo "import simulaqron" > simulaqron_tests.py && echo "simulaqron.tests()" >> simulaqron_tests.py
+#  - python simulaqron_tests.py
