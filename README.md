@@ -51,7 +51,7 @@ The included `test/tests.cpp` contains unit tests and usage examples. The unitte
 
 ## Installing OpenCL on VMWare
 
-Most platforms offer a standardized way of installing OpenCL, however for VMWare it's a little more peculiar.
+Most platforms offer a standardized way of installing OpenCL. However, a method for VMWare benefits from documentation, here.
 
 1.  Download the [AMD APP SDK](https://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/)
 1.  Install it.
