@@ -1459,10 +1459,6 @@ public:
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
 
-    /** When in Fourier basis, (after QFT,) this is equivalent to INC, after returning to permutation basis (after
-     * subsequent IQFT). */
-    virtual void QFTINC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-
     /** Add integer (without sign, with carry) */
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
