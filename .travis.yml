@@ -8,7 +8,7 @@ install:
   - python -m pip install --upgrade pip setuptools wheel pytest
   - python -m pip install numpy scipy
   - python -m pip install dormouse pybind11
-  - python -m pip install cython==0.29.14
+  - python -m pip install cython==0.27.3
   - python -m pip install qiskit stestr cvxpy
   - python -m pip install pennylane
 script:
