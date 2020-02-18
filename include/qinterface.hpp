@@ -122,8 +122,6 @@ protected:
         maxQPower = pow2(qubitCount);
     }
 
-    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
-
     static inline bitLenInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
@@ -204,6 +202,8 @@ public:
 
     /** Destructor of QInterface */
     virtual ~QInterface(){};
+
+    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
 
     /** Get the count of bits in this register */
     bitLenInt GetQubitCount() { return qubitCount; }

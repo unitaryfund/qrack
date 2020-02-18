@@ -25,21 +25,21 @@ typedef void (*IdsCallback)(unsigned int);
 
 enum Pauli
 {
-    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-    PauliI = 0,
-    /// Pauli X operator. Corresponds to Q# constant "PauliX."
-    PauliX = 1,
-    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
-    PauliY = 3,
-    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-    PauliZ = 2
-}
+	/// Pauli Identity operator. Corresponds to Q# constant "PauliI."
+	PauliI = 0,
+	/// Pauli X operator. Corresponds to Q# constant "PauliX."
+	PauliX = 1,
+	/// Pauli Y operator. Corresponds to Q# constant "PauliY."
+	PauliY = 3,
+	/// Pauli Z operator. Corresponds to Q# constant "PauliZ."
+	PauliZ = 2
+};
 
 class QrackSimulatorManager {
 protected:
-    QrackSimulatorManager* m_pInstance = NULL;
+    static QrackSimulatorManager* m_pInstance;
     std::vector<QInterfacePtr> simulators;
-    std::map<QInterfacePtr, std::map<uint, bitLenInt>> shards;
+    std::map<QInterfacePtr, std::map<unsigned int, bitLenInt>> shards;
 
     QrackSimulatorManager()
     {
@@ -48,9 +48,9 @@ protected:
 
     void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx);
 
-    void TransformPauliBasis(QInterfacePtr simulator, unsigned int len, unsigned int* qubitIds);
+    void TransformPauliBasis(QInterfacePtr simulator, unsigned int len, Pauli* bases, unsigned int* qubitIds);
 
-    void RevertPauliBasis(QInterfacePtr simulator, unsigned int len, unsigned int* qubitIds);
+    void RevertPauliBasis(QInterfacePtr simulator, unsigned int len, Pauli* bases, unsigned int* qubitIds);
 
 public:
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
@@ -59,7 +59,7 @@ public:
    /**
     * Initialize a simulator ID with 0 qubits
     */
-    void InitNewSimulator();
+    unsigned int InitNewSimulator();
 
     /**
     * Destroy a simulator (ID will not be reused)
@@ -109,7 +109,7 @@ public:
     /**
      * (External API) Measure bit in |0>/|1> basis
      */
-    unsigned int M(uint id, uint q);
+    unsigned int M(unsigned int id, unsigned int q);
 
     /**
      * Measure bits in specified Pauli bases
@@ -129,73 +129,73 @@ public:
     /**
      * "S" Gate
      */
-    void S(uint id, uint qubit);
+    void S(unsigned int id, unsigned int qubit);
 
     /**
      * Inverse "S" Gate
      */
-    void AdjS(uint id, uint qubit);
+    void AdjS(unsigned int id, unsigned int qubit);
 
     /**
      * Controlled "S" Gate
      */
-    void MCS(uint id, uint count, uint[] ctrls, uint qubit);
+    void MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
     /**
      * Controlled inverse "S" Gate
      */
-    void MCAdjS(uint id, uint count, uint[] ctrls, uint qubit);
+    void MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
     /**
      * "T" Gate
      */
-    void T(uint id, uint qubit);
+    void T(unsigned int id, unsigned int qubit);
 
     /**
      * Inverse "T" Gate
      */
-    void AdjT(uint id, uint qubit);
+    void AdjT(unsigned int id, unsigned int qubit);
 
     /**
      * Controlled "T" Gate
      */
-    void MCT(uint id, uint count, uint[] ctrls, uint qubit);
+    void MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
     /**
      * Controlled inverse "T" Gate
      */
-    void MCAdjT(uint id, uint count, uint[] ctrls, uint qubit);
+    void MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
     /**
      * "X" Gate
      */
-    void X(uint id, uint qubit);
+    void X(unsigned int id, unsigned int qubit);
 
     /**
      * Controlled "X" Gate
      */
-    void MCX(uint id, uint count, uint[] ctrls, uint qubit);
+    void MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
     /**
      * "Y" Gate
      */
-    void Y(uint id, uint qubit);
+    void Y(unsigned int id, unsigned int qubit);
 
     /**
      * Controlled "Y" Gate
      */
-    void MCY(uint id, uint count, uint[] ctrls, uint qubit);
+    void MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
     /**
      * "Z" Gate
      */
-    void Z(uint id, uint qubit);
+    void Z(unsigned int id, unsigned int qubit);
 
     /**
      * Controlled "Z" Gate
      */
-    void MCZ(uint id, uint count, uint[] ctrls, uint qubit);
-}
+    void MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+};
 
 /**
  * (External API) Initialize a simulator ID with 0 qubits
@@ -230,7 +230,7 @@ void release(unsigned int id, unsigned int qubit_id);
 /**
  * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
  */
-double JointEnsembleProbability(unsigned int id, unsigned int n, Pauli[] b, unsigned int[] q);
+double JointEnsembleProbability(unsigned int id, unsigned int n, Pauli* b, unsigned int* q);
 
 /**
  * (External API) Exponentiation of Pauli operators
@@ -250,12 +250,12 @@ void H(unsigned int id, unsigned int qubit);
 /**
  * (External API) Measure bit in |0>/|1> basis
  */
-unsigned int M(uint id, uint q);
+unsigned int M(unsigned int id, unsigned int q);
 
 /**
  * (External API) Measure bits in specified Pauli bases
  */
-unsigned int Measure(uint id, uint n, Pauli[] b, uint[] ids);
+unsigned int Measure(unsigned int id, unsigned int n, Pauli* b, unsigned int* ids);
 
 /**
  * (External API) Rotation around Pauli axes
@@ -272,69 +272,69 @@ long random_choice(unsigned int id, long size, double* p);
 /**
  * (External API) "S" Gate
  */
-void S(uint id, uint qubit);
+void S(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Inverse "S" Gate
  */
-void AdjS(uint id, uint qubit);
+void AdjS(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "S" Gate
  */
-void MCS(uint id, uint count, uint[] ctrls, uint qubit);
+void MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) Controlled Inverse "S" Gate
  */
-void MCAdjS(uint id, uint count, uint[] ctrls, uint qubit);
+void MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "T" Gate
  */
-void T(uint id, uint qubit);
+void T(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Inverse "T" Gate
  */
-void AdjT(uint id, uint qubit);
+void AdjT(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "T" Gate
  */
-void MCT(uint id, uint count, uint[] ctrls, uint qubit);
+void MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) Controlled Inverse "T" Gate
  */
-void MCAdjT(uint id, uint count, uint[] ctrls, uint qubit);
+void MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "X" Gate
  */
-void X(uint id, uint qubit);
+void X(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "X" Gate
  */
-void MCX(uint id, uint count, uint[] ctrls, uint qubit);
+void MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "Y" Gate
  */
-void Y(uint id, uint qubit);
+void Y(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "Y" Gate
  */
-void MCY(uint id, uint count, uint[] ctrls, uint qubit);
+void MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "Z" Gate
  */
-void Z(uint id, uint qubit);
+void Z(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "Z" Gate
  */
-void MCZ(uint id, uint count, uint[] ctrls, uint qubit);
+void MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
