@@ -33,7 +33,7 @@ add_library (qrack STATIC
     )
 
 if (MSVC)
-    set(QRACK_LIBS qrack atomic)
+    set(QRACK_LIBS qrack)
 else (MSVC)
     set(QRACK_LIBS qrack pthread atomic)
 endif (MSVC)
