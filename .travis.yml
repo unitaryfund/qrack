@@ -6,9 +6,11 @@ install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake python3-pip python3-pytest
   - python -m pip install --upgrade pip setuptools wheel pytest
-  - python -m pip install --only-binary=numpy,scipy numpy scipy
+  - python -m pip install numpy scipy
   - python -m pip install dormouse pybind11
-  - python -m pip install qiskit stestr Cython cvxpy
+  - python -m pip install Cython==0.29.14
+  - python -m pip install qiskit==0.14.1
+  - python -m pip install stestr cvxpy
   - python -m pip install pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all

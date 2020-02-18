@@ -99,7 +99,7 @@ public:
         amplitudes = Alloc(capacity);
     }
 
-    ~StateVectorArray() { Free(); }
+    virtual ~StateVectorArray() { Free(); }
 
     complex read(const bitCapInt& i) { return amplitudes[i]; };
 
