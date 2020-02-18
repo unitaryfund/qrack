@@ -10,13 +10,18 @@
 // for details.
 
 #include <map>
+#include <vector>
 
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 
 using namespace Qrack;
 
+#if defined(_WIN32)
 typedef void (__stdcall *IdsCallback)(unsigned int);
+#else
+typedef void (*IdsCallback)(unsigned int);
+#endif
 
 enum Pauli
 {
