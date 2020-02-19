@@ -33,6 +33,7 @@ if (ENABLE_OPENCL)
     # Include the necessary options and libraries to link against
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${OpenCL_INCLUDE_DIRS})
     target_compile_options (qrack PUBLIC ${OpenCL_COMPILATION_OPTIONS})
+	target_link_libraries (qrack_pinvoke ${OpenCL_LIBRARIES})
     target_link_libraries (unittest ${OpenCL_LIBRARIES})
     target_link_libraries (benchmarks ${OpenCL_LIBRARIES})
     target_link_libraries (accuracy ${OpenCL_LIBRARIES})

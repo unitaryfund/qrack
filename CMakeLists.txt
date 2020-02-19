@@ -27,16 +27,21 @@ add_library (qrack STATIC
     src/qengine/state.cpp
     src/qengine/utility.cpp
     src/bitbuffer.cpp
-    src/pinvoke_api.cpp
     src/qfusion.cpp
     src/qunit.cpp
     )
+	
+add_library (qrack_pinvoke SHARED
+	src/pinvoke_api.cpp
+	)
 
 if (MSVC)
     set(QRACK_LIBS qrack)
 else (MSVC)
     set(QRACK_LIBS qrack pthread atomic)
 endif (MSVC)
+
+target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
 
 # Declare the unittest executable
 add_executable (unittest
@@ -134,6 +139,7 @@ if (APPLE)
 endif (APPLE)
 
 target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack_pinvoke PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
@@ -174,6 +180,11 @@ install (FILES
 # Install the archive
 install (TARGETS qrack
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+	
+install (TARGETS qrack_pinvoke
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
