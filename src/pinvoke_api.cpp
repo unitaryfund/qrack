@@ -13,8 +13,6 @@
 
 using namespace Qrack;
 
-typedef void (__stdcall *IdsCallback)(unsigned int);
-
 void QrackSimulatorManager::mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx) {
     for (unsigned int i = 0; i < 4; i++) {
 		outMtrx[i] = scalar * inMtrx[i];
