@@ -9,6 +9,22 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#pragma once
+
+#if defined DLL_EXPORTS
+    #if defined WIN32
+        #define LIB_API(RetType) extern "C" __declspec(dllexport) RetType
+    #else
+        #define LIB_API(RetType) extern "C" RetType __attribute__((visibility("default")))
+    #endif
+#else
+    #if defined WIN32
+        #define LIB_API(RetType) extern "C" __declspec(dllimport) RetType
+    #else
+        #define LIB_API(RetType) extern "C" RetType
+    #endif
+#endif
+
 #include <map>
 #include <vector>
 
@@ -200,141 +216,141 @@ public:
 /**
  * (External API) Initialize a simulator ID with 0 qubits
  */
-unsigned int init();
+LIB_API(unsigned int) init();
 
 /**
 * (External API) Destroy a simulator (ID will not be reused)
 */
-void destroy(unsigned int id);
+LIB_API(void) destroy(unsigned int id);
 
 /**
  * (External API) "Dump" all IDs from the selected simulator ID into the callback
  */
-void DumpIds(unsigned int id, IdsCallback callback);
+LIB_API(void) DumpIds(unsigned int id, IdsCallback callback);
 
 /**
 * (External API) Set RNG seed for simulator ID
 */
-void seed(unsigned int id, uint32_t seedValue);
+LIB_API(void) seed(unsigned int id, uint32_t seedValue);
 
 /**
  * (External API) Allocate 1 new qubit with the given qubit ID, under the simulator ID
  */
-void allocateQubit(unsigned int id, unsigned int qubit_id);
+LIB_API(void) allocateQubit(unsigned int id, unsigned int qubit_id);
 
 /**
  * (External API) Release 1 qubit with the given qubit ID, under the simulator ID
  */
-void release(unsigned int id, unsigned int qubit_id);
+LIB_API(void) release(unsigned int id, unsigned int qubit_id);
 
 /**
  * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
  */
-double JointEnsembleProbability(unsigned int id, unsigned int n, Pauli* b, unsigned int* q);
+LIB_API(double) JointEnsembleProbability(unsigned int id, unsigned int n, Pauli* b, unsigned int* q);
 
 /**
  * (External API) Exponentiation of Pauli operators
  */
-void Exp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
+LIB_API(void) Exp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
 
 /**
  * (External API) Controlled exponentiation of Pauli operators
  */
-void MCExp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids);
+LIB_API(void) MCExp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids);
 
 /**
  * (External API) Walsh-Hadamard transform applied for simulator ID and qubit ID
  */
-void H(unsigned int id, unsigned int qubit);
+LIB_API(void) H(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Measure bit in |0>/|1> basis
  */
-unsigned int M(unsigned int id, unsigned int q);
+LIB_API(unsigned int) M(unsigned int id, unsigned int q);
 
 /**
  * (External API) Measure bits in specified Pauli bases
  */
-unsigned int Measure(unsigned int id, unsigned int n, Pauli* b, unsigned int* ids);
+LIB_API(unsigned int) Measure(unsigned int id, unsigned int n, Pauli* b, unsigned int* ids);
 
 /**
  * (External API) Rotation around Pauli axes
  */
-void R(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
+LIB_API(void) R(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
 
 /**
  * (External API) Controlled rotation around Pauli axes
  */
-void MCR(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids);
+LIB_API(void) MCR(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids);
 
-long random_choice(unsigned int id, long size, double* p);
+LIB_API(long) random_choice(unsigned int id, long size, double* p);
 
 /**
  * (External API) "S" Gate
  */
-void S(unsigned int id, unsigned int qubit);
+LIB_API(void) S(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Inverse "S" Gate
  */
-void AdjS(unsigned int id, unsigned int qubit);
+LIB_API(void) AdjS(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "S" Gate
  */
-void MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) Controlled Inverse "S" Gate
  */
-void MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "T" Gate
  */
-void T(unsigned int id, unsigned int qubit);
+LIB_API(void) T(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Inverse "T" Gate
  */
-void AdjT(unsigned int id, unsigned int qubit);
+LIB_API(void) AdjT(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "T" Gate
  */
-void MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) Controlled Inverse "T" Gate
  */
-void MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "X" Gate
  */
-void X(unsigned int id, unsigned int qubit);
+LIB_API(void) X(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "X" Gate
  */
-void MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "Y" Gate
  */
-void Y(unsigned int id, unsigned int qubit);
+LIB_API(void) Y(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "Y" Gate
  */
-void MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
 
 /**
  * (External API) "Z" Gate
  */
-void Z(unsigned int id, unsigned int qubit);
+LIB_API(void) Z(unsigned int id, unsigned int qubit);
 
 /**
  * (External API) Controlled "Z" Gate
  */
-void MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+LIB_API(void) MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);

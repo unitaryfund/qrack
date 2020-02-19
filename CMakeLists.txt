@@ -43,11 +43,6 @@ endif (MSVC)
 
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
 
-set_property(TARGET qrack_pinvoke PROPERTY 
-    VS_DOTNET_REFERENCE_qrack_pinvoke "${CMAKE_INSTALL_LIBDIR}/qrack_pinvoke.dll")
-	
-message("VS_DOTNET_REFERENCE_qrack_pinvoke at: ${CMAKE_INSTALL_LIBDIR}/qrack_pinvoke.dll")
-
 # Declare the unittest executable
 add_executable (unittest
     test/test_main.cpp
@@ -145,6 +140,7 @@ endif (APPLE)
 
 target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
