@@ -1496,8 +1496,8 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 
     if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
-        RevertBasis2Qb(controls[0], true);
-        RevertBasis2Qb(target, true);
+        RevertBasis2Qb(controls[0], true, false, { target }, {});
+        RevertBasis2Qb(target, true, false, {}, { controls[0] });
 
         shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
         return;
