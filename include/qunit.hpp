@@ -161,11 +161,13 @@ struct QEngineShard {
 
         // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
         // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
-        ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
-        if (!targetOfShards[control].isInvert && (controlShard != controlsShards.end()) &&
-            !controlShard->second.isInvert && (controlShard->second.angle0 == 0)) {
-            nAngle1 += controlShard->second.angle1;
-            RemovePhaseTarget(control);
+        if (!targetOfShards[control].isInvert) {
+            ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
+            if ((controlShard != controlsShards.end()) && !controlShard->second.isInvert &&
+                (controlShard->second.angle0 == 0)) {
+                nAngle1 += controlShard->second.angle1;
+                RemovePhaseTarget(control);
+            }
         }
 
         while (nAngle0 <= -M_PI) {
@@ -232,13 +234,7 @@ struct QEngineShard {
         return false;
     }
 
-    bool isInvert()
-    {
-        if (isInvertControl()) {
-            return true;
-        }
-        return isInvertTarget();
-    }
+    bool isInvert() { return isInvertControl() || isInvertTarget(); }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
     /// commute, instead of incurring the cost of applying the buffers.
@@ -669,14 +665,8 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false);
-    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvert = false,
-        const bool& onlyControlling = false)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i, onlyInvert, onlyControlling);
-        }
-    }
+    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false,
+        std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {});
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);

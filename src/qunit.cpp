@@ -1262,8 +1262,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
-        RevertBasis2Qb(control, true);
-        RevertBasis2Qb(target, true);
+        RevertBasis2Qb(control, true, false, { target }, {});
+        RevertBasis2Qb(target, true, false, {}, { control });
         tShard.AddInversionAngles(&cShard, 0, 0);
         return;
     }
@@ -2979,7 +2979,8 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
     freezeBasis = false;
 }
 
-void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const bool& onlyControlling)
+void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const bool& onlyControlling,
+    std::set<bitLenInt> exceptControlling, std::set<bitLenInt> exceptTargetedBy)
 {
     QEngineShard& shard = shards[i];
 
@@ -3006,6 +3007,10 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
 
         QEngineShard* partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
+
+        if (exceptControlling.find(j) != exceptControlling.end()) {
+            continue;
+        }
 
         polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
         polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
@@ -3056,6 +3061,10 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
 
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
+
+        if (exceptTargetedBy.find(j) != exceptTargetedBy.end()) {
+            continue;
+        }
 
         controls[0] = j;
 
