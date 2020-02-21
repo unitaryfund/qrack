@@ -1084,7 +1084,6 @@ void QUnit::X(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     RevertBasis2Qb(target, false, true);
-    RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
     shard.TryFlipPhaseAnti();
@@ -1265,6 +1264,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
+        //TODO: Only controlled-by, for control?
         RevertBasis2Qb(control, true, false, { target });
         RevertBasis2Qb(target, true, true);
         tShard.AddInversionAngles(&cShard, 0, 0);
@@ -1409,7 +1409,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     }
 
     RevertBasis2Qb(target, false, true);
-    RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
     shard.TryFlipPhaseAnti();
@@ -1503,6 +1502,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 
     if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
+        //TODO: Only controlled-by, for control?
         RevertBasis2Qb(controls[0], true, false, { target });
         RevertBasis2Qb(target, true, true);
 
