@@ -236,6 +236,24 @@ struct QEngineShard {
 
     bool isInvert() { return isInvertControl() || isInvertTarget(); }
 
+    void OptimizeControls()
+    {
+        QEngineShardPtr partner;
+        real1 partnerAngle;
+
+        ShardToPhaseMap tempControls = controlsShards;
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
+            if (!phaseShard->second.isInvert && (phaseShard->second.angle0 == ZERO_R1)) {
+                partner = phaseShard->first;
+                partnerAngle = phaseShard->second.angle1;
+
+                RemovePhaseTarget(partner);
+                AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+            }
+        }
+    }
+
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
     /// commute, instead of incurring the cost of applying the buffers.
     bool TryFlipPhaseAnti()
@@ -256,11 +274,14 @@ struct QEngineShard {
 
     bool TryCommutePhase(const complex& topLeft, const complex& bottomRight)
     {
-        if (controlsShards.size() > 0) {
-            return false;
+        ShardToPhaseMap::iterator phaseShard;
+
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            if (phaseShard->second.isInvert) {
+                return false;
+            }
         }
 
-        ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (!phaseShard->second.isInvert) {
                 continue;
