@@ -1100,8 +1100,8 @@ void QUnit::Z(bitLenInt target)
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, false, true);
     RevertBasis2Qb(target, true);
+
     // Not necessary to check return after the above revert:
     shard.TryCommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
@@ -1370,7 +1370,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    RevertBasis2Qb(target, false, true);
     RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
