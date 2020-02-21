@@ -1083,7 +1083,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, false, true);
     RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
@@ -1101,7 +1100,6 @@ void QUnit::Z(bitLenInt target)
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, false, true);
     RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
@@ -1371,7 +1369,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    RevertBasis2Qb(target, false, true);
     RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
@@ -1409,7 +1406,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target, false, true);
     RevertBasis2Qb(target, true);
 
     // Not necessary to check return after the above revert:
