@@ -222,6 +222,10 @@ struct QEngineShard {
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
+        if (isPlusMinus) {
+            return;
+        }
+
         QEngineShardPtr partner;
         real1 partnerAngle;
 
@@ -229,7 +233,7 @@ struct QEngineShard {
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
-            if ((isPlusMinus != phaseShard->first->isPlusMinus) || phaseShard->second->isInvert ||
+            if (phaseShard->first->isPlusMinus || phaseShard->second->isInvert ||
                 (phaseShard->second->angle0 != ZERO_R1)) {
                 continue;
             }
@@ -247,6 +251,10 @@ struct QEngineShard {
     /// If this bit is both control and target of another bit, try to combine the operations into one gate.
     void CombineGates()
     {
+        if (isPlusMinus) {
+            return;
+        }
+
         ShardToPhaseMap::iterator partnerShard;
         QEngineShardPtr partner;
         real1 partnerAngle;
@@ -255,7 +263,7 @@ struct QEngineShard {
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
-            if (isPlusMinus != phaseShard->first->isPlusMinus) {
+            if (phaseShard->first->isPlusMinus) {
                 continue;
             }
 
@@ -326,6 +334,8 @@ struct QEngineShard {
 
     bool TryHCommute()
     {
+        CombineGates();
+
         complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
 
