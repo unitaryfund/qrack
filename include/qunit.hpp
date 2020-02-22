@@ -219,12 +219,9 @@ struct QEngineShard {
 
     bool isInvert() { return isInvertControl() || isInvertTarget(); }
 
+    /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
-        if (isPlusMinus) {
-            return;
-        }
-
         QEngineShardPtr partner;
         real1 partnerAngle;
 
@@ -232,7 +229,7 @@ struct QEngineShard {
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
-            if (phaseShard->first->isPlusMinus || phaseShard->second->isInvert ||
+            if ((isPlusMinus != phaseShard->first->isPlusMinus) || phaseShard->second->isInvert ||
                 (phaseShard->second->angle0 != ZERO_R1)) {
                 continue;
             }
@@ -244,6 +241,46 @@ struct QEngineShard {
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+        }
+    }
+
+    /// If this bit is both control and target of another bit, try to combine the operations into one gate.
+    void CombineGates()
+    {
+        ShardToPhaseMap::iterator partnerShard;
+        QEngineShardPtr partner;
+        real1 partnerAngle;
+
+        ShardToPhaseMap tempControls = controlsShards;
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
+
+            if (isPlusMinus != phaseShard->first->isPlusMinus) {
+                continue;
+            }
+
+            partner = phaseShard->first;
+
+            partnerShard = targetOfShards.find(partner);
+            if (partnerShard == targetOfShards.end()) {
+                continue;
+            }
+
+            if (!phaseShard->second->isInvert && (phaseShard->second->angle0 == ZERO_R1)) {
+                partnerAngle = phaseShard->second->angle1;
+
+                phaseShard->first->targetOfShards.erase(this);
+                controlsShards.erase(partner);
+
+                AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+            } else if (!partnerShard->second->isInvert && (partnerShard->second->angle0 == ZERO_R1)) {
+                partnerAngle = partnerShard->second->angle1;
+
+                phaseShard->first->controlsShards.erase(this);
+                targetOfShards.erase(partner);
+
+                partner->AddPhaseAngles(this, ZERO_R1, partnerAngle);
+            }
         }
     }
 
