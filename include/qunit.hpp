@@ -51,7 +51,8 @@ typedef std::shared_ptr<PhaseShard> PhaseShardPtr;
 typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
-struct QEngineShard {
+class QEngineShard : public ParallelFor {
+public:
     QInterfacePtr unit;
     bitLenInt mapped;
     bool isEmulated;
@@ -230,12 +231,12 @@ struct QEngineShard {
         real1 partnerAngle;
 
         ShardToPhaseMap tempControls = controlsShards;
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
-
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
             if (phaseShard->first->isPlusMinus || phaseShard->second->isInvert ||
                 (phaseShard->second->angle0 != ZERO_R1)) {
-                continue;
+                return;
             }
 
             partner = phaseShard->first;
@@ -245,7 +246,7 @@ struct QEngineShard {
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ZERO_R1, partnerAngle);
-        }
+        });
     }
 
     /// If this bit is both control and target of another bit, try to combine the operations into one gate.
@@ -260,18 +261,20 @@ struct QEngineShard {
         real1 partnerAngle;
 
         ShardToPhaseMap tempControls = controlsShards;
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
+        ShardToPhaseMap tempTargets = targetOfShards;
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
 
             if (phaseShard->first->isPlusMinus) {
-                continue;
+                return;
             }
 
             partner = phaseShard->first;
 
-            partnerShard = targetOfShards.find(partner);
-            if (partnerShard == targetOfShards.end()) {
-                continue;
+            partnerShard = tempTargets.find(partner);
+            if (partnerShard == tempTargets.end()) {
+                return;
             }
 
             if (!phaseShard->second->isInvert && (phaseShard->second->angle0 == ZERO_R1)) {
@@ -289,7 +292,7 @@ struct QEngineShard {
 
                 partner->AddPhaseAngles(this, ZERO_R1, partnerAngle);
             }
-        }
+        });
     }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
@@ -300,10 +303,11 @@ struct QEngineShard {
             return false;
         }
 
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
             std::swap(phaseShard->second->angle0, phaseShard->second->angle1);
-        }
+        });
 
         return true;
     }
@@ -318,16 +322,18 @@ struct QEngineShard {
             }
         }
 
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
             if (!phaseShard->second->isInvert) {
-                continue;
+                return;
             }
 
             phaseShard->second->angle0 =
                 std::arg(std::polar(ONE_R1, phaseShard->second->angle0) * topLeft / bottomRight);
             phaseShard->second->angle1 =
                 std::arg(std::polar(ONE_R1, phaseShard->second->angle1) * bottomRight / topLeft);
-        }
+        });
 
         return true;
     }
