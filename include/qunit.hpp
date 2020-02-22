@@ -223,10 +223,6 @@ public:
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
-        if (isPlusMinus) {
-            return;
-        }
-
         QEngineShardPtr partner;
         real1 partnerAngle;
 
@@ -234,7 +230,7 @@ public:
         par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = tempControls.begin();
             std::advance(phaseShard, lcv);
-            if (phaseShard->first->isPlusMinus || phaseShard->second->isInvert ||
+            if ((isPlusMinus != phaseShard->first->isPlusMinus) || phaseShard->second->isInvert ||
                 (phaseShard->second->angle0 != ZERO_R1)) {
                 return;
             }
@@ -252,10 +248,6 @@ public:
     /// If this bit is both control and target of another bit, try to combine the operations into one gate.
     void CombineGates()
     {
-        if (isPlusMinus) {
-            return;
-        }
-
         ShardToPhaseMap::iterator partnerShard;
         QEngineShardPtr partner;
         real1 partnerAngle;
@@ -266,7 +258,7 @@ public:
             ShardToPhaseMap::iterator phaseShard = tempControls.begin();
             std::advance(phaseShard, lcv);
 
-            if (phaseShard->first->isPlusMinus) {
+            if (isPlusMinus != phaseShard->first->isPlusMinus) {
                 return;
             }
 
