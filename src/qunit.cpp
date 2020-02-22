@@ -1083,7 +1083,7 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    //shard.OptimizeControls();
+    shard.OptimizeControls();
     RevertBasis2Qb(target, false, true);
 
     // Not necessary to check return after the above revert:
@@ -1408,7 +1408,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    //shard.OptimizeControls();
+    shard.OptimizeControls();
     RevertBasis2Qb(target, false, true);
 
     // Not necessary to check return after the above revert:

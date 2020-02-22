@@ -244,13 +244,21 @@ struct QEngineShard {
         ShardToPhaseMap tempControls = controlsShards;
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
-            if (!phaseShard->second.isInvert && (phaseShard->second.angle0 == ZERO_R1)) {
-                partner = phaseShard->first;
-                partnerAngle = phaseShard->second.angle1;
 
-                RemovePhaseTarget(partner);
-                AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+            if (phaseShard->second.isInvert || (phaseShard->second.angle0 != ZERO_R1)) {
+                continue;
             }
+
+            partner = phaseShard->first;
+            partnerAngle = phaseShard->second.angle1;
+
+            RemovePhaseTarget(partner);
+
+            MakePhaseControlledBy(partner);
+            targetOfShards[partner].angle0 = ZERO_R1;
+            partner->controlsShards[this].angle0 = ZERO_R1;
+            targetOfShards[partner].angle1 = partnerAngle;
+            partner->controlsShards[this].angle1 = partnerAngle;
         }
     }
 
