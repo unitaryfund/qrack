@@ -159,17 +159,6 @@ struct QEngineShard {
         real1 nAngle0 = targetOfShards[control]->angle0 + angle0Diff;
         real1 nAngle1 = targetOfShards[control]->angle1 + angle1Diff;
 
-        // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
-        // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
-        if (!targetOfShards[control]->isInvert) {
-            ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
-            if ((controlShard != controlsShards.end()) && !controlShard->second->isInvert &&
-                (controlShard->second->angle0 == ZERO_R1)) {
-                nAngle1 += controlShard->second->angle1;
-                RemovePhaseTarget(control);
-            }
-        }
-
         while (nAngle0 <= -M_PI) {
             nAngle0 += 2 * M_PI;
         }
@@ -239,12 +228,12 @@ struct QEngineShard {
         QEngineShardPtr partner;
         real1 partnerAngle;
 
-        ShardToPhaseMap::iterator phaseShard = controlsShards.begin();
-        while (phaseShard != controlsShards.end()) {
+        ShardToPhaseMap tempControls = controlsShards;
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
             if (phaseShard->first->isPlusMinus || phaseShard->second->isInvert ||
                 (phaseShard->second->angle0 != ZERO_R1)) {
-                phaseShard++;
                 continue;
             }
 
@@ -255,8 +244,6 @@ struct QEngineShard {
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ZERO_R1, partnerAngle);
-
-            phaseShard = controlsShards.begin();
         }
     }
 
