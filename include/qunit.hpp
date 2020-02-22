@@ -278,11 +278,14 @@ struct QEngineShard {
 
     bool TryCommutePhase(const complex& topLeft, const complex& bottomRight)
     {
-        if (controlsShards.size() > 0) {
-            return false;
+        ShardToPhaseMap::iterator phaseShard;
+
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            if (phaseShard->second.isInvert) {
+                return false;
+            }
         }
 
-        ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (!phaseShard->second.isInvert) {
                 continue;
