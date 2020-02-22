@@ -2983,9 +2983,9 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
 
     //shard.CombineGates();
 
-    //if (onlyControlling && !onlyInvert) {
-    //    shard.OptimizeControls();
-    //}
+    if (onlyControlling && !onlyInvert) {
+        shard.OptimizeControls();
+    }
 
     bitLenInt controls[1];
     complex polar0, polar1;
