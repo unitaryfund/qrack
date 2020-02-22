@@ -1083,7 +1083,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    // shard.OptimizeControls();
     RevertBasis2Qb(target, false, true);
 
     // Not necessary to check return after the above revert:
@@ -1408,7 +1407,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    // shard.OptimizeControls();
     RevertBasis2Qb(target, false, true);
 
     // Not necessary to check return after the above revert:
@@ -2929,11 +2927,11 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
 
 QInterfacePtr QUnit::Clone()
 {
-    bitLenInt i;
-    // ShardToPhaseMap::iterator phaseShard;
-
+    // TODO: Copy buffers instead of flushing?
     ToPermBasisAll();
     EndAllEmulation();
+
+    bitLenInt i;
 
     QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
         complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
@@ -2954,25 +2952,6 @@ QInterfacePtr QUnit::Clone()
         copyPtr->shards[i] = QEngineShard(shards[i]);
         copyPtr->shards[i].unit = dupeEngines[engineIndex];
     }
-
-    /*
-    // TODO: These should create separate PhaseShardPtr instance and attach them to the right controls/targets.
-    for (i = 0; i < qubitCount; i++) {
-        ShardToPhaseMap targetOfShards;
-        for (phaseShard = copyPtr->shards[i].targetOfShards.begin();
-             phaseShard != copyPtr->shards[i].targetOfShards.end(); phaseShard++) {
-            targetOfShards[&(copyPtr->shards[FindShardIndex(*(phaseShard->first))])] = phaseShard->second;
-        }
-        copyPtr->shards[i].targetOfShards = targetOfShards;
-
-        ShardToPhaseMap controlsShards;
-        for (phaseShard = copyPtr->shards[i].controlsShards.begin();
-             phaseShard != copyPtr->shards[i].controlsShards.end(); phaseShard++) {
-            controlsShards[&(copyPtr->shards[FindShardIndex(*(phaseShard->first))])] = phaseShard->second;
-        }
-        copyPtr->shards[i].controlsShards = controlsShards;
-    }
-    */
 
     return copyPtr;
 }
@@ -3000,6 +2979,11 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
         // Recursive call that should be blocked,
         // or already in target basis.
         return;
+    }
+
+    if (onlyControlling && !onlyInvert) {
+        TransformBasis1Qb(false, i);
+        shard.OptimizeControls();
     }
 
     bitLenInt controls[1];

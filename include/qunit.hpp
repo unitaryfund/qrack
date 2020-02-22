@@ -164,7 +164,7 @@ struct QEngineShard {
         if (!targetOfShards[control]->isInvert) {
             ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
             if ((controlShard != controlsShards.end()) && !controlShard->second->isInvert &&
-                (controlShard->second->angle0 == 0)) {
+                (controlShard->second->angle0 == ZERO_R1)) {
                 nAngle1 += controlShard->second->angle1;
                 RemovePhaseTarget(control);
             }
@@ -232,23 +232,31 @@ struct QEngineShard {
 
     void OptimizeControls()
     {
+        if (isPlusMinus) {
+            return;
+        }
+
         QEngineShardPtr partner;
         real1 partnerAngle;
 
-        ShardToPhaseMap tempControls = controlsShards;
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
+        ShardToPhaseMap::iterator phaseShard = controlsShards.begin();
+        while (phaseShard != controlsShards.end()) {
 
-            if (phaseShard->second->isInvert || (phaseShard->second->angle0 != ZERO_R1)) {
+            if (phaseShard->first->isPlusMinus || phaseShard->second->isInvert ||
+                (phaseShard->second->angle0 != ZERO_R1)) {
+                phaseShard++;
                 continue;
             }
 
             partner = phaseShard->first;
             partnerAngle = phaseShard->second->angle1;
 
-            RemovePhaseTarget(partner);
+            phaseShard->first->targetOfShards.erase(this);
+            controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+
+            phaseShard = controlsShards.begin();
         }
     }
 
