@@ -254,11 +254,7 @@ struct QEngineShard {
 
             RemovePhaseTarget(partner);
 
-            MakePhaseControlledBy(partner);
-            targetOfShards[partner].angle0 = ZERO_R1;
-            partner->controlsShards[this].angle0 = ZERO_R1;
-            targetOfShards[partner].angle1 = partnerAngle;
-            partner->controlsShards[this].angle1 = partnerAngle;
+            AddPhaseAngles(partner, ZERO_R1, partnerAngle);
         }
     }
 
