@@ -111,6 +111,16 @@ public:
     {
     }
 
+    void ClampAmps() {
+        if (norm(amp0) < min_norm) {
+            amp0 = ZERO_R1;
+            amp1 /= abs(amp1);
+        } else if (norm(amp1) < min_norm) {
+            amp1 = ZERO_R1;
+            amp0 /= abs(amp0);
+        }
+    }
+
     /// Remove another qubit as being a cached control of a phase gate buffer, for "this" as target bit.
     void RemovePhaseControl(QEngineShardPtr p)
     {

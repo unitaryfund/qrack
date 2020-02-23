@@ -59,7 +59,7 @@ typedef double real1;
 #define PI_R1 M_PI
 // min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
 // the results of the tests in accuracy.cpp.
-#define min_norm 1e-31
+#define min_norm 1e-30
 #define REAL1_DEFAULT_ARG -999.0
 #endif
 
