@@ -8,9 +8,10 @@ install:
   - python -m pip install --upgrade pip setuptools wheel pytest
   - python -m pip install numpy scipy
   - python -m pip install dormouse pybind11
+  - python -m pip install cvxpy==1.0.25
   - python -m pip install Cython==0.29.14
   - python -m pip install qiskit==0.14.1
-  - python -m pip install stestr cvxpy
+  - python -m pip install stestr
   - python -m pip install pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
