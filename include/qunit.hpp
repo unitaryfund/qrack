@@ -47,11 +47,12 @@ struct PhaseShard {
 
 struct QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
-typedef PhaseShard* PhaseShardPtr;
-typedef std::map<QEngineShardPtr, PhaseShard> ShardToPhaseMap;
+typedef std::shared_ptr<PhaseShard> PhaseShardPtr;
+typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
-struct QEngineShard {
+class QEngineShard : public ParallelFor {
+public:
     QInterfacePtr unit;
     bitLenInt mapped;
     bool isEmulated;
@@ -110,6 +111,16 @@ struct QEngineShard {
     {
     }
 
+    void ClampAmps() {
+        if (norm(amp0) < min_norm) {
+            amp0 = ZERO_R1;
+            amp1 /= abs(amp1);
+        } else if (norm(amp1) < min_norm) {
+            amp1 = ZERO_R1;
+            amp0 /= abs(amp0);
+        }
+    }
+
     /// Remove another qubit as being a cached control of a phase gate buffer, for "this" as target bit.
     void RemovePhaseControl(QEngineShardPtr p)
     {
@@ -134,7 +145,7 @@ struct QEngineShard {
     void MakePhaseControlledBy(QEngineShardPtr p)
     {
         if (p && (targetOfShards.find(p) == targetOfShards.end())) {
-            PhaseShard ps;
+            PhaseShardPtr ps = std::make_shared<PhaseShard>();
             targetOfShards[p] = ps;
             p->controlsShards[this] = ps;
         }
@@ -144,7 +155,7 @@ struct QEngineShard {
     void MakePhaseControlOf(QEngineShardPtr p)
     {
         if (p && (controlsShards.find(p) == controlsShards.end())) {
-            PhaseShard ps;
+            PhaseShardPtr ps = std::make_shared<PhaseShard>();
             controlsShards[p] = ps;
             p->targetOfShards[this] = ps;
         }
@@ -156,17 +167,8 @@ struct QEngineShard {
     {
         MakePhaseControlledBy(control);
 
-        real1 nAngle0 = targetOfShards[control].angle0 + angle0Diff;
-        real1 nAngle1 = targetOfShards[control].angle1 + angle1Diff;
-
-        // Buffers with "angle0" = 0 are actually symmetric (unchanged) under exchange of control and target.
-        // We can reduce our number of buffer instances by taking advantage of this kind of symmetry:
-        ShardToPhaseMap::iterator controlShard = controlsShards.find(control);
-        if (!targetOfShards[control].isInvert && (controlShard != controlsShards.end()) &&
-            !controlShard->second.isInvert && (controlShard->second.angle0 == 0)) {
-            nAngle1 += controlShard->second.angle1;
-            RemovePhaseTarget(control);
-        }
+        real1 nAngle0 = targetOfShards[control]->angle0 + angle0Diff;
+        real1 nAngle1 = targetOfShards[control]->angle1 + angle1Diff;
 
         while (nAngle0 <= -M_PI) {
             nAngle0 += 2 * M_PI;
@@ -181,29 +183,23 @@ struct QEngineShard {
             nAngle1 -= 2 * M_PI;
         }
 
-        if ((nAngle0 == ZERO_R1) && (nAngle1 == ZERO_R1) && !targetOfShards[control].isInvert) {
+        if ((nAngle0 == ZERO_R1) && (nAngle1 == ZERO_R1) && !targetOfShards[control]->isInvert) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
         }
 
-        targetOfShards[control].angle0 = nAngle0;
-        control->controlsShards[this].angle0 = nAngle0;
-        targetOfShards[control].angle1 = nAngle1;
-        control->controlsShards[this].angle1 = nAngle1;
+        targetOfShards[control]->angle0 = nAngle0;
+        targetOfShards[control]->angle1 = nAngle1;
     }
 
     void AddInversionAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
     {
         MakePhaseControlledBy(control);
 
-        PhaseShard& targetOfShard = targetOfShards[control];
-        targetOfShard.isInvert = !targetOfShard.isInvert;
-        std::swap(targetOfShard.angle0, targetOfShard.angle1);
-
-        PhaseShard& controlShard = control->controlsShards[this];
-        controlShard.isInvert = !controlShard.isInvert;
-        std::swap(controlShard.angle0, controlShard.angle1);
+        PhaseShardPtr targetOfShard = targetOfShards[control];
+        targetOfShard->isInvert = !targetOfShard->isInvert;
+        std::swap(targetOfShard->angle0, targetOfShard->angle1);
 
         AddPhaseAngles(control, angle0Diff, angle1Diff);
     }
@@ -212,7 +208,7 @@ struct QEngineShard {
     {
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-            if (phaseShard->second.isInvert) {
+            if (phaseShard->second->isInvert) {
                 return true;
             }
         }
@@ -224,7 +220,7 @@ struct QEngineShard {
     {
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            if (phaseShard->second.isInvert) {
+            if (phaseShard->second->isInvert) {
                 return true;
             }
         }
@@ -232,12 +228,73 @@ struct QEngineShard {
         return false;
     }
 
-    bool isInvert()
+    bool isInvert() { return isInvertControl() || isInvertTarget(); }
+
+    /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
+    void OptimizeControls()
     {
-        if (isInvertControl()) {
-            return true;
-        }
-        return isInvertTarget();
+        QEngineShardPtr partner;
+        real1 partnerAngle;
+
+        ShardToPhaseMap tempControls = controlsShards;
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
+            if ((isPlusMinus != phaseShard->first->isPlusMinus) || phaseShard->second->isInvert ||
+                (phaseShard->second->angle0 != ZERO_R1)) {
+                return;
+            }
+
+            partner = phaseShard->first;
+            partnerAngle = phaseShard->second->angle1;
+
+            phaseShard->first->targetOfShards.erase(this);
+            controlsShards.erase(partner);
+
+            AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+        });
+    }
+
+    /// If this bit is both control and target of another bit, try to combine the operations into one gate.
+    void CombineGates()
+    {
+        ShardToPhaseMap::iterator partnerShard;
+        QEngineShardPtr partner;
+        real1 partnerAngle;
+
+        ShardToPhaseMap tempControls = controlsShards;
+        ShardToPhaseMap tempTargets = targetOfShards;
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
+
+            if (isPlusMinus != phaseShard->first->isPlusMinus) {
+                return;
+            }
+
+            partner = phaseShard->first;
+
+            partnerShard = tempTargets.find(partner);
+            if (partnerShard == tempTargets.end()) {
+                return;
+            }
+
+            if (!phaseShard->second->isInvert && (phaseShard->second->angle0 == ZERO_R1)) {
+                partnerAngle = phaseShard->second->angle1;
+
+                phaseShard->first->targetOfShards.erase(this);
+                controlsShards.erase(partner);
+
+                AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+            } else if (!partnerShard->second->isInvert && (partnerShard->second->angle0 == ZERO_R1)) {
+                partnerAngle = partnerShard->second->angle1;
+
+                phaseShard->first->controlsShards.erase(this);
+                targetOfShards.erase(partner);
+
+                partner->AddPhaseAngles(this, ZERO_R1, partnerAngle);
+            }
+        });
     }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
@@ -248,53 +305,57 @@ struct QEngineShard {
             return false;
         }
 
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            std::swap(phaseShard->second.angle0, phaseShard->second.angle1);
-            PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
-            std::swap(remotePhase.angle0, remotePhase.angle1);
-        }
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            std::swap(phaseShard->second->angle0, phaseShard->second->angle1);
+        });
 
         return true;
     }
 
     bool TryCommutePhase(const complex& topLeft, const complex& bottomRight)
     {
-        if (controlsShards.size() > 0) {
-            return false;
+        ShardToPhaseMap::iterator phaseShard;
+
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            if (phaseShard->second->isInvert) {
+                return false;
+            }
         }
 
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            if (!phaseShard->second.isInvert) {
-                continue;
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            if (!phaseShard->second->isInvert) {
+                return;
             }
 
-            phaseShard->second.angle0 = std::arg(std::polar(ONE_R1, phaseShard->second.angle0) * topLeft / bottomRight);
-            phaseShard->second.angle1 = std::arg(std::polar(ONE_R1, phaseShard->second.angle1) * bottomRight / topLeft);
-
-            PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
-            remotePhase.angle0 = phaseShard->second.angle0;
-            remotePhase.angle1 = phaseShard->second.angle1;
-        }
+            phaseShard->second->angle0 =
+                std::arg(std::polar(ONE_R1, phaseShard->second->angle0) * topLeft / bottomRight);
+            phaseShard->second->angle1 =
+                std::arg(std::polar(ONE_R1, phaseShard->second->angle1) * bottomRight / topLeft);
+        });
 
         return true;
     }
 
     bool TryHCommute()
     {
+        CombineGates();
+
         complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
 
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
-            polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
+            polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+            polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
             if (polar0 == polar1) {
-                if (phaseShard->second.isInvert) {
+                if (phaseShard->second->isInvert) {
                     return false;
                 }
             } else if (polar0 == -polar1) {
-                if (!phaseShard->second.isInvert) {
+                if (!phaseShard->second->isInvert) {
                     return false;
                 }
             } else {
@@ -303,8 +364,8 @@ struct QEngineShard {
         }
 
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
-            polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
+            polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+            polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
             if ((polar0 != polar1) && (polar0 != -polar1)) {
                 return false;
             }
@@ -312,17 +373,17 @@ struct QEngineShard {
 
         bool didFlip;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second.angle0);
-            polar1 = std::polar(ONE_R1, phaseShard->second.angle1);
+            polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+            polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
             didFlip = false;
             if (polar0 == polar1) {
-                if (phaseShard->second.isInvert) {
+                if (phaseShard->second->isInvert) {
                     polar0 = (polar0 + polar1) / (real1)2;
                     polar1 = -polar0;
                     didFlip = true;
                 }
             } else if (polar0 == -polar1) {
-                if (!phaseShard->second.isInvert) {
+                if (!phaseShard->second->isInvert) {
                     polar0 = (polar0 + polar1) / (real1)2;
                     polar1 = polar0;
                     didFlip = true;
@@ -332,14 +393,9 @@ struct QEngineShard {
             }
 
             if (didFlip) {
-                phaseShard->second.isInvert = !phaseShard->second.isInvert;
-                phaseShard->second.angle0 = (real1)arg(polar0);
-                phaseShard->second.angle1 = (real1)arg(polar1);
-
-                PhaseShard& remotePhase = phaseShard->first->controlsShards[this];
-                remotePhase.isInvert = !remotePhase.isInvert;
-                remotePhase.angle0 = phaseShard->second.angle0;
-                remotePhase.angle1 = phaseShard->second.angle1;
+                phaseShard->second->isInvert = !phaseShard->second->isInvert;
+                phaseShard->second->angle0 = (real1)arg(polar0);
+                phaseShard->second->angle1 = (real1)arg(polar1);
             }
         }
 
@@ -669,14 +725,8 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false);
-    void RevertBasis2Qb(const bitLenInt& start, const bitLenInt& length, const bool& onlyInvert = false,
-        const bool& onlyControlling = false)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i, onlyInvert, onlyControlling);
-        }
-    }
+    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false,
+        std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {});
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
