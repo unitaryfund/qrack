@@ -1,356 +1,83 @@
-//////////////////////////////////////////////////////////////////////////////////////
-//
-// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
-//
-// This example demonstrates Shor's algorithm for integer factoring. (This file was heavily adapted from
-// https://github.com/ProjectQ-Framework/ProjectQ/blob/develop/examples/shor.py, with thanks to ProjectQ!)
-//
-// Licensed under the GNU Lesser General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
-// for details.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 #pragma once
 
-#if defined DLL_EXPORTS
-    #if defined WIN32
-        #define LIB_API(RetType) extern "C" __declspec(dllexport) RetType
+#if defined (BUILD_SHARED_LIBS)
+    #ifdef BUILD_DLL
+        #define MICROSOFT_QUANTUM_DECL __declspec(dllexport)
     #else
-        #define LIB_API(RetType) extern "C" RetType __attribute__((visibility("default")))
+        #define MICROSOFT_QUANTUM_DECL __declspec(dllimport)
     #endif
+    #define MICROSOFT_QUANTUM_DECL_IMPORT __declspec(dllimport)
 #else
-    #if defined WIN32
-        #define LIB_API(RetType) extern "C" __declspec(dllimport) RetType
-    #else
-        #define LIB_API(RetType) extern "C" RetType
-    #endif
+    #define MICROSOFT_QUANTUM_DECL
+    #define MICROSOFT_QUANTUM_DECL_IMPORT
 #endif
 
-#include <map>
-#include <vector>
-
-// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
-#include "qfactory.hpp"
-
-using namespace Qrack;
-
-#if defined(_WIN32)
-typedef void (__stdcall *IdsCallback)(unsigned int);
-#else
-typedef void (*IdsCallback)(unsigned int);
+// SAL only defined in windows.
+#ifndef _In_
+#define _In_
+#define _In_reads_(n)
 #endif
 
-enum Pauli
-{
-	/// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-	PauliI = 0,
-	/// Pauli X operator. Corresponds to Q# constant "PauliX."
-	PauliX = 1,
-	/// Pauli Y operator. Corresponds to Q# constant "PauliY."
-	PauliY = 3,
-	/// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-	PauliZ = 2
-};
+extern "C" {
+// non-quantum
 
-class QrackSimulatorManager {
-protected:
-    static QrackSimulatorManager* m_pInstance;
-    std::vector<QInterfacePtr> simulators;
-    std::map<QInterfacePtr, std::map<unsigned int, bitLenInt>> shards;
+MICROSOFT_QUANTUM_DECL unsigned init();
+MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
+MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
+MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ bool(*callback)(size_t, double, double));
+MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ bool(*callback)(size_t, double, double));
+MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ void(*callback)(unsigned));
 
-    QrackSimulatorManager()
-    {
-        // Intentionally left blank;
-    }
+MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _In_reads_(n) double* p);
 
-    void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx);
+MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q);
 
-    void TransformPauliBasis(QInterfacePtr simulator, unsigned int len, Pauli* bases, unsigned int* qubitIds);
+// allocate and release
+MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid);
+MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid);
 
-    void RevertPauliBasis(QInterfacePtr simulator, unsigned int len, Pauli* bases, unsigned int* qubitIds);
+// single-qubit gates
+MICROSOFT_QUANTUM_DECL void X(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void Y(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void Z(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void H(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q);
 
-public:
-    /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
-    static QrackSimulatorManager* Instance();
 
-   /**
-    * Initialize a simulator ID with 0 qubits
-    */
-    unsigned int InitNewSimulator();
+// multi-controlled single-qubit gates
 
-    /**
-    * Destroy a simulator (ID will not be reused)
-    */
-    void DestroySimulator(unsigned int id);
+MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
 
-    /**
-    * "Dump" all IDs from the selected simulator ID into the callback
-    */
-    void DumpIds(unsigned int id, IdsCallback callback);
+// rotations
+MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q);
 
-    /**
-    * Set RNG seed for simulator ID
-    */
-    void SetSeed(unsigned int simulatorId, uint32_t seedValue);
+// multi-controlled rotations
+MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
 
-    /**
-    * Allocate 1 new qubit with the given qubit ID, under the simulator ID
-    */
-    void AllocateOneQubit(unsigned int simulatorId, long qubitId);
+// Exponential of Pauli operators
+MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q);
 
-    /**
-    * Release 1 qubit with the given qubit ID, under the simulator ID
-    */
-    bool ReleaseOneQubit(unsigned int simulatorId, long qubitId);
+// measurements
+MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL unsigned Measure(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q);
 
-    /**
-     * Find the joint probability for all specified qubits under the respective Pauli basis transformations.
-     */
-    double JointEnsembleProbability(unsigned int simulatorId, unsigned int len, Pauli* bases, unsigned int* qubitIds);
+// permutation oracle emulation
+//MICROSOFT_QUANTUM_DECL void PermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ std::size_t table_size, _In_reads_(table_size) std::size_t *permutation_table);
+//MICROSOFT_QUANTUM_DECL void AdjPermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ std::size_t table_size, _In_reads_(table_size) std::size_t *permutation_table);
 
-    /**
-     * Exponentiation of Pauli operators
-    */
-    void Exp(unsigned int simulatorId, unsigned int len, Pauli* paulis, double angle, unsigned int* qubitIds);
-
-    /**
-     * Exponentiation of Pauli operators
-    */
-    void MCExp(unsigned int simulatorId, unsigned int len, Pauli* paulis, double angle, unsigned int ctrlLen, unsigned int* ctrls, unsigned int* qubitIds);
-
-    /**
-    * Walsh-Hadamard transform applied for simulator ID and qubit ID
-    */
-    void H(unsigned int simulatorId, unsigned int qubit);
-
-    /**
-     * (External API) Measure bit in |0>/|1> basis
-     */
-    unsigned int M(unsigned int id, unsigned int q);
-
-    /**
-     * Measure bits in specified Pauli bases
-     */
-    unsigned int Measure(unsigned int simulatorId, unsigned int len, Pauli* bases, unsigned int* qubitIds);
-
-    /**
-    * (External API) Rotation around Pauli axes
-    */
-    void R(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
-
-    /**
-    * (External API) Controlled rotation around Pauli axes
-    */
-    void MCR(unsigned int id, unsigned int len, Pauli* paulis, double angle, unsigned int ctrlLen, unsigned int* ctrls, unsigned int* ids);
-
-    /**
-     * "S" Gate
-     */
-    void S(unsigned int id, unsigned int qubit);
-
-    /**
-     * Inverse "S" Gate
-     */
-    void AdjS(unsigned int id, unsigned int qubit);
-
-    /**
-     * Controlled "S" Gate
-     */
-    void MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-    /**
-     * Controlled inverse "S" Gate
-     */
-    void MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-    /**
-     * "T" Gate
-     */
-    void T(unsigned int id, unsigned int qubit);
-
-    /**
-     * Inverse "T" Gate
-     */
-    void AdjT(unsigned int id, unsigned int qubit);
-
-    /**
-     * Controlled "T" Gate
-     */
-    void MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-    /**
-     * Controlled inverse "T" Gate
-     */
-    void MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-    /**
-     * "X" Gate
-     */
-    void X(unsigned int id, unsigned int qubit);
-
-    /**
-     * Controlled "X" Gate
-     */
-    void MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-    /**
-     * "Y" Gate
-     */
-    void Y(unsigned int id, unsigned int qubit);
-
-    /**
-     * Controlled "Y" Gate
-     */
-    void MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-    /**
-     * "Z" Gate
-     */
-    void Z(unsigned int id, unsigned int qubit);
-
-    /**
-     * Controlled "Z" Gate
-     */
-    void MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-};
-
-/**
- * (External API) Initialize a simulator ID with 0 qubits
- */
-LIB_API(unsigned int) init();
-
-/**
-* (External API) Destroy a simulator (ID will not be reused)
-*/
-LIB_API(void) destroy(unsigned int id);
-
-/**
- * (External API) "Dump" all IDs from the selected simulator ID into the callback
- */
-LIB_API(void) DumpIds(unsigned int id, IdsCallback callback);
-
-/**
-* (External API) Set RNG seed for simulator ID
-*/
-LIB_API(void) seed(unsigned int id, uint32_t seedValue);
-
-/**
- * (External API) Allocate 1 new qubit with the given qubit ID, under the simulator ID
- */
-LIB_API(void) allocateQubit(unsigned int id, unsigned int qubit_id);
-
-/**
- * (External API) Release 1 qubit with the given qubit ID, under the simulator ID
- */
-LIB_API(void) release(unsigned int id, unsigned int qubit_id);
-
-/**
- * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
- */
-LIB_API(double) JointEnsembleProbability(unsigned int id, unsigned int n, Pauli* b, unsigned int* q);
-
-/**
- * (External API) Exponentiation of Pauli operators
- */
-LIB_API(void) Exp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
-
-/**
- * (External API) Controlled exponentiation of Pauli operators
- */
-LIB_API(void) MCExp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids);
-
-/**
- * (External API) Walsh-Hadamard transform applied for simulator ID and qubit ID
- */
-LIB_API(void) H(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Measure bit in |0>/|1> basis
- */
-LIB_API(unsigned int) M(unsigned int id, unsigned int q);
-
-/**
- * (External API) Measure bits in specified Pauli bases
- */
-LIB_API(unsigned int) Measure(unsigned int id, unsigned int n, Pauli* b, unsigned int* ids);
-
-/**
- * (External API) Rotation around Pauli axes
- */
-LIB_API(void) R(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids);
-
-/**
- * (External API) Controlled rotation around Pauli axes
- */
-LIB_API(void) MCR(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids);
-
-LIB_API(long) random_choice(unsigned int id, long size, double* p);
-
-/**
- * (External API) "S" Gate
- */
-LIB_API(void) S(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Inverse "S" Gate
- */
-LIB_API(void) AdjS(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Controlled "S" Gate
- */
-LIB_API(void) MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-/**
- * (External API) Controlled Inverse "S" Gate
- */
-LIB_API(void) MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-/**
- * (External API) "T" Gate
- */
-LIB_API(void) T(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Inverse "T" Gate
- */
-LIB_API(void) AdjT(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Controlled "T" Gate
- */
-LIB_API(void) MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-/**
- * (External API) Controlled Inverse "T" Gate
- */
-LIB_API(void) MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-/**
- * (External API) "X" Gate
- */
-LIB_API(void) X(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Controlled "X" Gate
- */
-LIB_API(void) MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-/**
- * (External API) "Y" Gate
- */
-LIB_API(void) Y(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Controlled "Y" Gate
- */
-LIB_API(void) MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
-
-/**
- * (External API) "Z" Gate
- */
-LIB_API(void) Z(unsigned int id, unsigned int qubit);
-
-/**
- * (External API) Controlled "Z" Gate
- */
-LIB_API(void) MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit);
+}

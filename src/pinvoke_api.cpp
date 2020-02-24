@@ -11,16 +11,225 @@
 
 #include "pinvoke_api.hpp"
 
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
+//
+// This example demonstrates Shor's algorithm for integer factoring. (This file was heavily adapted from
+// https://github.com/ProjectQ-Framework/ProjectQ/blob/develop/examples/shor.py, with thanks to ProjectQ!)
+//
+// Licensed under the GNU Lesser General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
+// for details.
+
+#pragma once
+
+#include <map>
+#include <vector>
+
+// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
+#include "qfactory.hpp"
+
 using namespace Qrack;
 
+enum Pauli
+{
+	/// Pauli Identity operator. Corresponds to Q# constant "PauliI."
+	PauliI = 0U,
+	/// Pauli X operator. Corresponds to Q# constant "PauliX."
+	PauliX = 1U,
+	/// Pauli Y operator. Corresponds to Q# constant "PauliY."
+	PauliY = 3U,
+	/// Pauli Z operator. Corresponds to Q# constant "PauliZ."
+	PauliZ = 2U
+};
+
+class QrackSimulatorManager {
+protected:
+    static QrackSimulatorManager* m_pInstance;
+    qrack_rand_gen_ptr rng;
+    std::vector<QInterfacePtr> simulators;
+    std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
+
+    QrackSimulatorManager()
+    {
+        rng = std::make_shared<qrack_rand_gen>(std::time(0));
+    }
+
+    void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx);
+
+    void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds);
+
+    void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds);
+
+public:
+    /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
+    static QrackSimulatorManager* Instance();
+
+   /**
+    * Initialize a simulator ID with 0 qubits
+    */
+    unsigned InitNewSimulator();
+
+    /**
+    * Destroy a simulator (ID will not be reused)
+    */
+    void DestroySimulator(unsigned id);
+
+    /**
+    * "Dump" all IDs from the selected simulator ID into the callback
+    */
+    void DumpIds(unsigned id, void(*callback)(unsigned));
+
+	/**
+     * Select from a distribution of "n" elements according the discrete probabilities in "d."
+     */
+	std::size_t random_choice(unsigned simulatorId, std::size_t n, double* d);
+
+    /**
+    * Set RNG seed for simulator ID
+    */
+    void SetSeed(unsigned simulatorId, unsigned seedValue);
+
+    /**
+    * Allocate 1 new qubit with the given qubit ID, under the simulator ID
+    */
+    void AllocateOneQubit(unsigned simulatorId, long qubitId);
+
+    /**
+    * Release 1 qubit with the given qubit ID, under the simulator ID
+    */
+    bool ReleaseOneQubit(unsigned simulatorId, long qubitId);
+
+    /**
+    * Get currently allocated number of qubits, under the simulator ID
+    */
+	unsigned NumQubits(unsigned simulatorId);
+
+    /**
+     * Find the joint probability for all specified qubits under the respective Pauli basis transformations.
+     */
+    double JointEnsembleProbability(unsigned simulatorId, unsigned len, unsigned* bases, unsigned* qubitIds);
+
+    /**
+     * Exponentiation of Pauli operators
+    */
+    void Exp(unsigned simulatorId, unsigned len, unsigned* paulis, double angle, unsigned* qubitIds);
+
+    /**
+     * Exponentiation of Pauli operators
+    */
+    void MCExp(unsigned simulatorId, unsigned len, unsigned* paulis, double angle, unsigned ctrlLen, unsigned* ctrls, unsigned* qubitIds);
+
+    /**
+    * Walsh-Hadamard transform applied for simulator ID and qubit ID
+    */
+    void H(unsigned simulatorId, unsigned qubit);
+
+    /**
+     * (External API) Measure bit in |0>/|1> basis
+     */
+    unsigned M(unsigned id, unsigned q);
+
+    /**
+     * Measure bits in specified Pauli bases
+     */
+    unsigned Measure(unsigned simulatorId, unsigned len, unsigned* bases, unsigned* qubitIds);
+
+    /**
+    * (External API) Rotation around Pauli axes
+    */
+    void R(unsigned simulatorId, unsigned basis, double phi, unsigned qubitId);
+
+    /**
+    * (External API) Controlled rotation around Pauli axes
+    */
+    void MCR(unsigned simulatorId, unsigned basis, double phi, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId);
+
+    /**
+     * "S" Gate
+     */
+    void S(unsigned id, unsigned qubit);
+
+    /**
+     * Inverse "S" Gate
+     */
+    void AdjS(unsigned id, unsigned qubit);
+
+    /**
+     * Controlled "S" Gate
+     */
+    void MCS(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * Controlled inverse "S" Gate
+     */
+    void MCAdjS(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * "T" Gate
+     */
+    void T(unsigned id, unsigned qubit);
+
+    /**
+     * Inverse "T" Gate
+     */
+    void AdjT(unsigned id, unsigned qubit);
+
+    /**
+     * Controlled "T" Gate
+     */
+    void MCT(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * Controlled inverse "T" Gate
+     */
+    void MCAdjT(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * "X" Gate
+     */
+    void X(unsigned id, unsigned qubit);
+
+    /**
+     * Controlled "X" Gate
+     */
+    void MCX(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * "Y" Gate
+     */
+    void Y(unsigned id, unsigned qubit);
+
+    /**
+     * Controlled "Y" Gate
+     */
+    void MCY(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * "Z" Gate
+     */
+    void Z(unsigned id, unsigned qubit);
+
+    /**
+     * Controlled "Z" Gate
+     */
+    void MCZ(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+
+    /**
+     * Controlled "H" Gate
+     */
+    void MCH(unsigned id, unsigned count, unsigned* ctrls, unsigned qubit);
+};
+
 void QrackSimulatorManager::mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx) {
-    for (unsigned int i = 0; i < 4; i++) {
+    for (unsigned i = 0; i < 4; i++) {
 		outMtrx[i] = scalar * inMtrx[i];
     }
 }
 
-void QrackSimulatorManager::TransformPauliBasis(QInterfacePtr simulator, unsigned int len, Pauli* bases, unsigned int* qubitIds) {
-    for (unsigned int i = 0; i < len; i++) {
+void QrackSimulatorManager::TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds) {
+    for (unsigned i = 0; i < len; i++) {
         switch (bases[i]) {
             case PauliX:
                 simulator->H(shards[simulator][qubitIds[i]]);
@@ -38,8 +247,8 @@ void QrackSimulatorManager::TransformPauliBasis(QInterfacePtr simulator, unsigne
     }
 }
 
-void QrackSimulatorManager::RevertPauliBasis(QInterfacePtr simulator, unsigned int len, Pauli* bases, unsigned int* qubitIds) {
-    for (unsigned int i = 0; i < len; i++) {
+void QrackSimulatorManager::RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds) {
+    for (unsigned i = 0; i < len; i++) {
         switch (bases[i]) {
             case PauliX:
                 simulator->H(shards[simulator][qubitIds[i]]);
@@ -66,29 +275,35 @@ QrackSimulatorManager* QrackSimulatorManager::Instance() {
     return m_pInstance;
 }
 
-unsigned int QrackSimulatorManager::InitNewSimulator() {
+unsigned QrackSimulatorManager::InitNewSimulator() {
     simulators.push_back(NULL);
     return simulators.size() - 1U;
 }
 
-void QrackSimulatorManager::DestroySimulator(unsigned int id) {
+void QrackSimulatorManager::DestroySimulator(unsigned id) {
     simulators[id] = NULL;
 }
 
-void QrackSimulatorManager::DumpIds(unsigned int simulatorId, IdsCallback callback) {
+void QrackSimulatorManager::DumpIds(unsigned simulatorId, void(*callback)(unsigned)) {
     QInterfacePtr simulator = simulators[simulatorId];
-    std::map<unsigned int, bitLenInt>::iterator it;
+    std::map<unsigned, bitLenInt>::iterator it;
 
     for (it = shards[simulator].begin(); it != shards[simulator].end(); it++) {
         callback(it->first);
     }
 }
 
-void QrackSimulatorManager::SetSeed(unsigned int simulatorId, uint32_t seedValue) {
+std::size_t QrackSimulatorManager::random_choice(unsigned simulatorId, std::size_t n, double* d)
+{
+    std::discrete_distribution<std::size_t> dist(d, d+n);
+    return dist(*rng.get());
+}
+
+void QrackSimulatorManager::SetSeed(unsigned simulatorId, unsigned seedValue) {
     simulators[simulatorId]->SetRandomSeed(seedValue);
 }
 
-void QrackSimulatorManager::AllocateOneQubit(unsigned int simulatorId, long qubitId) {
+void QrackSimulatorManager::AllocateOneQubit(unsigned simulatorId, long qubitId) {
     QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, 1, 0);
     if (simulators[simulatorId] == NULL) {
         simulators[simulatorId] = nQubit;
@@ -98,7 +313,7 @@ void QrackSimulatorManager::AllocateOneQubit(unsigned int simulatorId, long qubi
     shards[simulators[simulatorId]][qubitId] = simulators[simulatorId]->GetQubitCount();
 }
 
-bool QrackSimulatorManager::ReleaseOneQubit(unsigned int simulatorId, long qubitId) {
+bool QrackSimulatorManager::ReleaseOneQubit(unsigned simulatorId, long qubitId) {
     QInterfacePtr simulator = simulators[simulatorId];
     bool isQubitZero = simulator->Prob(shards[simulator][qubitId]) < min_norm;
 
@@ -108,7 +323,7 @@ bool QrackSimulatorManager::ReleaseOneQubit(unsigned int simulatorId, long qubit
     } else {
         bitLenInt oIndex = shards[simulator][qubitId];
         simulator->Dispose(oIndex, 1U);
-        for (unsigned int i = 0; i < shards[simulator].size(); i++) {
+        for (unsigned i = 0; i < shards[simulator].size(); i++) {
             if (shards[simulator][i] > oIndex) {
                 shards[simulator][i]--;
             }
@@ -119,14 +334,18 @@ bool QrackSimulatorManager::ReleaseOneQubit(unsigned int simulatorId, long qubit
     return isQubitZero;
 }
 
-double QrackSimulatorManager::JointEnsembleProbability(unsigned int simulatorId, unsigned int len, Pauli* bases, unsigned int* qubitIds)
+unsigned QrackSimulatorManager::NumQubits(unsigned simulatorId) {
+    return (unsigned)simulators[simulatorId]->GetQubitCount();
+}
+
+double QrackSimulatorManager::JointEnsembleProbability(unsigned simulatorId, unsigned len, unsigned* bases, unsigned* qubitIds)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     double jointProb = 1.0;
 
     TransformPauliBasis(simulator, len, bases, qubitIds);
 
-    for (unsigned int i = 0; i < len; i++) {
+    for (unsigned i = 0; i < len; i++) {
         jointProb *= (double)simulator->Prob(shards[simulator][qubitIds[i]]);
         if (jointProb == 0.0) {
             break;
@@ -138,10 +357,10 @@ double QrackSimulatorManager::JointEnsembleProbability(unsigned int simulatorId,
     return jointProb;
 }
 
-void QrackSimulatorManager::Exp(unsigned int simulatorId, unsigned int len, Pauli* paulis, double angle, unsigned int* qubitIds)
+void QrackSimulatorManager::Exp(unsigned simulatorId, unsigned len, unsigned* paulis, double angle, unsigned* qubitIds)
 {
     QInterfacePtr simulator = simulators[simulatorId];
-    for (unsigned int i = 0; i < len; i++) {
+    for (unsigned i = 0; i < len; i++) {
         switch (paulis[i]) {
             case PauliI:
                 simulator->Exp(angle, shards[simulator][qubitIds[i]]);
@@ -161,11 +380,11 @@ void QrackSimulatorManager::Exp(unsigned int simulatorId, unsigned int len, Paul
     }
 }
 
-void QrackSimulatorManager::MCExp(unsigned int simulatorId, unsigned int len, Pauli* paulis, double angle, unsigned int ctrlLen, unsigned int* ctrls, unsigned int* qubitIds)
+void QrackSimulatorManager::MCExp(unsigned simulatorId, unsigned len, unsigned* paulis, double angle, unsigned ctrlLen, unsigned* ctrls, unsigned* qubitIds)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -176,7 +395,7 @@ void QrackSimulatorManager::MCExp(unsigned int simulatorId, unsigned int len, Pa
 
     complex toApply[4];
 
-    for (unsigned int i = 0; i < len; i++) {
+    for (unsigned i = 0; i < len; i++) {
         switch (paulis[i]) {
             case PauliI:
                 mul2x2(angle, pauliI, toApply);
@@ -199,25 +418,25 @@ void QrackSimulatorManager::MCExp(unsigned int simulatorId, unsigned int len, Pa
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::H(unsigned int simulatorId, unsigned int qubitId) {
+void QrackSimulatorManager::H(unsigned simulatorId, unsigned qubitId) {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->H(shards[simulator][qubitId]);
 }
 
-unsigned int QrackSimulatorManager::M(unsigned int simulatorId, unsigned int qubitId)
+unsigned QrackSimulatorManager::M(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     return simulator->M(shards[simulator][qubitId]) ? 1U : 0U;
 }
 
-unsigned int QrackSimulatorManager::Measure(unsigned int simulatorId, unsigned int len, Pauli* bases, unsigned int* qubitIds)
+unsigned QrackSimulatorManager::Measure(unsigned simulatorId, unsigned len, unsigned* bases, unsigned* qubitIds)
 {
     QInterfacePtr simulator = simulators[simulatorId];
-    unsigned int toRet = 0U;
+    unsigned toRet = 0U;
 
     TransformPauliBasis(simulator, len, bases, qubitIds);
 
-    for (unsigned int i = 0; i < len; i++) {
+    for (unsigned i = 0; i < len; i++) {
         if (simulator->M(shards[simulator][qubitIds[i]]))
         {
             toRet |= pow2((bitLenInt)i);
@@ -229,89 +448,85 @@ unsigned int QrackSimulatorManager::Measure(unsigned int simulatorId, unsigned i
     return toRet;
 }
 
-void QrackSimulatorManager::R(unsigned int simulatorId, unsigned int len, Pauli* paulis, double angle, unsigned int* qubitIds)
+void QrackSimulatorManager::R(unsigned simulatorId, unsigned basis, double phi, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
 
-    for (unsigned int i = 0; i < len; i++) {
-        switch (paulis[i]) {
-            case PauliI:
-                simulator->RT(angle, shards[simulator][qubitIds[i]]);
-                break;
-            case PauliX:
-                simulator->RX(angle, shards[simulator][qubitIds[i]]);
-                break;
-            case PauliY:
-                simulator->RY(angle, shards[simulator][qubitIds[i]]);
-                break;
-            case PauliZ:
-                simulator->RZ(angle, shards[simulator][qubitIds[i]]);
-                break;
-            default:
-                break;
-        }
+    switch (basis) {
+        case PauliI:
+            simulator->RT(phi, shards[simulator][qubitId]);
+            break;
+        case PauliX:
+            simulator->RX(phi, shards[simulator][qubitId]);
+            break;
+        case PauliY:
+            simulator->RY(phi, shards[simulator][qubitId]);
+            break;
+        case PauliZ:
+            simulator->RZ(phi, shards[simulator][qubitId]);
+            break;
+        default:
+            break;
     }
 }
 
-void QrackSimulatorManager::MCR(unsigned int simulatorId, unsigned int len, Pauli* paulis, double angle, unsigned int ctrlLen, unsigned int* ctrls, unsigned int* qubitIds)
+void QrackSimulatorManager::MCR(unsigned simulatorId, unsigned basis, double phi, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
-    real1 cosine = cos(angle / 2.0);
-    real1 sine = sin(angle / 2.0);
+    real1 cosine = cos(phi / 2.0);
+    real1 sine = sin(phi / 2.0);
     complex pauliR[4];
 
-    for (unsigned int i = 0; i < len; i++) {
-        switch (paulis[i]) {
-            case PauliI:
-                simulator->ApplyControlledSinglePhase(ctrlsArray, ctrlLen, shards[simulator][qubitIds[i]], complex(ONE_R1, ZERO_R1), complex(cosine, sine));
-                break;
-            case PauliX:
-                pauliR[0] = complex(cosine, ZERO_R1);
-                pauliR[1] = complex(ZERO_R1, -sine);
-                pauliR[2] = complex(ZERO_R1, -sine);
-                pauliR[3] = complex(cosine, ZERO_R1);
-                simulator->ApplyControlledSingleBit(ctrlsArray, ctrlLen, shards[simulator][qubitIds[i]], pauliR);
-                break;
-            case PauliY:
-                pauliR[0] = complex(cosine, ZERO_R1);
-                pauliR[1] = complex(-sine, ZERO_R1);
-                pauliR[2] = complex(-sine, ZERO_R1);
-                pauliR[3] = complex(cosine, ZERO_R1);
-                simulator->ApplyControlledSingleBit(ctrlsArray, ctrlLen, shards[simulator][qubitIds[i]], pauliR);
-                break;
-            case PauliZ:
-                simulator->ApplyControlledSinglePhase(ctrlsArray, ctrlLen, shards[simulator][qubitIds[i]], complex(cosine, -sine), complex(cosine, sine));
-                break;
-            default:
-                break;
-        }
+    switch (basis) {
+        case PauliI:
+            simulator->ApplyControlledSinglePhase(ctrlsArray, ctrlLen, shards[simulator][qubitId], complex(ONE_R1, ZERO_R1), complex(cosine, sine));
+            break;
+        case PauliX:
+            pauliR[0] = complex(cosine, ZERO_R1);
+            pauliR[1] = complex(ZERO_R1, -sine);
+            pauliR[2] = complex(ZERO_R1, -sine);
+            pauliR[3] = complex(cosine, ZERO_R1);
+            simulator->ApplyControlledSingleBit(ctrlsArray, ctrlLen, shards[simulator][qubitId], pauliR);
+            break;
+        case PauliY:
+            pauliR[0] = complex(cosine, ZERO_R1);
+            pauliR[1] = complex(-sine, ZERO_R1);
+            pauliR[2] = complex(-sine, ZERO_R1);
+            pauliR[3] = complex(cosine, ZERO_R1);
+            simulator->ApplyControlledSingleBit(ctrlsArray, ctrlLen, shards[simulator][qubitId], pauliR);
+            break;
+        case PauliZ:
+            simulator->ApplyControlledSinglePhase(ctrlsArray, ctrlLen, shards[simulator][qubitId], complex(cosine, -sine), complex(cosine, sine));
+            break;
+        default:
+            break;
     }
 
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::S(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::S(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->S(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::AdjS(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::AdjS(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->IS(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::MCS(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCS(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -320,11 +535,11 @@ void QrackSimulatorManager::MCS(unsigned int simulatorId, unsigned int ctrlLen, 
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::MCAdjS(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCAdjS(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -333,23 +548,23 @@ void QrackSimulatorManager::MCAdjS(unsigned int simulatorId, unsigned int ctrlLe
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::T(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::T(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->T(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::AdjT(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::AdjT(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->IT(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::MCT(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCT(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -358,11 +573,11 @@ void QrackSimulatorManager::MCT(unsigned int simulatorId, unsigned int ctrlLen, 
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::MCAdjT(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCAdjT(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -371,17 +586,17 @@ void QrackSimulatorManager::MCAdjT(unsigned int simulatorId, unsigned int ctrlLe
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::X(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::X(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->X(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::MCX(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCX(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -390,17 +605,17 @@ void QrackSimulatorManager::MCX(unsigned int simulatorId, unsigned int ctrlLen, 
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::Y(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::Y(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->Y(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::MCY(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCY(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -409,17 +624,17 @@ void QrackSimulatorManager::MCY(unsigned int simulatorId, unsigned int ctrlLen, 
     delete[] ctrlsArray;
 }
 
-void QrackSimulatorManager::Z(unsigned int simulatorId, unsigned int qubitId)
+void QrackSimulatorManager::Z(unsigned simulatorId, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     simulator->Z(shards[simulator][qubitId]);
 }
 
-void QrackSimulatorManager::MCZ(unsigned int simulatorId, unsigned int ctrlLen, unsigned int* ctrls, unsigned int qubitId)
+void QrackSimulatorManager::MCZ(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
     QInterfacePtr simulator = simulators[simulatorId];
     bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
-    for (unsigned int i = 0; i < ctrlLen; i++) {
+    for (unsigned i = 0; i < ctrlLen; i++) {
 		ctrlsArray[i] = shards[simulator][ctrls[i]];
     }
 
@@ -428,231 +643,270 @@ void QrackSimulatorManager::MCZ(unsigned int simulatorId, unsigned int ctrlLen, 
     delete[] ctrlsArray;
 }
 
-/**
- * (External API) Initialize a simulator ID with 0 qubits
- */
-unsigned int init()
+void QrackSimulatorManager::MCH(unsigned simulatorId, unsigned ctrlLen, unsigned* ctrls, unsigned qubitId)
 {
-    return QrackSimulatorManager::Instance()->InitNewSimulator();
+    QInterfacePtr simulator = simulators[simulatorId];
+    bitLenInt* ctrlsArray = new bitLenInt[ctrlLen];
+    for (unsigned i = 0; i < ctrlLen; i++) {
+		ctrlsArray[i] = shards[simulator][ctrls[i]];
+    }
+
+	const complex hGate[4] = {
+		complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
+		complex(M_SQRT1_2, ZERO_R1), complex(-M_SQRT1_2, ZERO_R1)
+	};
+
+    simulator->ApplyControlledSingleBit(ctrlsArray, ctrlLen, shards[simulator][qubitId], hGate);
+
+    delete[] ctrlsArray;
+}
+
+extern "C" {
+
+/**
+	* (External API) Initialize a simulator ID with 0 qubits
+	*/
+MICROSOFT_QUANTUM_DECL unsigned init()
+{
+	return QrackSimulatorManager::Instance()->InitNewSimulator();
 }
 
 /**
 * (External API) Destroy a simulator (ID will not be reused)
 */
-void destroy(unsigned int id)
+MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 {
-    QrackSimulatorManager::Instance()->DestroySimulator(id);
-}
-
-/**
- * (External API) "Dump" all IDs from the selected simulator ID into the callback
- */
-void DumpIds(unsigned int id, IdsCallback callback)
-{
-    QrackSimulatorManager::Instance()->DumpIds(id, callback);
+	QrackSimulatorManager::Instance()->DestroySimulator(sid);
 }
 
 /**
 * (External API) Set RNG seed for simulator ID
 */
-void seed(unsigned int id, uint32_t seedValue)
+MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 {
-    QrackSimulatorManager::Instance()->SetSeed(id, seedValue);
+	QrackSimulatorManager::Instance()->SetSeed(sid, s);
+}
+
+
+/**
+	* (External API) "Dump" all IDs from the selected simulator ID into the callback
+	*/
+MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ void(*callback)(unsigned))
+{
+	QrackSimulatorManager::Instance()->DumpIds(sid, callback);
 }
 
 /**
- * (External API) Allocate 1 new qubit with the given qubit ID, under the simulator ID
- */
-void allocateQubit(unsigned int id, unsigned int qubit_id)
+	* (External API) Select from a distribution of "n" elements according the discrete probabilities in "d."
+	*/
+MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::size_t n, _In_reads_(n) double* p)
 {
-    QrackSimulatorManager::Instance()->AllocateOneQubit(id, qubit_id);
+	return QrackSimulatorManager::Instance()->random_choice(sid, n, p);
 }
 
 /**
- * (External API) Release 1 qubit with the given qubit ID, under the simulator ID
- */
-void release(unsigned int id, unsigned int qubit_id)
+	* (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
+	*/
+MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
 {
-    QrackSimulatorManager::Instance()->AllocateOneQubit(id, qubit_id);
+	return QrackSimulatorManager::Instance()->JointEnsembleProbability(sid, n, b, q);
 }
 
 /**
- * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
- */
-double JointEnsembleProbability(unsigned int id, unsigned int n, Pauli* b, unsigned int* q)
+	* (External API) Allocate 1 new qubit with the given qubit ID, under the simulator ID
+	*/
+MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
-    return QrackSimulatorManager::Instance()->JointEnsembleProbability(id, n, b, q);
+	QrackSimulatorManager::Instance()->AllocateOneQubit(sid, qid);
 }
 
 /**
- * (External API) Exponentiation of Pauli operators
- */
-void Exp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids)
+	* (External API) Release 1 qubit with the given qubit ID, under the simulator ID
+	*/
+MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->Exp(id, n, paulis, angle, ids);
+	QrackSimulatorManager::Instance()->ReleaseOneQubit(sid, q);
+}
+
+MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
+{
+	return QrackSimulatorManager::Instance()->NumQubits(sid);
 }
 
 /**
- * (External API) Controlled exponentiation of Pauli operators
- */
-void MCExp(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids)
+	* (External API) "X" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void X(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCExp(id, n, paulis, angle, nc, ctrls, ids);
+	QrackSimulatorManager::Instance()->X(sid, q);
 }
 
 /**
- * (External API) Walsh-Hadamard transform applied for simulator ID and qubit ID
- */
-void H(unsigned int id, unsigned int qubit)
+	* (External API) "Y" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void Y(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->H(id, qubit);
+	QrackSimulatorManager::Instance()->Y(sid, q);
 }
 
 /**
- * (External API) Measure bit in |0>/|1> basis
- */
-unsigned int M(unsigned int id, unsigned int q)
+	* (External API) "Z" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void Z(_In_ unsigned sid, _In_ unsigned q)
 {
-    return QrackSimulatorManager::Instance()->M(id, q);
+	QrackSimulatorManager::Instance()->Z(sid, q);
 }
 
 /**
- * (External API) Measure bits in specified Pauli bases
- */
-unsigned int Measure(unsigned int id, unsigned int n, Pauli* b, unsigned int* ids)
+	* (External API) Walsh-Hadamard transform applied for simulator ID and qubit ID
+	*/
+MICROSOFT_QUANTUM_DECL void H(_In_ unsigned sid, _In_ unsigned q)
 {
-    return QrackSimulatorManager::Instance()->Measure(id, n, b, ids);
+	QrackSimulatorManager::Instance()->H(sid, q);
 }
 
 /**
- * (External API) Rotation around Pauli axes
- */
-void R(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int* ids)
+	* (External API) "S" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->R(id, n, paulis, angle, ids);
+	QrackSimulatorManager::Instance()->S(sid, q);
 }
 
 /**
- * (External API) Controlled rotation around Pauli axes
- */
-void MCR(unsigned int id, unsigned int n, Pauli* paulis, double angle, unsigned int nc, unsigned int* ctrls, unsigned int* ids)
+	* (External API) "T" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCR(id, n, paulis, angle,  nc, ctrls, ids);
-}
-
-long random_choice(unsigned int id, long size, double* p)
-{
-    throw("'random_choice' not implemented!");
+	QrackSimulatorManager::Instance()->T(sid, q);
 }
 
 /**
- * (External API) "S" Gate
- */
-void S(unsigned int id, unsigned int qubit)
+	* (External API) Inverse "S" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->S(id, qubit);
+	QrackSimulatorManager::Instance()->AdjS(sid, q);
 }
 
 /**
- * (External API) Inverse "S" Gate
- */
-void AdjS(unsigned int id, unsigned int qubit)
+	* (External API) Inverse "T" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->AdjS(id, qubit);
+	QrackSimulatorManager::Instance()->AdjT(sid, q);
 }
 
 /**
- * (External API) Controlled "S" Gate
- */
-void MCS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled "X" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCS(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCX(sid, n, c, q);
 }
 
 /**
- * (External API) Controlled Inverse "S" Gate
- */
-void MCAdjS(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled "Y" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCAdjS(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCY(sid, n, c, q);
 }
 
 /**
- * (External API) "T" Gate
- */
-void T(unsigned int id, unsigned int qubit)
+	* (External API) Controlled "Z" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->T(id, qubit);
+	QrackSimulatorManager::Instance()->MCZ(sid, n, c, q);
 }
 
 /**
- * (External API) Inverse "T" Gate
- */
-void AdjT(unsigned int id, unsigned int qubit)
+	* (External API) Controlled "H" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->AdjT(id, qubit);
+	QrackSimulatorManager::Instance()->MCH(sid, n, c, q);
 }
 
 /**
- * (External API) Controlled "T" Gate
- */
-void MCT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled "S" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCT(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCS(sid, n, c, q);;
 }
 
 /**
- * (External API) Controlled Inverse "T" Gate
- */
-void MCAdjT(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled "T" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCAdjT(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCT(sid, n, c, q);;
 }
 
 /**
- * (External API) "X" Gate
- */
-void X(unsigned int id, unsigned int qubit)
+	* (External API) Controlled Inverse "S" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->X(id, qubit);
+	QrackSimulatorManager::Instance()->MCAdjS(sid, n, c, q);;
 }
 
 /**
- * (External API) Controlled "X" Gate
- */
-void MCX(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled Inverse "T" Gate
+	*/
+MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCX(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCAdjT(sid, n, c, q);;
 }
 
 /**
- * (External API) "Y" Gate
- */
-void Y(unsigned int id, unsigned int qubit)
+	* (External API) Rotation around Pauli axes
+	*/
+MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->Y(id, qubit);
+	QrackSimulatorManager::Instance()->R(sid, b, phi, q);
 }
 
 /**
- * (External API) Controlled "Y" Gate
- */
-void MCY(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled rotation around Pauli axes
+	*/
+MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-    QrackSimulatorManager::Instance()->MCY(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCR(sid, b, phi, n, c, q);
 }
 
 /**
- * (External API) "Z" Gate
- */
-void Z(unsigned int id, unsigned int qubit)
+	* (External API) Exponentiation of Pauli operators
+	*/
+MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q)
 {
-    QrackSimulatorManager::Instance()->Z(id, qubit);
+	QrackSimulatorManager::Instance()->Exp(sid, n, b, phi, q);
 }
 
 /**
- * (External API) Controlled "Z" Gate
- */
-void MCZ(unsigned int id, unsigned int count, unsigned int* ctrls, unsigned int qubit)
+	* (External API) Controlled exponentiation of Pauli operators
+	*/
+MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q)
 {
-    QrackSimulatorManager::Instance()->MCZ(id, count, ctrls, qubit);
+	QrackSimulatorManager::Instance()->MCExp(sid, n, b, phi, nc, cs, q);
+}
+
+/**
+	* (External API) Measure bit in |0>/|1> basis
+	*/
+MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
+{
+	return QrackSimulatorManager::Instance()->M(sid, q);
+}
+
+/**
+	* (External API) Measure bits in specified Pauli bases
+	*/
+MICROSOFT_QUANTUM_DECL unsigned Measure(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
+{
+	return QrackSimulatorManager::Instance()->Measure(sid, n, b, q);
+}
+
 }
