@@ -2,27 +2,13 @@
 //
 // (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
 //
-// This example demonstrates Shor's algorithm for integer factoring. (This file was heavily adapted from
-// https://github.com/ProjectQ-Framework/ProjectQ/blob/develop/examples/shor.py, with thanks to ProjectQ!)
-//
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
 #include "pinvoke_api.hpp"
 
-//////////////////////////////////////////////////////////////////////////////////////
-//
-// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
-//
-// This example demonstrates Shor's algorithm for integer factoring. (This file was heavily adapted from
-// https://github.com/ProjectQ-Framework/ProjectQ/blob/develop/examples/shor.py, with thanks to ProjectQ!)
-//
-// Licensed under the GNU Lesser General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
-
-#pragma once
 
 #include <map>
 #include <vector>
