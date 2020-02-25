@@ -85,8 +85,15 @@ extern "C" {
 */
 MICROSOFT_QUANTUM_DECL unsigned init()
 {
+	int sid = simulators.size();
+
 	simulators.push_back(NULL);
-	return simulators.size() - 1U;
+
+	for (unsigned i = 0; i < 4; i++) {
+		allocateQubit(sid, i);
+	}
+
+	return sid;
 }
 
 /**
@@ -164,7 +171,7 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 	else {
 		simulators[sid]->Compose(nQubit);
 	}
-	shards[simulators[sid]][qid] = simulators[sid]->GetQubitCount();
+	shards[simulators[sid]][qid] = (simulators[sid]->GetQubitCount() - 1U);
 }
 
 /**
