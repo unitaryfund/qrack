@@ -3,17 +3,13 @@
 
 #pragma once
 
-//#if defined (BUILD_SHARED_LIBS)
-//    #ifdef BUILD_DLL
-        #define MICROSOFT_QUANTUM_DECL __declspec(dllexport)
-//    #else
-//        #define MICROSOFT_QUANTUM_DECL __declspec(dllimport)
-//    #endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    #define MICROSOFT_QUANTUM_DECL __declspec(dllexport)
     #define MICROSOFT_QUANTUM_DECL_IMPORT __declspec(dllimport)
-//#else
-//    #define MICROSOFT_QUANTUM_DECL
-//    #define MICROSOFT_QUANTUM_DECL_IMPORT
-//#endif
+#else
+    #define MICROSOFT_QUANTUM_DECL
+    #define MICROSOFT_QUANTUM_DECL_IMPORT
+#endif
 
 // SAL only defined in windows.
 #ifndef _In_
