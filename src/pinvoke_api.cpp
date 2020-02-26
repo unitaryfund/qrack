@@ -118,7 +118,7 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 /**
 	* (External API) "Dump" all IDs from the selected simulator ID into the callback
 	*/
-MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ Callback callback)
+MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
 {
 	QInterfacePtr simulator = simulators[sid];
 	std::map<unsigned, bitLenInt>::iterator it;
@@ -126,6 +126,21 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ Callback callback)
 	for (it = shards[simulator].begin(); it != shards[simulator].end(); it++) {
 		callback(it->first);
 	}
+}
+
+/**
+	* (External API) "Dump" all IDs from the selected simulator ID into the callback
+	*/
+MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback)
+{
+	QInterfacePtr simulator = simulators[sid];
+	bitCapInt wfnl = simulator->GetMaxQPower();
+	complex* wfn = new complex[wfnl];
+	simulator->GetQuantumState(wfn);
+	for (size_t i = 0; i < wfnl; i++) {
+		if (!callback(i, real(wfn[i]), imag(wfn[i]))) break;
+	}
+	delete[] wfn;
 }
 
 /**

@@ -19,7 +19,8 @@
 #define _In_reads_(n)
 #endif
 
-typedef void(*Callback)(unsigned);
+typedef void(*IdCallback)(unsigned);
+typedef bool(*ProbAmpCallback)(size_t, double, double);
 
 extern "C" {
 // non-quantum
@@ -27,9 +28,9 @@ extern "C" {
 MICROSOFT_QUANTUM_DECL unsigned init();
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
-//MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ bool(*callback)(size_t, double, double));
-//MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ bool(*callback)(size_t, double, double));
-MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ Callback callback);
+MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
+//MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ ProbAmpCallback callback);
+MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback);
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _In_reads_(n) double* p);
 
