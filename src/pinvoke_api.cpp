@@ -118,7 +118,7 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 /**
 	* (External API) "Dump" all IDs from the selected simulator ID into the callback
 	*/
-MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ void(*callback)(unsigned))
+MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ Callback callback)
 {
 	QInterfacePtr simulator = simulators[sid];
 	std::map<unsigned, bitLenInt>::iterator it;

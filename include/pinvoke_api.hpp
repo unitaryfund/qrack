@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "stddef.h"
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
     #define MICROSOFT_QUANTUM_DECL __declspec(dllexport)
     #define MICROSOFT_QUANTUM_DECL_IMPORT __declspec(dllimport)
@@ -17,6 +19,8 @@
 #define _In_reads_(n)
 #endif
 
+typedef void(*Callback)(unsigned);
+
 extern "C" {
 // non-quantum
 
@@ -24,8 +28,8 @@ MICROSOFT_QUANTUM_DECL unsigned init();
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ bool(*callback)(size_t, double, double));
-MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ bool(*callback)(size_t, double, double));
-MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ void(*callback)(unsigned));
+//MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ bool(*callback)(size_t, double, double));
+MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ Callback callback);
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _In_reads_(n) double* p);
 
