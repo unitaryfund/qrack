@@ -41,39 +41,31 @@ void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx) {
 }
 
 void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds) {
+	const complex adjHyGate[4] = { complex(M_SQRT1_2, 0), complex(0, -M_SQRT1_2), complex(M_SQRT1_2, 0), complex(0, M_SQRT1_2) };
+
 	for (unsigned i = 0; i < len; i++) {
 		switch (bases[i]) {
-		case PauliX:
-			simulator->H(shards[simulator][qubitIds[i]]);
-			break;
-		case PauliY:
-			simulator->Z(shards[simulator][qubitIds[i]]);
-			simulator->S(shards[simulator][qubitIds[i]]);
-			simulator->H(shards[simulator][qubitIds[i]]);
-			break;
-		case PauliZ:
-		case PauliI:
-		default:
-			break;
+			case PauliX:
+				simulator->H(shards[simulator][qubitIds[i]]);
+				break;
+			case PauliY:
+				simulator->ApplySingleBit(adjHyGate, shards[simulator][qubitIds[i]]);
+				break;
 		}
 	}
 }
 
 void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds) {
+	const complex hyGate[4] = { complex(M_SQRT1_2, 0), complex(M_SQRT1_2, 0), complex(0, M_SQRT1_2), complex(0, -M_SQRT1_2) };
+
 	for (unsigned i = 0; i < len; i++) {
 		switch (bases[i]) {
-		case PauliX:
-			simulator->H(shards[simulator][qubitIds[i]]);
-			break;
-		case PauliY:
-			simulator->H(shards[simulator][qubitIds[i]]);
-			simulator->IS(shards[simulator][qubitIds[i]]);
-			simulator->Z(shards[simulator][qubitIds[i]]);
-			break;
-		case PauliZ:
-		case PauliI:
-		default:
-			break;
+			case PauliX:
+				simulator->H(shards[simulator][qubitIds[i]]);
+				break;
+			case PauliY:
+				simulator->ApplySingleBit(hyGate, shards[simulator][qubitIds[i]]);
+				break;
 		}
 	}
 }
@@ -158,16 +150,15 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	double jointProb = 1.0;
+	bitCapInt perm = 0U;
 
 	TransformPauliBasis(simulator, n, b, q);
 
 	for (unsigned i = 0; i < n; i++) {
-		jointProb *= (double)simulator->Prob(shards[simulator][q[i]]);
-		if (jointProb == 0.0) {
-			break;
-		}
+		perm |= pow2(shards[simulator][q[i]]);
 	}
+
+	double jointProb = simulator->ProbMask(perm, perm);
 
 	RevertPauliBasis(simulator, n, b, q);
 

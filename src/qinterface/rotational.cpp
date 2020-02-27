@@ -101,8 +101,9 @@ void QInterface::UniformlyControlledRZ(
 /// Exponentiate identity operator
 void QInterface::Exp(real1 radians, bitLenInt qubit)
 {
-    complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySinglePhase(phaseFac, phaseFac, qubit);
+	complex phaseFac = complex(cos(radians), sin(radians));
+	complex expZ[4] = { phaseFac, ONE_CMPLX, ONE_CMPLX, phaseFac };
+	ApplySingleBit(expZ, qubit);
 }
 
 /// Imaginary exponentiate of arbitrary single bit gate
@@ -126,22 +127,25 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 /// Exponentiate Pauli X operator
 void QInterface::ExpX(real1 radians, bitLenInt qubit)
 {
-    complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySingleInvert(phaseFac, phaseFac, qubit);
+	complex phaseFac = complex(cos(radians), sin(radians));
+	complex expX[4] = { ONE_CMPLX, phaseFac, phaseFac, ONE_CMPLX };
+    ApplySingleBit(expX, qubit);
 }
 
 /// Exponentiate Pauli Y operator
 void QInterface::ExpY(real1 radians, bitLenInt qubit)
 {
-    complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySingleInvert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), qubit);
+	complex phaseFac = complex(exp(radians), ZERO_R1);
+	complex expY[4] = { ONE_CMPLX, phaseFac, ONE_CMPLX / phaseFac, ONE_CMPLX };
+	ApplySingleBit(expY, qubit);
 }
 
 /// Exponentiate Pauli Z operator
 void QInterface::ExpZ(real1 radians, bitLenInt qubit)
 {
-    complex phaseFac = complex(cos(radians), sin(radians));
-    ApplySinglePhase(phaseFac, -phaseFac, qubit);
+	complex phaseFac = complex(cos(radians), sin(radians));
+	complex expZ[4] = { phaseFac, ONE_CMPLX, ONE_CMPLX, ONE_CMPLX / phaseFac };
+	ApplySingleBit(expZ, qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
