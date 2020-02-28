@@ -150,15 +150,36 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	bitCapInt perm = 0U;
+	bitCapInt pow2n = pow2(n);
+	bitCapInt mask = 0U;
+	bitCapInt perm;
+	std::vector<bitCapInt> qSortedPowers(n);
 
 	TransformPauliBasis(simulator, n, b, q);
 
-	for (unsigned i = 0; i < n; i++) {
-		perm |= pow2(shards[simulator][q[i]]);
+	double jointProb = 0;
+
+	for (bitLenInt i = 0; i < n; i++) {
+		bitCapInt bit = pow2(shards[simulator][q[i]]);
+		qSortedPowers[i] = bit;
+		mask |= bit;
 	}
 
-	double jointProb = simulator->ProbMask(perm, perm);
+	std::sort(qSortedPowers.begin(), qSortedPowers.end());
+
+	for (bitCapInt i = 0; i < pow2n; i++) {
+		perm = 0U;
+		bool isOdd = false;
+		for (bitLenInt j = 0; j < n; j++) {
+			if (i & pow2(j)) {
+				perm |= qSortedPowers[j];
+				isOdd = !isOdd;
+			}
+		}
+		if (isOdd) {
+			jointProb += simulator->ProbMask(mask, perm);
+		}
+	}
 
 	RevertPauliBasis(simulator, n, b, q);
 
