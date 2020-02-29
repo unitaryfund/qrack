@@ -1955,7 +1955,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     REQUIRE(qftReg->ApproxCompare(qftReg2));
 }
 
-/*
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp")
 {
     qftReg->SetPermutation(0x80001);
@@ -2125,7 +2124,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expzdyad_reg")
     qftReg->H(1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x04));
 }
-*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rol")
 {
