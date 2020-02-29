@@ -249,6 +249,12 @@ public:
      */
     virtual complex GetAmplitude(bitCapInt perm) = 0;
 
+    /** Sets the representational amplitude of a full permutation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
+
     /** Set to a specific permutation */
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
 

@@ -62,6 +62,19 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
     return stateVec->read(perm);
 }
 
+void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
+{
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    stateVec->write(perm, amp);
+
+    if (doNormalize) {
+        UpdateRunningNorm();
+    }
+}
+
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     stateVec->clear();

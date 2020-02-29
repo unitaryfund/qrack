@@ -243,6 +243,7 @@ public:
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
+    virtual void SetAmplitude(bitCapInt perm, complex amp);
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {

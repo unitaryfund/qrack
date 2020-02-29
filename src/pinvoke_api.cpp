@@ -584,15 +584,56 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL unsigned Measure(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	unsigned toRet = 0U;
+	bitCapInt pow2n = pow2(n);
+	bitCapInt mask = 0U;
+	bitCapInt perm;
+	std::vector<bitCapInt> qSortedPowers(n);
 
 	TransformPauliBasis(simulator, n, b, q);
 
-	for (unsigned i = 0; i < n; i++) {
-		if (simulator->M(shards[simulator][q[i]]))
-		{
-			toRet |= pow2((bitLenInt)i);
+	double jointProb = 0;
+
+	for (bitLenInt i = 0; i < n; i++) {
+		bitCapInt bit = pow2(shards[simulator][q[i]]);
+		qSortedPowers[i] = bit;
+		mask |= bit;
+	}
+
+	std::sort(qSortedPowers.begin(), qSortedPowers.end());
+
+	for (bitCapInt i = 0; i < pow2n; i++) {
+		perm = 0U;
+		bool isOdd = false;
+		for (bitLenInt j = 0; j < n; j++) {
+			if (i & pow2(j)) {
+				perm |= qSortedPowers[j];
+				isOdd = !isOdd;
+			}
 		}
+		if (isOdd) {
+			jointProb += simulator->ProbMask(mask, perm);
+		}
+	}
+
+	unsigned toRet = jointProb < simulator->Rand() ? 0U : 1U;
+
+	if (jointProb != 0.0 && jointProb != 1.0) {
+		for (bitCapInt i = 0; i < pow2n; i++) {
+			perm = 0U;
+			bool isOdd = false;
+			for (bitLenInt j = 0; j < n; j++) {
+				if (i & pow2(j)) {
+					perm |= qSortedPowers[j];
+					isOdd = !isOdd;
+				}
+			}
+			if (isOdd != toRet) {
+				simulator->SetAmplitude(perm, ZERO_CMPLX);
+			}
+		}
+
+		simulator->UpdateRunningNorm();
+		simulator->NormalizeState();
 	}
 
 	RevertPauliBasis(simulator, n, b, q);

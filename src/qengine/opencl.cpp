@@ -2024,6 +2024,21 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
     return amp[0];
 }
 
+void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
+{
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+	LockSync(CL_MAP_WRITE);
+	stateVec[perm] = amp;
+	UnlockSync();
+    
+    if (doNormalize) {
+        UpdateRunningNorm();
+    }
+}
+
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineOCL::GetQuantumState(complex* outputState)
 {
