@@ -443,16 +443,16 @@ MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double ph
 
 	switch (b) {
 	case PauliI:
-		simulator->RT(-phi, shards[simulator][q]);
+		simulator->RT(phi, shards[simulator][q]);
 		break;
 	case PauliX:
-		simulator->RX(-phi, shards[simulator][q]);
+		simulator->RX(phi, shards[simulator][q]);
 		break;
 	case PauliY:
-		simulator->RY(-phi, shards[simulator][q]);
+		simulator->RY(phi, shards[simulator][q]);
 		break;
 	case PauliZ:
-		simulator->RZ(-phi, shards[simulator][q]);
+		simulator->RZ(phi, shards[simulator][q]);
 		break;
 	default:
 		break;
@@ -470,8 +470,8 @@ MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double 
 		ctrlsArray[i] = shards[simulator][c[i]];
 	}
 
-	real1 cosine = cos(-phi / 2.0);
-	real1 sine = sin(-phi / 2.0);
+	real1 cosine = cos(phi / 2.0);
+	real1 sine = sin(phi / 2.0);
 	complex pauliR[4];
 
 	switch (b) {
@@ -488,7 +488,7 @@ MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double 
 	case PauliY:
 		pauliR[0] = complex(cosine, ZERO_R1);
 		pauliR[1] = complex(-sine, ZERO_R1);
-		pauliR[2] = complex(-sine, ZERO_R1);
+		pauliR[2] = complex(sine, ZERO_R1);
 		pauliR[3] = complex(cosine, ZERO_R1);
 		simulator->ApplyControlledSingleBit(ctrlsArray, n, shards[simulator][q], pauliR);
 		break;
