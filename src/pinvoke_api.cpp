@@ -271,7 +271,7 @@ MICROSOFT_QUANTUM_DECL void H(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	simulator->S(shards[simulator][q]);
+	simulator->IS(shards[simulator][q]);
 }
 
 /**
@@ -280,7 +280,7 @@ MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	simulator->T(shards[simulator][q]);
+	simulator->IT(shards[simulator][q]);
 }
 
 /**
@@ -289,7 +289,7 @@ MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	simulator->IS(shards[simulator][q]);
+	simulator->S(shards[simulator][q]);
 }
 
 /**
@@ -298,7 +298,7 @@ MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
 {
 	QInterfacePtr simulator = simulators[sid];
-	simulator->IT(shards[simulator][q]);
+	simulator->T(shards[simulator][q]);
 }
 
 /**
@@ -381,7 +381,7 @@ MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 		ctrlsArray[i] = shards[simulator][c[i]];
 	}
 
-	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 2));
+	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / 2));
 
 	delete[] ctrlsArray;
 }
@@ -397,7 +397,7 @@ MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 		ctrlsArray[i] = shards[simulator][c[i]];
 	}
 
-	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 4));
+	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / 4));
 
 	delete[] ctrlsArray;
 }
@@ -413,7 +413,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads
 		ctrlsArray[i] = shards[simulator][c[i]];
 	}
 
-	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / 2));
+	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 2));
 
 	delete[] ctrlsArray;
 }
@@ -429,7 +429,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
 		ctrlsArray[i] = shards[simulator][c[i]];
 	}
 
-	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / 4));
+	simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 4));
 
 	delete[] ctrlsArray;
 }
