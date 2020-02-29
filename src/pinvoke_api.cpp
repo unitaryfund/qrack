@@ -631,9 +631,6 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(_In_ unsigned sid, _In_ unsigned n, _In_
 				simulator->SetAmplitude(perm, ZERO_CMPLX);
 			}
 		}
-
-		simulator->UpdateRunningNorm();
-		simulator->NormalizeState();
 	}
 
 	RevertPauliBasis(simulator, n, b, q);

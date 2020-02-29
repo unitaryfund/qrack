@@ -1192,7 +1192,7 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     std::vector<bitCapInt> skipPowersVec;
     for (length = 0; v; length++) {
         oldV = v;
-        v &= v - 1; // clear the least significant bit set
+        v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
@@ -2026,17 +2026,12 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
+    runningNorm -= norm(GetAmplitude(perm));
 
-	LockSync(CL_MAP_WRITE);
-	stateVec[perm] = amp;
-	UnlockSync();
-    
-    if (doNormalize) {
-        UpdateRunningNorm();
-    }
+    EventVecPtr waitVec = ResetWaitEvents();
+    device_context->wait_events->emplace_back();
+    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex), waitVec.get(), &(device_context->wait_events->back()));
+    queue.flush();
 }
 
 /// Get pure quantum state, in unsigned int permutation basis

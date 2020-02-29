@@ -68,11 +68,8 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         NormalizeState();
     }
 
+	runningNorm -= norm(stateVec->read(perm));
     stateVec->write(perm, amp);
-
-    if (doNormalize) {
-        UpdateRunningNorm();
-    }
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -702,7 +699,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
 
-    bitCapInt* skipPowers = new bitCapInt[skipPowersVec.size()];
+    bitCapInt* skipPowers = new bitCapInt[length];
     std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
 
     int num_threads = GetConcurrencyLevel();
