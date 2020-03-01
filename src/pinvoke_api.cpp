@@ -208,9 +208,6 @@ inline complex iExp(int power)
 void apply_controlled_exp(std::vector<complex>& wfn, std::vector<unsigned> const& b, double phi,
     std::vector<unsigned> const& cs, std::vector<unsigned> const& qs)
 {
-    unsigned lowest = *std::min_element(qs.begin(), qs.end());
-
-    std::size_t offset = pow2(lowest);
     std::size_t cmask = make_mask(cs);
 
     if (isDiagonal(b)) {
@@ -278,10 +275,6 @@ MICROSOFT_QUANTUM_DECL unsigned init()
             break;
         }
     }
-
-    // if (sid >= 64) {
-    //	throw "QrackSimulator management only supports up to 64 concurrent simulators!";
-    //}
 
     QInterfacePtr simulator =
         CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, 4, 0, rng);
