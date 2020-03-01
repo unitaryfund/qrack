@@ -182,18 +182,17 @@ inline std::size_t make_mask(std::vector<unsigned> const& qs)
 // power of square root of -1
 inline complex iExp(int power)
 {
-	using namespace std::literals::complex_literals;
 	int p = ((power % 4) + 8) % 4;
 	switch (p)
 	{
 	case 0:
-		return 1;
+		return ONE_CMPLX;
 	case 1:
-		return 1i;
+		return I_CMPLX;
 	case 2:
-		return -1;
+		return -ONE_CMPLX;
 	case 3:
-		return -1i;
+		return -I_CMPLX;
 	}
 	return 0;
 }
