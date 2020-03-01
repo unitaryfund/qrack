@@ -78,10 +78,10 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DENABLE_COMPLEX8=OFF -DXXD_BIN="C:/Program Files (x86)/Vim/vim81/xxd.exe" ..
 ```
 
-After CMake, the project must be built in Visual Studio.
+After CMake, the project must be built in Visual Studio. (`-DENABLE_COMPLEX8=OFF` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
 
 ## Performing code coverage
 
