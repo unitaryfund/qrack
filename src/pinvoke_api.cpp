@@ -11,10 +11,17 @@
 // for details.
 
 #include <map>
+#include <mutex>
 #include <vector>
 
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
+
+std::mutex metaOperationMutex;
+
+#define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
+//#define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> simulatorLock(simulatorMutexVec[sid]);
+#define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
 using namespace Qrack;
 
@@ -271,12 +278,27 @@ extern "C" {
 */
 MICROSOFT_QUANTUM_DECL unsigned init()
 {
+	META_LOCK_GUARD()
+
 	int sid = simulators.size();
 
-	simulators.push_back(NULL);
+	for (unsigned i = 0; i < simulators.size(); i++) {
+		if (simulators[i] == NULL) {
+			sid = i;
+			break;
+		}
+	}
 
-	for (unsigned i = 0; i < 4; i++) {
-		allocateQubit(sid, i);
+	//if (sid >= 64) {
+	//	throw "QrackSimulator management only supports up to 64 concurrent simulators!";
+	//}
+
+	QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, 4, 0, rng);
+	if (sid == simulators.size()) {
+		simulators.push_back(simulator);
+	}
+	else {
+		simulators[sid] = simulator;
 	}
 
 	return sid;
@@ -287,6 +309,9 @@ MICROSOFT_QUANTUM_DECL unsigned init()
 */
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 {
+	META_LOCK_GUARD()
+	//SIMULATOR_LOCK_GUARD(sid)
+
 	simulators[sid] = NULL;
 }
 
@@ -295,6 +320,8 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 */
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	if (simulators[sid] != NULL) {
 		simulators[sid]->SetRandomSeed(s);
 	}
@@ -306,6 +333,8 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 	*/
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	std::map<unsigned, bitLenInt>::iterator it;
 
@@ -319,6 +348,8 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
 	*/
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitCapInt wfnl = simulator->GetMaxQPower();
 	complex* wfn = new complex[wfnl];
@@ -343,6 +374,8 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
 	*/
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitCapInt pow2n = pow2(n);
 	bitCapInt mask = 0U;
@@ -385,6 +418,8 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ u
 	*/
 MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, 1, 0, rng);
 	if (simulators[sid] == NULL) {
 		simulators[sid] = nQubit;
@@ -403,10 +438,10 @@ MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
 	QInterfacePtr simulator = simulators[sid];
 
 	if (simulator->GetQubitCount() == 1U) {
-		simulators[sid] = NULL;
 		shards.erase(simulator);
 	}
 	else {
+		SIMULATOR_LOCK_GUARD(sid)
 		bitLenInt oIndex = shards[simulator][q];
 		simulator->Dispose(oIndex, 1U);
 		for (unsigned i = 0; i < shards[simulator].size(); i++) {
@@ -420,6 +455,8 @@ MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
 
 MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	return (unsigned)simulators[sid]->GetQubitCount();
 }
 
@@ -428,6 +465,8 @@ MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
 	*/
 MICROSOFT_QUANTUM_DECL void X(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->X(shards[simulator][q]);
 }
@@ -437,6 +476,8 @@ MICROSOFT_QUANTUM_DECL void X(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void Y(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->Y(shards[simulator][q]);
 }
@@ -446,6 +487,8 @@ MICROSOFT_QUANTUM_DECL void Y(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void Z(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->Z(shards[simulator][q]);
 }
@@ -455,6 +498,8 @@ MICROSOFT_QUANTUM_DECL void Z(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void H(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->H(shards[simulator][q]);
 }
@@ -464,6 +509,8 @@ MICROSOFT_QUANTUM_DECL void H(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->IS(shards[simulator][q]);
 }
@@ -473,6 +520,8 @@ MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->IT(shards[simulator][q]);
 }
@@ -482,6 +531,8 @@ MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->S(shards[simulator][q]);
 }
@@ -491,6 +542,8 @@ MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	simulator->T(shards[simulator][q]);
 }
@@ -500,6 +553,8 @@ MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -516,6 +571,8 @@ MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -532,6 +589,8 @@ MICROSOFT_QUANTUM_DECL void MCY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -548,6 +607,8 @@ MICROSOFT_QUANTUM_DECL void MCZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -569,6 +630,8 @@ MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -585,6 +648,8 @@ MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -601,6 +666,8 @@ MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -617,6 +684,8 @@ MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads
 	*/
 MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitLenInt* ctrlsArray = new bitLenInt[n];
 	for (unsigned i = 0; i < n; i++) {
@@ -633,6 +702,8 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
 	*/
 MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	RHelper(sid, b, phi, q);
 }
 
@@ -641,6 +712,8 @@ MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double ph
 	*/
 MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	MCRHelper(sid, b, phi, n, c, q);
 }
 
@@ -652,6 +725,8 @@ MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	if (n == 0) {
 		return;
 	}
+
+	SIMULATOR_LOCK_GUARD(sid)
 
 	std::vector<unsigned> bVec(n);
 	std::vector<unsigned> qVec(n);
@@ -695,6 +770,8 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 		return;
 	}
 
+	SIMULATOR_LOCK_GUARD(sid)
+
 	std::vector<unsigned> bVec(n);
 	std::vector<unsigned> qVec(n);
 
@@ -734,6 +811,8 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 	*/
 MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	return simulator->M(shards[simulator][q]) ? 1U : 0U;
 }
@@ -743,6 +822,8 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
 	*/
 MICROSOFT_QUANTUM_DECL unsigned Measure(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
 {
+	SIMULATOR_LOCK_GUARD(sid)
+
 	QInterfacePtr simulator = simulators[sid];
 	bitCapInt pow2n = pow2(n);
 	bitCapInt mask = 0U;
