@@ -212,7 +212,6 @@ void apply_controlled_exp(std::vector<complex>& wfn, std::vector<unsigned> const
 
     std::size_t offset = pow2(lowest);
     std::size_t cmask = make_mask(cs);
-    std::size_t cmasku = cmask & (~(offset - 1));
 
     if (isDiagonal(b)) {
         std::size_t mask = make_mask(qs);
@@ -271,7 +270,7 @@ MICROSOFT_QUANTUM_DECL unsigned init()
 {
     META_LOCK_GUARD()
 
-    int sid = simulators.size();
+    unsigned sid = simulators.size();
 
     for (unsigned i = 0; i < simulators.size(); i++) {
         if (simulators[i] == NULL) {
