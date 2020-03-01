@@ -121,9 +121,6 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
 	complex pauliR[4];
 
 	const complex pauliI[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
-	const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-	const complex pauliY[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-	const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
 
 	complex toApply[4];
 
