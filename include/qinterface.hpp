@@ -203,8 +203,9 @@ public:
     /** Destructor of QInterface */
     virtual ~QInterface(){};
 
-    virtual void SetRandomSeed(uint32_t seed) {
-        if (rand_generator != NULL) { 
+    virtual void SetRandomSeed(uint32_t seed)
+    {
+        if (rand_generator != NULL) {
             rand_generator->seed(seed);
         }
     }

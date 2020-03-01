@@ -6,11 +6,11 @@
 #include "stddef.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-    #define MICROSOFT_QUANTUM_DECL __declspec(dllexport)
-    #define MICROSOFT_QUANTUM_DECL_IMPORT __declspec(dllimport)
+#define MICROSOFT_QUANTUM_DECL __declspec(dllexport)
+#define MICROSOFT_QUANTUM_DECL_IMPORT __declspec(dllimport)
 #else
-    #define MICROSOFT_QUANTUM_DECL
-    #define MICROSOFT_QUANTUM_DECL_IMPORT
+#define MICROSOFT_QUANTUM_DECL
+#define MICROSOFT_QUANTUM_DECL_IMPORT
 #endif
 
 // SAL only defined in windows.
@@ -19,8 +19,8 @@
 #define _In_reads_(n)
 #endif
 
-typedef void(*IdCallback)(unsigned);
-typedef bool(*ProbAmpCallback)(size_t, double, double);
+typedef void (*IdCallback)(unsigned);
+typedef bool (*ProbAmpCallback)(size_t, double, double);
 
 extern "C" {
 // non-quantum
@@ -29,12 +29,14 @@ MICROSOFT_QUANTUM_DECL unsigned init();
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
-//MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ ProbAmpCallback callback);
+// MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_
+// ProbAmpCallback callback);
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback);
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _In_reads_(n) double* p);
 
-MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q);
 
 // allocate and release
 MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid);
@@ -51,7 +53,6 @@ MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q);
 
-
 // multi-controlled single-qubit gates
 
 MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
@@ -67,18 +68,23 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
 MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q);
 
 // multi-controlled rotations
-MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCR(
+    _In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
 
 // Exponential of Pauli operators
-MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q);
-MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void Exp(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi,
+    _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q);
 
 // measurements
 MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q);
-MICROSOFT_QUANTUM_DECL unsigned Measure(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL unsigned Measure(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q);
 
 // permutation oracle emulation
-//MICROSOFT_QUANTUM_DECL void PermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ std::size_t table_size, _In_reads_(table_size) std::size_t *permutation_table);
-//MICROSOFT_QUANTUM_DECL void AdjPermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ std::size_t table_size, _In_reads_(table_size) std::size_t *permutation_table);
-
+// MICROSOFT_QUANTUM_DECL void PermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_
+// std::size_t table_size, _In_reads_(table_size) std::size_t *permutation_table);  MICROSOFT_QUANTUM_DECL void
+// AdjPermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ std::size_t table_size,
+// _In_reads_(table_size) std::size_t *permutation_table);
 }

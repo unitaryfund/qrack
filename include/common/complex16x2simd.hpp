@@ -48,14 +48,14 @@ struct Complex16x2Simd {
     }
     inline Complex16x2Simd operator*(const Complex16x2Simd& other) const
     {
-        return _mm256_add_pd(
-            _mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5), _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, other._val2), other._val2, 15)),
+        return _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5),
+                                 _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, other._val2), other._val2, 15)),
             _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
     }
     inline Complex16x2Simd operator*=(const Complex16x2Simd& other)
     {
-        _val2 = _mm256_add_pd(
-            _mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5), _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, other._val2), other._val2, 15)),
+        _val2 = _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(_val2, _val2, 5),
+                                  _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, other._val2), other._val2, 15)),
             _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
         return _val2;
     }
@@ -88,8 +88,8 @@ inline Complex16x2Simd matrixMul(
     return _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5),
                                            _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
                              _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
-        _mm256_add_pd(
-            _mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5), _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
+        _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5),
+                          _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
             _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
 }
 inline Complex16x2Simd matrixMul(

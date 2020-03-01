@@ -2030,7 +2030,8 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex), waitVec.get(), &(device_context->wait_events->back()));
+    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * perm, sizeof(complex), waitVec.get(),
+        &(device_context->wait_events->back()));
     queue.flush();
 }
 

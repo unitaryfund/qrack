@@ -111,7 +111,8 @@ public:
     {
     }
 
-    void ClampAmps() {
+    void ClampAmps()
+    {
         if (norm(amp0) < min_norm) {
             amp0 = ZERO_R1;
             amp1 /= abs(amp1);
