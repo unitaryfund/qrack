@@ -153,6 +153,118 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
 	delete[] ctrlsArray;
 }
 
+inline bool isDiagonal(std::vector<unsigned> const& b)
+{
+	for (auto x : b)
+		if (x == PauliX || x == PauliY)
+			return false;
+	return true;
+}
+
+inline bool poppar(unsigned perm) {
+	// From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
+	unsigned int c; // c accumulates the total bits set in v
+	for (c = 0; perm; c++)
+	{
+		perm &= perm - 1U; // clear the least significant bit set
+	}
+	return c & 1U;
+}
+
+inline std::size_t make_mask(std::vector<unsigned> const& qs)
+{
+	std::size_t mask = 0;
+	for (std::size_t q : qs)
+		mask = mask | pow2(q);
+	return mask;
+}
+
+// power of square root of -1
+inline complex iExp(int power)
+{
+	using namespace std::literals::complex_literals;
+	int p = ((power % 4) + 8) % 4;
+	switch (p)
+	{
+	case 0:
+		return 1;
+	case 1:
+		return 1i;
+	case 2:
+		return -1;
+	case 3:
+		return -1i;
+	}
+	return 0;
+}
+
+void apply_controlled_exp(std::vector<complex>& wfn,
+	std::vector<unsigned> const&b,
+	double phi,
+	std::vector<unsigned> const& cs,
+	std::vector<unsigned> const& qs)
+{
+	unsigned lowest = *std::min_element(qs.begin(), qs.end());
+
+	std::size_t offset = pow2(lowest);
+	std::size_t cmask = make_mask(cs);
+	std::size_t cmasku = cmask & (~(offset - 1));
+
+	if (isDiagonal(b))
+	{
+		std::size_t mask = make_mask(qs);
+		complex phase = std::exp(complex(0., -phi));
+
+		for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
+			if ((x & cmask) == cmask) {
+				wfn[x] *= (poppar(x & mask) ? phase : std::conj(phase));
+			}
+		}
+	}
+	else
+	{   // see Exp-implementation-details.txt for the explanation of the algorithm below
+		std::size_t xy_bits = 0;
+		std::size_t yz_bits = 0;
+		int y_count = 0;
+		for (unsigned i = 0; i < b.size(); ++i)
+		{
+			switch (b[i])
+			{
+			case PauliX:
+				xy_bits |= (1ull << qs[i]);
+				break;
+			case PauliY:
+				xy_bits |= (1ull << qs[i]);
+				yz_bits |= (1ull << qs[i]);
+				++y_count;
+				break;
+			case PauliZ:
+				yz_bits |= (1ull << qs[i]);
+				break;
+			case PauliI:
+				break;
+			}
+		}
+
+		real1 alpha = std::cos(phi);
+		complex beta = std::sin(phi) * iExp(3 * y_count + 1);
+		complex gamma = std::sin(phi) * iExp(y_count + 1);
+
+		for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++)
+		{
+			std::intptr_t t = x ^ xy_bits;
+			if (x < t && ((x & cmask) == cmask))
+			{
+				auto parity = poppar(x & yz_bits);
+				auto a = wfn[x];
+				auto b = wfn[t];
+				wfn[x] = alpha * a + (parity ? -beta : beta) * b;
+				wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
+			}
+		}
+	}
+}
+
 extern "C" {
 
 /**
@@ -557,8 +669,21 @@ MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 		RHelper(sid, bVec.front(), -2. * phi, qVec.front());
 	}
 	else {
-		//psi.apply_controlled_exp(bs, phi, cs, qs);
-		//throw "Unsupported Exp variant";
+		QInterfacePtr simulator = simulators[sid];
+		std::vector<complex> wfn(simulator->GetMaxQPower());
+		simulator->GetQuantumState(&(wfn[0]));
+
+		std::vector<unsigned> bVec(n);
+		std::copy(b, b + n, bVec.begin());
+
+		std::vector<unsigned> csVec;
+
+		std::vector<unsigned> qVec(n);
+		std::copy(q, q + n, qVec.begin());
+
+		apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
+
+		simulator->SetQuantumState(&(wfn[0]));
 	}
 }
 
@@ -586,8 +711,22 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 		MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
 	}
 	else {
-		//psi.apply_controlled_exp(bs, phi, cs, qs);
-		//throw "Unsupported MCExp variant";
+		QInterfacePtr simulator = simulators[sid];
+		std::vector<complex> wfn(simulator->GetMaxQPower());
+		simulator->GetQuantumState(&(wfn[0]));
+
+		std::vector<unsigned> bVec(n);
+		std::copy(b, b + n, bVec.begin());
+
+		std::vector<unsigned> csVec(nc);
+		std::copy(cs, cs + nc, csVec.begin());
+
+		std::vector<unsigned> qVec(n);
+		std::copy(q, q + n, qVec.begin());
+
+		apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
+
+		simulator->SetQuantumState(&(wfn[0]));
 	}
 }
 
