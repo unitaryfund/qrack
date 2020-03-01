@@ -241,9 +241,9 @@ void apply_controlled_exp(std::vector<complex>& wfn, std::vector<unsigned> const
             }
         }
 
-        real1 alpha = std::cos(phi);
-        complex beta = std::sin(phi) * iExp(3 * y_count + 1);
-        complex gamma = std::sin(phi) * iExp(y_count + 1);
+        real1 alpha = (real1)std::cos(phi);
+        complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
+        complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
 
         for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
             std::intptr_t t = x ^ xy_bits;
