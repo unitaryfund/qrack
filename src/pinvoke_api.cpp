@@ -70,6 +70,92 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
 	}
 }
 
+void removeIdentities(std::vector<unsigned>& b, std::vector<unsigned>& qs)
+{
+	unsigned i = 0;
+	while (i != b.size())
+	{
+		if (b[i] == PauliI)
+		{
+			b.erase(b.begin() + i);
+			qs.erase(qs.begin() + i);
+		}
+		else {
+            ++i;
+		}
+	}
+}
+
+void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
+{
+	QInterfacePtr simulator = simulators[sid];
+
+	switch (b) {
+	case PauliI:
+		simulator->Exp(phi, shards[simulator][q]);
+		break;
+	case PauliX:
+		simulator->RX(phi, shards[simulator][q]);
+		break;
+	case PauliY:
+		simulator->RY(phi, shards[simulator][q]);
+		break;
+	case PauliZ:
+		simulator->RZ(phi, shards[simulator][q]);
+		break;
+	default:
+		break;
+	}
+}
+
+void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, unsigned q)
+{
+	QInterfacePtr simulator = simulators[sid];
+	bitLenInt* ctrlsArray = new bitLenInt[n];
+	for (unsigned i = 0; i < n; i++) {
+		ctrlsArray[i] = shards[simulator][c[i]];
+	}
+
+	real1 cosine = cos(phi / 2.0);
+	real1 sine = sin(phi / 2.0);
+	complex pauliR[4];
+
+	const complex pauliI[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
+	const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+	const complex pauliY[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+	const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+
+	complex toApply[4];
+
+	switch (b) {
+	case PauliI:
+		mul2x2(phi / 2, pauliI, toApply);
+        simulator->Exp(ctrlsArray, n, shards[simulator][q], toApply);
+		break;
+	case PauliX:
+		pauliR[0] = complex(cosine, ZERO_R1);
+		pauliR[1] = complex(ZERO_R1, -sine);
+		pauliR[2] = complex(ZERO_R1, -sine);
+		pauliR[3] = complex(cosine, ZERO_R1);
+		simulator->ApplyControlledSingleBit(ctrlsArray, n, shards[simulator][q], pauliR);
+		break;
+	case PauliY:
+		pauliR[0] = complex(cosine, ZERO_R1);
+		pauliR[1] = complex(-sine, ZERO_R1);
+		pauliR[2] = complex(sine, ZERO_R1);
+		pauliR[3] = complex(cosine, ZERO_R1);
+		simulator->ApplyControlledSingleBit(ctrlsArray, n, shards[simulator][q], pauliR);
+		break;
+	case PauliZ:
+		simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], complex(cosine, -sine), complex(cosine, sine));
+		break;
+	default:
+		break;
+	}
+
+	delete[] ctrlsArray;
+}
+
 extern "C" {
 
 /**
@@ -439,24 +525,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
 	*/
 MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q)
 {
-	QInterfacePtr simulator = simulators[sid];
-
-	switch (b) {
-	case PauliI:
-		simulator->Exp(phi, shards[simulator][q]);
-		break;
-	case PauliX:
-		simulator->ExpX(phi, shards[simulator][q]);
-		break;
-	case PauliY:
-		simulator->ExpY(phi, shards[simulator][q]);
-		break;
-	case PauliZ:
-		simulator->ExpZ(phi, shards[simulator][q]);
-		break;
-	default:
-		break;
-	}
+	RHelper(sid, b, phi, q);
 }
 
 /**
@@ -464,38 +533,7 @@ MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double ph
 	*/
 MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
-	QInterfacePtr simulator = simulators[sid];
-	bitLenInt* ctrlsArray = new bitLenInt[n];
-	for (unsigned i = 0; i < n; i++) {
-		ctrlsArray[i] = shards[simulator][c[i]];
-	}
-
-	const complex pauliI[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
-	const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-	const complex pauliY[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-	const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-
-	complex toApply[4];
-
-	switch (b) {
-	case PauliI:
-		mul2x2(phi / 2, pauliI, toApply);
-		break;
-	case PauliX:
-		mul2x2(phi / 2, pauliX, toApply);
-		break;
-	case PauliY:
-		mul2x2(phi / 2, pauliY, toApply);
-		break;
-	case PauliZ:
-		mul2x2(phi / 2, pauliZ, toApply);
-		break;
-	default:
-		break;
-	}
-	simulator->Exp(ctrlsArray, n, shards[simulator][q], toApply);
-
-	delete[] ctrlsArray;
+	MCRHelper(sid, b, phi, n, c, q);
 }
 
 /**
@@ -503,24 +541,27 @@ MICROSOFT_QUANTUM_DECL void MCR(_In_ unsigned sid, _In_ unsigned b, _In_ double 
 	*/
 MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q)
 {
-	QInterfacePtr simulator = simulators[sid];
-	for (unsigned i = 0; i < n; i++) {
-		switch (b[i]) {
-		case PauliI:
-			simulator->Exp(phi, shards[simulator][q[i]]);
-			break;
-		case PauliX:
-			simulator->ExpX(phi, shards[simulator][q[i]]);
-			break;
-		case PauliY:
-			simulator->ExpY(phi, shards[simulator][q[i]]);
-			break;
-		case PauliZ:
-			simulator->ExpZ(phi, shards[simulator][q[i]]);
-			break;
-		default:
-			break;
-		}
+	if (n == 0) {
+		return;
+	}
+
+	std::vector<unsigned> bVec(n);
+	std::vector<unsigned> qVec(n);
+
+	std::copy(b, b + n, bVec.begin());
+	std::copy(q, q + n, qVec.begin());
+
+	removeIdentities(bVec, qVec);
+
+	if (bVec.size() == 0) {
+		RHelper(sid, PauliI, -2. * phi, qVec.front());
+	}
+	else if (bVec.size() == 1) {
+		RHelper(sid, bVec.front(), -2. * phi, qVec.front());
+	}
+	else {
+		//psi.apply_controlled_exp(bs, phi, cs, qs);
+		//throw "Unsupported Exp variant";
 	}
 }
 
@@ -529,40 +570,28 @@ MICROSOFT_QUANTUM_DECL void Exp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 	*/
 MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q)
 {
-	QInterfacePtr simulator = simulators[sid];
-	bitLenInt* ctrlsArray = new bitLenInt[nc];
-	for (unsigned i = 0; i < nc; i++) {
-		ctrlsArray[i] = shards[simulator][cs[i]];
+	if (n == 0) {
+		return;
 	}
 
-	const complex pauliI[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
-	const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-	const complex pauliY[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
-	const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+	std::vector<unsigned> bVec(n);
+	std::vector<unsigned> qVec(n);
 
-	complex toApply[4];
+	std::copy(b, b + n, bVec.begin());
+	std::copy(q, q + n, qVec.begin());
 
-	for (unsigned i = 0; i < n; i++) {
-		switch (b[i]) {
-		case PauliI:
-			mul2x2(phi, pauliI, toApply);
-			break;
-		case PauliX:
-			mul2x2(phi, pauliX, toApply);
-			break;
-		case PauliY:
-			mul2x2(phi, pauliY, toApply);
-			break;
-		case PauliZ:
-			mul2x2(phi, pauliZ, toApply);
-			break;
-		default:
-			break;
-		}
-		simulator->Exp(ctrlsArray, nc, shards[simulator][q[i]], toApply);
+	removeIdentities(bVec, qVec);
+
+	if (bVec.size() == 0) {
+		MCRHelper(sid, PauliI, -2. * phi, nc, cs, qVec.front());
 	}
-
-	delete[] ctrlsArray;
+	else if (bVec.size() == 1) {
+		MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
+	}
+	else {
+		//psi.apply_controlled_exp(bs, phi, cs, qs);
+		//throw "Unsupported MCExp variant";
+	}
 }
 
 /**
