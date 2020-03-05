@@ -20,7 +20,7 @@
 std::mutex metaOperationMutex;
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
-//#define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> simulatorLock(simulatorMutexVec[sid]);
+// TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This feature might not yet be fully realized.
 #define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
 using namespace Qrack;

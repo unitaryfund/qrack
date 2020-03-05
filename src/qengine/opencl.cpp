@@ -2027,6 +2027,7 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
     runningNorm -= norm(GetAmplitude(perm));
+    runningNorm += norm(amp);
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();

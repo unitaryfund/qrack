@@ -69,6 +69,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     runningNorm -= norm(stateVec->read(perm));
+    runningNorm += norm(amp);
     stateVec->write(perm, amp);
 }
 
