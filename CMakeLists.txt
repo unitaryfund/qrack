@@ -32,8 +32,8 @@ add_library (qrack STATIC
     )
 	
 add_library (qrack_pinvoke SHARED
-	src/pinvoke_api.cpp
-	)
+    src/pinvoke_api.cpp
+    )
 
 if (MSVC)
     set(QRACK_LIBS qrack)

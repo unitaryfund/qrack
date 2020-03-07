@@ -164,9 +164,11 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
 
 inline bool isDiagonal(std::vector<unsigned> const& b)
 {
-    for (auto x : b)
-        if (x == PauliX || x == PauliY)
+    for (auto x : b) {
+        if (x == PauliX || x == PauliY) {
             return false;
+        }
+    }
     return true;
 }
 
@@ -337,8 +339,9 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
     complex* wfn = new complex[wfnl];
     simulator->GetQuantumState(wfn);
     for (size_t i = 0; i < wfnl; i++) {
-        if (!callback(i, real(wfn[i]), imag(wfn[i])))
+        if (!callback(i, real(wfn[i]), imag(wfn[i]))) {
             break;
+        }
     }
     delete[] wfn;
 }
