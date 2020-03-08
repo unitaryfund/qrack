@@ -52,7 +52,8 @@ public:
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
-    complex GetAmplitude(bitCapInt perm);
+    virtual complex GetAmplitude(bitCapInt perm);
+    virtual void SetAmplitude(bitCapInt perm, complex amp);
 
     virtual bitLenInt Compose(QEngineCPUPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }

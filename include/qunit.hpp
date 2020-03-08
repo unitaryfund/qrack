@@ -111,7 +111,8 @@ public:
     {
     }
 
-    void ClampAmps() {
+    void ClampAmps()
+    {
         if (norm(amp0) < min_norm) {
             amp0 = ZERO_R1;
             amp1 /= abs(amp1);
@@ -444,6 +445,7 @@ public:
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
+    virtual void SetAmplitude(bitCapInt perm, complex amp);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
     virtual bitLenInt Compose(QUnitPtr toCopy);

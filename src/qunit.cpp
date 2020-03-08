@@ -77,7 +77,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     bool bitState;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = (initState >> i) & ONE_BCI;
+        bitState = (initState >> (bitCapInt)i) & ONE_BCI;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -95,7 +95,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     Finish();
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = (perm >> i) & ONE_BCI;
+        bitState = (perm >> (bitCapInt)i) & ONE_BCI;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -153,7 +153,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         if (perms.find(shards[i].unit) == perms.end()) {
             perms[shards[i].unit] = 0U;
         }
-        if ((perm >> i) & ONE_BCI) {
+        if ((perm >> (bitCapInt)i) & ONE_BCI) {
             perms[shards[i].unit] |= pow2(shards[i].mapped);
         }
     }
@@ -170,6 +170,12 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     }
 
     return result;
+}
+
+void QUnit::SetAmplitude(bitCapInt perm, complex amp)
+{
+    EntangleAll();
+    shards[0].unit->SetAmplitude(perm, amp);
 }
 
 bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
@@ -846,7 +852,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
-        bitState = (value >> i) & ONE_BCI;
+        bitState = (value >> (bitCapInt)i) & ONE_BCI;
         shards[i + start] = QEngineShard(shards[i + start].unit, bitState);
         shards[i + start].isEmulated = true;
     }
@@ -2144,7 +2150,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 }
 
                 carry = toAdd;
-                toMod >>= partLength;
+                toMod >>= (bitCapInt)partLength;
                 start += partLength;
                 length -= partLength;
 
@@ -2367,7 +2373,7 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
         bitCapInt lengthMask = pow2Mask(length);
         bitCapInt res = GetCachedPermutation(inOutStart, length) * toMul;
         SetReg(inOutStart, length, res & lengthMask);
-        SetReg(carryStart, length, (res >> length) & lengthMask);
+        SetReg(carryStart, length, (res >> (bitCapInt)length) & lengthMask);
         return;
     }
 
@@ -2392,7 +2398,7 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
         bitCapInt res = origRes / toDiv;
         if (origRes == (res * toDiv)) {
             SetReg(inOutStart, length, res & lengthMask);
-            SetReg(carryStart, length, (res >> length) & lengthMask);
+            SetReg(carryStart, length, (res >> (bitCapInt)length) & lengthMask);
         }
         return;
     }

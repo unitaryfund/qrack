@@ -122,8 +122,6 @@ protected:
         maxQPower = pow2(qubitCount);
     }
 
-    virtual void SetRandomSeed(uint32_t seed) { rand_generator->seed(seed); }
-
     static inline bitLenInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
@@ -205,6 +203,13 @@ public:
     /** Destructor of QInterface */
     virtual ~QInterface(){};
 
+    virtual void SetRandomSeed(uint32_t seed)
+    {
+        if (rand_generator != NULL) {
+            rand_generator->seed(seed);
+        }
+    }
+
     /** Get the count of bits in this register */
     bitLenInt GetQubitCount() { return qubitCount; }
 
@@ -244,6 +249,12 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual complex GetAmplitude(bitCapInt perm) = 0;
+
+    /** Sets the representational amplitude of a full permutation
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
 
     /** Set to a specific permutation */
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
