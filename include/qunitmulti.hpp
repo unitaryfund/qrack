@@ -70,26 +70,24 @@ public:
         : QUnitMulti(qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG)
     {
     }
-    QUnitMulti(QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
-        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG)
+    QUnitMulti(QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true,
+        int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG)
         : QUnitMulti(qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG)
     {
     }
 
-    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
-        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG);
+    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true,
+        int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
-
-    virtual void SetDefaultDevice();
 
     virtual void SeparateBit(bool value, bitLenInt qubit);
 
