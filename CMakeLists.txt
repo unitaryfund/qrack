@@ -170,12 +170,13 @@ install (FILES
     include/bitbuffer.hpp
     include/hamiltonian.hpp
     include/statevector.hpp
-	include/pinvoke_api.hpp
+    include/pinvoke_api.hpp
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
     include/qfusion.hpp
     include/qunit.hpp
+    include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
