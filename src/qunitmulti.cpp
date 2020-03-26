@@ -81,6 +81,14 @@ void QUnitMulti::RedistributeQEngines()
         // residency on this device.
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
         if (qinfos[i].size <= 2U) {
+            devSizes[qinfos[i].deviceID] += 2U;
+            continue;
+        }
+    }
+
+    for (i = 0; i < qinfos.size(); i++) {
+        if (qinfos[i].size <= 2U) {
+            // We counted these, above.
             continue;
         }
 
