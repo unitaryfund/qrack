@@ -12,6 +12,7 @@
 // for details.
 
 #include "qunitmulti.hpp"
+#include "common/oclengine.hpp"
 #include "qfactory.hpp"
 
 namespace Qrack {
@@ -28,6 +29,11 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     // class.
     deviceCount = OCLEngine::Instance()->GetDeviceCount();
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
+
+    std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
+    for (bitLenInt i = 0; i < deviceContext.size(); i++) {
+        deviceMaxSizes.push_back(deviceContext[i]->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>());
+    }
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
@@ -66,6 +72,7 @@ void QUnitMulti::RedistributeQEngines()
     std::vector<bitCapInt> devSizes(deviceCount);
     std::fill(devSizes.begin(), devSizes.end(), 0U);
     bitCapInt sz;
+    bitCapInt trialSz;
     bitLenInt devID = defaultDeviceID;
     bitLenInt i, j;
 
@@ -89,8 +96,9 @@ void QUnitMulti::RedistributeQEngines()
 
         // Find the device with the lowest load.
         for (j = 0; j < deviceCount; j++) {
-            if (devSizes[j] < sz) {
-                sz = devSizes[j];
+            trialSz = devSizes[j] + qinfos[i].size;
+            if ((trialSz <= deviceMaxSizes[j]) && (trialSz < sz)) {
+                sz = trialSz;
                 devID = j;
             }
         }

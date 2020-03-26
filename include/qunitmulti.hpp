@@ -61,6 +61,7 @@ class QUnitMulti : public QUnit, public ParallelFor {
 protected:
     int deviceCount;
     int defaultDeviceID;
+    std::vector<bitCapInt> deviceMaxSizes;
 
 public:
     QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,

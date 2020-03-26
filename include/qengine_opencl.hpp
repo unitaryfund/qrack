@@ -168,6 +168,8 @@ public:
         }
     }
 
+    bitCapInt GetMaxSize() { return maxMem / sizeof(complex); };
+
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual real1 ProbAll(bitCapInt fullRegister);
 
