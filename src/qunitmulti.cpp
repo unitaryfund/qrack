@@ -120,6 +120,9 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    // Might exceed single device capacity:
+    std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit)->SetDevice(defaultDeviceID);
+
     QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
     RedistributeQEngines();
     return toRet;
