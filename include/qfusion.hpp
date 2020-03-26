@@ -50,7 +50,7 @@ public:
     QFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG);
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> devList = {});
     QFusion(QInterfacePtr target);
 
     virtual void SetQuantumState(const complex* inputState);

@@ -19,9 +19,10 @@ namespace Qrack {
 
 QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh)
+    real1 norm_thresh, std::vector<bitLenInt> devList)
     : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
           useHardwareRNG, useSparseStateVec, norm_thresh)
+    , deviceList(devList)
 {
     // Notice that this constructor does not take an engine type parameter, and it always passes QINTERFACE_OPENCL to
     // the QUnit constructor. For QUnitMulti, the "shard" engines are therefore guaranteed to always be QEngineOCL
@@ -31,8 +32,17 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
-    for (bitLenInt i = 0; i < deviceContext.size(); i++) {
-        deviceMaxSizes.push_back(deviceContext[i]->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>());
+
+    if (deviceList.size() == 0) {
+        for (bitLenInt i = 0; i < deviceContext.size(); i++) {
+            deviceList.push_back(i);
+        }
+
+        std::swap(deviceList[0], deviceList[defaultDeviceID]);
+    }
+
+    for (bitLenInt i = 0; i < deviceList.size(); i++) {
+        deviceMaxSizes.push_back(deviceContext[deviceList[i]]->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>());
     }
 }
 
@@ -62,18 +72,17 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 void QUnitMulti::RedistributeQEngines()
 {
     // No need to redistribute, if there is only 1 device
-    if (deviceCount == 1) {
+    if (deviceList.size() == 1) {
         return;
     }
 
     // Get shard sizes and devices
     std::vector<QEngineInfo> qinfos = GetQInfos();
 
-    std::vector<bitCapInt> devSizes(deviceCount);
+    std::vector<bitCapInt> devSizes(deviceList.size());
     std::fill(devSizes.begin(), devSizes.end(), 0U);
     bitCapInt sz;
-    bitCapInt trialSz;
-    bitLenInt devID = defaultDeviceID;
+    bitLenInt devID = 0;
     bitLenInt i, j;
 
     for (i = 0; i < qinfos.size(); i++) {
@@ -85,21 +94,20 @@ void QUnitMulti::RedistributeQEngines()
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        sz = devSizes[qinfos[i].deviceID] + qinfos[i].size;
+        sz = devSizes[qinfos[i].deviceID];
         devID = qinfos[i].deviceID;
 
         // If the default OpenCL device has equal load to the least, we prefer the default.
-        if (devSizes[defaultDeviceID] <= sz) {
-            sz = devSizes[defaultDeviceID];
-            devID = defaultDeviceID;
+        if (devSizes[0] <= sz) {
+            sz = devSizes[0];
+            devID = deviceList[0];
         }
 
         // Find the device with the lowest load.
-        for (j = 0; j < deviceCount; j++) {
-            trialSz = devSizes[j] + qinfos[i].size;
-            if ((trialSz <= deviceMaxSizes[j]) && (trialSz < sz)) {
-                sz = trialSz;
-                devID = j;
+        for (j = 0; j < deviceList.size(); j++) {
+            if (((devSizes[j] + qinfos[i].size) <= deviceMaxSizes[j]) && (devSizes[j] < sz)) {
+                sz = devSizes[j];
+                devID = deviceList[j];
             }
         }
 
@@ -107,7 +115,7 @@ void QUnitMulti::RedistributeQEngines()
         qinfos[i].unit->SetDevice(devID);
 
         // Update the size of buffers handles by this device.
-        devSizes[devID] += qinfos[i].size;
+        devSizes[*std::find(deviceList.begin(), deviceList.end(), devID)] += qinfos[i].size;
     }
 }
 
@@ -141,7 +149,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
     // If device capacity is exceeded, put on default device:
     if (pow2(qubitCount) > std::dynamic_pointer_cast<QEngineOCL>(unit1)->GetMaxSize()) {
-        std::dynamic_pointer_cast<QEngineOCL>(unit1)->SetDevice(defaultDeviceID);
+        std::dynamic_pointer_cast<QEngineOCL>(unit1)->SetDevice(deviceList[0]);
     }
 
     QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
@@ -157,11 +165,11 @@ void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
         Finish();
     }
 
-    bitLenInt currentDevID = defaultDeviceID;
+    bitLenInt currentDevID = 0;
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((1 << i) & perm) >> i;
         shards[i].unit = CreateQuantumInterface(engine, subengine, 1, (pow2(i) & perm) >> (bitCapInt)i, rand_generator,
-            phaseFac, doNormalize, randGlobalPhase, useHostRam, currentDevID, useRDRAND);
+            phaseFac, doNormalize, randGlobalPhase, useHostRam, deviceList[currentDevID], useRDRAND);
         shards[i].mapped = 0;
         shards[i].isEmulated = false;
         shards[i].isProbDirty = false;
@@ -171,7 +179,7 @@ void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
         shards[i].isPlusMinus = false;
 
         currentDevID++;
-        if (currentDevID >= deviceCount) {
+        if (currentDevID >= deviceList.size()) {
             currentDevID = 0;
         }
     }
