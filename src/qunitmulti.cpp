@@ -146,23 +146,26 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    // Check if size exceeds single device capacity:
-    bitLenInt qubitCount = 0;
-    std::map<QInterfacePtr, bool> found;
+    QEngineOCLPtr unit1 = std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit);
 
-    for (auto bit = first; bit < last; bit++) {
-        QInterfacePtr unit = shards[**bit].unit;
-        if (found.find(unit) == found.end()) {
-            found[unit] = true;
-            qubitCount += unit->GetQubitCount();
+    // This does nothing if the first unit is the default device:
+    if (deviceList[0].id != unit1->GetDeviceID()) {
+        // Check if size exceeds single device capacity:
+        bitLenInt qubitCount = 0;
+        std::map<QInterfacePtr, bool> found;
+
+        for (auto bit = first; bit < last; bit++) {
+            QInterfacePtr unit = shards[**bit].unit;
+            if (found.find(unit) == found.end()) {
+                found[unit] = true;
+                qubitCount += unit->GetQubitCount();
+            }
         }
-    }
 
-    QInterfacePtr unit1 = shards[**first].unit;
-
-    // If device capacity is exceeded, put on default device:
-    if (pow2(qubitCount) > std::dynamic_pointer_cast<QEngineOCL>(unit1)->GetMaxSize()) {
-        std::dynamic_pointer_cast<QEngineOCL>(unit1)->SetDevice(deviceList[0].id);
+        // If device capacity is exceeded, put on default device:
+        if (pow2(qubitCount) > std::dynamic_pointer_cast<QEngineOCL>(unit1)->GetMaxSize()) {
+            unit1->SetDevice(deviceList[0].id);
+        }
     }
 
     QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
