@@ -53,7 +53,7 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     }
 
     if (devList.size() == 0) {
-        std::sort(deviceList.begin(), deviceList.end());
+        std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
     }
 }
 
