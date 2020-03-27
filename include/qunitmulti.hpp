@@ -24,20 +24,39 @@ namespace Qrack {
 
 struct QEngineInfo {
     QEngineOCLPtr unit;
+    bitLenInt deviceIndex;
 
     QEngineInfo()
         : unit(NULL)
+        , deviceIndex(0)
     {
         // Intentionally left blank
     }
 
-    QEngineInfo(QEngineOCLPtr u)
+    QEngineInfo(QEngineOCLPtr u, bitLenInt devIndex)
         : unit(u)
+        , deviceIndex(devIndex)
     {
         // Intentionally left blank
     }
 
-    bool operator<(const QEngineInfo& other) const { return unit->GetMaxQPower() < other.unit->GetMaxQPower(); }
+    bool operator<(const QEngineInfo& other) const
+    {
+        if (unit->GetMaxQPower() == other.unit->GetMaxQPower()) {
+            // "Larger" QEngineInfo instances get first scheduling priority, and low device indices have greater
+            // capacity, so larger deviceIndices get are "<"
+            return other.deviceIndex < deviceIndex;
+        } else {
+            return unit->GetMaxQPower() < other.unit->GetMaxQPower();
+        }
+    }
+};
+
+struct DeviceInfo {
+    int id;
+    bitCapInt maxSize;
+
+    bool operator<(const DeviceInfo& other) const { return maxSize < other.maxSize; }
 };
 
 class QUnitMulti;
@@ -48,8 +67,7 @@ class QUnitMulti : public QUnit, public ParallelFor {
 protected:
     int deviceCount;
     int defaultDeviceID;
-    std::vector<bitCapInt> deviceMaxSizes;
-    std::vector<bitLenInt> deviceList;
+    std::vector<DeviceInfo> deviceList;
 
 public:
     QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
