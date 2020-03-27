@@ -50,16 +50,14 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 {
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
-    bitCapInt sz;
     QEngineOCLPtr qOCL;
     std::vector<QEngineInfo> qinfos;
 
     for (auto&& shard : shards) {
         if (std::find(qips.begin(), qips.end(), shard.unit) == qips.end()) {
-            sz = (shard.unit)->GetMaxQPower();
             qips.push_back(shard.unit);
             qOCL = std::dynamic_pointer_cast<QEngineOCL>(shard.unit);
-            qinfos.push_back(QEngineInfo(sz, qOCL->GetDeviceID(), qOCL));
+            qinfos.push_back(QEngineInfo(qOCL));
         }
     }
 
@@ -82,32 +80,35 @@ void QUnitMulti::RedistributeQEngines()
     std::vector<bitCapInt> devSizes(deviceList.size());
     std::fill(devSizes.begin(), devSizes.end(), 0U);
     bitCapInt sz;
-    bitLenInt devID = 0;
+    bitLenInt devID, devIndex;
     bitLenInt i, j;
 
     for (i = 0; i < qinfos.size(); i++) {
         // If the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
-        if (qinfos[i].size <= 2U) {
+        if (qinfos[i].unit->GetMaxQPower() <= 2U) {
             continue;
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        sz = devSizes[qinfos[i].deviceID];
-        devID = qinfos[i].deviceID;
+        devID = qinfos[i].unit->GetDeviceID();
+        devIndex = std::distance(deviceList.begin(), std::find(deviceList.begin(), deviceList.end(), devID));
+        sz = devSizes[devIndex];
 
         // If the default OpenCL device has equal load to the least, we prefer the default.
         if (devSizes[0] <= sz) {
-            sz = devSizes[0];
             devID = deviceList[0];
+            devIndex = 0;
+            sz = devSizes[0];
         }
 
         // Find the device with the lowest load.
         for (j = 0; j < deviceList.size(); j++) {
-            if (((devSizes[j] + qinfos[i].size) <= deviceMaxSizes[j]) && (devSizes[j] < sz)) {
-                sz = devSizes[j];
+            if (((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceMaxSizes[j]) && (devSizes[j] < sz)) {
                 devID = deviceList[j];
+                devIndex = j;
+                sz = devSizes[j];
             }
         }
 
@@ -115,7 +116,7 @@ void QUnitMulti::RedistributeQEngines()
         qinfos[i].unit->SetDevice(devID);
 
         // Update the size of buffers handles by this device.
-        devSizes[*std::find(deviceList.begin(), deviceList.end(), devID)] += qinfos[i].size;
+        devSizes[devIndex] += qinfos[i].unit->GetMaxQPower();
     }
 }
 

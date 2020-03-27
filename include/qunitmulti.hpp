@@ -23,34 +23,21 @@
 namespace Qrack {
 
 struct QEngineInfo {
-    bitCapInt size;
-    bitLenInt deviceID;
     QEngineOCLPtr unit;
 
     QEngineInfo()
-        : size(0)
-        , deviceID(0)
-        , unit(NULL)
+        : unit(NULL)
     {
         // Intentionally left blank
     }
 
-    QEngineInfo(bitCapInt sz, bitLenInt devID, QEngineOCLPtr u)
-        : size(sz)
-        , deviceID(devID)
-        , unit(u)
+    QEngineInfo(QEngineOCLPtr u)
+        : unit(u)
     {
         // Intentionally left blank
     }
 
-    bool operator<(const QEngineInfo& other) const
-    {
-        if (size == other.size) {
-            return deviceID < other.deviceID;
-        } else {
-            return size < other.size;
-        }
-    }
+    bool operator<(const QEngineInfo& other) const { return unit->GetMaxQPower() < other.unit->GetMaxQPower(); }
 };
 
 class QUnitMulti;
