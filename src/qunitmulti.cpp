@@ -148,17 +148,12 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 {
     // Check if size exceeds single device capacity:
     bitLenInt qubitCount = 0;
-
-    std::vector<QInterfacePtr> units;
-    units.reserve((int)(last - first));
-
     std::map<QInterfacePtr, bool> found;
 
     for (auto bit = first; bit < last; bit++) {
         QInterfacePtr unit = shards[**bit].unit;
         if (found.find(unit) == found.end()) {
             found[unit] = true;
-            units.push_back(unit);
             qubitCount += unit->GetQubitCount();
         }
     }
