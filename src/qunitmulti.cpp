@@ -27,12 +27,12 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     // the QUnit constructor. For QUnitMulti, the "shard" engines are therefore guaranteed to always be QEngineOCL
     // types, and it's safe to assume that they can be cast from QInterfacePtr types to QEngineOCLPtr types in this
     // class.
-    deviceCount = OCLEngine::Instance()->GetDeviceCount();
-    defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
     if (devList.size() == 0) {
+        defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
+
         for (bitLenInt i = 0; i < deviceContext.size(); i++) {
             DeviceInfo deviceInfo;
             deviceInfo.id = i;
@@ -41,7 +41,9 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
         std::swap(deviceList[0], deviceList[defaultDeviceID]);
     } else {
-        for (bitLenInt i = 0; i < deviceList.size(); i++) {
+        defaultDeviceID = devList[0];
+
+        for (bitLenInt i = 0; i < devList.size(); i++) {
             DeviceInfo deviceInfo;
             deviceInfo.id = devList[i];
             deviceList.push_back(deviceInfo);

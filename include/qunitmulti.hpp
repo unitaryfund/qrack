@@ -77,7 +77,6 @@ typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 class QUnitMulti : public QUnit, public ParallelFor {
 
 protected:
-    int deviceCount;
     int defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
