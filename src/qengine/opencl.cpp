@@ -957,12 +957,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
-    Finish();
-
     if (length == qubitCount) {
         if (destination != NULL) {
             if (deviceID == destination->deviceID) {
-                destination->Finish();
                 destination->ResetStateVec(stateVec);
                 destination->stateBuffer = stateBuffer;
                 stateVec = NULL;
@@ -1090,13 +1087,13 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         FreeStateVec();
     }
 
-    complex* nStateVec = AllocStateVec(nMaxQPower);
-    BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
+    delete[] partStateProb;
+    delete[] partStateAngle;
 
     SetQubitCount(nLength);
 
-    delete[] partStateProb;
-    delete[] partStateAngle;
+    complex* nStateVec = AllocStateVec(nMaxQPower);
+    BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     std::vector<real1*> toDelete(2);
     toDelete[0] = remainderStateProb;
@@ -1107,6 +1104,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateBuffer(nStateBuffer);
 
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, true);
+
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
