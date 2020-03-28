@@ -57,6 +57,8 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     if (devList.size() == 0) {
         std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
     }
+
+    RedistributeQEngines();
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
@@ -146,10 +148,20 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    QEngineOCLPtr unit1 = std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit);
+    /*QEngineOCLPtr unit1 = std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit);
+
+    // If already fully entangled, just return unit1.
+    bool isAlreadyEntangled = true;
+    for (auto bit = first + 1; bit < last; bit++) {
+        QInterfacePtr unit = shards[**bit].unit;
+        if (unit1 != unit) {
+            isAlreadyEntangled = false;
+            break;
+        }
+    }
 
     // This does nothing if the first unit is the default device:
-    if (deviceList[0].id != unit1->GetDeviceID()) {
+    if (!isAlreadyEntangled && deviceList[0].id != unit1->GetDeviceID()) {
         // Check if size exceeds single device capacity:
         bitLenInt qubitCount = 0;
         std::map<QInterfacePtr, bool> found;
@@ -166,39 +178,18 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         if (pow2(qubitCount) > std::dynamic_pointer_cast<QEngineOCL>(unit1)->GetMaxSize()) {
             unit1->SetDevice(deviceList[0].id);
         }
-    }
-
+    }*/
     QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
-    RedistributeQEngines();
+    // if (!isAlreadyEntangled) {
+    //    RedistributeQEngines();
+    //}
     return toRet;
 }
 
 void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 {
-    bool bitState;
-
-    if (shards.size() > 0) {
-        Finish();
-    }
-
-    bitLenInt currentDevID = 0;
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = ((1 << i) & perm) >> i;
-        shards[i].unit = CreateQuantumInterface(engine, subengine, 1, (pow2(i) & perm) >> (bitCapInt)i, rand_generator,
-            phaseFac, doNormalize, randGlobalPhase, useHostRam, deviceList[currentDevID].id, useRDRAND);
-        shards[i].mapped = 0;
-        shards[i].isEmulated = false;
-        shards[i].isProbDirty = false;
-        shards[i].isPhaseDirty = false;
-        shards[i].amp0 = bitState ? ZERO_CMPLX : ONE_CMPLX;
-        shards[i].amp1 = bitState ? ONE_CMPLX : ZERO_CMPLX;
-        shards[i].isPlusMinus = false;
-
-        currentDevID++;
-        if (currentDevID >= deviceList.size()) {
-            currentDevID = 0;
-        }
-    }
+    QUnit::SetPermutation(perm, phaseFac);
+    RedistributeQEngines();
 }
 
 bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
