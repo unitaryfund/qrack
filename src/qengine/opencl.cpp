@@ -202,10 +202,10 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void QEngineOCL::QueueCall(
-    OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
+void QEngineOCL::QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+    size_t localBuffSize, bool resetBuffer)
 {
-    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize);
+    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize, resetBuffer);
 
     queue_mutex.lock();
     bool isBase = (wait_queue_items.size() == 0);
@@ -225,10 +225,22 @@ void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
 void QEngineOCL::PopQueue(cl_event event, cl_int type)
 {
     queue_mutex.lock();
+
+    bool resetBuffer = wait_queue_items.front().resetBuffer;
     wait_queue_items.pop_front();
+
+    if (resetBuffer) {
+        std::vector<real1*> toDelete = real1sToDelete.front();
+        real1sToDelete.pop_front();
+        for (size_t i = 0; i < toDelete.size(); i++) {
+            delete[] toDelete[i];
+        }
+    }
+
     if (poolItems.size() > 1) {
         rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
     }
+
     queue_mutex.unlock();
 
     DispatchQueue(event, type);
@@ -834,6 +846,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         NormalizeState();
     }
 
+    Finish();
+
     if (toCopy->doNormalize) {
         toCopy->NormalizeState();
     }
@@ -1088,17 +1102,20 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     complex* nStateVec = AllocStateVec(nMaxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, nStateBuffer });
-
     SetQubitCount(nLength);
+
+    delete[] partStateProb;
+    delete[] partStateAngle;
+
+    std::vector<real1*> toDelete(2);
+    toDelete[0] = remainderStateProb;
+    toDelete[1] = remainderStateAngle;
+    real1sToDelete.push_back(toDelete);
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 
-    delete[] remainderStateProb;
-    delete[] remainderStateAngle;
-    delete[] partStateProb;
-    delete[] partStateAngle;
+    QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, true);
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)

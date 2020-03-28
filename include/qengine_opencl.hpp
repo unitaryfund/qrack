@@ -42,13 +42,15 @@ struct QueueItem {
     size_t localGroupSize;
     std::vector<BufferPtr> buffers;
     size_t localBuffSize;
+    bool resetBuffer;
 
-    QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
+    QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs, bool resetBfr)
         : api_call(ac)
         , workItemCount(wic)
         , localGroupSize(lgs)
         , buffers(b)
         , localBuffSize(lbs)
+        , resetBuffer(resetBfr)
     {
     }
 };
@@ -111,6 +113,7 @@ protected:
     size_t baseAlign;
     unsigned int procElemCount;
     bool unlockHostMem;
+    std::list<std::vector<real1*>> real1sToDelete;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -338,7 +341,7 @@ protected:
 
     /* Utility functions used by the operations above. */
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0);
+        size_t localBuffSize = 0, bool resetBuffer = false);
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
     EventVecPtr ResetWaitEvents(bool waitQueue = true);
