@@ -1038,10 +1038,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
                 waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPower, complex(ZERO_R1, ZERO_R1));
         }
 
+        size_t oNStateVecSize = maxQPower * sizeof(complex);
+
         WaitCall(
             OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
-
-        size_t oNStateVecSize = maxQPower * sizeof(complex);
 
         if (destination->deviceID != deviceID) {
             queue.enqueueMapBuffer(*otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPower);
@@ -1089,17 +1089,15 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    std::vector<std::shared_ptr<real1>> toDelete(2);
-    toDelete[0] = remainderStateProb;
-    toDelete[1] = remainderStateAngle;
-    real1sToDelete.push_back(toDelete);
+    // std::vector<std::shared_ptr<real1>> toDelete(2);
+    // toDelete[0] = remainderStateProb;
+    // toDelete[1] = remainderStateAngle;
+    // real1sToDelete.push_back(toDelete);
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 
-    runningNorm = ONE_R1;
-
-    QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, true);
+    WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, nStateBuffer });
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
