@@ -277,9 +277,9 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
         kernelWaitVec.get(), // vector of events to wait for
         &kernelEvent); // handle to wait for the kernel
 
-    queue.flush();
-
     device_context->wait_events->push_back(kernelEvent);
+
+    queue.flush();
 }
 
 real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
@@ -1088,11 +1088,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-
-    // std::vector<std::shared_ptr<real1>> toDelete(2);
-    // toDelete[0] = remainderStateProb;
-    // toDelete[1] = remainderStateAngle;
-    // real1sToDelete.push_back(toDelete);
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
