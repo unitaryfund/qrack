@@ -845,7 +845,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         toCopy->NormalizeState();
     }
 
-    Finish();
     toCopy->Finish();
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1092,7 +1091,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 
-    WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, nStateBuffer });
+    // std::vector<std::shared_ptr<real1>> toDelete(2);
+    // toDelete[0] = remainderStateProb;
+    // toDelete[1] = remainderStateAngle;
+    // real1sToDelete.push_back(toDelete);
+
+    WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
