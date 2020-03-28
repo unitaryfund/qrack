@@ -230,11 +230,7 @@ void QEngineOCL::PopQueue(cl_event event, cl_int type)
     wait_queue_items.pop_front();
 
     if (resetBuffer) {
-        std::vector<real1*> toDelete = real1sToDelete.front();
         real1sToDelete.pop_front();
-        for (size_t i = 0; i < toDelete.size(); i++) {
-            delete[] toDelete[i];
-        }
     }
 
     if (poolItems.size() > 1) {
@@ -881,6 +877,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
+    runningNorm = ONE_R1;
+
     OCLDeviceCall ocl = device_context->Reserve(apiCall);
 
     BufferPtr otherStateBuffer;
@@ -897,8 +895,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
         toCopy->UnlockSync();
     }
-
-    runningNorm = ONE_R1;
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
@@ -995,12 +991,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // The "remainder" bits will always be maintained.
-    real1* remainderStateProb = new real1[remainderPower]();
-    real1* remainderStateAngle = new real1[remainderPower]();
+    std::shared_ptr<real1> remainderStateProb(new real1[remainderPower], [](real1* p) { delete[] p; });
+    std::shared_ptr<real1> remainderStateAngle(new real1[remainderPower], [](real1* p) { delete[] p; });
     BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb);
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb.get());
     BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle);
+        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle.get());
 
     // The removed "part" is only necessary for Decompose.
     real1* partStateProb = new real1[partPower]();
@@ -1083,7 +1079,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
-        clFinish();
+        Finish();
         FreeStateVec();
     }
 
@@ -1092,10 +1088,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     SetQubitCount(nLength);
 
-    complex* nStateVec = AllocStateVec(nMaxQPower);
+    complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    std::vector<real1*> toDelete(2);
+    std::vector<std::shared_ptr<real1>> toDelete(2);
     toDelete[0] = remainderStateProb;
     toDelete[1] = remainderStateAngle;
     real1sToDelete.push_back(toDelete);
@@ -1103,9 +1099,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 
+    runningNorm = ONE_R1;
+
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, true);
 
-    runningNorm = ONE_R1;
+    // TODO: Debug and remove:
+    Finish();
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)

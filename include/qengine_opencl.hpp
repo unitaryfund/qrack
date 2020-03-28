@@ -113,7 +113,7 @@ protected:
     size_t baseAlign;
     unsigned int procElemCount;
     bool unlockHostMem;
-    std::list<std::vector<real1*>> real1sToDelete;
+    std::list<std::vector<std::shared_ptr<real1>>> real1sToDelete;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
