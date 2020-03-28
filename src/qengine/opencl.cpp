@@ -991,8 +991,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // The "remainder" bits will always be maintained.
-    std::shared_ptr<real1> remainderStateProb(new real1[remainderPower], [](real1* p) { delete[] p; });
-    std::shared_ptr<real1> remainderStateAngle(new real1[remainderPower], [](real1* p) { delete[] p; });
+    std::shared_ptr<real1> remainderStateProb(new real1[remainderPower](), [](real1* p) { delete[] p; });
+    std::shared_ptr<real1> remainderStateAngle(new real1[remainderPower](), [](real1* p) { delete[] p; });
     BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb.get());
     BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
@@ -1010,7 +1010,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     QueueCall(api_call, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
 
-    bitCapInt nMaxQPower = pow2(nLength);
+    SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != NULL) {
@@ -1041,7 +1041,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         WaitCall(
             OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
 
-        size_t oNStateVecSize = nMaxQPower * sizeof(complex);
+        size_t oNStateVecSize = maxQPower * sizeof(complex);
 
         if (destination->deviceID != deviceID) {
             queue.enqueueMapBuffer(*otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPower);
@@ -1069,24 +1069,22 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         }
     }
 
-    // If we either Decompose or Dispose, calculate the state of the bit system that remains.
-    bciArgs[0] = nMaxQPower;
-    EventVecPtr waitVec3 = ResetWaitEvents();
-    DISPATCH_WRITE(waitVec3, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs);
-
-    ngc = FixWorkItemCount(nMaxQPower, nrmGroupCount);
-    ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    size_t nStateVecSize = nMaxQPower * sizeof(complex);
-    if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
-        Finish();
-        FreeStateVec();
-    }
-
     delete[] partStateProb;
     delete[] partStateAngle;
 
-    SetQubitCount(nLength);
+    // If we either Decompose or Dispose, calculate the state of the bit system that remains.
+    bciArgs[0] = maxQPower;
+    EventVecPtr waitVec3 = ResetWaitEvents();
+    DISPATCH_WRITE(waitVec3, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs);
+
+    ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    size_t nStateVecSize = maxQPower * sizeof(complex);
+    if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
+        clFinish();
+        FreeStateVec();
+    }
 
     complex* nStateVec = AllocStateVec(maxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
@@ -1102,9 +1100,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     runningNorm = ONE_R1;
 
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, true);
-
-    // TODO: Debug and remove:
-    Finish();
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
