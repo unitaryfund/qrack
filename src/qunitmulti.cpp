@@ -115,24 +115,27 @@ void QUnitMulti::RedistributeQEngines()
         devIndex = qinfos[i].deviceIndex;
         sz = devSizes[devIndex];
 
-        // If the default OpenCL device has equal load to the least, we prefer the default.
-        if (devSizes[0] <= sz) {
-            devID = deviceList[0].id;
-            devIndex = 0;
-            sz = devSizes[0];
-        }
-
-        // Find the device with the lowest load.
-        for (j = 0; j < deviceList.size(); j++) {
-            if (((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize) && (devSizes[j] < sz)) {
-                devID = deviceList[j].id;
-                devIndex = j;
-                sz = devSizes[j];
+        // If the original device has 0 determined load, don't switch the unit.
+        if (sz > 0) {
+            // If the default OpenCL device has equal load to the least, we prefer the default.
+            if (devSizes[0] <= sz) {
+                devID = deviceList[0].id;
+                devIndex = 0;
+                sz = devSizes[0];
             }
-        }
 
-        // Add this unit to the device with the lowest load.
-        qinfos[i].unit->SetDevice(devID);
+            // Find the device with the lowest load.
+            for (j = 0; j < deviceList.size(); j++) {
+                if (((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize) && (devSizes[j] < sz)) {
+                    devID = deviceList[j].id;
+                    devIndex = j;
+                    sz = devSizes[j];
+                }
+            }
+
+            // Add this unit to the device with the lowest load.
+            qinfos[i].unit->SetDevice(devID);
+        }
 
         // Update the size of buffers handles by this device.
         devSizes[devIndex] += qinfos[i].unit->GetMaxQPower();
@@ -148,7 +151,7 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    /*QEngineOCLPtr unit1 = std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit);
+    QEngineOCLPtr unit1 = std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit);
 
     // If already fully entangled, just return unit1.
     bool isAlreadyEntangled = true;
@@ -178,11 +181,12 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         if (pow2(qubitCount) > std::dynamic_pointer_cast<QEngineOCL>(unit1)->GetMaxSize()) {
             unit1->SetDevice(deviceList[0].id);
         }
-    }*/
+    }
+
     QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
-    // if (!isAlreadyEntangled) {
-    //    RedistributeQEngines();
-    //}
+    if (!isAlreadyEntangled) {
+        RedistributeQEngines();
+    }
     return toRet;
 }
 
