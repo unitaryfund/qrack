@@ -51,6 +51,11 @@ namespace Qrack {
     queue.enqueueFillBuffer(buff, value, 0, size, waitVec.get(), &(device_context->wait_events->back()));              \
     queue.flush()
 
+#define DISPATCH_COPY(waitVec, buff1, buff2, size)                                                                     \
+    device_context->wait_events->emplace_back();                                                                       \
+    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
+    queue.flush();
+
 #define WAIT_COPY(buff1, buff2, size)                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, NULL, &(device_context->wait_events->back()));                   \
@@ -840,14 +845,19 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     bitCapInt nMaxQPower = bciArgs[0];
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
 
+    // Hold onto the original state buffer reference until async dispatch finishes.
+    BufferPtr saveBufferRef;
+
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (!stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
         complex* nSV = AllocStateVec(maxQPower, true);
         BufferPtr nSB = MakeStateVecBuffer(nSV);
 
-        WAIT_COPY(*stateBuffer, *nSB, sizeof(complex) * maxQPower);
+        EventVecPtr waitVecCopy = ResetWaitEvents();
+        DISPATCH_COPY(waitVecCopy, *stateBuffer, *nSB, sizeof(complex) * maxQPower);
 
         stateVec = nSV;
+        saveBufferRef = stateBuffer;
         stateBuffer = nSB;
     }
 
@@ -880,6 +890,9 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     runningNorm = ONE_R1;
 
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+
+    // We no longer need this shared_ptr.
+    saveBufferRef = NULL;
 
     if (toCopy->deviceID != deviceID) {
         toCopy->UnlockSync();
@@ -996,10 +1009,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
-    WaitCall(api_call, ngc, ngs,
+    QueueCall(api_call, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
 
-    SetQubitCount(nLength);
+    bitCapInt nMaxQPower = pow2(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
     if (destination != NULL) {
@@ -1030,7 +1043,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         WaitCall(
             OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
 
-        size_t oNStateVecSize = maxQPower * sizeof(complex);
+        size_t oNStateVecSize = nMaxQPower * sizeof(complex);
 
         if (destination->deviceID != deviceID) {
             queue.enqueueMapBuffer(*otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPower);
@@ -1059,23 +1072,25 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
-    bciArgs[0] = maxQPower;
+    bciArgs[0] = nMaxQPower;
     EventVecPtr waitVec3 = ResetWaitEvents();
     DISPATCH_WRITE(waitVec3, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs);
 
-    ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    ngc = FixWorkItemCount(nMaxQPower, nrmGroupCount);
     ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    size_t nStateVecSize = maxQPower * sizeof(complex);
+    size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
         clFinish();
         FreeStateVec();
     }
 
-    complex* nStateVec = AllocStateVec(maxQPower);
+    complex* nStateVec = AllocStateVec(nMaxQPower);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, nStateBuffer });
+
+    SetQubitCount(nLength);
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
