@@ -957,9 +957,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
+    Finish();
+
     if (length == qubitCount) {
         if (destination != NULL) {
             if (deviceID == destination->deviceID) {
+                destination->Finish();
                 destination->ResetStateVec(stateVec);
                 destination->stateBuffer = stateBuffer;
                 stateVec = NULL;
