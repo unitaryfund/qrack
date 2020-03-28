@@ -845,22 +845,17 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     if (doNormalize) {
         NormalizeState();
     }
-
-    Finish();
-
     if (toCopy->doNormalize) {
         toCopy->NormalizeState();
     }
 
+    Finish();
     toCopy->Finish();
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
     bitCapInt nMaxQPower = bciArgs[0];
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
-
-    // Hold onto the original state buffer reference until async dispatch finishes.
-    BufferPtr saveBufferRef;
 
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (!stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
@@ -871,7 +866,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         DISPATCH_COPY(waitVecCopy, *stateBuffer, *nSB, sizeof(complex) * maxQPower);
 
         stateVec = nSV;
-        saveBufferRef = stateBuffer;
         stateBuffer = nSB;
     }
 
@@ -894,23 +888,17 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     if (toCopy->deviceID == deviceID) {
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
+        QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
     } else {
         toCopy->LockSync(CL_MAP_READ);
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+        toCopy->UnlockSync();
     }
 
     runningNorm = ONE_R1;
-
-    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-
-    // We no longer need this shared_ptr.
-    saveBufferRef = NULL;
-
-    if (toCopy->deviceID != deviceID) {
-        toCopy->UnlockSync();
-    }
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
