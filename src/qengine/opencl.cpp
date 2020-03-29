@@ -1095,12 +1095,13 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // TODO: Figure out why this doesn't work:
 
-    //std::vector<std::shared_ptr<real1>> toDelete(2);
-    //toDelete[0] = remainderStateProb;
-    //toDelete[1] = remainderStateAngle;
-    //real1sToDelete.push_back(toDelete);
+    // std::vector<std::shared_ptr<real1>> toDelete(2);
+    // toDelete[0] = remainderStateProb;
+    // toDelete[1] = remainderStateAngle;
+    // real1sToDelete.push_back(toDelete);
 
-    //QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0, true);
+    // QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0,
+    // true);
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
