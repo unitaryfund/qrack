@@ -202,10 +202,10 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void QEngineOCL::QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-    size_t localBuffSize, bool resetBuffer)
+void QEngineOCL::QueueCall(
+    OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
 {
-    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize, resetBuffer);
+    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize);
 
     queue_mutex.lock();
     bool isBase = (wait_queue_items.size() == 0);
@@ -226,12 +226,7 @@ void QEngineOCL::PopQueue(cl_event event, cl_int type)
 {
     queue_mutex.lock();
 
-    bool resetBuffer = wait_queue_items.front().resetBuffer;
     wait_queue_items.pop_front();
-
-    if (resetBuffer) {
-        real1sToDelete.pop_front();
-    }
 
     if (poolItems.size() > 1) {
         rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
@@ -1092,16 +1087,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateBuffer(nStateBuffer);
 
     WaitCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
-
-    // TODO: Figure out why this doesn't work:
-
-    // std::vector<std::shared_ptr<real1>> toDelete(2);
-    // toDelete[0] = remainderStateProb;
-    // toDelete[1] = remainderStateAngle;
-    // real1sToDelete.push_back(toDelete);
-
-    // QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0,
-    // true);
 }
 
 void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
