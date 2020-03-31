@@ -1007,7 +1007,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
-    if (destination != NULL) {
+    if (destination == NULL) {
+        clFinish();
+    } else {
         destination->Finish();
 
         bciArgs[0] = partPower;
