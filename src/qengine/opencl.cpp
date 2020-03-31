@@ -846,18 +846,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     bitCapInt nMaxQPower = bciArgs[0];
     bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
-
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
-    if (!stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
-        complex* nSV = AllocStateVec(maxQPower, true);
-        BufferPtr nSB = MakeStateVecBuffer(nSV);
-
-        EventVecPtr waitVecCopy = ResetWaitEvents();
-        DISPATCH_COPY(waitVecCopy, *stateBuffer, *nSB, sizeof(complex) * maxQPower);
-
-        stateVec = nSV;
-        stateBuffer = nSB;
-    }
 
     EventVecPtr waitVec = ResetWaitEvents();
 
@@ -871,25 +860,27 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     writeArgsEvent.wait();
 
-    complex* nStateVec = AllocStateVec(maxQPower);
+    bool forceAlloc = !stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem));
+    complex* nStateVec = AllocStateVec(maxQPower, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-
-    runningNorm = ONE_R1;
 
     OCLDeviceCall ocl = device_context->Reserve(apiCall);
 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
-    if (toCopy->deviceID == deviceID) {
-        otherStateVec = toCopy->stateVec;
-        otherStateBuffer = toCopy->stateBuffer;
-        QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-    } else {
+    if (toCopy->deviceID != deviceID) {
         toCopy->LockSync(CL_MAP_READ);
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
-        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    } else {
+        otherStateVec = toCopy->stateVec;
+        otherStateBuffer = toCopy->stateBuffer;
+    }
+
+    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+
+    if (toCopy->deviceID != deviceID) {
         toCopy->UnlockSync();
     }
 
