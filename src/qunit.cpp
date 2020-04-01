@@ -279,6 +279,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     while (units.size() > 1U) {
         std::vector<QInterfacePtr> nUnits((units.size() + 1U) / 2U);
         std::map<QInterfacePtr, bitLenInt> offsets;
+        std::map<QInterfacePtr, QInterfacePtr> offsetPartners;
         bitLenInt maxLcv = units.size() / 2U;
         bitLenInt unitOffset = 0;
         bitLenInt index;
@@ -290,13 +291,14 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             index = i * 2U + unitOffset;
             nUnits[i + unitOffset] = (units[index]);
             offsets[units[index + 1U]] = nUnits[i + unitOffset]->Compose(units[index + 1U]);
+            offsetPartners[units[index + 1U]] = units[index];
         }
 
         for (auto&& shard : shards) {
             auto search = offsets.find(shard.unit);
             if (search != offsets.end()) {
                 shard.mapped += search->second;
-                shard.unit = unit1;
+                shard.unit = offsetPartners[shard.unit];
             }
         }
 
