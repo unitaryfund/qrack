@@ -277,17 +277,19 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 
     /* Collapse all units in binary fashion, iteratively returning a map to the new bit offsets. */
     while (units.size() > 1U) {
-        std::vector<QInterfacePtr> nUnits;
+        std::vector<QInterfacePtr> nUnits((units.size() + 1U) / 2U);
         std::map<QInterfacePtr, bitLenInt> offsets;
         bitLenInt maxLcv = units.size() / 2U;
         bitLenInt unitOffset = 0;
+        bitLenInt index;
         if (units.size() & 1U) {
-            nUnits.push_back(units.front());
+            nUnits[0] = units.front();
             unitOffset = 1U;
         }
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            nUnits.push_back(units[i * 2U + unitOffset]);
-            offsets[units[i * 2U + 1U + unitOffset]] = nUnits.back()->Compose(units[i * 2U + 1U + unitOffset]);
+            index = i * 2U + unitOffset;
+            nUnits[i + unitOffset] = (units[index]);
+            offsets[units[index + 1U]] = nUnits[i + unitOffset]->Compose(units[index + 1U]);
         }
 
         for (auto&& shard : shards) {
