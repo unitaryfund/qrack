@@ -228,6 +228,9 @@ void QEngineOCL::PopQueue(cl_event event, cl_int type)
 
     wait_queue_items.pop_front();
 
+    poolItems.front()->probArray = NULL;
+    poolItems.front()->angleArray = NULL;
+
     if (poolItems.size() > 1) {
         rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
     }
@@ -843,15 +846,14 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     toCopy->Finish();
 
     PoolItemPtr poolItem = GetFreePoolItem();
-
-    bitCapInt nMaxQPower = bciArgs[0];
-    bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
-    size_t nStateVecSize = nMaxQPower * sizeof(complex);
-
     EventVecPtr waitVec = ResetWaitEvents();
 
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 7, bciArgs, writeArgsEvent);
+
+    bitCapInt nMaxQPower = bciArgs[0];
+    bitCapInt nQubitCount = bciArgs[1] + toCopy->qubitCount;
+    size_t nStateVecSize = nMaxQPower * sizeof(complex);
 
     SetQubitCount(nQubitCount);
 
@@ -860,7 +862,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     writeArgsEvent.wait();
 
-    bool forceAlloc = !stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem));
+    bool forceAlloc = !stateVec && ((nStateVecSize < baseAlign) || ((OclMemDenom * nStateVecSize) > maxMem));
     complex* nStateVec = AllocStateVec(maxQPower, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
@@ -1071,8 +1073,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ngs = FixGroupSize(ngc, nrmGroupSize);
 
     size_t nStateVecSize = maxQPower * sizeof(complex);
+
+    clFinish();
+
     if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
-        clFinish();
         FreeStateVec();
     }
 
@@ -1081,6 +1085,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
+
+    poolItem->probArray = remainderStateProb;
+    poolItem->angleArray = remainderStateAngle;
 
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
 }

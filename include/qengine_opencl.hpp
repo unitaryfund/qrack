@@ -58,7 +58,12 @@ struct PoolItem {
     BufferPtr realBuffer;
     BufferPtr ulongBuffer;
 
+    std::shared_ptr<real1> probArray;
+    std::shared_ptr<real1> angleArray;
+
     PoolItem(cl::Context& context)
+        : probArray(NULL)
+        , angleArray(NULL)
     {
         cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
