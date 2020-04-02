@@ -859,10 +859,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    bool forceAlloc = !stateVec && ((nStateVecSize < baseAlign) || ((OclMemDenom * nStateVecSize) > maxMem));
 
     writeArgsEvent.wait();
 
-    bool forceAlloc = !stateVec && ((nStateVecSize < baseAlign) || ((OclMemDenom * nStateVecSize) > maxMem));
     complex* nStateVec = AllocStateVec(maxQPower, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
