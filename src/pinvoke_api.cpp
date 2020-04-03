@@ -365,17 +365,28 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt pow2n = pow2(n);
     bitCapInt mask = 0U;
     bitCapInt perm;
-    std::vector<bitCapInt> qSortedPowers(n);
 
     TransformPauliBasis(simulator, n, b, q);
+
+    std::vector<unsigned> bVec(n);
+    std::vector<unsigned> qVec(n);
+
+    std::copy(b, b + n, bVec.begin());
+    std::copy(q, q + n, qVec.begin());
+
+    removeIdentities(bVec, qVec);
+
+    n = qVec.size();
+
+    bitCapInt pow2n = pow2(n);
+    std::vector<bitCapInt> qSortedPowers(n);
 
     double jointProb = 0;
 
     for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][q[i]]);
+        bitCapInt bit = pow2(shards[simulator][qVec[i]]);
         qSortedPowers[i] = bit;
         mask |= bit;
     }
@@ -809,17 +820,28 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt pow2n = pow2(n);
     bitCapInt mask = 0U;
     bitCapInt perm;
-    std::vector<bitCapInt> qSortedPowers(n);
 
     TransformPauliBasis(simulator, n, b, q);
+
+    std::vector<unsigned> bVec(n);
+    std::vector<unsigned> qVec(n);
+
+    std::copy(b, b + n, bVec.begin());
+    std::copy(q, q + n, qVec.begin());
+
+    removeIdentities(bVec, qVec);
+
+    n = qVec.size();
+
+    bitCapInt pow2n = pow2(n);
+    std::vector<bitCapInt> qSortedPowers(n);
 
     double jointProb = 0;
 
     for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][q[i]]);
+        bitCapInt bit = pow2(shards[simulator][qVec[i]]);
         qSortedPowers[i] = bit;
         mask |= bit;
     }
