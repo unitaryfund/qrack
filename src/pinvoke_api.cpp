@@ -363,8 +363,12 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
 
     removeIdentities(bVec, qVec);
     n = qVec->size();
-
     qSortedPowers->resize(qVec->size());
+
+    if (n == 0) {
+        return 0.0;
+    }
+
     for (bitLenInt i = 0; i < n; i++) {
         bitCapInt bit = pow2(shards[simulator][(*qVec)[i]]);
         (*qSortedPowers)[i] = bit;
@@ -736,10 +740,12 @@ MICROSOFT_QUANTUM_DECL void Exp(
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
+    unsigned someQubit = qVec.front();
+
     removeIdentities(&bVec, &qVec);
 
     if (bVec.size() == 0) {
-        RHelper(sid, PauliI, -2. * phi, qVec.front());
+        RHelper(sid, PauliI, -2. * phi, someQubit);
     } else if (bVec.size() == 1) {
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
@@ -779,10 +785,12 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
+    unsigned someQubit = qVec.front();
+
     removeIdentities(&bVec, &qVec);
 
     if (bVec.size() == 0) {
-        MCRHelper(sid, PauliI, -2. * phi, nc, cs, qVec.front());
+        MCRHelper(sid, PauliI, -2. * phi, nc, cs, someQubit);
     } else if (bVec.size() == 1) {
         MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
     } else {
