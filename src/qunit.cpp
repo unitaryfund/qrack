@@ -276,15 +276,23 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 
     /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
     while (units.size() > 1U) {
+        // Work odd unit into collapse sequence:
+        if (units.size() & 1U) {
+            QInterfacePtr consumed = units[1];
+            bitLenInt offset = unit1->Compose(consumed);
+            units.erase(units.begin() + 1U);
+
+            for (auto&& shard : shards) {
+                if (shard.unit == consumed) {
+                    shard.mapped += offset;
+                    shard.unit = unit1;
+                }
+            }
+        }
+
         std::vector<QInterfacePtr> nUnits;
         std::map<QInterfacePtr, bitLenInt> offsets;
         std::map<QInterfacePtr, QInterfacePtr> offsetPartners;
-
-        // Work odd unit into collapse sequence:
-        if (units.size() & 1U) {
-            nUnits.push_back(units.front());
-            units.erase(units.begin());
-        }
 
         for (size_t i = 0; i < units.size(); i+=2) {
             QInterfacePtr retained = units[i];
