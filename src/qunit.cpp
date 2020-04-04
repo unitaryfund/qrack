@@ -264,7 +264,6 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     units.reserve((int)(last - first));
 
     QInterfacePtr unit1 = shards[**first].unit;
-
     std::map<QInterfacePtr, bool> found;
 
     /* Walk through all of the supplied bits and create a unique list to compose. */
@@ -275,25 +274,27 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         }
     }
 
-    /* Collapse all units in binary fashion, iteratively returning a map to the new bit offsets. */
+    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
     while (units.size() > 1U) {
-        std::vector<QInterfacePtr> nUnits((units.size() + 1U) / 2U);
+        std::vector<QInterfacePtr> nUnits;
         std::map<QInterfacePtr, bitLenInt> offsets;
         std::map<QInterfacePtr, QInterfacePtr> offsetPartners;
-        bitLenInt maxLcv = units.size() / 2U;
-        bitLenInt unitOffset = 0;
-        bitLenInt index;
+
+        // Work odd unit into collapse sequence:
         if (units.size() & 1U) {
-            nUnits[0] = units.front();
-            unitOffset = 1U;
-        }
-        for (bitLenInt i = 0; i < maxLcv; i++) {
-            index = i * 2U + unitOffset;
-            nUnits[i + unitOffset] = (units[index]);
-            offsets[units[index + 1U]] = nUnits[i + unitOffset]->Compose(units[index + 1U]);
-            offsetPartners[units[index + 1U]] = units[index];
+            nUnits.push_back(units.front());
+            units.erase(units.begin());
         }
 
+        for (size_t i = 0; i < units.size(); i+=2) {
+            QInterfacePtr retained = units[i];
+            QInterfacePtr consumed = units[i + 1U];
+            nUnits.push_back(retained);
+            offsets[consumed] = retained->Compose(consumed);
+            offsetPartners[consumed] = retained;
+        }
+
+        /* Since each unit will be collapsed in-order, one set of bits at a time. */
         for (auto&& shard : shards) {
             auto search = offsets.find(shard.unit);
             if (search != offsets.end()) {
@@ -414,45 +415,6 @@ QInterfacePtr QUnit::EntangleRange(
     OrderContiguous(shards[start1].unit);
     return toRet;
 }
-
-QInterfacePtr QUnit::EntangleAll()
-{
-    ToPermBasisAll();
-    EndAllEmulation();
-
-    std::vector<QInterfacePtr> units;
-    units.reserve(qubitCount);
-
-    QInterfacePtr unit1 = shards[0].unit;
-    std::map<QInterfacePtr, bool> found;
-
-    found[unit1] = true;
-
-    /* Walk through all of the supplied bits and create a unique list to compose. */
-    for (bitLenInt bit = 1; bit < qubitCount; bit++) {
-        if (found.find(shards[bit].unit) == found.end()) {
-            found[shards[bit].unit] = true;
-            units.push_back(shards[bit].unit);
-        }
-    }
-
-    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
-    if (units.size() != 0) {
-        auto&& offsets = unit1->QInterface::Compose(units);
-
-        /* Since each unit will be collapsed in-order, one set of bits at a time. */
-        for (auto&& shard : shards) {
-            auto search = offsets.find(shard.unit);
-            if (search != offsets.end()) {
-                shard.mapped += search->second;
-                shard.unit = unit1;
-            }
-        }
-    }
-
-    return unit1;
-}
-
 
 /*
  * Accept a variable number of bits, entangle them all into a single QInterface

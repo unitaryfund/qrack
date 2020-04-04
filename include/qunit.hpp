@@ -682,7 +682,7 @@ protected:
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
     virtual QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
-    virtual QInterfacePtr EntangleAll();
+    virtual QInterfacePtr EntangleAll() { return EntangleRange(0, qubitCount); }
 
     virtual bool CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis = false);
     virtual bool CheckBitsPermutation(

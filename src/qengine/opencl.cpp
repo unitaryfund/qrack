@@ -2124,7 +2124,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
-    real1 sumSqrErr;
+    real1 sumSqrErr = 0;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     if (toCompare->deviceID != deviceID) {
