@@ -407,7 +407,6 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt perm;
 
     std::vector<unsigned> bVec;
     std::vector<unsigned> qVec;
