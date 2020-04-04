@@ -165,7 +165,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         }
     }
 
-    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1)) {
+    if ((shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1) && (randGlobalPhase || (result == ONE_CMPLX ))) {
         SetPermutation(perm);
     }
 
