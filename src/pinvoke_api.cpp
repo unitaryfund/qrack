@@ -82,13 +82,13 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
     }
 }
 
-void removeIdentities(std::vector<unsigned>& b, std::vector<unsigned>& qs)
+void removeIdentities(std::vector<unsigned>* b, std::vector<unsigned>* qs)
 {
     unsigned i = 0;
-    while (i != b.size()) {
-        if (b[i] == PauliI) {
-            b.erase(b.begin() + i);
-            qs.erase(qs.begin() + i);
+    while (i != b->size()) {
+        if ((*b)[i] == PauliI) {
+            b->erase(b->begin() + i);
+            qs->erase(qs->begin() + i);
         } else {
             ++i;
         }
@@ -356,6 +356,48 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*rng.get());
 }
 
+double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QInterfacePtr simulator, std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers) {
+    bitCapInt mask = 0;
+
+    bVec->resize(n);
+    qVec->resize(n);
+
+    std::copy(b, b + n, bVec->begin());
+    std::copy(q, q + n, qVec->begin());
+
+    removeIdentities(bVec, qVec);
+    n = qVec->size();
+
+    qSortedPowers->resize(qVec->size());
+    for (bitLenInt i = 0; i < n; i++) {
+        bitCapInt bit = pow2(shards[simulator][(*qVec)[i]]);
+        (*qSortedPowers)[i] = bit;
+        mask |= bit;
+    }
+
+    std::sort(qSortedPowers->begin(), qSortedPowers->end());
+
+    bitCapInt pow2n = pow2(n);
+    double jointProb = 0;
+    bitCapInt perm;
+
+    for (bitCapInt i = 0; i < pow2n; i++) {
+        perm = 0U;
+        bool isOdd = false;
+        for (bitLenInt j = 0; j < n; j++) {
+            if (i & pow2(j)) {
+                perm |= (*qSortedPowers)[j];
+                isOdd = !isOdd;
+            }
+        }
+        if (isOdd) {
+            jointProb += simulator->ProbMask(mask, perm);
+        }
+    }
+
+    return jointProb;
+}
+
 /**
  * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
  */
@@ -365,47 +407,15 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt mask = 0U;
     bitCapInt perm;
+
+    std::vector<unsigned> bVec;
+    std::vector<unsigned> qVec;
+    std::vector<bitCapInt> qSortedPowers;
 
     TransformPauliBasis(simulator, n, b, q);
 
-    std::vector<unsigned> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
-
-    removeIdentities(bVec, qVec);
-
-    n = qVec.size();
-
-    bitCapInt pow2n = pow2(n);
-    std::vector<bitCapInt> qSortedPowers(n);
-
-    double jointProb = 0;
-
-    for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][qVec[i]]);
-        qSortedPowers[i] = bit;
-        mask |= bit;
-    }
-
-    std::sort(qSortedPowers.begin(), qSortedPowers.end());
-
-    for (bitCapInt i = 0; i < pow2n; i++) {
-        perm = 0U;
-        bool isOdd = false;
-        for (bitLenInt j = 0; j < n; j++) {
-            if (i & pow2(j)) {
-                perm |= qSortedPowers[j];
-                isOdd = !isOdd;
-            }
-        }
-        if (isOdd) {
-            jointProb += simulator->ProbMask(mask, perm);
-        }
-    }
+    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
 
     RevertPauliBasis(simulator, n, b, q);
 
@@ -731,7 +741,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
-    removeIdentities(bVec, qVec);
+    removeIdentities(&bVec, &qVec);
 
     if (bVec.size() == 0) {
         RHelper(sid, PauliI, -2. * phi, qVec.front());
@@ -774,7 +784,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
-    removeIdentities(bVec, qVec);
+    removeIdentities(&bVec, &qVec);
 
     if (bVec.size() == 0) {
         MCRHelper(sid, PauliI, -2. * phi, nc, cs, qVec.front());
@@ -820,62 +830,29 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt mask = 0U;
-    bitCapInt perm;
+
+    std::vector<unsigned> bVec;
+    std::vector<unsigned> qVec;
+    std::vector<bitCapInt> qSortedPowers;
 
     TransformPauliBasis(simulator, n, b, q);
 
-    std::vector<unsigned> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
-
-    removeIdentities(bVec, qVec);
-
-    n = qVec.size();
-
-    bitCapInt pow2n = pow2(n);
-    std::vector<bitCapInt> qSortedPowers(n);
-
-    double jointProb = 0;
-
-    for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][qVec[i]]);
-        qSortedPowers[i] = bit;
-        mask |= bit;
-    }
-
-    std::sort(qSortedPowers.begin(), qSortedPowers.end());
-
-    for (bitCapInt i = 0; i < pow2n; i++) {
-        perm = 0U;
-        bool isOdd = false;
-        for (bitLenInt j = 0; j < n; j++) {
-            if (i & pow2(j)) {
-                perm |= qSortedPowers[j];
-                isOdd = !isOdd;
-            }
-        }
-        if (isOdd) {
-            jointProb += simulator->ProbMask(mask, perm);
-        }
-    }
+    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
 
     unsigned toRet = jointProb < simulator->Rand() ? 0U : 1U;
+    bitCapInt len = qVec.size();
+    bitCapInt maxQPower = simulator->GetMaxQPower();
 
     if (jointProb != 0.0 && jointProb != 1.0) {
-        for (bitCapInt i = 0; i < pow2n; i++) {
-            perm = 0U;
+        for (bitCapInt i = 0; i < maxQPower; i++) {
             bool isOdd = false;
-            for (bitLenInt j = 0; j < n; j++) {
-                if (i & pow2(j)) {
-                    perm |= qSortedPowers[j];
+            for (bitLenInt j = 0; j < len; j++) {
+                if (i & qSortedPowers[j]) {
                     isOdd = !isOdd;
                 }
             }
             if (isOdd != toRet) {
-                simulator->SetAmplitude(perm, ZERO_CMPLX);
+                simulator->SetAmplitude(i, ZERO_CMPLX);
             }
         }
     }
