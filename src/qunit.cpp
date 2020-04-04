@@ -3037,16 +3037,17 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap controlsShards = shard.controlsShards;
     while (controlsShards.size() > 0) {
         phaseShard = controlsShards.begin();
-        controlsShards.erase(phaseShard);
 
         if (onlyInvert && !phaseShard->second->isInvert) {
+            controlsShards.erase(phaseShard);
             continue;
         }
 
-        QEngineShard* partner = phaseShard->first;
+        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptControlling.find(j) != exceptControlling.end()) {
+            controlsShards.erase(phaseShard);
             continue;
         }
 
@@ -3081,6 +3082,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
             freezeBasis = false;
         }
 
+        controlsShards.erase(phaseShard);
         shard.RemovePhaseTarget(partner);
     }
 
@@ -3091,9 +3093,9 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
     while (targetOfShards.size() > 0) {
         phaseShard = targetOfShards.begin();
-        targetOfShards.erase(phaseShard);
 
         if (onlyInvert && !phaseShard->second->isInvert) {
+            targetOfShards.erase(phaseShard);
             continue;
         }
 
@@ -3101,6 +3103,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptTargetedBy.find(j) != exceptTargetedBy.end()) {
+            targetOfShards.erase(phaseShard);
             continue;
         }
 
@@ -3137,6 +3140,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
             freezeBasis = false;
         }
 
+        targetOfShards.erase(phaseShard);
         shard.RemovePhaseControl(partner);
     }
 }
