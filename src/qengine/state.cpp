@@ -740,7 +740,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     real1* partError = new real1[numCores]();
 
     complex basePhaseFac1;
-    real1 nrm;
+    real1 nrm = 0;
     bitCapInt basePerm;
     for (basePerm = 0; basePerm < maxQPower; basePerm++) {
         nrm = norm(stateVec->read(basePerm));
