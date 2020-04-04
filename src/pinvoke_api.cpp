@@ -129,14 +129,10 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     real1 sine = sin(phi / 2.0);
     complex pauliR[4];
 
-    const complex pauliI[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
-
-    complex toApply[4];
-
     switch (b) {
     case PauliI:
-        mul2x2(phi / 2, pauliI, toApply);
-        simulator->Exp(ctrlsArray, n, shards[simulator][q], toApply);
+        simulator->ApplyControlledSinglePhase(
+            ctrlsArray, n, shards[simulator][q], complex(cosine, sine), complex(cosine, sine));
         break;
     case PauliX:
         pauliR[0] = complex(cosine, ZERO_R1);
