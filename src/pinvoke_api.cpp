@@ -841,19 +841,24 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     unsigned toRet = jointProb < simulator->Rand() ? 0U : 1U;
     bitCapInt len = qVec.size();
     bitCapInt maxQPower = simulator->GetMaxQPower();
+    bool isOdd;
 
     if (jointProb != 0.0 && jointProb != 1.0) {
+        complex* nStateVec = new complex[simulator->GetMaxQPower()]();
         for (bitCapInt i = 0; i < maxQPower; i++) {
-            bool isOdd = false;
+            isOdd = false;
             for (bitLenInt j = 0; j < len; j++) {
                 if (i & qSortedPowers[j]) {
                     isOdd = !isOdd;
                 }
             }
-            if (isOdd != toRet) {
-                simulator->SetAmplitude(i, ZERO_CMPLX);
+            if (isOdd == toRet) {
+                nStateVec[i] = simulator->GetAmplitude(i);
             }
         }
+        simulator->SetQuantumState(nStateVec);
+        simulator->UpdateRunningNorm();
+        delete[] nStateVec;
     }
 
     RevertPauliBasis(simulator, n, b, q);
