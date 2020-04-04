@@ -175,7 +175,7 @@ PoolItemPtr QEngineOCL::GetFreePoolItem()
 {
     std::lock_guard<std::mutex> lock(queue_mutex);
 
-    if (wait_queue_items.size() == poolItems.size()) {
+    while (wait_queue_items.size() >= poolItems.size()) {
         poolItems.push_back(std::make_shared<PoolItem>(context));
     }
 
@@ -1010,6 +1010,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
         bciArgs[0] = partPower;
 
+        poolItem = GetFreePoolItem();
         EventVecPtr waitVec2 = ResetWaitEvents();
         DISPATCH_WRITE(waitVec2, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs);
 
@@ -1066,6 +1067,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPower;
+    poolItem = GetFreePoolItem();
     EventVecPtr waitVec3 = ResetWaitEvents();
     DISPATCH_WRITE(waitVec3, *(poolItem->ulongBuffer), sizeof(bitCapInt), bciArgs);
 

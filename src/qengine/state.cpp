@@ -750,8 +750,9 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
         }
     }
 
+    real1 nrmCompare = nrm;
     nrm = norm(toCompare->stateVec->read(basePerm));
-    if (nrm < amplitudeFloor) {
+    if (abs(nrm - nrmCompare) >= approxcompare_error) {
         // If the amplitude we sample for global phase offset correction doesn't match, we're done.
         return false;
     }
