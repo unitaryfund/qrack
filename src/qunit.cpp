@@ -415,42 +415,8 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
-QInterfacePtr QUnit::EntangleAll()
-{
-    ToPermBasisAll();
-    EndAllEmulation();
-
-    std::vector<QInterfacePtr> units;
-    units.reserve(qubitCount);
-
-    QInterfacePtr unit1 = shards[0].unit;
-    std::map<QInterfacePtr, bool> found;
-
-    found[unit1] = true;
-
-    /* Walk through all of the supplied bits and create a unique list to compose. */
-    for (bitLenInt bit = 1; bit < qubitCount; bit++) {
-        if (found.find(shards[bit].unit) == found.end()) {
-            found[shards[bit].unit] = true;
-            units.push_back(shards[bit].unit);
-        }
-    }
-
-    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
-    if (units.size() != 0) {
-        auto&& offsets = unit1->QInterface::Compose(units);
-
-        /* Since each unit will be collapsed in-order, one set of bits at a time. */
-        for (auto&& shard : shards) {
-            auto search = offsets.find(shard.unit);
-            if (search != offsets.end()) {
-                shard.mapped += search->second;
-                shard.unit = unit1;
-            }
-        }
-    }
-
-    return unit1;
+QInterfacePtr QUnit::EntangleAll() {
+    return EntangleRange(0, qubitCount);
 }
 
 
