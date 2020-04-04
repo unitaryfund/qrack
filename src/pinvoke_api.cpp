@@ -353,6 +353,11 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
 }
 
 double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QInterfacePtr simulator, std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers) {
+
+    if (n == 0) {
+        return 0.0;
+    }
+
     bitCapInt mask = 0;
 
     bVec->resize(n);
@@ -363,8 +368,8 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
 
     removeIdentities(bVec, qVec);
     n = qVec->size();
-    qSortedPowers->resize(qVec->size());
-
+    qSortedPowers->resize(n);
+    
     if (n == 0) {
         return 0.0;
     }
@@ -380,10 +385,11 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
     bitCapInt pow2n = pow2(n);
     double jointProb = 0;
     bitCapInt perm;
+    bool isOdd;
 
     for (bitCapInt i = 0; i < pow2n; i++) {
         perm = 0U;
-        bool isOdd = false;
+        isOdd = false;
         for (bitLenInt j = 0; j < n; j++) {
             if (i & pow2(j)) {
                 perm |= (*qSortedPowers)[j];
