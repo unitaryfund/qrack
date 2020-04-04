@@ -790,14 +790,8 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         std::vector<complex> wfn(simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<unsigned> bVec(n);
-        std::copy(b, b + n, bVec.begin());
-
         std::vector<unsigned> csVec(nc);
         std::copy(cs, cs + nc, csVec.begin());
-
-        std::vector<unsigned> qVec(n);
-        std::copy(q, q + n, qVec.begin());
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
