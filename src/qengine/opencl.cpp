@@ -299,6 +299,13 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     complex* nStateVec = NULL;
 
+    cl::Context oldContext = context;
+    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
+    deviceID = device_context->context_id;
+    context = device_context->context;
+    cl::CommandQueue oldQueue = queue;
+    queue = device_context->queue;
+
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if ((!forceReInit) && (context == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context)) {
@@ -315,13 +322,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         // We're about to switch to a new device, so finish the queue, first.
         clFinish(true);
     }
-
-    cl::Context oldContext = context;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
-    deviceID = device_context->context_id;
-    context = device_context->context;
-    cl::CommandQueue oldQueue = queue;
-    queue = device_context->queue;
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
     clFinish(true);
