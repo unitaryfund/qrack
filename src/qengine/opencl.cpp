@@ -875,15 +875,12 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
             context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+        QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+        toCopy->UnlockSync();
     } else {
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
-    }
-
-    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-
-    if (toCopy->deviceID != deviceID) {
-        toCopy->UnlockSync();
+        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
     }
 
     ResetStateVec(nStateVec);
