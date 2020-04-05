@@ -301,7 +301,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if ((!forceReInit) && (dID == deviceID)) {
+        if ((!forceReInit) && (context == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context)) {
             return;
         }
 
@@ -316,7 +316,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         clFinish(true);
     }
 
-    int oldDeviceID = deviceID;
+    cl::Context oldContext = context;
     device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
     deviceID = device_context->context_id;
     context = device_context->context;
@@ -416,7 +416,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     poolItems.push_back(std::make_shared<PoolItem>(context));
     powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * sizeof(bitCapInt) * 16);
 
-    if ((!didInit) || (oldDeviceID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+    if ((!didInit) || (oldContext != context) || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer =
             std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
         EventVecPtr waitVec = ResetWaitEvents();
@@ -870,7 +870,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
-    if (toCopy->deviceID != deviceID) {
+    if (toCopy->context != context) {
         toCopy->LockSync(CL_MAP_READ);
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = std::make_shared<cl::Buffer>(
@@ -882,7 +882,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
-    if (toCopy->deviceID != deviceID) {
+    if (toCopy->context != context) {
         toCopy->UnlockSync();
     }
 
@@ -945,7 +945,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     if (length == qubitCount) {
         if (destination != NULL) {
-            if (deviceID == destination->deviceID) {
+            if (context == destination->context) {
                 destination->ResetStateVec(stateVec);
                 destination->stateBuffer = stateBuffer;
                 stateVec = NULL;
@@ -1019,7 +1019,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
         BufferPtr otherStateBuffer;
         complex* otherStateVec;
-        if (destination->deviceID == deviceID) {
+        if (destination->context == context) {
             otherStateVec = destination->stateVec;
             otherStateBuffer = destination->stateBuffer;
         } else {
@@ -1036,7 +1036,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         WaitCall(
             OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
 
-        if (destination->deviceID != deviceID) {
+        if (destination->context != context) {
             queue.enqueueMapBuffer(*otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPower);
             destination->LockSync(CL_MAP_WRITE);
             std::copy(otherStateVec, otherStateVec + destination->maxQPower, destination->stateVec);
@@ -2109,7 +2109,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
-    if (toCompare->deviceID == deviceID) {
+    if (toCompare->context == context) {
         otherStateVec = toCompare->stateVec;
         otherStateBuffer = toCompare->stateBuffer;
     } else {
@@ -2127,7 +2127,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     real1 sumSqrErr = 0;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
-    if (toCompare->deviceID != deviceID) {
+    if (toCompare->context != context) {
         FreeAligned(otherStateVec);
     }
 
