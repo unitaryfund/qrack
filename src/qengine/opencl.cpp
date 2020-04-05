@@ -299,13 +299,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     complex* nStateVec = NULL;
 
-    cl::Context oldContext = context;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
-    deviceID = device_context->context_id;
-    context = device_context->context;
-    cl::CommandQueue oldQueue = queue;
-    queue = device_context->queue;
-
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if ((!forceReInit) && (dID == deviceID)) {
@@ -324,6 +317,13 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         // We're about to switch to a new device, so finish the queue, first.
         clFinish(true);
     }
+
+    cl::Context oldContext = context;
+    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
+    deviceID = device_context->context_id;
+    context = device_context->context;
+    cl::CommandQueue oldQueue = queue;
+    queue = device_context->queue;
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
     clFinish(true);
@@ -393,16 +393,16 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // create buffers on device (allocate space on GPU)
-    if (didInit && nStateVec) {
+    if (didInit) {
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-        if (!stateVec) {
+        if (!stateVec && nStateVec) {
             // We did not have host allocation, so we copied from device-local memory to host memory, above.
             // Now, we copy to the new device's memory.
             stateBuffer = MakeStateVecBuffer(NULL);
             queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, nStateVec);
             FreeAligned(nStateVec);
-        } else {
+        } else if (nStateVec) {
             // We had host allocation; we will continue to have it.
             ResetStateVec(nStateVec);
             ResetStateBuffer(MakeStateVecBuffer(nStateVec));
