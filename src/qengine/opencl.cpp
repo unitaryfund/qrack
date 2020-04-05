@@ -308,16 +308,18 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if ((!forceReInit) && (context == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context)) {
+        if ((!forceReInit) && (dID == deviceID)) {
             return;
         }
 
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-        nStateVec = AllocStateVec(maxQPower, true);
-        LockSync(CL_MAP_READ);
-        std::copy(stateVec, stateVec + maxQPower, nStateVec);
-        UnlockSync();
+        if (context != OCLEngine::Instance()->GetDeviceContextPtr(dID)->context) {
+            nStateVec = AllocStateVec(maxQPower, true);
+            LockSync(CL_MAP_READ);
+            std::copy(stateVec, stateVec + maxQPower, nStateVec);
+            UnlockSync();
+        }
 
         // We're about to switch to a new device, so finish the queue, first.
         clFinish(true);
