@@ -393,7 +393,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     // create buffers on device (allocate space on GPU)
-    if (didInit) {
+    if (didInit && nStateVec) {
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
         if (!stateVec) {
