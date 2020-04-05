@@ -165,7 +165,8 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         }
     }
 
-    if ((shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1) && (randGlobalPhase || (result == ONE_CMPLX ))) {
+    if ((shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1) &&
+        (randGlobalPhase || (result == ONE_CMPLX))) {
         SetPermutation(perm);
     }
 
@@ -294,7 +295,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         std::map<QInterfacePtr, bitLenInt> offsets;
         std::map<QInterfacePtr, QInterfacePtr> offsetPartners;
 
-        for (size_t i = 0; i < units.size(); i+=2) {
+        for (size_t i = 0; i < units.size(); i += 2) {
             QInterfacePtr retained = units[i];
             QInterfacePtr consumed = units[i + 1U];
             nUnits.push_back(retained);
