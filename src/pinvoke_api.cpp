@@ -849,6 +849,8 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
 
     if (jointProb != 0.0 && jointProb != 1.0) {
         complex* nStateVec = new complex[simulator->GetMaxQPower()]();
+        simulator->GetQuantumState(nStateVec);
+        real1 nrmlzr = 0.0;
         for (bitCapInt i = 0; i < maxQPower; i++) {
             isOdd = false;
             for (bitLenInt j = 0; j < len; j++) {
@@ -857,12 +859,14 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
                 }
             }
             if (isOdd == toRet) {
-                nStateVec[i] = simulator->GetAmplitude(i);
+                nrmlzr += norm(nStateVec[i]);
+            } else {
+                nStateVec[i] = ZERO_CMPLX;
             }
         }
         simulator->SetQuantumState(nStateVec);
-        simulator->UpdateRunningNorm();
         delete[] nStateVec;
+        simulator->NormalizeState(nrmlzr);
     }
 
     RevertPauliBasis(simulator, n, b, q);
