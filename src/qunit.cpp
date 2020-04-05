@@ -51,16 +51,16 @@ namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh)
+    real1 norm_thresh, std::vector<bitLenInt> devList)
     : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID,
-          useHardwareRNG, useSparseStateVec, norm_thresh)
+          useHardwareRNG, useSparseStateVec, norm_thresh, devList)
 {
     // Intentionally left blank
 }
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh)
+    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<bitLenInt> devList)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
     , subengine(subEng)
@@ -165,7 +165,8 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         }
     }
 
-    if (randGlobalPhase && (shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1)) {
+    if ((shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1) &&
+        (randGlobalPhase || (result == ONE_CMPLX))) {
         SetPermutation(perm);
     }
 
@@ -266,10 +267,8 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     QInterfacePtr unit1 = shards[**first].unit;
     std::map<QInterfacePtr, bool> found;
 
-    found[unit1] = true;
-
     /* Walk through all of the supplied bits and create a unique list to compose. */
-    for (auto bit = first + 1; bit < last; bit++) {
+    for (auto bit = first; bit < last; bit++) {
         if (found.find(shards[**bit].unit) == found.end()) {
             found[shards[**bit].unit] = true;
             units.push_back(shards[**bit].unit);
@@ -277,17 +276,43 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     }
 
     /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
-    if (units.size() != 0) {
-        auto&& offsets = unit1->Compose(units);
+    while (units.size() > 1U) {
+        // Work odd unit into collapse sequence:
+        if (units.size() & 1U) {
+            QInterfacePtr consumed = units[1];
+            bitLenInt offset = unit1->Compose(consumed);
+            units.erase(units.begin() + 1U);
+
+            for (auto&& shard : shards) {
+                if (shard.unit == consumed) {
+                    shard.mapped += offset;
+                    shard.unit = unit1;
+                }
+            }
+        }
+
+        std::vector<QInterfacePtr> nUnits;
+        std::map<QInterfacePtr, bitLenInt> offsets;
+        std::map<QInterfacePtr, QInterfacePtr> offsetPartners;
+
+        for (size_t i = 0; i < units.size(); i += 2) {
+            QInterfacePtr retained = units[i];
+            QInterfacePtr consumed = units[i + 1U];
+            nUnits.push_back(retained);
+            offsets[consumed] = retained->Compose(consumed);
+            offsetPartners[consumed] = retained;
+        }
 
         /* Since each unit will be collapsed in-order, one set of bits at a time. */
         for (auto&& shard : shards) {
             auto search = offsets.find(shard.unit);
             if (search != offsets.end()) {
                 shard.mapped += search->second;
-                shard.unit = unit1;
+                shard.unit = offsetPartners[shard.unit];
             }
         }
+
+        units = nUnits;
     }
 
     /* Change the source parameters to the correct newly mapped bit indexes. */
@@ -398,44 +423,6 @@ QInterfacePtr QUnit::EntangleRange(
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     OrderContiguous(shards[start1].unit);
     return toRet;
-}
-
-QInterfacePtr QUnit::EntangleAll()
-{
-    ToPermBasisAll();
-    EndAllEmulation();
-
-    std::vector<QInterfacePtr> units;
-    units.reserve(qubitCount);
-
-    QInterfacePtr unit1 = shards[0].unit;
-    std::map<QInterfacePtr, bool> found;
-
-    found[unit1] = true;
-
-    /* Walk through all of the supplied bits and create a unique list to compose. */
-    for (bitLenInt bit = 1; bit < qubitCount; bit++) {
-        if (found.find(shards[bit].unit) == found.end()) {
-            found[shards[bit].unit] = true;
-            units.push_back(shards[bit].unit);
-        }
-    }
-
-    /* Collapse all of the other units into unit1, returning a map to the new bit offset. */
-    if (units.size() != 0) {
-        auto&& offsets = unit1->QInterface::Compose(units);
-
-        /* Since each unit will be collapsed in-order, one set of bits at a time. */
-        for (auto&& shard : shards) {
-            auto search = offsets.find(shard.unit);
-            if (search != offsets.end()) {
-                shard.mapped += search->second;
-                shard.unit = unit1;
-            }
-        }
-    }
-
-    return unit1;
 }
 
 /*
@@ -3008,16 +2995,17 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap controlsShards = shard.controlsShards;
     while (controlsShards.size() > 0) {
         phaseShard = controlsShards.begin();
-        controlsShards.erase(phaseShard);
 
         if (onlyInvert && !phaseShard->second->isInvert) {
+            controlsShards.erase(phaseShard);
             continue;
         }
 
-        QEngineShard* partner = phaseShard->first;
+        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptControlling.find(j) != exceptControlling.end()) {
+            controlsShards.erase(phaseShard);
             continue;
         }
 
@@ -3052,6 +3040,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
             freezeBasis = false;
         }
 
+        controlsShards.erase(phaseShard);
         shard.RemovePhaseTarget(partner);
     }
 
@@ -3062,9 +3051,9 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
     while (targetOfShards.size() > 0) {
         phaseShard = targetOfShards.begin();
-        targetOfShards.erase(phaseShard);
 
         if (onlyInvert && !phaseShard->second->isInvert) {
+            targetOfShards.erase(phaseShard);
             continue;
         }
 
@@ -3072,6 +3061,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptTargetedBy.find(j) != exceptTargetedBy.end()) {
+            targetOfShards.erase(phaseShard);
             continue;
         }
 
@@ -3108,6 +3098,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
             freezeBasis = false;
         }
 
+        targetOfShards.erase(phaseShard);
         shard.RemovePhaseControl(partner);
     }
 }

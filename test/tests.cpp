@@ -46,6 +46,17 @@ void print_bin(int bits, int d)
 
 void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std::endl; }
 
+QInterfacePtr MakeEngine(bitLenInt qubitCount)
+{
+    if (testSubEngineType == testSubSubEngineType) {
+        return CreateQuantumInterface(testEngineType, testSubEngineType, qubitCount, 0, rng, ONE_CMPLX,
+            enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    } else {
+        return CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, qubitCount, 0, rng,
+            ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    }
+}
+
 TEST_CASE("test_complex")
 {
     bool test;
@@ -3386,7 +3397,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng);
+    QInterfacePtr qftReg2 = MakeEngine(4U);
 
     qftReg->SetPermutation(0x2b);
     REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == true);

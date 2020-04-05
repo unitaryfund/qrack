@@ -58,7 +58,12 @@ struct PoolItem {
     BufferPtr realBuffer;
     BufferPtr ulongBuffer;
 
+    std::shared_ptr<real1> probArray;
+    std::shared_ptr<real1> angleArray;
+
     PoolItem(cl::Context& context)
+        : probArray(NULL)
+        , angleArray(NULL)
     {
         cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
@@ -138,7 +143,7 @@ public:
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG);
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored2 = {});
 
     virtual ~QEngineOCL()
     {
@@ -167,6 +172,8 @@ public:
             stateVec = NULL;
         }
     }
+
+    bitCapInt GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual real1 ProbAll(bitCapInt fullRegister);

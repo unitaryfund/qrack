@@ -38,7 +38,7 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh)
+    real1 norm_thresh, std::vector<bitLenInt> devList)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
 {
@@ -740,7 +740,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     real1* partError = new real1[numCores]();
 
     complex basePhaseFac1;
-    real1 nrm;
+    real1 nrm = 0;
     bitCapInt basePerm;
     for (basePerm = 0; basePerm < maxQPower; basePerm++) {
         nrm = norm(stateVec->read(basePerm));
@@ -750,8 +750,9 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
         }
     }
 
+    real1 nrmCompare = nrm;
     nrm = norm(toCompare->stateVec->read(basePerm));
-    if (nrm < amplitudeFloor) {
+    if (abs(nrm - nrmCompare) >= approxcompare_error) {
         // If the amplitude we sample for global phase offset correction doesn't match, we're done.
         return false;
     }

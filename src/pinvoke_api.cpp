@@ -20,7 +20,8 @@
 std::mutex metaOperationMutex;
 
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
-// TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This feature might not yet be fully realized.
+// TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This
+// feature might not yet be fully realized.
 #define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 
 using namespace Qrack;
@@ -81,13 +82,13 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
     }
 }
 
-void removeIdentities(std::vector<unsigned>& b, std::vector<unsigned>& qs)
+void removeIdentities(std::vector<unsigned>* b, std::vector<unsigned>* qs)
 {
     unsigned i = 0;
-    while (i != b.size()) {
-        if (b[i] == PauliI) {
-            b.erase(b.begin() + i);
-            qs.erase(qs.begin() + i);
+    while (i != b->size()) {
+        if ((*b)[i] == PauliI) {
+            b->erase(b->begin() + i);
+            qs->erase(qs->begin() + i);
         } else {
             ++i;
         }
@@ -128,14 +129,10 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     real1 sine = sin(phi / 2.0);
     complex pauliR[4];
 
-    const complex pauliI[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
-
-    complex toApply[4];
-
     switch (b) {
     case PauliI:
-        mul2x2(phi / 2, pauliI, toApply);
-        simulator->Exp(ctrlsArray, n, shards[simulator][q], toApply);
+        simulator->ApplyControlledSinglePhase(
+            ctrlsArray, n, shards[simulator][q], complex(cosine, sine), complex(cosine, sine));
         break;
     case PauliX:
         pauliR[0] = complex(cosine, ZERO_R1);
@@ -355,6 +352,60 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*rng.get());
 }
 
+double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QInterfacePtr simulator,
+    std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers)
+{
+
+    if (n == 0) {
+        return 0.0;
+    }
+
+    bitCapInt mask = 0;
+
+    bVec->resize(n);
+    qVec->resize(n);
+
+    std::copy(b, b + n, bVec->begin());
+    std::copy(q, q + n, qVec->begin());
+
+    removeIdentities(bVec, qVec);
+    n = qVec->size();
+    qSortedPowers->resize(n);
+
+    if (n == 0) {
+        return 0.0;
+    }
+
+    for (bitLenInt i = 0; i < n; i++) {
+        bitCapInt bit = pow2(shards[simulator][(*qVec)[i]]);
+        (*qSortedPowers)[i] = bit;
+        mask |= bit;
+    }
+
+    std::sort(qSortedPowers->begin(), qSortedPowers->end());
+
+    bitCapInt pow2n = pow2(n);
+    double jointProb = 0;
+    bitCapInt perm;
+    bool isOdd;
+
+    for (bitCapInt i = 0; i < pow2n; i++) {
+        perm = 0U;
+        isOdd = false;
+        for (bitLenInt j = 0; j < n; j++) {
+            if (i & pow2(j)) {
+                perm |= (*qSortedPowers)[j];
+                isOdd = !isOdd;
+            }
+        }
+        if (isOdd) {
+            jointProb += simulator->ProbMask(mask, perm);
+        }
+    }
+
+    return jointProb;
+}
+
 /**
  * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
  */
@@ -364,36 +415,14 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt pow2n = pow2(n);
-    bitCapInt mask = 0U;
-    bitCapInt perm;
-    std::vector<bitCapInt> qSortedPowers(n);
+
+    std::vector<unsigned> bVec;
+    std::vector<unsigned> qVec;
+    std::vector<bitCapInt> qSortedPowers;
 
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = 0;
-
-    for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][q[i]]);
-        qSortedPowers[i] = bit;
-        mask |= bit;
-    }
-
-    std::sort(qSortedPowers.begin(), qSortedPowers.end());
-
-    for (bitCapInt i = 0; i < pow2n; i++) {
-        perm = 0U;
-        bool isOdd = false;
-        for (bitLenInt j = 0; j < n; j++) {
-            if (i & pow2(j)) {
-                perm |= qSortedPowers[j];
-                isOdd = !isOdd;
-            }
-        }
-        if (isOdd) {
-            jointProb += simulator->ProbMask(mask, perm);
-        }
-    }
+    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
 
     RevertPauliBasis(simulator, n, b, q);
 
@@ -719,10 +748,12 @@ MICROSOFT_QUANTUM_DECL void Exp(
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
-    removeIdentities(bVec, qVec);
+    unsigned someQubit = qVec.front();
+
+    removeIdentities(&bVec, &qVec);
 
     if (bVec.size() == 0) {
-        RHelper(sid, PauliI, -2. * phi, qVec.front());
+        RHelper(sid, PauliI, -2. * phi, someQubit);
     } else if (bVec.size() == 1) {
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
@@ -762,10 +793,12 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
-    removeIdentities(bVec, qVec);
+    unsigned someQubit = qVec.front();
+
+    removeIdentities(&bVec, &qVec);
 
     if (bVec.size() == 0) {
-        MCRHelper(sid, PauliI, -2. * phi, nc, cs, qVec.front());
+        MCRHelper(sid, PauliI, -2. * phi, nc, cs, someQubit);
     } else if (bVec.size() == 1) {
         MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
     } else {
@@ -773,14 +806,8 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         std::vector<complex> wfn(simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<unsigned> bVec(n);
-        std::copy(b, b + n, bVec.begin());
-
         std::vector<unsigned> csVec(nc);
         std::copy(cs, cs + nc, csVec.begin());
-
-        std::vector<unsigned> qVec(n);
-        std::copy(q, q + n, qVec.begin());
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
@@ -808,53 +835,40 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt pow2n = pow2(n);
-    bitCapInt mask = 0U;
-    bitCapInt perm;
-    std::vector<bitCapInt> qSortedPowers(n);
+
+    std::vector<unsigned> bVec;
+    std::vector<unsigned> qVec;
+    std::vector<bitCapInt> qSortedPowers;
 
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = 0;
-
-    for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][q[i]]);
-        qSortedPowers[i] = bit;
-        mask |= bit;
-    }
-
-    std::sort(qSortedPowers.begin(), qSortedPowers.end());
-
-    for (bitCapInt i = 0; i < pow2n; i++) {
-        perm = 0U;
-        bool isOdd = false;
-        for (bitLenInt j = 0; j < n; j++) {
-            if (i & pow2(j)) {
-                perm |= qSortedPowers[j];
-                isOdd = !isOdd;
-            }
-        }
-        if (isOdd) {
-            jointProb += simulator->ProbMask(mask, perm);
-        }
-    }
+    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
 
     unsigned toRet = jointProb < simulator->Rand() ? 0U : 1U;
+    bitCapInt len = qVec.size();
+    bitCapInt maxQPower = simulator->GetMaxQPower();
+    bool isOdd;
 
     if (jointProb != 0.0 && jointProb != 1.0) {
-        for (bitCapInt i = 0; i < pow2n; i++) {
-            perm = 0U;
-            bool isOdd = false;
-            for (bitLenInt j = 0; j < n; j++) {
-                if (i & pow2(j)) {
-                    perm |= qSortedPowers[j];
+        complex* nStateVec = new complex[simulator->GetMaxQPower()]();
+        simulator->GetQuantumState(nStateVec);
+        real1 nrmlzr = 0.0;
+        for (bitCapInt i = 0; i < maxQPower; i++) {
+            isOdd = false;
+            for (bitLenInt j = 0; j < len; j++) {
+                if (i & qSortedPowers[j]) {
                     isOdd = !isOdd;
                 }
             }
-            if (isOdd != toRet) {
-                simulator->SetAmplitude(perm, ZERO_CMPLX);
+            if (isOdd == toRet) {
+                nrmlzr += norm(nStateVec[i]);
+            } else {
+                nStateVec[i] = ZERO_CMPLX;
             }
         }
+        simulator->SetQuantumState(nStateVec);
+        delete[] nStateVec;
+        simulator->NormalizeState(nrmlzr);
     }
 
     RevertPauliBasis(simulator, n, b, q);
