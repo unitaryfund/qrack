@@ -336,16 +336,31 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // anyway.
     maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    baseAlign = device_context->device.getInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>();
     size_t stateVecSize = maxQPower * sizeof(complex);
     bool usingHostRam;
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         throw "Error: State vector exceeds device maximum OpenCL allocation";
-    } else if (useHostRam || (stateVecSize < baseAlign) || ((OclMemDenom * stateVecSize) > maxMem)) {
+    } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
+        if (didInit && !stateVec && !nStateVec) {
+            nStateVec = AllocStateVec(maxQPower, true);
+            BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
+            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
+            oldQueue.finish();
+            ResetStateVec(nStateVec);
+            ResetStateBuffer(nStateBuffer);
+            nStateVec = NULL;
+        }
     } else {
         usingHostRam = false;
+        if (didInit && stateVec && !nStateVec) {
+            BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
+            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPower);
+            oldQueue.finish();
+            ResetStateVec(NULL);
+            ResetStateBuffer(nStateBuffer);
+        }
     }
 
     // constrain to a power of two
@@ -395,13 +410,14 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // create buffers on device (allocate space on GPU)
     if (didInit) {
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
-        // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-        if (!stateVec && nStateVec) {
+        // that's accessible in a new device, if the old buffer is not.
+        if (!usingHostRam && nStateVec) {
             // We did not have host allocation, so we copied from device-local memory to host memory, above.
             // Now, we copy to the new device's memory.
             stateBuffer = MakeStateVecBuffer(NULL);
             queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPower, nStateVec);
             FreeAligned(nStateVec);
+            ResetStateVec(NULL);
         } else if (nStateVec) {
             // We had host allocation; we will continue to have it.
             ResetStateVec(nStateVec);
@@ -861,7 +877,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
 
     size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    bool forceAlloc = !stateVec && ((nStateVecSize < baseAlign) || ((OclMemDenom * nStateVecSize) > maxMem));
+    bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > maxMem);
 
     writeArgsEvent.wait();
 
@@ -1080,7 +1096,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     clFinish();
 
-    if (!useHostRam && stateVec && ((nStateVecSize >= baseAlign) && ((OclMemDenom * nStateVecSize) <= maxMem))) {
+    if (!useHostRam && stateVec && ((OclMemDenom * nStateVecSize) <= maxMem)) {
         FreeStateVec();
     }
 
