@@ -126,7 +126,7 @@ void QUnitMulti::RedistributeQEngines()
 
             // Find the device with the lowest load.
             for (j = 0; j < deviceList.size(); j++) {
-                if (((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize) && (devSizes[j] < sz)) {
+                if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
                     devID = deviceList[j].id;
                     devIndex = j;
                     sz = devSizes[j];

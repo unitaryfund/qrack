@@ -84,37 +84,40 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 void QEngineOCL::LockSync(cl_int flags)
 {
+    lockSyncFlags = flags;
     clFinish();
 
     if (stateVec) {
         unlockHostMem = true;
+        lockSyncStateBuffer = stateBuffer;
     } else {
         unlockHostMem = false;
         stateVec = AllocStateVec(maxQPower, true);
-        BufferPtr nStateBuffer = MakeStateVecBuffer(stateVec);
-        WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
-        stateBuffer = nStateBuffer;
+        lockSyncStateBuffer = MakeStateVecBuffer(stateVec);
+        WAIT_COPY(*stateBuffer, *lockSyncStateBuffer, sizeof(complex) * maxQPower);
     }
 
-    queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower, NULL);
+    queue.enqueueMapBuffer(*lockSyncStateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPower, NULL);
 }
 
 void QEngineOCL::UnlockSync()
 {
     EventVecPtr waitVec = ResetWaitEvents();
     cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*stateBuffer, stateVec, waitVec.get(), &unmapEvent);
+    queue.enqueueUnmapMemObject(*lockSyncStateBuffer, stateVec, waitVec.get(), &unmapEvent);
     unmapEvent.wait();
     wait_refs.clear();
 
     if (!unlockHostMem) {
-        BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-        WAIT_COPY(*stateBuffer, *nStateBuffer, sizeof(complex) * maxQPower);
-
-        stateBuffer = nStateBuffer;
+        if (lockSyncFlags & CL_MAP_WRITE) {
+            WAIT_COPY(*lockSyncStateBuffer, *stateBuffer, sizeof(complex) * maxQPower);
+        }
         FreeStateVec();
         stateVec = NULL;
     }
+
+    lockSyncStateBuffer = NULL;
+    lockSyncFlags = 0;
 }
 
 void QEngineOCL::clFinish(bool doHard)
