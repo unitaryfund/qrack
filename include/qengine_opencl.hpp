@@ -106,6 +106,7 @@ protected:
     BufferPtr stateBuffer;
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
+    BufferPtr lockSyncStateBuffer;
     std::vector<PoolItemPtr> poolItems;
     real1* nrmArray;
     size_t nrmGroupCount;
@@ -115,6 +116,7 @@ protected:
     size_t maxAlloc;
     unsigned int procElemCount;
     bool unlockHostMem;
+    cl_int lockSyncFlags;   
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
