@@ -233,6 +233,10 @@ void QEngineOCL::PopQueue(cl_event event, cl_int type)
 
     poolItems.front()->probArray = NULL;
     poolItems.front()->angleArray = NULL;
+    if (poolItems.front()->otherStateVec) {
+        FreeStateVec(poolItems.front()->otherStateVec);
+        poolItems.front()->otherStateVec = NULL;
+    }
 
     if (poolItems.size() > 1) {
         rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
@@ -855,7 +859,7 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
     ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
 
-void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy)
+void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy, bool isConsumed)
 {
     if (doNormalize) {
         NormalizeState();
@@ -892,26 +896,52 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
     if (toCopy->context != context) {
-        toCopy->LockSync(CL_MAP_READ);
-        otherStateVec = toCopy->stateVec;
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+        if (isConsumed) {
+            toCopy->clFinish();
+            if (toCopy->stateVec) {
+                otherStateVec = toCopy->stateVec;
+                otherStateBuffer = toCopy->stateBuffer;
+            } else {
+                otherStateVec = toCopy->AllocStateVec(toCopy->maxQPower, true);
+                otherStateBuffer = std::make_shared<cl::Buffer>(toCopy->context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY,
+                    sizeof(complex) * toCopy->maxQPower, otherStateVec);
+
+                toCopy->device_context->wait_events->emplace_back();
+                toCopy->queue.enqueueCopyBuffer(*(toCopy->stateBuffer), *otherStateBuffer, 0, 0,
+                    sizeof(complex) * toCopy->maxQPower, NULL, &(toCopy->device_context->wait_events->back()));
+                toCopy->device_context->wait_events->back().wait();
+                toCopy->device_context->wait_events->pop_back();
+            }
+
+            toCopy->queue.enqueueMapBuffer(
+                *otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * toCopy->maxQPower, NULL);
+        } else {
+            toCopy->LockSync(CL_MAP_READ);
+            otherStateVec = toCopy->stateVec;
+            otherStateBuffer = std::make_shared<cl::Buffer>(
+                context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+        }
     } else {
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
     }
 
-    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-
-    if (toCopy->context != context) {
-        toCopy->UnlockSync();
+    if (isConsumed) {
+        poolItem->otherStateVec = otherStateVec;
+        toCopy->stateVec = NULL;
+        QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    } else {
+        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+        if (toCopy->context != context) {
+            toCopy->UnlockSync();
+        }
     }
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 }
 
-bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
+bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bool isConsumed)
 {
     bitLenInt result = qubitCount;
 
@@ -929,12 +959,12 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
         api_call = OCL_API_COMPOSE;
     }
 
-    Compose(api_call, bciArgs, toCopy);
+    Compose(api_call, bciArgs, toCopy, isConsumed);
 
     return result;
 }
 
-bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
+bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start, bool isConsumed)
 {
     bitLenInt result = start;
 
@@ -947,7 +977,7 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
     bitCapInt bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start, 0, 0,
         0 };
 
-    Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy);
+    Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy, isConsumed);
 
     return result;
 }

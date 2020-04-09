@@ -62,12 +62,15 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Compose;
-    virtual bitLenInt Compose(QFusionPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QFusion>(toCopy)); }
-    virtual bitLenInt Compose(QFusionPtr toCopy, bitLenInt start);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QFusionPtr toCopy, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
     {
-        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), isConsumed);
+    }
+    virtual bitLenInt Compose(QFusionPtr toCopy, bitLenInt start, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
+    {
+        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), start, isConsumed);
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {

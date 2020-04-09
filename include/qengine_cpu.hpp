@@ -55,13 +55,16 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp);
 
-    virtual bitLenInt Compose(QEngineCPUPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy)); }
-    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
-    virtual bitLenInt Compose(QEngineCPUPtr toCopy, bitLenInt start);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QEngineCPUPtr toCopy, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
     {
-        return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), isConsumed);
+    }
+    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy, bool isConsumed = false);
+    virtual bitLenInt Compose(QEngineCPUPtr toCopy, bitLenInt start, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
+    {
+        return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start, isConsumed);
     }
 
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
