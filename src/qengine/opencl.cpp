@@ -93,7 +93,13 @@ void QEngineOCL::LockSync(cl_int flags)
     } else {
         unlockHostMem = false;
         stateVec = AllocStateVec(maxQPower, true);
-        lockSyncStateBuffer = MakeStateVecBuffer(stateVec);
+        if (lockSyncFlags & CL_MAP_WRITE) {
+            lockSyncStateBuffer = MakeStateVecBuffer(stateVec);
+        } else {
+            // The OpenCL device will never have to read from this buffer, hence we can set it CL_MEM_WRITE_ONLY
+            lockSyncStateBuffer = std::make_shared<cl::Buffer>(
+                context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPower, stateVec);
+        }
         WAIT_COPY(*stateBuffer, *lockSyncStateBuffer, sizeof(complex) * maxQPower);
     }
 
