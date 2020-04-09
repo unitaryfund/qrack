@@ -896,44 +896,21 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCop
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
     if (toCopy->context != context) {
-        if (isConsumed) {
-            toCopy->clFinish();
-            if (toCopy->stateVec) {
-                otherStateVec = toCopy->stateVec;
-                otherStateBuffer = toCopy->stateBuffer;
-            } else {
-                otherStateVec = toCopy->AllocStateVec(toCopy->maxQPower, true);
-                otherStateBuffer = std::make_shared<cl::Buffer>(toCopy->context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY,
-                    sizeof(complex) * toCopy->maxQPower, otherStateVec);
-
-                toCopy->device_context->wait_events->emplace_back();
-                toCopy->queue.enqueueCopyBuffer(*(toCopy->stateBuffer), *otherStateBuffer, 0, 0,
-                    sizeof(complex) * toCopy->maxQPower, NULL, &(toCopy->device_context->wait_events->back()));
-                toCopy->device_context->wait_events->back().wait();
-                toCopy->device_context->wait_events->pop_back();
-            }
-
-            toCopy->queue.enqueueMapBuffer(
-                *otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * toCopy->maxQPower, NULL);
-        } else {
-            toCopy->LockSync(CL_MAP_READ);
-            otherStateVec = toCopy->stateVec;
-            otherStateBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
-        }
+        toCopy->LockSync(CL_MAP_READ);
+        otherStateVec = toCopy->stateVec;
+        otherStateBuffer = std::make_shared<cl::Buffer>(
+            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPower, otherStateVec);
+        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+        toCopy->UnlockSync();
     } else {
         otherStateVec = toCopy->stateVec;
         otherStateBuffer = toCopy->stateBuffer;
-    }
-
-    if (isConsumed) {
-        poolItem->otherStateVec = otherStateVec;
-        toCopy->stateVec = NULL;
-        QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-    } else {
-        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-        if (toCopy->context != context) {
-            toCopy->UnlockSync();
+        if (isConsumed) {
+            poolItem->otherStateVec = otherStateVec;
+            toCopy->stateVec = NULL;
+            QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+        } else {
+            WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
         }
     }
 
