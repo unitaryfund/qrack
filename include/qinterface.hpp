@@ -301,9 +301,9 @@ public:
      * Returns the quantum bit offset that the QInterface was appended at, such
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
-    virtual bitLenInt Compose(QInterfacePtr toCopy) = 0;
-    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) = 0;
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false) = 0;
+    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false) = 0;
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,

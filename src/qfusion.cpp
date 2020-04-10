@@ -306,20 +306,20 @@ void QFusion::UniformlyControlledSingleBit(const bitLenInt* controls, const bitL
 
 // "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed"
 // qubit, so it's most likely cheaper just to FlushAll() immediately.
-bitLenInt QFusion::Compose(QFusionPtr toCopy)
+bitLenInt QFusion::Compose(QFusionPtr toCopy, bool isConsumed)
 {
     FlushAll();
     toCopy->FlushAll();
-    bitLenInt toRet = qReg->Compose(toCopy->qReg);
+    bitLenInt toRet = qReg->Compose(toCopy->qReg, isConsumed);
     SetQubitCount(qReg->GetQubitCount());
     return toRet;
 }
 
-bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start)
+bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start, bool isConsumed)
 {
     FlushAll();
     toCopy->FlushAll();
-    bitLenInt toRet = qReg->Compose(toCopy->qReg, start);
+    bitLenInt toRet = qReg->Compose(toCopy->qReg, start, isConsumed);
     SetQubitCount(qReg->GetQubitCount());
     return toRet;
 }

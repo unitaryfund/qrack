@@ -373,7 +373,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
  * to them to delete the old unit that was added.
  */
-bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
+bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bool isConsumed)
 {
     // TODO: Sparse optimization
     bitLenInt result = qubitCount;
@@ -413,7 +413,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
  * Combine (a copy of) another QEngineCPU with this one, inserted at the "start" index. (If the programmer doesn't want
  * to "cheat," it is left up to them to delete the old unit that was added.
  */
-bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
+bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start, bool isConsumed)
 {
     if (doNormalize && (runningNorm != ONE_R1)) {
         NormalizeState();
@@ -452,7 +452,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
  *
  * Returns a mapping of the index into the new QEngine that each old one was mapped to.
  */
-std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr> toCopy)
+std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr> toCopy, bool isConsumed)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
 

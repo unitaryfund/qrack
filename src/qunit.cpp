@@ -179,12 +179,12 @@ void QUnit::SetAmplitude(bitCapInt perm, complex amp)
     shards[0].unit->SetAmplitude(perm, amp);
 }
 
-bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
+bitLenInt QUnit::Compose(QUnitPtr toCopy, bool isConsumed) { return Compose(toCopy, qubitCount, isConsumed); }
 
 /*
  * Append QInterface in the middle of QUnit.
  */
-bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
+bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start, bool isConsumed)
 {
     /* Create a clone of the quantum state in toCopy. */
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
@@ -280,7 +280,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         // Work odd unit into collapse sequence:
         if (units.size() & 1U) {
             QInterfacePtr consumed = units[1];
-            bitLenInt offset = unit1->Compose(consumed);
+            bitLenInt offset = unit1->Compose(consumed, true);
             units.erase(units.begin() + 1U);
 
             for (auto&& shard : shards) {
@@ -299,7 +299,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             QInterfacePtr retained = units[i];
             QInterfacePtr consumed = units[i + 1U];
             nUnits.push_back(retained);
-            offsets[consumed] = retained->Compose(consumed);
+            offsets[consumed] = retained->Compose(consumed, true);
             offsetPartners[consumed] = retained;
         }
 

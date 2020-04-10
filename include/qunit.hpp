@@ -448,10 +448,13 @@ public:
     virtual void SetAmplitude(bitCapInt perm, complex amp);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
-    virtual bitLenInt Compose(QUnitPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
-    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QUnitPtr toCopy, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
+    {
+        return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), isConsumed);
+    }
+    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
     {
         return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), start);
     }

@@ -60,10 +60,12 @@ struct PoolItem {
 
     std::shared_ptr<real1> probArray;
     std::shared_ptr<real1> angleArray;
+    complex* otherStateVec;
 
     PoolItem(cl::Context& context)
         : probArray(NULL)
         , angleArray(NULL)
+        , otherStateVec(NULL)
     {
         cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
@@ -116,7 +118,7 @@ protected:
     size_t maxAlloc;
     unsigned int procElemCount;
     bool unlockHostMem;
-    cl_int lockSyncFlags;   
+    cl_int lockSyncFlags;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -190,14 +192,17 @@ public:
     virtual void Z(bitLenInt target);
 
     using QEngine::Compose;
-    virtual bitLenInt Compose(QEngineOCLPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
-    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
     {
-        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), isConsumed);
     }
-    virtual void Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy);
+    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start, bool isConsumed = false);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
+    {
+        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start, isConsumed);
+    }
+    virtual void Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy, bool isConsumed = false);
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
 
