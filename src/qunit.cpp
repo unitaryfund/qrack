@@ -763,6 +763,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                 contigRegLength++;
                 i++;
             }
+            // If we're measuring the entire length of the sub-unit, we can skip the "collapse" portion of measurement.
             doApply = (qi.first->GetQubitCount() != contigRegLength);
             toDispose[contigRegStart] = contigRegLength;
             if (values) {
