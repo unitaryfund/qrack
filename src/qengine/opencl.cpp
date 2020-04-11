@@ -2099,21 +2099,9 @@ void QEngineOCL::GetProbs(real1* outputProbs)
         NormalizeState();
     }
 
-    if (stateVec) {
-        LockSync(CL_MAP_READ);
-        std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
-        UnlockSync();
-        return;
-    }
-
-    complex* outputState = AllocStateVec(maxQPower, true);
-    BufferPtr oStateBuffer = MakeStateVecBuffer(outputState);
-    WAIT_COPY(*stateBuffer, *oStateBuffer, sizeof(complex) * maxQPower);
-    queue.enqueueMapBuffer(*oStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower);
-
-    std::transform(outputState, outputState + maxQPower, outputProbs, normHelper);
-
-    FreeStateVec(outputState);
+    LockSync(CL_MAP_READ);
+    std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
+    UnlockSync();
 }
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
