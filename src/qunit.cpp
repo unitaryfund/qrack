@@ -829,6 +829,10 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 {
     bitLenInt i;
 
+    if ((start == 0) && (length == qubitCount)) {
+        ToPermBasisAllMeasure();
+    }
+
     bitLenInt* bits = new bitLenInt[length];
     for (i = 0; i < length; i++) {
         bits[i] = start + i;

@@ -744,6 +744,18 @@ protected:
         }
     }
     void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
+    void ToPermBasisAllMeasure()
+    {
+        bitLenInt i;
+        for (i = 0; i < qubitCount; i++) {
+            TransformBasis1Qb(i, false);
+        }
+        for (i = 0; i < qubitCount; i++) {
+            RevertBasis2Qb(i, true);
+            shards[i].controlsShards.clear();
+            shards[i].targetOfShards.clear();
+        }
+    }
     void PopHBasis2Qb(const bitLenInt& i)
     {
         QEngineShard& shard = shards[i];
