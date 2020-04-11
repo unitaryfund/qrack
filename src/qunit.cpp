@@ -684,7 +684,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     }
 }
 
-bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
+bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
     ToPermBasis(qubit);
 
@@ -695,7 +695,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
         result = doForce ? res : SHARD_STATE(shard);
     } else {
         EndEmulation(qubit);
-        result = shard.unit->ForceM(shard.mapped, res, doForce);
+        result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
 
     if (shard.unit->GetQubitCount() == 1) {
@@ -722,7 +722,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce)
     return result;
 }
 
-bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
+bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
 {
     //"Collapsing" the register bit-by-bit is very costly. It's cheap to eventually recover the measurement from the
     // single-bit method, but only once we collapse the state more efficiently.
@@ -750,7 +750,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
             continue;
         }
 
-        bool doApply = true;
+        bool doApplySub = doApply;
         std::sort(qi.second.begin(), qi.second.end());
         i = 0;
         std::map<bitLenInt, bitLenInt> toDispose;
@@ -764,7 +764,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                 i++;
             }
             // If we're measuring the entire length of the sub-unit, we can skip the "collapse" portion of measurement.
-            doApply = (qi.first->GetQubitCount() != contigRegLength);
+            doApplySub = doApply && (qi.first->GetQubitCount() != contigRegLength);
             toDispose[contigRegStart] = contigRegLength;
             if (values) {
                 contigRegResult = 0;
@@ -773,42 +773,18 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                         contigRegResult |= pow2(j);
                     }
                 }
-                if (doApply) {
+                if (doApplySub) {
                     partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
                 } else {
                     partResults.push_back(contigRegResult);
                 }
             } else {
-                if (doApply) {
-                    partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
-                } else {
-                    bitCapInt subMaxQPower = qi.first->GetMaxQPower();
-                    real1* probs = new real1[subMaxQPower];
-                    qi.first->GetProbs(probs);
-                    real1 rnd = Rand();
-                    real1 tot = ZERO_R1;
-                    bitCapInt perm;
-                    bitCapInt lastPerm = 0;
-                    for (perm = 0; perm < subMaxQPower; perm++) {
-                        tot += probs[perm];
-                        if (probs[perm] > ZERO_R1) {
-                            lastPerm = perm;
-                        }
-                        if (rnd < tot) {
-                            break;
-                        }
-                    }
-                    if (perm == subMaxQPower) {
-                        perm = lastPerm;
-                    }
-                    partResults.push_back(perm);
-                    delete[] probs;
-                }
+                partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, 0, false, doApplySub));
             }
         }
 
         // This is critical: it's the "nonlocal correlation" of "wave function collapse".
-        if (doApply) {
+        if (doApplySub) {
             for (j = 0; j < qubitCount; j++) {
                 if (shards[j].unit == qi.first) {
                     shards[j].isProbDirty = true;
@@ -830,10 +806,10 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
         }
     }
 
-    return QInterface::ForceM(bits, length, values);
+    return QInterface::ForceM(bits, length, values, doApply);
 }
 
-bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     bitLenInt i;
 
@@ -852,7 +828,7 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
         }
     }
 
-    bitCapInt maskResult = ForceM(bits, length, values);
+    bitCapInt maskResult = ForceM(bits, length, values, doApply);
 
     bitCapInt toRet = 0;
     for (i = 0; i < length; i++) {

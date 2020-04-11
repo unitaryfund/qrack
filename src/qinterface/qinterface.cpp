@@ -511,19 +511,19 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     bitCapInt res = 0;
     bitCapInt power;
     for (bitLenInt bit = 0; bit < length; bit++) {
         power = pow2(bit);
-        res |= ForceM(start + bit, (bool)(power & result), doForce) ? power : 0;
+        res |= ForceM(start + bit, (bool)(power & result), doForce, doApply) ? power : 0;
     }
     return res;
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
+bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
 {
     bitCapInt result = 0;
     if (values == NULL) {
@@ -532,7 +532,7 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
         }
     } else {
         for (bitLenInt bit = 0; bit < length; bit++) {
-            result |= ForceM(bits[bit], values[bit]) ? pow2(bits[bit]) : 0;
+            result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0;
         }
     }
     return result;
