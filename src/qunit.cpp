@@ -787,11 +787,18 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                     real1 rnd = Rand();
                     real1 tot = 0;
                     bitCapInt perm;
+                    bitCapInt lastPerm = 0;
                     for (perm = 0; perm < subMaxQPower; perm++) {
                         tot += probs[perm];
+                        if (probs[perm] > ZERO_R1) {
+                            lastPerm = perm;
+                        }
                         if (rnd < tot) {
                             break;
                         }
+                    }
+                    if (perm == subMaxQPower) {
+                        perm = lastPerm;
                     }
                     partResults.push_back(perm);
                     delete[] probs;
