@@ -750,6 +750,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
             continue;
         }
 
+        bool doApply = true;
         std::sort(qi.second.begin(), qi.second.end());
         i = 0;
         std::map<bitLenInt, bitLenInt> toDispose;
@@ -762,6 +763,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                 contigRegLength++;
                 i++;
             }
+            doApply = (qi.first->GetQubitCount() != contigRegLength);
             toDispose[contigRegStart] = contigRegLength;
             if (values) {
                 contigRegResult = 0;
@@ -770,17 +772,40 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                         contigRegResult |= pow2(j);
                     }
                 }
-                partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
+                if (doApply) {
+                    partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
+                } else {
+                    partResults.push_back(contigRegResult);
+                }
             } else {
-                partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
+                if (doApply) {
+                    partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
+                } else {
+                    bitCapInt subMaxQPower = qi.first->GetMaxQPower();
+                    real1* probs = new real1[subMaxQPower];
+                    qi.first->GetProbs(probs);
+                    real1 rnd = Rand();
+                    real1 tot = 0;
+                    bitCapInt perm;
+                    for (perm = 0; perm < subMaxQPower; perm++) {
+                        tot += probs[perm];
+                        if (rnd < tot) {
+                            break;
+                        }
+                    }
+                    partResults.push_back(perm);
+                    delete[] probs;
+                }
             }
         }
 
         // This is critical: it's the "nonlocal correlation" of "wave function collapse".
-        for (j = 0; j < qubitCount; j++) {
-            if (shards[j].unit == qi.first) {
-                shards[j].isProbDirty = true;
-                shards[j].isPhaseDirty = true;
+        if (doApply) {
+            for (j = 0; j < qubitCount; j++) {
+                if (shards[j].unit == qi.first) {
+                    shards[j].isProbDirty = true;
+                    shards[j].isPhaseDirty = true;
+                }
             }
         }
 
