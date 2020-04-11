@@ -61,9 +61,10 @@ public:
 
     virtual ~QEngine() { Finish(); }
 
-    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true);
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
-    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
+    virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
+    virtual bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
     {

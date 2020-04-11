@@ -1202,7 +1202,17 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
         // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
-        QEngine::ProbRegAll(start, length, probsArray);
+        if ((start == 0) && length == qubitCount) {
+            if (doNormalize) {
+                NormalizeState();
+            }
+
+            LockSync(CL_MAP_READ);
+            std::transform(stateVec, stateVec + maxQPower, probsArray, normHelper);
+            UnlockSync();
+        } else {
+            QEngine::ProbRegAll(start, length, probsArray);
+        }
         return;
     }
 
@@ -2093,28 +2103,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 }
 
 /// Get all probabilities, in unsigned int permutation basis
-void QEngineOCL::GetProbs(real1* outputProbs)
-{
-    if (doNormalize) {
-        NormalizeState();
-    }
-
-    if (stateVec) {
-        LockSync(CL_MAP_READ);
-        std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
-        UnlockSync();
-        return;
-    }
-
-    complex* outputState = AllocStateVec(maxQPower, true);
-    BufferPtr oStateBuffer = MakeStateVecBuffer(outputState);
-    WAIT_COPY(*stateBuffer, *oStateBuffer, sizeof(complex) * maxQPower);
-    queue.enqueueMapBuffer(*oStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(complex) * maxQPower);
-
-    std::transform(outputState, outputState + maxQPower, outputProbs, normHelper);
-
-    FreeStateVec(outputState);
-}
+void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, outputProbs); }
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 {

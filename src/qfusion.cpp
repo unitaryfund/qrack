@@ -504,22 +504,22 @@ void QFusion::AntiCISqrtSwap(
     qReg->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
 }
 
-bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce)
+bool QFusion::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     FlushAll();
-    return qReg->ForceM(qubit, result, doForce);
+    return qReg->ForceM(qubit, result, doForce, doApply);
 }
 
-bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
+bitCapInt QFusion::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
 {
     FlushAll();
-    return qReg->ForceM(bits, length, values);
+    return qReg->ForceM(bits, length, values, doApply);
 }
 
-bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+bitCapInt QFusion::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     FlushAll();
-    return qReg->ForceMReg(start, length, result, doForce);
+    return qReg->ForceMReg(start, length, result, doForce, doApply);
 }
 
 void QFusion::BufferArithmetic(

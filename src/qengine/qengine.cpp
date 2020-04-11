@@ -15,7 +15,7 @@
 namespace Qrack {
 
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
-bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
+bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     if (doNormalize) {
         NormalizeState();
@@ -38,14 +38,16 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce)
         throw "ERROR: Forced a measurement result with 0 probability";
     }
 
-    bitCapInt qPower = pow2(qubit);
-    ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
+    if (doApply) {
+        bitCapInt qPower = pow2(qubit);
+        ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
+    }
 
     return result;
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values)
+bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
 {
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
@@ -144,7 +146,9 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     nrm = phase / (real1)(std::sqrt(nrmlzr));
 
-    ApplyM(regMask, result, nrm);
+    if (doApply) {
+        ApplyM(regMask, result, nrm);
+    }
 
     return result;
 }
@@ -435,7 +439,7 @@ void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1*
 }
 
 /// Measure permutation state of a register
-bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
+bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
@@ -492,7 +496,9 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     bitCapInt resultPtr = result << (bitCapInt)start;
     complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
 
-    ApplyM(regMask, resultPtr, nrm);
+    if (doApply) {
+        ApplyM(regMask, resultPtr, nrm);
+    }
 
     return result;
 }

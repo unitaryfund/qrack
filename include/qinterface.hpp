@@ -635,7 +635,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true) = 0;
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
 
     /**
      * S gate
@@ -1666,13 +1666,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bitCapInt ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true);
+    virtual bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
     virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values);
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from
