@@ -731,7 +731,8 @@ protected:
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
     void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false,
-        std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {});
+        std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {},
+        const bool& dumpSkipped = false);
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
@@ -739,11 +740,37 @@ protected:
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
-        for (bitLenInt i = 0; i < length; i++) {
-            ToPermBasis(start + i);
+        bitLenInt i;
+        for (i = 0; i < length; i++) {
+            TransformBasis1Qb(false, start + i);
+        }
+        for (i = 0; i < length; i++) {
+            RevertBasis2Qb(start + i);
         }
     }
     void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
+    void ToPermBasisMeasure(const bitLenInt& start, const bitLenInt& length)
+    {
+        if ((start == 0) && (length == qubitCount)) {
+            ToPermBasisAllMeasure();
+            return;
+        }
+
+        bitLenInt i;
+
+        std::set<bitLenInt> exceptBits;
+        for (i = 0; i < length; i++) {
+            exceptBits.insert(start + i);
+        }
+
+        for (i = 0; i < length; i++) {
+            TransformBasis1Qb(false, start + i);
+        }
+        for (i = 0; i < length; i++) {
+            RevertBasis2Qb(start + i, true);
+            RevertBasis2Qb(start + i, false, false, exceptBits, exceptBits, true);
+        }
+    }
     void ToPermBasisAllMeasure()
     {
         bitLenInt i;
@@ -751,9 +778,7 @@ protected:
             TransformBasis1Qb(i, false);
         }
         for (i = 0; i < qubitCount; i++) {
-            RevertBasis2Qb(i, true);
-            shards[i].controlsShards.clear();
-            shards[i].targetOfShards.clear();
+            RevertBasis2Qb(i, true, false, {}, {}, true);
         }
     }
     void PopHBasis2Qb(const bitLenInt& i)

@@ -837,9 +837,7 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 {
     bitLenInt i;
 
-    if ((start == 0) && (length == qubitCount)) {
-        ToPermBasisAllMeasure();
-    }
+    ToPermBasisMeasure(start, length);
 
     bitLenInt* bits = new bitLenInt[length];
     for (i = 0; i < length; i++) {
@@ -3007,7 +3005,7 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
 }
 
 void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const bool& onlyControlling,
-    std::set<bitLenInt> exceptControlling, std::set<bitLenInt> exceptTargetedBy)
+    std::set<bitLenInt> exceptControlling, std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped)
 {
     QEngineShard& shard = shards[i];
 
@@ -3032,17 +3030,23 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap controlsShards = shard.controlsShards;
     while (controlsShards.size() > 0) {
         phaseShard = controlsShards.begin();
+        QEngineShardPtr partner = phaseShard->first;
 
         if (onlyInvert && !phaseShard->second->isInvert) {
             controlsShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseTarget(partner);
+            }
             continue;
         }
 
-        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptControlling.find(j) != exceptControlling.end()) {
             controlsShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseTarget(partner);
+            }
             continue;
         }
 
@@ -3088,17 +3092,23 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
     while (targetOfShards.size() > 0) {
         phaseShard = targetOfShards.begin();
+        QEngineShardPtr partner = phaseShard->first;
 
         if (onlyInvert && !phaseShard->second->isInvert) {
             targetOfShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseControl(partner);
+            }
             continue;
         }
 
-        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptTargetedBy.find(j) != exceptTargetedBy.end()) {
             targetOfShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseControl(partner);
+            }
             continue;
         }
 
