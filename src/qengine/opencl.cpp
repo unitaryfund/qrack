@@ -1202,7 +1202,17 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
         // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
-        QEngine::ProbRegAll(start, length, probsArray);
+        if ((start == 0) && length == qubitCount) {
+            if (doNormalize) {
+                NormalizeState();
+            }
+
+            LockSync(CL_MAP_READ);
+            std::transform(stateVec, stateVec + maxQPower, probsArray, normHelper);
+            UnlockSync();
+        } else {
+            QEngine::ProbRegAll(start, length, probsArray);
+        }
         return;
     }
 
