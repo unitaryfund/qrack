@@ -785,7 +785,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                     real1* probs = new real1[subMaxQPower];
                     qi.first->GetProbs(probs);
                     real1 rnd = Rand();
-                    real1 tot = 0;
+                    real1 tot = ZERO_R1;
                     bitCapInt perm;
                     bitCapInt lastPerm = 0;
                     for (perm = 0; perm < subMaxQPower; perm++) {
