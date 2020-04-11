@@ -750,6 +750,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
             continue;
         }
 
+        bool doApply = true;
         std::sort(qi.second.begin(), qi.second.end());
         i = 0;
         std::map<bitLenInt, bitLenInt> toDispose;
@@ -762,6 +763,8 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                 contigRegLength++;
                 i++;
             }
+            // If we're measuring the entire length of the sub-unit, we can skip the "collapse" portion of measurement.
+            doApply = (qi.first->GetQubitCount() != contigRegLength);
             toDispose[contigRegStart] = contigRegLength;
             if (values) {
                 contigRegResult = 0;
@@ -770,17 +773,47 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
                         contigRegResult |= pow2(j);
                     }
                 }
-                partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
+                if (doApply) {
+                    partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
+                } else {
+                    partResults.push_back(contigRegResult);
+                }
             } else {
-                partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
+                if (doApply) {
+                    partResults.push_back(qi.first->MReg(contigRegStart, contigRegLength));
+                } else {
+                    bitCapInt subMaxQPower = qi.first->GetMaxQPower();
+                    real1* probs = new real1[subMaxQPower];
+                    qi.first->GetProbs(probs);
+                    real1 rnd = Rand();
+                    real1 tot = ZERO_R1;
+                    bitCapInt perm;
+                    bitCapInt lastPerm = 0;
+                    for (perm = 0; perm < subMaxQPower; perm++) {
+                        tot += probs[perm];
+                        if (probs[perm] > ZERO_R1) {
+                            lastPerm = perm;
+                        }
+                        if (rnd < tot) {
+                            break;
+                        }
+                    }
+                    if (perm == subMaxQPower) {
+                        perm = lastPerm;
+                    }
+                    partResults.push_back(perm);
+                    delete[] probs;
+                }
             }
         }
 
         // This is critical: it's the "nonlocal correlation" of "wave function collapse".
-        for (j = 0; j < qubitCount; j++) {
-            if (shards[j].unit == qi.first) {
-                shards[j].isProbDirty = true;
-                shards[j].isPhaseDirty = true;
+        if (doApply) {
+            for (j = 0; j < qubitCount; j++) {
+                if (shards[j].unit == qi.first) {
+                    shards[j].isProbDirty = true;
+                    shards[j].isPhaseDirty = true;
+                }
             }
         }
 
@@ -803,6 +836,8 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce)
 {
     bitLenInt i;
+
+    ToPermBasisMeasure(start, length);
 
     bitLenInt* bits = new bitLenInt[length];
     for (i = 0; i < length; i++) {
@@ -2970,7 +3005,7 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
 }
 
 void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const bool& onlyControlling,
-    std::set<bitLenInt> exceptControlling, std::set<bitLenInt> exceptTargetedBy)
+    std::set<bitLenInt> exceptControlling, std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped)
 {
     QEngineShard& shard = shards[i];
 
@@ -2995,17 +3030,23 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap controlsShards = shard.controlsShards;
     while (controlsShards.size() > 0) {
         phaseShard = controlsShards.begin();
+        QEngineShardPtr partner = phaseShard->first;
 
         if (onlyInvert && !phaseShard->second->isInvert) {
             controlsShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseTarget(partner);
+            }
             continue;
         }
 
-        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptControlling.find(j) != exceptControlling.end()) {
             controlsShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseTarget(partner);
+            }
             continue;
         }
 
@@ -3051,17 +3092,23 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
     while (targetOfShards.size() > 0) {
         phaseShard = targetOfShards.begin();
+        QEngineShardPtr partner = phaseShard->first;
 
         if (onlyInvert && !phaseShard->second->isInvert) {
             targetOfShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseControl(partner);
+            }
             continue;
         }
 
-        QEngineShardPtr partner = phaseShard->first;
         bitLenInt j = FindShardIndex(*partner);
 
         if (exceptTargetedBy.find(j) != exceptTargetedBy.end()) {
             targetOfShards.erase(phaseShard);
+            if (dumpSkipped) {
+                shard.RemovePhaseControl(partner);
+            }
             continue;
         }
 
