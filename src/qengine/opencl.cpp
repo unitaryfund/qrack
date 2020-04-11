@@ -2093,16 +2093,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 }
 
 /// Get all probabilities, in unsigned int permutation basis
-void QEngineOCL::GetProbs(real1* outputProbs)
-{
-    if (doNormalize) {
-        NormalizeState();
-    }
-
-    LockSync(CL_MAP_READ);
-    std::transform(stateVec, stateVec + maxQPower, outputProbs, normHelper);
-    UnlockSync();
-}
+void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, outputProbs); }
 
 bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 {
