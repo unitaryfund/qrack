@@ -14,6 +14,7 @@
 #pragma once
 
 #include <algorithm>
+#include <future>
 #include <map>
 #include <mutex>
 #include <set>
@@ -195,10 +196,13 @@ public:
             return {};
         }
 
+        int32_t i, combineCount;
+
         bitCapInt unsetMask = ~setMask;
 
         int32_t threadCount = GetConcurrencyLevel();
         std::vector<std::set<bitCapInt>> toRet(threadCount);
+        std::vector<std::set<bitCapInt>>::iterator toRetIt;
 
         mtx.lock();
 
@@ -220,9 +224,33 @@ public:
             });
         }
 
-        for (int32_t i = 1; i < threadCount; i++) {
+        for (i = 1; i < threadCount; i++) {
             toRet[0].insert(toRet[i].begin(), toRet[i].end());
             toRet[i].clear();
+        }
+
+        while (toRet.size() > 1U) {
+            // Work odd unit into collapse sequence:
+            if (toRet.size() & 1U) {
+                toRet[toRet.size() - 2U].insert(toRet[toRet.size() - 1U].begin(), toRet[toRet.size() - 1U].end());
+                toRet.pop_back();
+            }
+
+            combineCount = toRet.size() / 2U;
+            std::vector<std::future<void>> futures(combineCount);
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i] = std::async(std::launch::async, [i, &toRet]() {
+                    toRet[i * 2U].insert(toRet[i * 2U + 1U].begin(), toRet[i * 2U + 1U].end());
+                    toRet[i * 2U + 1U].clear();
+                });
+            }
+
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i].get();
+                toRetIt = toRet.begin();
+                std::advance(toRetIt, i * 2U + 1U);
+                toRet.erase(toRetIt);
+            }
         }
 
         mtx.unlock();
