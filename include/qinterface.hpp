@@ -1796,6 +1796,12 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
 
+    /** Transform a length of qubit register via lookup through a hash table. The hash table must be a one-to-one
+     * function, otherwise the behavior of this method is undefined. The value array definition convention is the same
+     * as IndexedLDA(). Essentially, this is an IndexedLDA() operation that replaces the index register with the value
+     * register, but the lookup table must therefore be one-to-one, for this operation to be unitary, as required. */
+    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) = 0;
+
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 

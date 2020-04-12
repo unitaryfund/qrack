@@ -237,6 +237,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
 
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);

@@ -1571,8 +1571,7 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr
     }
 }
 
-void kernel indexedLda(
-    global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel indexedLda(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
     bitCapInt Nthreads, lcv;
 
@@ -1602,8 +1601,7 @@ void kernel indexedLda(
     }
 }
 
-void kernel indexedAdc(
-    global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel indexedAdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
     bitCapInt Nthreads, lcv;
 
@@ -1646,8 +1644,7 @@ void kernel indexedAdc(
     }
 }
 
-void kernel indexedSbc(
-    global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel indexedSbc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
     bitCapInt Nthreads, lcv;
 
@@ -1687,6 +1684,29 @@ void kernel indexedSbc(
 
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | inputRes | otherRes | carryRes] = stateVec[i];
+    }
+}
+
+void kernel hash(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt start = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt bytes = bitCapIntPtr[3];
+    bitCapInt inputRes, inputInt, outputRes, outputInt;
+    bitCapInt j;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        inputRes = lcv & inputMask;
+        inputInt = inputRes >> start;
+        outputInt = 0U;
+        for (j = 0U; j < bytes; j++) {
+            outputInt |= values[inputInt * bytes + j] << (8U * j);
+        }
+        outputRes = outputInt << start;
+        nStateVec[outputRes | (lcv & ~inputRes)] = stateVec[lcv];
     }
 }
 

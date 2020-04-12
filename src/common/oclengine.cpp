@@ -78,6 +78,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
     OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
     OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
+    OCLKernelHandle(OCL_API_HASH, "hash"),
     OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
     OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"),
     OCLKernelHandle(OCL_API_NORMALIZE_WIDE, "nrmlzewide"),

@@ -166,6 +166,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);

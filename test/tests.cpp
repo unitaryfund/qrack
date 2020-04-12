@@ -3333,6 +3333,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
     cl_free(testPage);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
+{
+    const bitCapInt INPUT_KEY = 126;
+
+    int j;
+
+    qftReg->SetPermutation(INPUT_KEY);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, INPUT_KEY));
+
+    unsigned char* testPage = cl_alloc(256);
+    for (j = 0; j < 256; j++) {
+        testPage[j] = j;
+    }
+    std::random_shuffle(testPage, testPage + 256);
+
+    qftReg->Hash(0, 8, testPage);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, testPage[INPUT_KEY]));
+    cl_free(testPage);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
 {
     qftReg->SetPermutation(0x2b);
