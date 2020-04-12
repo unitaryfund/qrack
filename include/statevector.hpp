@@ -224,10 +224,6 @@ public:
     std::set<bitCapInt> iterable(
         const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
     {
-        if ((filterMask == 0) && (amplitudes.size() >= (capacity / 2U))) {
-            return {};
-        }
-
         bitCapInt unsetMask = ~setMask;
         bitCapInt unfilterMask = ~filterMask;
         std::set<bitCapInt> toRet;
@@ -235,11 +231,19 @@ public:
         mtx.lock();
 
         std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
-        while (it != amplitudes.end()) {
-            if ((it->first & filterMask) == filterValues) {
-                toRet.insert(it->first & unsetMask & unfilterMask);
+
+        if (filterMask == 0) {
+            while (it != amplitudes.end()) {
+                toRet.insert(it->first);
+                it++;
             }
-            it++;
+        } else {
+            while (it != amplitudes.end()) {
+                if ((it->first & filterMask) == filterValues) {
+                    toRet.insert(it->first & unsetMask & unfilterMask);
+                }
+                it++;
+            }
         }
 
         mtx.unlock();
