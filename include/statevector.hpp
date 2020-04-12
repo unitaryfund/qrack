@@ -195,8 +195,10 @@ public:
             return {};
         }
 
-        std::set<bitCapInt> toRet;
         bitCapInt unsetMask = ~setMask;
+
+        int32_t threadCount = GetConcurrencyLevel();
+        std::vector<std::set<bitCapInt>> toRet(threadCount);
 
         mtx.lock();
 
@@ -204,7 +206,7 @@ public:
             par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
                 std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
                 std::advance(it, lcv);
-                toRet.insert(it->first & unsetMask);
+                toRet[cpu].insert(it->first & unsetMask);
             });
         } else {
             bitCapInt unfilterMask = ~filterMask;
@@ -213,14 +215,19 @@ public:
                 std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
                 std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {
-                    toRet.insert(it->first & unsetMask & unfilterMask);
+                    toRet[cpu].insert(it->first & unsetMask & unfilterMask);
                 }
             });
         }
 
+        for (int32_t i = 1; i < threadCount; i++) {
+            toRet[0].insert(toRet[i].begin(), toRet[i].end());
+            toRet[i].clear();
+        }
+
         mtx.unlock();
 
-        return toRet;
+        return toRet[0];
     }
 };
 
