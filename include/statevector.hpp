@@ -227,15 +227,15 @@ public:
 
         std::set<bitCapInt> toRet;
         std::map<bitCapInt, complex>::const_iterator it;
+        bitCapInt unsetMask = ~setMask;
 
         mtx.lock();
 
         if ((filterMask == 0) && (filterValues == 0)) {
             for (it = amplitudes.begin(); it != amplitudes.begin(); it++) {
-                toRet.insert(it->first);
+                toRet.insert(it->first & unsetMask);
             }
         } else {
-            bitCapInt unsetMask = ~setMask;
             bitCapInt unfilterMask = ~filterMask;
 
             for (it = amplitudes.begin(); it != amplitudes.begin(); it++) {
