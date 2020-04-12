@@ -110,7 +110,7 @@ public:
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
-    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
+    virtual std::vector<bitCapInt> iterable() = 0;
     virtual std::set<bitCapInt> iterable(
         const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0) = 0;
 };

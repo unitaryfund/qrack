@@ -93,11 +93,14 @@ public:
 
     bool is_sparse() { return false; }
 
-    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
+    /// Not used:
+    std::vector<bitCapInt> iterable() { return {}; }
+
+    /// Not used:
     std::set<bitCapInt> iterable(
         const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
     {
-        return std::set<bitCapInt>();
+        return {};
     }
 };
 
@@ -187,6 +190,63 @@ public:
     }
 
     bool is_sparse() { return (amplitudes.size() < (capacity >> 1U)); }
+
+    std::vector<bitCapInt> iterable()
+    {
+        int32_t i, combineCount;
+
+        int32_t threadCount = GetConcurrencyLevel();
+        std::vector<std::vector<bitCapInt>> toRet(threadCount);
+        std::vector<std::vector<bitCapInt>>::iterator toRetIt;
+
+        mtx.lock();
+
+        par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+            std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+            std::advance(it, lcv);
+            toRet[cpu].push_back(it->first);
+        });
+
+        for (i = (toRet.size() - 1); i >= 0; i--) {
+            if (toRet[i].size() == 0) {
+                toRetIt = toRet.begin();
+                std::advance(toRetIt, i);
+                toRet.erase(toRetIt);
+            }
+        }
+
+        if (toRet.size() == 0) {
+            mtx.unlock();
+            return {};
+        }
+
+        while (toRet.size() > 1U) {
+            // Work odd unit into collapse sequence:
+            if (toRet.size() & 1U) {
+                toRet[toRet.size() - 2U].insert(
+                    toRet[toRet.size() - 2U].end(), toRet[toRet.size() - 1U].begin(), toRet[toRet.size() - 1U].end());
+                toRet.pop_back();
+            }
+
+            combineCount = toRet.size() / 2U;
+            std::vector<std::future<void>> futures(combineCount);
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
+                    toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                    toRet[i + combineCount].clear();
+                });
+            }
+
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i].get();
+                toRet.pop_back();
+            }
+        }
+
+        mtx.unlock();
+
+        return toRet[0];
+    }
 
     /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
     std::set<bitCapInt> iterable(

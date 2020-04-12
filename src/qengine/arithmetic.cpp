@@ -1005,7 +1005,7 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     };
 
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(0), fn);
+        par_for_set(stateVec->iterable(), fn);
     } else {
         par_for(0, maxQPower, fn);
     }
