@@ -18,43 +18,10 @@
 #include <mutex>
 #include <set>
 
+#include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 
 namespace Qrack {
-
-class StateVector;
-class StateVectorArray;
-class StateVectorSparse;
-
-typedef std::shared_ptr<StateVector> StateVectorPtr;
-typedef std::shared_ptr<StateVectorArray> StateVectorArrayPtr;
-typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
-
-// This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
-class StateVector {
-protected:
-    bitCapInt capacity;
-
-public:
-    StateVector(bitCapInt cap)
-        : capacity(cap)
-    {
-    }
-    virtual complex read(const bitCapInt& i) = 0;
-    virtual void write(const bitCapInt& i, const complex& c) = 0;
-    /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
-    /// tensor slicing.)
-    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
-    virtual void clear() = 0;
-    virtual void copy_in(const complex* inArray) = 0;
-    virtual void copy_out(complex* outArray) = 0;
-    virtual void copy(StateVectorPtr toCopy) = 0;
-    virtual void get_probs(real1* outArray) = 0;
-    virtual bool is_sparse() = 0;
-    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
-    virtual std::set<bitCapInt> iterable(
-        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0) = 0;
-};
 
 class StateVectorArray : public StateVector {
 protected:
@@ -133,7 +100,7 @@ public:
     }
 };
 
-class StateVectorSparse : public StateVector {
+class StateVectorSparse : public StateVector, public ParallelFor {
 protected:
     std::map<bitCapInt, complex> amplitudes;
     std::mutex mtx;
@@ -229,23 +196,26 @@ public:
         }
 
         std::set<bitCapInt> toRet;
-        std::map<bitCapInt, complex>::const_iterator it;
         bitCapInt unsetMask = ~setMask;
 
         mtx.lock();
 
         if ((filterMask == 0) && (filterValues == 0)) {
-            for (it = amplitudes.begin(); it != amplitudes.end(); it++) {
+            par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+                std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                std::advance(it, lcv);
                 toRet.insert(it->first & unsetMask);
-            }
+            });
         } else {
             bitCapInt unfilterMask = ~filterMask;
 
-            for (it = amplitudes.begin(); it != amplitudes.end(); it++) {
+            par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+                std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {
                     toRet.insert(it->first & unsetMask & unfilterMask);
                 }
-            }
+            });
         }
 
         mtx.unlock();
