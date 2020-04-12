@@ -18,7 +18,7 @@
 using namespace Qrack;
 
 const size_t TABLE_SIZE = 256;
-const size_t KEY_SIZE = 2;
+const size_t KEY_SIZE = 4;
 
 bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
 {
@@ -58,6 +58,7 @@ bitCapInt QPearson32(const unsigned char* x, size_t len, unsigned char* T, QInte
         qReg->IndexedLDA(x_index, 8, h_index, 8, T);
         for (i = 1; i < len; ++i) {
             x_index += 8;
+            // XOR might collapse the state, as we have defined the API.
             qReg->XOR(x_index, h_index, h_index, 8);
             // This is a valid API if the hash table is one-to-one (unitary).
             qReg->Hash(h_index, 8, T);
@@ -72,7 +73,7 @@ bitCapInt QPearson32(const unsigned char* x, size_t len, unsigned char* T, QInte
 int main()
 {
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU,
-        32U + 8U * (KEY_SIZE + 1U), 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
+        32U + 8U * KEY_SIZE, 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
 
     unsigned char T[TABLE_SIZE];
     for (size_t i = 0; i < TABLE_SIZE; i++) {
