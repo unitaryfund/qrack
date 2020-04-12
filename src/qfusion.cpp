@@ -858,6 +858,12 @@ bitCapInt QFusion::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLe
     return qReg->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
+void QFusion::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+{
+    FlushReg(start, length);
+    return qReg->Hash(start, length, values);
+}
+
 void QFusion::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     std::rotate(bitBuffers.begin() + start, bitBuffers.begin() + start + shift, bitBuffers.begin() + start + length);

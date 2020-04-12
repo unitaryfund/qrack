@@ -46,9 +46,18 @@ set_target_properties(shors_factoring PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 
 target_link_libraries (shors_factoring ${QRACK_LIBS})
 
+add_executable (pearson32
+    examples/pearson32.cpp
+    )
+
+set_target_properties(pearson32 PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
+
+target_link_libraries (pearson32 ${QRACK_LIBS})
+
 target_compile_options (grovers PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (grovers_lookup PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (ordered_list_search PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (quantum_perceptron PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (quantum_associative_memory PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (shors_factoring PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (pearson32 PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)

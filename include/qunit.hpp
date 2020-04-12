@@ -434,11 +434,11 @@ protected:
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
-        bool randomGlobalPhase = true, bool useHostMem = true, int deviceID = -1, bool useHardwareRNG = true,
+        bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true, bool useHostMem = true,
-        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
+        bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
 
     virtual void SetQuantumState(const complex* inputState);
@@ -605,6 +605,7 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
@@ -724,6 +725,7 @@ protected:
 
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
+    bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values);
 
     void Transform2x2(const complex* mtrxIn, complex* mtrxOut);
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);

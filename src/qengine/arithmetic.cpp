@@ -762,8 +762,8 @@ bitCapInt QEngineCPU::IndexedLDA(
         bitCapInt inputRes = lcv & inputMask;
         bitCapInt inputInt = inputRes >> indexStart;
         bitCapInt outputInt = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8UL * j);
+        for (bitCapInt j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         bitCapInt outputRes = outputInt << valueStart;
         nStateVec->write(outputRes | lcv, stateVec->read(lcv));
@@ -844,8 +844,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         // "outputStart" register value its entangled with in this
         // iteration of the loop.
         bitCapInt outputInt = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8UL * j);
+        for (bitCapInt j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         outputInt += (outputRes >> valueStart) + carryIn;
 
@@ -941,8 +941,8 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         // from "outputStart" register value its entangled with in this
         // iteration of the loop.
         bitCapInt outputInt = 0;
-        for (bitLenInt j = 0; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8UL * j);
+        for (bitCapInt j = 0; j < valueBytes; j++) {
+            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
         }
         outputInt = (outputRes >> valueStart) + (lengthPower - (outputInt + carryIn));
 
@@ -982,6 +982,35 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 
     // Return the expectation value.
     return (bitCapInt)(average + (ONE_R1 / 2));
+}
+
+/// Transform a length of qubit register via lookup through a hash table.
+void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+{
+    bitLenInt bytes = (length + 7U) / 8U;
+    bitCapInt inputMask = bitRegMask(start, length);
+
+    StateVectorPtr nStateVec = AllocStateVec(maxQPower);
+    nStateVec->clear();
+
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt inputRes = lcv & inputMask;
+        bitCapInt inputInt = inputRes >> start;
+        bitCapInt outputInt = 0;
+        for (bitCapInt j = 0; j < bytes; j++) {
+            outputInt |= values[inputInt * bytes + j] << (8U * j);
+        }
+        bitCapInt outputRes = outputInt << start;
+        nStateVec->write(outputRes | (lcv & ~inputRes), stateVec->read(lcv));
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(0, bitRegMask(start, length), 0), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+
+    ResetStateVec(nStateVec);
 }
 
 void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)

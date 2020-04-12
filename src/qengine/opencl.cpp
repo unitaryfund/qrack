@@ -2004,6 +2004,16 @@ bitCapInt QEngineOCL::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     return OpIndexed(OCL_API_INDEXEDSBC, 1, indexStart, indexLength, valueStart, valueLength, carryIndex, values);
 }
 
+/** Set 8 bit register bits based on read from classical memory */
+void QEngineOCL::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+{
+    bitLenInt bytes = (length + 7) / 8;
+    bitCapInt inputMask = bitRegMask(start, length);
+    bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower, start, inputMask, bytes, 0, 0, 0, 0, 0, 0 };
+
+    ArithmeticCall(OCL_API_HASH, bciArgs, values, pow2(length) * bytes);
+}
+
 void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs)
 {
     // We don't actually have to wait, so this is empty:

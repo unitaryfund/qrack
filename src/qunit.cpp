@@ -2757,6 +2757,18 @@ bitCapInt QUnit::GetIndexedEigenstate(
     return value;
 }
 
+bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values)
+{
+    bitCapInt indexInt = GetCachedPermutation(start, length);
+    bitLenInt bytes = (length + 7U) / 8U;
+    bitCapInt value = 0;
+    for (bitLenInt j = 0; j < bytes; j++) {
+        value |= values[indexInt * bytes + j] << (8ULL * j);
+    }
+
+    return value;
+}
+
 bitCapInt QUnit::IndexedLDA(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
@@ -2862,6 +2874,21 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
     shards[carryIndex].isPhaseDirty = true;
 
     return toRet;
+}
+
+void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+{
+    if (CheckBitsPermutation(start, length)) {
+        bitCapInt value = GetIndexedEigenstate(start, length, values);
+        SetReg(start, length, value);
+        return;
+    }
+
+    EntangleRange(start, length);
+
+    shards[start].unit->Hash(shards[start].mapped, length, values);
+
+    DirtyShardRangePhase(start, length);
 }
 
 bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2)
