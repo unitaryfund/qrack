@@ -49,7 +49,7 @@ void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
     for (j = 0; j < 4; ++j) {
         // Change the first byte
         x_index = 0;
-        qReg->IndexedLDA(x_index, 8, h_index, 8, T);
+        qReg->IndexedLDA(x_index, 8, h_index, 8, T, false);
         std::cout << "Loaded." << std::endl;
         for (i = 1; i < len; ++i) {
             x_index += 8;

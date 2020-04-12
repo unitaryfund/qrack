@@ -1734,7 +1734,7 @@ public:
      * at a time.
      */
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values) = 0;
+        bitLenInt valueLength, unsigned char* values, bool resetValue = true) = 0;
 
     /**
      * Add to entangled 8 bit register state with a superposed

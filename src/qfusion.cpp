@@ -832,12 +832,12 @@ void QFusion::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt 
     qReg->PhaseFlipIfLess(greaterPerm, start, length);
 }
 
-bitCapInt QFusion::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QFusion::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+    unsigned char* values, bool resetValue)
 {
     FlushReg(indexStart, indexLength);
     FlushReg(valueStart, valueLength);
-    return qReg->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values);
+    return qReg->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
 }
 
 bitCapInt QFusion::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,

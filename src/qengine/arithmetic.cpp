@@ -746,10 +746,12 @@ void QEngineCPU::INCDECBCDC(
 }
 
 /// Set 8 bit register bits based on read from classical memory
-bitCapInt QEngineCPU::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
-    SetReg(valueStart, valueLength, 0);
+    if (resetValue) {
+        SetReg(valueStart, valueLength, 0);
+    }
 
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);

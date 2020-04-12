@@ -2769,8 +2769,8 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigne
     return value;
 }
 
-bitCapInt QUnit::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+    unsigned char* values, bool resetValue)
 {
     // TODO: Index bits that have exactly 0 or 1 probability can be optimized out of the gate.
     // This could follow the logic of UniformlyControlledSingleBit().
@@ -2788,7 +2788,7 @@ bitCapInt QUnit::IndexedLDA(
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
-        shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values);
+        shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);

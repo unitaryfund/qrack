@@ -1936,10 +1936,13 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, cons
 }
 
 /** Set 8 bit register bits based on read from classical memory */
-bitCapInt QEngineOCL::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
-    SetReg(valueStart, valueLength, 0);
+    if (resetValue) {
+        SetReg(valueStart, valueLength, 0);
+    }
+
     bitLenInt valueBytes = (valueLength + 7) / 8;
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
     bitCapInt bciArgs[BCI_ARG_LEN] = { maxQPower >> valueLength, indexStart, inputMask, valueStart, valueBytes,
