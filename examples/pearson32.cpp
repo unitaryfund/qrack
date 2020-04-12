@@ -36,7 +36,7 @@ bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
         hh[j] = h;
     }
 
-    return (((bitCapInt)hh[3]) << 24) | (((bitCapInt)hh[2]) << 16) | (((bitCapInt)hh[1]) << 8) | ((bitCapInt)hh[0]);
+    return (((bitCapInt)hh[0]) << 24) | (((bitCapInt)hh[1]) << 16) | (((bitCapInt)hh[2]) << 8) | ((bitCapInt)hh[3]);
 }
 
 bitCapInt QPearson32(const unsigned char* x, size_t len, unsigned char* T, QInterfacePtr qReg)
@@ -44,7 +44,7 @@ bitCapInt QPearson32(const unsigned char* x, size_t len, unsigned char* T, QInte
     size_t i;
     size_t j;
     bitLenInt x_index;
-    bitLenInt h_index = len * 8;
+    bitLenInt h_index = (len + 3) * 8;
 
     bitCapInt xFull = 0;
     for (i = 0; i < len; i++) {
@@ -64,7 +64,7 @@ bitCapInt QPearson32(const unsigned char* x, size_t len, unsigned char* T, QInte
             qReg->Hash(h_index, 8, T);
         }
         qReg->INC(1, 0, 8);
-        h_index += 8;
+        h_index -= 8;
     }
 
     return qReg->MReg(8 * len, 32);
