@@ -224,6 +224,10 @@ public:
     std::set<bitCapInt> iterable(
         const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
     {
+        if (amplitudes.size() == capacity) {
+            return {};
+        }
+
         bitCapInt unsetMask = ~setMask;
         bitCapInt unfilterMask = ~filterMask;
         std::set<bitCapInt> toRet;
