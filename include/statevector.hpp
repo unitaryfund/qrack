@@ -224,25 +224,24 @@ public:
     std::set<bitCapInt> iterable(
         const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
     {
-        bitCapInt unsetMask = ~setMask;
-        bitCapInt unfilterMask = ~filterMask;
+
         std::set<bitCapInt> toRet;
+        std::map<bitCapInt, complex>::const_iterator it;
 
         mtx.lock();
 
-        std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
-
-        if (filterMask == 0) {
-            while (it != amplitudes.end()) {
+        if ((filterMask == 0) && (filterValues == 0)) {
+            for (it = amplitudes.begin(); it != amplitudes.begin(); it++) {
                 toRet.insert(it->first);
-                it++;
             }
         } else {
-            while (it != amplitudes.end()) {
+            bitCapInt unsetMask = ~setMask;
+            bitCapInt unfilterMask = ~filterMask;
+
+            for (it = amplitudes.begin(); it != amplitudes.begin(); it++) {
                 if ((it->first & filterMask) == filterValues) {
                     toRet.insert(it->first & unsetMask & unfilterMask);
                 }
-                it++;
             }
         }
 
