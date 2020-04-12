@@ -224,11 +224,6 @@ public:
             });
         }
 
-        for (i = 1; i < threadCount; i++) {
-            toRet[0].insert(toRet[i].begin(), toRet[i].end());
-            toRet[i].clear();
-        }
-
         while (toRet.size() > 1U) {
             // Work odd unit into collapse sequence:
             if (toRet.size() & 1U) {
