@@ -224,6 +224,19 @@ public:
             });
         }
 
+        for (i = (toRet.size() - 1); i >= 0; i--) {
+            if (toRet[i].size() == 0) {
+                toRetIt = toRet.begin();
+                std::advance(toRetIt, i);
+                toRet.erase(toRetIt);
+            }
+        }
+
+        if (toRet.size() == 0) {
+            mtx.unlock();
+            return {};
+        }
+
         while (toRet.size() > 1U) {
             // Work odd unit into collapse sequence:
             if (toRet.size() & 1U) {
