@@ -186,7 +186,7 @@ public:
         }
     }
 
-    bool is_sparse() { return (amplitudes.size() < (capacity >> 2U)); }
+    bool is_sparse() { return (amplitudes.size() < (capacity >> 1U)); }
 
     /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
     std::set<bitCapInt> iterable(
