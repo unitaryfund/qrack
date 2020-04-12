@@ -247,17 +247,15 @@ public:
             combineCount = toRet.size() / 2U;
             std::vector<std::future<void>> futures(combineCount);
             for (i = (combineCount - 1U); i >= 0; i--) {
-                futures[i] = std::async(std::launch::async, [i, &toRet]() {
-                    toRet[i * 2U].insert(toRet[i * 2U + 1U].begin(), toRet[i * 2U + 1U].end());
-                    toRet[i * 2U + 1U].clear();
+                futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
+                    toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                    toRet[i + combineCount].clear();
                 });
             }
 
             for (i = (combineCount - 1U); i >= 0; i--) {
                 futures[i].get();
-                toRetIt = toRet.begin();
-                std::advance(toRetIt, i * 2U + 1U);
-                toRet.erase(toRetIt);
+                toRet.pop_back();
             }
         }
 
