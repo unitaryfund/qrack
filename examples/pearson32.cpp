@@ -103,7 +103,7 @@ int main()
     qReg->H(0);
     std::cout << "Initialized." << std::endl;
     QPearson32(KEY_SIZE, T, qReg);
-    /*qReg->ForceM(8 * KEY_SIZE, false);
+    qReg->ForceM(8 * KEY_SIZE, false);
 
     bitCapInt quantumKey = qReg->MReg(0, 8);
     quantumResult = qReg->MReg(8 * KEY_SIZE, 24);
@@ -120,5 +120,4 @@ int main()
     } else {
         std::cout << "(Failed.)" << std::endl;
     }
-    */
 };

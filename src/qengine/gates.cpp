@@ -16,13 +16,19 @@ namespace Qrack {
 
 void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
-    par_for(0, maxQPower, [&](const bitCapInt i, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
         if ((i & regMask) == result) {
             stateVec->write(i, nrm * stateVec->read(i));
         } else {
             stateVec->write(i, complex(ZERO_R1, ZERO_R1));
         }
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
 
     runningNorm = ONE_R1;
 }
@@ -32,8 +38,16 @@ void QEngineCPU::PhaseFlip()
 {
     // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
     // phase offsets.
-    if (!randGlobalPhase) {
-        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
+    if (randGlobalPhase) {
+        return;
+    }
+
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
     }
 }
 
