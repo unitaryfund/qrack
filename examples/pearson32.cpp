@@ -36,7 +36,7 @@ bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
         hh[j] = h;
     }
 
-    return (((bitCapInt)hh[1]) << 16) | (((bitCapInt)hh[2]) << 8) | ((bitCapInt)hh[3]);
+    return (((bitCapInt)hh[0]) << 16) | (((bitCapInt)hh[1]) << 8) | ((bitCapInt)hh[2]);
 }
 
 void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)

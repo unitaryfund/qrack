@@ -127,9 +127,10 @@ public:
     void write(const bitCapInt& i, const complex& c)
     {
         if (norm(c) < min_norm) {
-            if (amplitudes.find(i) != amplitudes.end()) {
+            auto it = amplitudes.find(i);
+            if (it != amplitudes.end()) {
                 mtx.lock();
-                amplitudes.erase(i);
+                amplitudes.erase(it);
                 mtx.unlock();
             }
         } else {
