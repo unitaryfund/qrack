@@ -27,7 +27,7 @@ bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
     unsigned char h;
     unsigned char hh[8];
 
-    for (j = 0; j < 4; ++j) {
+    for (j = 0; j < 3; ++j) {
         // Change the first byte
         h = T[(x[0] + j) & 0xFF];
         for (i = 1; i < len; ++i) {
@@ -36,7 +36,7 @@ bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
         hh[j] = h;
     }
 
-    return (((bitCapInt)hh[0]) << 24) | (((bitCapInt)hh[1]) << 16) | (((bitCapInt)hh[2]) << 8) | ((bitCapInt)hh[3]);
+    return (((bitCapInt)hh[1]) << 16) | (((bitCapInt)hh[2]) << 8) | ((bitCapInt)hh[3]);
 }
 
 void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
@@ -44,9 +44,9 @@ void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
     size_t i;
     size_t j;
     bitLenInt x_index;
-    bitLenInt h_index = (len + 3) * 8;
+    bitLenInt h_index = (len + 2) * 8;
 
-    for (j = 0; j < 4; ++j) {
+    for (j = 0; j < 3; ++j) {
         // Change the first byte
         x_index = 0;
         qReg->IndexedLDA(x_index, 8, h_index, 8, T, false);
@@ -60,8 +60,10 @@ void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
             qReg->Hash(h_index, 8, T);
             std::cout << "Hashed." << std::endl;
         }
-        qReg->INC(1, 0, 8);
-        std::cout << "Incremented." << std::endl;
+        if (j < 2) {
+            qReg->INC(1, 0, 8);
+            std::cout << "Incremented." << std::endl;
+        }
         h_index -= 8;
     }
 }
@@ -71,7 +73,7 @@ int main()
     size_t i;
 
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU,
-        32U + 8U * KEY_SIZE, 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
+        24U + 8U * KEY_SIZE, 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
 
     unsigned char T[TABLE_SIZE];
     for (i = 0; i < TABLE_SIZE; i++) {
@@ -92,7 +94,7 @@ int main()
     QPearson32(KEY_SIZE, T, qReg);
 
     bitCapInt classicalResult = Pearson32(x, KEY_SIZE, T);
-    bitCapInt quantumResult = qReg->MReg(8 * KEY_SIZE, 32);
+    bitCapInt quantumResult = qReg->MReg(8 * KEY_SIZE, 24);
 
     std::cout << "Classical result: " << (int)classicalResult << std::endl;
     std::cout << "Quantum result:   " << (int)quantumResult << std::endl;
@@ -101,11 +103,10 @@ int main()
     qReg->H(0);
     std::cout << "Initialized." << std::endl;
     QPearson32(KEY_SIZE, T, qReg);
-    std::cout << "Hashed." << std::endl;
-    qReg->ForceM(8 * KEY_SIZE, false);
+    /*qReg->ForceM(8 * KEY_SIZE, false);
 
     bitCapInt quantumKey = qReg->MReg(0, 8);
-    quantumResult = qReg->MReg(8 * KEY_SIZE, 32);
+    quantumResult = qReg->MReg(8 * KEY_SIZE, 24);
 
     for (i = 0; i < KEY_SIZE; i++) {
         x[i] = (quantumKey >> (i * 8U)) & 0xFF;
@@ -119,4 +120,5 @@ int main()
     } else {
         std::cout << "(Failed.)" << std::endl;
     }
+    */
 };

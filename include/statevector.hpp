@@ -119,24 +119,19 @@ public:
     complex read(const bitCapInt& i)
     {
         complex toRet;
-        mtx.lock();
-        std::map<bitCapInt, complex>::const_iterator it = amplitudes.find(i);
-        if (it == amplitudes.end()) {
-            mtx.unlock();
-            toRet = ZERO_CMPLX;
-        } else {
-            toRet = it->second;
-            mtx.unlock();
-        }
+        auto it = amplitudes.find(i);
+        toRet = (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
         return toRet;
     }
 
     void write(const bitCapInt& i, const complex& c)
     {
         if (norm(c) < min_norm) {
-            mtx.lock();
-            amplitudes.erase(i);
-            mtx.unlock();
+            if (amplitudes.find(i) != amplitudes.end()) {
+                mtx.lock();
+                amplitudes.erase(i);
+                mtx.unlock();
+            }
         } else {
             mtx.lock();
             amplitudes[i] = c;
@@ -146,9 +141,27 @@ public:
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
-        if ((norm(c1) > min_norm) || (norm(c2) > min_norm)) {
-            write(i1, c1);
-            write(i2, c2);
+        bool isC1Set = norm(c1) > min_norm;
+        bool isC2Set = norm(c2) > min_norm;
+        if (!(isC1Set || isC2Set)) {
+            return;
+        }
+
+        if (isC1Set && isC2Set) {
+            mtx.lock();
+            amplitudes[i1] = c1;
+            amplitudes[i2] = c2;
+            mtx.unlock();
+        } else if (isC1Set) {
+            mtx.lock();
+            amplitudes.erase(i2);
+            amplitudes[i1] = c1;
+            mtx.unlock();
+        } else {
+            mtx.lock();
+            amplitudes.erase(i1);
+            amplitudes[i2] = c2;
+            mtx.unlock();
         }
     }
 
