@@ -68,6 +68,7 @@ void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
         }
         h_index -= 8;
     }
+    qReg->DEC(3, 0, 8);
 }
 
 int main()
@@ -100,4 +101,18 @@ int main()
 
     std::cout << "Classical result: " << (int)classicalResult << std::endl;
     std::cout << "Quantum result:   " << (int)quantumResult << std::endl;
+
+    qReg->SetPermutation(0);
+    qReg->H(0, 8);
+    QPearson32(KEY_SIZE, T, qReg);
+
+    try {
+        qReg->ForceM(8U * KEY_SIZE, false);
+    } catch (...) {
+        std::cout << "Even result:      (failed)" << std::endl;
+    }
+
+    bitCapInt quantumKey = qReg->MReg(0, 8U * KEY_SIZE);
+    quantumResult = qReg->MReg(8U * KEY_SIZE, 32);
+    std::cout << "Even result:      (key: " << (int)quantumKey << ", hash: " << (int)quantumResult << ")" << std::endl;
 };

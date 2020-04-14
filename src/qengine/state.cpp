@@ -627,13 +627,14 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     bitCapInt remainderPower = pow2(nLength);
     bitCapInt skipMask = pow2(start) - ONE_BCI;
     bitCapInt disposedRes = disposedPerm << (bitCapInt)start;
+    bitCapInt saveMask = ~((pow2(start + length) - ONE_BCI) ^ skipMask);
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
 
     if (stateVec->is_sparse()) {
         par_for_set(stateVec->iterable(), [&](const bitCapInt lcv, const int cpu) {
             bitCapInt i, iLow, iHigh;
-            iHigh = lcv ^ disposedRes;
+            iHigh = lcv & saveMask;
             iLow = iHigh & skipMask;
             i = iLow | ((iHigh ^ iLow) >> (bitCapInt)length);
             nStateVec->write(i, stateVec->read(lcv));
