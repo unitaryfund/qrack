@@ -613,6 +613,40 @@ void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineCPUPtr)NULL); }
 
+void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+{
+    if (length == 0) {
+        return;
+    }
+
+    if (doNormalize && (runningNorm != ONE_R1)) {
+        NormalizeState();
+    }
+
+    bitLenInt nLength = qubitCount - length;
+    bitCapInt remainderPower = pow2(nLength);
+    bitCapInt skipMask = pow2(start) - ONE_BCI;
+    bitCapInt disposedRes = disposedPerm << (bitCapInt)start;
+
+    StateVectorPtr nStateVec = AllocStateVec(remainderPower);
+
+    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt i, iLow, iHigh;
+        iHigh = lcv;
+        iLow = iHigh & skipMask;
+        i = iLow | ((iHigh ^ iLow) << (bitCapInt)length) | disposedRes;
+        nStateVec->write(lcv, stateVec->read(i));
+    });
+
+    if (nLength == 0) {
+        SetQubitCount(1);
+    } else {
+        SetQubitCount(nLength);
+    }
+
+    ResetStateVec(nStateVec);
+}
+
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {

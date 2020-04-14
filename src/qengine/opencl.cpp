@@ -1136,6 +1136,50 @@ void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineOCLPtr)NULL); }
 
+void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+{
+    if (length == 0) {
+        return;
+    }
+
+    if (length == qubitCount) {
+        // This will be cleared by the destructor:
+        ResetStateVec(AllocStateVec(2));
+        stateBuffer = MakeStateVecBuffer(stateVec);
+        SetQubitCount(1);
+        return;
+    }
+
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    bitLenInt nLength = qubitCount - length;
+    bitCapInt remainderPower = pow2(nLength);
+    bitCapInt skipMask = pow2(start) - ONE_BCI;
+    bitCapInt disposedRes = disposedPerm << (bitCapInt)start;
+
+    bitCapInt bciArgs[BCI_ARG_LEN] = { remainderPower, length, skipMask, disposedRes, 0, 0, 0, 0, 0, 0 };
+
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapInt) * 4, bciArgs);
+
+    SetQubitCount(nLength);
+
+    size_t ngc = FixWorkItemCount(maxQPower, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    complex* nStateVec = AllocStateVec(maxQPower);
+    BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
+
+    WaitCall(OCL_API_DISPOSE, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer });
+
+    ResetStateVec(nStateVec);
+    ResetStateBuffer(nStateBuffer);
+}
+
 real1 QEngineOCL::Probx(OCLAPI api_call, bitCapInt* bciArgs)
 {
     if (doNormalize) {

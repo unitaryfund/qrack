@@ -499,6 +499,24 @@ void kernel decomposeamp(global real1* stateProb, global real1* stateAngle, cons
     }
 }
 
+void kernel dispose(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
+{
+    bitCapInt Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapInt remainderPower = bitCapIntPtr[0];
+    bitCapInt len = bitCapIntPtr[1];
+    bitCapInt skipMask = bitCapIntPtr[2];
+    bitCapInt disposedRes = bitCapIntPtr[3];
+    bitCapInt i, iLow, iHigh;
+    for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        iHigh = lcv;
+        iLow = iHigh & skipMask;
+        i = iLow | ((iHigh ^ iLow) << (bitCapInt)len) | disposedRes;
+        nStateVec[lcv] = stateVec[i];
+    }
+}
+
 void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
 {
     bitCapInt Nthreads, lcv, locID, locNthreads;

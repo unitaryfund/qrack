@@ -464,6 +464,7 @@ public:
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives

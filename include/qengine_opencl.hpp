@@ -205,6 +205,7 @@ public:
     virtual void Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy, bool isConsumed = false);
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 

@@ -78,6 +78,7 @@ public:
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
     virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
         return TryDecompose(start, length, std::dynamic_pointer_cast<QFusion>(dest));

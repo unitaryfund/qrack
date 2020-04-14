@@ -50,19 +50,15 @@ void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
         // Change the first byte
         x_index = 0;
         qReg->IndexedLDA(x_index, 8, h_index, 8, T, false);
-        std::cout << "Loaded." << std::endl;
         for (i = 1; i < len; ++i) {
             x_index += 8;
             // XOR might collapse the state, as we have defined the API.
             qReg->XOR(x_index, h_index, h_index, 8);
-            std::cout << "XOR-ed." << std::endl;
             // This is a valid API if the hash table is one-to-one (unitary).
             qReg->Hash(h_index, 8, T);
-            std::cout << "Hashed." << std::endl;
         }
         if (j < 2) {
             qReg->INC(1, 0, 8);
-            std::cout << "Incremented." << std::endl;
         }
         h_index -= 8;
     }
@@ -101,7 +97,6 @@ int main()
 
     qReg->SetPermutation(0);
     qReg->H(0);
-    std::cout << "Initialized." << std::endl;
     QPearson32(KEY_SIZE, T, qReg);
     qReg->ForceM(8 * KEY_SIZE, false);
 

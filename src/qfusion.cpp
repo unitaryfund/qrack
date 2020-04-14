@@ -354,6 +354,17 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     SetQubitCount(qReg->GetQubitCount());
 }
 
+void QFusion::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+{
+    if (length == 0) {
+        return;
+    }
+
+    FlushAll();
+    qReg->Dispose(start, length, disposedPerm);
+    SetQubitCount(qReg->GetQubitCount());
+}
+
 bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushAll();

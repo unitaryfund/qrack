@@ -386,7 +386,12 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length) = 0;
 
     /**
-     *  Attempt a Decompose() operation, on a state which might not be separable. If the state is not separable, abort
+     * Dispose a a contiguous set of qubits that are already in a permutation eigenstate.
+     */
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) = 0;
+
+    /**
+     * Attempt a Decompose() operation, on a state which might not be separable. If the state is not separable, abort
      * and return false. Otherwise, complete the operation and return true.
      */
     virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);

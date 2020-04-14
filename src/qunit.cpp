@@ -254,6 +254,9 @@ void QUnit::Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
+// The optimization of this method is redudandant with other optimizations in QUnit.
+void QUnit::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { Detach(start, length, nullptr); }
+
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
@@ -673,7 +676,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     }
 
     if (doDispose) {
-        unit->Dispose(mapped, 1);
+        unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
     }
 
     /* Update the mappings. */
@@ -696,6 +699,10 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     } else {
         EndEmulation(qubit);
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
+    }
+
+    if (!doApply) {
+        return result;
     }
 
     if (shard.unit->GetQubitCount() == 1) {
@@ -795,13 +802,14 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
 
         for (auto iter = toDispose.rbegin(); iter != toDispose.rend(); ++iter) {
             contigRegResult = partResults.back();
-            partResults.pop_back();
             for (i = iter->first; i < (iter->first + iter->second); i++) {
                 SeparateBit(contigRegResult & ONE_BCI, bits[invMap[qi.first][i]], false);
                 contigRegResult >>= ONE_BCI;
             }
+            contigRegResult = partResults.back();
+            partResults.pop_back();
             if (qi.first->GetQubitCount() > iter->second) {
-                qi.first->Dispose(iter->first, iter->second);
+                qi.first->Dispose(iter->first, iter->second, contigRegResult);
             }
         }
     }

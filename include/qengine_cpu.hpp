@@ -70,6 +70,7 @@ public:
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
     /** @} */
 
