@@ -118,10 +118,8 @@ public:
 
     complex read(const bitCapInt& i)
     {
-        complex toRet;
         auto it = amplitudes.find(i);
-        toRet = (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
-        return toRet;
+        return (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
     }
 
     void write(const bitCapInt& i, const complex& c)
