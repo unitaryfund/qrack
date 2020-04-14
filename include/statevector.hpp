@@ -118,8 +118,15 @@ public:
 
     complex read(const bitCapInt& i)
     {
-        auto it = amplitudes.find(i);
-        return (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
+        const std::map<bitCapInt, complex>::const_iterator it = amplitudes.find(i);
+        mtx.lock();
+        if (it == amplitudes.end()) {
+            mtx.unlock();
+            return ZERO_CMPLX;
+        } else {
+            mtx.unlock();
+            return it->second;
+        }
     }
 
     void write(const bitCapInt& i, const complex& c)
