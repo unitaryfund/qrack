@@ -354,6 +354,17 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length)
     SetQubitCount(qReg->GetQubitCount());
 }
 
+void QFusion::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+{
+    if (length == 0) {
+        return;
+    }
+
+    FlushAll();
+    qReg->Dispose(start, length, disposedPerm);
+    SetQubitCount(qReg->GetQubitCount());
+}
+
 bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
 {
     FlushAll();
@@ -832,12 +843,12 @@ void QFusion::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt 
     qReg->PhaseFlipIfLess(greaterPerm, start, length);
 }
 
-bitCapInt QFusion::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QFusion::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+    unsigned char* values, bool resetValue)
 {
     FlushReg(indexStart, indexLength);
     FlushReg(valueStart, valueLength);
-    return qReg->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values);
+    return qReg->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
 }
 
 bitCapInt QFusion::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,

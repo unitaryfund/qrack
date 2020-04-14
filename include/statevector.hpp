@@ -14,47 +14,15 @@
 #pragma once
 
 #include <algorithm>
+#include <future>
 #include <map>
 #include <mutex>
 #include <set>
 
+#include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 
 namespace Qrack {
-
-class StateVector;
-class StateVectorArray;
-class StateVectorSparse;
-
-typedef std::shared_ptr<StateVector> StateVectorPtr;
-typedef std::shared_ptr<StateVectorArray> StateVectorArrayPtr;
-typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
-
-// This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
-class StateVector {
-protected:
-    bitCapInt capacity;
-
-public:
-    StateVector(bitCapInt cap)
-        : capacity(cap)
-    {
-    }
-    virtual complex read(const bitCapInt& i) = 0;
-    virtual void write(const bitCapInt& i, const complex& c) = 0;
-    /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
-    /// tensor slicing.)
-    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
-    virtual void clear() = 0;
-    virtual void copy_in(const complex* inArray) = 0;
-    virtual void copy_out(complex* outArray) = 0;
-    virtual void copy(StateVectorPtr toCopy) = 0;
-    virtual void get_probs(real1* outArray) = 0;
-    virtual bool is_sparse() = 0;
-    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
-    virtual std::set<bitCapInt> iterable(
-        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0) = 0;
-};
 
 class StateVectorArray : public StateVector {
 protected:
@@ -125,15 +93,18 @@ public:
 
     bool is_sparse() { return false; }
 
-    /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
+    /// Not used:
+    std::vector<bitCapInt> iterable() { return {}; }
+
+    /// Not used:
     std::set<bitCapInt> iterable(
         const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
     {
-        return std::set<bitCapInt>();
+        return {};
     }
 };
 
-class StateVectorSparse : public StateVector {
+class StateVectorSparse : public StateVector, public ParallelFor {
 protected:
     std::map<bitCapInt, complex> amplitudes;
     std::mutex mtx;
@@ -147,25 +118,19 @@ public:
 
     complex read(const bitCapInt& i)
     {
-        complex toRet;
-        mtx.lock();
-        std::map<bitCapInt, complex>::const_iterator it = amplitudes.find(i);
-        if (it == amplitudes.end()) {
-            mtx.unlock();
-            toRet = ZERO_CMPLX;
-        } else {
-            toRet = it->second;
-            mtx.unlock();
-        }
-        return toRet;
+        auto it = amplitudes.find(i);
+        return (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
     }
 
     void write(const bitCapInt& i, const complex& c)
     {
         if (norm(c) < min_norm) {
-            mtx.lock();
-            amplitudes.erase(i);
-            mtx.unlock();
+            auto it = amplitudes.find(i);
+            if (it != amplitudes.end()) {
+                mtx.lock();
+                amplitudes.erase(it);
+                mtx.unlock();
+            }
         } else {
             mtx.lock();
             amplitudes[i] = c;
@@ -175,9 +140,27 @@ public:
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
-        if ((norm(c1) > min_norm) || (norm(c2) > min_norm)) {
-            write(i1, c1);
-            write(i2, c2);
+        bool isC1Set = norm(c1) > min_norm;
+        bool isC2Set = norm(c2) > min_norm;
+        if (!(isC1Set || isC2Set)) {
+            return;
+        }
+
+        if (isC1Set && isC2Set) {
+            mtx.lock();
+            amplitudes[i1] = c1;
+            amplitudes[i2] = c2;
+            mtx.unlock();
+        } else if (isC1Set) {
+            mtx.lock();
+            amplitudes.erase(i2);
+            amplitudes[i1] = c1;
+            mtx.unlock();
+        } else {
+            mtx.lock();
+            amplitudes.erase(i1);
+            amplitudes[i2] = c2;
+            mtx.unlock();
         }
     }
 
@@ -218,7 +201,64 @@ public:
         }
     }
 
-    bool is_sparse() { return (amplitudes.size() < (capacity >> 2U)); }
+    bool is_sparse() { return (amplitudes.size() < (capacity >> 1U)); }
+
+    std::vector<bitCapInt> iterable()
+    {
+        int32_t i, combineCount;
+
+        int32_t threadCount = GetConcurrencyLevel();
+        std::vector<std::vector<bitCapInt>> toRet(threadCount);
+        std::vector<std::vector<bitCapInt>>::iterator toRetIt;
+
+        mtx.lock();
+
+        par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+            std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+            std::advance(it, lcv);
+            toRet[cpu].push_back(it->first);
+        });
+
+        for (i = (toRet.size() - 1); i >= 0; i--) {
+            if (toRet[i].size() == 0) {
+                toRetIt = toRet.begin();
+                std::advance(toRetIt, i);
+                toRet.erase(toRetIt);
+            }
+        }
+
+        if (toRet.size() == 0) {
+            mtx.unlock();
+            return {};
+        }
+
+        while (toRet.size() > 1U) {
+            // Work odd unit into collapse sequence:
+            if (toRet.size() & 1U) {
+                toRet[toRet.size() - 2U].insert(
+                    toRet[toRet.size() - 2U].end(), toRet[toRet.size() - 1U].begin(), toRet[toRet.size() - 1U].end());
+                toRet.pop_back();
+            }
+
+            combineCount = toRet.size() / 2U;
+            std::vector<std::future<void>> futures(combineCount);
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
+                    toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                    toRet[i + combineCount].clear();
+                });
+            }
+
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i].get();
+                toRet.pop_back();
+            }
+        }
+
+        mtx.unlock();
+
+        return toRet[0];
+    }
 
     /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
     std::set<bitCapInt> iterable(
@@ -228,29 +268,72 @@ public:
             return {};
         }
 
-        std::set<bitCapInt> toRet;
-        std::map<bitCapInt, complex>::const_iterator it;
+        int32_t i, combineCount;
+
         bitCapInt unsetMask = ~setMask;
+
+        int32_t threadCount = GetConcurrencyLevel();
+        std::vector<std::set<bitCapInt>> toRet(threadCount);
+        std::vector<std::set<bitCapInt>>::iterator toRetIt;
 
         mtx.lock();
 
         if ((filterMask == 0) && (filterValues == 0)) {
-            for (it = amplitudes.begin(); it != amplitudes.end(); it++) {
-                toRet.insert(it->first & unsetMask);
-            }
+            par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+                std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                std::advance(it, lcv);
+                toRet[cpu].insert(it->first & unsetMask);
+            });
         } else {
             bitCapInt unfilterMask = ~filterMask;
 
-            for (it = amplitudes.begin(); it != amplitudes.end(); it++) {
+            par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+                std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {
-                    toRet.insert(it->first & unsetMask & unfilterMask);
+                    toRet[cpu].insert(it->first & unsetMask & unfilterMask);
                 }
+            });
+        }
+
+        for (i = (toRet.size() - 1); i >= 0; i--) {
+            if (toRet[i].size() == 0) {
+                toRetIt = toRet.begin();
+                std::advance(toRetIt, i);
+                toRet.erase(toRetIt);
+            }
+        }
+
+        if (toRet.size() == 0) {
+            mtx.unlock();
+            return {};
+        }
+
+        while (toRet.size() > 1U) {
+            // Work odd unit into collapse sequence:
+            if (toRet.size() & 1U) {
+                toRet[toRet.size() - 2U].insert(toRet[toRet.size() - 1U].begin(), toRet[toRet.size() - 1U].end());
+                toRet.pop_back();
+            }
+
+            combineCount = toRet.size() / 2U;
+            std::vector<std::future<void>> futures(combineCount);
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
+                    toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                    toRet[i + combineCount].clear();
+                });
+            }
+
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                futures[i].get();
+                toRet.pop_back();
             }
         }
 
         mtx.unlock();
 
-        return toRet;
+        return toRet[0];
     }
 };
 

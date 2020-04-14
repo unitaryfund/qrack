@@ -78,6 +78,7 @@ public:
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
     virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
         return TryDecompose(start, length, std::dynamic_pointer_cast<QFusion>(dest));
@@ -161,7 +162,7 @@ public:
     virtual void PhaseFlip();
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values);
+        bitLenInt valueLength, unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,

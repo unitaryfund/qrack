@@ -12,10 +12,11 @@
 
 #pragma once
 
+#include <algorithm>
+#include <set>
 #include <vector>
 
 /* Needed for bitCapInt typedefs. */
-#include "../statevector.hpp"
 #include "qrack_types.hpp"
 
 namespace Qrack {
@@ -63,6 +64,9 @@ public:
 
     /** Iterate over a sparse state vector. */
     void par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn);
+
+    /** Iterate over a sparse state vector. */
+    void par_for_set(const std::vector<bitCapInt>& sparseSet, ParallelFunc fn);
 
     /** Iterate over the power set of 2 sparse state vectors. */
     void par_for_sparse_compose(const std::set<bitCapInt>& lowSet, const std::set<bitCapInt>& highSet,

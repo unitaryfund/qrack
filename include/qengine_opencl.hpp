@@ -205,6 +205,7 @@ public:
     virtual void Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy, bool isConsumed = false);
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -232,7 +233,7 @@ public:
     virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values);
+        bitLenInt valueLength, unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,

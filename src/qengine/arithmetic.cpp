@@ -33,13 +33,19 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt regRes = lcv & regMask;
-        bitCapInt regInt = regRes >> start;
+        bitCapInt regInt = (lcv & regMask) >> start;
         bitCapInt outInt = (regInt >> (length - shift)) | ((regInt << shift) & lengthMask);
         nStateVec->write((outInt << start) | otherRes, stateVec->read(lcv));
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+
     ResetStateVec(nStateVec);
 }
 
@@ -61,13 +67,19 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
         nStateVec->write((outInt << inOutStart) | otherRes, stateVec->read(lcv));
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+
     ResetStateVec(nStateVec);
 }
 
@@ -107,8 +119,7 @@ void QEngineCPU::CINC(
 
     par_for_mask(0, maxQPower, controlPowers, controlLen, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
         nStateVec->write((outInt << inOutStart) | otherRes | controlMask, stateVec->read(lcv | controlMask));
     });
@@ -144,8 +155,7 @@ void QEngineCPU::INCDECC(
 
     par_for_skip(0, maxQPower, pow2(carryIndex), ONE_BCI, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt outInt = inOutInt + toMod;
         bitCapInt outRes;
         if (outInt < lengthPower) {
@@ -186,11 +196,9 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
-        bitCapInt inInt = toAdd;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt outInt = inOutInt + toAdd;
         bitCapInt outRes;
         if (outInt < lengthPower) {
@@ -198,13 +206,20 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
         } else {
             outRes = ((outInt - lengthPower) << inOutStart) | otherRes;
         }
-        bool isOverflow = isOverflowAdd(inOutInt, inInt, signMask, lengthPower);
+        bool isOverflow = isOverflowAdd(inOutInt, toAdd, signMask, lengthPower);
         if (isOverflow && ((outRes & overflowMask) == overflowMask)) {
             nStateVec->write(outRes, -stateVec->read(lcv));
         } else {
             nStateVec->write(outRes, stateVec->read(lcv));
         }
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+
     ResetStateVec(nStateVec);
 }
 
@@ -234,8 +249,7 @@ void QEngineCPU::INCDECSC(
 
     par_for_skip(0, maxQPower, carryMask, ONE_BCI, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt inInt = toMod;
         bitCapInt outInt = inOutInt + toMod;
         bitCapInt outRes;
@@ -279,8 +293,7 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
 
     par_for_skip(0, maxQPower, carryMask, ONE_BCI, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt inInt = toMod;
         bitCapInt outInt = inOutInt + toMod;
         bitCapInt outRes;
@@ -621,11 +634,10 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toAdd;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         int test1, test2;
         int j;
         int* nibbles = new int[nibbleCount];
@@ -656,7 +668,14 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
             nStateVec->write(lcv, stateVec->read(lcv));
         }
         delete[] nibbles;
-    });
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(stateVec->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+
     ResetStateVec(nStateVec);
 }
 
@@ -691,8 +710,7 @@ void QEngineCPU::INCDECBCDC(
     par_for_skip(0, maxQPower, pow2(carryIndex), ONE_BCI, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt partToAdd = toMod;
-        bitCapInt inOutRes = lcv & inOutMask;
-        bitCapInt inOutInt = inOutRes >> inOutStart;
+        bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         int test1, test2;
         int j;
         int* nibbles = new int[nibbleCount];
@@ -746,10 +764,12 @@ void QEngineCPU::INCDECBCDC(
 }
 
 /// Set 8 bit register bits based on read from classical memory
-bitCapInt QEngineCPU::IndexedLDA(
-    bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
+bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
-    SetReg(valueStart, valueLength, 0);
+    if (resetValue) {
+        SetReg(valueStart, valueLength, 0);
+    }
 
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
@@ -758,19 +778,25 @@ bitCapInt QEngineCPU::IndexedLDA(
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
 
-    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt inputRes = lcv & inputMask;
-        bitCapInt inputInt = inputRes >> indexStart;
-        bitCapInt outputInt = 0;
-        for (bitCapInt j = 0; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
-        }
-        bitCapInt outputRes = outputInt << valueStart;
-        nStateVec->write(outputRes | lcv, stateVec->read(lcv));
-    };
+    ParallelFunc fn;
+    if (valueBytes == 1) {
+        fn = [&](const bitCapInt lcv, const int cpu) {
+            nStateVec->write(lcv | (values[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+        };
+    } else {
+        fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt inputInt = (lcv & inputMask) >> indexStart;
+            bitCapInt outputInt = 0;
+            for (bitCapInt j = 0; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
+            bitCapInt outputRes = outputInt << valueStart;
+            nStateVec->write(outputRes | lcv, stateVec->read(lcv));
+        };
+    }
 
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(0, bitRegMask(valueStart, valueLength), 0), fn);
+        par_for_set(stateVec->iterable(), fn);
     } else {
         par_for_skip(0, maxQPower, skipPower, valueLength, fn);
     }
@@ -1005,7 +1031,7 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     };
 
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(0), fn);
+        par_for_set(stateVec->iterable(), fn);
     } else {
         par_for(0, maxQPower, fn);
     }

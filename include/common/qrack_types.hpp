@@ -81,6 +81,40 @@ typedef std::shared_ptr<complex> BitOp;
 typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
 typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
 
+class StateVector;
+class StateVectorArray;
+class StateVectorSparse;
+
+typedef std::shared_ptr<StateVector> StateVectorPtr;
+typedef std::shared_ptr<StateVectorArray> StateVectorArrayPtr;
+typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
+
+// This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
+class StateVector {
+protected:
+    bitCapInt capacity;
+
+public:
+    StateVector(bitCapInt cap)
+        : capacity(cap)
+    {
+    }
+    virtual complex read(const bitCapInt& i) = 0;
+    virtual void write(const bitCapInt& i, const complex& c) = 0;
+    /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
+    /// tensor slicing.)
+    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
+    virtual void clear() = 0;
+    virtual void copy_in(const complex* inArray) = 0;
+    virtual void copy_out(complex* outArray) = 0;
+    virtual void copy(StateVectorPtr toCopy) = 0;
+    virtual void get_probs(real1* outArray) = 0;
+    virtual bool is_sparse() = 0;
+    virtual std::vector<bitCapInt> iterable() = 0;
+    virtual std::set<bitCapInt> iterable(
+        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0) = 0;
+};
+
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);

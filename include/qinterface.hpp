@@ -386,7 +386,12 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length) = 0;
 
     /**
-     *  Attempt a Decompose() operation, on a state which might not be separable. If the state is not separable, abort
+     * Dispose a a contiguous set of qubits that are already in a permutation eigenstate.
+     */
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) = 0;
+
+    /**
+     * Attempt a Decompose() operation, on a state which might not be separable. If the state is not separable, abort
      * and return false. Otherwise, complete the operation and return true.
      */
     virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
@@ -1734,7 +1739,7 @@ public:
      * at a time.
      */
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values) = 0;
+        bitLenInt valueLength, unsigned char* values, bool resetValue = true) = 0;
 
     /**
      * Add to entangled 8 bit register state with a superposed
