@@ -17,10 +17,17 @@
 #include <future>
 #include <mutex>
 #include <set>
-#include <unordered_map>
 
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
+
+#if ENABLE_UINT128
+#include <map>
+#define SparseStateVecMap std::map<bitCapInt, complex>
+#else
+#include <unordered_map>
+#define SparseStateVecMap std::unordered_map<bitCapInt, complex>
+#endif
 
 namespace Qrack {
 
@@ -106,7 +113,7 @@ public:
 
 class StateVectorSparse : public StateVector, public ParallelFor {
 protected:
-    std::unordered_map<bitCapInt, complex> amplitudes;
+    SparseStateVecMap amplitudes;
     std::mutex mtx;
 
 public:
@@ -285,7 +292,7 @@ public:
 
         if ((filterMask == 0) && (filterValues == 0)) {
             par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
-                std::unordered_map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                auto it = amplitudes.begin();
                 std::advance(it, lcv);
                 toRet[cpu].insert(it->first & unsetMask);
             });
@@ -293,7 +300,7 @@ public:
             bitCapInt unfilterMask = ~filterMask;
 
             par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
-                std::unordered_map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                auto it = amplitudes.begin();
                 std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {
                     toRet[cpu].insert(it->first & unsetMask & unfilterMask);
