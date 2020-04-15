@@ -18,12 +18,20 @@
 
 #define bitLenInt uint8_t
 #if ENABLE_PURE32
+#define bitCapIntOcl uint32_t
 #define bitCapInt uint32_t
 #define ONE_BCI 1U
 #elif ENABLE_UINT128
+#define bitCapIntOcl uint64_t
 #define bitCapInt __uint128_t
-#define ONE_BCI ((__uint128_t)1U)
+#define ONE_BCI 1ULL
+#elif ENABLE_UINT256
+#include <boost/multiprecision/cpp_int.hpp>
+#define bitCapIntOcl uint64_t
+#define bitCapInt boost::multiprecision::uint128_t
+#define ONE_BCI 1ULL
 #else
+#define bitCapIntOcl uint64_t
 #define bitCapInt uint64_t
 #define ONE_BCI 1ULL
 #endif

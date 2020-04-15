@@ -69,7 +69,7 @@ struct PoolItem {
     {
         cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * BCI_ARG_LEN);
+        ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
     }
 };
 
@@ -123,7 +123,7 @@ protected:
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
     /// design of the QEngine.
-    static const bitCapInt OclMemDenom = 3U;
+    static const bitCapIntOcl OclMemDenom = 3U;
 
     /**
      * Initialize a Qrack::QEngineOCL object. Specify the number of qubits and an initial permutation state.
@@ -176,7 +176,7 @@ public:
         }
     }
 
-    bitCapInt GetMaxSize() { return maxAlloc / sizeof(complex); };
+    bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual real1 ProbAll(bitCapInt fullRegister);
@@ -202,7 +202,6 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start, isConsumed);
     }
-    virtual void Compose(OCLAPI apiCall, bitCapInt* bciArgs, QEngineOCLPtr toCopy, bool isConsumed = false);
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
@@ -282,6 +281,8 @@ protected:
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
+    virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy, bool isConsumed = false);
+
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     virtual void INCDECSC(
@@ -294,7 +295,7 @@ protected:
     void InitOCL(int devID);
     PoolItemPtr GetFreePoolItem();
 
-    real1 ParSum(real1* toSum, bitCapInt maxI);
+    real1 ParSum(real1* toSum, bitCapIntOcl maxI);
 
     /**
      * Finishes the asynchronous wait event list or queue of OpenCL events.
@@ -332,10 +333,10 @@ protected:
     void UnlockSync();
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
-    void ArithmeticCall(
-        OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL, bitCapInt valuesLength = 0);
-    void CArithmeticCall(OCLAPI api_call, bitCapInt (&bciArgs)[BCI_ARG_LEN], bitCapInt* controlPowers,
-        const bitLenInt controlLen, unsigned char* values = NULL, bitCapInt valuesLength = 0);
+    void ArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
+        bitCapIntOcl valuesLength = 0);
+    void CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
+        const bitLenInt controlLen, unsigned char* values = NULL, bitCapIntOcl valuesLength = 0);
 
     using QEngine::Apply2x2;
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
@@ -355,37 +356,37 @@ protected:
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
     EventVecPtr ResetWaitEvents(bool waitQueue = true);
-    void ApplyMx(OCLAPI api_call, bitCapInt* bciArgs, complex nrm);
-    real1 Probx(OCLAPI api_call, bitCapInt* bciArgs);
+    void ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm);
+    real1 Probx(OCLAPI api_call, bitCapIntOcl* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
-    void INT(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
-    void CINT(OCLAPI api_call, bitCapInt toMod, const bitLenInt start, const bitLenInt length,
+    void INT(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length);
+    void CINT(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt start, const bitLenInt length,
         const bitLenInt* controls, const bitLenInt controlLen);
-    void INTC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
+    void INTC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
-    void INTS(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
+    void INTS(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt overflowIndex);
-    void INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
+    void INTSC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
-    void INTSC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
+    void INTSC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt overflowIndex, const bitLenInt carryIndex);
-    void INTBCD(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length);
-    void INTBCDC(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt length,
+    void INTBCD(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length);
+    void INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
-    void xMULx(OCLAPI api_call, bitCapInt* bciArgs, BufferPtr controlBuffer);
-    void MULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
+    void xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr controlBuffer);
+    void MULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length);
-    void MULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inOutStart,
+    void MULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN, const bitLenInt inOutStart,
         const bitLenInt carryStart, const bitLenInt length);
-    void CMULx(OCLAPI api_call, bitCapInt toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
+    void CMULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
-    void CMULModx(OCLAPI api_call, bitCapInt toMod, bitCapInt modN, const bitLenInt inOutStart,
+    void CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN, const bitLenInt inOutStart,
         const bitLenInt carryStart, const bitLenInt length, const bitLenInt* controls, const bitLenInt controlLen);
     void FullAdx(
         bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call);
-    void PhaseFlipX(OCLAPI api_call, bitCapInt* bciArgs);
+    void PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs);
 
-    bitCapInt OpIndexed(OCLAPI api_call, bitCapInt carryIn, bitLenInt indexStart, bitLenInt indexLength,
+    bitCapIntOcl OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
 };
 
