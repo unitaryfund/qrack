@@ -21,8 +21,8 @@
 #define SineShift M_PI_2
 #define PI_R1 M_PI
 #define min_norm 1e-30
-#define bitCapInt ulong
-#define bitCapInt2 ulong2
-#define bitCapInt4 ulong4
+#define bitCapIntOcl ulong
+#define bitCapIntOcl2 ulong2
+#define bitCapIntOcl4 ulong4
 #define bitLenInt unsigned char
 

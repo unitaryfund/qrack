@@ -658,14 +658,22 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     BufferPtr locPowersBuffer;
     cl::Event writeControlsEvent;
+    bitCapIntOcl* qPowersSortedOcl;
     if (bitCount > 2) {
         if (doCalcNorm) {
             locPowersBuffer = powersBuffer;
         } else {
             locPowersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * bitCount);
         }
-        DISPATCH_TEMP_WRITE(
-            waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent);
+        if (sizeof(bitCapInt) == sizeof(bitCapIntOcl)) {
+            DISPATCH_TEMP_WRITE(
+                waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent);
+        } else {
+            qPowersSortedOcl = new bitCapIntOcl[bitCount];
+            std::copy(qPowersSorted, qPowersSorted + bitCount, qPowersSortedOcl);
+            DISPATCH_TEMP_WRITE(
+                waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSortedOcl, writeControlsEvent);
+        }
     }
 
     // We load the appropriate kernel, that does/doesn't CALCULATE the norm, and does/doesn't APPLY the norm.
@@ -735,6 +743,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     if (bitCount > 2) {
         writeControlsEvent.wait();
+        if (sizeof(bitCapInt) != sizeof(bitCapIntOcl)) {
+            delete[] qPowersSortedOcl;
+        }
     }
     if (doCalcNorm) {
         wait_refs.clear();
