@@ -22,8 +22,13 @@
 #include "common/qrack_types.hpp"
 
 #if ENABLE_UINT128
+#if BOOST_AVAILABLE
+#include <unordered_map>
+#define SparseStateVecMap std::unordered_map<bitCapInt, complex>
+#else
 #include <map>
 #define SparseStateVecMap std::map<bitCapInt, complex>
+#endif
 #else
 #include <unordered_map>
 #define SparseStateVecMap std::unordered_map<bitCapInt, complex>
@@ -43,15 +48,20 @@ protected:
 #if defined(__APPLE__)
         void* toRet;
         posix_memalign(&toRet, QRACK_ALIGN_SIZE,
-            ((sizeof(complex) * elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : sizeof(complex) * elemCount);
+            ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
+                ? QRACK_ALIGN_SIZE
+                : sizeof(complex) * (bitCapIntOcl)elemCount);
         return (complex*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        return (complex*)_aligned_malloc(
-            ((sizeof(complex) * elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : sizeof(complex) * elemCount,
+        return (complex*)_aligned_malloc(((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
+                ? QRACK_ALIGN_SIZE
+                : sizeof(complex) * (bitCapIntOcl)elemCount,
             QRACK_ALIGN_SIZE);
 #else
         return (complex*)aligned_alloc(QRACK_ALIGN_SIZE,
-            ((sizeof(complex) * elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : sizeof(complex) * elemCount);
+            ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
+                ? QRACK_ALIGN_SIZE
+                : sizeof(complex) * (bitCapIntOcl)elemCount);
 #endif
     }
 
@@ -76,27 +86,33 @@ public:
 
     virtual ~StateVectorArray() { Free(); }
 
-    complex read(const bitCapInt& i) { return amplitudes[i]; };
+    complex read(const bitCapInt& i) { return amplitudes[(bitCapIntOcl)i]; };
 
-    void write(const bitCapInt& i, const complex& c) { amplitudes[i] = c; };
+    void write(const bitCapInt& i, const complex& c) { amplitudes[(bitCapIntOcl)i] = c; };
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
-        amplitudes[i1] = c1;
-        amplitudes[i2] = c2;
+        amplitudes[(bitCapIntOcl)i1] = c1;
+        amplitudes[(bitCapIntOcl)i2] = c2;
     };
 
-    void clear() { std::fill(amplitudes, amplitudes + capacity, ZERO_CMPLX); }
+    void clear() { std::fill(amplitudes, amplitudes + (bitCapIntOcl)capacity, ZERO_CMPLX); }
 
-    void copy_in(const complex* copyIn) { std::copy(copyIn, copyIn + capacity, amplitudes); }
+    void copy_in(const complex* copyIn) { std::copy(copyIn, copyIn + (bitCapIntOcl)capacity, amplitudes); }
 
-    void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + capacity, copyOut); }
+    void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + (bitCapIntOcl)capacity, copyOut); }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
-    void copy(StateVectorArrayPtr toCopy) { std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes); }
+    void copy(StateVectorArrayPtr toCopy)
+    {
+        std::copy(toCopy->amplitudes, toCopy->amplitudes + (bitCapIntOcl)capacity, amplitudes);
+    }
 
-    void get_probs(real1* outArray) { std::transform(amplitudes, amplitudes + capacity, outArray, normHelper); }
+    void get_probs(real1* outArray)
+    {
+        std::transform(amplitudes, amplitudes + (bitCapIntOcl)capacity, outArray, normHelper);
+    }
 
     bool is_sparse() { return false; }
 
@@ -182,10 +198,10 @@ public:
     {
         mtx.lock();
         for (bitCapInt i = 0; i < capacity; i++) {
-            if (norm(copyIn[i]) < min_norm) {
+            if (norm(copyIn[(bitCapIntOcl)i]) < min_norm) {
                 amplitudes.erase(i);
             } else {
-                amplitudes[i] = copyIn[i];
+                amplitudes[i] = copyIn[(bitCapIntOcl)i];
             }
         }
         mtx.unlock();
@@ -194,7 +210,7 @@ public:
     void copy_out(complex* copyOut)
     {
         for (bitCapInt i = 0; i < capacity; i++) {
-            copyOut[i] = read(i);
+            copyOut[(bitCapIntOcl)i] = read(i);
         }
     }
 
@@ -210,11 +226,11 @@ public:
     void get_probs(real1* outArray)
     {
         for (bitCapInt i = 0; i < capacity; i++) {
-            outArray[i] = norm(read(i));
+            outArray[(bitCapIntOcl)i] = norm(read(i));
         }
     }
 
-    bool is_sparse() { return (amplitudes.size() < (capacity >> 1U)); }
+    bool is_sparse() { return (amplitudes.size() < (capacity >> ONE_BCI)); }
 
     std::vector<bitCapInt> iterable()
     {

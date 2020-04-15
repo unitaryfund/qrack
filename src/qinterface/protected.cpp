@@ -194,7 +194,8 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
         return perm;
     }
 
-    bitCapInt i, iHigh, iLow, p;
+    bitCapInt i, iHigh, iLow;
+    bitCapIntOcl p;
     iHigh = perm;
     i = 0;
     for (p = 0; p < skipPowersCount; p++) {

@@ -131,9 +131,9 @@ protected:
     static inline bitLenInt log2(bitCapInt n)
     {
         bitLenInt pow = 0;
-        bitLenInt p = n >> 1;
+        bitCapInt p = n >> 1U;
         while (p != 0) {
-            p >>= 1;
+            p >>= 1U;
             pow++;
         }
         return pow;
