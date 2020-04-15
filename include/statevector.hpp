@@ -15,9 +15,9 @@
 
 #include <algorithm>
 #include <future>
-#include <map>
 #include <mutex>
 #include <set>
+#include <unordered_map>
 
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
@@ -106,7 +106,7 @@ public:
 
 class StateVectorSparse : public StateVector, public ParallelFor {
 protected:
-    std::map<bitCapInt, complex> amplitudes;
+    std::unordered_map<bitCapInt, complex> amplitudes;
     std::mutex mtx;
 
 public:
@@ -118,15 +118,11 @@ public:
 
     complex read(const bitCapInt& i)
     {
-        const std::map<bitCapInt, complex>::const_iterator it = amplitudes.find(i);
         mtx.lock();
-        if (it == amplitudes.end()) {
-            mtx.unlock();
-            return ZERO_CMPLX;
-        } else {
-            mtx.unlock();
-            return it->second;
-        }
+        auto it = amplitudes.find(i);
+        bool isNotFound = (it == amplitudes.end());
+        mtx.unlock();
+        return isNotFound ? ZERO_CMPLX : it->second;
     }
 
     void write(const bitCapInt& i, const complex& c)
@@ -177,9 +173,15 @@ public:
 
     void copy_in(const complex* copyIn)
     {
+        mtx.lock();
         for (bitCapInt i = 0; i < capacity; i++) {
-            write(i, copyIn[i]);
+            if (norm(copyIn[i]) < min_norm) {
+                amplitudes.erase(i);
+            } else {
+                amplitudes[i] = copyIn[i];
+            }
         }
+        mtx.unlock();
     }
 
     void copy_out(complex* copyOut)
@@ -218,10 +220,12 @@ public:
         mtx.lock();
 
         par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
-            std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+            auto it = amplitudes.begin();
             std::advance(it, lcv);
             toRet[cpu].push_back(it->first);
         });
+
+        mtx.unlock();
 
         for (i = (toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
@@ -232,7 +236,6 @@ public:
         }
 
         if (toRet.size() == 0) {
-            mtx.unlock();
             return {};
         }
 
@@ -259,8 +262,6 @@ public:
             }
         }
 
-        mtx.unlock();
-
         return toRet[0];
     }
 
@@ -284,7 +285,7 @@ public:
 
         if ((filterMask == 0) && (filterValues == 0)) {
             par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
-                std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                std::unordered_map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
                 std::advance(it, lcv);
                 toRet[cpu].insert(it->first & unsetMask);
             });
@@ -292,13 +293,15 @@ public:
             bitCapInt unfilterMask = ~filterMask;
 
             par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
-                std::map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
+                std::unordered_map<bitCapInt, complex>::const_iterator it = amplitudes.begin();
                 std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {
                     toRet[cpu].insert(it->first & unsetMask & unfilterMask);
                 }
             });
         }
+
+        mtx.unlock();
 
         for (i = (toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
@@ -334,8 +337,6 @@ public:
                 toRet.pop_back();
             }
         }
-
-        mtx.unlock();
 
         return toRet[0];
     }
