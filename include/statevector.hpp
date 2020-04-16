@@ -154,7 +154,7 @@ public:
 
     void write(const bitCapInt& i, const complex& c)
     {
-        if (norm(c) < min_norm) {
+        if (c == ZERO_CMPLX) {
             mtx.lock();
             amplitudes.erase(i);
             mtx.unlock();
@@ -167,8 +167,8 @@ public:
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
-        bool isC1Set = norm(c1) > min_norm;
-        bool isC2Set = norm(c2) > min_norm;
+        bool isC1Set = (c1 != ZERO_CMPLX);
+        bool isC2Set = (c2 != ZERO_CMPLX);
         if (!(isC1Set || isC2Set)) {
             return;
         }
@@ -202,7 +202,7 @@ public:
     {
         mtx.lock();
         for (bitCapInt i = 0; i < capacity; i++) {
-            if (norm(copyIn[(bitCapIntOcl)i]) < min_norm) {
+            if (copyIn[(bitCapIntOcl)i] == ZERO_CMPLX) {
                 amplitudes.erase(i);
             } else {
                 amplitudes[i] = copyIn[(bitCapIntOcl)i];
