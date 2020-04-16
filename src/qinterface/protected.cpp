@@ -56,6 +56,17 @@ bitCapInt intPow(bitCapInt base, bitCapInt power)
     return base * intPow(base, power - 1);
 }
 
+bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
+{
+    if (power == 0U) {
+        return ONE_BCI;
+    }
+    if (power == ONE_BCI) {
+        return base;
+    }
+    return base * intPowOcl(base, power - 1);
+}
+
 void mul2x2(complex* left, complex* right, complex* out)
 {
     out[0] = (left[0] * right[0]) + (left[1] * right[2]);

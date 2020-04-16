@@ -683,7 +683,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         }
     }
 
-    bitCapIntOcl subsetCap = (bitCapIntOcl)pow2(qPowerCount);
+    bitCapIntOcl subsetCap = pow2Ocl(qPowerCount);
     real1* probsArray = new real1[subsetCap];
     ProbMaskAll(mask, probsArray);
 

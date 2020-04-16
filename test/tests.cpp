@@ -145,7 +145,7 @@ TEST_CASE("test_qengine_cpu_par_for")
 
     qengine->par_for(0, NUM_ENTRIES, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
-        old = hit[lcv].exchange(old);
+        old = hit[(bitCapIntOcl)lcv].exchange(old);
         REQUIRE(old == false);
         calls++;
     });
@@ -177,7 +177,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip")
 
     qengine->par_for_skip(0, NUM_ENTRIES, 4, 1, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
-        old = hit[lcv].exchange(old);
+        old = hit[(bitCapIntOcl)lcv].exchange(old);
         REQUIRE(old == false);
         REQUIRE((lcv & skipBit) == 0);
 
@@ -207,7 +207,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
     qengine->par_for_skip(0, NUM_ENTRIES, 4, 3, [&](const bitCapInt lcv, const int cpu) {
         REQUIRE(lcv < NUM_ENTRIES);
         bool old = true;
-        old = hit[lcv].exchange(old);
+        old = hit[(bitCapIntOcl)lcv].exchange(old);
         REQUIRE(old == false);
         REQUIRE((lcv & skipBit) == 0);
 
@@ -237,7 +237,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
     qengine->par_for_mask(0, NUM_ENTRIES, skipArray, 2, [&](const bitCapInt lcv, const int cpu) {
         bool old = true;
-        old = hit[lcv].exchange(old);
+        old = hit[(bitCapIntOcl)lcv].exchange(old);
         REQUIRE(old == false);
         for (int i = 0; i < NUM_SKIP; i++) {
             REQUIRE((lcv & skipArray[i]) == 0);
@@ -1883,7 +1883,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     complex pauliRYs[16];
 
     real1 cosine, sine;
-    for (bitCapInt i = 0; i < 4; i++) {
+    for (bitCapIntOcl i = 0; i < 4; i++) {
         cosine = cos(angles[i] / 2);
         sine = sin(angles[i] / 2);
 
@@ -3092,7 +3092,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 {
-    bitCapInt randPerm = qftReg->Rand() * 256U;
+    bitCapInt randPerm = (bitCapInt)(qftReg->Rand() * 256U);
     qftReg->SetPermutation(randPerm);
 
     int i;
@@ -3335,7 +3335,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
 {
-    const bitCapInt INPUT_KEY = 126;
+    const bitCapIntOcl INPUT_KEY = 126;
 
     int j;
 
@@ -3499,7 +3499,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
     // Similarly, we're trying to hit another hardware-specific case with the maximum.
     if (testEngineType == QINTERFACE_OPENCL) {
         qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, max_qubits, 0, rng);
-        real1* probsN = new real1[pow2(max_qubits)];
+        real1* probsN = new real1[pow2Ocl(max_qubits)];
         qftReg->ProbMaskAll(pow2(max_qubits) - ONE_BCI, probsN);
         REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
         delete[] probsN;
@@ -3571,7 +3571,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
     complex state[1U << 4U];
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
     qftReg->GetQuantumState(state);
-    for (bitCapInt i = 0; i < 16; i++) {
+    for (bitCapIntOcl i = 0; i < 16; i++) {
         if (i == 0x0b) {
             REQUIRE_FLOAT(norm(state[i]), ONE_R1);
         } else {
@@ -3591,7 +3591,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getprobs")
     real1 state[1U << 4U];
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
     qftReg->GetProbs(state);
-    for (bitCapInt i = 0; i < 16; i++) {
+    for (bitCapIntOcl i = 0; i < 16; i++) {
         if (i == 0x0b) {
             REQUIRE_FLOAT(state[i], ONE_R1);
         } else {
@@ -3655,8 +3655,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     const bitLenInt indexLength = 8;
     const bitLenInt valueLength = 8;
     const bitLenInt carryIndex = indexLength + valueLength;
-    const bitCapInt TARGET_VALUE = 100;
-    const bitCapInt TARGET_KEY = 230;
+    const bitCapIntOcl TARGET_VALUE = 100;
+    const bitCapIntOcl TARGET_KEY = 230;
 
     unsigned char* toLoad = cl_alloc(1 << indexLength);
     for (i = 0; i < (1 << indexLength); i++) {
@@ -3738,8 +3738,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
     const bitLenInt carryIndex = 19;
-    const bitCapInt TARGET_VALUE = 6;
-    const bitCapInt TARGET_KEY = 18;
+    const bitCapIntOcl TARGET_VALUE = 6;
+    const bitCapIntOcl TARGET_KEY = 18;
 
     bool foundPerm = false;
 
@@ -3764,14 +3764,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
 
         bitLenInt fixedLength = i * 2;
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
-        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapIntOcl unfixedMask = (1 << unfixedLength) - 1;
+        bitCapIntOcl key = ((bitCapIntOcl)qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
 
         // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical computing
         // components, as need and efficiency dictate).
-        bitCapInt lowBound = toLoad[key];
-        bitCapInt highBound = toLoad[key | unfixedMask];
+        bitCapIntOcl lowBound = toLoad[key];
+        bitCapIntOcl highBound = toLoad[key | unfixedMask];
 
         if (lowBound == TARGET_VALUE) {
             // We've found our match, and the key register already contains the correct value.
@@ -3849,7 +3849,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
     if (!foundPerm && (i == (indexLength / 2))) {
         // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
         // one match.
-        bitCapInt key = qftReg->MReg(2 * valueLength, indexLength);
+        bitCapIntOcl key = (bitCapIntOcl)qftReg->MReg(2 * valueLength, indexLength);
         if (toLoad[key] == TARGET_VALUE) {
             foundPerm = true;
         }
@@ -3864,9 +3864,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search")
         // the match, in which case we know a match does not exist in the list.
         bitLenInt fixedLength = i * 2;
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
-        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapIntOcl checkIncrement = 1 << (unfixedLength - 2);
+        bitCapIntOcl key = ((bitCapIntOcl)qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
             // computing components, as need and efficiency dictate).
@@ -3903,8 +3903,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
     const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
     const bitLenInt carryIndex = 19;
-    const bitCapInt TARGET_VALUE = 6;
-    const bitCapInt TARGET_KEY = 5;
+    const bitCapIntOcl TARGET_VALUE = 6;
+    const bitCapIntOcl TARGET_KEY = 5;
 
     bool foundPerm = false;
 
@@ -3929,14 +3929,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
 
         bitLenInt fixedLength = i * 2;
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
-        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapIntOcl unfixedMask = (1 << unfixedLength) - 1;
+        bitCapIntOcl key = ((bitCapIntOcl)qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
 
         // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical computing
         // components, as need and efficiency dictate).
-        bitCapInt lowBound = toLoad[key];
-        bitCapInt highBound = toLoad[key | unfixedMask];
+        bitCapIntOcl lowBound = toLoad[key];
+        bitCapIntOcl highBound = toLoad[key | unfixedMask];
 
         if (lowBound == TARGET_VALUE) {
             // We've found our match, and the key register already contains the correct value.
@@ -4029,7 +4029,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
     if (!foundPerm && (i == (indexLength / 2))) {
         // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
         // one match.
-        bitCapInt key = qftReg->MReg(2 * valueLength, indexLength);
+        bitCapIntOcl key = (bitCapIntOcl)qftReg->MReg(2 * valueLength, indexLength);
         if (toLoad[key] == TARGET_VALUE) {
             foundPerm = true;
         }
@@ -4044,9 +4044,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_quaternary_search_alt")
         // the match, in which case we know a match does not exist in the list.
         bitLenInt fixedLength = i * 2;
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
-        bitCapInt key = (qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapIntOcl checkIncrement = 1 << (unfixedLength - 2);
+        bitCapIntOcl key = ((bitCapIntOcl)qftReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
             // computing components, as need and efficiency dictate).
@@ -4441,7 +4441,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
         comp = (~perm) + 1U;
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qftReg->SetPermutation(perm);
-            bit = comp & (1U << i);
+            bit = (comp & pow2(i)) != 0;
             outputLayer[i]->LearnPermutation(bit, eta);
         }
     }

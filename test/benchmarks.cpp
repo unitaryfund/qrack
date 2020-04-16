@@ -110,7 +110,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
         for (i = 0; i < ITERATIONS; i++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    qftReg->SetPermutation(qftReg->Rand() * qftReg->GetMaxQPower());
+                    qftReg->SetPermutation((bitCapIntOcl)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower()));
                 } else {
                     qftReg->SetPermutation(0);
                 }
@@ -352,10 +352,10 @@ TEST_CASE("test_mreg", "[measure]")
 
 void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> fn)
 {
-    bitCapInt i, j;
+    bitCapIntOcl i, j;
 
-    bitCapInt wordLength = (max_qubits / 16 + 1);
-    bitCapInt indexLength = (1 << (max_qubits / 2));
+    bitCapIntOcl wordLength = (max_qubits / 16 + 1);
+    bitCapIntOcl indexLength = (1 << (max_qubits / 2));
     unsigned char* testPage = new unsigned char[wordLength * indexLength];
     for (j = 0; j < indexLength; j++) {
         for (i = 0; i < wordLength; i++) {

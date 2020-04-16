@@ -275,7 +275,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
         bitCapIntOcl maxJ = 4;
         if (op->uniform) {
-            maxJ *= (bitCapIntOcl)pow2(op->controlLen);
+            maxJ *= pow2Ocl(op->controlLen);
         }
         mtrx = new complex[maxJ];
 

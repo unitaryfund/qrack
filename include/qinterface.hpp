@@ -40,13 +40,25 @@ bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
+bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 #if ENABLE_UINT128
 std::ostream& operator<<(std::ostream& left, __uint128_t right);
 #endif
 inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
+inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
+inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
+inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapInt& source)
+{
+    return (bitCapIntOcl)((ONE_BCI << bit) & source);
+}
+inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return (ONE_BCI << bit) & source; }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
+{
+    return ((ONE_BCI << length) - ONE_BCI) << start;
+}
+inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& length)
 {
     return ((ONE_BCI << length) - ONE_BCI) << start;
 }

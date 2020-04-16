@@ -82,7 +82,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     }
     std::sort(qPowers, qPowers + length);
 
-    bitCapIntOcl lengthPower = (bitCapIntOcl)pow2(length);
+    bitCapIntOcl lengthPower = pow2Ocl(length);
     real1 nrmlzr = ONE_R1;
     bitCapIntOcl lcv;
     bitCapInt result;
@@ -433,7 +433,7 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
 void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
-    bitCapIntOcl lengthPower = (bitCapIntOcl)pow2(length);
+    bitCapIntOcl lengthPower = pow2Ocl(length);
     for (bitCapIntOcl lcv = 0; lcv < lengthPower; lcv++) {
         probsArray[lcv] = ProbReg(start, length, lcv);
     }
@@ -455,7 +455,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         NormalizeState();
     }
 
-    bitCapIntOcl lengthPower = (bitCapIntOcl)pow2(length);
+    bitCapIntOcl lengthPower = pow2Ocl(length);
     bitCapInt regMask = (lengthPower - ONE_BCI) << (bitCapIntOcl)start;
     real1 nrmlzr = ONE_BCI;
 

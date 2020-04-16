@@ -95,6 +95,7 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineOCL : virtual public QEngine {
 protected:
+    bitCapIntOcl maxQPowerOcl;
     complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
@@ -153,6 +154,12 @@ public:
         Finish();
         FreeAligned(nrmArray);
         FreeStateVec();
+    }
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QEngine::SetQubitCount(qb);
+        maxQPowerOcl = (bitCapIntOcl)maxQPower;
     }
 
     virtual void FreeStateVec(complex* sv = NULL)

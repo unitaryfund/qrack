@@ -23,6 +23,7 @@
 
 #if ENABLE_UINT128
 #if BOOST_AVAILABLE
+#include <boost/functional/hash.hpp>
 #include <unordered_map>
 #define SparseStateVecMap std::unordered_map<bitCapInt, complex>
 #else

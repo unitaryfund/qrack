@@ -77,7 +77,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     bool bitState;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = (initState >> (bitCapInt)i) & ONE_BCI;
+        bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -95,7 +95,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     Finish();
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = (perm >> (bitCapInt)i) & ONE_BCI;
+        bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
         shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
     }
 }
@@ -153,7 +153,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         if (perms.find(shards[i].unit) == perms.end()) {
             perms[shards[i].unit] = 0U;
         }
-        if ((perm >> (bitCapInt)i) & ONE_BCI) {
+        if ((perm >> (bitCapIntOcl)i) & ONE_BCI) {
             perms[shards[i].unit] |= pow2(shards[i].mapped);
         }
     }
@@ -803,7 +803,7 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
         for (auto iter = toDispose.rbegin(); iter != toDispose.rend(); ++iter) {
             contigRegResult = partResults.back();
             for (i = iter->first; i < (iter->first + iter->second); i++) {
-                SeparateBit(contigRegResult & ONE_BCI, bits[invMap[qi.first][i]], false);
+                SeparateBit((contigRegResult & ONE_BCI) != 0, bits[invMap[qi.first][i]], false);
                 contigRegResult >>= ONE_BCI;
             }
             contigRegResult = partResults.back();
@@ -836,7 +836,7 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
     if (doForce) {
         values = new bool[length];
         for (i = 0; i < length; i++) {
-            values[i] = (result >> (bitCapInt)i) & 1U;
+            values[i] = ((result >> (bitCapIntOcl)i) & 1U) != 0;
         }
     }
 
@@ -862,7 +862,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
-        bitState = (value >> (bitCapInt)i) & ONE_BCI;
+        bitState = ((value >> (bitCapIntOcl)i) & ONE_BCI) != 0;
         shards[i + start] = QEngineShard(shards[i + start].unit, bitState);
         shards[i + start].isEmulated = true;
     }
@@ -1010,7 +1010,8 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     if (trimmedControls.size() == 0) {
         bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
         complex mtrx[4];
-        std::copy(mtrxs + (controlPerm * 4UL), mtrxs + ((controlPerm + ONE_BCI) * 4U), mtrx);
+        std::copy(
+            mtrxs + (bitCapIntOcl)(controlPerm * 4UL), mtrxs + (bitCapIntOcl)((controlPerm + ONE_BCI) * 4U), mtrx);
         ApplySingleBit(mtrx, qubitIndex);
         return;
     }
@@ -1810,7 +1811,7 @@ void QUnit::CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInp
 {
     bool cBit;
     for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput);
+        cBit = bitSlice(i, classicalInput) != 0;
         fn(qInputStart + i, cBit, outputStart + i);
     }
 }
@@ -2068,7 +2069,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     bitLenInt origLength = length;
     bitLenInt i = 0;
     while (i < origLength) {
-        toAdd = toMod & ONE_BCI;
+        toAdd = (toMod & ONE_BCI) != 0;
 
         if (toAdd == carry) {
             toMod >>= ONE_BCI;
@@ -2126,7 +2127,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 i++;
                 bitMask <<= ONE_BCI;
 
-                toAdd = toMod & bitMask;
+                toAdd = (toMod & bitMask) != 0;
                 partMod |= toMod & bitMask;
 
                 partStart = start + partLength - ONE_BCI;
@@ -2160,7 +2161,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 }
 
                 carry = toAdd;
-                toMod >>= (bitCapInt)partLength;
+                toMod >>= (bitCapIntOcl)partLength;
                 start += partLength;
                 length -= partLength;
 
@@ -2262,7 +2263,7 @@ void QUnit::INTS(
         return;
     }
 
-    bool addendNeg = toMod & pow2(length - 1U);
+    bool addendNeg = (toMod & pow2(length - 1U)) != 0;
     bool knewSign = CheckBitPermutation(signBit);
     bool quantumNeg = SHARD_STATE(shards[signBit]);
 
@@ -2383,7 +2384,7 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
         bitCapInt lengthMask = pow2Mask(length);
         bitCapInt res = GetCachedPermutation(inOutStart, length) * toMul;
         SetReg(inOutStart, length, res & lengthMask);
-        SetReg(carryStart, length, (res >> (bitCapInt)length) & lengthMask);
+        SetReg(carryStart, length, (res >> (bitCapIntOcl)length) & lengthMask);
         return;
     }
 
@@ -2408,7 +2409,7 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
         bitCapInt res = origRes / toDiv;
         if (origRes == (res * toDiv)) {
             SetReg(inOutStart, length, res & lengthMask);
-            SetReg(carryStart, length, (res >> (bitCapInt)length) & lengthMask);
+            SetReg(carryStart, length, (res >> (bitCapIntOcl)length) & lengthMask);
         }
         return;
     }
@@ -2514,7 +2515,7 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     DirtyShardRange(outStart, length);
 }
 
-QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitCapInt carryStart,
+QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitLenInt carryStart,
     bitLenInt length, std::vector<bitLenInt>* controlsMapped)
 {
     EntangleRange(start, length);
@@ -2759,10 +2760,10 @@ void QUnit::PhaseFlip()
 bitCapInt QUnit::GetIndexedEigenstate(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
-    bitCapInt indexInt = GetCachedPermutation(indexStart, indexLength);
+    bitCapIntOcl indexInt = (bitCapIntOcl)GetCachedPermutation(indexStart, indexLength);
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt value = 0;
-    for (bitLenInt j = 0; j < valueBytes; j++) {
+    for (bitCapIntOcl j = 0; j < valueBytes; j++) {
         value |= values[indexInt * valueBytes + j] << (8U * j);
     }
 
@@ -2771,11 +2772,11 @@ bitCapInt QUnit::GetIndexedEigenstate(
 
 bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values)
 {
-    bitCapInt indexInt = GetCachedPermutation(start, length);
+    bitCapIntOcl indexInt = (bitCapIntOcl)GetCachedPermutation(start, length);
     bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt value = 0;
-    for (bitLenInt j = 0; j < bytes; j++) {
-        value |= values[indexInt * bytes + j] << (8ULL * j);
+    for (bitCapIntOcl j = 0; j < bytes; j++) {
+        value |= values[indexInt * bytes + j] << (8U * j);
     }
 
     return value;

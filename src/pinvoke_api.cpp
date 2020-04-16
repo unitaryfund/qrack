@@ -183,7 +183,7 @@ inline std::size_t make_mask(std::vector<unsigned> const& qs)
 {
     std::size_t mask = 0;
     for (std::size_t q : qs)
-        mask = mask | pow2(q);
+        mask = mask | pow2Ocl(q);
     return mask;
 }
 
@@ -332,7 +332,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    bitCapInt wfnl = simulator->GetMaxQPower();
+    bitCapIntOcl wfnl = (bitCapIntOcl)simulator->GetMaxQPower();
     complex* wfn = new complex[wfnl];
     simulator->GetQuantumState(wfn);
     for (size_t i = 0; i < wfnl; i++) {
@@ -758,7 +758,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn(simulator->GetMaxQPower());
+        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
         std::vector<unsigned> bVec(n);
@@ -803,7 +803,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn(simulator->GetMaxQPower());
+        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
         std::vector<unsigned> csVec(nc);
@@ -850,10 +850,10 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     bool isOdd;
 
     if (jointProb != 0.0 && jointProb != 1.0) {
-        complex* nStateVec = new complex[simulator->GetMaxQPower()]();
+        complex* nStateVec = new complex[(bitCapIntOcl)simulator->GetMaxQPower()]();
         simulator->GetQuantumState(nStateVec);
         real1 nrmlzr = 0.0;
-        for (bitCapInt i = 0; i < maxQPower; i++) {
+        for (bitCapIntOcl i = 0; i < maxQPower; i++) {
             isOdd = false;
             for (bitLenInt j = 0; j < len; j++) {
                 if (i & qSortedPowers[j]) {
