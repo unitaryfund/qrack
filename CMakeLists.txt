@@ -13,12 +13,12 @@ set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops (must be power of 2)
 
 set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
 if (QBCAPPOW LESS 5)
-    message(FATAL_ERROR "QBCAPACITYPOW must be at least 5, equivalent to >= 32 qubits!")
+    message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
 endif (QBCAPPOW LESS 5)
 
-if (QBCAPPOW GREATER 63)
-    message(FATAL_ERROR "QBCAPACITYPOW must be less than 64, equivalent to < 2^64 qubits!")
-endif (QBCAPPOW GREATER 63)
+if (QBCAPPOW GREATER 31)
+    message(FATAL_ERROR "QBCAPPOW must be less than 32, equivalent to < 2^32 qubits!")
+endif (QBCAPPOW GREATER 31)
 
 # Declare the library
 add_library (qrack STATIC
