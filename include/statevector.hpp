@@ -31,6 +31,9 @@
 #define SparseStateVecMap std::map<bitCapInt, complex>
 #endif
 #else
+#if QBCAPPOW > 7
+#include <boost/functional/hash.hpp>
+#endif
 #include <unordered_map>
 #define SparseStateVecMap std::unordered_map<bitCapInt, complex>
 #endif
