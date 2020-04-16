@@ -305,7 +305,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 {
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(&(mtrxs[mtrxSkipValueMask * 4U]), qubitIndex);
+        ApplySingleBit(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
         return;
     }
 
@@ -323,14 +323,15 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
 
     par_for_skip(0, maxQPower, targetPower, 1, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt offset = 0;
+        bitCapIntOcl offset = 0;
         for (bitLenInt j = 0; j < controlLen; j++) {
             if (lcv & qPowers[j]) {
-                offset |= pow2(j);
+                offset |= pow2Ocl(j);
             }
         }
 
-        bitCapInt i, iHigh, iLow, p;
+        bitCapInt i, iHigh, iLow;
+        bitCapIntOcl p;
         iHigh = offset;
         i = 0;
         for (p = 0; p < mtrxSkipLen; p++) {
@@ -340,7 +341,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
         }
         i |= iHigh;
 
-        offset = i | mtrxSkipValueMask;
+        offset = (bitCapIntOcl)(i | mtrxSkipValueMask);
 
         // Offset is permutation * 4, for the components of 2x2 matrices. (Note that this sacrifices 2 qubits of
         // capacity for the unsigned bitCapInt.)
@@ -386,7 +387,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bool isConsumed)
         toCopy->NormalizeState();
     }
 
-    bitCapInt nQubitCount = qubitCount + toCopy->qubitCount;
+    bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
     bitCapInt nMaxQPower = pow2(nQubitCount);
     bitCapInt startMask = maxQPower - ONE_BCI;
     bitCapInt endMask = (toCopy->maxQPower - ONE_BCI) << qubitCount;
@@ -463,7 +464,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     std::vector<bitCapInt> mask(toComposeCount);
 
     bitCapInt startMask = maxQPower - ONE_BCI;
-    bitCapInt nQubitCount = qubitCount;
+    bitLenInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
     if (doNormalize && (runningNorm != ONE_R1)) {
@@ -475,7 +476,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
         }
-        mask[i] = (src->GetMaxQPower() - ONE_BCI) << nQubitCount;
+        mask[i] = (src->GetMaxQPower() - ONE_BCI) << (bitCapIntOcl)nQubitCount;
         offset[i] = nQubitCount;
         ret[toCopy[i]] = nQubitCount;
         nQubitCount += src->GetQubitCount();
@@ -521,8 +522,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     bitLenInt nLength = qubitCount - length;
 
-    bitCapInt partPower = pow2(length);
-    bitCapInt remainderPower = pow2(nLength);
+    bitCapIntOcl partPower = pow2Ocl(length);
+    bitCapIntOcl remainderPower = pow2Ocl(nLength);
 
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower]();
@@ -530,7 +531,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     real1* partStateProb = new real1[partPower]();
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j, k, l;
+        bitCapInt j, l;
+        bitCapIntOcl k;
         j = lcv & pow2Mask(start);
         j |= (lcv ^ j) << length;
 
@@ -542,7 +544,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             l = j | (k << start);
 
             nrm = norm(stateVec->read(l));
-            remainderStateProb[lcv] += nrm;
+            remainderStateProb[(bitCapIntOcl)lcv] += nrm;
 
             if (nrm > amplitudeFloor) {
                 currentAngle = arg(stateVec->read(l));
@@ -555,7 +557,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     });
 
     par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j, k, l;
+        bitCapInt j, l;
+        bitCapIntOcl k;
         j = lcv << start;
 
         real1 firstAngle = -16 * M_PI;
@@ -568,7 +571,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             l = j | l;
 
             nrm = norm(stateVec->read(l));
-            partStateProb[lcv] += nrm;
+            partStateProb[(bitCapIntOcl)lcv] += nrm;
 
             if (nrm > amplitudeFloor) {
                 currentAngle = arg(stateVec->read(l));
@@ -583,7 +586,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     if (destination != nullptr) {
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec->write(lcv,
-                (real1)(std::sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv])));
+                (real1)(std::sqrt(partStateProb[(bitCapIntOcl)lcv])) *
+                    complex(cos(partStateAngle[(bitCapIntOcl)lcv]), sin(partStateAngle[(bitCapIntOcl)lcv])));
         });
     }
 
@@ -596,8 +600,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         stateVec->write(lcv,
-            (real1)(std::sqrt(remainderStateProb[lcv])) *
-                complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv])));
+            (real1)(std::sqrt(remainderStateProb[(bitCapIntOcl)lcv])) *
+                complex(cos(remainderStateAngle[(bitCapIntOcl)lcv]), sin(remainderStateAngle[(bitCapIntOcl)lcv])));
     });
 
     delete[] remainderStateProb;
@@ -626,7 +630,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     bitLenInt nLength = qubitCount - length;
     bitCapInt remainderPower = pow2(nLength);
     bitCapInt skipMask = pow2(start) - ONE_BCI;
-    bitCapInt disposedRes = disposedPerm << (bitCapInt)start;
+    bitCapInt disposedRes = disposedPerm << (bitCapIntOcl)start;
     bitCapInt saveMask = ~((pow2(start + length) - ONE_BCI) ^ skipMask);
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
@@ -636,7 +640,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
             bitCapInt i, iLow, iHigh;
             iHigh = lcv & saveMask;
             iLow = iHigh & skipMask;
-            i = iLow | ((iHigh ^ iLow) >> (bitCapInt)length);
+            i = iLow | ((iHigh ^ iLow) >> (bitCapIntOcl)length);
             nStateVec->write(i, stateVec->read(lcv));
         });
     } else {
@@ -644,7 +648,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
             bitCapInt i, iLow, iHigh;
             iHigh = lcv;
             iLow = iHigh & skipMask;
-            i = iLow | ((iHigh ^ iLow) << (bitCapInt)length) | disposedRes;
+            i = iLow | ((iHigh ^ iLow) << (bitCapIntOcl)length) | disposedRes;
             nStateVec->write(lcv, stateVec->read(i));
         });
     }

@@ -25,4 +25,3 @@
 #define bitCapInt2 ulong2
 #define bitCapInt4 ulong4
 #define bitLenInt unsigned char
-

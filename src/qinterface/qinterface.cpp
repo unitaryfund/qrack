@@ -34,7 +34,7 @@ namespace Qrack {
     void QInterface::gate(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)    \
     {                                                                                                                  \
         for (bitLenInt i = 0; i < length; i++) {                                                                       \
-            gate(qInputStart + i, bitSlice(i, classicalInput), outputStart + i);                                       \
+            gate(qInputStart + i, (bitCapIntOcl)bitSlice(i, classicalInput), outputStart + i);                         \
         }                                                                                                              \
     }
 
@@ -503,7 +503,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
         bool bitVal;
         bitCapInt regVal = MReg(start, length);
         for (bitLenInt i = 0; i < length; i++) {
-            bitVal = bitSlice(i, regVal);
+            bitVal = (bitCapIntOcl)bitSlice(i, regVal);
             if ((bitVal && !bitSlice(i, value)) || (!bitVal && bitSlice(i, value)))
                 X(start + i);
         }
@@ -639,7 +639,7 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     }
 
     bitCapInt lengthPower = pow2(length);
-    bitCapInt lcv;
+    bitCapIntOcl lcv;
 
     bitLenInt p;
     bitCapInt i, iHigh, iLow;
@@ -663,7 +663,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
 {
     bitLenInt i;
-    bitCapInt j;
+    bitCapIntOcl j;
 
     bitCapInt* qPowersSorted = new bitCapInt[qPowerCount];
     bitCapInt mask = 0U;
@@ -683,7 +683,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         }
     }
 
-    bitCapInt subsetCap = pow2(qPowerCount);
+    bitCapIntOcl subsetCap = pow2Ocl(qPowerCount);
     real1* probsArray = new real1[subsetCap];
     ProbMaskAll(mask, probsArray);
 

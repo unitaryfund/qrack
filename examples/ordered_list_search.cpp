@@ -32,7 +32,7 @@ int main()
     // At each step of the search, we select the quadrant with bounds that could contain our value. In an ideal
     // noiseless quantum computer, this search should be deterministic.
 
-    bitCapInt i, j;
+    bitCapIntOcl i, j;
     bitLenInt partStart;
     bitLenInt partLength;
 
@@ -85,14 +85,14 @@ int main()
 
         bitLenInt fixedLength = i * 2;
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitCapInt unfixedMask = (1 << unfixedLength) - 1;
-        bitCapInt key = (qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapIntOcl unfixedMask = (1 << unfixedLength) - 1;
+        bitCapIntOcl key = ((bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
 
         // (We could either manipulate the quantum bits directly to check the bounds, or rely on auxiliary classical
         // computing components, as need and efficiency dictate).
-        bitCapInt lowBound = toLoad[key];
-        bitCapInt highBound = toLoad[key | unfixedMask];
+        bitCapIntOcl lowBound = toLoad[key];
+        bitCapIntOcl highBound = toLoad[key | unfixedMask];
 
         if (lowBound == TARGET_VALUE) {
             // We've found our match, and the key register already contains the correct value.
@@ -195,7 +195,7 @@ int main()
     if (!foundPerm && (i == (indexLength / 2))) {
         // Here, we hit the maximum iterations, but there might be no match in the array, or there might be more than
         // one match.
-        bitCapInt key = qReg->MReg(2 * valueLength, indexLength);
+        bitCapIntOcl key = (bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength);
         if (toLoad[key] == TARGET_VALUE) {
             foundPerm = true;
         }
@@ -210,9 +210,9 @@ int main()
         // the match, in which case we know a match does not exist in the list.
         bitLenInt fixedLength = i * 2;
         bitLenInt unfixedLength = indexLength - fixedLength;
-        bitCapInt fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
-        bitCapInt checkIncrement = 1 << (unfixedLength - 2);
-        bitCapInt key = (qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
+        bitCapIntOcl fixedLengthMask = ((1 << fixedLength) - 1) << unfixedLength;
+        bitCapIntOcl checkIncrement = 1 << (unfixedLength - 2);
+        bitCapIntOcl key = ((bitCapIntOcl)qReg->MReg(2 * valueLength, indexLength)) & (fixedLengthMask);
         for (i = 0; i < 4; i++) {
             // (We could either manipulate the quantum bits directly to check this, or rely on auxiliary classical
             // computing components, as need and efficiency dictate).

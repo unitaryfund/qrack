@@ -108,7 +108,7 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (pow2(n - 1U))), qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))), qubit);
 }
 
 /// Apply inverse 1/(2^N) phase rotation
@@ -122,7 +122,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (pow2(n - 1U))), qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))), qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -230,14 +230,14 @@ void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
-    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (pow2(n - 1U))));
+    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
 }
 
 /// Apply controlled "IPhaseRootN" gate to bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
-    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (pow2(n - 1U))));
+    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
 }
 
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -253,7 +253,7 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
             }
         }
 
-        ApplyControlledSingleBit(controls, controlLen, qubitIndex, &(mtrxs[index * 4U]));
+        ApplyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs + (bitCapIntOcl)(index * 4U));
 
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
             if (!((lcv >> bit_pos) & 1)) {
@@ -273,13 +273,13 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
         complex* opMtrx = op->matrix.get();
         complex* mtrx;
 
-        bitCapInt maxJ = 4;
+        bitCapIntOcl maxJ = 4;
         if (op->uniform) {
-            maxJ *= pow2(op->controlLen);
+            maxJ *= pow2Ocl(op->controlLen);
         }
         mtrx = new complex[maxJ];
 
-        for (bitCapInt j = 0; j < maxJ; j++) {
+        for (bitCapIntOcl j = 0; j < maxJ; j++) {
             mtrx[j] = opMtrx[j] * (-timeDiff);
         }
 
@@ -293,7 +293,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
 
         if (op->uniform) {
             complex* expMtrx = new complex[maxJ];
-            for (bitCapInt j = 0; j < pow2(op->controlLen); j++) {
+            for (bitCapIntOcl j = 0; j < pow2(op->controlLen); j++) {
                 exp2x2(mtrx + (j * 4U), expMtrx + (j * 4U));
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);

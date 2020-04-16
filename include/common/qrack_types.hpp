@@ -16,17 +16,44 @@
 #include <memory>
 #include <random>
 
+#if QBCAPPOW < 8
 #define bitLenInt uint8_t
+#elif QBCAPPOW < 16
+#define bitLenInt uint16_t
+#elif QBCAPPOW < 32
+#define bitLenInt uint32_t
+#else
+#define bitLenInt uint64_t
+#endif
+
 #if ENABLE_PURE32
+#define bitCapIntOcl uint32_t
 #define bitCapInt uint32_t
 #define ONE_BCI 1U
 #elif ENABLE_UINT128
-#define bitCapInt __uint128_t
-#define ONE_BCI ((__uint128_t)1U)
+#ifdef BOOST_AVAILABLE
+#include <boost/multiprecision/cpp_int.hpp>
+#define bitCapIntOcl uint64_t
+#define bitCapInt boost::multiprecision::uint128_t
+#define ONE_BCI 1ULL
 #else
+#define bitCapIntOcl uint64_t
+#define bitCapInt __uint128_t
+#define ONE_BCI 1ULL
+#endif
+#elif QBCAPPOW > 7
+#include <boost/multiprecision/cpp_int.hpp>
+#define bitCapIntOcl uint64_t
+#define bitCapInt                                                                                                      \
+    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
+        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+#define ONE_BCI 1ULL
+#else
+#define bitCapIntOcl uint64_t
 #define bitCapInt uint64_t
 #define ONE_BCI 1ULL
 #endif
+
 #define bitsInByte 8
 #define qrack_rand_gen std::mt19937_64
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>

@@ -1,0 +1,5 @@
+find_package(Boost)
+IF (Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIR})
+    target_compile_definitions (qrack PUBLIC BOOST_AVAILABLE=1)
+endif (Boost_FOUND)

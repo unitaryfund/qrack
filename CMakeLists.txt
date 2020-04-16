@@ -11,6 +11,15 @@ include_directories ("include" "include/common")
 
 set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops (must be power of 2)")
 
+set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
+if (QBCAPPOW LESS 5)
+    message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
+endif (QBCAPPOW LESS 5)
+
+if (QBCAPPOW GREATER 31)
+    message(FATAL_ERROR "QBCAPPOW must be less than 32, equivalent to < 2^32 qubits!")
+endif (QBCAPPOW GREATER 31)
+
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
@@ -98,10 +107,22 @@ include ("cmake/OpenCL.cmake" )
 include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
+include ("cmake/Boost.cmake")
 include ("cmake/VM6502Q.cmake")
 
-message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
-message ("128-bit compilation is: ${ENABLE_UINT128}")
+target_compile_definitions (qrack PUBLIC QBCAPPOW=${QBCAPPOW})
+
+message ("Qubit capacity power is: ${QBCAPPOW}")
+if (QBCAPPOW EQUAL 5)
+    message ("Pure 32-bit compilation is: ON")
+else (QBCAPPOW EQUAL 5)
+    message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
+endif (QBCAPPOW EQUAL 5)
+if (QBCAPPOW EQUAL 7)
+    message ("128-bit compilation is: ON")
+else (QBCAPPOW EQUAL 7)
+    message ("128-bit compilation is: ${ENABLE_UINT128}")
+endif (QBCAPPOW EQUAL 7)
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")

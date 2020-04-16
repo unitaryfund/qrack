@@ -24,7 +24,7 @@ private:
     QInterfacePtr qReg;
     bitLenInt* inputIndices;
     bitLenInt inputCount;
-    bitCapInt inputPower;
+    bitCapIntOcl inputPower;
     bitLenInt outputIndex;
     real1* angles;
     real1 tolerance;
@@ -42,7 +42,7 @@ public:
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
     QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
         : inputCount(inputCnt)
-        , inputPower(pow2(inputCnt))
+        , inputPower(pow2Ocl(inputCnt))
         , outputIndex(outputIndx)
         , tolerance(tol)
     {
@@ -150,11 +150,12 @@ public:
 protected:
     real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb, bool resetInit)
     {
+        bitCapIntOcl permOcl = (bitCapIntOcl)perm;
         real1 endProb;
         real1 origAngle;
 
-        origAngle = angles[perm];
-        angles[perm] += eta * M_PI;
+        origAngle = angles[permOcl];
+        angles[permOcl] += eta * M_PI;
 
         endProb = Predict(expected, resetInit);
         if (endProb > (ONE_R1 - tolerance)) {
@@ -164,7 +165,7 @@ protected:
         if (endProb > startProb) {
             startProb = endProb;
         } else {
-            angles[perm] -= 2 * eta * M_PI;
+            angles[permOcl] -= 2 * eta * M_PI;
 
             endProb = Predict(expected, resetInit);
             if (endProb > (ONE_R1 - tolerance)) {
@@ -174,7 +175,7 @@ protected:
             if (endProb > startProb) {
                 startProb = endProb;
             } else {
-                angles[perm] = origAngle;
+                angles[permOcl] = origAngle;
             }
         }
 

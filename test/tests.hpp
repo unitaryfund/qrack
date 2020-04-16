@@ -160,7 +160,7 @@ public:
             return false;
         }
 
-        for (bitCapInt j = 0; j < length; j++) {
+        for (bitLenInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
             if (bit != !!(mask & (1U << j))) {
@@ -181,5 +181,5 @@ public:
     }
 };
 
-inline ProbPattern HasProbability(bitLenInt s, bitLenInt l, uint64_t m) { return ProbPattern(s, l, m); }
-inline ProbPattern HasProbability(uint64_t m) { return ProbPattern(0, 0, m); }
+inline ProbPattern HasProbability(bitLenInt s, bitLenInt l, bitCapInt m) { return ProbPattern(s, l, m); }
+inline ProbPattern HasProbability(bitCapInt m) { return ProbPattern(0, 0, m); }

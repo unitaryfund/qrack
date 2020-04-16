@@ -574,14 +574,14 @@ void QFusion::BufferArithmetic(
 void QFusion::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     if (MODLEN(toAdd, length)) {
-        BufferArithmetic(NULL, 0, toAdd, start, length);
+        BufferArithmetic(NULL, 0, (int)toAdd, start, length);
     }
 }
 
 void QFusion::CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     if (MODLEN(toAdd, length)) {
-        BufferArithmetic(controls, controlLen, toAdd, inOutStart, length);
+        BufferArithmetic(controls, controlLen, (int)toAdd, inOutStart, length);
     }
 }
 
@@ -634,14 +634,14 @@ void QFusion::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
 void QFusion::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
     if (MODLEN(toSub, length)) {
-        BufferArithmetic(NULL, 0, -toSub, start, length);
+        BufferArithmetic(NULL, 0, -((int)toSub), start, length);
     }
 }
 
 void QFusion::CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
     if (MODLEN(toSub, length)) {
-        BufferArithmetic(controls, controlLen, -toSub, inOutStart, length);
+        BufferArithmetic(controls, controlLen, -((int)toSub), inOutStart, length);
     }
 }
 

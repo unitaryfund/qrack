@@ -33,7 +33,7 @@
     i = idx++;                                                                                                         \
     idxLock.unlock();
 #else
-#define DECLARE_ATOMIC_BITCAPINT() std::atomic<bitCapInt> idx;
+#define DECLARE_ATOMIC_BITCAPINT() std::atomic<bitCapIntOcl> idx;
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
 #define ATOMIC_INC() i = idx++;
@@ -48,7 +48,7 @@ namespace Qrack {
 void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
     if (itemCount <= (bitCapInt)numCores) {
-        std::vector<std::future<void>> futures(itemCount);
+        std::vector<std::future<void>> futures((bitCapIntOcl)itemCount);
         bitCapInt j;
         uint32_t cpu;
         for (cpu = 0; cpu < itemCount; cpu++) {
@@ -241,7 +241,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
 {
     real1 nrmSqr = 0;
     if (maxQPower <= (bitCapInt)numCores) {
-        std::vector<std::future<real1>> futures(maxQPower);
+        std::vector<std::future<real1>> futures((bitCapIntOcl)maxQPower);
         bitCapInt j;
         uint32_t cpu;
         for (cpu = 0; cpu < maxQPower; cpu++) {
