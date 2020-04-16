@@ -20,7 +20,7 @@
 #define SineShift M_PI_2_F
 #define PI_R1 M_PI_F
 #define min_norm 1e-13f
-#define bitCapIntOcl uint
-#define bitCapIntOcl2 uint2
-#define bitCapIntOcl4 uint4
+#define bitCapInt uint
+#define bitCapInt2 uint2
+#define bitCapInt4 uint4
 #define bitLenInt unsigned char

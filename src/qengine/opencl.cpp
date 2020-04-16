@@ -78,6 +78,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , nrmArray(NULL)
     , unlockHostMem(false)
 {
+    maxQPowerOcl = pow2Ocl(qubitCount);
     InitOCL(devID);
     SetPermutation(initState, phaseFac);
 }

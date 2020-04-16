@@ -1,3 +1,4 @@
+
 //////////////////////////////////////////////////////////////////////////////////////
 //
 // (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
@@ -20,7 +21,7 @@
 #define SineShift M_PI_2_F
 #define PI_R1 M_PI_F
 #define min_norm 1e-13f
-#define bitCapIntOcl ulong
-#define bitCapIntOcl2 ulong2
-#define bitCapIntOcl4 ulong4
+#define bitCapInt ulong
+#define bitCapInt2 ulong2
+#define bitCapInt4 ulong4
 #define bitLenInt unsigned char

@@ -32,15 +32,15 @@ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-#define OFFSET2_ARG bitCapIntOclPtr[0]
-#define OFFSET1_ARG bitCapIntOclPtr[1]
-#define MAXI_ARG bitCapIntOclPtr[2]
-#define BITCOUNT_ARG bitCapIntOclPtr[3]
+#define OFFSET2_ARG bitCapIntPtr[0]
+#define OFFSET1_ARG bitCapIntPtr[1]
+#define MAXI_ARG bitCapIntPtr[2]
+#define BITCOUNT_ARG bitCapIntPtr[3]
 #define ID get_global_id(0)
 
 #define PREP_2X2()                                                                   \
-    bitCapIntOcl lcv, i;                                                                \
-    bitCapIntOcl Nthreads = get_global_size(0);                                         \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0);                                         \
                                                                                      \
     cmplx4 mtrx = vload8(0, cmplxPtr);                                               \
     real1 nrm = cmplxPtr[8];                                                         \
@@ -52,13 +52,13 @@ inline real1 arg(const cmplx cmp)
     real1 dotMulRes;
 
 #define PREP_SPECIAL_2X2()                                                           \
-    bitCapIntOcl lcv, i;                                                                \
-    bitCapIntOcl Nthreads = get_global_size(0);                                         \
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0);                                         \
     cmplx Y0;
 
 #define PREP_Z_2X2()                                                                 \
-    bitCapIntOcl lcv, i;                                                                \
-    bitCapIntOcl Nthreads = get_global_size(0);
+    bitCapInt lcv, i;                                                                \
+    bitCapInt Nthreads = get_global_size(0);
 
 #define PUSH_APART_GEN()                                                             \
     iHigh = lcv;                                                                     \
@@ -136,11 +136,11 @@ inline real1 arg(const cmplx cmp)
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                           \
     stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
-void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr, constant bitCapIntOcl* qPowersSorted)
+void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
     PREP_2X2();
     
-    bitCapIntOcl iLow, iHigh;
+    bitCapInt iLow, iHigh;
     bitLenInt p;
     
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
@@ -149,11 +149,11 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
     }
 }
 
-void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[3];
+    bitCapInt qMask = bitCapIntPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -161,13 +161,13 @@ void kernel apply2x2single(global cmplx* stateVec, constant real1* cmplxPtr, con
     }
 }
 
-void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
-    bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
-    bitCapIntOcl iLow, iHigh;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
+    bitCapInt iLow, iHigh;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_2();
@@ -175,11 +175,11 @@ void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, con
     }
 }
 
-void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr, constant bitCapIntOcl* qPowersSorted)
+void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowersSorted)
 {
     PREP_2X2();
     
-    bitCapIntOcl iLow, iHigh;
+    bitCapInt iLow, iHigh;
     bitLenInt p;
     
     lcv = ID;
@@ -187,38 +187,38 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[2];
+    bitCapInt qMask = bitCapIntPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr)
 {
     PREP_2X2();
 
-    bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
-    bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
-    bitCapIntOcl iLow, iHigh;
+    bitCapInt qMask1 = bitCapIntPtr[3];
+    bitCapInt qMask2 = bitCapIntPtr[4];
+    bitCapInt iLow, iHigh;
 
     lcv = ID;
     PUSH_APART_2();
     APPLY_AND_OUT();
 }
 
-void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr, global real1* nrmParts, local real1* lProbBuffer)
+void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
     PREP_2X2_NORM();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[3];
+    bitCapInt qMask = bitCapIntPtr[3];
 
-    bitCapIntOcl locID, locNthreads;
+    bitCapInt locID, locNthreads;
     cmplx YT;
     real1 partNrm = ZERO_R1;
 
@@ -230,14 +230,14 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     SUM_2X2();
 }
 
-void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr, global real1* nrmParts, local real1* lProbBuffer)
+void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapInt* bitCapIntPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
     PREP_2X2();
     PREP_2X2_NORM();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[2];
+    bitCapInt qMask = bitCapIntPtr[2];
 
-    bitCapIntOcl locID, locNthreads;
+    bitCapInt locID, locNthreads;
     cmplx YT;
     real1 partNrm = ZERO_R1;
 
@@ -248,11 +248,11 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
     SUM_2X2();
 }
 
-void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel xsingle(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
     PREP_SPECIAL_2X2();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[3];
+    bitCapInt qMask = bitCapIntPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -260,22 +260,22 @@ void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel xsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
     PREP_SPECIAL_2X2();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[2];
+    bitCapInt qMask = bitCapIntPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_X();
 }
 
-void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel zsingle(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
     PREP_Z_2X2();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[3];
+    bitCapInt qMask = bitCapIntPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -283,29 +283,29 @@ void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel zsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel zsinglewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
     PREP_Z_2X2();
 
-    bitCapIntOcl qMask = bitCapIntOclPtr[2];
+    bitCapInt qMask = bitCapIntPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_Z();
 }
 
-void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant bitCapIntOcl* qPowers, constant cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
+void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant bitCapInt* qPowers, constant cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts, local real1* lProbBuffer)
 {
-    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+    bitCapInt Nthreads, lcv, locID, locNthreads;
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl targetPower = bitCapIntOclPtr[1];
-    bitCapIntOcl targetMask = targetPower - ONE_BCI;
-    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
-    bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[3];
-    bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[4];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt targetPower = bitCapIntPtr[1];
+    bitCapInt targetMask = targetPower - ONE_BCI;
+    bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt mtrxSkipLen = bitCapIntPtr[3];
+    bitCapInt mtrxSkipValueMask = bitCapIntPtr[4];
 
     real1 nrm = nrmIn[0];
 
@@ -314,8 +314,8 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     cmplx2 qubit;
     cmplx Y0;
 
-    bitCapIntOcl i, offset;
-    bitCapIntOcl j, jHigh, jLow, p;
+    bitCapInt i, offset;
+    bitCapInt j, jHigh, jLow, p;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & targetMask;
@@ -365,70 +365,70 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     }
 }
 
-void kernel compose(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel compose(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
     // For reference:
-    //bitCapIntOcl nMaxQPower = args.x;
-    //bitCapIntOcl qubitCount = args.y;
-    //bitCapIntOcl startMask = args.z;
-    //bitCapIntOcl endMask = args.w;
+    //bitCapInt nMaxQPower = args.x;
+    //bitCapInt qubitCount = args.y;
+    //bitCapInt startMask = args.z;
+    //bitCapInt endMask = args.w;
 
     for (lcv = ID; lcv < args.x; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[lcv & args.z], stateVec2[(lcv & args.w) >> args.y]);
     }
 }
 
-void kernel composewide(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel composewide(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl lcv = ID;
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapInt lcv = ID;
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
     // For reference:
-    //bitCapIntOcl nMaxQPower = args.x;
-    //bitCapIntOcl qubitCount = args.y;
-    //bitCapIntOcl startMask = args.z;
-    //bitCapIntOcl endMask = args.w;
+    //bitCapInt nMaxQPower = args.x;
+    //bitCapInt qubitCount = args.y;
+    //bitCapInt startMask = args.z;
+    //bitCapInt endMask = args.w;
 
     nStateVec[lcv] = zmul(stateVec1[lcv & args.z], stateVec2[(lcv & args.w) >> args.y]);
 }
 
-void kernel composemid(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel composemid(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
-    bitCapIntOcl nMaxQPower = args.x;
-    bitCapIntOcl qubitCount = args.y;
-    bitCapIntOcl oQubitCount = args.z;
-    bitCapIntOcl startMask = args.w;
-    bitCapIntOcl midMask = bitCapIntOclPtr[4];
-    bitCapIntOcl endMask = bitCapIntOclPtr[5];    
-    bitCapIntOcl start = bitCapIntOclPtr[6];
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt nMaxQPower = args.x;
+    bitCapInt qubitCount = args.y;
+    bitCapInt oQubitCount = args.z;
+    bitCapInt startMask = args.w;
+    bitCapInt midMask = bitCapIntPtr[4];
+    bitCapInt endMask = bitCapIntPtr[5];    
+    bitCapInt start = bitCapIntPtr[6];
 
     for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[(lcv & startMask) | ((lcv & endMask) >> oQubitCount)], stateVec2[(lcv & midMask) >> start]);
     }
 }
 
-void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb, global real1* partStateAngle)
+void kernel decomposeprob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* remainderStateProb, global real1* remainderStateAngle, global real1* partStateProb, global real1* partStateAngle)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
-    bitCapIntOcl partPower = args.x;
-    bitCapIntOcl remainderPower = args.y;
-    bitCapIntOcl start = args.z;
-    bitCapIntOcl len = args.w;
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt partPower = args.x;
+    bitCapInt remainderPower = args.y;
+    bitCapInt start = args.z;
+    bitCapInt len = args.w;
 
-    bitCapIntOcl j, k, l;
+    bitCapInt j, k, l;
     cmplx amp;
     real1 partProb, nrm, firstAngle, currentAngle;
 
@@ -486,12 +486,12 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
     }
 }
 
-void kernel decomposeamp(global real1* stateProb, global real1* stateAngle, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel decomposeamp(global real1* stateProb, global real1* stateAngle, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxQPower = bitCapIntOclPtr[0];
+    bitCapInt maxQPower = bitCapIntPtr[0];
     real1 angle;
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
@@ -499,38 +499,38 @@ void kernel decomposeamp(global real1* stateProb, global real1* stateAngle, cons
     }
 }
 
-void kernel dispose(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel dispose(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl remainderPower = bitCapIntOclPtr[0];
-    bitCapIntOcl len = bitCapIntOclPtr[1];
-    bitCapIntOcl skipMask = bitCapIntOclPtr[2];
-    bitCapIntOcl disposedRes = bitCapIntOclPtr[3];
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapInt remainderPower = bitCapIntPtr[0];
+    bitCapInt len = bitCapIntPtr[1];
+    bitCapInt skipMask = bitCapIntPtr[2];
+    bitCapInt disposedRes = bitCapIntPtr[3];
+    bitCapInt i, iLow, iHigh;
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
-        i = iLow | ((iHigh ^ iLow) << (bitCapIntOcl)len) | disposedRes;
+        i = iLow | ((iHigh ^ iLow) << (bitCapInt)len) | disposedRes;
         nStateVec[lcv] = stateVec[i];
     }
 }
 
-void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
+void kernel prob(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
 {
-    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+    bitCapInt Nthreads, lcv, locID, locNthreads;
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
-    bitCapIntOcl maxI = args.x;
-    bitCapIntOcl qPower = args.y;
-    bitCapIntOcl qMask = qPower - ONE_BCI;
+    bitCapInt2 args = vload2(0, bitCapIntPtr);
+    bitCapInt maxI = args.x;
+    bitCapInt qPower = args.y;
+    bitCapInt qMask = qPower - ONE_BCI;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
-    bitCapIntOcl i;
+    bitCapInt i;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
@@ -555,22 +555,22 @@ void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
-void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
+void kernel probreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, local real1* lProbBuffer)
 {
-    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+    bitCapInt Nthreads, lcv, locID, locNthreads;
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
-    bitCapIntOcl maxI = args.x;
-    bitCapIntOcl perm = args.y;
-    bitCapIntOcl start = args.z;
-    bitCapIntOcl len = args.w;
-    bitCapIntOcl qMask = (ONE_BCI << start) - ONE_BCI;
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt maxI = args.x;
+    bitCapInt perm = args.y;
+    bitCapInt start = args.z;
+    bitCapInt len = args.w;
+    bitCapInt qMask = (ONE_BCI << start) - ONE_BCI;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
-    bitCapIntOcl i;
+    bitCapInt i;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
@@ -595,23 +595,23 @@ void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer)
+void kernel probregall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer)
 {
-    bitCapIntOcl Nthreads, lcv1, lcv2;
+    bitCapInt Nthreads, lcv1, lcv2;
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
-    bitCapIntOcl maxI = args.x;
-    bitCapIntOcl maxJ = args.y;
-    bitCapIntOcl start = args.z;
-    bitCapIntOcl len = args.w;
-    bitCapIntOcl qMask = (ONE_BCI << start) - ONE_BCI;
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt maxI = args.x;
+    bitCapInt maxJ = args.y;
+    bitCapInt start = args.z;
+    bitCapInt len = args.w;
+    bitCapInt qMask = (ONE_BCI << start) - ONE_BCI;
 
     real1 oneChancePart;
     cmplx amp;
-    bitCapIntOcl perm;
-    bitCapIntOcl i;
+    bitCapInt perm;
+    bitCapInt i;
 
     for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
         perm = lcv1 << start;
@@ -626,21 +626,21 @@ void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer, constant bitCapIntOcl* qPowers, local real1* lProbBuffer )
+void kernel probmask(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, constant bitCapInt* qPowers, local real1* lProbBuffer )
 {
-    bitCapIntOcl Nthreads, locID, locNthreads, lcv;
+    bitCapInt Nthreads, locID, locNthreads, lcv;
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
-    bitCapIntOcl maxI = args.x;
-    bitCapIntOcl mask = args.y;
-    bitCapIntOcl perm = args.z;
-    bitCapIntOcl len = args.w;
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt maxI = args.x;
+    bitCapInt mask = args.y;
+    bitCapInt perm = args.z;
+    bitCapInt len = args.w;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
-    bitCapIntOcl i, iHigh, iLow, p;
+    bitCapInt i, iHigh, iLow, p;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -672,22 +672,22 @@ void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
     }
 }
 
-void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer, constant bitCapIntOcl* qPowersMask, constant bitCapIntOcl* qPowersSkip)
+void kernel probmaskall(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global real1* oneChanceBuffer, constant bitCapInt* qPowersMask, constant bitCapInt* qPowersSkip)
 {
-    bitCapIntOcl Nthreads, lcv1, lcv2;
+    bitCapInt Nthreads, lcv1, lcv2;
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
-    bitCapIntOcl maxI = args.x;
-    bitCapIntOcl maxJ = args.y;
-    bitCapIntOcl maskLen = args.z;
-    bitCapIntOcl skipLen = args.w;
+    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapInt maxI = args.x;
+    bitCapInt maxJ = args.y;
+    bitCapInt maskLen = args.z;
+    bitCapInt skipLen = args.w;
 
     real1 oneChancePart;
     cmplx amp;
-    bitCapIntOcl perm;
-    bitCapIntOcl i, iHigh, iLow, p;
+    bitCapInt perm;
+    bitCapInt i, iHigh, iLow, p;
 
     for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
         iHigh = lcv1;
@@ -717,19 +717,19 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
-void kernel rol(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel rol(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl regMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
-    bitCapIntOcl start = bitCapIntOclPtr[4];
-    bitCapIntOcl shift = bitCapIntOclPtr[5];
-    bitCapIntOcl length = bitCapIntOclPtr[6];
-    bitCapIntOcl otherRes, regRes, regInt, inInt;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
+    bitCapInt start = bitCapIntPtr[4];
+    bitCapInt shift = bitCapIntPtr[5];
+    bitCapInt length = bitCapIntPtr[6];
+    bitCapInt otherRes, regRes, regInt, inInt;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = (lcv & otherMask);
         regRes = (lcv & regMask);
@@ -739,37 +739,37 @@ void kernel rol(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
     }
 }
 
-void kernel inc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel inc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, i;
+    bitCapInt Nthreads, i;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[4];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[5];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toAdd = bitCapIntPtr[5];
     for (i = ID; i < maxI; i += Nthreads) {
         nStateVec[(((((i & inOutMask) >> inOutStart) + toAdd) & lengthMask) << inOutStart) | (i & otherMask)] = stateVec[i];
     }
 }
 
-void kernel cinc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitCapIntOcl* controlPowers)
+void kernel cinc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    bitCapIntOcl Nthreads, i, lcv;
+    bitCapInt Nthreads, i, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[4];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[5];
-    bitCapIntOcl controlLen = bitCapIntOclPtr[6];
-    bitCapIntOcl controlMask = bitCapIntOclPtr[7];
-    bitCapIntOcl otherRes;
-    bitCapIntOcl iHigh, iLow;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toAdd = bitCapIntPtr[5];
+    bitCapInt controlLen = bitCapIntPtr[6];
+    bitCapInt controlMask = bitCapIntPtr[7];
+    bitCapInt otherRes;
+    bitCapInt iHigh, iLow;
     bitLenInt p;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -786,19 +786,19 @@ void kernel cinc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
-void kernel incdecc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel incdecc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
-    bitCapIntOcl carryMask = bitCapIntOclPtr[4];
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[5];
-    bitCapIntOcl toMod = bitCapIntOclPtr[6];
-    bitCapIntOcl otherRes, inOutRes, outInt, outRes, i;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
+    bitCapInt carryMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toMod = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutRes, outInt, outRes, i;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & (carryMask - ONE_BCI);
         i |= (lcv ^ i) << ONE_BCI;
@@ -816,20 +816,20 @@ void kernel incdecc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel incs(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel incs(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthPower = bitCapIntOclPtr[3];
-    bitCapIntOcl signMask = lengthPower >> ONE_BCI;
-    bitCapIntOcl overflowMask = bitCapIntOclPtr[4];
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[5];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[6];
-    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> ONE_BCI;
+    bitCapInt overflowMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toAdd = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -866,21 +866,21 @@ void kernel incs(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
-void kernel incdecsc1(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel incdecsc1(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthPower = bitCapIntOclPtr[3];
-    bitCapIntOcl signMask = lengthPower >> ONE_BCI;
-    bitCapIntOcl overflowMask = bitCapIntOclPtr[4];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[6];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[7];
-    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> ONE_BCI;
+    bitCapInt overflowMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt inOutStart = bitCapIntPtr[6];
+    bitCapInt toAdd = bitCapIntPtr[7];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -918,20 +918,20 @@ void kernel incdecsc1(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
     }
 }
 
-void kernel incdecsc2(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel incdecsc2(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl lengthPower = bitCapIntOclPtr[3];
-    bitCapIntOcl signMask = lengthPower >> ONE_BCI;
-    bitCapIntOcl carryMask = bitCapIntOclPtr[4];
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[5];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[6];
-    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt lengthPower = bitCapIntPtr[3];
+    bitCapInt signMask = lengthPower >> ONE_BCI;
+    bitCapInt carryMask = bitCapIntPtr[4];
+    bitCapInt inOutStart = bitCapIntPtr[5];
+    bitCapInt toAdd = bitCapIntPtr[6];
+    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -969,18 +969,18 @@ void kernel incdecsc2(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
     }
 }
 
-void kernel incbcd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel incbcd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[3];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[4];
-    int nibbleCount = bitCapIntOclPtr[5];
-    bitCapIntOcl otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt inOutStart = bitCapIntPtr[3];
+    bitCapInt toAdd = bitCapIntPtr[4];
+    int nibbleCount = bitCapIntPtr[5];
+    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes;
     int test1, test2;
     int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1025,7 +1025,7 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
                         nibbles[j + 1]++;
                     }
                 }
-                outInt |= ((bitCapIntOcl)nibbles[j]) << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes;
             nStateVec[outRes] = amp;
@@ -1035,19 +1035,19 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
     }
 }
 
-void kernel incdecbcdc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel incdecbcdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[4];
-    bitCapIntOcl toAdd = bitCapIntOclPtr[5];
-    int nibbleCount = bitCapIntOclPtr[6];
-    bitCapIntOcl otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes, i;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inOutMask = bitCapIntPtr[1];
+    bitCapInt otherMask = bitCapIntPtr[2];
+    bitCapInt carryMask = bitCapIntPtr[3];
+    bitCapInt inOutStart = bitCapIntPtr[4];
+    bitCapInt toAdd = bitCapIntPtr[5];
+    int nibbleCount = bitCapIntPtr[6];
+    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes, i;
     int test1, test2;
     int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1099,7 +1099,7 @@ void kernel incdecbcdc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
                         carryRes = carryMask;
                     }
                 }
-                outInt |= ((bitCapIntOcl)nibbles[j]) << (j * 4);
+                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << inOutStart) | otherRes | carryRes;
             nStateVec[outRes] = amp1;
@@ -1112,24 +1112,24 @@ void kernel incdecbcdc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel mul(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel mul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl toMul = bitCapIntOclPtr[1];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[4];
-    bitCapIntOcl len = bitCapIntOclPtr[5];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapIntOcl highMask = lowMask << len;
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[6];
-    bitCapIntOcl carryStart = bitCapIntOclPtr[7];
-    bitCapIntOcl skipMask = bitCapIntOclPtr[8];
-    bitCapIntOcl otherRes, outInt;
-    bitCapIntOcl i, iHigh, iLow;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toMul = bitCapIntPtr[1];
+    bitCapInt inOutMask = bitCapIntPtr[2];
+    bitCapInt carryMask = bitCapIntPtr[3];
+    bitCapInt otherMask = bitCapIntPtr[4];
+    bitCapInt len = bitCapIntPtr[5];
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapInt highMask = lowMask << len;
+    bitCapInt inOutStart = bitCapIntPtr[6];
+    bitCapInt carryStart = bitCapIntPtr[7];
+    bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt otherRes, outInt;
+    bitCapInt i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1141,24 +1141,24 @@ void kernel mul(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
     }
 }
 
-void kernel div(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel div(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl toDiv = bitCapIntOclPtr[1];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[4];
-    bitCapIntOcl len = bitCapIntOclPtr[5];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapIntOcl highMask = lowMask << len;
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[6];
-    bitCapIntOcl carryStart = bitCapIntOclPtr[7];
-    bitCapIntOcl skipMask = bitCapIntOclPtr[8];
-    bitCapIntOcl otherRes, outInt;
-    bitCapIntOcl i, iHigh, iLow;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toDiv = bitCapIntPtr[1];
+    bitCapInt inOutMask = bitCapIntPtr[2];
+    bitCapInt carryMask = bitCapIntPtr[3];
+    bitCapInt otherMask = bitCapIntPtr[4];
+    bitCapInt len = bitCapIntPtr[5];
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapInt highMask = lowMask << len;
+    bitCapInt inOutStart = bitCapIntPtr[6];
+    bitCapInt carryStart = bitCapIntPtr[7];
+    bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt otherRes, outInt;
+    bitCapInt i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1172,22 +1172,22 @@ void kernel div(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
 
 // The conditional in the body of kernel loop would majorly hurt performance:
 #define MODNOUT(indexIn, indexOut)                                                                       \
-    bitCapIntOcl Nthreads, lcv;                                                                             \
+    bitCapInt Nthreads, lcv;                                                                             \
                                                                                                          \
     Nthreads = get_global_size(0);                                                                       \
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];                                                                    \
-    bitCapIntOcl toMul = bitCapIntOclPtr[1];                                                                   \
-    bitCapIntOcl inMask = bitCapIntOclPtr[2];                                                                  \
-    bitCapIntOcl outMask = bitCapIntOclPtr[3];                                                                 \
-    bitCapIntOcl otherMask = bitCapIntOclPtr[4];                                                               \
-    bitCapIntOcl len = bitCapIntOclPtr[5];                                                                     \
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;                                                      \
-    bitCapIntOcl inStart = bitCapIntOclPtr[6];                                                                 \
-    bitCapIntOcl outStart = bitCapIntOclPtr[7];                                                                \
-    bitCapIntOcl skipMask = bitCapIntOclPtr[8];                                                                \
-    bitCapIntOcl modN = bitCapIntOclPtr[9];                                                                    \
-    bitCapIntOcl otherRes, inRes, outRes;                                                                   \
-    bitCapIntOcl i, iHigh, iLow;                                                                            \
+    bitCapInt maxI = bitCapIntPtr[0];                                                                    \
+    bitCapInt toMul = bitCapIntPtr[1];                                                                   \
+    bitCapInt inMask = bitCapIntPtr[2];                                                                  \
+    bitCapInt outMask = bitCapIntPtr[3];                                                                 \
+    bitCapInt otherMask = bitCapIntPtr[4];                                                               \
+    bitCapInt len = bitCapIntPtr[5];                                                                     \
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;                                                      \
+    bitCapInt inStart = bitCapIntPtr[6];                                                                 \
+    bitCapInt outStart = bitCapIntPtr[7];                                                                \
+    bitCapInt skipMask = bitCapIntPtr[8];                                                                \
+    bitCapInt modN = bitCapIntPtr[9];                                                                    \
+    bitCapInt otherRes, inRes, outRes;                                                                   \
+    bitCapInt i, iHigh, iLow;                                                                            \
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {                                                        \
         iHigh = lcv;                                                                                     \
         iLow = iHigh & skipMask;                                                                         \
@@ -1199,34 +1199,34 @@ void kernel div(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
         nStateVec[indexOut] = stateVec[indexIn];                                                         \
     }
 
-void kernel mulmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel mulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     MODNOUT(i, (inRes | outRes | otherRes));
 }
 
-void kernel imulmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel imulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
     MODNOUT((inRes | outRes | otherRes), i);
 }
 
-void kernel powmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
+void kernel powmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl base = bitCapIntOclPtr[1];
-    bitCapIntOcl inMask = bitCapIntOclPtr[2];
-    bitCapIntOcl outMask = bitCapIntOclPtr[3];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[4];
-    bitCapIntOcl len = bitCapIntOclPtr[5];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapIntOcl inStart = bitCapIntOclPtr[6];
-    bitCapIntOcl outStart = bitCapIntOclPtr[7];
-    bitCapIntOcl skipMask = bitCapIntOclPtr[8];
-    bitCapIntOcl modN = bitCapIntOclPtr[9];
-    bitCapIntOcl otherRes, inRes, outRes, inInt;
-    bitCapIntOcl i, iHigh, iLow, powRes, pw;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt base = bitCapIntPtr[1];
+    bitCapInt inMask = bitCapIntPtr[2];
+    bitCapInt outMask = bitCapIntPtr[3];
+    bitCapInt otherMask = bitCapIntPtr[4];
+    bitCapInt len = bitCapIntPtr[5];
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapInt inStart = bitCapIntPtr[6];
+    bitCapInt outStart = bitCapIntPtr[7];
+    bitCapInt skipMask = bitCapIntPtr[8];
+    bitCapInt modN = bitCapIntPtr[9];
+    bitCapInt otherRes, inRes, outRes, inInt;
+    bitCapInt i, iHigh, iLow, powRes, pw;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1250,18 +1250,18 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel fulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel fulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl input1Mask = bitCapIntOclPtr[1];
-    bitCapIntOcl input2Mask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryInSumOutMask = bitCapIntOclPtr[3];
-    bitCapIntOcl carryOutMask = bitCapIntOclPtr[4];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt input1Mask = bitCapIntPtr[1];
+    bitCapInt input2Mask = bitCapIntPtr[2];
+    bitCapInt carryInSumOutMask = bitCapIntPtr[3];
+    bitCapInt carryOutMask = bitCapIntPtr[4];
 
-    bitCapIntOcl qMask1, qMask2;
+    bitCapInt qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
         qMask1 = carryInSumOutMask - ONE_BCI;
         qMask2 = carryOutMask - ONE_BCI;
@@ -1273,7 +1273,7 @@ void kernel fulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
     cmplx outs0c0, outs0c1, outs1c0, outs1c1;
 
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapInt i, iLow, iHigh;
 
     bool aVal, bVal;
 
@@ -1330,18 +1330,18 @@ void kernel fulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel ifulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel ifulladd(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl input1Mask = bitCapIntOclPtr[1];
-    bitCapIntOcl input2Mask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryInSumOutMask = bitCapIntOclPtr[3];
-    bitCapIntOcl carryOutMask = bitCapIntOclPtr[4];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt input1Mask = bitCapIntPtr[1];
+    bitCapInt input2Mask = bitCapIntPtr[2];
+    bitCapInt carryInSumOutMask = bitCapIntPtr[3];
+    bitCapInt carryOutMask = bitCapIntPtr[4];
 
-    bitCapIntOcl qMask1, qMask2;
+    bitCapInt qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
         qMask1 = carryInSumOutMask - ONE_BCI;
         qMask2 = carryOutMask - ONE_BCI;
@@ -1353,7 +1353,7 @@ void kernel ifulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
     cmplx outs0c0, outs0c1, outs1c0, outs1c1;
 
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapInt i, iLow, iHigh;
 
     bool aVal, bVal;
 
@@ -1432,27 +1432,27 @@ void kernel ifulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
         nStateVec[i | partControlMask] = stateVec[i | partControlMask];              \
     }
 
-void kernel cmul(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitCapIntOcl* controlPowers)
+void kernel cmul(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl toMul = bitCapIntOclPtr[1];
-    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
-    bitCapIntOcl controlMask = bitCapIntOclPtr[3];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[4];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[6];
-    bitCapIntOcl len = bitCapIntOclPtr[7];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapIntOcl highMask = lowMask << len;
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[8];
-    bitCapIntOcl carryStart = bitCapIntOclPtr[9];
-    bitCapIntOcl otherRes, outInt;
-    bitCapIntOcl i, iHigh, iLow, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toMul = bitCapIntPtr[1];
+    bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt controlMask = bitCapIntPtr[3];
+    bitCapInt inOutMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt otherMask = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapInt highMask = lowMask << len;
+    bitCapInt inOutStart = bitCapIntPtr[8];
+    bitCapInt carryStart = bitCapIntPtr[9];
+    bitCapInt otherRes, outInt;
+    bitCapInt i, iHigh, iLow, j;
     bitLenInt p, k;
-    bitCapIntOcl partControlMask;
+    bitCapInt partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         CMOD_START();
 
@@ -1464,27 +1464,27 @@ void kernel cmul(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
-void kernel cdiv(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitCapIntOcl* controlPowers)
+void kernel cdiv(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl toDiv = bitCapIntOclPtr[1];
-    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
-    bitCapIntOcl controlMask = bitCapIntOclPtr[3];
-    bitCapIntOcl inOutMask = bitCapIntOclPtr[4];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[6];
-    bitCapIntOcl len = bitCapIntOclPtr[7];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapIntOcl highMask = lowMask << len;
-    bitCapIntOcl inOutStart = bitCapIntOclPtr[8];
-    bitCapIntOcl carryStart = bitCapIntOclPtr[9];
-    bitCapIntOcl otherRes, outInt;
-    bitCapIntOcl i, iHigh, iLow, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt toDiv = bitCapIntPtr[1];
+    bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt controlMask = bitCapIntPtr[3];
+    bitCapInt inOutMask = bitCapIntPtr[4];
+    bitCapInt carryMask = bitCapIntPtr[5];
+    bitCapInt otherMask = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapInt highMask = lowMask << len;
+    bitCapInt inOutStart = bitCapIntPtr[8];
+    bitCapInt carryStart = bitCapIntPtr[9];
+    bitCapInt otherRes, outInt;
+    bitCapInt i, iHigh, iLow, j;
     bitLenInt p, k;
-    bitCapIntOcl partControlMask;
+    bitCapInt partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         CMOD_START();
 
@@ -1498,28 +1498,28 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
 
 // The conditional in the body of kernel loop would majorly hurt performance:
 #define CMODNOUT(indexIn, indexOut)                                                                      \
-    bitCapIntOcl Nthreads, lcv;                                                                             \
+    bitCapInt Nthreads, lcv;                                                                             \
                                                                                                          \
     Nthreads = get_global_size(0);                                                                       \
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];                                                                    \
-    bitCapIntOcl toMul = bitCapIntOclPtr[1];                                                                   \
-    bitCapIntOcl controlLen = bitCapIntOclPtr[2];                                                              \
-    bitCapIntOcl controlMask = bitCapIntOclPtr[3];                                                             \
-    bitCapIntOcl inMask = bitCapIntOclPtr[4];                                                                  \
-    bitCapIntOcl outMask = bitCapIntOclPtr[5];                                                                 \
-    bitCapIntOcl modN = bitCapIntOclPtr[6];                                                                    \
-    bitCapIntOcl len = bitCapIntOclPtr[7];                                                                     \
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;                                                      \
-    bitCapIntOcl inStart = bitCapIntOclPtr[8];                                                                 \
-    bitCapIntOcl outStart = bitCapIntOclPtr[9];                                                                \
+    bitCapInt maxI = bitCapIntPtr[0];                                                                    \
+    bitCapInt toMul = bitCapIntPtr[1];                                                                   \
+    bitCapInt controlLen = bitCapIntPtr[2];                                                              \
+    bitCapInt controlMask = bitCapIntPtr[3];                                                             \
+    bitCapInt inMask = bitCapIntPtr[4];                                                                  \
+    bitCapInt outMask = bitCapIntPtr[5];                                                                 \
+    bitCapInt modN = bitCapIntPtr[6];                                                                    \
+    bitCapInt len = bitCapIntPtr[7];                                                                     \
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;                                                      \
+    bitCapInt inStart = bitCapIntPtr[8];                                                                 \
+    bitCapInt outStart = bitCapIntPtr[9];                                                                \
                                                                                                          \
-    bitCapIntOcl otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);                           \
+    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);                           \
     maxI >>= (controlLen + len);                                                                         \
                                                                                                          \
-    bitCapIntOcl otherRes, outRes, inRes;                                                                   \
-    bitCapIntOcl i, iHigh, iLow, j;                                                                         \
+    bitCapInt otherRes, outRes, inRes;                                                                   \
+    bitCapInt i, iHigh, iLow, j;                                                                         \
     bitLenInt p, k;                                                                                      \
-    bitCapIntOcl partControlMask;                                                                           \
+    bitCapInt partControlMask;                                                                           \
                                                                                                          \
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {                                                        \
         CMOD_START();                                                                                    \
@@ -1532,40 +1532,40 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
         CMOD_FINISH();                                                                                   \
     }
 
-void kernel cmulmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitCapIntOcl* controlPowers)
+void kernel cmulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
     CMODNOUT((i | controlMask), (inRes | outRes | otherRes | controlMask));
 }
 
-void kernel cimulmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitCapIntOcl* controlPowers)
+void kernel cimulmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
     CMODNOUT((inRes | outRes | otherRes | controlMask), (i | controlMask));
 }
 
-void kernel cpowmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitCapIntOcl* controlPowers)
+void kernel cpowmodnout(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitCapInt* controlPowers)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl base = bitCapIntOclPtr[1];
-    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
-    bitCapIntOcl controlMask = bitCapIntOclPtr[3];
-    bitCapIntOcl inMask = bitCapIntOclPtr[4];
-    bitCapIntOcl outMask = bitCapIntOclPtr[5];
-    bitCapIntOcl modN = bitCapIntOclPtr[6];
-    bitCapIntOcl len = bitCapIntOclPtr[7];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapIntOcl inStart = bitCapIntOclPtr[8];
-    bitCapIntOcl outStart = bitCapIntOclPtr[9];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt base = bitCapIntPtr[1];
+    bitCapInt controlLen = bitCapIntPtr[2];
+    bitCapInt controlMask = bitCapIntPtr[3];
+    bitCapInt inMask = bitCapIntPtr[4];
+    bitCapInt outMask = bitCapIntPtr[5];
+    bitCapInt modN = bitCapIntPtr[6];
+    bitCapInt len = bitCapIntPtr[7];
+    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapInt inStart = bitCapIntPtr[8];
+    bitCapInt outStart = bitCapIntPtr[9];
 
-    bitCapIntOcl otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
+    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
     maxI >>= (controlLen + len);
 
-    bitCapIntOcl otherRes, outRes, inRes, inInt;
-    bitCapIntOcl i, iHigh, iLow, j, powRes, pw;
+    bitCapInt otherRes, outRes, inRes, inInt;
+    bitCapInt i, iHigh, iLow, j, powRes, pw;
     bitLenInt p, k;
-    bitCapIntOcl partControlMask;
+    bitCapInt partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         CMOD_START();
 
@@ -1589,20 +1589,20 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
-void kernel indexedLda(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel indexedLda(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inputStart = bitCapIntOclPtr[1];
-    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
-    bitCapIntOcl outputStart = bitCapIntOclPtr[3];
-    bitCapIntOcl valueBytes = bitCapIntOclPtr[4];
-    bitCapIntOcl valueLength = bitCapIntOclPtr[5];
-    bitCapIntOcl lowMask = (ONE_BCI << outputStart) - ONE_BCI;
-    bitCapIntOcl inputRes, inputInt, outputRes, outputInt;
-    bitCapIntOcl i, iLow, iHigh, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inputStart = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt outputStart = bitCapIntPtr[3];
+    bitCapInt valueBytes = bitCapIntPtr[4];
+    bitCapInt valueLength = bitCapIntPtr[5];
+    bitCapInt lowMask = (ONE_BCI << outputStart) - ONE_BCI;
+    bitCapInt inputRes, inputInt, outputRes, outputInt;
+    bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
@@ -1619,23 +1619,23 @@ void kernel indexedLda(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel indexedAdc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel indexedAdc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inputStart = bitCapIntOclPtr[1];
-    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
-    bitCapIntOcl outputStart = bitCapIntOclPtr[3];
-    bitCapIntOcl outputMask = bitCapIntOclPtr[4];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[5];
-    bitCapIntOcl carryIn = bitCapIntOclPtr[6];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[7];
-    bitCapIntOcl lengthPower = bitCapIntOclPtr[8];
-    bitCapIntOcl valueBytes = bitCapIntOclPtr[9];
-    bitCapIntOcl otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    bitCapIntOcl i, iLow, iHigh, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inputStart = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt outputStart = bitCapIntPtr[3];
+    bitCapInt outputMask = bitCapIntPtr[4];
+    bitCapInt otherMask = bitCapIntPtr[5];
+    bitCapInt carryIn = bitCapIntPtr[6];
+    bitCapInt carryMask = bitCapIntPtr[7];
+    bitCapInt lengthPower = bitCapIntPtr[8];
+    bitCapInt valueBytes = bitCapIntPtr[9];
+    bitCapInt otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - ONE_BCI);
@@ -1662,23 +1662,23 @@ void kernel indexedAdc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel indexedSbc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel indexedSbc(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl inputStart = bitCapIntOclPtr[1];
-    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
-    bitCapIntOcl outputStart = bitCapIntOclPtr[3];
-    bitCapIntOcl outputMask = bitCapIntOclPtr[4];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[5];
-    bitCapIntOcl carryIn = bitCapIntOclPtr[6];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[7];
-    bitCapIntOcl lengthPower = bitCapIntOclPtr[8];
-    bitCapIntOcl valueBytes = bitCapIntOclPtr[9];
-    bitCapIntOcl otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    bitCapIntOcl i, iLow, iHigh, j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt inputStart = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt outputStart = bitCapIntPtr[3];
+    bitCapInt outputMask = bitCapIntPtr[4];
+    bitCapInt otherMask = bitCapIntPtr[5];
+    bitCapInt carryIn = bitCapIntPtr[6];
+    bitCapInt carryMask = bitCapIntPtr[7];
+    bitCapInt lengthPower = bitCapIntPtr[8];
+    bitCapInt valueBytes = bitCapIntPtr[9];
+    bitCapInt otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    bitCapInt i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - ONE_BCI);
@@ -1705,17 +1705,17 @@ void kernel indexedSbc(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel hash(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+void kernel hash(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, global cmplx* nStateVec, constant bitLenInt* values)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
 
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl start = bitCapIntOclPtr[1];
-    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
-    bitCapIntOcl bytes = bitCapIntOclPtr[3];
-    bitCapIntOcl inputRes, inputInt, outputRes, outputInt;
-    bitCapIntOcl j;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt start = bitCapIntPtr[1];
+    bitCapInt inputMask = bitCapIntPtr[2];
+    bitCapInt bytes = bitCapIntPtr[3];
+    bitCapInt inputRes, inputInt, outputRes, outputInt;
+    bitCapInt j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         inputRes = lcv & inputMask;
         inputInt = inputRes >> start;
@@ -1728,11 +1728,11 @@ void kernel hash(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
-void kernel nrmlze(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr) {
-    bitCapIntOcl Nthreads, lcv;
+void kernel nrmlze(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapInt maxI = bitCapIntPtr[0];
     real1 norm_thresh = args_ptr[0];
     real1 nrm = args_ptr[1];
     cmplx amp;
@@ -1746,8 +1746,8 @@ void kernel nrmlze(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
     }
 }
 
-void kernel nrmlzewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr) {
-    bitCapIntOcl lcv = ID;
+void kernel nrmlzewide(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr) {
+    bitCapInt lcv = ID;
     real1 norm_thresh = args_ptr[0];
     real1 nrm = args_ptr[1];
     cmplx amp;
@@ -1759,11 +1759,11 @@ void kernel nrmlzewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     stateVec[lcv] = nrm * amp;
 }
 
-void kernel updatenorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr, global real1* norm_ptr, local real1* lProbBuffer) {
-    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+void kernel updatenorm(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant real1* args_ptr, global real1* norm_ptr, local real1* lProbBuffer) {
+    bitCapInt Nthreads, lcv, locID, locNthreads;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapInt maxI = bitCapIntPtr[0];
     real1 norm_thresh = args_ptr[0];
     cmplx amp;
     real1 nrm;
@@ -1794,18 +1794,18 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     }
 }
 
-void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global real1* norm_ptr, local real1* lProbBuffer) {
-    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapInt* bitCapIntPtr, global real1* norm_ptr, local real1* lProbBuffer) {
+    bitCapInt Nthreads, lcv, locID, locNthreads;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapInt maxI = bitCapIntPtr[0];
     cmplx amp;
     real1 partNrm = ZERO_R1;
 
     // Hopefully, since this is identical redundant work by all elements, the break hits for all at the same time.
     cmplx basePhaseFac1;
     real1 nrm;
-    bitCapIntOcl basePerm = 0;
+    bitCapInt basePerm = 0;
     do {
         amp = stateVec1[basePerm];
         nrm = dot(amp, amp);
@@ -1847,17 +1847,17 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
     }
 }
 
-void kernel applym(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr) {
-    bitCapIntOcl Nthreads, lcv;
+void kernel applym(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant cmplx* cmplx_ptr) {
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl qPower = bitCapIntOclPtr[1];
-    bitCapIntOcl qMask = qPower - ONE_BCI;
-    bitCapIntOcl savePower = bitCapIntOclPtr[2];
-    bitCapIntOcl discardPower = qPower ^ savePower;
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt qPower = bitCapIntPtr[1];
+    bitCapInt qMask = qPower - ONE_BCI;
+    bitCapInt savePower = bitCapIntPtr[2];
+    bitCapInt discardPower = qPower ^ savePower;
     cmplx nrm = cmplx_ptr[0];
-    bitCapIntOcl i, iLow, iHigh, j;
+    bitCapInt i, iLow, iHigh, j;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1869,13 +1869,13 @@ void kernel applym(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
     }
 }
 
-void kernel applymreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr) {
-    bitCapIntOcl Nthreads, lcv;
+void kernel applymreg(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr, constant cmplx* cmplx_ptr) {
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl mask = bitCapIntOclPtr[1];
-    bitCapIntOcl result = bitCapIntOclPtr[2];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt mask = bitCapIntPtr[1];
+    bitCapInt result = bitCapIntPtr[2];
     cmplx nrm = cmplx_ptr[0];
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1883,26 +1883,26 @@ void kernel applymreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
     }
 }
 
-void kernel phaseflip(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapInt maxI = bitCapIntPtr[0];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         stateVec[lcv] = -stateVec[lcv];
     }
 }
 
-void kernel zerophaseflip(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel zerophaseflip(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
-    bitCapIntOcl Nthreads, lcv;
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapInt Nthreads, lcv;
+    bitCapInt i, iLow, iHigh;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl skipMask = bitCapIntOclPtr[1] - ONE_BCI;
-    bitCapIntOcl skipLength = bitCapIntOclPtr[2];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt skipMask = bitCapIntPtr[1] - ONE_BCI;
+    bitCapInt skipLength = bitCapIntPtr[2];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1912,17 +1912,17 @@ void kernel zerophaseflip(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
     }
 }
 
-void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
-    bitCapIntOcl Nthreads, lcv;
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapInt Nthreads, lcv;
+    bitCapInt i, iLow, iHigh;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl regMask = bitCapIntOclPtr[1];
-    bitCapIntOcl skipPower = bitCapIntOclPtr[2];
-    bitCapIntOcl greaterPerm = bitCapIntOclPtr[3];
-    bitCapIntOcl start = bitCapIntOclPtr[4];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt skipPower = bitCapIntPtr[2];
+    bitCapInt greaterPerm = bitCapIntPtr[3];
+    bitCapInt start = bitCapIntPtr[4];
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1934,15 +1934,15 @@ void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitC
     }
 }
 
-void kernel phaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phaseflipifless(global cmplx* stateVec, constant bitCapInt* bitCapIntPtr)
 {
-    bitCapIntOcl Nthreads, lcv;
+    bitCapInt Nthreads, lcv;
     
     Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl regMask = bitCapIntOclPtr[1];
-    bitCapIntOcl greaterPerm = bitCapIntOclPtr[2];
-    bitCapIntOcl start = bitCapIntOclPtr[3];
+    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapInt regMask = bitCapIntPtr[1];
+    bitCapInt greaterPerm = bitCapIntPtr[2];
+    bitCapInt start = bitCapIntPtr[3];
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         if (((lcv & regMask) >> start) < greaterPerm)

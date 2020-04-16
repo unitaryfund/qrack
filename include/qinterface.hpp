@@ -49,10 +49,6 @@ inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
 inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
-inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapInt& source)
-{
-    return (bitCapIntOcl)((ONE_BCI << bit) & source);
-}
 inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return (ONE_BCI << bit) & source; }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
