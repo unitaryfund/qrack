@@ -61,9 +61,11 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     RedistributeSingleQubits();
 }
 
-void QUnitMulti::RedistributeSingleQubits() {
+void QUnitMulti::RedistributeSingleQubits()
+{
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        std::dynamic_pointer_cast<QEngineOCL>(shards[i].unit)->SetDevice(deviceList[(int)((real1)(i * deviceList.size()) / qubitCount)].id);
+        std::dynamic_pointer_cast<QEngineOCL>(shards[i].unit)
+            ->SetDevice(deviceList[(int)((real1)(i * deviceList.size()) / qubitCount)].id);
     }
 }
 
