@@ -410,7 +410,7 @@ public:
 class QUnit;
 typedef std::shared_ptr<QUnit> QUnitPtr;
 
-class QUnit : public QInterface {
+class QUnit : public QInterface, public ParallelFor {
 protected:
     QInterfaceEngine engine;
     QInterfaceEngine subengine;

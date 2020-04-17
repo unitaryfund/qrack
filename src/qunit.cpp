@@ -199,7 +199,7 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start, bool isConsumed)
 
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
-    /* TODO: This method should compose the bits for the destination without cohering the length first */
+    /* TODO: This method should decompose the bits for the destination without composing the length first */
 
     for (bitLenInt i = 0; i < length; i++) {
         RevertBasis2Qb(start + i);
@@ -294,17 +294,23 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             }
         }
 
-        std::vector<QInterfacePtr> nUnits;
+        size_t maxLcv = units.size() / 2U;
+        std::vector<QInterfacePtr> nUnits(maxLcv);
         std::map<QInterfacePtr, bitLenInt> offsets;
         std::map<QInterfacePtr, QInterfacePtr> offsetPartners;
 
-        for (size_t i = 0; i < units.size(); i += 2) {
-            QInterfacePtr retained = units[i];
-            QInterfacePtr consumed = units[i + 1U];
-            nUnits.push_back(retained);
-            offsets[consumed] = retained->Compose(consumed, true);
-            offsetPartners[consumed] = retained;
+        for (size_t i = 0; i < maxLcv; i++) {
+            offsets[units[2U * i + 1U]] = 0;
+            offsetPartners[units[2U * i + 1U]] = NULL;
         }
+
+        par_for(0, maxLcv, [&](const bitCapInt i, const int cpu) {
+            QInterfacePtr retained = units[2U * i];
+            QInterfacePtr consumed = units[2U * i + 1U];
+            nUnits[i] = retained;
+            offsets.find(consumed)->second = retained->Compose(consumed, true);
+            offsetPartners.find(consumed)->second = retained;
+        });
 
         /* Since each unit will be collapsed in-order, one set of bits at a time. */
         for (auto&& shard : shards) {
@@ -752,48 +758,50 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
         invMap[shard.unit][shard.mapped] = i;
     }
 
-    for (auto&& qi : perms) {
-        if (qi.second.size() == 1) {
-            continue;
+    par_for(0, perms.size(), [&](const bitCapInt permLcv, const int cpu) {
+        std::map<QInterfacePtr, std::vector<bitLenInt>>::iterator qi = perms.begin();
+        std::advance(qi, permLcv);
+        if (qi->second.size() == 1) {
+            return;
         }
 
         bool doApplySub = doApply;
-        std::sort(qi.second.begin(), qi.second.end());
+        std::sort(qi->second.begin(), qi->second.end());
         i = 0;
         std::map<bitLenInt, bitLenInt> toDispose;
         std::vector<bitCapInt> partResults;
-        while (i < qi.second.size()) {
-            contigRegStart = qi.second[i];
+        while (i < qi->second.size()) {
+            contigRegStart = qi->second[i];
             contigRegLength = 1U;
             i++;
-            while (qi.second[i] == (contigRegStart + contigRegLength)) {
+            while (qi->second[i] == (contigRegStart + contigRegLength)) {
                 contigRegLength++;
                 i++;
             }
             // If we're measuring the entire length of the sub-unit, we can skip the "collapse" portion of measurement.
-            doApplySub = doApply && (qi.first->GetQubitCount() != contigRegLength);
+            doApplySub = doApply && (qi->first->GetQubitCount() != contigRegLength);
             toDispose[contigRegStart] = contigRegLength;
             if (values) {
                 contigRegResult = 0;
                 for (j = 0; j < contigRegLength; j++) {
-                    if (values[invMap[qi.first][contigRegStart + j]]) {
+                    if (values[invMap[qi->first][contigRegStart + j]]) {
                         contigRegResult |= pow2(j);
                     }
                 }
                 if (doApplySub) {
-                    partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
+                    partResults.push_back(qi->first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
                 } else {
                     partResults.push_back(contigRegResult);
                 }
             } else {
-                partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, 0, false, doApplySub));
+                partResults.push_back(qi->first->ForceMReg(contigRegStart, contigRegLength, 0, false, doApplySub));
             }
         }
 
         // This is critical: it's the "nonlocal correlation" of "wave function collapse".
         if (doApplySub) {
             for (j = 0; j < qubitCount; j++) {
-                if (shards[j].unit == qi.first) {
+                if (shards[j].unit == qi->first) {
                     shards[j].isProbDirty = true;
                     shards[j].isPhaseDirty = true;
                 }
@@ -803,16 +811,16 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
         for (auto iter = toDispose.rbegin(); iter != toDispose.rend(); ++iter) {
             contigRegResult = partResults.back();
             for (i = iter->first; i < (iter->first + iter->second); i++) {
-                SeparateBit((contigRegResult & ONE_BCI) != 0, bits[invMap[qi.first][i]], false);
+                SeparateBit((contigRegResult & ONE_BCI) != 0, bits[invMap[qi->first][i]], false);
                 contigRegResult >>= ONE_BCI;
             }
             contigRegResult = partResults.back();
             partResults.pop_back();
-            if (qi.first->GetQubitCount() > iter->second) {
-                qi.first->Dispose(iter->first, iter->second, contigRegResult);
+            if (qi->first->GetQubitCount() > iter->second) {
+                qi->first->Dispose(iter->first, iter->second, contigRegResult);
             }
         }
-    }
+    });
 
     return QInterface::ForceM(bits, length, values, doApply);
 }
