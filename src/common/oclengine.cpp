@@ -315,6 +315,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         for (unsigned int j = 0; j < kernelHandles.size(); j++) {
             all_dev_contexts[i]->calls[kernelHandles[j].oclapi] =
                 cl::Kernel(program, kernelHandles[j].kernelname.c_str());
+            all_dev_contexts[i]->mutexes.emplace(kernelHandles[j].oclapi, new std::mutex);
         }
 
         if (saveBinaries) {
