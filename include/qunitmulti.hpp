@@ -104,6 +104,8 @@ protected:
 
     virtual void RedistributeQEngines();
 
+    virtual void RedistributeSingleQubits();
+
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 };
