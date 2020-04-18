@@ -724,11 +724,13 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     bitCapInt perm = permutation << start;
 
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | perm)); };
+    stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
         par_for_set(CastStateVecSparse()->iterable(0, bitRegMask(start, length), perm), fn);
     } else {
         par_for_skip(0, maxQPower, pow2(start), length, fn);
     }
+    stateVec->isReadLocked = true;
 
     real1 prob = ZERO_R1;
     for (int thrd = 0; thrd < num_threads; thrd++) {
@@ -763,8 +765,10 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     int num_threads = GetConcurrencyLevel();
     real1* probs = new real1[num_threads]();
 
+    stateVec->isReadLocked = false;
     par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
         [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | permutation)); });
+    stateVec->isReadLocked = true;
 
     delete[] skipPowers;
 
