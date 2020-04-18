@@ -36,6 +36,8 @@
     (!shards[shardIndex].isProbDirty &&                                                                                \
         ((ProbBase(shardIndex) < min_norm) || ((ONE_R1 - ProbBase(shardIndex)) < min_norm)))
 #define CACHED_1QB(shardIndex) (!shards[shardIndex].isProbDirty && !shards[shardIndex].isPlusMinus)
+#define CACHED_1QB_H(shardIndex)                                                                                       \
+    (shards[shardIndex].isPlusMinus && !QUEUED_PHASE(shards[shardIndex]) && UNSAFE_CACHED_CLASSICAL(shardIndex))
 #define CACHED_PROB(shardIndex)                                                                                        \
     (CACHED_1QB(shardIndex) && (shards[shardIndex].targetOfShards.size() == 0) &&                                      \
         (shards[shardIndex].controlsShards.size() == 0))
@@ -618,6 +620,19 @@ bitCapInt QUnit::GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt
         }
     }
     return res;
+}
+
+bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
+{
+    bool isHBasis = true;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!(CACHED_1QB_H(qubitIndex + i) && (ProbBase(qubitIndex + i) < min_norm))) {
+            isHBasis = false;
+            break;
+        }
+    }
+
+    return isHBasis;
 }
 
 void QUnit::DumpShards()
@@ -2017,6 +2032,11 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
+    if (!hasCarry && CheckBitsPlus(start, length)) {
+        // This operation happens to do nothing.
+        return;
+    }
+
     std::vector<bitLenInt> allBits(controlLen + 1U);
     std::copy(controls, controls + controlLen, allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
@@ -2857,6 +2877,11 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
 void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
 {
+    if (CheckBitsPlus(start, length)) {
+        // This operation happens to do nothing.
+        return;
+    }
+
     if (CheckBitsPermutation(start, length)) {
         bitCapInt value = GetIndexedEigenstate(start, length, values);
         SetReg(start, length, value);

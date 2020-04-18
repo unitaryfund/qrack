@@ -2582,6 +2582,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
     qftReg->INC(3, 0, 2);
     qftReg->INC(1, 1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+    qftReg->INC(20, 0, 8);
+    qftReg->H(0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
@@ -2784,6 +2790,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
         start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+    qftReg->DEC(20, 0, 8);
+    qftReg->H(0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
@@ -3351,6 +3363,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
     qftReg->Hash(0, 8, testPage);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, testPage[INPUT_KEY]));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 8);
+    qftReg->Hash(0, 8, testPage);
+    qftReg->H(0, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
+
     cl_free(testPage);
 }
 
