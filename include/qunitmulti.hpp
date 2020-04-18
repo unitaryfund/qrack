@@ -91,6 +91,10 @@ public:
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
+    virtual QInterfacePtr Clone();
+    virtual void GetQuantumState(complex* outputState);
+    virtual void GetProbs(real1* outputProbs);
+
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 

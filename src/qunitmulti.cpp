@@ -220,4 +220,34 @@ void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
     RedistributeQEngines();
 }
 
+QInterfacePtr QUnitMulti::Clone()
+{
+    // TODO: Copy buffers instead of flushing?
+    ToPermBasisAll();
+    EndAllEmulation();
+
+    QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(
+        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+
+    return CloneBody(copyPtr);
+}
+
+void QUnitMulti::GetQuantumState(complex* outputState)
+{
+    ToPermBasisAll();
+    EndAllEmulation();
+
+    OrderContiguous(EntangleAll());
+    shards[0].unit->GetQuantumState(outputState);
+}
+
+void QUnitMulti::GetProbs(real1* outputProbs)
+{
+    ToPermBasisAll();
+    EndAllEmulation();
+
+    OrderContiguous(EntangleAll());
+    shards[0].unit->GetProbs(outputProbs);
+}
+
 } // namespace Qrack

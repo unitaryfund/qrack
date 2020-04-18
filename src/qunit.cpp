@@ -2947,16 +2947,19 @@ QInterfacePtr QUnit::Clone()
     ToPermBasisAll();
     EndAllEmulation();
 
-    bitLenInt i;
-
     QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
         complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
+    return CloneBody(copyPtr);
+}
+
+QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
+{
     std::vector<QInterfacePtr> shardEngines;
     std::vector<QInterfacePtr> dupeEngines;
     std::vector<QInterfacePtr>::iterator origEngine;
     bitLenInt engineIndex;
-    for (i = 0; i < qubitCount; i++) {
+    for (bitLenInt i = 0; i < qubitCount; i++) {
         if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
             shardEngines.push_back(shards[i].unit);
             dupeEngines.push_back(shards[i].unit->Clone());
