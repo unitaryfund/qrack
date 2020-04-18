@@ -24,8 +24,8 @@
 using namespace Qrack;
 
 const size_t TABLE_SIZE = 256;
-const size_t KEY_SIZE = 6;
-const size_t HASH_SIZE = 6;
+const size_t KEY_SIZE = 4;
+const size_t HASH_SIZE = 4;
 
 bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
 {
