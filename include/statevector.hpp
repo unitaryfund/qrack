@@ -155,21 +155,20 @@ public:
         bool isCSet = (c != ZERO_CMPLX);
 
         mtx.lock();
+
         auto it = amplitudes.find(i);
         bool isFound = (it != amplitudes.end());
         if (isCSet == isFound) {
             mtx.unlock();
-        }
-
-        if (isCSet) {
-            if (isFound) {
+            if (isCSet) {
                 it->second = c;
-            } else {
-                amplitudes[i] = c;
-                mtx.unlock();
             }
-        } else if (isFound) {
-            amplitudes.erase(it);
+        } else {
+            if (isCSet) {
+                amplitudes[i] = c;
+            } else {
+                amplitudes.erase(it);
+            }
             mtx.unlock();
         }
     }
