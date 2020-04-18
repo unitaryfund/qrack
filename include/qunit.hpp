@@ -689,6 +689,8 @@ protected:
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
     virtual QInterfacePtr EntangleAll() { return EntangleRange(0, qubitCount); }
 
+    virtual QInterfacePtr CloneBody(QUnitPtr copyPtr);
+
     virtual bool CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis = false);
     virtual bool CheckBitsPermutation(
         const bitLenInt& start, const bitLenInt& length, const bool& inCurrentBasis = false);
