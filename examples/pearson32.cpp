@@ -32,7 +32,7 @@ bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
     size_t i;
     size_t j;
     unsigned char h;
-    unsigned char hh[8];
+    unsigned char hh[HASH_SIZE];
 
     for (j = 0; j < HASH_SIZE; ++j) {
         // Change the first byte
@@ -56,7 +56,7 @@ void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
     size_t i;
     size_t j;
     bitLenInt x_index;
-    bitLenInt h_index = (len + 3) * 8;
+    bitLenInt h_index = (len + HASH_SIZE - 1U) * 8;
 
     for (j = 0; j < HASH_SIZE; ++j) {
         // Change the first byte
