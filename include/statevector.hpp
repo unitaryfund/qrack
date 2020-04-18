@@ -119,22 +119,28 @@ public:
     }
 
     bool is_sparse() { return false; }
-
-    /// Not used:
-    std::vector<bitCapInt> iterable() { return {}; }
-
-    /// Not used:
-    std::set<bitCapInt> iterable(
-        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
-    {
-        return {};
-    }
 };
 
 class StateVectorSparse : public StateVector, public ParallelFor {
 protected:
     SparseStateVecMap amplitudes;
     std::mutex mtx;
+
+    complex readUnlocked(const bitCapInt& i)
+    {
+        auto it = amplitudes.find(i);
+        bool isFound = (it != amplitudes.end());
+        return isFound ? it->second : ZERO_CMPLX;
+    }
+
+    complex readLocked(const bitCapInt& i)
+    {
+        mtx.lock();
+        auto it = amplitudes.find(i);
+        bool isFound = (it != amplitudes.end());
+        mtx.unlock();
+        return isFound ? it->second : ZERO_CMPLX;
+    }
 
 public:
     StateVectorSparse(bitCapInt cap)
@@ -143,14 +149,7 @@ public:
     {
     }
 
-    complex read(const bitCapInt& i)
-    {
-        mtx.lock();
-        auto it = amplitudes.find(i);
-        bool isFound = (it != amplitudes.end());
-        mtx.unlock();
-        return isFound ? it->second : ZERO_CMPLX;
-    }
+    complex read(const bitCapInt& i) { return isReadLocked ? readLocked(i) : readUnlocked(i); }
 
     void write(const bitCapInt& i, const complex& c)
     {
