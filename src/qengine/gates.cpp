@@ -25,7 +25,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     };
 
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(), fn);
+        par_for_set(CastStateVecSparse()->iterable(), fn);
     } else {
         par_for(0, maxQPower, fn);
     }
@@ -45,7 +45,7 @@ void QEngineCPU::PhaseFlip()
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
 
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(), fn);
+        par_for_set(CastStateVecSparse()->iterable(), fn);
     } else {
         par_for(0, maxQPower, fn);
     }

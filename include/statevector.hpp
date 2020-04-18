@@ -119,22 +119,27 @@ public:
     }
 
     bool is_sparse() { return false; }
-
-    /// Not used:
-    std::vector<bitCapInt> iterable() { return {}; }
-
-    /// Not used:
-    std::set<bitCapInt> iterable(
-        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
-    {
-        return {};
-    }
 };
 
 class StateVectorSparse : public StateVector, public ParallelFor {
 protected:
     SparseStateVecMap amplitudes;
     std::mutex mtx;
+
+    complex readUnlocked(const bitCapInt& i)
+    {
+        auto it = amplitudes.find(i);
+        return (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
+    }
+
+    complex readLocked(const bitCapInt& i)
+    {
+        mtx.lock();
+        auto it = amplitudes.find(i);
+        bool isFound = (it != amplitudes.end());
+        mtx.unlock();
+        return isFound ? it->second : ZERO_CMPLX;
+    }
 
 public:
     StateVectorSparse(bitCapInt cap)
@@ -143,24 +148,27 @@ public:
     {
     }
 
-    complex read(const bitCapInt& i)
-    {
-        mtx.lock();
-        auto it = amplitudes.find(i);
-        bool isNotFound = (it == amplitudes.end());
-        mtx.unlock();
-        return isNotFound ? ZERO_CMPLX : it->second;
-    }
+    complex read(const bitCapInt& i) { return isReadLocked ? readLocked(i) : readUnlocked(i); }
 
     void write(const bitCapInt& i, const complex& c)
     {
-        if (c == ZERO_CMPLX) {
-            mtx.lock();
-            amplitudes.erase(i);
+        bool isCSet = (c != ZERO_CMPLX);
+
+        mtx.lock();
+
+        auto it = amplitudes.find(i);
+        bool isFound = (it != amplitudes.end());
+        if (isCSet == isFound) {
             mtx.unlock();
+            if (isCSet) {
+                it->second = c;
+            }
         } else {
-            mtx.lock();
-            amplitudes[i] = c;
+            if (isCSet) {
+                amplitudes[i] = c;
+            } else {
+                amplitudes.erase(it);
+            }
             mtx.unlock();
         }
     }

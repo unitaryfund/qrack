@@ -207,7 +207,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             filterMask |= (qPowersSorted[i] & ~setMask);
         }
         bitCapInt filterValues = filterMask & offset1 & offset2;
-        par_for_set(stateVec->iterable(setMask, filterMask, filterValues), fn);
+        par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
     }
@@ -284,7 +284,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             filterMask |= (qPowersSorted[i] & ~setMask);
         }
         bitCapInt filterValues = filterMask & offset1 & offset2;
-        par_for_set(stateVec->iterable(setMask, filterMask, filterValues), fn);
+        par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
     } else {
         par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
     }
@@ -393,12 +393,14 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bool isConsumed)
     bitCapInt endMask = (toCopy->maxQPower - ONE_BCI) << qubitCount;
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
+    stateVec->isReadLocked = false;
 
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         nStateVec->write(lcv, stateVec->read(lcv & startMask) * toCopy->stateVec->read((lcv & endMask) >> qubitCount));
     };
     if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
-        par_for_sparse_compose(stateVec->iterable(0, 0, 0), toCopy->stateVec->iterable(0, 0, 0), qubitCount, fn);
+        par_for_sparse_compose(
+            CastStateVecSparse()->iterable(), toCopy->CastStateVecSparse()->iterable(), qubitCount, fn);
     } else {
         par_for(0, nMaxQPower, fn);
     }
@@ -432,6 +434,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start, bool isCons
     bitCapInt endMask = pow2Mask(qubitCount + oQubitCount) & ~(startMask | midMask);
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
+    stateVec->isReadLocked = false;
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec->write(lcv,
@@ -485,6 +488,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     nMaxQPower = pow2(nQubitCount);
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
+    stateVec->isReadLocked = false;
 
     par_for(0, nMaxQPower, [&](const bitCapInt lcv, const int cpu) {
         nStateVec->write(lcv, stateVec->read(lcv & startMask));
@@ -634,9 +638,10 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     bitCapInt saveMask = ~((pow2(start + length) - ONE_BCI) ^ skipMask);
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
+    stateVec->isReadLocked = false;
 
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(), [&](const bitCapInt lcv, const int cpu) {
+        par_for_set(CastStateVecSparse()->iterable(), [&](const bitCapInt lcv, const int cpu) {
             bitCapInt i, iLow, iHigh;
             iHigh = lcv & saveMask;
             iLow = iHigh & skipMask;
@@ -679,7 +684,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
         oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
     };
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(qPower, qPower, qPower), fn);
+        par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
     } else {
         par_for_skip(0, maxQPower, qPower, 1U, fn);
     }
@@ -717,7 +722,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | perm)); };
     if (stateVec->is_sparse()) {
-        par_for_set(stateVec->iterable(0, bitRegMask(start, length), perm), fn);
+        par_for_set(CastStateVecSparse()->iterable(0, bitRegMask(start, length), perm), fn);
     } else {
         par_for_skip(0, maxQPower, pow2(start), length, fn);
     }

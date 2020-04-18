@@ -122,8 +122,11 @@ protected:
     bitCapInt capacity;
 
 public:
+    bool isReadLocked;
+
     StateVector(bitCapInt cap)
         : capacity(cap)
+        , isReadLocked(true)
     {
     }
     virtual complex read(const bitCapInt& i) = 0;
@@ -137,9 +140,6 @@ public:
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
-    virtual std::vector<bitCapInt> iterable() = 0;
-    virtual std::set<bitCapInt> iterable(
-        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0) = 0;
 };
 
 void mul2x2(complex* left, complex* right, complex* out);

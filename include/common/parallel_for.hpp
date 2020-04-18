@@ -69,7 +69,7 @@ public:
     void par_for_set(const std::vector<bitCapInt>& sparseSet, ParallelFunc fn);
 
     /** Iterate over the power set of 2 sparse state vectors. */
-    void par_for_sparse_compose(const std::set<bitCapInt>& lowSet, const std::set<bitCapInt>& highSet,
+    void par_for_sparse_compose(const std::vector<bitCapInt>& lowSet, const std::vector<bitCapInt>& highSet,
         const bitLenInt& highStart, ParallelFunc fn);
 
     /** Calculate the normal for the array. */
