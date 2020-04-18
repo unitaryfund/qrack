@@ -154,14 +154,16 @@ public:
 
     void write(const bitCapInt& i, const complex& c)
     {
+        bool isCSet = (c != ZERO_CMPLX);
+
         mtx.lock();
         auto it = amplitudes.find(i);
         bool isFound = (it != amplitudes.end());
-        if ((c == ZERO_CMPLX) != isFound) {
+        if (isCSet == isFound) {
             mtx.unlock();
         }
 
-        if (c != ZERO_CMPLX) {
+        if (isCSet) {
             if (isFound) {
                 it->second = c;
             } else {
