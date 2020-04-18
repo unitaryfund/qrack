@@ -683,11 +683,14 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
     };
+
+    stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
         par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
     } else {
         par_for_skip(0, maxQPower, qPower, 1U, fn);
     }
+    stateVec->isReadLocked = true;
 
     for (int i = 0; i < numCores; i++) {
         oneChance += oneChanceBuff[i];
