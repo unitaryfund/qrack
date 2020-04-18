@@ -116,7 +116,7 @@ int main()
         qReg->ForceM(8U * KEY_SIZE, false);
     } catch (...) {
         std::cout << "Even result:      (failed)" << std::endl;
-        return;
+        return 0;
     }
 
     bitCapInt quantumKey = qReg->MReg(0, 8U * KEY_SIZE);
