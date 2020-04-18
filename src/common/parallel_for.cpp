@@ -140,8 +140,8 @@ void ParallelFor::par_for_set(const std::vector<bitCapInt>& sparseSet, ParallelF
         fn);
 }
 
-void ParallelFor::par_for_sparse_compose(
-    const std::set<bitCapInt>& lowSet, const std::set<bitCapInt>& highSet, const bitLenInt& highStart, ParallelFunc fn)
+void ParallelFor::par_for_sparse_compose(const std::vector<bitCapInt>& lowSet, const std::vector<bitCapInt>& highSet,
+    const bitLenInt& highStart, ParallelFunc fn)
 {
     bitCapInt lowSize = lowSet.size();
     par_for_inc(0, lowSize * highSet.size(),

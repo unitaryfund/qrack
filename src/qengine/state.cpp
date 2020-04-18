@@ -398,7 +398,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bool isConsumed)
         nStateVec->write(lcv, stateVec->read(lcv & startMask) * toCopy->stateVec->read((lcv & endMask) >> qubitCount));
     };
     if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
-        par_for_sparse_compose(stateVec->iterable(0, 0, 0), toCopy->stateVec->iterable(0, 0, 0), qubitCount, fn);
+        par_for_sparse_compose(stateVec->iterable(), toCopy->stateVec->iterable(), qubitCount, fn);
     } else {
         par_for(0, nMaxQPower, fn);
     }
