@@ -626,7 +626,9 @@ void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
         toSub++;
     }
 
-    bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
+    bitCapInt maxVal = intPow(10U, length / 4U);
+    toSub %= maxVal;
+    bitCapInt invToSub = maxVal - toSub;
     INCDECBCDC(invToSub, inOutStart, length, carryIndex);
 }
 

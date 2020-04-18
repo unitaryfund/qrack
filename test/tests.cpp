@@ -2227,49 +2227,49 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fulladd_noncoding")
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x00 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x01 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x01 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x02 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x02 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x03 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x03 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x04 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x04 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x05 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x05 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x06 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x06 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 
     qftReg->SetPermutation(0x07 | 8);
     qftReg->FullAdd(0, 1, 2, 3);
     qftReg2->SetPermutation(0x07 | 8);
     qftReg2->QInterface::FullAdd(0, 1, 2, 3);
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+    REQUIRE(qftReg->MReg(0, 4) == qftReg2->MReg(0, 4));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ifulladd")

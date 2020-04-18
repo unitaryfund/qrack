@@ -1911,36 +1911,8 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
     delete[] lControls;
 }
 
-/// Collapse the carry bit in an optimal way, before carry arithmetic.
-void QUnit::CollapseCarry(bitLenInt flagIndex, bitLenInt start, bitLenInt length)
-{
-    ToPermBasis(flagIndex);
-
-    // Measure the carry flag.
-    // Don't separate the flag just to entangle it again, if it's in the same unit.
-    QInterfacePtr flagUnit = shards[flagIndex].unit;
-    bool isFlagEntangled = false;
-    if (flagUnit->GetQubitCount() > 1) {
-        for (bitLenInt i = 0; i < length; i++) {
-            if (flagUnit == shards[start + i].unit) {
-                isFlagEntangled = true;
-                break;
-            }
-        }
-    }
-    if (isFlagEntangled) {
-        EndEmulation(shards[flagIndex]);
-        flagUnit->M(shards[flagIndex].mapped);
-    } else {
-        M(flagIndex);
-    }
-}
-
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    CollapseCarry(flagIndex, start, length);
-
-    /* Make sure the flag bit is entangled in the same QU. */
     EntangleRange(start, length);
 
     std::vector<bitLenInt> bits = { start, flagIndex };
@@ -1960,12 +1932,6 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
-    /*
-     * Overflow flag should not be measured, however the carry flag still needs
-     * to be measured.
-     */
-    CollapseCarry(flag2Index, start, length);
-
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
     std::vector<bitLenInt> bits = { start, flag1Index, flag2Index };
