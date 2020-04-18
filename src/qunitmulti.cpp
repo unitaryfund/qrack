@@ -58,7 +58,15 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
         std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
     }
 
-    RedistributeQEngines();
+    RedistributeSingleQubits();
+}
+
+void QUnitMulti::RedistributeSingleQubits()
+{
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        std::dynamic_pointer_cast<QEngineOCL>(shards[i].unit)
+            ->SetDevice(deviceList[(int)((real1)(i * deviceList.size()) / qubitCount)].id);
+    }
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
@@ -193,7 +201,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     QUnit::SetPermutation(perm, phaseFac);
-    RedistributeQEngines();
+    RedistributeSingleQubits();
 }
 
 bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)

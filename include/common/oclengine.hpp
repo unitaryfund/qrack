@@ -123,7 +123,7 @@ struct OCLKernelHandle {
 
 class OCLDeviceCall {
 protected:
-    std::lock_guard<std::recursive_mutex> guard;
+    std::lock_guard<std::mutex> guard;
 
 public:
     // A cl::Kernel is unique object which should always be taken by reference, or the OCLDeviceContext will lose
@@ -132,7 +132,7 @@ public:
     OCLDeviceCall(const OCLDeviceCall&);
 
 protected:
-    OCLDeviceCall(std::recursive_mutex& m, cl::Kernel& c)
+    OCLDeviceCall(std::mutex& m, cl::Kernel& c)
         : guard(m)
         , call(c)
     {
@@ -154,8 +154,9 @@ public:
     EventVecPtr wait_events;
 
 protected:
-    std::recursive_mutex mutex;
+    std::mutex waitEventsMutex;
     std::map<OCLAPI, cl::Kernel> calls;
+    std::map<OCLAPI, std::unique_ptr<std::mutex>> mutexes;
 
 public:
     OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int cntxt_id)
@@ -163,7 +164,6 @@ public:
         , device(d)
         , context(c)
         , context_id(cntxt_id)
-        , mutex()
     {
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
@@ -178,11 +178,11 @@ public:
             });
     }
 
-    OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(mutex, calls[call]); }
+    OCLDeviceCall Reserve(OCLAPI call) { return OCLDeviceCall(*(mutexes[call]), calls[call]); }
 
     EventVecPtr ResetWaitEvents()
     {
-        std::lock_guard<std::recursive_mutex> guard(mutex);
+        std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
         wait_events = std::make_shared<std::vector<cl::Event>>();
         return waitVec;
@@ -190,7 +190,7 @@ public:
 
     void WaitOnAllEvents()
     {
-        std::lock_guard<std::recursive_mutex> guard(mutex);
+        std::lock_guard<std::mutex> guard(waitEventsMutex);
         for (unsigned int i = 0; i < (wait_events.get())->size(); i++) {
             (*wait_events.get())[i].wait();
         }

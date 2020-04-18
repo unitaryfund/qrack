@@ -915,8 +915,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     complex* nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    OCLDeviceCall ocl = device_context->Reserve(apiCall);
-
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
     if (toCopy->context != context) {
@@ -2205,8 +2203,6 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     toCompare->Finish();
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPROXCOMPARE);
-
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2312,8 +2308,6 @@ void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
-
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_UPDATENORM);
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
