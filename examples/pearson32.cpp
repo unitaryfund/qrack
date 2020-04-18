@@ -24,8 +24,8 @@
 using namespace Qrack;
 
 const size_t TABLE_SIZE = 256;
-const size_t KEY_SIZE = 4;
-const size_t HASH_SIZE = 4;
+const size_t KEY_SIZE = 6;
+const size_t HASH_SIZE = 6;
 
 bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
 {
@@ -74,7 +74,7 @@ void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
         }
         h_index -= 8;
     }
-    qReg->DEC(3, 0, 8);
+    qReg->DEC((HASH_SIZE - 2U), 0, 8);
 }
 
 int main()
@@ -116,6 +116,7 @@ int main()
         qReg->ForceM(8U * KEY_SIZE, false);
     } catch (...) {
         std::cout << "Even result:      (failed)" << std::endl;
+        return;
     }
 
     bitCapInt quantumKey = qReg->MReg(0, 8U * KEY_SIZE);
