@@ -157,18 +157,18 @@ public:
         mtx.lock();
         auto it = amplitudes.find(i);
         bool isFound = (it != amplitudes.end());
-        mtx.unlock();
+        if ((c == ZERO_CMPLX) != isFound) {
+            mtx.unlock();
+        }
 
         if (c != ZERO_CMPLX) {
             if (isFound) {
                 it->second = c;
             } else {
-                mtx.lock();
                 amplitudes[i] = c;
                 mtx.unlock();
             }
         } else if (isFound) {
-            mtx.lock();
             amplitudes.erase(it);
             mtx.unlock();
         }
