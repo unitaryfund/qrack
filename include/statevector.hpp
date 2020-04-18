@@ -147,20 +147,29 @@ public:
     {
         mtx.lock();
         auto it = amplitudes.find(i);
-        bool isNotFound = (it == amplitudes.end());
+        bool isFound = (it != amplitudes.end());
         mtx.unlock();
-        return isNotFound ? ZERO_CMPLX : it->second;
+        return isFound ? it->second : ZERO_CMPLX;
     }
 
     void write(const bitCapInt& i, const complex& c)
     {
-        if (c == ZERO_CMPLX) {
+        mtx.lock();
+        auto it = amplitudes.find(i);
+        bool isFound = (it != amplitudes.end());
+        mtx.unlock();
+
+        if (c != ZERO_CMPLX) {
+            if (isFound) {
+                it->second = c;
+            } else {
+                mtx.lock();
+                amplitudes[i] = c;
+                mtx.unlock();
+            }
+        } else if (isFound) {
             mtx.lock();
-            amplitudes.erase(i);
-            mtx.unlock();
-        } else {
-            mtx.lock();
-            amplitudes[i] = c;
+            amplitudes.erase(it);
             mtx.unlock();
         }
     }
