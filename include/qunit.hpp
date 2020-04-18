@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
 //
 // QUnit maintains explicit separability of qubits as an optimization on a QEngine.
 // See https://arxiv.org/abs/1710.05867
@@ -410,7 +410,7 @@ public:
 class QUnit;
 typedef std::shared_ptr<QUnit> QUnitPtr;
 
-class QUnit : public QInterface, public ParallelFor {
+class QUnit : public QInterface {
 protected:
     QInterfaceEngine engine;
     QInterfaceEngine subengine;
