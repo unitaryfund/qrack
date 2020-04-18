@@ -25,15 +25,16 @@ using namespace Qrack;
 
 const size_t TABLE_SIZE = 256;
 const size_t KEY_SIZE = 4;
+const size_t HASH_SIZE = 4;
 
-bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
+bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
 {
     size_t i;
     size_t j;
     unsigned char h;
     unsigned char hh[8];
 
-    for (j = 0; j < 4; ++j) {
+    for (j = 0; j < HASH_SIZE; ++j) {
         // Change the first byte
         h = T[(x[0] + j) & 0xFF];
         for (i = 1; i < len; ++i) {
@@ -42,17 +43,22 @@ bitCapInt Pearson32(const unsigned char* x, size_t len, const unsigned char* T)
         hh[j] = h;
     }
 
-    return (((bitCapInt)hh[0]) << 24) | (((bitCapInt)hh[1]) << 16) | (((bitCapInt)hh[2]) << 8) | ((bitCapInt)hh[3]);
+    bitCapInt result = 0;
+    for (j = 0; j < HASH_SIZE; j++) {
+        result |= ((bitCapInt)hh[j]) << ((HASH_SIZE - (j + 1U)) * 8U);
+    }
+
+    return result;
 }
 
-void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
+void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
 {
     size_t i;
     size_t j;
     bitLenInt x_index;
     bitLenInt h_index = (len + 3) * 8;
 
-    for (j = 0; j < 4; ++j) {
+    for (j = 0; j < HASH_SIZE; ++j) {
         // Change the first byte
         x_index = 0;
         qReg->IndexedLDA(x_index, 8, h_index, 8, T, false);
@@ -63,7 +69,7 @@ void QPearson32(size_t len, unsigned char* T, QInterfacePtr qReg)
             // This is a valid API if the hash table is one-to-one (unitary).
             qReg->Hash(h_index, 8, T);
         }
-        if (j < 3) {
+        if (j < (HASH_SIZE - 1U)) {
             qReg->INC(1, 0, 8);
         }
         h_index -= 8;
@@ -76,7 +82,7 @@ int main()
     size_t i;
 
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU,
-        32U + 8U * KEY_SIZE, 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
+        8U * (KEY_SIZE + HASH_SIZE), 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
 
     unsigned char T[TABLE_SIZE];
     for (i = 0; i < TABLE_SIZE; i++) {
@@ -94,17 +100,17 @@ int main()
         xFull |= ((bitCapInt)x[i]) << (i * 8U);
     }
     qReg->SetPermutation(xFull);
-    QPearson32(KEY_SIZE, T, qReg);
+    QPearson(KEY_SIZE, T, qReg);
 
-    bitCapInt classicalResult = Pearson32(x, KEY_SIZE, T);
-    bitCapInt quantumResult = qReg->MReg(8 * KEY_SIZE, 32);
+    bitCapInt classicalResult = Pearson(x, KEY_SIZE, T);
+    bitCapInt quantumResult = qReg->MReg(8 * KEY_SIZE, 8 * HASH_SIZE);
 
     std::cout << "Classical result: " << (int)classicalResult << std::endl;
     std::cout << "Quantum result:   " << (int)quantumResult << std::endl;
 
     qReg->SetPermutation(0);
     qReg->H(0, 8);
-    QPearson32(KEY_SIZE, T, qReg);
+    QPearson(KEY_SIZE, T, qReg);
 
     try {
         qReg->ForceM(8U * KEY_SIZE, false);
@@ -113,6 +119,6 @@ int main()
     }
 
     bitCapInt quantumKey = qReg->MReg(0, 8U * KEY_SIZE);
-    quantumResult = qReg->MReg(8U * KEY_SIZE, 32);
+    quantumResult = qReg->MReg(8U * KEY_SIZE, 8U * HASH_SIZE);
     std::cout << "Even result:      (key: " << (int)quantumKey << ", hash: " << (int)quantumResult << ")" << std::endl;
 };
