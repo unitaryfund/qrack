@@ -696,6 +696,7 @@ protected:
         const bitLenInt& start, const bitLenInt& length, const bool& inCurrentBasis = false);
     virtual bitCapInt GetCachedPermutation(const bitLenInt& start, const bitLenInt& length);
     virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, const bitLenInt& length);
+    virtual bool CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length);
 
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
