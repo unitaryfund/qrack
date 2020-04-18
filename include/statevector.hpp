@@ -129,8 +129,7 @@ protected:
     complex readUnlocked(const bitCapInt& i)
     {
         auto it = amplitudes.find(i);
-        bool isFound = (it != amplitudes.end());
-        return isFound ? it->second : ZERO_CMPLX;
+        return (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
     }
 
     complex readLocked(const bitCapInt& i)
