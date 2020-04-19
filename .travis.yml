@@ -8,7 +8,7 @@ install:
   - python -m pip install --upgrade pip wheel pytest numpy setuptools==45
   - python -m pip install scipy
   - python -m pip install dormouse pybind11 cvxpy cython stestr
-  - python -m pip install qiskit==0.17.0
+  - python -m pip install qiskit
   - python -m pip install pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
