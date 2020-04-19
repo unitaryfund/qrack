@@ -711,6 +711,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     bool result;
     if (CACHED_CLASSICAL(qubit)) {
         result = doForce ? res : SHARD_STATE(shard);
+    } else if (!shard.isProbDirty && (shard.unit->GetQubitCount() == 1U)) {
+        result = doForce ? res : (Rand() <= oneChance);
     } else {
         EndEmulation(qubit);
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
@@ -720,7 +722,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         return result;
     }
 
-    if (shard.unit->GetQubitCount() == 1) {
+    if (shard.unit->GetQubitCount() == 1U) {
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
         shard.isEmulated = true;
