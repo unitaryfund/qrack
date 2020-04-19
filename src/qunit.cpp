@@ -836,13 +836,13 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
 
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
+    ToPermBasisMeasure(start, length);
+
     if (isSparse) {
         return QInterface::ForceMReg(start, length, result, doForce, doApply);
     }
 
     bitLenInt i;
-
-    ToPermBasisMeasure(start, length);
 
     bitLenInt* bits = new bitLenInt[length];
     for (i = 0; i < length; i++) {
