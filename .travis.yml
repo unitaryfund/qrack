@@ -1,15 +1,12 @@
 language: python
-python: 3.6
+python: 3.7
 dist: xenial
 sudo: true
 install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
-  - python -m pip install --upgrade pip wheel pytest numpy setuptools==45
-  - python -m pip install scipy
-  - python -m pip install dormouse pybind11 cvxpy cython stestr
-  - python -m pip install qiskit
-  - python -m pip install pennylane
+  - python -m pip install --upgrade pip setuptools==45 wheel
+  - python -m pip install cvxpy cython stestr qiskit pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - sudo make install
@@ -17,6 +14,7 @@ script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
   - ./unittest --proc-cpu
   - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
+  - python -m pip install -r requirements.txt
   - python setup.py install
   - cd build && python -m pytest .
   - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
