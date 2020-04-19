@@ -5,7 +5,7 @@ sudo: true
 install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
-  - python -m pip install --upgrade pip wheel pytest numpy setuptools==45
+  - python -m pip install --upgrade pip wheel pytest numpy matplotlib setuptools==45
   - python -m pip install scipy
   - python -m pip install dormouse pybind11 cvxpy cython stestr
   - python -m pip install qiskit
