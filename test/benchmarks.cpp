@@ -486,6 +486,113 @@ bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
     return *bitIterator;
 }
 
+TEST_CASE("test_universal_circuit_continuous", "[supreme]")
+{
+    const int GateCountMultiQb = 2;
+    const int Depth = 20;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+
+            int d;
+            bitLenInt i;
+            real1 theta, phi, lambda;
+            bitLenInt b1, b2;
+            complex polar0;
+
+            for (d = 0; d < Depth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    theta = 2 * M_PI * qReg->Rand();
+                    phi = 2 * M_PI * qReg->Rand();
+                    lambda = 2 * M_PI * qReg->Rand();
+
+                    qReg->U(i, theta, phi, lambda);
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    if ((GateCountMultiQb * qReg->Rand()) < ONE_R1) {
+                        qReg->Swap(b1, b2);
+                    } else {
+                        qReg->CNOT(b1, b2);
+                    }
+                }
+            }
+
+            qReg->MReg(0, n);
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
+
+TEST_CASE("test_universal_circuit_discrete", "[supreme]")
+{
+    const int GateCount1Qb = 2;
+    const int GateCountMultiQb = 2;
+    const int Depth = 20;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+
+            int d;
+            bitLenInt i;
+            real1 gateRand;
+            bitLenInt b1, b2, b3;
+            complex polar0;
+            int maxGates;
+
+            for (d = 0; d < Depth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    gateRand = qReg->Rand();
+                    if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                        qReg->H(i);
+                    }
+                    // Otherwise, no H gate
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    if (unusedBits.size() > 0) {
+                        maxGates = GateCountMultiQb;
+                    } else {
+                        maxGates = GateCountMultiQb - 1U;
+                    }
+
+                    gateRand = maxGates * qReg->Rand();
+
+                    if (gateRand < ONE_R1) {
+                        qReg->Swap(b1, b2);
+                    } else {
+                        b3 = pickRandomBit(qReg, &unusedBits);
+                        qReg->CCNOT(b1, b2, b3);
+                    }
+                }
+            }
+
+            qReg->MReg(0, n);
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
+
 TEST_CASE("test_universal_circuit_digital", "[supreme]")
 {
     const int GateCount1Qb = 4;

@@ -23,8 +23,14 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     real1 oneChance = Prob(qubit);
     if (!doForce) {
-        real1 prob = Rand();
-        result = (prob <= oneChance);
+        if (oneChance >= ONE_R1) {
+            result = true;
+        } else if (oneChance <= ZERO_R1) {
+            result = false;
+        } else {
+            real1 prob = Rand();
+            result = (prob <= oneChance);
+        }
     }
 
     real1 nrmlzr;

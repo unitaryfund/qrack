@@ -32,20 +32,18 @@
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 #define QUEUED_H_PHASE(shard) (shard.isPlusMinus && QUEUED_PHASE(shard))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shardIndex)                                                                            \
-    (!shards[shardIndex].isProbDirty &&                                                                                \
-        ((ProbBase(shardIndex) < min_norm) || ((ONE_R1 - ProbBase(shardIndex)) < min_norm)))
-#define CACHED_1QB(shardIndex) (!shards[shardIndex].isProbDirty && !shards[shardIndex].isPlusMinus)
-#define CACHED_1QB_H(shardIndex)                                                                                       \
-    (shards[shardIndex].isPlusMinus && !QUEUED_PHASE(shards[shardIndex]) && UNSAFE_CACHED_CLASSICAL(shardIndex))
-#define CACHED_PROB(shardIndex)                                                                                        \
-    (CACHED_1QB(shardIndex) && (shards[shardIndex].targetOfShards.size() == 0) &&                                      \
-        (shards[shardIndex].controlsShards.size() == 0))
-#define CACHED_CLASSICAL(shardIndex)                                                                                   \
-    (CACHED_PROB(shardIndex) && ((Prob(shardIndex) < min_norm) || ((ONE_R1 - Prob(shardIndex)) < min_norm)))
-#define CACHED_ONE(shardIndex) (CACHED_PROB(shardIndex) && ((ONE_R1 - Prob(shardIndex)) < min_norm))
-#define CACHED_ZERO(shardIndex) (CACHED_PROB(shardIndex) && (Prob(shardIndex) < min_norm))
-#define PHASE_MATTERS(shardIndex) (!randGlobalPhase || !CACHED_CLASSICAL(shardIndex))
+#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+    (!shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+#define CACHED_1QB(shard) (!shard.isProbDirty && !shard.isPlusMinus)
+#define CACHED_1QB_H(shard) (shard.isPlusMinus && !QUEUED_PHASE(shard) && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_1QB_PLUS(shard)                                                                                         \
+    (shard.isPlusMinus && !QUEUED_PHASE(shard) && !shard.isProbDirty && (norm(shard.amp1) < min_norm))
+#define CACHED_PROB(shard)                                                                                             \
+    (CACHED_1QB(shard) && (shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0))
+#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+#define CACHED_ONE(shard) (CACHED_PROB(shard) && (norm(shard.amp0) < min_norm))
+#define CACHED_ZERO(shard) (CACHED_PROB(shard) && (norm(shard.amp1) < min_norm))
+#define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 
@@ -578,7 +576,8 @@ bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurre
     if (!inCurrentBasis) {
         ToPermBasis(qubitIndex);
     }
-    if (UNSAFE_CACHED_CLASSICAL(qubitIndex)) {
+    QEngineShard& shard = shards[qubitIndex];
+    if (UNSAFE_CACHED_CLASSICAL(shard)) {
         return true;
     } else {
         return false;
@@ -626,7 +625,8 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
 {
     bool isHBasis = true;
     for (bitLenInt i = 0; i < length; i++) {
-        if (!(CACHED_1QB_H(qubitIndex + i) && (ProbBase(qubitIndex + i) < min_norm))) {
+        QEngineShard& shard = shards[qubitIndex + i];
+        if (!CACHED_1QB_PLUS(shard)) {
             isHBasis = false;
             break;
         }
@@ -709,8 +709,10 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (CACHED_CLASSICAL(qubit)) {
+    if (CACHED_CLASSICAL(shard)) {
         result = doForce ? res : SHARD_STATE(shard);
+    } else if (!shard.isProbDirty && (shard.unit->GetQubitCount() == 1U)) {
+        result = doForce ? res : (Rand() <= norm(shard.amp1));
     } else {
         EndEmulation(qubit);
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
@@ -720,7 +722,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         return result;
     }
 
-    if (shard.unit->GetQubitCount() == 1) {
+    if (shard.unit->GetQubitCount() == 1U) {
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
         shard.isEmulated = true;
@@ -834,13 +836,13 @@ bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bo
 
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
+    ToPermBasisMeasure(start, length);
+
     if (isSparse) {
         return QInterface::ForceMReg(start, length, result, doForce, doApply);
     }
 
     bitLenInt i;
-
-    ToPermBasisMeasure(start, length);
 
     bitLenInt* bits = new bitLenInt[length];
     for (i = 0; i < length; i++) {
@@ -920,7 +922,7 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (CACHED_CLASSICAL(qubit1) && CACHED_CLASSICAL(qubit2)) {
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
             Swap(qubit1, qubit2);
@@ -955,7 +957,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (CACHED_CLASSICAL(qubit1) && CACHED_CLASSICAL(qubit2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -982,7 +984,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (CACHED_CLASSICAL(qubit1) && CACHED_CLASSICAL(qubit2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -1105,7 +1107,7 @@ void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-    if (PHASE_MATTERS(target)) {
+    if (PHASE_MATTERS(shard)) {
         EndEmulation(shard);
         shard.unit->Z(shard.mapped);
         shard.amp1 = -shard.amp1;
@@ -1139,7 +1141,7 @@ void QUnit::Z(bitLenInt target)
     shard.TryCommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
     if (!shard.isPlusMinus) {
-        if (PHASE_MATTERS(target)) {
+        if (PHASE_MATTERS(shard)) {
             ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
             shard.amp1 = -shard.amp1;
         }
@@ -1229,7 +1231,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     bitLenInt rControlLen = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
-        if (CACHED_CLASSICAL(controls[i])) {
+        if (CACHED_CLASSICAL(shard)) {
             if ((anti && SHARD_STATE(shard)) || (!anti && !SHARD_STATE(shard))) {
                 return true;
             }
@@ -1262,7 +1264,15 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
-    if (CACHED_PROB(control)) {
+    QEngineShard& tShard = shards[target];
+
+    if (CACHED_1QB_PLUS(tShard)) {
+        return;
+    }
+
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_PROB(cShard)) {
         if (Prob(control) < min_norm) {
             return;
         }
@@ -1274,9 +1284,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-
-    QEngineShard& cShard = shards[control];
-    QEngineShard& tShard = shards[target];
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
@@ -1310,6 +1317,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_1QB_PLUS(tShard)) {
+        return;
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
@@ -1319,6 +1331,11 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_1QB_PLUS(tShard)) {
+        return;
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, false)) {
@@ -1347,6 +1364,11 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_1QB_PLUS(tShard)) {
+        return;
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, true)) {
@@ -1374,7 +1396,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_ZERO(target) || CACHED_ZERO(control)) {
+    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
         return;
     }
 
@@ -1399,7 +1421,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(target)) {
+    if (!PHASE_MATTERS(shard)) {
         return;
     }
 
@@ -1410,7 +1432,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
-        if (PHASE_MATTERS(target)) {
+        if (PHASE_MATTERS(shard)) {
             ApplyOrEmulate(
                 shard, [&](QEngineShard& shard) { shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped); });
             shard.amp0 *= topLeft;
@@ -1437,7 +1459,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(target) || (randGlobalPhase && (topRight == bottomLeft))) {
+    if (!PHASE_MATTERS(shard) || (randGlobalPhase && (topRight == bottomLeft))) {
         X(target);
         return;
     }
@@ -1484,13 +1506,15 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(target)) {
+    QEngineShard& tShard = shards[target];
+
+    if (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(tShard)) {
         delete[] controls;
         return;
     }
 
     if (IS_ONE_CMPLX(topLeft)) {
-        if (CACHED_ZERO(target)) {
+        if (CACHED_ZERO(tShard)) {
             delete[] controls;
             return;
         }
@@ -1513,7 +1537,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[controls[0]];
 
     if (!freezeBasis && (controlLen == 1U)) {
@@ -1563,7 +1586,9 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    if ((IS_ONE_CMPLX(topLeft) && CACHED_ZERO(cTarget)) || (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(cTarget))) {
+    QEngineShard& shard = shards[cTarget];
+
+    if ((IS_ONE_CMPLX(topLeft) && CACHED_ZERO(shard)) || (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(shard))) {
         delete[] controls;
         return;
     }
@@ -2736,7 +2761,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 void QUnit::PhaseFlip()
 {
     QEngineShard& shard = shards[0];
-    if (PHASE_MATTERS(0)) {
+    if (PHASE_MATTERS(shard)) {
         TransformBasis1Qb(false, 0);
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
