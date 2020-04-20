@@ -1264,6 +1264,10 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
+    if (CACHED_1QB_H(target)) {
+        return;
+    }
+
     if (CACHED_PROB(control)) {
         if (Prob(control) < min_norm) {
             return;
@@ -1312,6 +1316,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
+    if (CACHED_1QB_H(target)) {
+        return;
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
@@ -1321,6 +1329,10 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
+    if (CACHED_1QB_H(target)) {
+        return;
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, false)) {
@@ -1349,6 +1361,10 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
+    if (CACHED_1QB_H(target)) {
+        return;
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, true)) {
