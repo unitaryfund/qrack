@@ -38,6 +38,9 @@
 #define CACHED_1QB(shardIndex) (!shards[shardIndex].isProbDirty && !shards[shardIndex].isPlusMinus)
 #define CACHED_1QB_H(shardIndex)                                                                                       \
     (shards[shardIndex].isPlusMinus && !QUEUED_PHASE(shards[shardIndex]) && UNSAFE_CACHED_CLASSICAL(shardIndex))
+#define CACHED_1QB_PLUS(shardIndex)                                                                                    \
+    (shards[shardIndex].isPlusMinus && !QUEUED_PHASE(shards[shardIndex]) &&                                            \
+        (!shards[shardIndex].isProbDirty && ((ONE_R1 - ProbBase(shardIndex)) < min_norm)))
 #define CACHED_PROB(shardIndex)                                                                                        \
     (CACHED_1QB(shardIndex) && (shards[shardIndex].targetOfShards.size() == 0) &&                                      \
         (shards[shardIndex].controlsShards.size() == 0))
@@ -626,7 +629,7 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
 {
     bool isHBasis = true;
     for (bitLenInt i = 0; i < length; i++) {
-        if (!(CACHED_1QB_H(qubitIndex + i) && (ProbBase(qubitIndex + i) < min_norm))) {
+        if (!CACHED_1QB_PLUS(qubitIndex + i)) {
             isHBasis = false;
             break;
         }
@@ -1264,7 +1267,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
-    if (CACHED_1QB_H(target)) {
+    if (CACHED_1QB_PLUS(target)) {
         return;
     }
 
@@ -1316,7 +1319,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    if (CACHED_1QB_H(target)) {
+    if (CACHED_1QB_PLUS(target)) {
         return;
     }
 
@@ -1329,7 +1332,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (CACHED_1QB_H(target)) {
+    if (CACHED_1QB_PLUS(target)) {
         return;
     }
 
@@ -1361,7 +1364,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (CACHED_1QB_H(target)) {
+    if (CACHED_1QB_PLUS(target)) {
         return;
     }
 
