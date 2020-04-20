@@ -1039,16 +1039,20 @@ struct MultiQubitGate {
 
 TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 {
-    std::cout << "Starting cross entropy benchmark..." << std::endl;
+    std::cout << ">>> 'test_universal_circuit_digital_cross_entropy':" << std::endl;
 
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
-    const int Depth = 1;
+    const int Depth = 3;
 
-    const int ITERATIONS = 100000;
-    const int n = 6;
+    const int ITERATIONS = 20000;
+    const int n = 8;
     bitCapInt permCount = pow2(n);
     bitCapInt perm;
+
+    std::cout << "Width: " << n << " qubits" << std::endl;
+    std::cout << "Depth: " << Depth << " layers of 1 qubit then multi-qubit gates" << std::endl;
+    std::cout << "samples collected: " << ITERATIONS << std::endl;
 
     int d;
     bitLenInt i;
@@ -1131,7 +1135,6 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     }
 
     std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
-    std::cout << "Calculated gold standard distribution." << std::endl;
 
     std::map<bitCapInt, int>::iterator measurementBin;
 
