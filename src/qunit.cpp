@@ -32,22 +32,18 @@
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 #define QUEUED_H_PHASE(shard) (shard.isPlusMinus && QUEUED_PHASE(shard))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shardIndex)                                                                            \
-    (!shards[shardIndex].isProbDirty &&                                                                                \
-        ((ProbBase(shardIndex) < min_norm) || ((ONE_R1 - ProbBase(shardIndex)) < min_norm)))
-#define CACHED_1QB(shardIndex) (!shards[shardIndex].isProbDirty && !shards[shardIndex].isPlusMinus)
-#define CACHED_1QB_H(shardIndex)                                                                                       \
-    (shards[shardIndex].isPlusMinus && !QUEUED_PHASE(shards[shardIndex]) && UNSAFE_CACHED_CLASSICAL(shardIndex))
-#define CACHED_1QB_PLUS(shardIndex)                                                                                    \
-    (shards[shardIndex].isPlusMinus && !QUEUED_PHASE(shards[shardIndex]) &&                                            \
-        (!shards[shardIndex].isProbDirty && ((ONE_R1 - ProbBase(shardIndex)) < min_norm)))
-#define CACHED_PROB(shardIndex)                                                                                        \
-    (CACHED_1QB(shardIndex) && (shards[shardIndex].targetOfShards.size() == 0) &&                                      \
-        (shards[shardIndex].controlsShards.size() == 0))
+#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+    (!shard.isProbDirty && ((norm(shard.amp0) < min_norm) || (norm(shard.amp1) < min_norm)))
+#define CACHED_1QB(shard) (!shard.isProbDirty && !shard.isPlusMinus)
+#define CACHED_1QB_H(shard) (shard.isPlusMinus && !QUEUED_PHASE(shard) && UNSAFE_CACHED_CLASSICAL(shard))
+#define CACHED_1QB_PLUS(shard)                                                                                         \
+    (shard.isPlusMinus && !QUEUED_PHASE(shard) && !shard.isProbDirty && (norm(shard.amp1) < min_norm))
+#define CACHED_PROB(shard)                                                                                             \
+    (CACHED_1QB(shard) && (shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0))
 #define CACHED_CLASSICAL(shardIndex)                                                                                   \
-    (CACHED_PROB(shardIndex) && ((Prob(shardIndex) < min_norm) || ((ONE_R1 - Prob(shardIndex)) < min_norm)))
-#define CACHED_ONE(shardIndex) (CACHED_PROB(shardIndex) && ((ONE_R1 - Prob(shardIndex)) < min_norm))
-#define CACHED_ZERO(shardIndex) (CACHED_PROB(shardIndex) && (Prob(shardIndex) < min_norm))
+    (CACHED_PROB(shards[shardIndex]) && ((Prob(shardIndex) < min_norm) || ((ONE_R1 - Prob(shardIndex)) < min_norm)))
+#define CACHED_ONE(shardIndex) (CACHED_PROB(shards[shardIndex]) && ((ONE_R1 - Prob(shardIndex)) < min_norm))
+#define CACHED_ZERO(shardIndex) (CACHED_PROB(shards[shardIndex]) && (Prob(shardIndex) < min_norm))
 #define PHASE_MATTERS(shardIndex) (!randGlobalPhase || !CACHED_CLASSICAL(shardIndex))
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
@@ -581,7 +577,7 @@ bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurre
     if (!inCurrentBasis) {
         ToPermBasis(qubitIndex);
     }
-    if (UNSAFE_CACHED_CLASSICAL(qubitIndex)) {
+    if (UNSAFE_CACHED_CLASSICAL(shards[qubitIndex])) {
         return true;
     } else {
         return false;
@@ -629,7 +625,8 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
 {
     bool isHBasis = true;
     for (bitLenInt i = 0; i < length; i++) {
-        if (!CACHED_1QB_PLUS(qubitIndex + i)) {
+        QEngineShard& shard = shards[qubitIndex + i];
+        if (!CACHED_1QB_PLUS(shard)) {
             isHBasis = false;
             break;
         }
@@ -1267,11 +1264,15 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
-    if (CACHED_1QB_PLUS(target)) {
+    QEngineShard& tShard = shards[target];
+
+    if (CACHED_1QB_PLUS(tShard)) {
         return;
     }
 
-    if (CACHED_PROB(control)) {
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_PROB(cShard)) {
         if (Prob(control) < min_norm) {
             return;
         }
@@ -1283,9 +1284,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-
-    QEngineShard& cShard = shards[control];
-    QEngineShard& tShard = shards[target];
 
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
@@ -1319,7 +1317,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    if (CACHED_1QB_PLUS(target)) {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_1QB_PLUS(tShard)) {
         return;
     }
 
@@ -1332,7 +1331,8 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (CACHED_1QB_PLUS(target)) {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_1QB_PLUS(tShard)) {
         return;
     }
 
@@ -1364,7 +1364,8 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (CACHED_1QB_PLUS(target)) {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_1QB_PLUS(tShard)) {
         return;
     }
 
