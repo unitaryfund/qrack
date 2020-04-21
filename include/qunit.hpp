@@ -111,6 +111,11 @@ public:
     {
     }
 
+    void MakeDirty() {
+        isProbDirty = true;
+        isPhaseDirty = true;
+    }
+
     void ClampAmps()
     {
         if (norm(amp0) < min_norm) {

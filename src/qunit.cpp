@@ -672,7 +672,7 @@ real1 QUnit::Prob(bitLenInt qubit)
     return ProbBase(qubit);
 }
 
-real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
+real1 QUnit::ProbAll(bitCapInt perm) { return norm(GetAmplitude(perm)); }
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
@@ -1078,8 +1078,7 @@ void QUnit::H(bitLenInt target)
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->H(shard.mapped); });
 
     if (DIRTY(shard)) {
-        shard.isProbDirty = true;
-        shard.isPhaseDirty = true;
+        shard.MakeDirty();
         return;
     }
 
@@ -1432,6 +1431,12 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         if (PHASE_MATTERS(shard)) {
             ApplyOrEmulate(
                 shard, [&](QEngineShard& shard) { shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped); });
+
+            if (DIRTY(shard)) {
+                shard.MakeDirty();
+                return;
+            }
+
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
             if (doNormalize) {
@@ -1443,6 +1448,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         TransformPhase(topLeft, bottomRight, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
+
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
 
         complex Y0 = shard.amp0;
 
@@ -1474,6 +1484,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         ApplyOrEmulate(
             shard, [&](QEngineShard& shard) { shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped); });
 
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
         complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
@@ -1485,6 +1500,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         TransformInvert(topRight, bottomLeft, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
+
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
 
         complex Y0 = shard.amp0;
 
