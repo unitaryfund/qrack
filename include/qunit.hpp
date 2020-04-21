@@ -111,7 +111,8 @@ public:
     {
     }
 
-    void MakeDirty() {
+    void MakeDirty()
+    {
         isProbDirty = true;
         isPhaseDirty = true;
     }

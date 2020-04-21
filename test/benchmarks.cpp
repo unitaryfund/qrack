@@ -1250,4 +1250,62 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
+
+    std::map<bitCapInt, int> testCaseResult2;
+
+    testCase->SetPermutation(0);
+
+    for (d = 0; d < Depth; d++) {
+        std::vector<int>& layer1QbRands = gate1QbRands[d];
+        for (i = 0; i < layer1QbRands.size(); i++) {
+            int gate1Qb = layer1QbRands[i];
+            if (gate1Qb == 0) {
+                testCase->H(i);
+            } else if (gate1Qb == 1) {
+                testCase->X(i);
+            } else if (gate1Qb == 2) {
+                testCase->Y(i);
+            } else {
+                testCase->T(i);
+            }
+        }
+
+        std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+        for (i = 0; i < layerMultiQbRands.size(); i++) {
+            MultiQubitGate multiGate = layerMultiQbRands[i];
+            if (multiGate.gate == 0) {
+                testCase->Swap(multiGate.b1, multiGate.b2);
+            } else if (multiGate.gate == 1) {
+                testCase->CZ(multiGate.b1, multiGate.b2);
+            } else if (multiGate.gate == 2) {
+                testCase->CNOT(multiGate.b1, multiGate.b2);
+            } else {
+                testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+            }
+        }
+    }
+    testCaseResult2 = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+
+    crossEntropy = ZERO_R1;
+    for (perm = 0; perm < permCount; perm++) {
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult2.find(perm);
+        if (measurementBin == testCaseResult2.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+    std::cout << "Test case vs. (duplicate) test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
 }
