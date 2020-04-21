@@ -1220,7 +1220,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             testCaseResult[perm] += 1;
         }
     }
-    // std::map<bitCapInt, int> testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+    // testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
     crossEntropy = ZERO_R1;
     for (perm = 0; perm < permCount; perm++) {
@@ -1239,6 +1239,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
     }
+    if (crossEntropy < ZERO_R1) crossEntropy = ZERO_R1;
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
 }
