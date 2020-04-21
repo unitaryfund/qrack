@@ -1150,6 +1150,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (uniformRandomCount - goldBinResult) * (uniformRandomCount - goldBinResult);
     }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. uniform random cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
@@ -1172,6 +1175,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             testBinResult = measurementBin->second;
         }
         crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
     }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
@@ -1239,7 +1245,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
     }
-    if (crossEntropy < ZERO_R1) crossEntropy = ZERO_R1;
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
 }

@@ -676,8 +676,6 @@ real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
-    RevertBasis2Qb(qubit);
-
     QInterfacePtr unit = shards[qubit].unit;
     bitLenInt mapped = shards[qubit].mapped;
 
@@ -1092,13 +1090,7 @@ void QUnit::H(bitLenInt target)
         shard.ClampAmps();
     }
 
-    if (shard.unit->GetQubitCount() > 1U) {
-        if (shard.amp0 == ZERO_CMPLX) {
-            SeparateBit(true, target);
-        } else if (shard.amp1 == ZERO_CMPLX) {
-            SeparateBit(false, target);
-        }
-    }
+    CheckShardSeparable(target);
 }
 
 void QUnit::XBase(const bitLenInt& target)

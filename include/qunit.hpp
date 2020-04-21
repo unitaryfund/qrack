@@ -116,13 +116,15 @@ public:
         if (norm(amp0) < min_norm) {
             amp0 = ZERO_R1;
             amp1 = ONE_CMPLX;
-            isProbDirty = false;
-            isPhaseDirty = false;
+            if (!isProbDirty) {
+                isPhaseDirty = false;
+            }
         } else if (norm(amp1) < min_norm) {
             amp1 = ZERO_R1;
             amp0 = ONE_CMPLX;
-            isProbDirty = false;
-            isPhaseDirty = false;
+            if (!isProbDirty) {
+                isPhaseDirty = false;
+            }
         }
     }
 
