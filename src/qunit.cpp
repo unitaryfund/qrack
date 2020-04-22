@@ -28,24 +28,21 @@
 #include "qfactory.hpp"
 #include "qunit.hpp"
 
+#define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
+#define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 #define QUEUED_H_PHASE(shard) (shard.isPlusMinus && QUEUED_PHASE(shard))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
-#define CACHED_1QB(shard) (!shard.isProbDirty && !shard.isPlusMinus)
-#define CACHED_1QB_H(shard) (shard.isPlusMinus && !QUEUED_PHASE(shard) && UNSAFE_CACHED_CLASSICAL(shard))
-#define CACHED_1QB_PLUS(shard)                                                                                         \
-    (shard.isPlusMinus && !QUEUED_PHASE(shard) && !shard.isProbDirty && (shard.amp1 == ZERO_CMPLX))
-#define CACHED_PROB(shard)                                                                                             \
-    (CACHED_1QB(shard) && (shard.targetOfShards.size() == 0) && (shard.controlsShards.size() == 0))
+#define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && (shard.amp1 == ZERO_CMPLX))
+#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
 #define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && (shard.amp0 == ZERO_CMPLX))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && (shard.amp1 == ZERO_CMPLX))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
-#define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 
 namespace Qrack {
 
@@ -626,7 +623,7 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
     bool isHBasis = true;
     for (bitLenInt i = 0; i < length; i++) {
         QEngineShard& shard = shards[qubitIndex + i];
-        if (!CACHED_1QB_PLUS(shard)) {
+        if (!CACHED_PLUS(shard)) {
             isHBasis = false;
             break;
         }
@@ -1262,7 +1259,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_1QB_PLUS(tShard)) {
+    if (CACHED_PLUS(tShard)) {
         return;
     }
 
@@ -1314,7 +1311,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_1QB_PLUS(tShard)) {
+    if (CACHED_PLUS(tShard)) {
         return;
     }
 
@@ -1328,7 +1325,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_1QB_PLUS(tShard)) {
+    if (CACHED_PLUS(tShard)) {
         return;
     }
 
@@ -1361,7 +1358,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_1QB_PLUS(tShard)) {
+    if (CACHED_PLUS(tShard)) {
         return;
     }
 
