@@ -3189,7 +3189,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
+    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U) || QUEUED_PHASE(shard)) {
         return;
     }
 
