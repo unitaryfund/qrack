@@ -889,15 +889,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    // TODO: Can we avoid flushing some or all of the 2 qubit gate buffers?
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
-
-    // Simply swap the bit mapping, so long as no 2-qubit gates are buffered.
-    std::swap(shard1, shard2);
+    // Simply swap the bit mapping.
+    std::swap(shards[qubit1], shards[qubit2]);
 
     QInterfacePtr unit = shards[qubit1].unit;
     if (unit == shards[qubit2].unit) {
