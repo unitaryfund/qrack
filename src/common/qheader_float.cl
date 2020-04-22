@@ -19,7 +19,7 @@
 #define ONE_BCI 1UL
 #define SineShift M_PI_2_F
 #define PI_R1 M_PI_F
-#define min_norm 1e-13f
+#define min_norm 1e-14f
 #define bitCapInt ulong
 #define bitCapInt2 ulong2
 #define bitCapInt4 ulong4
