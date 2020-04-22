@@ -1226,6 +1226,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             testCaseResult[perm] += 1;
         }
     }
+    // Comment out the ITERATIONS loop and testCaseResult[perm] update above, and uncomment this line below, for a
+    // faster benchmark. This will not test the effect of the MReg() method.
     // testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
     crossEntropy = ZERO_R1;
