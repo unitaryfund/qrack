@@ -1401,6 +1401,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
+    if (CACHED_ONE(cShard)) {
+        Z(target);
+        return;
+    }
+
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
