@@ -1206,7 +1206,7 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
 bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-    const complex& bottomLeft, const complex& topRight, const bool& anti)
+    const complex& topRight, const complex& bottomLeft, const bool& anti)
 {
     // Returns:
     // "true" if successfully handled/consumed,
@@ -1214,13 +1214,26 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
     bitLenInt rControl = 0;
     bitLenInt rControlLen = 0;
+    real1 prob;
+
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
-        if (CACHED_CLASSICAL(shard)) {
-            if ((anti && SHARD_STATE(shard)) || (!anti && !SHARD_STATE(shard))) {
-                return true;
+
+        if (shard.isProbDirty && (shard.unit == shards[target].unit)) {
+            rControl = controls[i];
+            rControlLen++;
+            if (rControlLen > 1U) {
+                break;
             }
-        } else {
+            continue;
+        }
+
+        prob = Prob(controls[i]);
+        if ((anti && (prob == ONE_R1)) || (!anti && (prob == ZERO_R1))) {
+            return true;
+        }
+
+        if (!((anti && (prob == ZERO_R1)) || (!anti && (prob == ONE_R1)))) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1232,16 +1245,16 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     if (rControlLen == 0U) {
         ApplySingleInvert(topRight, bottomLeft, target);
         return true;
-    } else if (rControlLen == 1U) {
-        complex iTest[4] = { topRight, 0, 0, bottomLeft };
-        if (IsIdentity(iTest, true)) {
-            if (anti) {
-                AntiCNOT(rControl, target);
-            } else {
-                CNOT(rControl, target);
-            }
-            return true;
+    }
+
+    if (rControlLen == 1U) {
+        bitLenInt control[1] = { rControl };
+        if (anti) {
+            ApplyAntiControlledSingleInvert(control, 1U, target, topRight, bottomLeft);
+        } else {
+            ApplyControlledSingleInvert(control, 1U, target, topRight, bottomLeft);
         }
+        return true;
     }
 
     return false;
@@ -1328,24 +1341,8 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    ApplyEitherControlled(controls, 2, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPlusMinus) {
-                if (mappedControls.size() == 2) {
-                    unit->ApplyControlledSinglePhase(
-                        &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
-                } else {
-                    unit->CZ(CTRL_1_ARGS);
-                }
-            } else {
-                if (mappedControls.size() == 2) {
-                    unit->CCNOT(CTRL_2_ARGS);
-                } else {
-                    unit->CNOT(CTRL_1_ARGS);
-                }
-            }
-        },
-        [&]() { X(target); });
+    // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
+    EntangleAndCallMember(PTR3(CCNOT), control1, control2, target);
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1361,20 +1358,8 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    ApplyEitherControlled(controls, 2, { target }, true,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPlusMinus) {
-                unit->ApplyAntiControlledSinglePhase(
-                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
-            } else {
-                if (mappedControls.size() == 2) {
-                    unit->AntiCCNOT(CTRL_2_ARGS);
-                } else {
-                    unit->AntiCNOT(CTRL_1_ARGS);
-                }
-            }
-        },
-        [&]() { X(target); });
+    // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
+    EntangleAndCallMember(PTR3(AntiCCNOT), control1, control2, target);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
@@ -1465,7 +1450,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if (!PHASE_MATTERS(shard) || (randGlobalPhase && (topRight == bottomLeft))) {
+    if ((randGlobalPhase && (topRight == bottomLeft)) || !PHASE_MATTERS(shard)) {
         X(target);
         return;
     }
@@ -1575,7 +1560,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    if (TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, false)) {
+    if ((controlLen == 1U) && IS_ONE_CMPLX(topRight) && IS_ONE_CMPLX(bottomLeft)) {
+        CNOT(controls[0], target);
         return;
     }
 
@@ -1586,6 +1572,10 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         RevertBasis2Qb(target, true, true);
 
         shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
+        return;
+    }
+
+    if ((controlLen > 1U) && TryCnotOptimize(controls, controlLen, target, topRight, bottomLeft, false)) {
         return;
     }
 
@@ -1622,7 +1612,12 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    if (TryCnotOptimize(controls, controlLen, target, bottomLeft, topRight, true)) {
+    if ((controlLen == 1U) && IS_ONE_CMPLX(topRight) && IS_ONE_CMPLX(bottomLeft)) {
+        AntiCNOT(controls[0], target);
+        return;
+    }
+
+    if ((controlLen > 1U) && TryCnotOptimize(controls, controlLen, target, topRight, bottomLeft, true)) {
         return;
     }
 

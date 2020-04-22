@@ -889,7 +889,7 @@ protected:
     }
 
     bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex& bottomLeft, const complex& topRight, const bool& anti);
+        const complex& topRight, const complex& bottomLeft, const bool& anti);
 
     /* Debugging and diagnostic routines. */
     void DumpShards();
