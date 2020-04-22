@@ -1405,10 +1405,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    // TODO: Seems like this basis revert should happen in ApplyEitherControlled
-    RevertBasis2Qb(control);
-    RevertBasis2Qb(target);
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
@@ -1435,11 +1431,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             ApplyOrEmulate(
                 shard, [&](QEngineShard& shard) { shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped); });
 
-            if (DIRTY(shard)) {
-                shard.MakeDirty();
-                return;
-            }
-
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
             if (doNormalize) {
@@ -1451,11 +1442,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         TransformPhase(topLeft, bottomRight, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
-
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
 
         complex Y0 = shard.amp0;
 
@@ -1487,11 +1473,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         ApplyOrEmulate(
             shard, [&](QEngineShard& shard) { shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped); });
 
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
         complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
@@ -1503,11 +1484,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         TransformInvert(topRight, bottomLeft, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
-
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
 
         complex Y0 = shard.amp0;
 
@@ -1671,12 +1647,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     }
 
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, shard.mapped); });
-
-    if (DIRTY(shard)) {
-        shard.isProbDirty = true;
-        shard.isPhaseDirty = true;
-        return;
-    }
 
     complex Y0 = shard.amp0;
 
@@ -3219,7 +3189,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U) || QUEUED_H_PHASE(shard)) {
+    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
         return;
     }
 
