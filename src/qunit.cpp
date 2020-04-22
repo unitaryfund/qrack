@@ -468,7 +468,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         } else {
             prob = Prob(start);
         }
-        return ((prob < min_norm) || ((ONE_R1 - prob) < min_norm));
+        return ((prob == ZERO_R1) || (prob == ONE_R1));
     }
 
     QInterfacePtr separatedBits = MakeEngine(length, 0);
@@ -648,7 +648,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.amp1 = complex(sqrt(prob), ZERO_R1);
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         if (doNormalize) {
-            shard.ClampAmps();
+            shard.ClampAmps(amplitudeFloor);
         }
         shard.isProbDirty = false;
 
@@ -1075,7 +1075,7 @@ void QUnit::H(bitLenInt target)
     shard.amp0 = ((real1)M_SQRT1_2) * (shard.amp0 + shard.amp1);
     shard.amp1 = tempAmp1;
     if (doNormalize) {
-        shard.ClampAmps();
+        shard.ClampAmps(amplitudeFloor);
     }
 
     CheckShardSeparable(target);
@@ -1435,7 +1435,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
             if (doNormalize) {
-                shard.ClampAmps();
+                shard.ClampAmps(amplitudeFloor);
             }
         }
     } else {
@@ -1454,7 +1454,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
-            shard.ClampAmps();
+            shard.ClampAmps(amplitudeFloor);
         }
     }
 
@@ -1488,7 +1488,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
         if (doNormalize) {
-            shard.ClampAmps();
+            shard.ClampAmps(amplitudeFloor);
         }
     } else {
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
@@ -1506,7 +1506,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
-            shard.ClampAmps();
+            shard.ClampAmps(amplitudeFloor);
         }
     }
 
@@ -1674,7 +1674,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
     if (doNormalize) {
-        shard.ClampAmps();
+        shard.ClampAmps(amplitudeFloor);
     }
 
     CheckShardSeparable(target);
@@ -1759,13 +1759,13 @@ void QUnit::AntiCISqrtSwap(
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
     bitProb = inCurrentBasis ? ProbBase(controls[i]) : Prob(controls[i]);                                              \
-    if (bitProb < min_norm) {                                                                                          \
+    if (bitProb == ZERO_R1) {                                                                                          \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-    } else if ((ONE_R1 - bitProb) < min_norm) {                                                                        \
+    } else if (bitProb == ONE_R1) {                                                                                    \
         if (anti) {                                                                                                    \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
@@ -1929,7 +1929,7 @@ bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::
     for (bitLenInt i = 0; i < controlLen; i++) {
         // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
         // overhead.
-        if (!shards[controls[i]].isProbDirty && (Prob(controls[i]) < min_norm)) {
+        if (CACHED_ZERO(shards[controls[i]])) {
             return true;
         }
     }
@@ -1940,10 +1940,10 @@ bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::
 
     for (bitLenInt i = 0; i < controlLen; i++) {
         real1 prob = Prob(controls[i]);
-        if (prob < min_norm) {
+        if (prob == ZERO_R1) {
             // If any control has zero probability, this gate will do nothing.
             return true;
-        } else if ((ONE_R1 - prob) < min_norm) {
+        } else if (prob == ONE_R1) {
             // If any control has full probability, we can avoid entangling it.
             controlVec->erase(controlVec->begin() + controlIndex);
         } else {
@@ -2755,9 +2755,9 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     // Keep the bits separate, if cheap to do so:
     if (!shards[flagIndex].isProbDirty) {
         real1 prob = Prob(flagIndex);
-        if (prob < min_norm) {
+        if (prob == ZERO_R1) {
             return;
-        } else if ((ONE_R1 - prob) < min_norm) {
+        } else if (prob == ONE_R1) {
             PhaseFlipIfLess(greaterPerm, start, length);
             return;
         }

@@ -117,15 +117,15 @@ public:
         isPhaseDirty = true;
     }
 
-    void ClampAmps()
+    void ClampAmps(real1 norm_thresh)
     {
-        if (norm(amp0) < min_norm) {
+        if (norm(amp0) < norm_thresh) {
             amp0 = ZERO_R1;
             amp1 /= abs(amp1);
             if (!isProbDirty) {
                 isPhaseDirty = false;
             }
-        } else if (norm(amp1) < min_norm) {
+        } else if (norm(amp1) < norm_thresh) {
             amp1 = ZERO_R1;
             amp0 /= abs(amp0);
             if (!isProbDirty) {
