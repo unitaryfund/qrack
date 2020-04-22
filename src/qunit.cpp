@@ -1390,15 +1390,15 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
+    if (shards[control].isPlusMinus && !shards[target].isPlusMinus) {
+        std::swap(control, target);
+    }
+
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
     if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
         return;
-    }
-
-    if (cShard.isPlusMinus && !tShard.isPlusMinus) {
-        std::swap(control, target);
     }
 
     if (!freezeBasis) {
