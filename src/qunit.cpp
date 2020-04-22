@@ -1271,14 +1271,22 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
 
     if (CACHED_PROB(cShard)) {
-        real1 prob = Prob(control);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
+        if (norm(cShard.amp0) == ZERO_R1) {
             X(target);
             return;
         }
+        if (norm(cShard.amp1) == ZERO_R1) {
+            return;
+        }
+    }
+
+    if (!freezeBasis) {
+        TransformBasis1Qb(false, control);
+        // TODO: Only controlled-by, for control?
+        RevertBasis2Qb(control, true, false, { target });
+        RevertBasis2Qb(target, true, true);
+        tShard.AddInversionAngles(&cShard, 0, 0);
+        return;
     }
 
     bitLenInt controls[1] = { control };
@@ -1298,15 +1306,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true);
-        return;
-    }
-
-    if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-        // TODO: Only controlled-by, for control?
-        RevertBasis2Qb(control, true, false, { target });
-        RevertBasis2Qb(target, true, true);
-        tShard.AddInversionAngles(&cShard, 0, 0);
         return;
     }
 
