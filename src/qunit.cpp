@@ -1407,6 +1407,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
+    // TODO: Seems like this basis revert should happen in ApplyEitherControlled
+    RevertBasis2Qb(control);
+    RevertBasis2Qb(target);
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
