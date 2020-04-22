@@ -669,7 +669,7 @@ real1 QUnit::Prob(bitLenInt qubit)
     return ProbBase(qubit);
 }
 
-real1 QUnit::ProbAll(bitCapInt perm) { return norm(GetAmplitude(perm)); }
+real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
