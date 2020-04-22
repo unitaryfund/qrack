@@ -32,7 +32,6 @@
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
-#define QUEUED_H_PHASE(shard) (shard.isPlusMinus && QUEUED_PHASE(shard))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
@@ -1263,10 +1262,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
 
     if (CACHED_PROB(cShard)) {
-        if (Prob(control) < min_norm) {
+        real1 prob = Prob(control);
+        if (prob == ZERO_R1) {
             return;
         }
-        if ((ONE_R1 - Prob(control)) < min_norm) {
+        if (prob == ONE_R1) {
             X(target);
             return;
         }
@@ -1431,6 +1431,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             ApplyOrEmulate(
                 shard, [&](QEngineShard& shard) { shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped); });
 
+            if (DIRTY(shard)) {
+                shard.MakeDirty();
+                return;
+            }
+
             shard.amp0 *= topLeft;
             shard.amp1 *= bottomRight;
             if (doNormalize) {
@@ -1442,6 +1447,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         TransformPhase(topLeft, bottomRight, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
+
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
 
         complex Y0 = shard.amp0;
 
@@ -1473,6 +1483,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         ApplyOrEmulate(
             shard, [&](QEngineShard& shard) { shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped); });
 
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
         complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
@@ -1484,6 +1499,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         TransformInvert(topRight, bottomLeft, mtrx);
 
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
+
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
 
         complex Y0 = shard.amp0;
 
@@ -1649,6 +1669,11 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, shard.mapped); });
 
     complex Y0 = shard.amp0;
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
 
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
@@ -3189,7 +3214,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U) || QUEUED_PHASE(shard)) {
+    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
         return;
     }
 
