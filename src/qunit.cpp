@@ -652,11 +652,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         }
         shard.isProbDirty = false;
 
-        if (shard.amp0 == ZERO_CMPLX) {
-            SeparateBit(true, qubit);
-        } else if (shard.amp1 == ZERO_CMPLX) {
-            SeparateBit(false, qubit);
-        }
+        CheckShardSeparable(qubit);
     }
 
     return norm(shard.amp1);
