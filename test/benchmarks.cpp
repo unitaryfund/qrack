@@ -1091,7 +1091,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
             multiGate.gate = maxGates * goldStandard->Rand();
 
-            if (multiGate.gate == 3) {
+            if (multiGate.gate > 2) {
                 multiGate.b3 = pickRandomBit(goldStandard, &unusedBits);
             }
 
