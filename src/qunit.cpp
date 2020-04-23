@@ -322,6 +322,18 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     return unit1;
 }
 
+QInterfacePtr QUnit::Entangle(std::vector<bitLenInt> bits)
+{
+    std::sort(bits.begin(), bits.end());
+
+    std::vector<bitLenInt*> ebits(bits.size());
+    for (bitLenInt i = 0; i < ebits.size(); i++) {
+        ebits[i] = &bits[i];
+    }
+
+    return Entangle(ebits);
+}
+
 QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
 {
     for (bitLenInt i = 0; i < bits.size(); i++) {
@@ -422,28 +434,6 @@ QInterfacePtr QUnit::EntangleRange(
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     OrderContiguous(shards[start1].unit);
     return toRet;
-}
-
-/*
- * Accept a variable number of bits, entangle them all into a single QInterface
- * object, and then call the supplied function on that object.
- */
-template <typename F, typename... B> void QUnit::EntangleAndCallMember(F fn, B... bits)
-{
-    auto qbits = Entangle({ &bits... });
-    ((*qbits).*fn)(bits...);
-}
-
-template <typename F, typename... B> void QUnit::EntangleAndCall(F fn, B... bits)
-{
-    auto qbits = Entangle({ &bits... });
-    fn(qbits, bits...);
-}
-
-template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, real1 radians, B... bits)
-{
-    auto qbits = Entangle({ &bits... });
-    ((*qbits).*fn)(radians, bits...);
 }
 
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
@@ -893,13 +883,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     }
 }
 
-/* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
-#define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt))(&QInterface::OP)
-#define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt))(&QInterface::OP)
-#define PTR1(OP) (void (QInterface::*)(bitLenInt))(&QInterface::OP)
-#define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
-#define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
-
 void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
     if (qubit1 == qubit2) {
@@ -925,14 +908,15 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(ISwap), qubit1, qubit2);
+    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
+    unit->ISwap(shards[qubit1].mapped, shards[qubit2].mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shard1.isProbDirty = true;
-    shard1.isPhaseDirty = true;
-    shard2.isProbDirty = true;
-    shard2.isPhaseDirty = true;
+    shards[qubit1].isProbDirty = true;
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isProbDirty = true;
+    shards[qubit2].isPhaseDirty = true;
 }
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -952,14 +936,15 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(SqrtSwap), qubit1, qubit2);
+    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
+    unit->SqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shard1.isProbDirty = true;
-    shard1.isPhaseDirty = true;
-    shard2.isProbDirty = true;
-    shard2.isPhaseDirty = true;
+    shards[qubit1].isProbDirty = true;
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isProbDirty = true;
+    shards[qubit2].isPhaseDirty = true;
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -979,14 +964,15 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    EntangleAndCallMember(PTR2(ISqrtSwap), qubit1, qubit2);
+    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
+    unit->ISqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shard1.isProbDirty = true;
-    shard1.isPhaseDirty = true;
-    shard2.isProbDirty = true;
-    shard2.isPhaseDirty = true;
+    shards[qubit1].isProbDirty = true;
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isProbDirty = true;
+    shards[qubit2].isPhaseDirty = true;
 }
 
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
@@ -1264,18 +1250,24 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_PLUS(tShard)) {
-        return;
+    if (CACHED_PLUS_MINUS(tShard)) {
+        if (tShard.amp1 == ZERO_CMPLX) {
+            return;
+        }
+        if (tShard.amp0 == ZERO_CMPLX) {
+            Z(control);
+            return;
+        }
     }
 
     QEngineShard& cShard = shards[control];
 
     if (CACHED_PROB(cShard)) {
-        if (norm(cShard.amp0) == ZERO_R1) {
+        if (cShard.amp0 == ZERO_CMPLX) {
             X(target);
             return;
         }
-        if (norm(cShard.amp1) == ZERO_R1) {
+        if (cShard.amp1 == ZERO_CMPLX) {
             return;
         }
     }
@@ -1341,7 +1333,14 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    EntangleAndCallMember(PTR3(CCNOT), control1, control2, target);
+    // If we've made it this far, we have to form the entangled representation and apply the gate.
+    QInterfacePtr unit = Entangle({ control1, control2, target });
+    unit->CCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
+
+    shards[control1].isPhaseDirty = true;
+    shards[control2].isPhaseDirty = true;
+    shards[target].isProbDirty = true;
+    shards[target].isPhaseDirty = true;
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1358,7 +1357,14 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    EntangleAndCallMember(PTR3(AntiCCNOT), control1, control2, target);
+    // If we've made it this far, we have to form the entangled representation and apply the gate.
+    QInterfacePtr unit = Entangle({ control1, control2, target });
+    unit->AntiCCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
+
+    shards[control1].isPhaseDirty = true;
+    shards[control2].isPhaseDirty = true;
+    shards[target].isProbDirty = true;
+    shards[target].isPhaseDirty = true;
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
@@ -1970,12 +1976,7 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 {
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> bits = { start, flagIndex };
-    std::sort(bits.begin(), bits.end());
-
-    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
-
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit = Entangle({ start, flagIndex });
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 
@@ -1989,12 +1990,8 @@ void QUnit::INCxx(
 {
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
-    std::vector<bitLenInt> bits = { start, flag1Index, flag2Index };
-    std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1], &bits[2] };
-
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit = Entangle({ start, flag1Index, flag2Index });
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 
@@ -2760,12 +2757,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     // Otherwise, form the potentially entangled representation:
     EntangleRange(start, length);
 
-    std::vector<bitLenInt> bits = { start, flagIndex };
-    std::sort(bits.begin(), bits.end());
-
-    std::vector<bitLenInt*> ebits = { &bits[0], &bits[1] };
-
-    QInterfacePtr unit = Entangle(ebits);
+    QInterfacePtr unit = Entangle({ start, flagIndex });
 
     unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 
