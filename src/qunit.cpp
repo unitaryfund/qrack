@@ -1220,7 +1220,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
             return true;
         }
 
-        if (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)) {
+        if (!((!anti && IS_NORM_ZERO(shard.amp0)) || (anti && IS_NORM_ZERO(shard.amp1)))) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
