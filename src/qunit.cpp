@@ -1264,8 +1264,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_PLUS(tShard)) {
-        return;
+    if (CACHED_PLUS_MINUS(tShard)) {
+        if (tShard.amp1 == ZERO_CMPLX) {
+            return;
+        }
+        if (tShard.amp0 == ZERO_CMPLX) {
+            Z(control);
+            return;
+        }
     }
 
     QEngineShard& cShard = shards[control];
