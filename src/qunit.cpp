@@ -1339,8 +1339,8 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     shards[control1].isPhaseDirty = true;
     shards[control2].isPhaseDirty = true;
-    tShard.isProbDirty = true;
-    tShard.isPhaseDirty = true;
+    shards[target].isProbDirty = true;
+    shards[target].isPhaseDirty = true;
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1363,8 +1363,8 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     shards[control1].isPhaseDirty = true;
     shards[control2].isPhaseDirty = true;
-    tShard.isProbDirty = true;
-    tShard.isPhaseDirty = true;
+    shards[target].isProbDirty = true;
+    shards[target].isPhaseDirty = true;
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
