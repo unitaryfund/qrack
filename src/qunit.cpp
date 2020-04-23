@@ -1200,12 +1200,11 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
     bitLenInt rControl = 0;
     bitLenInt rControlLen = 0;
-    real1 prob;
 
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if (shard.isProbDirty && (shard.unit == shards[target].unit)) {
+        if (!CACHED_PROB(shard)) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1214,12 +1213,11 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
             continue;
         }
 
-        prob = Prob(controls[i]);
-        if ((anti && (prob == ONE_R1)) || (!anti && (prob == ZERO_R1))) {
+        if ((anti && (shard.amp0 == ZERO_CMPLX)) || (!anti && (shard.amp1 == ZERO_CMPLX))) {
             return true;
         }
 
-        if (!((anti && (prob == ZERO_R1)) || (!anti && (prob == ONE_R1)))) {
+        if (!((anti && (shard.amp1 == ZERO_CMPLX)) || (!anti && (shard.amp0 == ZERO_CMPLX)))) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1332,15 +1330,24 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    // If we've made it this far, we have to form the entangled representation and apply the gate.
-    QInterfacePtr unit = Entangle({ control1, control2, target });
-    unit->CCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
-
-    shards[control1].isPhaseDirty = true;
-    shards[control2].isPhaseDirty = true;
-    shards[target].isProbDirty = true;
-    shards[target].isPhaseDirty = true;
+    ApplyEitherControlled(controls, 2, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                if (mappedControls.size() == 2) {
+                    unit->ApplyControlledSinglePhase(
+                        &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+                } else {
+                    unit->CZ(CTRL_1_ARGS);
+                }
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->CCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->CNOT(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { X(target); });
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1356,15 +1363,20 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    // If we've made it this far, we have to form the entangled representation and apply the gate.
-    QInterfacePtr unit = Entangle({ control1, control2, target });
-    unit->AntiCCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
-
-    shards[control1].isPhaseDirty = true;
-    shards[control2].isPhaseDirty = true;
-    shards[target].isProbDirty = true;
-    shards[target].isPhaseDirty = true;
+    ApplyEitherControlled(controls, 2, { target }, true,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                unit->ApplyAntiControlledSinglePhase(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->AntiCCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->AntiCNOT(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { X(target); });
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
