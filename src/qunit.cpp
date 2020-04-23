@@ -1341,9 +1341,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     QInterfacePtr unit = Entangle(ebits);
 
-    std::vector<bitLenInt> controlsMapped = { shards[control1].mapped, shards[control2].mapped };
-
-    unit->CCNOT(controlsMapped[0], controlsMapped[1], shards[target].mapped);
+    unit->CCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
 
     shards[control1].isPhaseDirty = true;
     shards[control2].isPhaseDirty = true;
@@ -1376,9 +1374,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     QInterfacePtr unit = Entangle(ebits);
 
-    std::vector<bitLenInt> controlsMapped = { shards[control1].mapped, shards[control2].mapped };
-
-    unit->AntiCCNOT(controlsMapped[0], controlsMapped[1], shards[target].mapped);
+    unit->AntiCCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
 
     shards[control1].isPhaseDirty = true;
     shards[control2].isPhaseDirty = true;
