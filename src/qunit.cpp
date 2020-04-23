@@ -913,10 +913,10 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].mapped.isProbDirty = true;
-    shards[qubit1].mapped.isPhaseDirty = true;
-    shards[qubit2].mapped.isProbDirty = true;
-    shards[qubit2].mapped.isPhaseDirty = true;
+    shards[qubit1].isProbDirty = true;
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isProbDirty = true;
+    shards[qubit2].isPhaseDirty = true;
 }
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -941,10 +941,10 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].mapped.isProbDirty = true;
-    shards[qubit1].mapped.isPhaseDirty = true;
-    shards[qubit2].mapped.isProbDirty = true;
-    shards[qubit2].mapped.isPhaseDirty = true;
+    shards[qubit1].isProbDirty = true;
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isProbDirty = true;
+    shards[qubit2].isPhaseDirty = true;
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -969,10 +969,10 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].mapped.isProbDirty = true;
-    shards[qubit1].mapped.isPhaseDirty = true;
-    shards[qubit2].mapped.isProbDirty = true;
-    shards[qubit2].mapped.isPhaseDirty = true;
+    shards[qubit1].isProbDirty = true;
+    shards[qubit1].isPhaseDirty = true;
+    shards[qubit2].isProbDirty = true;
+    shards[qubit2].isPhaseDirty = true;
 }
 
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
