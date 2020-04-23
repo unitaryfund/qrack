@@ -881,12 +881,7 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     }
 }
 
-/* Unfortunately, many methods are overloaded, which prevents using just the address-to-member. */
-#define PTR3(OP) (void (QInterface::*)(bitLenInt, bitLenInt, bitLenInt))(&QInterface::OP)
 #define PTR2(OP) (void (QInterface::*)(bitLenInt, bitLenInt))(&QInterface::OP)
-#define PTR1(OP) (void (QInterface::*)(bitLenInt))(&QInterface::OP)
-#define PTR2A(OP) (void (QInterface::*)(real1, bitLenInt, bitLenInt))(&QInterface::OP)
-#define PTRA(OP) (void (QInterface::*)(real1, bitLenInt))(&QInterface::OP)
 
 void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
