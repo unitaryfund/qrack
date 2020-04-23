@@ -714,8 +714,6 @@ protected:
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
-    template <typename F, typename... B> void EntangleAndCall(F fn, B... bits);
-    template <typename F, typename... B> void EntangleAndCallMemberRot(F fn, real1 radians, B... bits);
 
     typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
     bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);

@@ -434,18 +434,6 @@ template <typename F, typename... B> void QUnit::EntangleAndCallMember(F fn, B..
     ((*qbits).*fn)(bits...);
 }
 
-template <typename F, typename... B> void QUnit::EntangleAndCall(F fn, B... bits)
-{
-    auto qbits = Entangle({ &bits... });
-    fn(qbits, bits...);
-}
-
-template <typename F, typename... B> void QUnit::EntangleAndCallMemberRot(F fn, real1 radians, B... bits)
-{
-    auto qbits = Entangle({ &bits... });
-    ((*qbits).*fn)(radians, bits...);
-}
-
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
     if (length == qubitCount) {
@@ -1347,7 +1335,20 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    EntangleAndCallMember(PTR3(CCNOT), control1, control2, target);
+    // If we've made it this far, we have to form the entangled representation and apply the gate.
+    std::vector<bitLenInt> allBits = { control1, control2, target };
+    std::sort(allBits.begin(), allBits.end());
+
+    std::vector<bitLenInt*> ebits(3);
+    for (bitLenInt i = 0; i < 3; i++) {
+        ebits[i] = &allBits[i];
+    }
+
+    QInterfacePtr unit = Entangle(ebits);
+
+    std::vector<bitLenInt> controlsMapped = { shards[control1].mapped, shards[control2].mapped };
+
+    unit->CCNOT(controlsMapped[0], controlsMapped[1], shards[target].mapped);
 
     shards[control1].isPhaseDirty = true;
     shards[control2].isPhaseDirty = true;
@@ -1369,7 +1370,20 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    EntangleAndCallMember(PTR3(AntiCCNOT), control1, control2, target);
+    // If we've made it this far, we have to form the entangled representation and apply the gate.
+    std::vector<bitLenInt> allBits = { control1, control2, target };
+    std::sort(allBits.begin(), allBits.end());
+
+    std::vector<bitLenInt*> ebits(3);
+    for (bitLenInt i = 0; i < 3; i++) {
+        ebits[i] = &allBits[i];
+    }
+
+    QInterfacePtr unit = Entangle(ebits);
+
+    std::vector<bitLenInt> controlsMapped = { shards[control1].mapped, shards[control2].mapped };
+
+    unit->AntiCCNOT(controlsMapped[0], controlsMapped[1], shards[target].mapped);
 
     shards[control1].isPhaseDirty = true;
     shards[control2].isPhaseDirty = true;
