@@ -1207,7 +1207,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if (!CACHED_PROB(shard) || (!((anti && IS_NORM_ZERO(shard.amp1)) || (!anti && IS_NORM_ZERO(shard.amp0))))) {
+        if (!CACHED_PROB(shard)) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1218,6 +1218,14 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
         if ((anti && IS_NORM_ZERO(shard.amp0)) || (!anti && IS_NORM_ZERO(shard.amp1))) {
             return true;
+        }
+
+        if (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)) {
+            rControl = controls[i];
+            rControlLen++;
+            if (rControlLen > 1U) {
+                break;
+            }
         }
     }
 
