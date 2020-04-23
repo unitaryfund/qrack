@@ -30,17 +30,17 @@
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
+#define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
-    (!shard.isProbDirty && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
+#define UNSAFE_CACHED_CLASSICAL(shard) (!shard.isProbDirty && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && (shard.amp1 == ZERO_CMPLX))
+#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_ZERO(shard.amp1))
 #define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
-#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
-#define CACHED_ONE(shard) (CACHED_PROB(shard) && (shard.amp0 == ZERO_CMPLX))
-#define CACHED_ZERO(shard) (CACHED_PROB(shard) && (shard.amp1 == ZERO_CMPLX))
+#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
+#define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp0))
+#define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp1))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 
 namespace Qrack {
@@ -1207,7 +1207,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if (!CACHED_PROB(shard) || (!((anti && (shard.amp1 == ZERO_CMPLX)) || (!anti && (shard.amp0 == ZERO_CMPLX))))) {
+        if (!CACHED_PROB(shard) || (!((anti && IS_NORM_ZERO(shard.amp1)) || (!anti && IS_NORM_ZERO(shard.amp0))))) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1216,7 +1216,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
             continue;
         }
 
-        if ((anti && (shard.amp0 == ZERO_CMPLX)) || (!anti && (shard.amp1 == ZERO_CMPLX))) {
+        if ((anti && IS_NORM_ZERO(shard.amp0)) || (!anti && IS_NORM_ZERO(shard.amp1))) {
             return true;
         }
     }
@@ -1244,10 +1244,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
 
     if (CACHED_PLUS_MINUS(tShard)) {
-        if (tShard.amp1 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(tShard.amp1)) {
             return;
         }
-        if (tShard.amp0 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(tShard.amp0)) {
             Z(control);
             return;
         }
@@ -1256,11 +1256,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
 
     if (CACHED_PROB(cShard)) {
-        if (cShard.amp0 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(cShard.amp0)) {
             X(target);
             return;
         }
-        if (cShard.amp1 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(cShard.amp1)) {
             return;
         }
     }
@@ -3206,9 +3206,9 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         return;
     }
 
-    if (shard.amp0 == ZERO_CMPLX) {
+    if (IS_NORM_ZERO(shard.amp0)) {
         SeparateBit(true, target);
-    } else if (shard.amp1 == ZERO_CMPLX) {
+    } else if (IS_NORM_ZERO(shard.amp1)) {
         SeparateBit(false, target);
     }
 }
