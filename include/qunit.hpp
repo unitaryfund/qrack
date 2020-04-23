@@ -694,6 +694,7 @@ protected:
     void CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
         const bitLenInt& length, F fn);
 
+    virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
@@ -712,8 +713,6 @@ protected:
 
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
-
-    template <typename F, typename... B> void EntangleAndCallMember(F fn, B... bits);
 
     typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
     bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);
