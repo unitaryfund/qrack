@@ -30,17 +30,17 @@
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
+#define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
-    (!shard.isProbDirty && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
+#define UNSAFE_CACHED_CLASSICAL(shard) (!shard.isProbDirty && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && (shard.amp1 == ZERO_CMPLX))
+#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_ZERO(shard.amp1))
 #define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
-#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && ((shard.amp0 == ZERO_CMPLX) || (shard.amp1 == ZERO_CMPLX)))
-#define CACHED_ONE(shard) (CACHED_PROB(shard) && (shard.amp0 == ZERO_CMPLX))
-#define CACHED_ZERO(shard) (CACHED_PROB(shard) && (shard.amp1 == ZERO_CMPLX))
+#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
+#define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp0))
+#define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp1))
 #define PHASE_MATTERS(shard) (!randGlobalPhase || !CACHED_CLASSICAL(shard))
 
 namespace Qrack {
@@ -638,9 +638,12 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.amp1 = complex(sqrt(prob), ZERO_R1);
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            if (shard.ClampAmps(amplitudeFloor) && (shard.unit->GetQubitCount() == 1U)) {
+                shard.unit->SetPermutation((prob < (ONE_R1 / 2)) ? 0 : 1);
+            }
         }
         shard.isProbDirty = false;
+        shard.isEmulated = false;
 
         CheckShardSeparable(qubit);
     }
@@ -666,8 +669,8 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     shards[qubit].isEmulated = false;
     shards[qubit].isProbDirty = false;
     shards[qubit].isPhaseDirty = false;
-    shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
-    shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+    shards[qubit].amp0 = value ? ZERO_CMPLX : ONE_CMPLX;
+    shards[qubit].amp1 = value ? ONE_CMPLX : ZERO_CMPLX;
 
     if (unit->GetQubitCount() == 1) {
         return;
@@ -1200,12 +1203,11 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
     bitLenInt rControl = 0;
     bitLenInt rControlLen = 0;
-    real1 prob;
 
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if (shard.isProbDirty && (shard.unit == shards[target].unit)) {
+        if (!CACHED_PROB(shard)) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1214,12 +1216,11 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
             continue;
         }
 
-        prob = Prob(controls[i]);
-        if ((anti && (prob == ONE_R1)) || (!anti && (prob == ZERO_R1))) {
+        if ((anti && IS_NORM_ZERO(shard.amp0)) || (!anti && IS_NORM_ZERO(shard.amp1))) {
             return true;
         }
 
-        if (!((anti && (prob == ZERO_R1)) || (!anti && (prob == ONE_R1)))) {
+        if (!((!anti && IS_NORM_ZERO(shard.amp0)) || (anti && IS_NORM_ZERO(shard.amp1)))) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1251,10 +1252,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
 
     if (CACHED_PLUS_MINUS(tShard)) {
-        if (tShard.amp1 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(tShard.amp1)) {
             return;
         }
-        if (tShard.amp0 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(tShard.amp0)) {
             Z(control);
             return;
         }
@@ -1263,11 +1264,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
 
     if (CACHED_PROB(cShard)) {
-        if (cShard.amp0 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(cShard.amp0)) {
             X(target);
             return;
         }
-        if (cShard.amp1 == ZERO_CMPLX) {
+        if (IS_NORM_ZERO(cShard.amp1)) {
             return;
         }
     }
@@ -1332,15 +1333,24 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    // If we've made it this far, we have to form the entangled representation and apply the gate.
-    QInterfacePtr unit = Entangle({ control1, control2, target });
-    unit->CCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
-
-    shards[control1].isPhaseDirty = true;
-    shards[control2].isPhaseDirty = true;
-    shards[target].isProbDirty = true;
-    shards[target].isPhaseDirty = true;
+    ApplyEitherControlled(controls, 2, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                if (mappedControls.size() == 2) {
+                    unit->ApplyControlledSinglePhase(
+                        &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+                } else {
+                    unit->CZ(CTRL_1_ARGS);
+                }
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->CCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->CNOT(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { X(target); });
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1356,15 +1366,20 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
-    // If we've made it this far, we have to form the entangled representation and apply the gate.
-    QInterfacePtr unit = Entangle({ control1, control2, target });
-    unit->AntiCCNOT(shards[control1].mapped, shards[control2].mapped, shards[target].mapped);
-
-    shards[control1].isPhaseDirty = true;
-    shards[control2].isPhaseDirty = true;
-    shards[target].isProbDirty = true;
-    shards[target].isPhaseDirty = true;
+    ApplyEitherControlled(controls, 2, { target }, true,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                unit->ApplyAntiControlledSinglePhase(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->AntiCCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->AntiCNOT(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { X(target); });
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
@@ -1664,13 +1679,12 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
 
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, shard.mapped); });
 
-    complex Y0 = shard.amp0;
-
     if (DIRTY(shard)) {
         shard.MakeDirty();
         return;
     }
 
+    complex Y0 = shard.amp0;
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
     if (doNormalize) {
@@ -3200,9 +3214,9 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         return;
     }
 
-    if (shard.amp0 == ZERO_CMPLX) {
+    if (IS_NORM_ZERO(shard.amp0)) {
         SeparateBit(true, target);
-    } else if (shard.amp1 == ZERO_CMPLX) {
+    } else if (IS_NORM_ZERO(shard.amp1)) {
         SeparateBit(false, target);
     }
 }

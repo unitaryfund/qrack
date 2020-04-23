@@ -91,6 +91,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         mnQbts = 4;
     }
 
+    QInterfacePtr qftReg = NULL;
+
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
 
         if (isBinaryOutput) {
@@ -100,8 +102,10 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
 
-        QInterfacePtr qftReg = NULL;
         if (!qUniverse) {
+            if (qftReg != NULL) {
+                qftReg.reset();
+            }
             qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
                 ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
         }
@@ -122,6 +126,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     }
                 }
             } else {
+                if (qftReg != NULL) {
+                    qftReg.reset();
+                }
                 qftReg = MakeRandQubit();
                 for (bitLenInt i = 1; i < numBits; i++) {
                     qftReg->Compose(MakeRandQubit());
