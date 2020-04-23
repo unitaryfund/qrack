@@ -1277,11 +1277,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
 
     if (CACHED_PROB(cShard)) {
-        if (norm(cShard.amp0) == ZERO_R1) {
+        if (cShard.amp0 == ZERO_CMPLX) {
             X(target);
             return;
         }
-        if (norm(cShard.amp1) == ZERO_R1) {
+        if (cShard.amp1 == ZERO_CMPLX) {
             return;
         }
     }
