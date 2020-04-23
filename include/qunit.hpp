@@ -117,21 +117,25 @@ public:
         isPhaseDirty = true;
     }
 
-    void ClampAmps(real1 norm_thresh)
+    bool ClampAmps(real1 norm_thresh)
     {
+        bool didClamp = false;
         if (norm(amp0) < norm_thresh) {
+            didClamp = true;
             amp0 = ZERO_R1;
             amp1 /= abs(amp1);
             if (!isProbDirty) {
                 isPhaseDirty = false;
             }
         } else if (norm(amp1) < norm_thresh) {
+            didClamp = true;
             amp1 = ZERO_R1;
             amp0 /= abs(amp0);
             if (!isProbDirty) {
                 isPhaseDirty = false;
             }
         }
+        return didClamp;
     }
 
     /// Remove another qubit as being a cached control of a phase gate buffer, for "this" as target bit.

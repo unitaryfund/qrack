@@ -638,9 +638,12 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.amp1 = complex(sqrt(prob), ZERO_R1);
         shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            if (shard.ClampAmps(amplitudeFloor) && (shard.unit->GetQubitCount() == 1U)) {
+                shard.unit->SetPermutation((prob < (ONE_R1 / 2)) ? 0 : 1);
+            }
         }
         shard.isProbDirty = false;
+        shard.isEmulated = false;
 
         CheckShardSeparable(qubit);
     }
@@ -666,8 +669,8 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     shards[qubit].isEmulated = false;
     shards[qubit].isProbDirty = false;
     shards[qubit].isPhaseDirty = false;
-    shards[qubit].amp0 = value ? complex(ZERO_R1, ZERO_R1) : complex(ONE_R1, ZERO_R1);
-    shards[qubit].amp1 = value ? complex(ONE_R1, ZERO_R1) : complex(ZERO_R1, ZERO_R1);
+    shards[qubit].amp0 = value ? ZERO_CMPLX : ONE_CMPLX;
+    shards[qubit].amp1 = value ? ONE_CMPLX : ZERO_CMPLX;
 
     if (unit->GetQubitCount() == 1) {
         return;
@@ -1204,7 +1207,7 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if (!CACHED_PROB(shard)) {
+        if (!CACHED_PROB(shard) || (!((anti && (shard.amp1 == ZERO_CMPLX)) || (!anti && (shard.amp0 == ZERO_CMPLX))))) {
             rControl = controls[i];
             rControlLen++;
             if (rControlLen > 1U) {
@@ -1215,14 +1218,6 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 
         if ((anti && (shard.amp0 == ZERO_CMPLX)) || (!anti && (shard.amp1 == ZERO_CMPLX))) {
             return true;
-        }
-
-        if (!((anti && (shard.amp1 == ZERO_CMPLX)) || (!anti && (shard.amp0 == ZERO_CMPLX)))) {
-            rControl = controls[i];
-            rControlLen++;
-            if (rControlLen > 1U) {
-                break;
-            }
         }
     }
 
@@ -1676,13 +1671,12 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
 
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, shard.mapped); });
 
-    complex Y0 = shard.amp0;
-
     if (DIRTY(shard)) {
         shard.MakeDirty();
         return;
     }
 
+    complex Y0 = shard.amp0;
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
     if (doNormalize) {
