@@ -1343,9 +1343,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     // TryCnotOptimize() already tried everything ApplyEitherControlled() would do.
     EntangleAndCallMember(PTR3(CCNOT), control1, control2, target);
 
-    shards[control1].isProbDirty = true;
     shards[control1].isPhaseDirty = true;
-    shards[control2].isProbDirty = true;
     shards[control2].isPhaseDirty = true;
     tShard.isProbDirty = true;
     tShard.isPhaseDirty = true;
