@@ -30,7 +30,7 @@
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
-#define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
+#define IS_NORM_ZERO(c) (norm(c) < amplitudeFloor)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
