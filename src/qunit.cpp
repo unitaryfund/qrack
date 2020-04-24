@@ -1246,9 +1246,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    RevertBasis2Qb(control);
-    RevertBasis2Qb(target);
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
@@ -1262,6 +1259,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
     if (cShard.isPlusMinus && tShard.isPlusMinus) {
+        RevertBasis2Qb(control);
+        RevertBasis2Qb(target);
+
         std::swap(controls[0], target);
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
@@ -1364,7 +1364,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
-        tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
+        tShard.AddPhaseAngles(&cShard, 0, ONE_R1);
         return;
     }
 
@@ -1522,7 +1522,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
-        tShard.AddPhaseAngles(&cShard, (real1)arg(topLeft), (real1)arg(bottomRight));
+        tShard.AddPhaseAngles(&cShard, (real1)(arg(topLeft) / M_PI), (real1)(arg(bottomRight) / M_PI));
         delete[] controls;
         return;
     }
@@ -1538,16 +1538,6 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
 {
     if ((controlLen == 1U) && IS_ONE_CMPLX(topRight) && IS_ONE_CMPLX(bottomLeft)) {
         CNOT(controls[0], target);
-        return;
-    }
-
-    if (!freezeBasis && (controlLen == 1U)) {
-        TransformBasis1Qb(false, controls[0]);
-        // TODO: Only controlled-by, for control?
-        RevertBasis2Qb(controls[0], true, false, { target });
-        RevertBasis2Qb(target, true, true);
-
-        shards[target].AddInversionAngles(&(shards[controls[0]]), (real1)arg(topRight), (real1)arg(bottomLeft));
         return;
     }
 
@@ -3021,8 +3011,8 @@ void QUnit::ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& c
     const bitLenInt controls[1] = { control };
     complex mtrx[4];
 
-    complex polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-    complex polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+    complex polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
+    complex polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
 
     if (shards[target].isPlusMinus) {
         if (phaseShard->second->isInvert) {
@@ -3068,8 +3058,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-        polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
+        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
 
         if (polar0 == polar1) {
             if (phaseShard->second->isInvert) {
@@ -3091,8 +3081,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-        polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
+        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
 
         if ((polar0 != polar1) && (polar0 != -polar1)) {
             ApplyBuffer(phaseShard, control, bitIndex);

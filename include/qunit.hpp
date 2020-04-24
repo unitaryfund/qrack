@@ -33,13 +33,13 @@ namespace Qrack {
 /** Caches controlled gate phase between shards, (as a case of "gate fusion" optimization particularly useful to QUnit)
  */
 struct PhaseShard {
-    real1 angle0;
-    real1 angle1;
+    real1 angle0DivPi;
+    real1 angle1DivPi;
     bool isInvert;
 
     PhaseShard()
-        : angle0(ZERO_R1)
-        , angle1(ZERO_R1)
+        : angle0DivPi(ZERO_R1)
+        , angle1DivPi(ZERO_R1)
         , isInvert(false)
     {
     }
@@ -180,45 +180,45 @@ public:
 
     /// "Fuse" phase gate buffer angles, (and initialize the buffer, if necessary,) for the buffer with "this" as target
     /// bit and a another qubit as control
-    void AddPhaseAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
+    void AddPhaseAngles(QEngineShardPtr control, real1 angle0DiffDivPi, real1 angle1DiffDivPi)
     {
         MakePhaseControlledBy(control);
 
-        real1 nAngle0 = targetOfShards[control]->angle0 + angle0Diff;
-        real1 nAngle1 = targetOfShards[control]->angle1 + angle1Diff;
+        real1 nAngle0DivPi = targetOfShards[control]->angle0DivPi + angle0DiffDivPi;
+        real1 nAngle1DivPi = targetOfShards[control]->angle1DivPi + angle1DiffDivPi;
 
-        while (nAngle0 <= -M_PI) {
-            nAngle0 += 2 * M_PI;
+        while (nAngle0DivPi <= -1) {
+            nAngle0DivPi += 2;
         }
-        while (nAngle0 > M_PI) {
-            nAngle0 -= 2 * M_PI;
+        while (nAngle0DivPi > 1) {
+            nAngle0DivPi -= 2;
         }
-        while (nAngle1 <= -M_PI) {
-            nAngle1 += 2 * M_PI;
+        while (nAngle1DivPi <= -1) {
+            nAngle1DivPi += 2;
         }
-        while (nAngle1 > M_PI) {
-            nAngle1 -= 2 * M_PI;
+        while (nAngle1DivPi > 1) {
+            nAngle1DivPi -= 2;
         }
 
-        if ((nAngle0 == ZERO_R1) && (nAngle1 == ZERO_R1) && !targetOfShards[control]->isInvert) {
+        if ((nAngle0DivPi == ZERO_R1) && (nAngle1DivPi == ZERO_R1) && !targetOfShards[control]->isInvert) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
         }
 
-        targetOfShards[control]->angle0 = nAngle0;
-        targetOfShards[control]->angle1 = nAngle1;
+        targetOfShards[control]->angle0DivPi = nAngle0DivPi;
+        targetOfShards[control]->angle1DivPi = nAngle1DivPi;
     }
 
-    void AddInversionAngles(QEngineShardPtr control, real1 angle0Diff, real1 angle1Diff)
+    void AddInversionAngles(QEngineShardPtr control, real1 angle0DiffDivPi, real1 angle1DiffDivPi)
     {
         MakePhaseControlledBy(control);
 
         PhaseShardPtr targetOfShard = targetOfShards[control];
         targetOfShard->isInvert = !targetOfShard->isInvert;
-        std::swap(targetOfShard->angle0, targetOfShard->angle1);
+        std::swap(targetOfShard->angle0DivPi, targetOfShard->angle1DivPi);
 
-        AddPhaseAngles(control, angle0Diff, angle1Diff);
+        AddPhaseAngles(control, angle0DiffDivPi, angle1DiffDivPi);
     }
 
     bool isInvertControl()
@@ -258,12 +258,12 @@ public:
             ShardToPhaseMap::iterator phaseShard = tempControls.begin();
             std::advance(phaseShard, lcv);
             if ((isPlusMinus != phaseShard->first->isPlusMinus) || phaseShard->second->isInvert ||
-                (phaseShard->second->angle0 != ZERO_R1)) {
+                (phaseShard->second->angle0DivPi != ZERO_R1)) {
                 return;
             }
 
             partner = phaseShard->first;
-            partnerAngle = phaseShard->second->angle1;
+            partnerAngle = phaseShard->second->angle1DivPi;
 
             phaseShard->first->targetOfShards.erase(this);
             controlsShards.erase(partner);
@@ -296,15 +296,15 @@ public:
                 return;
             }
 
-            if (!phaseShard->second->isInvert && (phaseShard->second->angle0 == ZERO_R1)) {
-                partnerAngle = phaseShard->second->angle1;
+            if (!phaseShard->second->isInvert && (phaseShard->second->angle0DivPi == ZERO_R1)) {
+                partnerAngle = phaseShard->second->angle1DivPi;
 
                 phaseShard->first->targetOfShards.erase(this);
                 controlsShards.erase(partner);
 
                 AddPhaseAngles(partner, ZERO_R1, partnerAngle);
-            } else if (!partnerShard->second->isInvert && (partnerShard->second->angle0 == ZERO_R1)) {
-                partnerAngle = partnerShard->second->angle1;
+            } else if (!partnerShard->second->isInvert && (partnerShard->second->angle0DivPi == ZERO_R1)) {
+                partnerAngle = partnerShard->second->angle1DivPi;
 
                 phaseShard->first->controlsShards.erase(this);
                 targetOfShards.erase(partner);
@@ -326,7 +326,7 @@ public:
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
             std::advance(phaseShard, lcv);
-            std::swap(phaseShard->second->angle0, phaseShard->second->angle1);
+            std::swap(phaseShard->second->angle0DivPi, phaseShard->second->angle1DivPi);
         });
     }
 
@@ -348,10 +348,10 @@ public:
                 return;
             }
 
-            phaseShard->second->angle0 =
-                std::arg(std::polar(ONE_R1, phaseShard->second->angle0) * topLeft / bottomRight);
-            phaseShard->second->angle1 =
-                std::arg(std::polar(ONE_R1, phaseShard->second->angle1) * bottomRight / topLeft);
+            phaseShard->second->angle0DivPi =
+                std::arg(std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI)) * topLeft / bottomRight);
+            phaseShard->second->angle1DivPi =
+                std::arg(std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI)) * bottomRight / topLeft);
         });
     }
 
@@ -389,8 +389,8 @@ public:
 
         bool didFlip;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-            polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+            polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
+            polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
             didFlip = false;
             if (polar0 == polar1) {
                 if (phaseShard->second->isInvert) {
@@ -408,8 +408,8 @@ public:
 
             if (didFlip) {
                 phaseShard->second->isInvert = !phaseShard->second->isInvert;
-                phaseShard->second->angle0 = (real1)arg(polar0);
-                phaseShard->second->angle1 = (real1)arg(polar1);
+                phaseShard->second->angle0DivPi = (real1)(arg(polar0) / M_PI);
+                phaseShard->second->angle1DivPi = (real1)(arg(polar1) / M_PI);
             }
         }
     }
