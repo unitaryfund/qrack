@@ -316,30 +316,30 @@ public:
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
     /// commute, instead of incurring the cost of applying the buffers.
-    bool TryFlipPhaseAnti()
+    void FlipPhaseAnti()
     {
-        if (controlsShards.size() > 0) {
-            return false;
-        }
+        // These cases cannot be handled:
+        // if (controlsShards.size() > 0) {
+        //    return false;
+        // }
 
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
             std::advance(phaseShard, lcv);
             std::swap(phaseShard->second->angle0, phaseShard->second->angle1);
         });
-
-        return true;
     }
 
-    bool TryCommutePhase(const complex& topLeft, const complex& bottomRight)
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
     {
         ShardToPhaseMap::iterator phaseShard;
 
-        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-            if (phaseShard->second->isInvert) {
-                return false;
-            }
-        }
+        // These casess cannot be handled:
+        // for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        //    if (phaseShard->second->isInvert) {
+        //        return false;
+        //    }
+        //}
 
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
@@ -353,10 +353,10 @@ public:
             phaseShard->second->angle1 =
                 std::arg(std::polar(ONE_R1, phaseShard->second->angle1) * bottomRight / topLeft);
         });
-
-        return true;
     }
 
+    // TODO: Just turn this into a QUnit method that flushes all the appropriate failed commutations, then remove them
+    // from here.
     bool TryHCommute()
     {
         CombineGates();
@@ -891,6 +891,18 @@ protected:
 
     bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
         const complex& topRight, const complex& bottomLeft, const bool& anti);
+
+    void FlipPhaseAnti(const bitLenInt& target)
+    {
+        RevertBasis2Qb(target, false, true);
+        shards[target].FlipPhaseAnti();
+    }
+
+    void CommutePhase(const bitLenInt& target, const complex& topLeft, const complex& bottomRight)
+    {
+        RevertBasis2Qb(target, true, true);
+        shards[target].CommutePhase(topLeft, bottomRight);
+    }
 
     /* Debugging and diagnostic routines. */
     void DumpShards();

@@ -1048,9 +1048,8 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasis) {
-        if (!shard.TryHCommute()) {
-            RevertBasis2Qb(target);
-        }
+        // TODO: Write a method that flushes only gates that can't be commuted
+        RevertBasis2Qb(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
@@ -1084,22 +1083,16 @@ void QUnit::ZBase(const bitLenInt& target)
     QEngineShard& shard = shards[target];
     // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
     if (PHASE_MATTERS(shard)) {
-        EndEmulation(shard);
-        shard.unit->Z(shard.mapped);
+        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
         shard.amp1 = -shard.amp1;
     }
 }
 
 void QUnit::X(bitLenInt target)
 {
-    QEngineShard& shard = shards[target];
+    FlipPhaseAnti(target);
 
-    RevertBasis2Qb(target, false, true);
-
-    // Not necessary to check return after the above revert:
-    shard.TryFlipPhaseAnti();
-
-    if (!shard.isPlusMinus) {
+    if (!shards[target].isPlusMinus) {
         XBase(target);
     } else {
         ZBase(target);
@@ -1108,19 +1101,10 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    // Commutes with controlled phase optimizations
-    QEngineShard& shard = shards[target];
+    CommutePhase(target, ONE_CMPLX, -ONE_CMPLX);
 
-    RevertBasis2Qb(target, true, true);
-
-    // Not necessary to check return after the above revert:
-    shard.TryCommutePhase(ONE_CMPLX, -ONE_CMPLX);
-
-    if (!shard.isPlusMinus) {
-        if (PHASE_MATTERS(shard)) {
-            ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
-            shard.amp1 = -shard.amp1;
-        }
+    if (!shards[target].isPlusMinus) {
+        ZBase(target);
     } else {
         XBase(target);
     }
@@ -1253,36 +1237,18 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_PLUS_MINUS(tShard)) {
-        if (IS_NORM_ZERO(tShard.amp1)) {
-            return;
-        }
-        if (IS_NORM_ZERO(tShard.amp0)) {
-            Z(control);
-            return;
-        }
+    if (CACHED_PLUS(tShard)) {
+        return;
     }
 
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_PROB(cShard)) {
-        if (IS_NORM_ZERO(cShard.amp0)) {
-            X(target);
-            return;
-        }
-        if (IS_NORM_ZERO(cShard.amp1)) {
-            return;
-        }
-    }
-
-    if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-        // TODO: Only controlled-by, for control?
-        RevertBasis2Qb(control, true, false, { target });
-        RevertBasis2Qb(target, true, true);
-        tShard.AddInversionAngles(&cShard, 0, 0);
+    if (CACHED_ZERO(cShard)) {
         return;
     }
+
+    RevertBasis2Qb(control);
+    RevertBasis2Qb(target);
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
@@ -1397,11 +1363,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (CACHED_ONE(cShard)) {
-        Z(target);
-        return;
-    }
-
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
         tShard.AddPhaseAngles(&cShard, 0, (real1)M_PI);
@@ -1423,10 +1384,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    RevertBasis2Qb(target, true, true);
-
-    // Not necessary to check return after the above revert:
-    shard.TryCommutePhase(topLeft, bottomRight);
+    CommutePhase(target, topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.
@@ -1477,10 +1435,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target, false, true);
-
-    // Not necessary to check return after the above revert:
-    shard.TryFlipPhaseAnti();
+    FlipPhaseAnti(target);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
