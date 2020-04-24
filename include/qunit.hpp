@@ -221,32 +221,6 @@ public:
         AddPhaseAngles(control, angle0DiffDivPi, angle1DiffDivPi);
     }
 
-    bool isInvertControl()
-    {
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-            if (phaseShard->second->isInvert) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool isInvertTarget()
-    {
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            if (phaseShard->second->isInvert) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool isInvert() { return isInvertControl() || isInvertTarget(); }
-
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
