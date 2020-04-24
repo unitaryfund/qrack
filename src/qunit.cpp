@@ -1246,13 +1246,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis) {
-        H(target);
-        CZ(control, target);
-        H(target);
-        return;
-    }
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
