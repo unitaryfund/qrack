@@ -195,7 +195,7 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start, bool isConsumed)
 
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
-    /* TODO: This method should compose the bits for the destination without cohering the length first */
+    /* TODO: This method should decompose the bits for the destination without composing the length first */
 
     for (bitLenInt i = 0; i < length; i++) {
         RevertBasis2Qb(start + i);
@@ -250,7 +250,7 @@ void QUnit::Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
-// The optimization of this method is redudandant with other optimizations in QUnit.
+// The optimization of this method is redundant with other optimizations in QUnit.
 void QUnit::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { Detach(start, length, nullptr); }
 
 QInterfacePtr QUnit::EntangleInCurrentBasis(
@@ -1109,7 +1109,7 @@ void QUnit::Z(bitLenInt target)
     // Commutes with controlled phase optimizations
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, true);
+    RevertBasis2Qb(target, true, true);
 
     // Not necessary to check return after the above revert:
     shard.TryCommutePhase(ONE_CMPLX, -ONE_CMPLX);
@@ -1421,7 +1421,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    RevertBasis2Qb(target, true);
+    RevertBasis2Qb(target, true, true);
 
     // Not necessary to check return after the above revert:
     shard.TryCommutePhase(topLeft, bottomRight);
