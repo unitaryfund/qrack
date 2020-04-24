@@ -334,7 +334,7 @@ public:
     {
         ShardToPhaseMap::iterator phaseShard;
 
-        // These casess cannot be handled:
+        // These cases cannot be handled:
         // for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
         //    if (phaseShard->second->isInvert) {
         //        return false;
@@ -355,38 +355,37 @@ public:
         });
     }
 
-    // TODO: Just turn this into a QUnit method that flushes all the appropriate failed commutations, then remove them
-    // from here.
-    bool TryHCommute()
+    void CommuteH()
     {
         CombineGates();
 
         complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
 
-        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-            polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
-            if (polar0 == polar1) {
-                if (phaseShard->second->isInvert) {
-                    return false;
-                }
-            } else if (polar0 == -polar1) {
-                if (!phaseShard->second->isInvert) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
+        // These cases cannot be handled:
+        // for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        //    polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+        //    polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+        //    if (polar0 == polar1) {
+        //        if (phaseShard->second->isInvert) {
+        //            return false;
+        //        }
+        //    } else if (polar0 == -polar1) {
+        //        if (!phaseShard->second->isInvert) {
+        //            return false;
+        //        }
+        //    } else {
+        //        return false;
+        //    }
+        //}
 
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-            polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
-            if ((polar0 != polar1) && (polar0 != -polar1)) {
-                return false;
-            }
-        }
+        // for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        //    polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+        //    polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+        //    if ((polar0 != polar1) && (polar0 != -polar1)) {
+        //        return false;
+        //    }
+        //}
 
         bool didFlip;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -405,8 +404,6 @@ public:
                     polar1 = polar0;
                     didFlip = true;
                 }
-            } else {
-                return false;
             }
 
             if (didFlip) {
@@ -415,8 +412,6 @@ public:
                 phaseShard->second->angle1 = (real1)arg(polar1);
             }
         }
-
-        return true;
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
@@ -749,6 +744,8 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
+    void ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target);
+
     void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false,
         std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {},
         const bool& dumpSkipped = false);
@@ -903,6 +900,8 @@ protected:
         RevertBasis2Qb(target, true, true);
         shards[target].CommutePhase(topLeft, bottomRight);
     }
+
+    void CommuteH(const bitLenInt& bitIndex);
 
     /* Debugging and diagnostic routines. */
     void DumpShards();

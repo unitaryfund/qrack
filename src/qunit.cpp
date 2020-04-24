@@ -1048,8 +1048,7 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasis) {
-        // TODO: Write a method that flushes only gates that can't be commuted
-        RevertBasis2Qb(target);
+        CommuteH(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
     }
@@ -3017,6 +3016,93 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
     freezeBasis = false;
 }
 
+void QUnit::ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target)
+{
+    const bitLenInt controls[1] = { control };
+    complex mtrx[4];
+
+    complex polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+    complex polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+
+    if (shards[target].isPlusMinus) {
+        if (phaseShard->second->isInvert) {
+            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+            mtrx[1] = (-polar0 + polar1) / (ONE_R1 * 2);
+            mtrx[2] = (polar0 - polar1) / (ONE_R1 * 2);
+            mtrx[3] = (-polar0 - polar1) / (ONE_R1 * 2);
+        } else {
+            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
+            mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
+            mtrx[2] = mtrx[1];
+            mtrx[3] = mtrx[0];
+        }
+
+        shards[target].isPlusMinus = false;
+        freezeBasis = true;
+        ApplyControlledSingleBit(controls, 1U, target, mtrx);
+        freezeBasis = false;
+        shards[target].isPlusMinus = true;
+    } else {
+        freezeBasis = true;
+        if (phaseShard->second->isInvert) {
+            ApplyControlledSingleInvert(controls, 1U, target, polar0, polar1);
+        } else {
+            ApplyControlledSinglePhase(controls, 1U, target, polar0, polar1);
+        }
+        freezeBasis = false;
+    }
+}
+
+void QUnit::CommuteH(const bitLenInt& bitIndex)
+{
+    QEngineShard& shard = shards[bitIndex];
+    shard.CombineGates();
+
+    complex polar0, polar1;
+    ShardToPhaseMap::iterator phaseShard;
+
+    ShardToPhaseMap controlsShards = shard.controlsShards;
+    ShardToPhaseMap targetOfShards = shard.targetOfShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        QEngineShardPtr partner = phaseShard->first;
+        bitLenInt target = FindShardIndex(*partner);
+
+        polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+        polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+
+        if (polar0 == polar1) {
+            if (phaseShard->second->isInvert) {
+                ApplyBuffer(phaseShard, bitIndex, target);
+                shard.RemovePhaseTarget(phaseShard->first);
+            }
+        } else if (polar0 == -polar1) {
+            if (!phaseShard->second->isInvert) {
+                ApplyBuffer(phaseShard, bitIndex, target);
+                shard.RemovePhaseTarget(phaseShard->first);
+            }
+        } else {
+            ApplyBuffer(phaseShard, bitIndex, target);
+            shard.RemovePhaseTarget(partner);
+        }
+    }
+
+    for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        QEngineShardPtr partner = phaseShard->first;
+        bitLenInt control = FindShardIndex(*partner);
+
+        polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
+        polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
+
+        if ((polar0 != polar1) && (polar0 != -polar1)) {
+            ApplyBuffer(phaseShard, control, bitIndex);
+            shard.RemovePhaseControl(partner);
+        }
+    }
+
+    shard.CommuteH();
+}
+
 void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const bool& onlyControlling,
     std::set<bitLenInt> exceptControlling, std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped)
 {
@@ -3034,12 +3120,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
         shard.OptimizeControls();
     }
 
-    bitLenInt controls[1];
-    complex polar0, polar1;
-    complex mtrx[4];
-
     ShardToPhaseMap::iterator phaseShard;
-    controls[0] = i;
     ShardToPhaseMap controlsShards = shard.controlsShards;
     while (controlsShards.size() > 0) {
         phaseShard = controlsShards.begin();
@@ -3063,36 +3144,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
             continue;
         }
 
-        polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-        polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
-
-        if (shards[j].isPlusMinus) {
-            if (phaseShard->second->isInvert) {
-                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-                mtrx[1] = (-polar0 + polar1) / (ONE_R1 * 2);
-                mtrx[2] = (polar0 - polar1) / (ONE_R1 * 2);
-                mtrx[3] = (-polar0 - polar1) / (ONE_R1 * 2);
-            } else {
-                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-                mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
-                mtrx[2] = mtrx[1];
-                mtrx[3] = mtrx[0];
-            }
-
-            shards[j].isPlusMinus = false;
-            freezeBasis = true;
-            ApplyControlledSingleBit(controls, 1U, j, mtrx);
-            freezeBasis = false;
-            shards[j].isPlusMinus = true;
-        } else {
-            freezeBasis = true;
-            if (phaseShard->second->isInvert) {
-                ApplyControlledSingleInvert(controls, 1U, j, polar0, polar1);
-            } else {
-                ApplyControlledSinglePhase(controls, 1U, j, polar0, polar1);
-            }
-            freezeBasis = false;
-        }
+        ApplyBuffer(phaseShard, i, j);
 
         controlsShards.erase(phaseShard);
         shard.RemovePhaseTarget(partner);
@@ -3125,38 +3177,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert, const boo
             continue;
         }
 
-        controls[0] = j;
-
-        polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-        polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
-
-        if (shards[i].isPlusMinus) {
-            if (phaseShard->second->isInvert) {
-                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-                mtrx[1] = (-polar0 + polar1) / (ONE_R1 * 2);
-                mtrx[2] = (polar0 - polar1) / (ONE_R1 * 2);
-                mtrx[3] = (-polar0 - polar1) / (ONE_R1 * 2);
-            } else {
-                mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-                mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
-                mtrx[2] = mtrx[1];
-                mtrx[3] = mtrx[0];
-            }
-
-            shards[i].isPlusMinus = false;
-            freezeBasis = true;
-            ApplyControlledSingleBit(controls, 1U, i, mtrx);
-            freezeBasis = false;
-            shards[i].isPlusMinus = true;
-        } else {
-            freezeBasis = true;
-            if (phaseShard->second->isInvert) {
-                ApplyControlledSingleInvert(controls, 1U, i, polar0, polar1);
-            } else {
-                ApplyControlledSinglePhase(controls, 1U, i, polar0, polar1);
-            }
-            freezeBasis = false;
-        }
+        ApplyBuffer(phaseShard, j, i);
 
         targetOfShards.erase(phaseShard);
         shard.RemovePhaseControl(partner);
