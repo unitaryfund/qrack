@@ -613,7 +613,7 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
     bool isHBasis = true;
     for (bitLenInt i = 0; i < length; i++) {
         QEngineShard& shard = shards[qubitIndex + i];
-        if (CACHED_PLUS(shard)) {
+        if (!CACHED_PLUS(shard)) {
             isHBasis = false;
             break;
         }
