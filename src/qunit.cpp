@@ -31,6 +31,8 @@
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 #define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
+#define IS_ZERO_R1(r) (r == ZERO_R1)
+#define IS_ONE_R1(r) (r == ONE_R1)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
@@ -156,12 +158,12 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 
     for (auto&& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
-        if (norm(result) == ZERO_R1) {
+        if (IS_NORM_ZERO(result)) {
             break;
         }
     }
 
-    if ((shards[0].unit->GetQubitCount() > 1) && (norm(result) == ONE_R1) &&
+    if ((shards[0].unit->GetQubitCount() > 1) && IS_ONE_R1(norm(result)) &&
         (randGlobalPhase || (result == ONE_CMPLX))) {
         SetPermutation(perm);
     }
@@ -458,7 +460,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         } else {
             prob = Prob(start);
         }
-        return ((prob == ZERO_R1) || (prob == ONE_R1));
+        return (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
     }
 
     QInterfacePtr separatedBits = MakeEngine(length, 0);
@@ -1773,13 +1775,13 @@ void QUnit::AntiCISqrtSwap(
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
     bitProb = inCurrentBasis ? ProbBase(controls[i]) : Prob(controls[i]);                                              \
-    if (bitProb == ZERO_R1) {                                                                                          \
+    if (IS_ZERO_R1(bitProb)) {                                                                                         \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-    } else if (bitProb == ONE_R1) {                                                                                    \
+    } else if (IS_ONE_R1(bitProb)) {                                                                                   \
         if (anti) {                                                                                                    \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
@@ -1954,10 +1956,10 @@ bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::
 
     for (bitLenInt i = 0; i < controlLen; i++) {
         real1 prob = Prob(controls[i]);
-        if (prob == ZERO_R1) {
+        if (IS_ZERO_R1(prob)) {
             // If any control has zero probability, this gate will do nothing.
             return true;
-        } else if (prob == ONE_R1) {
+        } else if (IS_ONE_R1(prob)) {
             // If any control has full probability, we can avoid entangling it.
             controlVec->erase(controlVec->begin() + controlIndex);
         } else {
@@ -2760,9 +2762,9 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     // Keep the bits separate, if cheap to do so:
     if (!shards[flagIndex].isProbDirty) {
         real1 prob = Prob(flagIndex);
-        if (prob == ZERO_R1) {
+        if (IS_ZERO_R1(prob)) {
             return;
-        } else if (prob == ONE_R1) {
+        } else if (IS_ONE_R1(prob) == ONE_R1) {
             PhaseFlipIfLess(greaterPerm, start, length);
             return;
         }
