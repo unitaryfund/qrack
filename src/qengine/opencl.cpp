@@ -146,6 +146,16 @@ void QEngineOCL::clFinish(bool doHard)
     wait_refs.clear();
 }
 
+void QEngineOCL::clDump()
+{
+    if (device_context == NULL) {
+        return;
+    }
+
+    device_context->WaitOnAllEvents();
+    wait_refs.clear();
+}
+
 size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
 {
     if (wic > maxI) {

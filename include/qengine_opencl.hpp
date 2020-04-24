@@ -151,7 +151,7 @@ public:
 
     virtual ~QEngineOCL()
     {
-        Finish();
+        clDump();
         FreeAligned(nrmArray);
         FreeStateVec();
     }
@@ -311,6 +311,11 @@ protected:
      * device queue is finished, (which might be shared by other QEngineOCL instances).
      */
     virtual void clFinish(bool doHard = false);
+
+    /**
+     * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
+     */
+    virtual void clDump();
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);
