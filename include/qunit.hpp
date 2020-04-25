@@ -332,51 +332,16 @@ public:
     {
         ShardToPhaseMap::iterator phaseShard;
 
-        // These cases cannot be handled:
-        // for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        //    polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-        //    polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
-        //    if (polar0 == polar1) {
-        //        if (phaseShard->second->isInvert) {
-        //            return false;
-        //        }
-        //    } else if (polar0 == -polar1) {
-        //        if (!phaseShard->second->isInvert) {
-        //            return false;
-        //        }
-        //    } else {
-        //        return false;
-        //    }
-        //}
-
-        // for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        //    polar0 = std::polar(ONE_R1, phaseShard->second->angle0);
-        //    polar1 = std::polar(ONE_R1, phaseShard->second->angle1);
-        //    if ((polar0 != polar1) && (polar0 != -polar1)) {
-        //        return false;
-        //    }
-        //}
-
-        real1 angleMinus;
-        PhaseShardPtr angleShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            angleShard = phaseShard->second;
-            angleMinus = abs(ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi));
-            if (angleMinus <= FLT_EPSILON) {
-                if (angleShard->isInvert) {
-                    if (angleShard->angle0DivPi >= ZERO_R1) {
-                        angleShard->angle1DivPi -= angleShard->angle0DivPi - ONE_R1;
-                    } else {
-                        angleShard->angle1DivPi -= angleShard->angle0DivPi + ONE_R1;
-                    }
-                    phaseShard->second->isInvert = false;
-                }
-            } else if (abs(ONE_R1 - angleMinus) <= FLT_EPSILON) {
-                if (!angleShard->isInvert) {
-                    angleShard->angle0DivPi = ZERO_R1;
-                    angleShard->angle1DivPi = ZERO_R1;
-                    angleShard->isInvert = true;
-                }
+            if (phaseShard->second->isInvert && (abs(phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
+                phaseShard->second->angle0DivPi = ZERO_R1;
+                phaseShard->second->angle1DivPi = ONE_R1;
+                phaseShard->second->isInvert = false;
+            } else if (!phaseShard->second->isInvert &&
+                (abs(ONE_R1 - phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
+                phaseShard->second->angle1DivPi = ZERO_R1;
+                phaseShard->second->angle1DivPi = ZERO_R1;
+                phaseShard->second->isInvert = true;
             }
         }
     }

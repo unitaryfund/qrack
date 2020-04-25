@@ -3033,30 +3033,28 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     QEngineShard& shard = shards[bitIndex];
     shard.CombineGates();
 
-    real1 angleMinus;
-    PhaseShardPtr angleShard;
-    QEngineShardPtr partner;
+    complex polar0, polar1;
     ShardToPhaseMap::iterator phaseShard;
 
     ShardToPhaseMap controlsShards = shard.controlsShards;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        angleShard = phaseShard->second;
-        partner = phaseShard->first;
+        QEngineShardPtr partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        angleMinus = abs(QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi));
+        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
+        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
 
-        if (angleMinus <= FLT_EPSILON) {
-            if (angleShard->isInvert) {
+        if (norm(polar0 - polar1) <= FLT_EPSILON) {
+            if (phaseShard->second->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(partner);
+                shard.RemovePhaseTarget(phaseShard->first);
             }
-        } else if (abs(ONE_R1 - angleMinus) <= FLT_EPSILON) {
-            if (!angleShard->isInvert) {
+        } else if (norm(polar0 + polar1) <= FLT_EPSILON) {
+            if (!phaseShard->second->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(partner);
+                shard.RemovePhaseTarget(phaseShard->first);
             }
         } else {
             ApplyBuffer(phaseShard, bitIndex, target);
@@ -3065,16 +3063,19 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     }
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        angleShard = phaseShard->second;
-        partner = phaseShard->first;
+        QEngineShardPtr partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        angleMinus = abs(QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi));
-
-        if ((angleMinus > FLT_EPSILON) && (abs(ONE_R1 - angleMinus) > FLT_EPSILON)) {
-            ApplyBuffer(phaseShard, control, bitIndex);
-            shard.RemovePhaseControl(partner);
+        if (phaseShard->second->isInvert && (abs(phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
+            continue;
         }
+
+        if (!phaseShard->second->isInvert && (abs(ONE_R1 - phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
+            continue;
+        }
+
+        ApplyBuffer(phaseShard, control, bitIndex);
+        shard.RemovePhaseControl(partner);
     }
 
     shard.CommuteH();
