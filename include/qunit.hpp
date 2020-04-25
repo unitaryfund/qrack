@@ -357,13 +357,12 @@ public:
         //    }
         //}
 
-        real1 angleMinus, anglePlus;
+        real1 angleMinus;
         PhaseShardPtr angleShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             angleShard = phaseShard->second;
-            angleMinus = ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi);
-            anglePlus = ClampAngleDivPi(angleShard->angle0DivPi + angleShard->angle1DivPi);
-            if (abs(angleMinus) <= FLT_EPSILON) {
+            angleMinus = abs(ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi));
+            if (angleMinus <= FLT_EPSILON) {
                 if (angleShard->isInvert) {
                     if (angleShard->angle0DivPi >= ZERO_R1) {
                         angleShard->angle1DivPi -= angleShard->angle0DivPi - ONE_R1;
@@ -372,7 +371,7 @@ public:
                     }
                     phaseShard->second->isInvert = false;
                 }
-            } else if (abs(anglePlus) <= FLT_EPSILON) {
+            } else if (abs(ONE_R1 - angleMinus) <= FLT_EPSILON) {
                 if (!angleShard->isInvert) {
                     angleShard->angle0DivPi = ZERO_R1;
                     angleShard->angle1DivPi = ZERO_R1;

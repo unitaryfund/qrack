@@ -3033,7 +3033,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     QEngineShard& shard = shards[bitIndex];
     shard.CombineGates();
 
-    real1 angleMinus, anglePlus;
+    real1 angleMinus;
     PhaseShardPtr angleShard;
     QEngineShardPtr partner;
     ShardToPhaseMap::iterator phaseShard;
@@ -3046,15 +3046,14 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        angleMinus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi);
-        anglePlus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi + angleShard->angle1DivPi);
+        angleMinus = abs(QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi));
 
-        if (abs(angleMinus) <= FLT_EPSILON) {
+        if (angleMinus <= FLT_EPSILON) {
             if (angleShard->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
                 shard.RemovePhaseTarget(partner);
             }
-        } else if (abs(anglePlus) <= FLT_EPSILON) {
+        } else if (abs(ONE_R1 - angleMinus) <= FLT_EPSILON) {
             if (!angleShard->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
                 shard.RemovePhaseTarget(partner);
@@ -3070,10 +3069,9 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        angleMinus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi);
-        anglePlus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi + angleShard->angle1DivPi);
+        angleMinus = abs(QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi));
 
-        if ((abs(angleMinus) > FLT_EPSILON) && (abs(anglePlus) > FLT_EPSILON)) {
+        if ((angleMinus > FLT_EPSILON) && (abs(ONE_R1 - angleMinus) > FLT_EPSILON)) {
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         }
