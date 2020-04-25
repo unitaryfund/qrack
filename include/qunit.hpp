@@ -198,7 +198,7 @@ public:
         real1 nAngle0DivPi = ClampAngleDivPi(targetOfShards[control]->angle0DivPi + angle0DiffDivPi);
         real1 nAngle1DivPi = ClampAngleDivPi(targetOfShards[control]->angle1DivPi + angle1DiffDivPi);
 
-        if ((abs(nAngle0DivPi) <= FLT_EPSILON) && (abs(nAngle1DivPi) <= FLT_EPSILON) && !targetOfShards[control]->isInvert) {
+        if ((nAngle0DivPi == ZERO_R1) && (nAngle1DivPi == ZERO_R1) && !targetOfShards[control]->isInvert) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
