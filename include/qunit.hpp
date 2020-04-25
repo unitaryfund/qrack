@@ -178,29 +178,27 @@ public:
         }
     }
 
+    static const real1 ClampAngleDivPi(real1 angleDivPi)
+    {
+        while (angleDivPi <= -ONE_R1) {
+            angleDivPi += (real1)2;
+        }
+        while (angleDivPi > ONE_R1) {
+            angleDivPi -= (real1)2;
+        }
+        return angleDivPi;
+    }
+
     /// "Fuse" phase gate buffer angles, (and initialize the buffer, if necessary,) for the buffer with "this" as target
     /// bit and a another qubit as control
     void AddPhaseAngles(QEngineShardPtr control, real1 angle0DiffDivPi, real1 angle1DiffDivPi)
     {
         MakePhaseControlledBy(control);
 
-        real1 nAngle0DivPi = targetOfShards[control]->angle0DivPi + angle0DiffDivPi;
-        real1 nAngle1DivPi = targetOfShards[control]->angle1DivPi + angle1DiffDivPi;
+        real1 nAngle0DivPi = ClampAngleDivPi(targetOfShards[control]->angle0DivPi + angle0DiffDivPi);
+        real1 nAngle1DivPi = ClampAngleDivPi(targetOfShards[control]->angle1DivPi + angle1DiffDivPi);
 
-        while (nAngle0DivPi <= -1) {
-            nAngle0DivPi += 2;
-        }
-        while (nAngle0DivPi > 1) {
-            nAngle0DivPi -= 2;
-        }
-        while (nAngle1DivPi <= -1) {
-            nAngle1DivPi += 2;
-        }
-        while (nAngle1DivPi > 1) {
-            nAngle1DivPi -= 2;
-        }
-
-        if ((nAngle0DivPi == ZERO_R1) && (nAngle1DivPi == ZERO_R1) && !targetOfShards[control]->isInvert) {
+        if ((abs(nAngle0DivPi) <= FLT_EPSILON) && (abs(nAngle1DivPi) <= FLT_EPSILON) && !targetOfShards[control]->isInvert) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
