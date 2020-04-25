@@ -266,14 +266,14 @@ public:
                 phaseShard->first->targetOfShards.erase(this);
                 controlsShards.erase(partner);
 
-                AddPhaseAngles(partner, ZERO_R1, partnerAngle);
+                AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
             } else if (!partnerShard->second->isInvert && IS_ARG_0(partnerShard->second->cmplx0)) {
                 partnerAngle = partnerShard->second->cmplx1;
 
                 phaseShard->first->controlsShards.erase(this);
                 targetOfShards.erase(partner);
 
-                partner->AddPhaseAngles(this, ZERO_R1, partnerAngle);
+                partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
             }
         });
     }
