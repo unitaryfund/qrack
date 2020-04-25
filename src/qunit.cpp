@@ -3056,7 +3056,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             continue;
         }
 
-        if (!buffer->isInvert && (abs(ONE_R1 - buffer->angle1DivPi) <= FLT_EPSILON)) {
+        if (!buffer->isInvert && (abs(QEngineShard::ClampAngleDivPi(buffer->angle1DivPi + ONE_R1)) <= FLT_EPSILON)) {
             continue;
         }
 
