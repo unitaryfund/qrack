@@ -231,7 +231,7 @@ public:
             ShardToPhaseMap::iterator phaseShard = tempControls.begin();
             std::advance(phaseShard, lcv);
             if ((isPlusMinus != phaseShard->first->isPlusMinus) || phaseShard->second->isInvert ||
-                (abs(phaseShard->second->angle0DivPi) > FLT_EPSILON)) {
+                (phaseShard->second->angle0DivPi != ZERO_R1)) {
                 return;
             }
 
@@ -269,14 +269,14 @@ public:
                 return;
             }
 
-            if (!phaseShard->second->isInvert && (abs(phaseShard->second->angle0DivPi) <= FLT_EPSILON)) {
+            if (!phaseShard->second->isInvert && (phaseShard->second->angle0DivPi == ZERO_R1)) {
                 partnerAngle = phaseShard->second->angle1DivPi;
 
                 phaseShard->first->targetOfShards.erase(this);
                 controlsShards.erase(partner);
 
                 AddPhaseAngles(partner, ZERO_R1, partnerAngle);
-            } else if (!partnerShard->second->isInvert && (abs(partnerShard->second->angle0DivPi) <= FLT_EPSILON)) {
+            } else if (!partnerShard->second->isInvert && (partnerShard->second->angle0DivPi == ZERO_R1)) {
                 partnerAngle = partnerShard->second->angle1DivPi;
 
                 phaseShard->first->controlsShards.erase(this);
@@ -335,15 +335,8 @@ public:
 
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
-            if (buffer->isInvert) {
-                buffer->angle0DivPi = ZERO_R1;
-                buffer->angle1DivPi = ONE_R1;
-                buffer->isInvert = false;
-            } else if (!buffer->isInvert) {
-                buffer->angle0DivPi = ZERO_R1;
-                buffer->angle1DivPi = ZERO_R1;
-                buffer->isInvert = true;
-            }
+            buffer->angle1DivPi *= -1;
+            buffer->isInvert = !buffer->isInvert;
         }
     }
 

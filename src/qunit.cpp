@@ -3046,17 +3046,19 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         control = FindShardIndex(*partner);
 
-        if (abs(buffer->angle0DivPi) > FLT_EPSILON) {
+        if (buffer->angle0DivPi != ZERO_R1) {
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
             continue;
         }
 
-        if (buffer->isInvert && (abs(buffer->angle1DivPi) <= FLT_EPSILON)) {
+        if (buffer->isInvert &&
+            (abs(QEngineShard::ClampAngleDivPi(buffer->angle0DivPi - buffer->angle1DivPi)) <= FLT_EPSILON)) {
             continue;
         }
 
-        if (!buffer->isInvert && ((ONE_R1 - abs(buffer->angle1DivPi)) <= FLT_EPSILON)) {
+        if (!buffer->isInvert &&
+            (abs(QEngineShard::ClampAngleDivPi(buffer->angle0DivPi + buffer->angle1DivPi)) <= FLT_EPSILON)) {
             continue;
         }
 
