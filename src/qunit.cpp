@@ -1355,7 +1355,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
-        tShard.AddPhaseAngles(&cShard, 0, ONE_R1);
+        tShard.AddPhaseAngles(&cShard, ONE_R1, -ONE_R1);
         return;
     }
 
@@ -1507,7 +1507,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if (!freezeBasis && (controlLen == 1U)) {
         TransformBasis1Qb(false, controls[0]);
-        tShard.AddPhaseAngles(&cShard, (real1)(arg(topLeft) / M_PI), (real1)(arg(bottomRight) / M_PI));
+        tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
         delete[] controls;
         return;
     }
@@ -2996,8 +2996,8 @@ void QUnit::ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& c
     const bitLenInt controls[1] = { control };
     complex mtrx[4];
 
-    complex polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-    complex polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
+    complex polar0 = phaseShard->second->cmplx0;
+    complex polar1 = phaseShard->second->cmplx1;
 
     if (shards[target].isPlusMinus) {
         if (phaseShard->second->isInvert) {
@@ -3043,15 +3043,15 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
+        polar0 = phaseShard->second->cmplx0;
+        polar1 = phaseShard->second->cmplx1;
 
-        if (polar0 == polar1) {
+        if (norm(polar0 - polar1) <= min_norm) {
             if (phaseShard->second->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
                 shard.RemovePhaseTarget(phaseShard->first);
             }
-        } else if (polar0 == -polar1) {
+        } else if (norm(polar0 + polar1) <= min_norm) {
             if (!phaseShard->second->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
                 shard.RemovePhaseTarget(phaseShard->first);
@@ -3066,10 +3066,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         QEngineShardPtr partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
+        polar0 = phaseShard->second->cmplx0;
+        polar1 = phaseShard->second->cmplx1;
 
-        if ((polar0 != polar1) && (polar0 != -polar1)) {
+        if ((norm(polar0 - polar1) > min_norm) && (norm(polar0 + polar1) > min_norm)) {
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         }
