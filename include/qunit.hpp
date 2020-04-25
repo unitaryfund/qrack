@@ -187,17 +187,17 @@ public:
         real1 nAngle0DivPi = targetOfShards[control]->angle0DivPi + angle0DiffDivPi;
         real1 nAngle1DivPi = targetOfShards[control]->angle1DivPi + angle1DiffDivPi;
 
-        while (nAngle0DivPi <= -1) {
-            nAngle0DivPi += 2;
+        while (nAngle0DivPi <= -ONE_R1) {
+            nAngle0DivPi += (real1)2;
         }
-        while (nAngle0DivPi > 1) {
-            nAngle0DivPi -= 2;
+        while (nAngle0DivPi > ONE_R1) {
+            nAngle0DivPi -= (real1)2;
         }
-        while (nAngle1DivPi <= -1) {
-            nAngle1DivPi += 2;
+        while (nAngle1DivPi <= -ONE_R1) {
+            nAngle1DivPi += (real1)2;
         }
-        while (nAngle1DivPi > 1) {
-            nAngle1DivPi -= 2;
+        while (nAngle1DivPi > ONE_R1) {
+            nAngle1DivPi -= (real1)2;
         }
 
         if ((nAngle0DivPi == ZERO_R1) && (nAngle1DivPi == ZERO_R1) && !targetOfShards[control]->isInvert) {
@@ -331,8 +331,6 @@ public:
 
     void CommuteH()
     {
-        CombineGates();
-
         complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
 
@@ -361,29 +359,24 @@ public:
         //    }
         //}
 
-        bool didFlip;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
             polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
-            didFlip = false;
             if (polar0 == polar1) {
                 if (phaseShard->second->isInvert) {
-                    polar0 = (polar0 + polar1) / (real1)2;
-                    polar1 = -polar0;
-                    didFlip = true;
+                    if (phaseShard->second->angle0DivPi >= ZERO_R1) {
+                        phaseShard->second->angle1DivPi -= phaseShard->second->angle0DivPi - ONE_R1;
+                    } else {
+                        phaseShard->second->angle1DivPi -= phaseShard->second->angle0DivPi + ONE_R1;
+                    }
+                    phaseShard->second->isInvert = false;
                 }
             } else if (polar0 == -polar1) {
                 if (!phaseShard->second->isInvert) {
-                    polar0 = (polar0 + polar1) / (real1)2;
-                    polar1 = polar0;
-                    didFlip = true;
+                    phaseShard->second->angle0DivPi = ZERO_R1;
+                    phaseShard->second->angle1DivPi = ZERO_R1;
+                    phaseShard->second->isInvert = true;
                 }
-            }
-
-            if (didFlip) {
-                phaseShard->second->isInvert = !phaseShard->second->isInvert;
-                phaseShard->second->angle0DivPi = (real1)(arg(polar0) / M_PI);
-                phaseShard->second->angle1DivPi = (real1)(arg(polar1) / M_PI);
             }
         }
     }
