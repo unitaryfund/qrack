@@ -338,6 +338,18 @@ public:
                 }
             }
         }
+
+        phaseShard = targetOfShards.begin();
+        while (phaseShard != targetOfShards.end()) {
+            if (!phaseShard->second->isInvert && IS_ARG_0(phaseShard->second->cmplx0) &&
+                IS_ARG_0(phaseShard->second->cmplx1)) {
+                // The buffer is equal to the identity operator, and it can be removed.
+                phaseShard->first->controlsShards.erase(this);
+                targetOfShards.erase(phaseShard);
+            } else {
+                phaseShard++
+            }
+        }
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
