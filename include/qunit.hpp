@@ -360,7 +360,7 @@ public:
         PhaseShardPtr angleShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             angleShard = phaseShard->second;
-            negAngle1DivPi = ClampAngleDivPi(-angleShard->angle1DivPi);
+            negAngle1DivPi = ClampAngleDivPi(angleShard->angle1DivPi + ONE_R1);
             if (angleShard->angle0DivPi == angleShard->angle1DivPi) {
                 if (angleShard->isInvert) {
                     if (angleShard->angle0DivPi >= ZERO_R1) {

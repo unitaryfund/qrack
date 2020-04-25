@@ -3046,7 +3046,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        negAngle1DivPi = QEngineShard::ClampAngleDivPi(-angleShard->angle1DivPi);
+        negAngle1DivPi = QEngineShard::ClampAngleDivPi(angleShard->angle1DivPi + ONE_R1);
 
         if (angleShard->angle0DivPi == angleShard->angle1DivPi) {
             if (angleShard->isInvert) {
@@ -3069,7 +3069,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        negAngle1DivPi = QEngineShard::ClampAngleDivPi(-angleShard->angle1DivPi);
+        negAngle1DivPi = QEngineShard::ClampAngleDivPi(angleShard->angle1DivPi + ONE_R1);
 
         if ((angleShard->angle0DivPi != angleShard->angle1DivPi) && (angleShard->angle0DivPi != negAngle1DivPi)) {
             ApplyBuffer(phaseShard, control, bitIndex);
