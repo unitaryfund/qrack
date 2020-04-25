@@ -328,7 +328,7 @@ public:
             buffer = phaseShard->second;
             polar0 = buffer->cmplx0;
             polar1 = buffer->cmplx1;
-            if (norm(polar0 - polar1) < (ONE_R1 / 2)) {
+            if (norm(polar0 - polar1) < ONE_R1) {
                 if (buffer->isInvert) {
                     buffer->cmplx1 = -polar1;
                     buffer->isInvert = false;
@@ -345,8 +345,8 @@ public:
 
         phaseShard = targetOfShards.begin();
         while (phaseShard != targetOfShards.end()) {
-            if (!phaseShard->second->isInvert && IS_ARG_0(phaseShard->second->cmplx0) &&
-                IS_ARG_0(phaseShard->second->cmplx1)) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
                 // The buffer is equal to the identity operator, and it can be removed.
                 phaseShard->first->controlsShards.erase(this);
                 targetOfShards.erase(phaseShard);

@@ -3031,36 +3031,12 @@ void QUnit::ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& c
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
     QEngineShard& shard = shards[bitIndex];
-    shard.CombineGates();
+    RevertBasis2Qb(bitIndex, false, true);
 
     complex polar0, polar1;
     ShardToPhaseMap::iterator phaseShard;
 
-    ShardToPhaseMap controlsShards = shard.controlsShards;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
-
-    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        QEngineShardPtr partner = phaseShard->first;
-        bitLenInt target = FindShardIndex(*partner);
-
-        polar0 = phaseShard->second->cmplx0;
-        polar1 = phaseShard->second->cmplx1;
-
-        if (norm(polar0 - polar1) <= min_norm) {
-            if (phaseShard->second->isInvert) {
-                ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(phaseShard->first);
-            }
-        } else if (norm(polar0 + polar1) <= min_norm) {
-            if (!phaseShard->second->isInvert) {
-                ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(phaseShard->first);
-            }
-        } else {
-            ApplyBuffer(phaseShard, bitIndex, target);
-            shard.RemovePhaseTarget(partner);
-        }
-    }
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         QEngineShardPtr partner = phaseShard->first;
