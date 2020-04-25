@@ -214,40 +214,43 @@ public:
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
+        PhaseShardPtr buffer;
         QEngineShardPtr partner;
         complex partnerAngle;
 
+        ShardToPhaseMap::iterator phaseShard;
         ShardToPhaseMap tempControls = controlsShards;
-        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
-            std::advance(phaseShard, lcv);
-            if (phaseShard->second->isInvert || (isPlusMinus != phaseShard->first->isPlusMinus) ||
-                !IS_ARG_0(phaseShard->second->cmplx0)) {
+
+        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            partner = phaseShard->first;
+
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
                 return;
             }
 
-            partner = phaseShard->first;
-            partnerAngle = phaseShard->second->cmplx1;
+            partnerAngle = buffer->cmplx1;
 
             phaseShard->first->targetOfShards.erase(this);
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
-        });
+        };
     }
 
     /// If this bit is both control and target of another bit, try to combine the operations into one gate.
     void CombineGates()
     {
+        PhaseShardPtr buffer;
         ShardToPhaseMap::iterator partnerShard;
         QEngineShardPtr partner;
         complex partnerAngle;
 
+        ShardToPhaseMap::iterator phaseShard;
         ShardToPhaseMap tempControls = controlsShards;
         ShardToPhaseMap tempTargets = targetOfShards;
-        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
-            std::advance(phaseShard, lcv);
+
+        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
             if (isPlusMinus != phaseShard->first->isPlusMinus) {
                 return;
@@ -260,22 +263,24 @@ public:
                 return;
             }
 
-            if (!phaseShard->second->isInvert && IS_ARG_0(phaseShard->second->cmplx0)) {
-                partnerAngle = phaseShard->second->cmplx1;
+            buffer = phaseShard->second;
+
+            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0)) {
+                partnerAngle = buffer->cmplx1;
 
                 phaseShard->first->targetOfShards.erase(this);
                 controlsShards.erase(partner);
 
                 AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
-            } else if (!partnerShard->second->isInvert && IS_ARG_0(partnerShard->second->cmplx0)) {
-                partnerAngle = partnerShard->second->cmplx1;
+            } else if (!buffer->isInvert && IS_ARG_0(partnerShard->second->cmplx0)) {
+                partnerAngle = buffer->cmplx1;
 
                 phaseShard->first->controlsShards.erase(this);
                 targetOfShards.erase(partner);
 
                 partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
             }
-        });
+        };
     }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
@@ -320,30 +325,28 @@ public:
     void CommuteH()
     {
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
-        complex polar0, polar1;
-        ShardToPhaseMap::iterator phaseShard;
-        PhaseShardPtr buffer;
-
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
-            polar0 = buffer->cmplx0;
-            polar1 = buffer->cmplx1;
-            if (norm(polar0 - polar1) < ONE_R1) {
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            PhaseShardPtr buffer = phaseShard->second;
+            if (norm(buffer->cmplx0 - buffer->cmplx1) < ONE_R1) {
                 if (buffer->isInvert) {
-                    buffer->cmplx1 = -polar1;
+                    buffer->cmplx1 *= -ONE_CMPLX;
                     buffer->isInvert = false;
                 }
             } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplx0, buffer->cmplx1);
                 } else {
-                    buffer->cmplx1 = polar0;
+                    buffer->cmplx1 = buffer->cmplx0;
                     buffer->isInvert = true;
                 }
             }
-        }
+        });
 
-        phaseShard = targetOfShards.begin();
+        PhaseShardPtr buffer;
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+
         while (phaseShard != targetOfShards.end()) {
             buffer = phaseShard->second;
             if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {

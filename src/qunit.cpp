@@ -1248,14 +1248,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-        RevertBasis2Qb(control, true, false, { target }, {});
-        RevertBasis2Qb(target, true, true, {}, { control });
-        tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
-        return;
-    }
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
