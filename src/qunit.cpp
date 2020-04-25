@@ -3033,7 +3033,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     QEngineShard& shard = shards[bitIndex];
     shard.CombineGates();
 
-    real1 negAngle1DivPi;
+    real1 angleMinus, anglePlus;
     PhaseShardPtr angleShard;
     QEngineShardPtr partner;
     ShardToPhaseMap::iterator phaseShard;
@@ -3046,14 +3046,15 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        negAngle1DivPi = QEngineShard::ClampAngleDivPi(angleShard->angle1DivPi + ONE_R1);
+        angleMinus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi);
+        anglePlus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi + angleShard->angle1DivPi);
 
-        if (angleShard->angle0DivPi == angleShard->angle1DivPi) {
+        if (abs(angleMinus) <= FLT_EPSILON) {
             if (angleShard->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
                 shard.RemovePhaseTarget(partner);
             }
-        } else if (angleShard->angle0DivPi == negAngle1DivPi) {
+        } else if (abs(anglePlus) <= FLT_EPSILON) {
             if (!angleShard->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
                 shard.RemovePhaseTarget(partner);
@@ -3069,9 +3070,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        negAngle1DivPi = QEngineShard::ClampAngleDivPi(angleShard->angle1DivPi + ONE_R1);
+        angleMinus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi - angleShard->angle1DivPi);
+        anglePlus = QEngineShard::ClampAngleDivPi(angleShard->angle0DivPi + angleShard->angle1DivPi);
 
-        if ((angleShard->angle0DivPi != angleShard->angle1DivPi) && (angleShard->angle0DivPi != negAngle1DivPi)) {
+        if ((abs(angleMinus) > FLT_EPSILON) && (abs(anglePlus) > FLT_EPSILON)) {
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         }
