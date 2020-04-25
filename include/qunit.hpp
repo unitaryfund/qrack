@@ -347,7 +347,7 @@ public:
                 phaseShard->first->controlsShards.erase(this);
                 targetOfShards.erase(phaseShard);
             } else {
-                phaseShard++
+                phaseShard++;
             }
         }
     }
