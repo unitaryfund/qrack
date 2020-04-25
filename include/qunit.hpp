@@ -320,14 +320,22 @@ public:
     void CommuteH()
     {
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
+        complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
+
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            if (phaseShard->second->isInvert) {
-                phaseShard->second->cmplx1 = -phaseShard->second->cmplx0;
-                phaseShard->second->isInvert = false;
+            polar0 = phaseShard->second->cmplx0;
+            polar1 = phaseShard->second->cmplx1;
+            if (norm(polar0 - polar1) < (ONE_R1 / 2)) {
+                if (phaseShard->second->isInvert) {
+                    phaseShard->second->cmplx1 = -phaseShard->second->cmplx0;
+                    phaseShard->second->isInvert = false;
+                }
             } else {
-                phaseShard->second->cmplx1 = phaseShard->second->cmplx0;
-                phaseShard->second->isInvert = true;
+                if (!phaseShard->second->isInvert) {
+                    phaseShard->second->cmplx1 = phaseShard->second->cmplx0;
+                    phaseShard->second->isInvert = true;
+                }
             }
         }
     }
