@@ -3033,28 +3033,30 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     QEngineShard& shard = shards[bitIndex];
     shard.CombineGates();
 
-    complex polar0, polar1;
+    real1 negAngle1DivPi;
+    PhaseShardPtr angleShard;
+    QEngineShardPtr partner;
     ShardToPhaseMap::iterator phaseShard;
 
     ShardToPhaseMap controlsShards = shard.controlsShards;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        QEngineShardPtr partner = phaseShard->first;
+        angleShard = phaseShard->second;
+        partner = phaseShard->first;
         bitLenInt target = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
+        negAngle1DivPi = QEngineShard::ClampAngleDivPi(-angleShard->angle1DivPi);
 
-        if (polar0 == polar1) {
-            if (phaseShard->second->isInvert) {
+        if (angleShard->angle0DivPi == angleShard->angle1DivPi) {
+            if (angleShard->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(phaseShard->first);
+                shard.RemovePhaseTarget(partner);
             }
-        } else if (polar0 == -polar1) {
-            if (!phaseShard->second->isInvert) {
+        } else if (angleShard->angle0DivPi == negAngle1DivPi) {
+            if (!angleShard->isInvert) {
                 ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(phaseShard->first);
+                shard.RemovePhaseTarget(partner);
             }
         } else {
             ApplyBuffer(phaseShard, bitIndex, target);
@@ -3063,13 +3065,13 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     }
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        QEngineShardPtr partner = phaseShard->first;
+        angleShard = phaseShard->second;
+        partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
+        negAngle1DivPi = QEngineShard::ClampAngleDivPi(-angleShard->angle1DivPi);
 
-        if ((polar0 != polar1) && (polar0 != -polar1)) {
+        if ((angleShard->angle0DivPi != angleShard->angle1DivPi) && (angleShard->angle0DivPi != negAngle1DivPi)) {
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         }

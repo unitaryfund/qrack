@@ -178,27 +178,25 @@ public:
         }
     }
 
+    static const real1 ClampAngleDivPi(real1 angleDivPi)
+    {
+        while (angleDivPi <= -ONE_R1) {
+            angleDivPi += (real1)2;
+        }
+        while (angleDivPi > ONE_R1) {
+            angleDivPi -= (real1)2;
+        }
+        return angleDivPi;
+    }
+
     /// "Fuse" phase gate buffer angles, (and initialize the buffer, if necessary,) for the buffer with "this" as target
     /// bit and a another qubit as control
     void AddPhaseAngles(QEngineShardPtr control, real1 angle0DiffDivPi, real1 angle1DiffDivPi)
     {
         MakePhaseControlledBy(control);
 
-        real1 nAngle0DivPi = targetOfShards[control]->angle0DivPi + angle0DiffDivPi;
-        real1 nAngle1DivPi = targetOfShards[control]->angle1DivPi + angle1DiffDivPi;
-
-        while (nAngle0DivPi <= -ONE_R1) {
-            nAngle0DivPi += (real1)2;
-        }
-        while (nAngle0DivPi > ONE_R1) {
-            nAngle0DivPi -= (real1)2;
-        }
-        while (nAngle1DivPi <= -ONE_R1) {
-            nAngle1DivPi += (real1)2;
-        }
-        while (nAngle1DivPi > ONE_R1) {
-            nAngle1DivPi -= (real1)2;
-        }
+        real1 nAngle0DivPi = ClampAngleDivPi(targetOfShards[control]->angle0DivPi + angle0DiffDivPi);
+        real1 nAngle1DivPi = ClampAngleDivPi(targetOfShards[control]->angle1DivPi + angle1DiffDivPi);
 
         if ((nAngle0DivPi == ZERO_R1) && (nAngle1DivPi == ZERO_R1) && !targetOfShards[control]->isInvert) {
             // The buffer is equal to the identity operator, and it can be removed.
@@ -331,7 +329,6 @@ public:
 
     void CommuteH()
     {
-        complex polar0, polar1;
         ShardToPhaseMap::iterator phaseShard;
 
         // These cases cannot be handled:
@@ -359,23 +356,25 @@ public:
         //    }
         //}
 
+        real1 negAngle1DivPi;
+        PhaseShardPtr angleShard;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-            polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
-            if (polar0 == polar1) {
-                if (phaseShard->second->isInvert) {
-                    if (phaseShard->second->angle0DivPi >= ZERO_R1) {
-                        phaseShard->second->angle1DivPi -= phaseShard->second->angle0DivPi - ONE_R1;
+            angleShard = phaseShard->second;
+            negAngle1DivPi = ClampAngleDivPi(-angleShard->angle1DivPi);
+            if (angleShard->angle0DivPi == angleShard->angle1DivPi) {
+                if (angleShard->isInvert) {
+                    if (angleShard->angle0DivPi >= ZERO_R1) {
+                        angleShard->angle1DivPi -= angleShard->angle0DivPi - ONE_R1;
                     } else {
-                        phaseShard->second->angle1DivPi -= phaseShard->second->angle0DivPi + ONE_R1;
+                        angleShard->angle1DivPi -= angleShard->angle0DivPi + ONE_R1;
                     }
                     phaseShard->second->isInvert = false;
                 }
-            } else if (polar0 == -polar1) {
-                if (!phaseShard->second->isInvert) {
-                    phaseShard->second->angle0DivPi = ZERO_R1;
-                    phaseShard->second->angle1DivPi = ZERO_R1;
-                    phaseShard->second->isInvert = true;
+            } else if (angleShard->angle0DivPi == negAngle1DivPi) {
+                if (!angleShard->isInvert) {
+                    angleShard->angle0DivPi = ZERO_R1;
+                    angleShard->angle1DivPi = ZERO_R1;
+                    angleShard->isInvert = true;
                 }
             }
         }
