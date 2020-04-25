@@ -187,17 +187,21 @@ public:
     {
         MakePhaseControlledBy(control);
 
-        complex nCmplx0 = targetOfShards[control]->cmplx0 * cmplx0;
-        complex nCmplx1 = targetOfShards[control]->cmplx1 * cmplx1;
+        PhaseShardPtr targetOfShard = targetOfShards[control];
 
-        if (!targetOfShards[control]->isInvert && IS_ARG_0(nCmplx0) && IS_ARG_0(nCmplx1)) {
+        complex nCmplx0 = targetOfShard->cmplx0 * cmplx0;
+        nCmplx0 /= abs(nCmplx0);
+        complex nCmplx1 = targetOfShard->cmplx1 * cmplx1;
+        nCmplx1 /= abs(nCmplx1);
+
+        if (!targetOfShard->isInvert && IS_ARG_0(nCmplx0) && IS_ARG_0(nCmplx1)) {
             // The buffer is equal to the identity operator, and it can be removed.
             RemovePhaseControl(control);
             return;
         }
 
-        targetOfShards[control]->cmplx0 = nCmplx0;
-        targetOfShards[control]->cmplx1 = nCmplx1;
+        targetOfShard->cmplx0 = nCmplx0;
+        targetOfShard->cmplx1 = nCmplx1;
     }
 
     void AddInversionAngles(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1)
@@ -226,7 +230,7 @@ public:
             partner = phaseShard->first;
 
             if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
-                return;
+                continue;
             }
 
             partnerAngle = buffer->cmplx1;
@@ -253,14 +257,14 @@ public:
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
             if (isPlusMinus != phaseShard->first->isPlusMinus) {
-                return;
+                continue;
             }
 
             partner = phaseShard->first;
 
             partnerShard = tempTargets.find(partner);
             if (partnerShard == tempTargets.end()) {
-                return;
+                continue;
             }
 
             buffer = phaseShard->second;
