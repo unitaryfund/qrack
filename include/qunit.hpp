@@ -330,18 +330,19 @@ public:
 
     void CommuteH()
     {
+        PhaseShardPtr buffer;
         ShardToPhaseMap::iterator phaseShard;
 
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            if (phaseShard->second->isInvert && (abs(phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
-                phaseShard->second->angle0DivPi = ZERO_R1;
-                phaseShard->second->angle1DivPi = ONE_R1;
-                phaseShard->second->isInvert = false;
-            } else if (!phaseShard->second->isInvert &&
-                (abs(ONE_R1 - phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
-                phaseShard->second->angle1DivPi = ZERO_R1;
-                phaseShard->second->angle1DivPi = ZERO_R1;
-                phaseShard->second->isInvert = true;
+            buffer = phaseShard->second;
+            if (buffer->isInvert) {
+                buffer->angle0DivPi = ZERO_R1;
+                buffer->angle1DivPi = ONE_R1;
+                buffer->isInvert = false;
+            } else if (!buffer->isInvert) {
+                buffer->angle0DivPi = ZERO_R1;
+                buffer->angle1DivPi = ZERO_R1;
+                buffer->isInvert = true;
             }
         }
     }

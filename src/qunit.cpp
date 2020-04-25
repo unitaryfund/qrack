@@ -3032,45 +3032,31 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
     QEngineShard& shard = shards[bitIndex];
     shard.CombineGates();
+    shard.OptimizeControls();
+    RevertBasis2Qb(bitIndex, false, true);
 
-    complex polar0, polar1;
     ShardToPhaseMap::iterator phaseShard;
+    PhaseShardPtr buffer;
+    QEngineShardPtr partner;
 
-    ShardToPhaseMap controlsShards = shard.controlsShards;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        QEngineShardPtr partner = phaseShard->first;
-        bitLenInt target = FindShardIndex(*partner);
-
-        polar0 = std::polar(ONE_R1, (real1)(phaseShard->second->angle0DivPi * M_PI));
-        polar1 = std::polar(ONE_R1, (real1)(phaseShard->second->angle1DivPi * M_PI));
-
-        if (norm(polar0 - polar1) <= FLT_EPSILON) {
-            if (phaseShard->second->isInvert) {
-                ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(phaseShard->first);
-            }
-        } else if (norm(polar0 + polar1) <= FLT_EPSILON) {
-            if (!phaseShard->second->isInvert) {
-                ApplyBuffer(phaseShard, bitIndex, target);
-                shard.RemovePhaseTarget(phaseShard->first);
-            }
-        } else {
-            ApplyBuffer(phaseShard, bitIndex, target);
-            shard.RemovePhaseTarget(partner);
-        }
-    }
-
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        QEngineShardPtr partner = phaseShard->first;
+        buffer = phaseShard->second;
+        partner = phaseShard->first;
         bitLenInt control = FindShardIndex(*partner);
 
-        if (phaseShard->second->isInvert && (abs(phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
+        if (abs(buffer->angle0DivPi) > FLT_EPSILON) {
+            ApplyBuffer(phaseShard, control, bitIndex);
+            shard.RemovePhaseControl(partner);
             continue;
         }
 
-        if (!phaseShard->second->isInvert && (abs(ONE_R1 - phaseShard->second->angle1DivPi) <= FLT_EPSILON)) {
+        if (buffer->isInvert && (abs(buffer->angle1DivPi) <= FLT_EPSILON)) {
+            continue;
+        }
+
+        if (!buffer->isInvert && (abs(ONE_R1 - buffer->angle1DivPi) <= FLT_EPSILON)) {
             continue;
         }
 
