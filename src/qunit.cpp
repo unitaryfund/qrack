@@ -1231,11 +1231,30 @@ bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlL
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
+
     if (CACHED_PLUS(tShard)) {
         return;
     }
 
     QEngineShard& cShard = shards[control];
+
+    if (CACHED_PROB(cShard)) {
+        if (norm(cShard.amp1) == ZERO_R1) {
+            return;
+        }
+        if (norm(cShard.amp0) == ZERO_R1) {
+            X(target);
+            return;
+        }
+    }
+
+    if (!freezeBasis) {
+        TransformBasis1Qb(false, control);
+        RevertBasis2Qb(control, true, false, { target }, {});
+        RevertBasis2Qb(target, true, true, {}, { control });
+        tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
+        return;
+    }
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
