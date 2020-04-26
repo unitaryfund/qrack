@@ -75,7 +75,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
+        shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState, doNormalize ? amplitudeFloor : ZERO_R1);
     }
 }
 
@@ -93,7 +93,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState);
+        shards[i] = QEngineShard(MakeEngine(1, bitState ? 1 : 0), bitState, doNormalize ? amplitudeFloor : ZERO_R1);
     }
 }
 
@@ -105,7 +105,7 @@ void QUnit::SetQuantumState(const complex* inputState)
     unit->SetQuantumState(inputState);
 
     for (bitLenInt idx = 0; idx < qubitCount; idx++) {
-        shards[idx] = QEngineShard(unit, idx);
+        shards[idx] = QEngineShard(unit, idx, doNormalize ? amplitudeFloor : ZERO_R1);
     }
 
     if (qubitCount == 1U) {
@@ -869,7 +869,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
         bitState = ((value >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i + start] = QEngineShard(shards[i + start].unit, bitState);
+        shards[i + start] = QEngineShard(shards[i + start].unit, bitState, doNormalize ? amplitudeFloor : ZERO_R1);
         shards[i + start].isEmulated = true;
     }
 }
@@ -1705,15 +1705,20 @@ void QUnit::AntiCISqrtSwap(
 }
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
-    /* Check whether the bit probability is 0, (or 1, if "anti"). */                                                   \
-    bitProb = inCurrentBasis ? ProbBase(controls[i]) : Prob(controls[i]);                                              \
-    if (IS_ZERO_R1(bitProb)) {                                                                                         \
+    /* Check whether the bit probability is 0, (or 1, if "anti"). (Just trigger the cache update.) */                  \
+    if (inCurrentBasis) {                                                                                              \
+        ProbBase(controls[i]);                                                                                         \
+    } else {                                                                                                           \
+        Prob(controls[i]);                                                                                             \
+    }                                                                                                                  \
+    shard = shards[controls[i]];                                                                                       \
+    if (IS_NORM_ZERO(shard.amp1)) {                                                                                    \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
         }                                                                                                              \
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-    } else if (IS_ONE_R1(bitProb)) {                                                                                   \
+    } else if (IS_NORM_ZERO(shard.amp0)) {                                                                             \
         if (anti) {                                                                                                    \
             /* This gate does nothing, so return without applying anything. */                                         \
             return;                                                                                                    \
@@ -1738,7 +1743,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> controlVec;
 
     bool isSeparated = true;
-    real1 bitProb;
+    QEngineShard shard;
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
@@ -3044,6 +3049,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     QEngineShard& shard = shards[bitIndex];
     RevertBasis2Qb(bitIndex, false, true);
 
+    real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+
     complex polar0, polar1;
     ShardToPhaseMap::iterator phaseShard;
 
@@ -3056,7 +3063,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar0 = phaseShard->second->cmplx0;
         polar1 = phaseShard->second->cmplx1;
 
-        if ((norm(polar0 - polar1) > min_norm) && (norm(polar0 + polar1) > min_norm)) {
+        if ((norm(polar0 - polar1) > ampThreshold) && (norm(polar0 + polar1) > ampThreshold)) {
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         }
