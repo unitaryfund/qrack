@@ -1234,8 +1234,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_PLUS(tShard)) {
-        return;
+    if (CACHED_PLUS_MINUS(tShard)) {
+        if (IS_NORM_ZERO(tShard.amp1)) {
+            return;
+        }
+        if (IS_NORM_ZERO(tShard.amp0)) {
+            Z(control);
+            return;
+        }
     }
 
     QEngineShard& cShard = shards[control];
