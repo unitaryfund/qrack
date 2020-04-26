@@ -1238,16 +1238,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_PROB(cShard)) {
-        if (norm(cShard.amp1) == ZERO_R1) {
-            return;
-        }
-        if (norm(cShard.amp0) == ZERO_R1) {
-            X(target);
-            return;
-        }
-    }
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 

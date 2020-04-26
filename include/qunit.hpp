@@ -256,11 +256,11 @@ public:
 
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
 
-            if (isPlusMinus != phaseShard->first->isPlusMinus) {
+            partner = phaseShard->first;
+
+            if (isPlusMinus != partner->isPlusMinus) {
                 continue;
             }
-
-            partner = phaseShard->first;
 
             partnerShard = tempTargets.find(partner);
             if (partnerShard == tempTargets.end()) {
