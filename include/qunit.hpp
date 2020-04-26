@@ -591,6 +591,7 @@ public:
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_threshold = REAL1_DEFAULT_ARG);
     virtual void Finish();
     virtual bool isFinished();
+    virtual void Dump();
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 

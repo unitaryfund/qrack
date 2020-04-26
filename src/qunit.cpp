@@ -89,7 +89,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     bool bitState;
 
-    Finish();
+    Dump();
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
@@ -99,6 +99,8 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
 void QUnit::SetQuantumState(const complex* inputState)
 {
+    Dump();
+
     QInterfacePtr unit = MakeEngine(qubitCount, 0);
     unit->SetQuantumState(inputState);
 
@@ -2915,6 +2917,14 @@ void QUnit::Finish()
 {
     ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2) {
         unit->Finish();
+        return true;
+    });
+}
+
+void QUnit::Dump()
+{
+    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2) {
+        unit.reset();
         return true;
     });
 }
