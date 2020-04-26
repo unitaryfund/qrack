@@ -45,8 +45,8 @@ struct PhaseShard {
     }
 };
 
-#define IS_ARG_0(c) (norm(c - ONE_CMPLX) <= min_norm)
-#define IS_ARG_PI(c) (norm(c + ONE_CMPLX) <= min_norm)
+#define IS_ARG_0(c) (norm(c - ONE_CMPLX) <= amplitudeFloor)
+#define IS_ARG_PI(c) (norm(c + ONE_CMPLX) <= amplitudeFloor)
 
 struct QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
@@ -58,6 +58,7 @@ class QEngineShard : public ParallelFor {
 public:
     QInterfacePtr unit;
     bitLenInt mapped;
+    real1 amplitudeFloor;
     bool isEmulated;
     bool isProbDirty;
     bool isPhaseDirty;
@@ -69,9 +70,10 @@ public:
     // Shards of which this shard is a target
     ShardToPhaseMap targetOfShards;
 
-    QEngineShard()
+    QEngineShard(const real1 amp_thresh = min_norm)
         : unit(NULL)
         , mapped(0)
+        , amplitudeFloor(amp_thresh)
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
@@ -83,9 +85,10 @@ public:
     {
     }
 
-    QEngineShard(QInterfacePtr u, const bool& set)
+    QEngineShard(QInterfacePtr u, const bool& set, const real1 amp_thresh = min_norm)
         : unit(u)
         , mapped(0)
+        , amplitudeFloor(amp_thresh)
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
@@ -100,9 +103,10 @@ public:
     }
 
     // Dirty state constructor:
-    QEngineShard(QInterfacePtr u, const bitLenInt& mapping)
+    QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1 amp_thresh = min_norm)
         : unit(u)
         , mapped(mapping)
+        , amplitudeFloor(amp_thresh)
         , isEmulated(false)
         , isProbDirty(true)
         , isPhaseDirty(true)
@@ -401,6 +405,8 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
 
+    virtual ~QUnit() { Dump(); }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
@@ -591,6 +597,7 @@ public:
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_threshold = REAL1_DEFAULT_ARG);
     virtual void Finish();
     virtual bool isFinished();
+    virtual void Dump();
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
