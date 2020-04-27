@@ -1075,6 +1075,12 @@ void QUnit::XBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
+
     std::swap(shard.amp0, shard.amp1);
 }
 
@@ -1082,6 +1088,12 @@ void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
     ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
+
     shard.amp1 = -shard.amp1;
 }
 
@@ -1378,6 +1390,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
+    if (IS_ONE_CMPLX(topLeft) && IS_ONE_CMPLX(-bottomRight)) {
+        Z(target);
+        return;
+    }
+
     QEngineShard& shard = shards[target];
 
     // TODO: Find commutation rules:
