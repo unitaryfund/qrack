@@ -307,27 +307,21 @@ public:
         });
     }
 
-    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    void RemoveTargetIdentityBuffers()
     {
-        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
 
-        // These cases cannot be handled:
-        // for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        //    if (phaseShard->second->isInvert) {
-        //        return false;
-        //    }
-        //}
-
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
-                return;
+        while (phaseShard != targetOfShards.end()) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
+                // The buffer is equal to the identity operator, and it can be removed.
+                phaseShard->first->controlsShards.erase(this);
+                targetOfShards.erase(phaseShard);
+            } else {
+                phaseShard++;
             }
-
-            phaseShard->second->cmplx0 *= topLeft / bottomRight;
-            phaseShard->second->cmplx1 *= bottomRight / topLeft;
-        });
+        }
     }
 
     void CommuteH()
@@ -352,19 +346,7 @@ public:
             }
         });
 
-        PhaseShardPtr buffer;
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-
-        while (phaseShard != targetOfShards.end()) {
-            buffer = phaseShard->second;
-            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
-                // The buffer is equal to the identity operator, and it can be removed.
-                phaseShard->first->controlsShards.erase(this);
-                targetOfShards.erase(phaseShard);
-            } else {
-                phaseShard++;
-            }
-        }
+        RemoveTargetIdentityBuffers();
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
@@ -753,13 +735,6 @@ protected:
             RevertBasis2Qb(i, true, false, {}, {}, true);
         }
     }
-    void PopHBasis2Qb(const bitLenInt& i)
-    {
-        QEngineShard& shard = shards[i];
-        if (shard.isPlusMinus && ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))) {
-            TransformBasis1Qb(false, i);
-        }
-    }
 
     void CheckShardSeparable(const bitLenInt& target);
 
@@ -849,12 +824,6 @@ protected:
     {
         RevertBasis2Qb(target, false, true);
         shards[target].FlipPhaseAnti();
-    }
-
-    void CommutePhase(const bitLenInt& target, const complex& topLeft, const complex& bottomRight)
-    {
-        RevertBasis2Qb(target, true, true);
-        shards[target].CommutePhase(topLeft, bottomRight);
     }
 
     void CommuteH(const bitLenInt& bitIndex);

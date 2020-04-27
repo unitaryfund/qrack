@@ -1190,7 +1190,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
     QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
-        ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng, sparse);
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
 
     std::map<bitCapInt, int> testCaseResult;
 
