@@ -3040,6 +3040,12 @@ void QUnit::ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& c
         freezeBasis = false;
         shards[target].isPlusMinus = true;
     } else {
+        real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+        if (!phaseShard->second->isInvert && (norm(polar0 - ONE_CMPLX) <= ampThreshold) &&
+            (norm(polar1 - ONE_CMPLX) <= ampThreshold)) {
+            return;
+        }
+
         freezeBasis = true;
         if (phaseShard->second->isInvert) {
             ApplyControlledSingleInvert(controls, 1U, target, polar0, polar1);

@@ -307,6 +307,23 @@ public:
         });
     }
 
+    void RemoveTargetIdentityBuffers()
+    {
+        PhaseShardPtr buffer;
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+
+        while (phaseShard != targetOfShards.end()) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
+                // The buffer is equal to the identity operator, and it can be removed.
+                phaseShard->first->controlsShards.erase(this);
+                targetOfShards.erase(phaseShard);
+            } else {
+                phaseShard++;
+            }
+        }
+    }
+
     void CommutePhase(const complex& topLeft, const complex& bottomRight)
     {
         ShardToPhaseMap::iterator phaseShard;
@@ -328,6 +345,8 @@ public:
             phaseShard->second->cmplx0 *= topLeft / bottomRight;
             phaseShard->second->cmplx1 *= bottomRight / topLeft;
         });
+
+        RemoveTargetIdentityBuffers();
     }
 
     void CommuteH()
@@ -352,19 +371,7 @@ public:
             }
         });
 
-        PhaseShardPtr buffer;
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-
-        while (phaseShard != targetOfShards.end()) {
-            buffer = phaseShard->second;
-            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
-                // The buffer is equal to the identity operator, and it can be removed.
-                phaseShard->first->controlsShards.erase(this);
-                targetOfShards.erase(phaseShard);
-            } else {
-                phaseShard++;
-            }
-        }
+        RemoveTargetIdentityBuffers();
     }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
