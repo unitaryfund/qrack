@@ -1098,7 +1098,8 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    CommutePhase(target, ONE_CMPLX, -ONE_CMPLX);
+    // TODO: Find commutation rules:
+    RevertBasis2Qb(target);
 
     if (!shards[target].isPlusMinus) {
         ZBase(target);
@@ -1379,7 +1380,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 {
     QEngineShard& shard = shards[target];
 
-    CommutePhase(target, topLeft, bottomRight);
+    // TODO: Find commutation rules:
+    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         // If the target bit is in a |0>/|1> eigenstate, this gate has no effect.

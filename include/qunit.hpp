@@ -324,31 +324,6 @@ public:
         }
     }
 
-    void CommutePhase(const complex& topLeft, const complex& bottomRight)
-    {
-        ShardToPhaseMap::iterator phaseShard;
-
-        // These cases cannot be handled:
-        // for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-        //    if (phaseShard->second->isInvert) {
-        //        return false;
-        //    }
-        //}
-
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
-                return;
-            }
-
-            phaseShard->second->cmplx0 *= topLeft / bottomRight;
-            phaseShard->second->cmplx1 *= bottomRight / topLeft;
-        });
-
-        RemoveTargetIdentityBuffers();
-    }
-
     void CommuteH()
     {
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
@@ -760,13 +735,6 @@ protected:
             RevertBasis2Qb(i, true, false, {}, {}, true);
         }
     }
-    void PopHBasis2Qb(const bitLenInt& i)
-    {
-        QEngineShard& shard = shards[i];
-        if (shard.isPlusMinus && ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))) {
-            TransformBasis1Qb(false, i);
-        }
-    }
 
     void CheckShardSeparable(const bitLenInt& target);
 
@@ -856,12 +824,6 @@ protected:
     {
         RevertBasis2Qb(target, false, true);
         shards[target].FlipPhaseAnti();
-    }
-
-    void CommutePhase(const bitLenInt& target, const complex& topLeft, const complex& bottomRight)
-    {
-        RevertBasis2Qb(target, true, true);
-        shards[target].CommutePhase(topLeft, bottomRight);
     }
 
     void CommuteH(const bitLenInt& bitIndex);
