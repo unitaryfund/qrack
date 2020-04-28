@@ -1020,7 +1020,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-    bool isSameContext = (destination->GetDeviceID() == GetDeviceID());
+    bool isSameContext = !destination || (destination->GetDeviceID() == GetDeviceID());
 #else
     bool isSameContext = !destination || (destination->context == context);
 #endif
