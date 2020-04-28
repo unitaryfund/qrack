@@ -332,7 +332,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        if (dID != deviceID) {
+#else
         if (context != OCLEngine::Instance()->GetDeviceContextPtr(dID)->context) {
+#endif
             nStateVec = AllocStateVec(maxQPowerOcl, true);
             LockSync(CL_MAP_READ);
             std::copy(stateVec, stateVec + maxQPowerOcl, nStateVec);
@@ -460,7 +464,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    if ((!didInit) || (dID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
+#else
     if ((!didInit) || (oldContext != context) || (nrmGroupCount != oldNrmGroupCount)) {
+#endif
         nrmBuffer =
             std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
         EventVecPtr waitVec = ResetWaitEvents();
@@ -927,7 +935,14 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
-    if (toCopy->context != context) {
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    bool isSameContext = (toCopy->GetDeviceID() == GetDeviceID());
+#else
+    bool isSameContext = (toCopy->context == context);
+#endif
+
+    if (!isSameContext) {
         toCopy->LockSync(CL_MAP_READ);
         otherStateVec = AllocStateVec(toCopy->maxQPowerOcl, true);
         std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPowerOcl, otherStateVec);
@@ -939,7 +954,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         otherStateBuffer = toCopy->stateBuffer;
     }
 
-    if (isConsumed || (toCopy->context != context)) {
+    if (isConsumed || !isSameContext) {
         poolItem->otherStateVec = otherStateVec;
         toCopy->stateVec = NULL;
         QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
@@ -1004,9 +1019,15 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    bool isSameContext = (destination->GetDeviceID() == GetDeviceID());
+#else
+    bool isSameContext = (destination->context == context);
+#endif
+
     if (length == qubitCount) {
         if (destination != NULL) {
-            if (context == destination->context) {
+            if (isSameContext) {
                 destination->ResetStateVec(stateVec);
                 destination->stateBuffer = stateBuffer;
                 stateVec = NULL;
@@ -1080,7 +1101,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
         BufferPtr otherStateBuffer;
         complex* otherStateVec;
-        if (destination->context == context) {
+        if (isSameContext) {
             otherStateVec = destination->stateVec;
             otherStateBuffer = destination->stateBuffer;
         } else {
@@ -1097,7 +1118,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         WaitCall(
             OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
 
-        if (destination->context != context) {
+        if (!isSameContext) {
             queue.enqueueMapBuffer(
                 *otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPowerOcl);
             destination->LockSync(CL_MAP_WRITE);
@@ -2220,9 +2241,15 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    bool isSameContext = (toCompare->GetDeviceID() == GetDeviceID());
+#else
+    bool isSameContext = (toCompare->context == context);
+#endif
+
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
-    if (toCompare->context == context) {
+    if (isSameContext) {
         otherStateVec = toCompare->stateVec;
         otherStateBuffer = toCompare->stateBuffer;
     } else {
@@ -2240,7 +2267,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     real1 sumSqrErr = 0;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
-    if (toCompare->context != context) {
+    if (!isSameContext) {
         FreeAligned(otherStateVec);
     }
 
