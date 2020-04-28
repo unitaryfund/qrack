@@ -324,6 +324,12 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     complex* nStateVec = NULL;
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        bool isSameContext = (dID == deviceID);
+#else
+        bool isSameContext = (context == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context);
+#endif
+
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if ((!forceReInit) && (dID == deviceID)) {
@@ -332,11 +338,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
         // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
         // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-#if defined(_WIN32) && !defined(__CYGWIN__)
-        if (dID != deviceID) {
-#else
-        if (context != OCLEngine::Instance()->GetDeviceContextPtr(dID)->context) {
-#endif
+        if (!isSameContext) {
             nStateVec = AllocStateVec(maxQPowerOcl, true);
             LockSync(CL_MAP_READ);
             std::copy(stateVec, stateVec + maxQPowerOcl, nStateVec);
@@ -464,11 +466,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    if ((!didInit) || (dID != deviceID) || (nrmGroupCount != oldNrmGroupCount)) {
-#else
-    if ((!didInit) || (oldContext != context) || (nrmGroupCount != oldNrmGroupCount)) {
-#endif
+    if ((!didInit) || !isSameContext || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer =
             std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
         EventVecPtr waitVec = ResetWaitEvents();
