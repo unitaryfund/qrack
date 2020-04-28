@@ -98,7 +98,7 @@ public:
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 
-    virtual void SeparateBit(bool value, bitLenInt qubit);
+    virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {

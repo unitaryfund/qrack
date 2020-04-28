@@ -47,7 +47,11 @@ add_library (qrack_pinvoke SHARED
 if (MSVC)
     set(QRACK_LIBS qrack)
 else (MSVC)
-    set(QRACK_LIBS qrack pthread atomic)
+    if (APPLE)
+        set(QRACK_LIBS qrack pthread)
+    else (APPLE)
+        set(QRACK_LIBS qrack pthread atomic)
+    endif (APPLE)
 endif (MSVC)
 
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})

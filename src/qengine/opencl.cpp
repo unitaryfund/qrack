@@ -324,7 +324,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     complex* nStateVec = NULL;
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__APPLE__)
         bool isSameContext = (dID == deviceID);
 #else
         bool isSameContext = (context == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context);
@@ -934,7 +934,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__APPLE__)
     bool isSameContext = (toCopy->GetDeviceID() == GetDeviceID());
 #else
     bool isSameContext = (toCopy->context == context);
@@ -1017,7 +1017,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__APPLE__)
     bool isSameContext = !destination || (destination->GetDeviceID() == GetDeviceID());
 #else
     bool isSameContext = !destination || (destination->context == context);
@@ -2239,7 +2239,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(__CYGWIN__)) || defined(__APPLE__)
     bool isSameContext = (toCompare->GetDeviceID() == GetDeviceID());
 #else
     bool isSameContext = (toCompare->context == context);
