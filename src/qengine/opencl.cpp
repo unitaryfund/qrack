@@ -324,11 +324,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     complex* nStateVec = NULL;
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-        bool isSameContext = (dID == deviceID);
-#else
-        bool isSameContext = (context == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context);
-#endif
+    bool isSameContext = (device_context == NULL) ||
+        (device_context->context_id == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context_id);
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
@@ -934,11 +931,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    bool isSameContext = (toCopy->GetDeviceID() == GetDeviceID());
-#else
-    bool isSameContext = (toCopy->context == context);
-#endif
+    bool isSameContext = (toCopy->device_context->context_id == device_context->context_id);
 
     if (!isSameContext) {
         toCopy->LockSync(CL_MAP_READ);
@@ -1017,11 +1010,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    bool isSameContext = !destination || (destination->GetDeviceID() == GetDeviceID());
-#else
-    bool isSameContext = !destination || (destination->context == context);
-#endif
+    bool isSameContext = !destination || (destination->device_context->context_id == device_context->context_id);
 
     if (length == qubitCount) {
         if (destination != NULL) {
@@ -2239,11 +2228,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    bool isSameContext = (toCompare->GetDeviceID() == GetDeviceID());
-#else
-    bool isSameContext = (toCompare->context == context);
-#endif
+    bool isSameContext = (toCompare->device_context->context_id == device_context->context_id);
 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;

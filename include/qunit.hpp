@@ -48,7 +48,7 @@ struct PhaseShard {
 #define IS_ARG_0(c) (norm(c - ONE_CMPLX) <= amplitudeFloor)
 #define IS_ARG_PI(c) (norm(c + ONE_CMPLX) <= amplitudeFloor)
 
-struct QEngineShard;
+class QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
 typedef std::shared_ptr<PhaseShard> PhaseShardPtr;
 typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;

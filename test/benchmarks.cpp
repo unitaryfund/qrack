@@ -505,7 +505,6 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
             bitLenInt i;
             real1 theta, phi, lambda;
             bitLenInt b1, b2;
-            complex polar0;
 
             for (d = 0; d < Depth; d++) {
 
@@ -554,7 +553,6 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
             bitLenInt i;
             real1 gateRand;
             bitLenInt b1, b2, b3;
-            complex polar0;
             int maxGates;
 
             for (d = 0; d < Depth; d++) {
@@ -613,7 +611,6 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
             bitLenInt i;
             real1 gateRand;
             bitLenInt b1, b2, b3;
-            complex polar0;
             int maxGates;
 
             for (d = 0; d < Depth; d++) {
@@ -1065,7 +1062,6 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     bitLenInt i;
     std::vector<std::vector<int>> gate1QbRands(Depth);
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
-    complex polar0;
     int maxGates;
 
     QInterfacePtr goldStandard = CreateQuantumInterface(testSubSubEngineType, n, 0, rng, ONE_CMPLX,

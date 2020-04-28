@@ -214,9 +214,9 @@ bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
     return toRet;
 }
 
-void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
+void QUnitMulti::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
-    QUnit::SeparateBit(value, qubit);
+    QUnit::SeparateBit(value, qubit, doDispose);
     RedistributeQEngines();
 }
 
