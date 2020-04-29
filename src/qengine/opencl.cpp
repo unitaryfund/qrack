@@ -2259,20 +2259,16 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
-    clFinish();
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1),
+        doNormalize, randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(
-        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam, deviceID);
-
-    copyPtr->clFinish();
-
+    copyPtr->Finish();
     copyPtr->runningNorm = runningNorm;
 
-    LockSync(CL_MAP_READ);
-    copyPtr->LockSync(CL_MAP_WRITE);
-    std::copy(stateVec, stateVec + maxQPowerOcl, copyPtr->stateVec);
-    UnlockSync();
-    copyPtr->UnlockSync();
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+    Finish();
 
     return copyPtr;
 }
