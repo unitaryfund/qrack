@@ -580,40 +580,15 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// "Circular shift right" - shift bits right, and carry first bits.
 void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
 
-std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy, bool isConsumed)
+std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
 
     for (auto&& q : toCopy) {
-        ret[q] = Compose(q, isConsumed);
+        ret[q] = Compose(q);
     }
 
     return ret;
-}
-
-bool QInterface::TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-{
-    Finish();
-
-    bool tempDoNorm = doNormalize;
-    doNormalize = false;
-
-    QInterfacePtr unitCopy = Clone();
-
-    unitCopy->Decompose(start, length, dest);
-    unitCopy->Compose(dest, start);
-
-    bool didSeparate = ApproxCompare(unitCopy);
-    if (didSeparate) {
-        // The subsystem is separable.
-        Dispose(start, length);
-    }
-
-    Finish();
-
-    doNormalize = tempDoNorm;
-
-    return didSeparate;
 }
 
 void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)

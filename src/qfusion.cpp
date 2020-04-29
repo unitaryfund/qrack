@@ -306,20 +306,20 @@ void QFusion::UniformlyControlledSingleBit(const bitLenInt* controls, const bitL
 
 // "Compose" will increase the cost of application of every currently buffered gate by a factor of 2 per "composed"
 // qubit, so it's most likely cheaper just to FlushAll() immediately.
-bitLenInt QFusion::Compose(QFusionPtr toCopy, bool isConsumed)
+bitLenInt QFusion::Compose(QFusionPtr toCopy)
 {
     FlushAll();
     toCopy->FlushAll();
-    bitLenInt toRet = qReg->Compose(toCopy->qReg, isConsumed);
+    bitLenInt toRet = qReg->Compose(toCopy->qReg);
     SetQubitCount(qReg->GetQubitCount());
     return toRet;
 }
 
-bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start, bool isConsumed)
+bitLenInt QFusion::Compose(QFusionPtr toCopy, bitLenInt start)
 {
     FlushAll();
     toCopy->FlushAll();
-    bitLenInt toRet = qReg->Compose(toCopy->qReg, start, isConsumed);
+    bitLenInt toRet = qReg->Compose(toCopy->qReg, start);
     SetQubitCount(qReg->GetQubitCount());
     return toRet;
 }
@@ -363,12 +363,6 @@ void QFusion::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     FlushAll();
     qReg->Dispose(start, length, disposedPerm);
     SetQubitCount(qReg->GetQubitCount());
-}
-
-bool QFusion::TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest)
-{
-    FlushAll();
-    return qReg->TryDecompose(start, length, dest->qReg);
 }
 
 // "PhaseFlip" can be buffered as a single bit operation to make it cheaper, (equivalent to the application of the gates

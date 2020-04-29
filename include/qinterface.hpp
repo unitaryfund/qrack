@@ -309,9 +309,9 @@ public:
      * Returns the quantum bit offset that the QInterface was appended at, such
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false) = 0;
-    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false) = 0;
+    virtual bitLenInt Compose(QInterfacePtr toCopy) = 0;
+    virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) = 0;
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,
@@ -348,8 +348,7 @@ public:
      * mechanically meaningful.) To ensure that the subsystem is "separable,"
      * i.e. that it has no entanglements to other subsystems in the
      * QInterface, it can be measured with M(), or else all qubits <i>other
-     * than</i> the subsystem can be measured. "TryDecompose" alternatively first tests the state for separability, and
-     * only decomposes the state if it is determined to be separable.
+     * than</i> the subsystem can be measured.
      */
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
 
@@ -388,8 +387,7 @@ public:
      * mechanically meaningful.) To ensure that the subsystem is "separable,"
      * i.e. that it has no entanglements to other subsystems in the
      * QInterface, it can be measured with M(), or else all qubits <i>other
-     * than</i> the subsystem can be measured. "TryDecompose" alternatively first tests the state for separability, and
-     * only decomposes the state if it is determined to be separable.
+     * than</i> the subsystem can be measured.
      */
     virtual void Dispose(bitLenInt start, bitLenInt length) = 0;
 
@@ -397,12 +395,6 @@ public:
      * Dispose a a contiguous set of qubits that are already in a permutation eigenstate.
      */
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) = 0;
-
-    /**
-     * Attempt a Decompose() operation, on a state which might not be separable. If the state is not separable, abort
-     * and return false. Otherwise, complete the operation and return true.
-     */
-    virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives

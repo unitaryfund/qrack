@@ -178,12 +178,12 @@ void QUnit::SetAmplitude(bitCapInt perm, complex amp)
     shards[0].unit->SetAmplitude(perm, amp);
 }
 
-bitLenInt QUnit::Compose(QUnitPtr toCopy, bool isConsumed) { return Compose(toCopy, qubitCount, isConsumed); }
+bitLenInt QUnit::Compose(QUnitPtr toCopy) { return Compose(toCopy, qubitCount); }
 
 /*
  * Append QInterface in the middle of QUnit.
  */
-bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start, bool isConsumed)
+bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 {
     /* Create a clone of the quantum state in toCopy. */
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
@@ -282,7 +282,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
         // Work odd unit into collapse sequence:
         if (units.size() & 1U) {
             QInterfacePtr consumed = units[1];
-            bitLenInt offset = unit1->Compose(consumed, true);
+            bitLenInt offset = unit1->Compose(consumed);
             units.erase(units.begin() + 1U);
 
             for (auto&& shard : shards) {
@@ -301,7 +301,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
             QInterfacePtr retained = units[i];
             QInterfacePtr consumed = units[i + 1U];
             nUnits.push_back(retained);
-            offsets[consumed] = retained->Compose(consumed, true);
+            offsets[consumed] = retained->Compose(consumed);
             offsetPartners[consumed] = retained;
         }
 
@@ -441,53 +441,21 @@ QInterfacePtr QUnit::EntangleRange(
 
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
-    if (length == qubitCount) {
-        return true;
-    }
+    bool didSeparate = false;
+    for (bitLenInt i = 0; i < length; i++) {
+        if (shards[start + i].unit->GetQubitCount() == 1) {
+            return true;
+        }
 
-    if ((length == 1) && (shards[start].unit->GetQubitCount() == 1)) {
-        return true;
-    }
-
-    if (length > 1) {
-        EntangleRange(start, length);
-        OrderContiguous(shards[start].unit);
-    } else {
-        // If length == 1, this is usually all that's worth trying:
-        QEngineShard& shard = shards[start];
+        // This is usually all that's worth trying:
+        QEngineShard& shard = shards[start + i];
         real1 prob;
         if (shard.isPlusMinus || QUEUED_PHASE(shard)) {
             prob = ProbBase(start);
         } else {
             prob = Prob(start);
         }
-        return (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
-    }
-
-    QInterfacePtr separatedBits = MakeEngine(length, 0);
-
-    QInterfacePtr unitCopy = shards[start].unit->Clone();
-
-    bitLenInt mappedStart = shards[start].mapped;
-    unitCopy->Decompose(mappedStart, length, separatedBits);
-    unitCopy->Compose(separatedBits, mappedStart);
-
-    bool didSeparate = unitCopy->ApproxCompare(shards[start].unit);
-    if (didSeparate) {
-        // The subsystem is separable.
-        shards[start].unit->Dispose(mappedStart, length);
-
-        /* Find the rest of the qubits. */
-        for (auto&& shard : shards) {
-            if (shard.unit == shards[start].unit && shard.mapped >= (mappedStart + length)) {
-                shard.mapped -= length;
-            }
-        }
-
-        for (bitLenInt i = 0; i < length; i++) {
-            shards[start + i].unit = separatedBits;
-            shards[start + i].mapped = i;
-        }
+        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
     }
 
     return didSeparate;
@@ -735,130 +703,10 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     return result;
 }
 
-bitCapInt QUnit::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
-{
-    //"Collapsing" the register bit-by-bit is very costly. It's cheap to eventually recover the measurement from the
-    // single-bit method, but only once we collapse the state more efficiently.
-
-    bitLenInt i, j;
-    bitLenInt contigRegStart;
-    bitLenInt contigRegLength;
-    bitCapInt contigRegResult;
-
-    for (i = 0; i < length; i++) {
-        ToPermBasis(bits[i]);
-        EndEmulation(bits[i]);
-    }
-
-    std::map<QInterfacePtr, std::vector<bitLenInt>> perms;
-    std::map<QInterfacePtr, std::map<bitLenInt, bitLenInt>> invMap;
-    for (i = 0; i < length; i++) {
-        QEngineShard& shard = shards[bits[i]];
-        perms[shard.unit].push_back(shard.mapped);
-        invMap[shard.unit][shard.mapped] = i;
-    }
-
-    for (auto&& qi : perms) {
-        if (qi.second.size() == 1) {
-            continue;
-        }
-
-        bool doApplySub = doApply;
-        std::sort(qi.second.begin(), qi.second.end());
-        i = 0;
-        std::map<bitLenInt, bitLenInt> toDispose;
-        std::vector<bitCapInt> partResults;
-        while (i < qi.second.size()) {
-            contigRegStart = qi.second[i];
-            contigRegLength = 1U;
-            i++;
-            while (qi.second[i] == (contigRegStart + contigRegLength)) {
-                contigRegLength++;
-                i++;
-            }
-            // If we're measuring the entire length of the sub-unit, we can skip the "collapse" portion of measurement.
-            doApplySub = doApply && (qi.first->GetQubitCount() != contigRegLength);
-            toDispose[contigRegStart] = contigRegLength;
-            if (values) {
-                contigRegResult = 0;
-                for (j = 0; j < contigRegLength; j++) {
-                    if (values[invMap[qi.first][contigRegStart + j]]) {
-                        contigRegResult |= pow2(j);
-                    }
-                }
-                if (doApplySub) {
-                    partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, contigRegResult, true));
-                } else {
-                    partResults.push_back(contigRegResult);
-                }
-            } else {
-                partResults.push_back(qi.first->ForceMReg(contigRegStart, contigRegLength, 0, false, doApplySub));
-            }
-        }
-
-        // This is critical: it's the "nonlocal correlation" of "wave function collapse".
-        if (doApplySub) {
-            for (j = 0; j < qubitCount; j++) {
-                if (shards[j].unit == qi.first) {
-                    shards[j].isProbDirty = true;
-                    shards[j].isPhaseDirty = true;
-                }
-            }
-        }
-
-        for (auto iter = toDispose.rbegin(); iter != toDispose.rend(); ++iter) {
-            contigRegResult = partResults.back();
-            for (i = iter->first; i < (iter->first + iter->second); i++) {
-                SeparateBit((contigRegResult & ONE_BCI) != 0, bits[invMap[qi.first][i]], false);
-                contigRegResult >>= ONE_BCI;
-            }
-            contigRegResult = partResults.back();
-            partResults.pop_back();
-            if (qi.first->GetQubitCount() > iter->second) {
-                qi.first->Dispose(iter->first, iter->second, contigRegResult);
-            }
-        }
-    }
-
-    return QInterface::ForceM(bits, length, values, doApply);
-}
-
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     ToPermBasisMeasure(start, length);
-
-    if (isSparse) {
-        return QInterface::ForceMReg(start, length, result, doForce, doApply);
-    }
-
-    bitLenInt i;
-
-    bitLenInt* bits = new bitLenInt[length];
-    for (i = 0; i < length; i++) {
-        bits[i] = start + i;
-    }
-
-    bool* values = NULL;
-    if (doForce) {
-        values = new bool[length];
-        for (i = 0; i < length; i++) {
-            values[i] = ((result >> (bitCapIntOcl)i) & 1U) != 0;
-        }
-    }
-
-    bitCapInt maskResult = ForceM(bits, length, values, doApply);
-
-    bitCapInt toRet = 0;
-    for (i = 0; i < length; i++) {
-        toRet |= (maskResult & pow2(start + i)) ? pow2(i) : 0;
-    }
-
-    delete[] bits;
-    if (values) {
-        delete[] values;
-    }
-
-    return toRet;
+    return QInterface::ForceMReg(start, length, result, doForce, doApply);
 }
 
 /// Set register bits to given permutation

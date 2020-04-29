@@ -62,15 +62,15 @@ public:
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void SetBit(bitLenInt qubitIndex, bool value);
     using QInterface::Compose;
-    virtual bitLenInt Compose(QFusionPtr toCopy, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
+    virtual bitLenInt Compose(QFusionPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy)
     {
-        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), isConsumed);
+        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy));
     }
-    virtual bitLenInt Compose(QFusionPtr toCopy, bitLenInt start, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
+    virtual bitLenInt Compose(QFusionPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), start, isConsumed);
+        return Compose(std::dynamic_pointer_cast<QFusion>(toCopy), start);
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
@@ -79,11 +79,6 @@ public:
     virtual void Decompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
-    virtual bool TryDecompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-    {
-        return TryDecompose(start, length, std::dynamic_pointer_cast<QFusion>(dest));
-    }
-    virtual bool TryDecompose(bitLenInt start, bitLenInt length, QFusionPtr dest);
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);

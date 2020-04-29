@@ -896,7 +896,7 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
     ApplyMx(OCL_API_APPLYMREG, bciArgs, nrm);
 }
 
-void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy, bool isConsumed)
+void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy)
 {
     if (doNormalize) {
         NormalizeState();
@@ -945,19 +945,18 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         otherStateBuffer = toCopy->stateBuffer;
     }
 
-    if (isConsumed || !isSameContext) {
+    if (!isSameContext) {
         poolItem->otherStateVec = otherStateVec;
         toCopy->stateVec = NULL;
-        QueueCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
-    } else {
-        WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
     }
+        
+    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 }
 
-bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bool isConsumed)
+bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
 {
     bitLenInt result = qubitCount;
 
@@ -975,12 +974,12 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bool isConsumed)
         api_call = OCL_API_COMPOSE;
     }
 
-    Compose(api_call, bciArgs, toCopy, isConsumed);
+    Compose(api_call, bciArgs, toCopy);
 
     return result;
 }
 
-bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start, bool isConsumed)
+bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start)
 {
     bitLenInt result = start;
 
@@ -993,7 +992,7 @@ bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy, bitLenInt start, bool isCons
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { nMaxQPower, qubitCount, oQubitCount, startMask, midMask, endMask, start, 0, 0,
         0 };
 
-    Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy, isConsumed);
+    Compose(OCL_API_COMPOSE_MID, bciArgs, toCopy);
 
     return result;
 }
