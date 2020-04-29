@@ -3448,26 +3448,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
-{
-    QInterfacePtr qftReg2 = MakeEngine(4U);
-
-    qftReg->SetPermutation(0x2b);
-    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == true);
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
-    REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
-
-    qftReg->SetPermutation(0xb);
-    qftReg->H(0, 4);
-    qftReg->CNOT(0, 4, 4);
-    REQUIRE(qftReg->TryDecompose(0, 4, qftReg2) == false);
-
-    qftReg->CNOT(0, 4, 4);
-    qftReg->H(0, 4);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xb));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
 {
     qftReg->SetPermutation(0x02);

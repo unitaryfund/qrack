@@ -396,13 +396,13 @@ public:
     virtual void SetAmplitude(bitCapInt perm, complex amp);
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
-    virtual bitLenInt Compose(QUnitPtr toCopy, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
+    virtual bitLenInt Compose(QUnitPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy)
     {
-        return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), isConsumed);
+        return Compose(std::dynamic_pointer_cast<QUnit>(toCopy));
     }
-    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
+    virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), start);
     }
@@ -466,7 +466,6 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     using QInterface::ForceM;
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);

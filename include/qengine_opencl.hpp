@@ -199,15 +199,15 @@ public:
     virtual void Z(bitLenInt target);
 
     using QEngine::Compose;
-    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bool isConsumed = false)
+    virtual bitLenInt Compose(QEngineOCLPtr toCopy);
+    virtual bitLenInt Compose(QInterfacePtr toCopy)
     {
-        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), isConsumed);
+        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy));
     }
-    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start, bool isConsumed = false);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start, bool isConsumed = false)
+    virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start, isConsumed);
+        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy), start);
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
@@ -288,7 +288,7 @@ protected:
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
 
-    virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy, bool isConsumed = false);
+    virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
 
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
