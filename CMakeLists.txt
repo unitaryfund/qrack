@@ -36,7 +36,6 @@ add_library (qrack STATIC
     src/qengine/state.cpp
     src/qengine/utility.cpp
     src/bitbuffer.cpp
-    src/qfusion.cpp
     src/qunit.cpp
     )
 	
@@ -199,7 +198,6 @@ install (FILES
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
-    include/qfusion.hpp
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp

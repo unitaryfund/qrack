@@ -4268,30 +4268,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_shunts")
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
-{
-    QFusion optimizer(qftReg);
-
-    optimizer.SetPermutation(0);
-    optimizer.X(0);
-    optimizer.CNOT(0, 1);
-    optimizer.X(0);
-    optimizer.CNOT(0, 1);
-    optimizer.X(2);
-    optimizer.CNOT(2, 3);
-    optimizer.SetBit(3, false);
-
-    optimizer.AntiCCNOT(4, 5, 6);
-    optimizer.CCNOT(4, 5, 7);
-    optimizer.X(6);
-    optimizer.AntiCCNOT(4, 5, 6);
-    optimizer.AntiCCNOT(4, 5, 7);
-
-    qftReg = optimizer.ReleaseEngine();
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC6));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 {
     real1 aParam = (real1)1e-4;
@@ -4582,4 +4558,181 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
         qftReg->CNOT(control1 + i, control2 + i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+}
+
+bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
+{
+    std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
+    bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
+    if (bitRand >= unusedBitsPtr->size()) {
+        bitRand = unusedBitsPtr->size() - 1;
+    }
+    std::advance(bitIterator, bitRand);
+    unusedBitsPtr->erase(bitIterator);
+    return *bitIterator;
+}
+
+struct MultiQubitGate {
+    int gate;
+    bitLenInt b1;
+    bitLenInt b2;
+    bitLenInt b3;
+};
+
+TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
+{
+    const int GateCount1Qb = 4;
+    const int GateCountMultiQb = 4;
+    const int Depth = 3;
+
+    const int TRIALS = 200;
+    const int ITERATIONS = 60000;
+    const int n = 8;
+    bitCapInt permCount = pow2(n);
+    bitCapInt perm;
+
+    int d;
+    bitLenInt i;
+    int maxGates;
+
+    QInterfacePtr goldStandard = CreateQuantumInterface(
+        testSubSubEngineType, n, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
+
+    QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+
+    for (int trial = 0; trial < TRIALS; trial++) {
+        std::vector<std::vector<int>> gate1QbRands(Depth);
+        std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
+
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < n; i++) {
+                layer1QbRands.push_back((int)(goldStandard->Rand() * GateCount1Qb));
+            }
+
+            std::set<bitLenInt> unusedBits;
+            for (i = 0; i < n; i++) {
+                // In the past, "goldStandard->TrySeparate(i)" was also used, here, to attempt optimization. Be aware
+                // that the method can give performance advantages, under opportune conditions, but it does not, here.
+                unusedBits.insert(unusedBits.end(), i);
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            while (unusedBits.size() > 1) {
+                MultiQubitGate multiGate;
+                multiGate.b1 = pickRandomBit(goldStandard, &unusedBits);
+                multiGate.b2 = pickRandomBit(goldStandard, &unusedBits);
+
+                if (unusedBits.size() > 0) {
+                    maxGates = GateCountMultiQb;
+                } else {
+                    maxGates = GateCountMultiQb - 1U;
+                }
+
+                multiGate.gate = maxGates * goldStandard->Rand();
+
+                if (multiGate.gate > 2) {
+                    multiGate.b3 = pickRandomBit(goldStandard, &unusedBits);
+                }
+
+                layerMultiQbRands.push_back(multiGate);
+            }
+        }
+
+        goldStandard->SetPermutation(0);
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < layer1QbRands.size(); i++) {
+                int gate1Qb = layer1QbRands[i];
+                if (gate1Qb == 0) {
+                    goldStandard->H(i);
+                } else if (gate1Qb == 1) {
+                    goldStandard->X(i);
+                } else if (gate1Qb == 2) {
+                    goldStandard->Y(i);
+                } else {
+                    goldStandard->T(i);
+                }
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                if (multiGate.gate == 0) {
+                    goldStandard->Swap(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 1) {
+                    goldStandard->CZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 2) {
+                    goldStandard->CNOT(multiGate.b1, multiGate.b2);
+                } else {
+                    goldStandard->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                }
+            }
+        }
+
+        bitCapInt qPowers[n];
+        for (i = 0; i < n; i++) {
+            qPowers[i] = pow2(i);
+        }
+
+        std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+
+        testCase->SetPermutation(0);
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < layer1QbRands.size(); i++) {
+                int gate1Qb = layer1QbRands[i];
+                if (gate1Qb == 0) {
+                    testCase->H(i);
+                } else if (gate1Qb == 1) {
+                    testCase->X(i);
+                } else if (gate1Qb == 2) {
+                    testCase->Y(i);
+                } else {
+                    testCase->T(i);
+                }
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                if (multiGate.gate == 0) {
+                    testCase->Swap(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 1) {
+                    testCase->CZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 2) {
+                    testCase->CNOT(multiGate.b1, multiGate.b2);
+                } else {
+                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                }
+            }
+        }
+        std::map<bitCapInt, int> testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+
+        int testBinResult, goldBinResult;
+        std::map<bitCapInt, int>::iterator measurementBin;
+        real1 crossEntropy = ZERO_R1;
+        for (perm = 0; perm < permCount; perm++) {
+            measurementBin = goldStandardResult.find(perm);
+            if (measurementBin == goldStandardResult.end()) {
+                goldBinResult = 0;
+            } else {
+                goldBinResult = measurementBin->second;
+            }
+
+            measurementBin = testCaseResult.find(perm);
+            if (measurementBin == testCaseResult.end()) {
+                testBinResult = 0;
+            } else {
+                testBinResult = measurementBin->second;
+            }
+            crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+        }
+        if (crossEntropy < ZERO_R1) {
+            crossEntropy = ZERO_R1;
+        }
+        crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+        REQUIRE(crossEntropy > 0.97);
+    }
 }

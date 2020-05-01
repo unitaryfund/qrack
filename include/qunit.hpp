@@ -249,7 +249,7 @@ public:
     /// If this bit is both control and target of another bit, try to combine the operations into one gate.
     void CombineGates()
     {
-        PhaseShardPtr buffer;
+        PhaseShardPtr buffer1, buffer2;
         ShardToPhaseMap::iterator partnerShard;
         QEngineShardPtr partner;
         complex partnerAngle;
@@ -262,26 +262,23 @@ public:
 
             partner = phaseShard->first;
 
-            if (isPlusMinus != partner->isPlusMinus) {
-                continue;
-            }
-
             partnerShard = tempTargets.find(partner);
             if (partnerShard == tempTargets.end()) {
                 continue;
             }
 
-            buffer = phaseShard->second;
+            buffer1 = phaseShard->second;
+            buffer2 = partnerShard->second;
 
-            if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0)) {
-                partnerAngle = buffer->cmplx1;
+            if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplx0)) {
+                partnerAngle = buffer1->cmplx1;
 
                 phaseShard->first->targetOfShards.erase(this);
                 controlsShards.erase(partner);
 
                 AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
-            } else if (!buffer->isInvert && IS_ARG_0(partnerShard->second->cmplx0)) {
-                partnerAngle = buffer->cmplx1;
+            } else if (!buffer2->isInvert && IS_ARG_0(buffer2->cmplx0)) {
+                partnerAngle = buffer2->cmplx1;
 
                 phaseShard->first->controlsShards.erase(this);
                 targetOfShards.erase(partner);
@@ -397,10 +394,7 @@ public:
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
     virtual bitLenInt Compose(QUnitPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy)
-    {
-        return Compose(std::dynamic_pointer_cast<QUnit>(toCopy));
-    }
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
     virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {

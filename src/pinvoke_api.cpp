@@ -275,8 +275,7 @@ MICROSOFT_QUANTUM_DECL unsigned init()
         }
     }
 
-    QInterfacePtr simulator =
-        CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, 4, 0, rng);
+    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, 4, 0, rng);
     if (sid == simulators.size()) {
         simulators.push_back(simulator);
     } else {
@@ -436,7 +435,7 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_OPTIMAL, 1, 0, rng);
+    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, 1, 0, rng);
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
     } else {
