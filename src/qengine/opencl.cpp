@@ -949,7 +949,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         poolItem->otherStateVec = otherStateVec;
         toCopy->stateVec = NULL;
     }
-        
+
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec);
@@ -2263,7 +2263,6 @@ QInterfacePtr QEngineOCL::Clone()
 
     copyPtr->Finish();
     copyPtr->runningNorm = runningNorm;
-
 
     EventVecPtr waitVec = ResetWaitEvents();
     DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);

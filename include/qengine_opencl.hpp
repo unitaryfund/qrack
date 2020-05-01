@@ -200,10 +200,7 @@ public:
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy)
-    {
-        return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy));
-    }
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
     virtual bitLenInt Compose(QEngineOCLPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {

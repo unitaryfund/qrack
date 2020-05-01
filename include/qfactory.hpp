@@ -13,7 +13,6 @@
 #pragma once
 
 #include "qengine_cpu.hpp"
-#include "qfusion.hpp"
 
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
@@ -36,8 +35,6 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
 #endif
-    case QINTERFACE_QFUSION:
-        return std::make_shared<QFusion>(subengine1, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine1, subengine2, args...);
 #if ENABLE_OPENCL
@@ -59,8 +56,6 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
 #endif
-    case QINTERFACE_QFUSION:
-        return std::make_shared<QFusion>(subengine, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);
 #if ENABLE_OPENCL

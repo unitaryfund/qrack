@@ -4268,30 +4268,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_shunts")
     REQUIRE_FLOAT(qftReg->Prob(1), 0);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_order")
-{
-    QFusion optimizer(qftReg);
-
-    optimizer.SetPermutation(0);
-    optimizer.X(0);
-    optimizer.CNOT(0, 1);
-    optimizer.X(0);
-    optimizer.CNOT(0, 1);
-    optimizer.X(2);
-    optimizer.CNOT(2, 3);
-    optimizer.SetBit(3, false);
-
-    optimizer.AntiCCNOT(4, 5, 6);
-    optimizer.CCNOT(4, 5, 7);
-    optimizer.X(6);
-    optimizer.AntiCCNOT(4, 5, 6);
-    optimizer.AntiCCNOT(4, 5, 7);
-
-    qftReg = optimizer.ReleaseEngine();
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC6));
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 {
     real1 aParam = (real1)1e-4;
@@ -4623,7 +4599,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         testSubSubEngineType, n, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
 
     QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
-        ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng, sparse);
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
 
     for (int trial = 0; trial < TRIALS; trial++) {
         std::vector<std::vector<int>> gate1QbRands(Depth);

@@ -81,8 +81,8 @@ int main()
 {
     size_t i;
 
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_QFUSION, QINTERFACE_CPU,
-        8U * (KEY_SIZE + HASH_SIZE), 0, nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_CPU, 8U * (KEY_SIZE + HASH_SIZE), 0,
+        nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
 
     unsigned char T[TABLE_SIZE];
     for (i = 0; i < TABLE_SIZE; i++) {

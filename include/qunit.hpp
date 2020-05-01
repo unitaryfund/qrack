@@ -394,10 +394,7 @@ public:
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     using QInterface::Compose;
     virtual bitLenInt Compose(QUnitPtr toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy)
-    {
-        return Compose(std::dynamic_pointer_cast<QUnit>(toCopy));
-    }
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QUnit>(toCopy)); }
     virtual bitLenInt Compose(QUnitPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
