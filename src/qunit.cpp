@@ -1237,7 +1237,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
+        return;
+    }
+
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(cShard)) {
         return;
     }
 
@@ -1382,7 +1386,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (IS_ONE_CMPLX(topLeft)) {
-        if (CACHED_ZERO(tShard)) {
+        if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
             delete[] controls;
             return;
         }
