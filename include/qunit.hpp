@@ -208,17 +208,6 @@ public:
         targetOfShard->cmplx1 = nCmplx1;
     }
 
-    void AddInversionAngles(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1)
-    {
-        MakePhaseControlledBy(control);
-
-        PhaseShardPtr targetOfShard = targetOfShards[control];
-        targetOfShard->isInvert = !targetOfShard->isInvert;
-        std::swap(targetOfShard->cmplx0, targetOfShard->cmplx1);
-
-        AddPhaseAngles(control, cmplx0, cmplx1);
-    }
-
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
@@ -273,14 +262,14 @@ public:
             if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplx0)) {
                 partnerAngle = buffer1->cmplx1;
 
-                phaseShard->first->targetOfShards.erase(this);
+                partner->targetOfShards.erase(this);
                 controlsShards.erase(partner);
 
                 AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
             } else if (!buffer2->isInvert && IS_ARG_0(buffer2->cmplx0)) {
                 partnerAngle = buffer2->cmplx1;
 
-                phaseShard->first->controlsShards.erase(this);
+                partner->controlsShards.erase(this);
                 targetOfShards.erase(partner);
 
                 partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
