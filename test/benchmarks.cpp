@@ -789,7 +789,7 @@ TEST_CASE("test_ccz_h", "[supreme]")
 
                     if (gateRand < ONE_R1) {
                         qReg->Swap(b1, b2);
-                    } else if (gateRand < (2 * ONE_R1)) {
+                    } else if ((gateRand < (2 * ONE_R1)) || (maxGates < 3)) {
                         qReg->CZ(b1, b2);
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);

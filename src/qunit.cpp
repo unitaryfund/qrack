@@ -977,6 +977,11 @@ void QUnit::Z(bitLenInt target)
         return;
     }
 
+    if (UNSAFE_CACHED_ONE(shard)) {
+        PhaseFlip();
+        return;
+    }
+
     RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
@@ -1183,8 +1188,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
             if (shards[target].isPlusMinus) {
                 if (mappedControls.size() == 2) {
-                    unit->ApplyControlledSinglePhase(
-                        &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+                    unit->CCZ(CTRL_2_ARGS);
                 } else {
                     unit->CZ(CTRL_1_ARGS);
                 }
@@ -1256,6 +1260,71 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     CTRLED_PHASE_INVERT_WRAP(
         CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_R1, -ONE_R1);
+}
+
+void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    if (shards[control1].isPlusMinus && !shards[target].isPlusMinus) {
+        std::swap(control1, target);
+    }
+
+    if (shards[control2].isPlusMinus && !shards[target].isPlusMinus) {
+        std::swap(control2, target);
+    }
+
+    QEngineShard& tShard = shards[target];
+    QEngineShard& c1Shard = shards[control1];
+    QEngineShard& c2Shard = shards[control2];
+
+    if (!c1Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_ZERO(c1Shard)) {
+            return;
+        }
+        if (UNSAFE_CACHED_ONE(c1Shard)) {
+            CZ(control2, target);
+            return;
+        }
+    }
+
+    if (!c2Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_ZERO(c2Shard)) {
+            return;
+        }
+        if (UNSAFE_CACHED_ONE(c2Shard)) {
+            CZ(control1, target);
+            return;
+        }
+    }
+
+    if (!tShard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_ZERO(tShard)) {
+            return;
+        }
+        if (UNSAFE_CACHED_ONE(tShard)) {
+            CZ(control1, control2);
+            return;
+        }
+    }
+
+    bitLenInt controls[2] = { control1, control2 };
+
+    ApplyEitherControlled(controls, 2, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPlusMinus) {
+                if (mappedControls.size() == 2) {
+                    unit->CCNOT(CTRL_2_ARGS);
+                } else {
+                    unit->CNOT(CTRL_1_ARGS);
+                }
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->CCZ(CTRL_2_ARGS);
+                } else {
+                    unit->CZ(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { Z(target); });
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
@@ -1391,8 +1460,13 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        if (controlLen == 1U) {
-            if (IS_ONE_CMPLX(-bottomRight)) {
+        if (IS_ONE_CMPLX(-bottomRight)) {
+            if (controlLen == 2U) {
+                CCZ(controls[0], controls[1], target);
+                delete[] controls;
+                return;
+            }
+            if (controlLen == 1U) {
                 CZ(controls[0], target);
                 delete[] controls;
                 return;
