@@ -232,7 +232,7 @@ public:
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
-        };
+        }
     }
 
     /// If this bit is both control and target of another bit, try to combine the operations into one gate.
@@ -274,7 +274,7 @@ public:
 
                 partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
             }
-        };
+        }
     }
 
     /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
@@ -334,6 +334,34 @@ public:
 
         RemoveTargetIdentityBuffers();
     }
+
+    bool IsInvertControl()
+    {
+        ShardToPhaseMap::iterator phaseShard;
+
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            if (phaseShard->second->isInvert) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool IsInvertTarget()
+    {
+        ShardToPhaseMap::iterator phaseShard;
+
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            if (phaseShard->second->isInvert) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool IsInvert() { return IsInvertControl() || IsInvertTarget(); }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
     bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }

@@ -1237,7 +1237,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_ZERO(tShard) || CACHED_ZERO(cShard)) {
+    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
+        return;
+    }
+
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(cShard)) {
         return;
     }
 
