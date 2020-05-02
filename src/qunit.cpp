@@ -1380,7 +1380,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     QEngineShard& tShard = shards[target];
 
-    if (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(tShard)) {
+    if (IS_ONE_CMPLX(bottomRight) && (!tShard.IsInvertTarget() && UNSAFE_CACHED_ONE(tShard))) {
         delete[] controls;
         return;
     }
