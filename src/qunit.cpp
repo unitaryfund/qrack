@@ -746,13 +746,13 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
+    RevertBasis2Qb(qubit1, true);
+    RevertBasis2Qb(qubit2, true);
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2)) {
+    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
             Swap(qubit1, qubit2);
@@ -782,13 +782,14 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
+    RevertBasis2Qb(qubit1, true);
+    RevertBasis2Qb(qubit2, true);
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (USAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
+        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -810,13 +811,14 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
+    RevertBasis2Qb(qubit1, true);
+    RevertBasis2Qb(qubit2, true);
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (CACHED_CLASSICAL(shard1) && CACHED_CLASSICAL(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
+        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -961,7 +963,6 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    // TODO: Find commutation rules:
     RevertBasis2Qb(target, true);
 
     QEngineShard& shard = shards[target];
@@ -1256,7 +1257,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    // TODO: Find commutation rules:
     RevertBasis2Qb(target, true);
 
     if (IS_ONE_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {

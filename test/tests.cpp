@@ -4736,3 +4736,204 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         REQUIRE(crossEntropy > 0.97);
     }
 }
+
+TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
+{
+    // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
+    complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
+
+    const int GateCount1Qb = 3;
+    const int Depth = 3;
+
+    const int TRIALS = 200;
+    const int ITERATIONS = 60000;
+    const int n = 8;
+    bitCapInt permCount = pow2(n);
+    bitCapInt perm;
+
+    int d;
+    bitLenInt i;
+
+    int row, col;
+    int tempRow, tempCol;
+    bitLenInt b1, b2;
+    bitLenInt gate;
+    bool startsEvenRow;
+
+    bitLenInt controls[1];
+
+    // We factor the qubit count into two integers, as close to a perfect square as we can.
+    int rowLen = std::sqrt(n);
+    while (((n / rowLen) * rowLen) != n) {
+        rowLen--;
+    }
+    int colLen = n / rowLen;
+
+    QInterfacePtr goldStandard = CreateQuantumInterface(
+        testSubSubEngineType, n, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
+
+    QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+
+    for (int trial = 0; trial < TRIALS; trial++) {
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+        // Depending on which element of the sequential tiling we're running, per depth iteration,
+        // we need to start either with row "0" or row "1".
+        std::map<bitLenInt, bitLenInt> sequenceRowStart;
+        sequenceRowStart[0] = 1;
+        sequenceRowStart[1] = 1;
+        sequenceRowStart[2] = 0;
+        sequenceRowStart[3] = 0;
+
+        std::vector<std::vector<int>> gate1QbRands(Depth);
+        std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
+
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            if (d == 0) {
+                for (i = 0; i < n; i++) {
+                    layer1QbRands.push_back((int)(goldStandard->Rand() * GateCount1Qb));
+                }
+            } else {
+                std::vector<int>& prevLayer1QbRands = gate1QbRands[d - 1U];
+                for (i = 0; i < n; i++) {
+                    int tempGate = (int)(goldStandard->Rand() * (GateCount1Qb - 1U));
+                    if (tempGate >= prevLayer1QbRands[i]) {
+                        tempGate++;
+                    }
+                    layer1QbRands.push_back(tempGate);
+                }
+            }
+
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+
+            startsEvenRow = ((sequenceRowStart[gate] & 1U) == 0U);
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (row = sequenceRowStart[gate]; row < (int)(n / rowLen); row += 2) {
+                for (col = 0; col < (int)(n / colLen); col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
+
+                    tempRow = row;
+                    tempCol = col;
+
+                    tempRow += ((gate & 2U) ? 1 : -1);
+
+                    if (startsEvenRow) {
+                        tempCol += ((gate & 1U) ? 0 : -1);
+                    } else {
+                        tempCol += ((gate & 1U) ? 1 : 0);
+                    }
+
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
+                        continue;
+                    }
+
+                    b1 = row * rowLen + col;
+                    b2 = tempRow * rowLen + tempCol;
+
+                    // For the efficiency of QUnit's mapper, we transpose the row and column.
+                    tempCol = b1 / rowLen;
+                    tempRow = b1 - (tempCol * rowLen);
+                    b1 = (tempRow * rowLen) + tempCol;
+
+                    tempCol = b2 / rowLen;
+                    tempRow = b2 - (tempCol * rowLen);
+                    b2 = (tempRow * rowLen) + tempCol;
+
+                    MultiQubitGate multiGate;
+                    multiGate.b1 = b1;
+                    multiGate.b2 = b2;
+                    layerMultiQbRands.push_back(multiGate);
+                }
+            }
+        }
+
+        goldStandard->SetPermutation(0);
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < layer1QbRands.size(); i++) {
+                int gate1Qb = layer1QbRands[i];
+                if (gate1Qb == 0) {
+                    goldStandard->SqrtX(i);
+                } else if (gate1Qb == 1) {
+                    goldStandard->SqrtY(i);
+                } else {
+                    goldStandard->SqrtXConjT(i);
+                }
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                goldStandard->ISwap(multiGate.b1, multiGate.b2);
+                controls[0] = multiGate.b1;
+                goldStandard->ApplyControlledSinglePhase(controls, 1U, multiGate.b2, ONE_CMPLX, sixthRoot);
+            }
+        }
+
+        bitCapInt qPowers[n];
+        for (i = 0; i < n; i++) {
+            qPowers[i] = pow2(i);
+        }
+
+        std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+
+        testCase->SetPermutation(0);
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < layer1QbRands.size(); i++) {
+                int gate1Qb = layer1QbRands[i];
+                if (gate1Qb == 0) {
+                    testCase->SqrtX(i);
+                } else if (gate1Qb == 1) {
+                    testCase->SqrtY(i);
+                } else {
+                    testCase->SqrtXConjT(i);
+                }
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                testCase->ISwap(multiGate.b1, multiGate.b2);
+                controls[0] = multiGate.b1;
+                testCase->ApplyControlledSinglePhase(controls, 1U, multiGate.b2, ONE_CMPLX, sixthRoot);
+            }
+        }
+        std::map<bitCapInt, int> testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
+
+        int testBinResult, goldBinResult;
+        std::map<bitCapInt, int>::iterator measurementBin;
+        real1 crossEntropy = ZERO_R1;
+        for (perm = 0; perm < permCount; perm++) {
+            measurementBin = goldStandardResult.find(perm);
+            if (measurementBin == goldStandardResult.end()) {
+                goldBinResult = 0;
+            } else {
+                goldBinResult = measurementBin->second;
+            }
+
+            measurementBin = testCaseResult.find(perm);
+            if (measurementBin == testCaseResult.end()) {
+                testBinResult = 0;
+            } else {
+                testBinResult = measurementBin->second;
+            }
+            crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+        }
+        if (crossEntropy < ZERO_R1) {
+            crossEntropy = ZERO_R1;
+        }
+        crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+        REQUIRE(crossEntropy > 0.97);
+    }
+}
