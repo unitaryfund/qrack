@@ -107,6 +107,9 @@ REG_GATE_2(SqrtSwap);
 /// Bit-wise apply inverse square root of swap to two registers
 REG_GATE_2(ISqrtSwap);
 
+/// Bit-wise apply doubly-controlled-z to two control registers and one target register
+REG_GATE_C2_1(CCZ);
+
 /// Bit-wise apply "anti-"controlled-not to two control registers and one target register
 REG_GATE_C2_1(AntiCCNOT);
 
