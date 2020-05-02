@@ -42,7 +42,8 @@
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp0))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shard) (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
+#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+    (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
 
@@ -1598,11 +1599,11 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). (Just trigger the cache update.) */                  \
-    if (inCurrentBasis) {                                                                                              \
-        ProbBase(controls[i]);                                                                                         \
-    } else {                                                                                                           \
-        Prob(controls[i]);                                                                                             \
+    if (!inCurrentBasis) {                                                                                             \
+        TransformBasis1Qb(false, controls[i]);                                                                         \
+        RevertBasis2Qb(controls[i], true);                                                                             \
     }                                                                                                                  \
+    ProbBase(controls[i]);                                                                                             \
     shard = shards[controls[i]];                                                                                       \
     if (IS_NORM_ZERO(shard.amp1)) {                                                                                    \
         if (!anti) {                                                                                                   \
