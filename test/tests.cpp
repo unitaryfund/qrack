@@ -4747,7 +4747,7 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
 
     const int TRIALS = 200;
     const int ITERATIONS = 60000;
-    const int n = 8;
+    const int n = 9;
     bitCapInt permCount = pow2(n);
     bitCapInt perm;
 
