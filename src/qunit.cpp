@@ -35,14 +35,17 @@
 #define IS_ONE_R1(r) (r == ONE_R1)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard) ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0))
-/* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shard) (!shard.isProbDirty && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_ZERO(shard.amp1))
 #define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
 #define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp0))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp1))
+/* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
+#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+    (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
+#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
+#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
 
 namespace Qrack {
 
@@ -959,9 +962,17 @@ void QUnit::X(bitLenInt target)
 void QUnit::Z(bitLenInt target)
 {
     // TODO: Find commutation rules:
+    RevertBasis2Qb(target, true);
+
+    QEngineShard& shard = shards[target];
+
+    if (UNSAFE_CACHED_ZERO(shard)) {
+        return;
+    }
+
     RevertBasis2Qb(target);
 
-    if (!shards[target].isPlusMinus) {
+    if (!shard.isPlusMinus) {
         ZBase(target);
     } else {
         XBase(target);
@@ -1246,6 +1257,16 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     QEngineShard& shard = shards[target];
 
     // TODO: Find commutation rules:
+    RevertBasis2Qb(target, true);
+
+    if (IS_ONE_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+        return;
+    }
+
+    if (IS_ONE_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+        return;
+    }
+
     RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
@@ -1578,11 +1599,11 @@ void QUnit::AntiCISqrtSwap(
 
 #define CHECK_BREAK_AND_TRIM()                                                                                         \
     /* Check whether the bit probability is 0, (or 1, if "anti"). (Just trigger the cache update.) */                  \
-    if (inCurrentBasis) {                                                                                              \
-        ProbBase(controls[i]);                                                                                         \
-    } else {                                                                                                           \
-        Prob(controls[i]);                                                                                             \
+    if (!inCurrentBasis) {                                                                                             \
+        TransformBasis1Qb(false, controls[i]);                                                                         \
+        RevertBasis2Qb(controls[i], true);                                                                             \
     }                                                                                                                  \
+    ProbBase(controls[i]);                                                                                             \
     shard = shards[controls[i]];                                                                                       \
     if (IS_NORM_ZERO(shard.amp1)) {                                                                                    \
         if (!anti) {                                                                                                   \
