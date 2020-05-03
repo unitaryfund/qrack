@@ -1125,7 +1125,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvert() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
             return;
         }
@@ -1138,6 +1138,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
+    bool isCachedInvert = cShard.IsInvertControlOf(&tShard);
+
     // We're free to transform gates to any orthonormal basis of the Hilbert space.
     // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
     // |++> -> |++>
@@ -1147,7 +1149,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
-    if (cShard.isPlusMinus && tShard.isPlusMinus) {
+    if (!isCachedInvert && cShard.isPlusMinus && tShard.isPlusMinus) {
         RevertBasis2Qb(control);
         RevertBasis2Qb(target);
 
@@ -1158,7 +1160,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis && (cShard.IsInvertControlOf(&tShard) || !QUEUED_PHASE(cShard))) {
+    if (!freezeBasis && (isCachedInvert || (!QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard)))) {
         TransformBasis1Qb(false, control);
         TransformBasis1Qb(false, target);
         RevertBasis2Qb(control, NONEXCLUSIVE, false, { target }, {});
