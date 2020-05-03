@@ -876,14 +876,19 @@ protected:
 
     void FlipPhaseAnti(const bitLenInt& target)
     {
-        RevertBasis2Qb(target);
-        // shards[target].FlipPhaseAnti();
+        if (shards[target].IsInvert()) {
+            RevertBasis2Qb(target);
+            return;
+        }
+
+        RevertBasis2Qb(target, NONEXCLUSIVE, true);
+        shards[target].FlipPhaseAnti();
     }
 
     void CommutePhase(const bitLenInt& target, const complex& topLeft, const complex& bottomRight)
     {
-        RevertBasis2Qb(target);
-        // shards[target].CommutePhase(topLeft, bottomRight);
+        RevertBasis2Qb(target, ONLY_INVERT, true);
+        shards[target].CommutePhase(topLeft, bottomRight);
     }
 
     void CommuteH(const bitLenInt& bitIndex);
