@@ -1160,13 +1160,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis) {
-        H(target);
-        CZ(control, target);
-        H(target);
-        return;
-    }
-
     CTRLED_PHASE_INVERT_WRAP(
         CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_R1, ONE_R1);
 }
