@@ -293,9 +293,8 @@ public:
     void FlipPhaseAnti()
     {
         // These cases cannot be handled:
-        // if (controlsShards.size() > 0) {
-        //    return false;
-        // }
+        // - any controlsShards
+        // - any IsInvert buffers
 
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
