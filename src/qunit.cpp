@@ -1123,17 +1123,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    QEngineShard& cShard = shards[control];
 
-    if (!cShard.IsInvert() && UNSAFE_CACHED_CLASSICAL(cShard)) {
-        if (IS_NORM_ZERO(cShard.amp1)) {
-            return;
-        }
-        if (IS_NORM_ZERO(cShard.amp0)) {
-            X(target);
-            return;
-        }
-    }
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
