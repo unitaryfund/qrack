@@ -214,7 +214,7 @@ public:
 
         PhaseShardPtr targetOfShard = targetOfShards[control];
         targetOfShard->isInvert = !targetOfShard->isInvert;
-        std::swap(targetOfShard->cmplx0, targetOfShard->cmplx0);
+        std::swap(targetOfShard->cmplx0, targetOfShard->cmplx1);
 
         AddPhaseAngles(control, cmplx0, cmplx1);
     }

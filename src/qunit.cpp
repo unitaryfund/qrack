@@ -3041,6 +3041,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isSame |= norm(polar0 - polar1) <= ampThreshold;
         isOpposite |= norm(polar0 + polar1) <= ampThreshold;
 
+        // "isSame" always results in a phase gate.
+        // "isOpposite" always results in an "inversion" gate.
+        // We can buffer multiple phase gates on a bit, but we can only buffer one inversion.
+        // Phase gates commute more generally than inversions, so the phase gate is preferable to the inversion in the
+        // case that we could produce one of either.
         if (isSame) {
             isOpposite = false;
             break;
