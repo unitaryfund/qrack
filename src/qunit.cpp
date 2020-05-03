@@ -977,11 +977,6 @@ void QUnit::Z(bitLenInt target)
         return;
     }
 
-    if (UNSAFE_CACHED_ONE(shard)) {
-        PhaseFlip();
-        return;
-    }
-
     RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
