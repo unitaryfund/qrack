@@ -1160,6 +1160,13 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
+    if (!freezeBasis) {
+        H(target);
+        CZ(control, target);
+        H(target);
+        return;
+    }
+
     CTRLED_PHASE_INVERT_WRAP(
         CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_R1, ONE_R1);
 }
@@ -3035,7 +3042,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    bool isSame, isOpposite;
+    bool isSame, isOpposite = false;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         partner = phaseShard->first;
@@ -3045,15 +3052,29 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar0 = buffer->cmplx0;
         polar1 = buffer->cmplx1;
 
-        isSame = norm(polar0 - polar1) <= ampThreshold;
         isOpposite = norm(polar0 + polar1) <= ampThreshold;
 
-        if (!isSame && !isOpposite) {
-            ApplyBuffer(phaseShard, control, bitIndex);
-            shard.RemovePhaseControl(partner);
-        } else if (isOpposite) {
+        if (isOpposite) {
             RevertBasis2Qb(bitIndex, ONLY_PHASE, false, { control }, {});
             break;
+        }
+    }
+
+    if (!isOpposite) {
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            partner = phaseShard->first;
+            bitLenInt control = FindShardIndex(*partner);
+            buffer = phaseShard->second;
+
+            polar0 = buffer->cmplx0;
+            polar1 = buffer->cmplx1;
+
+            isSame = norm(polar0 - polar1) <= ampThreshold;
+
+            if (!isSame) {
+                ApplyBuffer(phaseShard, control, bitIndex);
+                shard.RemovePhaseControl(partner);
+            }
         }
     }
 
