@@ -288,18 +288,28 @@ public:
         }
     }
 
-    /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
-    /// commute, instead of incurring the cost of applying the buffers.
     void FlipPhaseAnti()
     {
-        // These cases cannot be handled:
-        // - any controlsShards
-        // - any IsInvert buffers
-
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
             std::advance(phaseShard, lcv);
             std::swap(phaseShard->second->cmplx0, phaseShard->second->cmplx1);
+        });
+    }
+
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    {
+        ShardToPhaseMap::iterator phaseShard;
+
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            if (!phaseShard->second->isInvert) {
+                return;
+            }
+
+            phaseShard->second->cmplx0 *= topLeft / bottomRight;
+            phaseShard->second->cmplx1 *= bottomRight / topLeft;
         });
     }
 
@@ -866,9 +876,14 @@ protected:
 
     void FlipPhaseAnti(const bitLenInt& target)
     {
-        RevertBasis2Qb(target, ONLY_INVERT);
-        RevertBasis2Qb(target, NONEXCLUSIVE, true);
-        shards[target].FlipPhaseAnti();
+        RevertBasis2Qb(target);
+        // shards[target].FlipPhaseAnti();
+    }
+
+    void CommutePhase(const bitLenInt& target, const complex& topLeft, const complex& bottomRight)
+    {
+        RevertBasis2Qb(target);
+        // shards[target].CommutePhase(topLeft, bottomRight);
     }
 
     void CommuteH(const bitLenInt& bitIndex);
