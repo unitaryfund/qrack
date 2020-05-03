@@ -205,6 +205,13 @@ void QInterface::CZ(bitLenInt control, bitLenInt target)
     ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, -ONE_CMPLX);
 }
 
+/// Apply doubly-controlled Pauli Z matrix to bit
+void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyControlledSinglePhase(controls, 2, target, ONE_CMPLX, -ONE_CMPLX);
+}
+
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
