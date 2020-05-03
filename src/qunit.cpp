@@ -998,16 +998,16 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
 {
     mtrxOut[0] = (ONE_R1 / 2) * (topLeft + bottomRight);
     mtrxOut[1] = (ONE_R1 / 2) * (topLeft - bottomRight);
-    mtrxOut[2] = (ONE_R1 / 2) * (topLeft - bottomRight);
-    mtrxOut[3] = (ONE_R1 / 2) * (topLeft + bottomRight);
+    mtrxOut[2] = mtrxOut[1];
+    mtrxOut[3] = mtrxOut[0];
 }
 
 void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
 {
     mtrxOut[0] = (ONE_R1 / 2) * (bottomLeft + topRight);
     mtrxOut[1] = (ONE_R1 / 2) * (-bottomLeft + topRight);
-    mtrxOut[2] = (ONE_R1 / 2) * (bottomLeft - topRight);
-    mtrxOut[3] = (ONE_R1 / 2) * -(bottomLeft + topRight);
+    mtrxOut[2] = -mtrxOut[1];
+    mtrxOut[3] = -mtrxOut[0];
 }
 
 #define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
@@ -1157,13 +1157,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         ApplyEitherControlled(controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true);
-        return;
-    }
-
-    if (!freezeBasis) {
-        H(target);
-        CZ(control, target);
-        H(target);
         return;
     }
 
@@ -3009,44 +3002,23 @@ void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
 void QUnit::ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target)
 {
     const bitLenInt controls[1] = { control };
-    complex mtrx[4];
 
     complex polar0 = phaseShard->second->cmplx0;
     complex polar1 = phaseShard->second->cmplx1;
 
-    if (shards[target].isPlusMinus) {
-        if (phaseShard->second->isInvert) {
-            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-            mtrx[1] = (-polar0 + polar1) / (ONE_R1 * 2);
-            mtrx[2] = (polar0 - polar1) / (ONE_R1 * 2);
-            mtrx[3] = (-polar0 - polar1) / (ONE_R1 * 2);
-        } else {
-            mtrx[0] = (polar0 + polar1) / (ONE_R1 * 2);
-            mtrx[1] = (polar0 - polar1) / (ONE_R1 * 2);
-            mtrx[2] = mtrx[1];
-            mtrx[3] = mtrx[0];
-        }
-
-        shards[target].isPlusMinus = false;
-        freezeBasis = true;
-        ApplyControlledSingleBit(controls, 1U, target, mtrx);
-        freezeBasis = false;
-        shards[target].isPlusMinus = true;
-    } else {
-        real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
-        if (!phaseShard->second->isInvert && (norm(polar0 - ONE_CMPLX) <= ampThreshold) &&
-            (norm(polar1 - ONE_CMPLX) <= ampThreshold)) {
-            return;
-        }
-
-        freezeBasis = true;
-        if (phaseShard->second->isInvert) {
-            ApplyControlledSingleInvert(controls, 1U, target, polar0, polar1);
-        } else {
-            ApplyControlledSinglePhase(controls, 1U, target, polar0, polar1);
-        }
-        freezeBasis = false;
+    real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+    if (!phaseShard->second->isInvert && (norm(polar0 - ONE_CMPLX) <= ampThreshold) &&
+        (norm(polar1 - ONE_CMPLX) <= ampThreshold)) {
+        return;
     }
+
+    freezeBasis = true;
+    if (phaseShard->second->isInvert) {
+        ApplyControlledSingleInvert(controls, 1U, target, polar0, polar1);
+    } else {
+        ApplyControlledSinglePhase(controls, 1U, target, polar0, polar1);
+    }
+    freezeBasis = false;
 }
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
@@ -3080,7 +3052,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         } else if (isOpposite) {
-            RevertBasis2Qb(bitIndex, NONEXCLUSIVE);
+            RevertBasis2Qb(bitIndex, ONLY_PHASE, false, { control }, {});
             break;
         }
     }
