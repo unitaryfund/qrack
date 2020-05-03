@@ -720,10 +720,11 @@ protected:
 
     void ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target);
 
-    enum RevertExclusivity { NONEXCLUSIVE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
+    enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
+    enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
 
-    void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = NONEXCLUSIVE,
-        const bool& onlyControlling = false, std::set<bitLenInt> exceptControlling = {},
+    void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
+        const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS, std::set<bitLenInt> exceptControlling = {},
         std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
     void ToPermBasis(const bitLenInt& i)
     {
@@ -760,7 +761,7 @@ protected:
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
-            RevertBasis2Qb(start + i, NONEXCLUSIVE, false, exceptBits, exceptBits, true);
+            RevertBasis2Qb(start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, exceptBits, exceptBits, true);
         }
     }
     void ToPermBasisAllMeasure()
@@ -770,7 +771,7 @@ protected:
             TransformBasis1Qb(i, false);
         }
         for (i = 0; i < qubitCount; i++) {
-            RevertBasis2Qb(i, ONLY_INVERT, false, {}, {}, true);
+            RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, {}, {}, true);
         }
     }
 
@@ -861,7 +862,7 @@ protected:
     void FlipPhaseAnti(const bitLenInt& target)
     {
         RevertBasis2Qb(target, ONLY_INVERT);
-        RevertBasis2Qb(target, NONEXCLUSIVE, true);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS);
         shards[target].FlipPhaseAnti();
     }
 
