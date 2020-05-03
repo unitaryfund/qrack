@@ -1160,7 +1160,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis && (isCachedInvert || (!QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard)))) {
+    if (!freezeBasis && (isCachedInvert || !QUEUED_PHASE(cShard))) {
         TransformBasis1Qb(false, control);
         TransformBasis1Qb(false, target);
         RevertBasis2Qb(control, NONEXCLUSIVE, true, { target }, {});
