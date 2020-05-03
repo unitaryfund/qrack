@@ -1763,6 +1763,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
+    if (!inCurrentBasis) {
+        for (i = 0; i < controlVec.size(); i++) {
+            RevertBasis2Qb(controlVec[i]);
+        }
+    }
+
     // TODO: If controls that survive the "first order" check above start out entangled,
     // then it might be worth checking whether there is any intra-unit chance of control bits
     // being conditionally all 0 or all 1, in any unit, due to entanglement.
@@ -3085,7 +3091,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
     shard.CombineGates();
 
-    if ((controlExclusivity == ONLY_CONTROLS) && !(exclusivity == ONLY_INVERT)) {
+    if ((controlExclusivity == ONLY_CONTROLS) && (exclusivity != ONLY_INVERT)) {
         shard.OptimizeControls();
     }
 
