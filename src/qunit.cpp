@@ -1125,6 +1125,16 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
+    if (CACHED_CLASSICAL(cShard)) {
+        if (IS_NORM_ZERO(cShard.amp1)) {
+            return;
+        }
+        if (IS_NORM_ZERO(cShard.amp0)) {
+            X(target);
+            return;
+        }
+    }
+
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
@@ -1137,7 +1147,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
-    if (cShard.isPlusMinus && tShard.isPlusMinus && (cShard.IsInvertTarget() || !QUEUED_PHASE(cShard))) {
+    if (cShard.isPlusMinus && tShard.isPlusMinus) {
         RevertBasis2Qb(control);
         RevertBasis2Qb(target);
 
@@ -1148,10 +1158,12 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis) {
-        H(target);
-        CZ(control, target);
-        H(target);
+    if (!freezeBasis && (cShard.IsInvertControlOf(&tShard) || !QUEUED_PHASE(cShard))) {
+        TransformBasis1Qb(false, control);
+        TransformBasis1Qb(false, target);
+        RevertBasis2Qb(control, NONEXCLUSIVE, false, { target }, {});
+        RevertBasis2Qb(target, NONEXCLUSIVE, false, {}, { control });
+        tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
         return;
     }
 
@@ -1252,10 +1264,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
+        if (tShard.IsInvertControl()) {
+            std::swap(control, target);
+        }
         TransformBasis1Qb(false, control);
         RevertBasis2Qb(control, ONLY_INVERT, false, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, false, {}, { control });
-        tShard.AddPhaseAngles(&cShard, ONE_R1, -ONE_R1);
+        shards[target].AddPhaseAngles(&(shards[control]), ONE_R1, -ONE_R1);
         return;
     }
 
@@ -1487,13 +1502,14 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    QEngineShard& cShard = shards[controls[0]];
-
     if (!freezeBasis && (controlLen == 1U)) {
+        if (IS_ONE_CMPLX(topLeft) && tShard.IsInvertControl()) {
+            std::swap(controls[0], target);
+        }
         TransformBasis1Qb(false, controls[0]);
         RevertBasis2Qb(controls[0], ONLY_INVERT, false, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, false, {}, { controls[0] });
-        tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
+        shards[target].AddPhaseAngles(&(shards[controls[0]]), topLeft, bottomRight);
         delete[] controls;
         return;
     }

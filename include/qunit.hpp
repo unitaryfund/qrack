@@ -346,6 +346,26 @@ public:
         RemoveTargetIdentityBuffers();
     }
 
+    bool IsInvertControlOf(QEngineShardPtr target)
+    {
+        ShardToPhaseMap::iterator phaseShard = controlsShards.find(target);
+        if (phaseShard != controlsShards.end()) {
+            return phaseShard->second->isInvert;
+        }
+
+        return false;
+    }
+
+    bool IsInvertTargetOf(QEngineShardPtr control)
+    {
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(control);
+        if (phaseShard != targetOfShards.end()) {
+            return phaseShard->second->isInvert;
+        }
+
+        return false;
+    }
+
     bool IsInvertControl()
     {
         ShardToPhaseMap::iterator phaseShard;
