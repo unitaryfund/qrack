@@ -1161,11 +1161,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-        TransformBasis1Qb(false, target);
-        RevertBasis2Qb(control, NONEXCLUSIVE, true, { target }, {});
-        RevertBasis2Qb(target, NONEXCLUSIVE, false, {}, { control });
-        tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
+        H(target);
+        CZ(control, target);
+        H(target);
         return;
     }
 
@@ -1266,11 +1264,11 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if (tShard.IsInvertControl()) {
+        if (tShard.IsInvertControlOf(&cShard)) {
             std::swap(control, target);
         }
         TransformBasis1Qb(false, control);
-        RevertBasis2Qb(control, ONLY_INVERT, true, { target }, {});
+        RevertBasis2Qb(control, ONLY_INVERT, false, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, false, {}, { control });
         shards[target].AddPhaseAngles(&(shards[control]), ONE_R1, -ONE_R1);
         return;
@@ -1505,11 +1503,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (!freezeBasis && (controlLen == 1U)) {
-        if (IS_ONE_CMPLX(topLeft) && tShard.IsInvertControl()) {
+        if (IS_ONE_CMPLX(topLeft) && tShard.IsInvertControlOf(&(shards[controls[0]]))) {
             std::swap(controls[0], target);
         }
         TransformBasis1Qb(false, controls[0]);
-        RevertBasis2Qb(controls[0], ONLY_INVERT, true, { target }, {});
+        RevertBasis2Qb(controls[0], ONLY_INVERT, false, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, false, {}, { controls[0] });
         shards[target].AddPhaseAngles(&(shards[controls[0]]), topLeft, bottomRight);
         delete[] controls;
@@ -3082,7 +3080,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             ApplyBuffer(phaseShard, control, bitIndex);
             shard.RemovePhaseControl(partner);
         } else if (isOpposite) {
-            RevertBasis2Qb(bitIndex, NONEXCLUSIVE, true);
+            RevertBasis2Qb(bitIndex, NONEXCLUSIVE);
+            break;
         }
     }
 
