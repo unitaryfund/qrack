@@ -208,6 +208,17 @@ public:
         targetOfShard->cmplx1 = nCmplx1;
     }
 
+    void AddInversionAngles(QEngineShardPtr control, complex cmplx0, complex cmplx1)
+    {
+        MakePhaseControlledBy(control);
+
+        PhaseShardPtr targetOfShard = targetOfShards[control];
+        targetOfShard->isInvert = !targetOfShard->isInvert;
+        std::swap(targetOfShard->cmplx0, targetOfShard->cmplx0);
+
+        AddPhaseAngles(control, cmplx0, cmplx1);
+    }
+
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
@@ -696,9 +707,11 @@ protected:
 
     void ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target);
 
-    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false,
-        std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {},
-        const bool& dumpSkipped = false);
+    enum RevertExclusivity { NONEXCLUSIVE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
+
+    void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = NONEXCLUSIVE,
+        const bool& onlyControlling = false, std::set<bitLenInt> exceptControlling = {},
+        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
@@ -733,8 +746,8 @@ protected:
             TransformBasis1Qb(false, start + i);
         }
         for (i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i, true);
-            RevertBasis2Qb(start + i, false, false, exceptBits, exceptBits, true);
+            RevertBasis2Qb(start + i, ONLY_INVERT);
+            RevertBasis2Qb(start + i, NONEXCLUSIVE, false, exceptBits, exceptBits, true);
         }
     }
     void ToPermBasisAllMeasure()
@@ -744,7 +757,7 @@ protected:
             TransformBasis1Qb(i, false);
         }
         for (i = 0; i < qubitCount; i++) {
-            RevertBasis2Qb(i, true, false, {}, {}, true);
+            RevertBasis2Qb(i, ONLY_INVERT, false, {}, {}, true);
         }
     }
 
@@ -834,7 +847,8 @@ protected:
 
     void FlipPhaseAnti(const bitLenInt& target)
     {
-        RevertBasis2Qb(target, false, true);
+        RevertBasis2Qb(target, ONLY_INVERT);
+        RevertBasis2Qb(target, NONEXCLUSIVE, true);
         shards[target].FlipPhaseAnti();
     }
 
