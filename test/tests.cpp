@@ -4582,7 +4582,7 @@ struct MultiQubitGate {
 
 TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 {
-    const int GateCount1Qb = 4;
+    const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
     const int Depth = 3;
 
@@ -4652,8 +4652,10 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
                     goldStandard->X(i);
                 } else if (gate1Qb == 2) {
                     goldStandard->Y(i);
-                } else {
+                } else if (gate1Qb == 3) {
                     goldStandard->T(i);
+                } else {
+                    // Identity test
                 }
             }
 
@@ -4690,8 +4692,10 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
                     testCase->X(i);
                 } else if (gate1Qb == 2) {
                     testCase->Y(i);
-                } else {
+                } else if (gate1Qb == 3) {
                     testCase->T(i);
+                } else {
+                    // Identity test
                 }
             }
 
