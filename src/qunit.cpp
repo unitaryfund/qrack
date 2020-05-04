@@ -777,7 +777,7 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
             if (!randGlobalPhase) {
                 // Under the preconditions, this has no effect on Hermitian expectation values, but we track it, if the
                 // QUnit is tracking arbitrary numerical phase.
-                ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+                ApplySinglePhase(I_CMPLX, I_CMPLX, qubit1);
             }
         }
         return;
