@@ -731,12 +731,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    if (shards[qubit1].IsInvert() || shards[qubit2].IsInvert()) {
-        TransformBasis1Qb(false, qubit1);
-        TransformBasis1Qb(false, qubit2);
-    }
-    RevertBasis2Qb(qubit1, ONLY_INVERT);
-    RevertBasis2Qb(qubit2, ONLY_INVERT);
+    RevertBasis2Qb(qubit1);
+    RevertBasis2Qb(qubit2);
 
     // Simply swap the bit mapping.
     std::swap(shards[qubit1], shards[qubit2]);
