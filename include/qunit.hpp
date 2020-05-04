@@ -165,6 +165,34 @@ public:
         }
     }
 
+    void DumpControlOf()
+    {
+        OptimizeTargets();
+
+        ShardToPhaseMap::iterator phaseShard = controlsShards.begin();
+        while (phaseShard != controlsShards.end()) {
+            RemovePhaseTarget(phaseShard->first);
+            phaseShard = controlsShards.begin();
+        }
+    }
+
+    void DumpTargetOf()
+    {
+        OptimizeControls();
+
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+        while (phaseShard != targetOfShards.end()) {
+            RemovePhaseControl(phaseShard->first);
+            phaseShard = targetOfShards.begin();
+        }
+    }
+
+    void DumpBuffers()
+    {
+        DumpControlOf();
+        DumpTargetOf();
+    }
+
     /// Initialize a phase gate buffer, with "this" as target bit and a another qubit "p" as control
     void MakePhaseControlledBy(QEngineShardPtr p)
     {
@@ -208,6 +236,17 @@ public:
         targetOfShard->cmplx1 = nCmplx1;
     }
 
+    void AddInversionAngles(QEngineShardPtr control, complex cmplx0, complex cmplx1)
+    {
+        MakePhaseControlledBy(control);
+
+        PhaseShardPtr targetOfShard = targetOfShards[control];
+        targetOfShard->isInvert = !targetOfShard->isInvert;
+        std::swap(targetOfShard->cmplx0, targetOfShard->cmplx1);
+
+        AddPhaseAngles(control, cmplx0, cmplx1);
+    }
+
     /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
     void OptimizeControls()
     {
@@ -232,6 +271,33 @@ public:
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
+        }
+    }
+
+    /// Take ambiguous control/target operations, and reintrepret them as controlled by this bit
+    void OptimizeTargets()
+    {
+        PhaseShardPtr buffer;
+        QEngineShardPtr partner;
+        complex partnerAngle;
+
+        ShardToPhaseMap::iterator phaseShard;
+        ShardToPhaseMap tempTargetOf = targetOfShards;
+
+        for (phaseShard = tempTargetOf.begin(); phaseShard != tempTargetOf.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            partner = phaseShard->first;
+
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
+                continue;
+            }
+
+            partnerAngle = buffer->cmplx1;
+
+            phaseShard->first->controlsShards.erase(this);
+            targetOfShards.erase(partner);
+
+            partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
         }
     }
 
@@ -277,15 +343,8 @@ public:
         }
     }
 
-    /// If an "inversion" gate is applied to a qubit with controlled phase buffers, we can transform the buffers to
-    /// commute, instead of incurring the cost of applying the buffers.
     void FlipPhaseAnti()
     {
-        // These cases cannot be handled:
-        // if (controlsShards.size() > 0) {
-        //    return false;
-        // }
-
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
             std::advance(phaseShard, lcv);
@@ -333,6 +392,26 @@ public:
         });
 
         RemoveTargetIdentityBuffers();
+    }
+
+    bool IsInvertControlOf(QEngineShardPtr target)
+    {
+        ShardToPhaseMap::iterator phaseShard = controlsShards.find(target);
+        if (phaseShard != controlsShards.end()) {
+            return phaseShard->second->isInvert;
+        }
+
+        return false;
+    }
+
+    bool IsInvertTargetOf(QEngineShardPtr control)
+    {
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(control);
+        if (phaseShard != targetOfShards.end()) {
+            return phaseShard->second->isInvert;
+        }
+
+        return false;
     }
 
     bool IsInvertControl()
@@ -696,9 +775,12 @@ protected:
 
     void ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target);
 
-    void RevertBasis2Qb(const bitLenInt& i, const bool& onlyInvert = false, const bool& onlyControlling = false,
-        std::set<bitLenInt> exceptControlling = {}, std::set<bitLenInt> exceptTargetedBy = {},
-        const bool& dumpSkipped = false);
+    enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
+    enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
+
+    void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
+        const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS, std::set<bitLenInt> exceptControlling = {},
+        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
@@ -733,8 +815,8 @@ protected:
             TransformBasis1Qb(false, start + i);
         }
         for (i = 0; i < length; i++) {
-            RevertBasis2Qb(start + i, true);
-            RevertBasis2Qb(start + i, false, false, exceptBits, exceptBits, true);
+            RevertBasis2Qb(start + i, ONLY_INVERT);
+            RevertBasis2Qb(start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, exceptBits, exceptBits, true);
         }
     }
     void ToPermBasisAllMeasure()
@@ -744,7 +826,7 @@ protected:
             TransformBasis1Qb(i, false);
         }
         for (i = 0; i < qubitCount; i++) {
-            RevertBasis2Qb(i, true, false, {}, {}, true);
+            RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, {}, {}, true);
         }
     }
 
@@ -834,7 +916,8 @@ protected:
 
     void FlipPhaseAnti(const bitLenInt& target)
     {
-        RevertBasis2Qb(target, false, true);
+        RevertBasis2Qb(target, ONLY_INVERT);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS);
         shards[target].FlipPhaseAnti();
     }
 
