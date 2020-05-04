@@ -930,7 +930,6 @@ protected:
 
     void FlipPhaseAnti(const bitLenInt& target)
     {
-        RevertBasis2Qb(target, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS);
         shards[target].FlipPhaseAnti();
     }
