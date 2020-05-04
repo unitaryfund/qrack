@@ -352,6 +352,20 @@ public:
         });
     }
 
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    {
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            if (!phaseShard->second->isInvert) {
+                return;
+            }
+
+            phaseShard->second->cmplx0 *= topLeft / bottomRight;
+            phaseShard->second->cmplx1 *= bottomRight / topLeft;
+        });
+    }
+
     void RemoveTargetIdentityBuffers()
     {
         PhaseShardPtr buffer;

@@ -985,18 +985,16 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
-
     QEngineShard& shard = shards[target];
 
-    if (UNSAFE_CACHED_ZERO(shard)) {
-        if (!shard.IsInvertControl()) {
+    if (shard.IsInvertTarget()) {
+        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    } else {
+        if (UNSAFE_CACHED_ZERO(shard)) {
             shard.DumpControlOf();
+            return;
         }
-        return;
     }
-
-    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         ZBase(target);
@@ -1274,15 +1272,19 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
-        if (!tShard.IsInvertControl()) {
+    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(tShard)) {
+        if (SHARD_STATE(tShard)) {
+            Z(control);
+        } else if (!tShard.IsInvertControl()) {
             tShard.DumpControlOf();
         }
         return;
     }
 
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(cShard)) {
-        if (!cShard.IsInvertControl()) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+        if (SHARD_STATE(cShard)) {
+            Z(target);
+        } else if (!cShard.IsInvertControl()) {
             cShard.DumpControlOf();
         }
         return;
@@ -1395,17 +1397,19 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, ONLY_INVERT);
+    RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS);
 
-    if (IS_ONE_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
-        return;
+    if (shard.IsInvertTarget()) {
+        shard.CommutePhase(topLeft, bottomRight);
+    } else {
+        if (IS_ONE_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+            return;
+        }
+
+        if (IS_ONE_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+            return;
+        }
     }
-
-    if (IS_ONE_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
-        return;
-    }
-
-    RevertBasis2Qb(target);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
