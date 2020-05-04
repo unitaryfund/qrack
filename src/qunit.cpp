@@ -975,7 +975,7 @@ void QUnit::Z(bitLenInt target)
 
     if (UNSAFE_CACHED_ZERO(shard)) {
         if (!shard.IsInvertControl()) {
-            shard.DumpBuffers();
+            shard.DumpTargetOf();
         }
         return;
     }
@@ -1241,14 +1241,14 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
         if (!tShard.IsInvertControl()) {
-            tShard.DumpBuffers();
+            tShard.DumpTargetOf();
         }
         return;
     }
 
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(cShard)) {
         if (!cShard.IsInvertControl()) {
-            cShard.DumpBuffers();
+            cShard.DumpTargetOf();
         }
         return;
     }
@@ -1288,7 +1288,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     if (!c1Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
             if (!c1Shard.IsInvertControl()) {
-                c1Shard.DumpBuffers();
+                c1Shard.DumpTargetOf();
             }
             if (IS_NORM_ZERO(c1Shard.amp1)) {
                 return;
@@ -1303,7 +1303,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     if (!c2Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
             if (!c2Shard.IsInvertControl()) {
-                c2Shard.DumpBuffers();
+                c2Shard.DumpTargetOf();
             }
             if (IS_NORM_ZERO(c2Shard.amp1)) {
                 return;
@@ -1318,7 +1318,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     if (!tShard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(tShard)) {
             if (!tShard.IsInvertControl()) {
-                tShard.DumpBuffers();
+                tShard.DumpTargetOf();
             }
             if (IS_NORM_ZERO(tShard.amp1)) {
                 return;
@@ -1475,7 +1475,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if (IS_ONE_CMPLX(bottomRight) && (!tShard.IsInvertTarget() && UNSAFE_CACHED_ONE(tShard))) {
         if (!tShard.IsInvertControl()) {
-            tShard.DumpBuffers();
+            tShard.DumpTargetOf();
         }
         delete[] controls;
         return;
@@ -1484,7 +1484,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     if (IS_ONE_CMPLX(topLeft)) {
         if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
             if (!tShard.IsInvertControl()) {
-                tShard.DumpBuffers();
+                tShard.DumpTargetOf();
             }
             delete[] controls;
             return;
@@ -1724,7 +1724,7 @@ void QUnit::AntiCISqrtSwap(
     shard = shards[controls[i]];                                                                                       \
     if (IS_NORM_ZERO(shard.amp1)) {                                                                                    \
         if (!inCurrentBasis) {                                                                                         \
-            shard.DumpBuffers();                                                                                       \
+            shard.DumpTargetOf();                                                                                      \
         }                                                                                                              \
         if (!anti) {                                                                                                   \
             /* This gate does nothing, so return without applying anything. */                                         \
@@ -1733,7 +1733,7 @@ void QUnit::AntiCISqrtSwap(
         /* This control has 100% chance to "fire," so don't entangle it. */                                            \
     } else if (IS_NORM_ZERO(shard.amp0)) {                                                                             \
         if (!inCurrentBasis) {                                                                                         \
-            shard.DumpBuffers();                                                                                       \
+            shard.DumpTargetOf();                                                                                      \
         }                                                                                                              \
         if (anti) {                                                                                                    \
             /* This gate does nothing, so return without applying anything. */                                         \

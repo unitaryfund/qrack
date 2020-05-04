@@ -165,19 +165,30 @@ public:
         }
     }
 
-    void DumpBuffers()
+    void DumpControlOf()
     {
+        ShardToPhaseMap::iterator phaseShard = controlsShards.begin();
+        while (phaseShard != controlsShards.end()) {
+            RemovePhaseTarget(phaseShard->first);
+            phaseShard = controlsShards.begin();
+        }
+    }
+
+    void DumpTargetOf()
+    {
+        OptimizeControls();
+
         ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
         while (phaseShard != targetOfShards.end()) {
             RemovePhaseControl(phaseShard->first);
             phaseShard = targetOfShards.begin();
         }
+    }
 
-        phaseShard = controlsShards.begin();
-        while (phaseShard != controlsShards.end()) {
-            RemovePhaseTarget(phaseShard->first);
-            phaseShard = controlsShards.begin();
-        }
+    void DumpBuffers()
+    {
+        DumpControlOf();
+        DumpTargetOf();
     }
 
     /// Initialize a phase gate buffer, with "this" as target bit and a another qubit "p" as control
