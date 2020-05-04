@@ -167,6 +167,8 @@ public:
 
     void DumpControlOf()
     {
+        OptimizeTargets();
+
         ShardToPhaseMap::iterator phaseShard = controlsShards.begin();
         while (phaseShard != controlsShards.end()) {
             RemovePhaseTarget(phaseShard->first);
@@ -269,6 +271,33 @@ public:
             controlsShards.erase(partner);
 
             AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
+        }
+    }
+
+    /// Take ambiguous control/target operations, and reintrepret them as controlled by this bit
+    void OptimizeTargets()
+    {
+        PhaseShardPtr buffer;
+        QEngineShardPtr partner;
+        complex partnerAngle;
+
+        ShardToPhaseMap::iterator phaseShard;
+        ShardToPhaseMap tempTargetOf = targetOfShards;
+
+        for (phaseShard = tempTargetOf.begin(); phaseShard != tempTargetOf.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            partner = phaseShard->first;
+
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
+                continue;
+            }
+
+            partnerAngle = buffer->cmplx1;
+
+            phaseShard->first->controlsShards.erase(this);
+            targetOfShards.erase(partner);
+
+            partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
         }
     }
 
