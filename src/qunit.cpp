@@ -3054,7 +3054,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
     bool isSame = false, isOpposite = false;
-    bitLenInt oppositeControl;
+    bitLenInt oppositeControl = 0;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         partner = phaseShard->first;
