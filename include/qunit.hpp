@@ -787,14 +787,17 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target);
-
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
     enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
 
+    void ApplyBuffer(
+        ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target, const bool& isAnti);
+    void ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap, const RevertExclusivity& exclusivity,
+        const bool& isControl, const bool& isAnti, std::set<bitLenInt> exceptPartners, const bool& dumpSkipped);
     void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
         const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS, std::set<bitLenInt> exceptControlling = {},
         std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
+
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
