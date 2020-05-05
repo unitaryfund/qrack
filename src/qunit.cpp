@@ -3092,7 +3092,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    bool isSame = false, isOpposite = false;
+    bool isSame = false, isOpposite = false, anyOpposite = false;
     bitLenInt oppositeControl = 0;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -3104,7 +3104,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar1 = buffer->cmplx1;
 
         isSame |= norm(polar0 - polar1) <= ampThreshold;
-        isOpposite |= norm(polar0 + polar1) <= ampThreshold;
+        isOpposite = norm(polar0 + polar1) <= ampThreshold;
+        anyOpposite |= isOpposite;
 
         // "isSame" always results in a phase gate.
         // "isOpposite" always results in an "inversion" gate.
@@ -3112,7 +3113,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         // Phase gates commute more generally than inversions, so the phase gate is preferable to the inversion in the
         // case that we could produce one of either.
         if (isSame) {
-            isOpposite = false;
+            anyOpposite = false;
             break;
         }
 
@@ -3121,7 +3122,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
     }
 
-    if (isOpposite) {
+    if (anyOpposite) {
         RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, { oppositeControl }, {});
         shard.CommuteH();
         return;
