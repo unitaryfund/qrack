@@ -1776,39 +1776,47 @@ template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
     const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
 {
-    bitLenInt i, j;
+    bitLenInt i;
 
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have
     // total or no probability of altering the targets, such that we can still keep them separate.
 
     std::vector<bitLenInt> controlVec;
 
-    bool isSeparated = true;
     QEngineShard shard;
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
-            CHECK_BREAK_AND_TRIM();
-        } else {
-            isSeparated = true;
-            for (j = 0; j < targets.size(); j++) {
-                // If the shard doesn't have a cached probability, and if it's in the same shard unit as any of the
-                // targets, it isn't worth trying the next optimization.
-                if (shards[controls[i]].unit == shards[targets[j]].unit) {
-                    isSeparated = false;
-                    break;
-                }
+            if (!inCurrentBasis) {
+                TransformBasis1Qb(false, controls[i]);
+                RevertBasis2Qb(controls[i], ONLY_INVERT);
             }
-            if (isSeparated) {
-                CHECK_BREAK_AND_TRIM();
+            ProbBase(controls[i]);
+            shard = shards[controls[i]];
+            if (IS_NORM_ZERO(shard.amp1)) {
+                if (!inCurrentBasis) {
+                    shard.DumpControlOf();
+                }
+                if (!anti) { /* This gate does nothing, so return without applying anything. */
+                    return;
+                } /* This control has 100% chance to "fire," so don't entangle it. */
+            } else if (IS_NORM_ZERO(shard.amp0)) {
+                if (anti) { /* This gate does nothing, so return without applying anything. */
+                    return;
+                } /* This control has 100% chance to "fire," so don't entangle it. */
             } else {
                 if (!inCurrentBasis) {
                     ToPermBasis(controls[i]);
                 }
                 controlVec.push_back(controls[i]);
             }
+        } else {
+            if (!inCurrentBasis) {
+                ToPermBasis(controls[i]);
+            }
+            controlVec.push_back(controls[i]);
         }
     }
 
