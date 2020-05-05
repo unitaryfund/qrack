@@ -696,8 +696,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (shards[i].unit == shard.unit) {
-            shards[i].isProbDirty = true;
-            shards[i].isPhaseDirty = true;
+            shards[i].MakeDirty();
         }
     }
 
@@ -788,10 +787,8 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].isProbDirty = true;
-    shards[qubit1].isPhaseDirty = true;
-    shards[qubit2].isProbDirty = true;
-    shards[qubit2].isPhaseDirty = true;
+    shards[qubit1].MakeDirty();
+    shards[qubit2].MakeDirty();
 }
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -819,10 +816,8 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].isProbDirty = true;
-    shards[qubit1].isPhaseDirty = true;
-    shards[qubit2].isProbDirty = true;
-    shards[qubit2].isPhaseDirty = true;
+    shards[qubit1].MakeDirty();
+    shards[qubit2].MakeDirty();
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -850,10 +845,8 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].isProbDirty = true;
-    shards[qubit1].isPhaseDirty = true;
-    shards[qubit2].isProbDirty = true;
-    shards[qubit2].isPhaseDirty = true;
+    shards[qubit1].MakeDirty();
+    shards[qubit2].MakeDirty();
 }
 
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
@@ -913,8 +906,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     unit->UniformlyControlledSingleBit(mappedControls, trimmedControls.size(), shards[qubitIndex].mapped, mtrxs,
         &(skipPowers[0]), skipPowers.size(), skipValueMask);
 
-    shards[qubitIndex].isProbDirty = true;
-    shards[qubitIndex].isPhaseDirty = true;
+    shards[qubitIndex].MakeDirty();
 
     delete[] mappedControls;
 }
@@ -1869,8 +1861,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     cfn(unit, controlsMapped);
 
     for (i = 0; i < targets.size(); i++) {
-        shards[targets[i]].isProbDirty = true;
-        shards[targets[i]].isPhaseDirty = true;
+        shards[targets[i]].MakeDirty();
     }
 }
 
@@ -1989,8 +1980,7 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 
     DirtyShardRange(start, length);
-    shards[flagIndex].isProbDirty = true;
-    shards[flagIndex].isPhaseDirty = true;
+    shards[flagIndex].MakeDirty();
 }
 
 void QUnit::INCxx(
@@ -2004,10 +1994,8 @@ void QUnit::INCxx(
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 
     DirtyShardRange(start, length);
-    shards[flag1Index].isProbDirty = true;
-    shards[flag2Index].isProbDirty = true;
-    shards[flag1Index].isPhaseDirty = true;
-    shards[flag2Index].isPhaseDirty = true;
+    shards[flag1Index].MakeDirty();
+    shards[flag2Index].MakeDirty();
 }
 
 /// Check if overflow arithmetic can be optimized
@@ -2869,8 +2857,7 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
-    shards[carryIndex].isProbDirty = true;
-    shards[carryIndex].isPhaseDirty = true;
+    shards[carryIndex].MakeDirty();
 
     return toRet;
 }
@@ -2909,8 +2896,7 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
-    shards[carryIndex].isProbDirty = true;
-    shards[carryIndex].isPhaseDirty = true;
+    shards[carryIndex].MakeDirty();
 
     return toRet;
 }
