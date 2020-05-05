@@ -1790,6 +1790,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     QEngineShard shard;
     for (i = 0; i < controlLen; i++) {
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
+        bool isEigenstate = false;
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
@@ -1803,20 +1804,23 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 if (!inCurrentBasis) {
                     shard.DumpControlOf();
                 }
-                if (!anti) { /* This gate does nothing, so return without applying anything. */
+                if (!anti) {
+                    /* This gate does nothing, so return without applying anything. */
                     return;
-                } /* This control has 100% chance to "fire," so don't entangle it. */
-            } else if (IS_NORM_ZERO(shard.amp0)) {
-                if (anti) { /* This gate does nothing, so return without applying anything. */
-                    return;
-                } /* This control has 100% chance to "fire," so don't entangle it. */
-            } else {
-                if (!inCurrentBasis) {
-                    ToPermBasis(controls[i]);
                 }
-                controlVec.push_back(controls[i]);
+                /* This control has 100% chance to "fire," so don't entangle it. */
+                isEigenstate = true;
+            } else if (IS_NORM_ZERO(shard.amp0)) {
+                if (anti) {
+                    /* This gate does nothing, so return without applying anything. */
+                    return;
+                }
+                /* This control has 100% chance to "fire," so don't entangle it. */
+                isEigenstate = true;
             }
-        } else {
+        }
+
+        if (!isEigenstate) {
             if (!inCurrentBasis) {
                 ToPermBasis(controls[i]);
             }
@@ -3203,7 +3207,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             QEngineShard& cShard = shards[control];
             if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
                 // "Free" to apply the buffer right now:
-                ApplyBuffer(phaseShard, control, bitIndex);
+                ApplyBuffer(phaseShard, control, bitIndex, false);
                 shard.RemovePhaseControl(partner);
             } else {
                 anyOpposite = true;
