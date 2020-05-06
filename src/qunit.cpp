@@ -1069,59 +1069,6 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topLeft, bottomRight
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, topRight, bottomLeft
 
-bool QUnit::TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-    const complex& topRight, const complex& bottomLeft, const bool& anti)
-{
-    // Returns:
-    // "true" if successfully handled/consumed,
-    // "false" if needs general handling
-
-    bitLenInt rControl = 0;
-    bitLenInt rControlLen = 0;
-
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        QEngineShard& shard = shards[controls[i]];
-
-        if (!CACHED_PROB(shard)) {
-            rControl = controls[i];
-            rControlLen++;
-            if (rControlLen > 1U) {
-                break;
-            }
-            continue;
-        }
-
-        if ((anti && IS_NORM_ZERO(shard.amp0)) || (!anti && IS_NORM_ZERO(shard.amp1))) {
-            return true;
-        }
-
-        if (!((!anti && IS_NORM_ZERO(shard.amp0)) || (anti && IS_NORM_ZERO(shard.amp1)))) {
-            rControl = controls[i];
-            rControlLen++;
-            if (rControlLen > 1U) {
-                break;
-            }
-        }
-    }
-
-    if (rControlLen == 0U) {
-        ApplySingleInvert(topRight, bottomLeft, target);
-        return true;
-    }
-
-    if (rControlLen == 1U) {
-        bitLenInt control[1] = { rControl };
-        if (anti) {
-            ApplyAntiControlledSingleInvert(control, 1U, target, topRight, bottomLeft);
-        } else {
-            ApplyControlledSingleInvert(control, 1U, target, topRight, bottomLeft);
-        }
-        return true;
-    }
-
-    return false;
-}
-
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
@@ -1187,12 +1134,52 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS(tShard)) {
-        return;
+    if (CACHED_PLUS_MINUS(tShard)) {
+        if (IS_NORM_ZERO(tShard.amp1)) {
+            return;
+        }
+        if (IS_NORM_ZERO(tShard.amp0)) {
+            Z(control);
+            return;
+        }
     }
+
+    QEngineShard& cShard = shards[control];
+
+    if (CACHED_PROB(cShard)) {
+        if (IS_NORM_ZERO(cShard.amp1)) {
+            X(target);
+            return;
+        }
+        if (IS_NORM_ZERO(cShard.amp0)) {
+            return;
+        }
+    }
+
+    bool isCachedInvert = !freezeBasis && tShard.IsInvertTargetOf(&cShard);
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
+
+    if (!isCachedInvert && cShard.isPlusMinus && tShard.isPlusMinus) {
+        RevertBasis2Qb(control);
+        RevertBasis2Qb(target);
+
+        std::swap(controls[0], target);
+        ApplyEitherControlled(controls, controlLen, { target }, true,
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->AntiCNOT(CTRL_1_ARGS); },
+            [&]() { XBase(target); }, true);
+        return;
+    }
+
+    if (!freezeBasis) {
+        X(control);
+        H(target);
+        CZ(control, target);
+        H(target);
+        X(control);
+        return;
+    }
 
     CTRLED_PHASE_INVERT_WRAP(
         AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true, ONE_R1, ONE_R1);
@@ -1206,10 +1193,6 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     bitLenInt controls[2] = { control1, control2 };
-
-    if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, false)) {
-        return;
-    }
 
     ApplyEitherControlled(controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
@@ -1238,10 +1221,6 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     bitLenInt controls[2] = { control1, control2 };
-
-    if (TryCnotOptimize(controls, 2, target, ONE_CMPLX, ONE_CMPLX, true)) {
-        return;
-    }
 
     ApplyEitherControlled(controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
@@ -1571,10 +1550,6 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         return;
     }
 
-    if ((controlLen > 1U) && TryCnotOptimize(controls, controlLen, target, topRight, bottomLeft, false)) {
-        return;
-    }
-
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
 }
@@ -1592,9 +1567,40 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
 
-    QEngineShard& shard = shards[cTarget];
+    QEngineShard& tShard = shards[target];
 
-    if ((IS_ONE_CMPLX(topLeft) && CACHED_ZERO(shard)) || (IS_ONE_CMPLX(bottomRight) && CACHED_ONE(shard))) {
+    if (IS_ONE_CMPLX(bottomRight) && (!tShard.IsInvertTarget() && UNSAFE_CACHED_ONE(tShard))) {
+        delete[] controls;
+        return;
+    }
+
+    if (IS_ONE_CMPLX(topLeft)) {
+        if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
+            if (!tShard.IsInvertControl()) {
+                tShard.DumpControlOf();
+            }
+            delete[] controls;
+            return;
+        }
+
+        if (!shards[target].isPlusMinus) {
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                if (shards[controls[i]].isPlusMinus) {
+                    std::swap(controls[i], target);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!freezeBasis && (controlLen == 1U)) {
+        if (IS_ONE_CMPLX(topLeft) && tShard.IsInvertControlOf(&(shards[controls[0]]))) {
+            std::swap(controls[0], target);
+        }
+        TransformBasis1Qb(false, controls[0]);
+        RevertBasis2Qb(controls[0], ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { controls[0] });
+        shards[target].AddAntiPhaseAngles(&(shards[controls[0]]), topLeft, bottomRight);
         delete[] controls;
         return;
     }

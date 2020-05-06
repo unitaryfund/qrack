@@ -1093,9 +1093,6 @@ protected:
         return shards.size();
     }
 
-    bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex& topRight, const complex& bottomLeft, const bool& anti);
-
     void CommuteH(const bitLenInt& bitIndex);
 
     /* Debugging and diagnostic routines. */
