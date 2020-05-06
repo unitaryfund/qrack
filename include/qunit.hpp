@@ -55,6 +55,12 @@ typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
 class QEngineShard : public ParallelFor {
+protected:
+    typedef ShardToPhaseMap& (QEngineShard::*GetBufferFn)();
+    typedef void (QEngineShard::*OptimizeFn)();
+    typedef void (QEngineShard::*AddRemoveFn)(QEngineShardPtr);
+    typedef void (QEngineShard::*AddAnglesFn)(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1);
+
 public:
     QInterfacePtr unit;
     bitLenInt mapped;
@@ -67,9 +73,21 @@ public:
     bool isPlusMinus;
     // Shards which this shard controls
     ShardToPhaseMap controlsShards;
+    // Shards which this shard (anti-)controls
+    ShardToPhaseMap antiControlsShards;
     // Shards of which this shard is a target
     ShardToPhaseMap targetOfShards;
+    // Shards of which this shard is an (anti-controlled) target
+    ShardToPhaseMap antiTargetOfShards;
 
+protected:
+    // We'd rather not have these getters at all, but we need their function pointers.
+    ShardToPhaseMap& GetControlsShards() { return controlsShards; }
+    ShardToPhaseMap& GetAntiControlsShards() { return antiControlsShards; }
+    ShardToPhaseMap& GetTargetOfShards() { return targetOfShards; }
+    ShardToPhaseMap& GetAntiTargetOfShards() { return antiTargetOfShards; }
+
+public:
     QEngineShard(const real1 amp_thresh = min_norm)
         : unit(NULL)
         , mapped(0)
@@ -81,7 +99,9 @@ public:
         , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
+        , antiControlsShards()
         , targetOfShards()
+        , antiTargetOfShards()
     {
     }
 
@@ -96,7 +116,9 @@ public:
         , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
+        , antiControlsShards()
         , targetOfShards()
+        , antiTargetOfShards()
     {
         amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
         amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
@@ -114,7 +136,9 @@ public:
         , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
+        , antiControlsShards()
         , targetOfShards()
+        , antiTargetOfShards()
     {
     }
 
@@ -145,95 +169,111 @@ public:
         return didClamp;
     }
 
-    /// Remove another qubit as being a cached control of a phase gate buffer, for "this" as target bit.
-    void RemovePhaseControl(QEngineShardPtr p)
+protected:
+    void RemoveBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(p);
-        if (phaseShard != targetOfShards.end()) {
-            phaseShard->first->controlsShards.erase(this);
-            targetOfShards.erase(phaseShard);
+        ShardToPhaseMap::iterator phaseShard = localMap.find(p);
+        if (phaseShard != localMap.end()) {
+            ((*phaseShard->first).*remoteMapGet)().erase(this);
+            localMap.erase(phaseShard);
         }
     }
 
-    /// Remove another qubit as being a cached target of a phase gate buffer, for "this" as control bit.
-    void RemovePhaseTarget(QEngineShardPtr p)
+public:
+    void RemovePhaseControl(QEngineShardPtr p) { RemoveBuffer(p, targetOfShards, &QEngineShard::GetControlsShards); }
+    void RemovePhaseTarget(QEngineShardPtr p) { RemoveBuffer(p, controlsShards, &QEngineShard::GetTargetOfShards); }
+    void RemovePhaseAntiControl(QEngineShardPtr p)
     {
-        ShardToPhaseMap::iterator phaseShard = controlsShards.find(p);
-        if (phaseShard != controlsShards.end()) {
-            phaseShard->first->targetOfShards.erase(this);
-            controlsShards.erase(phaseShard);
+        RemoveBuffer(p, antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+    }
+    void RemovePhaseAntiTarget(QEngineShardPtr p)
+    {
+        RemoveBuffer(p, antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
+    }
+
+protected:
+    void DumpBuffer(OptimizeFn optimizeFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
+    {
+        ((*this).*optimizeFn)();
+        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        while (phaseShard != localMap.end()) {
+            ((*this).*remoteFn)(phaseShard->first);
+            phaseShard = localMap.begin();
         }
     }
 
+public:
     void DumpControlOf()
     {
-        OptimizeTargets();
-
-        ShardToPhaseMap::iterator phaseShard = controlsShards.begin();
-        while (phaseShard != controlsShards.end()) {
-            RemovePhaseTarget(phaseShard->first);
-            phaseShard = controlsShards.begin();
-        }
+        DumpBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
+        DumpBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
     }
-
     void DumpTargetOf()
     {
-        OptimizeControls();
-
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-        while (phaseShard != targetOfShards.end()) {
-            RemovePhaseControl(phaseShard->first);
-            phaseShard = targetOfShards.begin();
-        }
+        DumpBuffer(&QEngineShard::OptimizeControls, targetOfShards, &QEngineShard::RemovePhaseControl);
+        DumpBuffer(&QEngineShard::OptimizeAntiControls, antiTargetOfShards, &QEngineShard::RemovePhaseAntiControl);
     }
-
     void DumpBuffers()
     {
         DumpControlOf();
         DumpTargetOf();
     }
 
-    /// Initialize a phase gate buffer, with "this" as target bit and a another qubit "p" as control
-    void MakePhaseControlledBy(QEngineShardPtr p)
+protected:
+    void AddBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBufferFn remoteFn)
     {
-        if (p && (targetOfShards.find(p) == targetOfShards.end())) {
+        if (p && (localMap.find(p) == localMap.end())) {
             PhaseShardPtr ps = std::make_shared<PhaseShard>();
-            targetOfShards[p] = ps;
-            p->controlsShards[this] = ps;
+            localMap[p] = ps;
+            ((*p).*remoteFn)()[this] = ps;
         }
     }
 
-    /// Initialize a phase gate buffer, with "this" as control bit and a another qubit "p" as target
-    void MakePhaseControlOf(QEngineShardPtr p)
+public:
+    void MakePhaseControlledBy(QEngineShardPtr p) { AddBuffer(p, targetOfShards, &QEngineShard::GetControlsShards); }
+    void MakePhaseControlOf(QEngineShardPtr p) { AddBuffer(p, controlsShards, &QEngineShard::GetTargetOfShards); }
+    void MakePhaseAntiControlledBy(QEngineShardPtr p)
     {
-        if (p && (controlsShards.find(p) == controlsShards.end())) {
-            PhaseShardPtr ps = std::make_shared<PhaseShard>();
-            controlsShards[p] = ps;
-            p->targetOfShards[this] = ps;
-        }
+        AddBuffer(p, antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+    }
+    void MakePhaseAntiControlOf(QEngineShardPtr p)
+    {
+        AddBuffer(p, antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
     }
 
-    /// "Fuse" phase gate buffer angles, (and initialize the buffer, if necessary,) for the buffer with "this" as target
-    /// bit and a another qubit as control
-    void AddPhaseAngles(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1)
+protected:
+    void AddAngles(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1, AddRemoveFn localFn,
+        ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
     {
-        MakePhaseControlledBy(control);
+        ((*this).*localFn)(control);
 
-        PhaseShardPtr targetOfShard = targetOfShards[control];
+        PhaseShardPtr targetOfShard = localMap[control];
 
         complex nCmplx0 = targetOfShard->cmplx0 * cmplx0;
         nCmplx0 /= abs(nCmplx0);
         complex nCmplx1 = targetOfShard->cmplx1 * cmplx1;
         nCmplx1 /= abs(nCmplx1);
 
-        if (!targetOfShard->isInvert && IS_ARG_0(nCmplx0) && IS_ARG_0(nCmplx1)) {
-            // The buffer is equal to the identity operator, and it can be removed.
-            RemovePhaseControl(control);
+        if (!targetOfShard->isInvert && IS_ARG_0(nCmplx0) &&
+            IS_ARG_0(nCmplx1)) { /* The buffer is equal to the identity operator, and it can be removed. */
+            ((*this).*remoteFn)(control);
             return;
         }
 
         targetOfShard->cmplx0 = nCmplx0;
         targetOfShard->cmplx1 = nCmplx1;
+    }
+
+public:
+    void AddPhaseAngles(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1)
+    {
+        AddAngles(control, cmplx0, cmplx1, &QEngineShard::MakePhaseControlledBy, targetOfShards,
+            &QEngineShard::RemovePhaseControl);
+    }
+    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& cmplx0, const complex& cmplx1)
+    {
+        AddAngles(control, cmplx0, cmplx1, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
+            &QEngineShard::RemovePhaseAntiControl);
     }
 
     void AddInversionAngles(QEngineShardPtr control, complex cmplx0, complex cmplx1)
@@ -247,62 +287,59 @@ public:
         AddPhaseAngles(control, cmplx0, cmplx1);
     }
 
-    /// Take ambiguous control/target operations, and reintrepret them as targeting this bit
+protected:
+    void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
+    {
+        PhaseShardPtr buffer;
+        QEngineShardPtr partner;
+        complex partnerAngle;
+
+        ShardToPhaseMap::iterator phaseShard;
+        ShardToPhaseMap tempLocalMap = localMap;
+
+        for (phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            partner = phaseShard->first;
+
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
+                continue;
+            }
+
+            partnerAngle = buffer->cmplx1;
+
+            ((*phaseShard->first).*remoteMapGet)().erase(this);
+            localMap.erase(partner);
+
+            if (makeThisControl) {
+                ((*partner).*phaseFn)(this, ONE_CMPLX, partnerAngle);
+            } else {
+                ((*this).*phaseFn)(partner, ONE_CMPLX, partnerAngle);
+            }
+        }
+    }
+
+public:
     void OptimizeControls()
     {
-        PhaseShardPtr buffer;
-        QEngineShardPtr partner;
-        complex partnerAngle;
-
-        ShardToPhaseMap::iterator phaseShard;
-        ShardToPhaseMap tempControls = controlsShards;
-
-        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
-            buffer = phaseShard->second;
-            partner = phaseShard->first;
-
-            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
-                continue;
-            }
-
-            partnerAngle = buffer->cmplx1;
-
-            phaseShard->first->targetOfShards.erase(this);
-            controlsShards.erase(partner);
-
-            AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
-        }
+        OptimizeBuffer(controlsShards, &QEngineShard::GetTargetOfShards, &QEngineShard::AddPhaseAngles, false);
     }
-
-    /// Take ambiguous control/target operations, and reintrepret them as controlled by this bit
     void OptimizeTargets()
     {
-        PhaseShardPtr buffer;
-        QEngineShardPtr partner;
-        complex partnerAngle;
-
-        ShardToPhaseMap::iterator phaseShard;
-        ShardToPhaseMap tempTargetOf = targetOfShards;
-
-        for (phaseShard = tempTargetOf.begin(); phaseShard != tempTargetOf.end(); phaseShard++) {
-            buffer = phaseShard->second;
-            partner = phaseShard->first;
-
-            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
-                continue;
-            }
-
-            partnerAngle = buffer->cmplx1;
-
-            phaseShard->first->controlsShards.erase(this);
-            targetOfShards.erase(partner);
-
-            partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
-        }
+        OptimizeBuffer(targetOfShards, &QEngineShard::GetControlsShards, &QEngineShard::AddPhaseAngles, true);
+    }
+    void OptimizeAntiControls()
+    {
+        OptimizeBuffer(
+            antiControlsShards, &QEngineShard::GetAntiTargetOfShards, &QEngineShard::AddAntiPhaseAngles, false);
+    }
+    void OptimizeAntiTargets()
+    {
+        OptimizeBuffer(
+            antiTargetOfShards, &QEngineShard::GetAntiControlsShards, &QEngineShard::AddAntiPhaseAngles, true);
     }
 
-    /// If this bit is both control and target of another bit, try to combine the operations into one gate.
-    void CombineGates()
+protected:
+    void CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlMapGet, AddAnglesFn angleFn)
     {
         PhaseShardPtr buffer1, buffer2;
         ShardToPhaseMap::iterator partnerShard;
@@ -310,11 +347,10 @@ public:
         complex partnerAngle;
 
         ShardToPhaseMap::iterator phaseShard;
-        ShardToPhaseMap tempControls = controlsShards;
-        ShardToPhaseMap tempTargets = targetOfShards;
+        ShardToPhaseMap tempControls = ((*this).*controlMapGet)();
+        ShardToPhaseMap tempTargets = ((*this).*targetMapGet)();
 
         for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
-
             partner = phaseShard->first;
 
             partnerShard = tempTargets.find(partner);
@@ -328,25 +364,69 @@ public:
             if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplx0)) {
                 partnerAngle = buffer1->cmplx1;
 
-                partner->targetOfShards.erase(this);
-                controlsShards.erase(partner);
+                ((*partner).*targetMapGet)().erase(this);
+                ((*this).*controlMapGet)().erase(partner);
 
-                AddPhaseAngles(partner, ONE_CMPLX, partnerAngle);
+                ((*this).*angleFn)(partner, ONE_CMPLX, partnerAngle);
             } else if (!buffer2->isInvert && IS_ARG_0(buffer2->cmplx0)) {
                 partnerAngle = buffer2->cmplx1;
 
-                partner->controlsShards.erase(this);
-                targetOfShards.erase(partner);
+                ((*partner).*controlMapGet)().erase(this);
+                ((*this).*targetMapGet)().erase(partner);
 
-                partner->AddPhaseAngles(this, ONE_CMPLX, partnerAngle);
+                ((*partner).*angleFn)(this, ONE_CMPLX, partnerAngle);
             }
+        }
+    }
+
+public:
+    /// If this bit is both control and target of another bit, try to combine the operations into one gate.
+    void CombineGates()
+    {
+        CombineBuffers(
+            &QEngineShard::GetTargetOfShards, &QEngineShard::GetControlsShards, &QEngineShard::AddPhaseAngles);
+        CombineBuffers(&QEngineShard::GetAntiTargetOfShards, &QEngineShard::GetAntiControlsShards,
+            &QEngineShard::AddAntiPhaseAngles);
+    }
+
+    void SwapTargetAnti(QEngineShardPtr control)
+    {
+        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(control);
+        ShardToPhaseMap::iterator antiPhaseShard = antiTargetOfShards.find(control);
+        if (antiPhaseShard == antiTargetOfShards.end()) {
+            antiTargetOfShards[phaseShard->first] = phaseShard->second;
+            targetOfShards.erase(phaseShard);
+        } else if (phaseShard == targetOfShards.end()) {
+            targetOfShards[antiPhaseShard->first] = antiPhaseShard->second;
+            antiTargetOfShards.erase(antiPhaseShard);
+        } else {
+            std::swap(targetOfShards[control], antiTargetOfShards[control]);
         }
     }
 
     void FlipPhaseAnti()
     {
+        std::vector<QEngineShardPtr> alreadySwapped;
+        ShardToPhaseMap::iterator phaseShard;
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            phaseShard->first->SwapTargetAnti(this);
+            alreadySwapped.push_back(phaseShard->first);
+        }
+        for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
+            if (std::find(alreadySwapped.begin(), alreadySwapped.end(), phaseShard->first) == alreadySwapped.end()) {
+                phaseShard->first->SwapTargetAnti(this);
+            }
+        }
+        std::swap(controlsShards, antiControlsShards);
+
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            std::swap(phaseShard->second->cmplx0, phaseShard->second->cmplx1);
+        });
+
+        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
             std::advance(phaseShard, lcv);
             std::swap(phaseShard->second->cmplx0, phaseShard->second->cmplx1);
         });
@@ -364,25 +444,38 @@ public:
             phaseShard->second->cmplx0 *= topLeft / bottomRight;
             phaseShard->second->cmplx1 *= bottomRight / topLeft;
         });
+
+        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            if (!phaseShard->second->isInvert) {
+                return;
+            }
+
+            phaseShard->second->cmplx0 *= topLeft / bottomRight;
+            phaseShard->second->cmplx1 *= bottomRight / topLeft;
+        });
     }
 
-    void RemoveTargetIdentityBuffers()
+protected:
+    void RemoveIdentityBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
         PhaseShardPtr buffer;
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+        ShardToPhaseMap::iterator phaseShard = localMap.begin();
 
-        while (phaseShard != targetOfShards.end()) {
+        while (phaseShard != localMap.end()) {
             buffer = phaseShard->second;
             if (!buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
                 // The buffer is equal to the identity operator, and it can be removed.
-                phaseShard->first->controlsShards.erase(this);
-                targetOfShards.erase(phaseShard);
+                ((*phaseShard->first).*remoteMapGet)().erase(this);
+                localMap.erase(phaseShard);
             } else {
                 phaseShard++;
             }
         }
     }
 
+public:
     void CommuteH()
     {
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
@@ -405,49 +498,118 @@ public:
             }
         });
 
-        RemoveTargetIdentityBuffers();
+        RemoveIdentityBuffers(targetOfShards, &QEngineShard::GetControlsShards);
+
+        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            PhaseShardPtr buffer = phaseShard->second;
+            if (norm(buffer->cmplx0 - buffer->cmplx1) < ONE_R1) {
+                if (buffer->isInvert) {
+                    buffer->cmplx1 *= -ONE_CMPLX;
+                    buffer->isInvert = false;
+                }
+            } else {
+                if (buffer->isInvert) {
+                    std::swap(buffer->cmplx0, buffer->cmplx1);
+                } else {
+                    buffer->cmplx1 = buffer->cmplx0;
+                    buffer->isInvert = true;
+                }
+            }
+        });
+
+        RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
     }
 
     bool IsInvertControlOf(QEngineShardPtr target)
     {
+        bool toRet = false;
+
         ShardToPhaseMap::iterator phaseShard = controlsShards.find(target);
         if (phaseShard != controlsShards.end()) {
-            return phaseShard->second->isInvert;
+            toRet = phaseShard->second->isInvert;
         }
 
-        return false;
+        if (toRet) {
+            return true;
+        }
+
+        phaseShard = antiControlsShards.find(target);
+        if (phaseShard != antiControlsShards.end()) {
+            toRet |= phaseShard->second->isInvert;
+        }
+
+        return toRet;
     }
 
     bool IsInvertTargetOf(QEngineShardPtr control)
     {
+        bool toRet = false;
+
         ShardToPhaseMap::iterator phaseShard = targetOfShards.find(control);
         if (phaseShard != targetOfShards.end()) {
-            return phaseShard->second->isInvert;
+            toRet = phaseShard->second->isInvert;
         }
 
-        return false;
+        if (toRet) {
+            return true;
+        }
+
+        phaseShard = antiTargetOfShards.find(control);
+        if (phaseShard != antiTargetOfShards.end()) {
+            toRet |= phaseShard->second->isInvert;
+        }
+
+        return toRet;
     }
 
     bool IsInvertControl()
     {
+        bool toRet = false;
         ShardToPhaseMap::iterator phaseShard;
 
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
-                return true;
+                toRet = true;
+                break;
             }
         }
 
-        return false;
+        if (toRet) {
+            return true;
+        }
+
+        for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
+            if (phaseShard->second->isInvert) {
+                toRet = true;
+                break;
+            }
+        }
+
+        return toRet;
     }
 
     bool IsInvertTarget()
     {
+        bool toRet = false;
         ShardToPhaseMap::iterator phaseShard;
 
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
-                return true;
+                toRet = true;
+                break;
+            }
+        }
+
+        if (toRet) {
+            return true;
+        }
+
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            if (phaseShard->second->isInvert) {
+                toRet = true;
+                break;
             }
         }
 
@@ -787,14 +949,19 @@ protected:
 
     void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
 
-    void ApplyBuffer(ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target);
-
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
     enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
+    enum RevertAnti { CTRL_AND_ANTI = 0, ONLY_CTRL = 1, ONLY_ANTI = 2 };
 
+    void ApplyBuffer(
+        ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target, const bool& isAnti);
+    void ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap, const RevertExclusivity& exclusivity,
+        const bool& isControl, const bool& isAnti, std::set<bitLenInt> exceptPartners, const bool& dumpSkipped);
     void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
-        const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS, std::set<bitLenInt> exceptControlling = {},
+        const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS,
+        const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
         std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
+
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
@@ -830,7 +997,8 @@ protected:
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
-            RevertBasis2Qb(start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, exceptBits, exceptBits, true);
+            RevertBasis2Qb(
+                start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, exceptBits, exceptBits, true);
         }
     }
     void ToPermBasisAllMeasure()
@@ -840,7 +1008,7 @@ protected:
             TransformBasis1Qb(i, false);
         }
         for (i = 0; i < qubitCount; i++) {
-            RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, {}, {}, true);
+            RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);
         }
     }
 
@@ -923,15 +1091,6 @@ protected:
             }
         }
         return shards.size();
-    }
-
-    bool TryCnotOptimize(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex& topRight, const complex& bottomLeft, const bool& anti);
-
-    void FlipPhaseAnti(const bitLenInt& target)
-    {
-        RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS);
-        shards[target].FlipPhaseAnti();
     }
 
     void CommuteH(const bitLenInt& bitIndex);
