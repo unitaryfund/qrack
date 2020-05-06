@@ -970,10 +970,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (CACHED_PLUS(shard)) {
-        return;
-    }
-
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -991,7 +987,9 @@ void QUnit::Z(bitLenInt target)
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
         if (UNSAFE_CACHED_ZERO(shard)) {
-            shard.DumpControlOf();
+            if (!cShard.IsInvertControl()) {
+                shard.DumpControlOf();
+            }
             return;
         }
     }
@@ -1362,6 +1360,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         shard.CommutePhase(topLeft, bottomRight);
     } else {
         if (IS_ONE_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+            if (!shard.IsInvertControl()) {
+                shard.DumpControlOf();
+            }
             return;
         }
 
