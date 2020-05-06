@@ -970,7 +970,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS);
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -1454,7 +1453,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS);
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -3134,9 +3132,17 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
         bufferMap.erase(phaseShard);
 
         if (isControl) {
-            shard.RemovePhaseTarget(partner);
+            if (isAnti) {
+                shard.RemovePhaseAntiTarget(partner);
+            } else {
+                shard.RemovePhaseTarget(partner);
+            }
         } else {
-            shard.RemovePhaseControl(partner);
+            if (isAnti) {
+                shard.RemovePhaseAntiControl(partner);
+            } else {
+                shard.RemovePhaseControl(partner);
+            }
         }
     }
 }
@@ -3156,9 +3162,19 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
     shard.CombineGates();
 
     if ((controlExclusivity == ONLY_CONTROLS) && (exclusivity != ONLY_INVERT)) {
-        shard.OptimizeControls();
+        if (antiExclusivity != ONLY_ANTI) {
+            shard.OptimizeControls();
+        }
+        if (antiExclusivity != ONLY_CTRL) {
+            shard.OptimizeAntiControls();
+        }
     } else if ((controlExclusivity == ONLY_TARGETS) && (exclusivity != ONLY_INVERT)) {
-        shard.OptimizeTargets();
+        if (antiExclusivity != ONLY_ANTI) {
+            shard.OptimizeTargets();
+        }
+        if (antiExclusivity != ONLY_CTRL) {
+            shard.OptimizeAntiTargets();
+        }
     }
 
     if (controlExclusivity != ONLY_TARGETS) {
