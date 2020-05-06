@@ -738,11 +738,19 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_ZERO(shard1)) {
-        shard1.DumpControlOf();
+    if (UNSAFE_CACHED_CLASSICAL(shard1)) {
+        if (SHARD_STATE(shard1)) {
+            shard1.DumpAntiControlOf();
+        } else {
+            shard1.DumpControlOf();
+        }
     }
-    if (UNSAFE_CACHED_ZERO(shard2)) {
-        shard2.DumpControlOf();
+    if (UNSAFE_CACHED_CLASSICAL(shard2)) {
+        if (SHARD_STATE(shard2)) {
+            shard2.DumpAntiControlOf();
+        } else {
+            shard2.DumpControlOf();
+        }
     }
 
     RevertBasis2Qb(qubit1);
@@ -1091,6 +1099,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             return;
         }
         if (IS_NORM_ZERO(cShard.amp0)) {
+            cShard.DumpAntiControlOf();
             X(target);
             return;
         }
@@ -1142,6 +1151,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
             return;
         }
         if (IS_NORM_ZERO(cShard.amp0)) {
+            cShard.DumpAntiControlOf();
             return;
         }
     }
@@ -1221,6 +1231,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!tShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(tShard)) {
         if (SHARD_STATE(tShard)) {
+            tShard.DumpAntiControlOf();
             Z(control);
         } else {
             tShard.DumpControlOf();
@@ -1230,6 +1241,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (SHARD_STATE(cShard)) {
+            cShard.DumpAntiControlOf();
             Z(target);
         } else {
             cShard.DumpControlOf();
@@ -1276,6 +1288,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 return;
             }
             if (IS_NORM_ZERO(c1Shard.amp0)) {
+                c1Shard.DumpAntiControlOf();
                 CZ(control2, target);
                 return;
             }
@@ -1289,6 +1302,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 return;
             }
             if (IS_NORM_ZERO(c2Shard.amp0)) {
+                c2Shard.DumpAntiControlOf();
                 CZ(control1, target);
                 return;
             }
@@ -1302,6 +1316,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 return;
             }
             if (IS_NORM_ZERO(tShard.amp0)) {
+                tShard.DumpAntiControlOf();
                 CZ(control1, control2);
                 return;
             }
@@ -1353,6 +1368,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
 
         if (IS_ONE_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+            shard.DumpAntiControlOf();
             return;
         }
     }
@@ -1721,36 +1737,6 @@ void QUnit::AntiCISqrtSwap(
     CTRLED_SWAP_WRAP(AntiCISqrtSwap(CTRL_S_ARGS), ISqrtSwap(qubit1, qubit2), true);
 }
 
-#define CHECK_BREAK_AND_TRIM()                                                                                         \
-    /* Check whether the bit probability is 0, (or 1, if "anti"). (Just trigger the cache update.) */                  \
-    if (!inCurrentBasis) {                                                                                             \
-        TransformBasis1Qb(false, controls[i]);                                                                         \
-        RevertBasis2Qb(controls[i], ONLY_INVERT);                                                                      \
-    }                                                                                                                  \
-    ProbBase(controls[i]);                                                                                             \
-    shard = shards[controls[i]];                                                                                       \
-    if (IS_NORM_ZERO(shard.amp1)) {                                                                                    \
-        if (!inCurrentBasis) {                                                                                         \
-            shard.DumpControlOf();                                                                                     \
-        }                                                                                                              \
-        if (!anti) {                                                                                                   \
-            /* This gate does nothing, so return without applying anything. */                                         \
-            return;                                                                                                    \
-        }                                                                                                              \
-        /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-    } else if (IS_NORM_ZERO(shard.amp0)) {                                                                             \
-        if (anti) {                                                                                                    \
-            /* This gate does nothing, so return without applying anything. */                                         \
-            return;                                                                                                    \
-        }                                                                                                              \
-        /* This control has 100% chance to "fire," so don't entangle it. */                                            \
-    } else {                                                                                                           \
-        if (!inCurrentBasis) {                                                                                         \
-            ToPermBasis(controls[i]);                                                                                  \
-        }                                                                                                              \
-        controlVec.push_back(controls[i]);                                                                             \
-    }
-
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
     const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
@@ -1786,6 +1772,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 /* This control has 100% chance to "fire," so don't entangle it. */
                 isEigenstate = true;
             } else if (IS_NORM_ZERO(shard.amp0)) {
+                if (!inCurrentBasis) {
+                    shard.DumpAntiControlOf();
+                }
                 if (anti) {
                     /* This gate does nothing, so return without applying anything. */
                     return;

@@ -206,6 +206,9 @@ public:
     void DumpControlOf()
     {
         DumpBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
+    }
+    void DumpAntiControlOf()
+    {
         DumpBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
     }
     void DumpTargetOf()
@@ -216,6 +219,7 @@ public:
     void DumpBuffers()
     {
         DumpControlOf();
+        DumpAntiControlOf();
         DumpTargetOf();
     }
 
