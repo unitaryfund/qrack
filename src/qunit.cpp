@@ -970,6 +970,10 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    if (CACHED_PLUS(shard)) {
+        return;
+    }
+
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -1131,7 +1135,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     CTRLED_PHASE_INVERT_WRAP(
-        CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_R1, ONE_R1);
+        CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX);
 }
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -1162,8 +1166,8 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    CTRLED_PHASE_INVERT_WRAP(
-        AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true, ONE_R1, ONE_R1);
+    CTRLED_PHASE_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true,
+        ONE_CMPLX, ONE_CMPLX);
 }
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1248,7 +1252,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         TransformBasis1Qb(false, control);
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { control });
-        shards[target].AddPhaseAngles(&(shards[control]), ONE_R1, -ONE_R1);
+        shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
     }
 
@@ -1256,7 +1260,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     CTRLED_PHASE_INVERT_WRAP(
-        CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_R1, -ONE_R1);
+        CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX);
 }
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -2748,7 +2752,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
         real1 prob = Prob(flagIndex);
         if (IS_ZERO_R1(prob)) {
             return;
-        } else if (IS_ONE_R1(prob) == ONE_R1) {
+        } else if (IS_ONE_R1(prob)) {
             PhaseFlipIfLess(greaterPerm, start, length);
             return;
         }
@@ -3010,8 +3014,8 @@ QInterfacePtr QUnit::Clone()
     ToPermBasisAll();
     EndAllEmulation();
 
-    QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subengine, qubitCount, 0, rand_generator,
-        complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+    QUnitPtr copyPtr = std::make_shared<QUnit>(
+        engine, subengine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
 
     return CloneBody(copyPtr);
 }
