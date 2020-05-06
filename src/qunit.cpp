@@ -1613,10 +1613,6 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
         return;
     }
 
-    if ((controlLen > 1U) && TryCnotOptimize(controls, controlLen, target, topRight, bottomLeft, true)) {
-        return;
-    }
-
     CTRLED_PHASE_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), true, true, topRight, bottomLeft);
 }
