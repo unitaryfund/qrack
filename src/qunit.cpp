@@ -1133,19 +1133,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS_MINUS(tShard)) {
-        if (IS_NORM_ZERO(tShard.amp1)) {
-            return;
-        }
-        if (IS_NORM_ZERO(tShard.amp0)) {
-            Z(control);
-            return;
-        }
-    }
-
     QEngineShard& cShard = shards[control];
-
     if (CACHED_PROB(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
             X(target);
@@ -1156,21 +1144,8 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    bool isCachedInvert = !freezeBasis && tShard.IsInvertTargetOf(&cShard);
-
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
-
-    if (!isCachedInvert && cShard.isPlusMinus && tShard.isPlusMinus) {
-        RevertBasis2Qb(control);
-        RevertBasis2Qb(target);
-
-        std::swap(controls[0], target);
-        ApplyEitherControlled(controls, controlLen, { target }, true,
-            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->AntiCNOT(CTRL_1_ARGS); },
-            [&]() { XBase(target); }, true);
-        return;
-    }
 
     if (!freezeBasis) {
         X(control);
@@ -1215,11 +1190,6 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS(tShard)) {
-        return;
-    }
-
     bitLenInt controls[2] = { control1, control2 };
 
     ApplyEitherControlled(controls, 2, { target }, true,
