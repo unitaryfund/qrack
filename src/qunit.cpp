@@ -987,9 +987,7 @@ void QUnit::Z(bitLenInt target)
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
         if (UNSAFE_CACHED_ZERO(shard)) {
-            if (!cShard.IsInvertControl()) {
-                shard.DumpControlOf();
-            }
+            shard.DumpControlOf();
             return;
         }
     }
@@ -1089,9 +1087,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
-            if (!cShard.IsInvertControl()) {
-                cShard.DumpControlOf();
-            }
+            cShard.DumpControlOf();
             return;
         }
         if (IS_NORM_ZERO(cShard.amp0)) {
@@ -1141,13 +1137,11 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
+            cShard.DumpControlOf();
             X(target);
             return;
         }
         if (IS_NORM_ZERO(cShard.amp0)) {
-            if (!cShard.IsInvertControl()) {
-                cShard.DumpControlOf();
-            }
             return;
         }
     }
@@ -1228,7 +1222,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     if (!tShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(tShard)) {
         if (SHARD_STATE(tShard)) {
             Z(control);
-        } else if (!tShard.IsInvertControl()) {
+        } else {
             tShard.DumpControlOf();
         }
         return;
@@ -1237,7 +1231,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (SHARD_STATE(cShard)) {
             Z(target);
-        } else if (!cShard.IsInvertControl()) {
+        } else {
             cShard.DumpControlOf();
         }
         return;
@@ -1278,9 +1272,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     if (!c1Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
             if (IS_NORM_ZERO(c1Shard.amp1)) {
-                if (!c1Shard.IsInvertControl()) {
-                    c1Shard.DumpControlOf();
-                }
+                c1Shard.DumpControlOf();
                 return;
             }
             if (IS_NORM_ZERO(c1Shard.amp0)) {
@@ -1293,9 +1285,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     if (!c2Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
             if (IS_NORM_ZERO(c2Shard.amp1)) {
-                if (!c2Shard.IsInvertControl()) {
-                    c2Shard.DumpControlOf();
-                }
+                c2Shard.DumpControlOf();
                 return;
             }
             if (IS_NORM_ZERO(c2Shard.amp0)) {
@@ -1308,9 +1298,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     if (!tShard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(tShard)) {
             if (IS_NORM_ZERO(tShard.amp1)) {
-                if (!tShard.IsInvertControl()) {
-                    tShard.DumpControlOf();
-                }
+                tShard.DumpControlOf();
                 return;
             }
             if (IS_NORM_ZERO(tShard.amp0)) {
@@ -1360,9 +1348,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         shard.CommutePhase(topLeft, bottomRight);
     } else {
         if (IS_ONE_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
-            if (!shard.IsInvertControl()) {
-                shard.DumpControlOf();
-            }
+            shard.DumpControlOf();
             return;
         }
 
@@ -1479,9 +1465,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if (IS_ONE_CMPLX(topLeft)) {
         if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
-            if (!tShard.IsInvertControl()) {
-                tShard.DumpControlOf();
-            }
+            tShard.DumpControlOf();
             delete[] controls;
             return;
         }
@@ -1567,9 +1551,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
     if (IS_ONE_CMPLX(topLeft)) {
         if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
-            if (!tShard.IsInvertControl()) {
-                tShard.DumpControlOf();
-            }
+            tShard.DumpControlOf();
             delete[] controls;
             return;
         }
