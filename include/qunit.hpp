@@ -966,6 +966,16 @@ protected:
         const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
         std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
 
+    void Flush0Eigenstate(const bitLenInt& i)
+    {
+        shards[i].DumpControlOf();
+        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
+    }
+    void Flush1Eigenstate(const bitLenInt& i)
+    {
+        shards[i].DumpAntiControlOf();
+        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
+    }
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
