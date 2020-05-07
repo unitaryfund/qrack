@@ -202,6 +202,22 @@ protected:
         }
     }
 
+    void DumpSamePhaseBuffer(OptimizeFn optimizeFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
+    {
+        ((*this).*optimizeFn)();
+        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        int lcv = 0;
+        while (phaseShard != localMap.end()) {
+            if (!phaseShard->second->isInvert && (phaseShard->second->cmplx0 == phaseShard->second->cmplx1)) {
+                ((*this).*remoteFn)(phaseShard->first);
+            } else {
+                lcv++;
+            }
+            phaseShard = localMap.begin();
+            std::advance(phaseShard, lcv);
+        }
+    }
+
 public:
     void DumpControlOf()
     {
@@ -210,6 +226,15 @@ public:
     void DumpAntiControlOf()
     {
         DumpBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
+    }
+    void DumpSamePhaseControlOf()
+    {
+        DumpSamePhaseBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
+    }
+    void DumpSamePhaseAntiControlOf()
+    {
+        DumpSamePhaseBuffer(
+            &QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
     }
     void DumpTargetOf()
     {
@@ -969,12 +994,18 @@ protected:
     void Flush0Eigenstate(const bitLenInt& i)
     {
         shards[i].DumpControlOf();
-        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
+        shards[i].DumpSamePhaseAntiControlOf();
+        CheckShardSeparable(i);
+        // If all bits were separable, this would be "free."
+        // RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
     }
     void Flush1Eigenstate(const bitLenInt& i)
     {
         shards[i].DumpAntiControlOf();
-        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
+        shards[i].DumpSamePhaseControlOf();
+        CheckShardSeparable(i);
+        // If all bits were separable, this would be "free."
+        // RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
     }
     void ToPermBasis(const bitLenInt& i)
     {
