@@ -45,8 +45,10 @@ struct PhaseShard {
     }
 };
 
-#define IS_ARG_0(c) (norm(c - ONE_CMPLX) <= amplitudeFloor)
-#define IS_ARG_PI(c) (norm(c + ONE_CMPLX) <= amplitudeFloor)
+#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
+#define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
+#define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
 class QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
@@ -202,11 +204,39 @@ protected:
         }
     }
 
+    void DumpSamePhaseBuffer(OptimizeFn optimizeFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
+    {
+        ((*this).*optimizeFn)();
+        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        int lcv = 0;
+        while (phaseShard != localMap.end()) {
+            if (!phaseShard->second->isInvert && IS_SAME(phaseShard->second->cmplx0, phaseShard->second->cmplx1)) {
+                ((*this).*remoteFn)(phaseShard->first);
+            } else {
+                lcv++;
+            }
+            phaseShard = localMap.begin();
+            std::advance(phaseShard, lcv);
+        }
+    }
+
 public:
     void DumpControlOf()
     {
         DumpBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
+    }
+    void DumpAntiControlOf()
+    {
         DumpBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
+    }
+    void DumpSamePhaseControlOf()
+    {
+        DumpSamePhaseBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
+    }
+    void DumpSamePhaseAntiControlOf()
+    {
+        DumpSamePhaseBuffer(
+            &QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
     }
     void DumpTargetOf()
     {
@@ -216,6 +246,7 @@ public:
     void DumpBuffers()
     {
         DumpControlOf();
+        DumpAntiControlOf();
         DumpTargetOf();
     }
 
@@ -962,6 +993,22 @@ protected:
         const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
         std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
 
+    void Flush0Eigenstate(const bitLenInt& i)
+    {
+        shards[i].DumpControlOf();
+        if (randGlobalPhase) {
+            shards[i].DumpSamePhaseAntiControlOf();
+        }
+        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
+    }
+    void Flush1Eigenstate(const bitLenInt& i)
+    {
+        shards[i].DumpAntiControlOf();
+        if (randGlobalPhase) {
+            shards[i].DumpSamePhaseControlOf();
+        }
+        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
+    }
     void ToPermBasis(const bitLenInt& i)
     {
         TransformBasis1Qb(false, i);
