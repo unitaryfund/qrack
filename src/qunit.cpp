@@ -1504,6 +1504,17 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (!freezeBasis && (controlLen == 1U)) {
+        QEngineShard& cShard = shards[controls[0]];
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+            if (SHARD_STATE(cShard)) {
+                Flush1Eigenstate(controls[0]);
+                ApplySinglePhase(topLeft, bottomRight, target);
+            } else {
+                Flush0Eigenstate(controls[0]);
+            }
+            return;
+        }
+
         if (IS_ONE_CMPLX(topLeft) && tShard.IsInvertControlOf(&(shards[controls[0]]))) {
             std::swap(controls[0], target);
         }
