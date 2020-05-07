@@ -4582,6 +4582,8 @@ struct MultiQubitGate {
 
 TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 {
+    std::cout << ">>> 'test_universal_circuit_digital_cross_entropy':" << std::endl;
+
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
     const int Depth = 3;
@@ -4744,6 +4746,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
 TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
 {
+    std::cout << ">>> 'test_quantum_supremacy_cross_entropy':" << std::endl;
+
     // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
     complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
 
