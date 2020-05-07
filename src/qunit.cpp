@@ -3181,7 +3181,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    bool isSame = false, isOpposite, isAnti, alreadyOpposite = false;
+    bool isSame = false, isOpposite = false, anyOpposite = false, isAnti = false;
     bitLenInt oppositeControl = 0;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -3202,14 +3202,14 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         // case that we could produce one of either.
         if (isOpposite) {
             QEngineShard& cShard = shards[control];
-            if (alreadyOpposite || (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard))) {
+            if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
                 // "Free" to apply the buffer right now:
                 ApplyBuffer(phaseShard, control, bitIndex, false);
                 shard.RemovePhaseControl(partner);
             } else {
-                alreadyOpposite = true;
-                oppositeControl = control;
                 isAnti = false;
+                anyOpposite = true;
+                oppositeControl = control;
             }
         }
     }
@@ -3234,19 +3234,19 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         // case that we could produce one of either.
         if (isOpposite) {
             QEngineShard& cShard = shards[control];
-            if (alreadyOpposite || (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard))) {
+            if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
                 // "Free" to apply the buffer right now:
                 ApplyBuffer(phaseShard, control, bitIndex, true);
                 shard.RemovePhaseAntiControl(partner);
             } else {
-                alreadyOpposite = true;
-                oppositeControl = control;
                 isAnti = true;
+                anyOpposite = true;
+                oppositeControl = control;
             }
         }
     }
 
-    if (alreadyOpposite && !isSame) {
+    if (anyOpposite && !isSame) {
         RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, isAnti ? ONLY_CTRL : ONLY_ANTI);
         RevertBasis2Qb(
             bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, isAnti ? ONLY_ANTI : ONLY_CTRL, { oppositeControl }, {});
