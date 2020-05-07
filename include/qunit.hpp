@@ -45,8 +45,10 @@ struct PhaseShard {
     }
 };
 
-#define IS_ARG_0(c) (norm(c - ONE_CMPLX) <= amplitudeFloor)
-#define IS_ARG_PI(c) (norm(c + ONE_CMPLX) <= amplitudeFloor)
+#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
+#define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
+#define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
 class QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
@@ -208,7 +210,7 @@ protected:
         ShardToPhaseMap::iterator phaseShard = localMap.begin();
         int lcv = 0;
         while (phaseShard != localMap.end()) {
-            if (!phaseShard->second->isInvert && (phaseShard->second->cmplx0 == phaseShard->second->cmplx1)) {
+            if (!phaseShard->second->isInvert && IS_SAME(phaseShard->second->cmplx0, phaseShard->second->cmplx1)) {
                 ((*this).*remoteFn)(phaseShard->first);
             } else {
                 lcv++;
