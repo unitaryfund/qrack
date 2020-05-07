@@ -997,9 +997,7 @@ protected:
         if (randGlobalPhase) {
             shards[i].DumpSamePhaseAntiControlOf();
         }
-        CheckShardSeparable(i);
-        // If all bits were separable, this would be "free."
-        // RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
+        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_ANTI);
     }
     void Flush1Eigenstate(const bitLenInt& i)
     {
@@ -1007,9 +1005,7 @@ protected:
         if (randGlobalPhase) {
             shards[i].DumpSamePhaseControlOf();
         }
-        CheckShardSeparable(i);
-        // If all bits were separable, this would be "free."
-        // RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
+        RevertBasis2Qb(i, INVERT_AND_PHASE, ONLY_CONTROLS, ONLY_CTRL);
     }
     void ToPermBasis(const bitLenInt& i)
     {
