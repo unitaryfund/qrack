@@ -1355,8 +1355,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS);
-
     if (shard.IsInvertTarget()) {
         shard.CommutePhase(topLeft, bottomRight);
     } else {
@@ -3175,13 +3173,13 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
 
     complex polar0, polar1;
-    ShardToPhaseMap::iterator phaseShard;
+    ShardToPhaseMap::iterator phaseShard, oppositeShard;
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    bool isSame = false, isOpposite = false, anyOpposite = false, isAnti = false;
+    bool isSame, isOpposite, anySame = false, anyOpposite = false, isOppositeAnti = false;
     bitLenInt oppositeControl = 0;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -3192,25 +3190,18 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar0 = buffer->cmplx0;
         polar1 = buffer->cmplx1;
 
-        isSame |= norm(polar0 - polar1) <= ampThreshold;
-        isOpposite = norm(polar0 + polar1) <= ampThreshold;
+        isSame = norm(polar0 - polar1) <= ampThreshold;
+        anySame |= isSame;
+        isOpposite = norm(polar0 - polar1) <= ampThreshold;
 
-        // "isSame" always results in a phase gate.
-        // "isOpposite" always results in an "inversion" gate.
-        // We can buffer multiple phase gates on a bit, but we can only buffer one inversion.
-        // Phase gates commute more generally than inversions, so the phase gate is preferable to the inversion in the
-        // case that we could produce one of either.
-        if (isOpposite) {
-            QEngineShard& cShard = shards[control];
-            if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
-                // "Free" to apply the buffer right now:
-                ApplyBuffer(phaseShard, control, bitIndex, false);
-                shard.RemovePhaseControl(partner);
-            } else {
-                isAnti = false;
-                anyOpposite = true;
-                oppositeControl = control;
-            }
+        if (!isSame && (anyOpposite || !isOpposite)) {
+            ApplyBuffer(phaseShard, control, bitIndex, false);
+            shard.RemovePhaseControl(partner);
+        } else if (isOpposite && !anyOpposite) {
+            anyOpposite = true;
+            oppositeShard = phaseShard;
+            oppositeControl = control;
+            isOppositeAnti = false;
         }
     }
 
@@ -3224,70 +3215,24 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar0 = buffer->cmplx0;
         polar1 = buffer->cmplx1;
 
-        isSame |= norm(polar0 - polar1) <= ampThreshold;
-        isOpposite = norm(polar0 + polar1) <= ampThreshold;
-
-        // "isSame" always results in a phase gate.
-        // "isOpposite" always results in an "inversion" gate.
-        // We can buffer multiple phase gates on a bit, but we can only buffer one inversion.
-        // Phase gates commute more generally than inversions, so the phase gate is preferable to the inversion in the
-        // case that we could produce one of either.
-        if (isOpposite) {
-            QEngineShard& cShard = shards[control];
-            if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
-                // "Free" to apply the buffer right now:
-                ApplyBuffer(phaseShard, control, bitIndex, true);
-                shard.RemovePhaseAntiControl(partner);
-            } else {
-                isAnti = true;
-                anyOpposite = true;
-                oppositeControl = control;
-            }
-        }
-    }
-
-    if (anyOpposite && !isSame) {
-        RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, isAnti ? ONLY_CTRL : ONLY_ANTI);
-        RevertBasis2Qb(
-            bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, isAnti ? ONLY_ANTI : ONLY_CTRL, { oppositeControl }, {});
-        shard.CommuteH();
-        return;
-    }
-
-    targetOfShards = shard.targetOfShards;
-
-    for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        partner = phaseShard->first;
-        bitLenInt control = FindShardIndex(*partner);
-        buffer = phaseShard->second;
-
-        polar0 = buffer->cmplx0;
-        polar1 = buffer->cmplx1;
-
         isSame = norm(polar0 - polar1) <= ampThreshold;
+        anySame |= isSame;
+        isOpposite = norm(polar0 - polar1) <= ampThreshold;
 
-        if (!isSame) {
-            ApplyBuffer(phaseShard, control, bitIndex, false);
-            shard.RemovePhaseControl(partner);
-        }
-    }
-
-    antiTargetOfShards = shard.antiTargetOfShards;
-
-    for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
-        partner = phaseShard->first;
-        bitLenInt control = FindShardIndex(*partner);
-        buffer = phaseShard->second;
-
-        polar0 = buffer->cmplx0;
-        polar1 = buffer->cmplx1;
-
-        isSame = norm(polar0 - polar1) <= ampThreshold;
-
-        if (!isSame) {
+        if (!isSame && (anyOpposite || !isOpposite)) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
+        } else if (isOpposite && !anyOpposite) {
+            anyOpposite = true;
+            oppositeShard = phaseShard;
+            oppositeControl = control;
+            isOppositeAnti = true;
         }
+    }
+
+    if (anyOpposite && anySame) {
+        ApplyBuffer(oppositeShard, oppositeControl, bitIndex, isOppositeAnti);
+        shard.RemovePhaseControl(&shards[oppositeControl]);
     }
 
     shard.CommuteH();
