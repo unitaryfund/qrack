@@ -1288,21 +1288,23 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if (tShard.IsInvertControlOf(&cShard)) {
-            std::swap(control, target);
-        }
-        TransformBasis1Qb(false, control);
-
         if (cShard.IsCnotControl()) {
             cShard.isPlusMinus = !cShard.isPlusMinus;
             H(control);
         }
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
 
         if (tShard.IsCnotControl()) {
             tShard.isPlusMinus = !tShard.isPlusMinus;
             H(target);
         }
+
+        if (tShard.IsInvertControlOf(&cShard)) {
+            std::swap(control, target);
+        }
+        TransformBasis1Qb(false, control);
+
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
+
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
@@ -1565,21 +1567,23 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        if (IS_ARG_0(topLeft) && tShard.IsInvertControlOf(&(shards[controls[0]]))) {
-            std::swap(control, target);
-        }
-        TransformBasis1Qb(false, control);
-
         if (shards[control].IsCnotControl()) {
             shards[control].isPlusMinus = !shards[control].isPlusMinus;
             H(control);
         }
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
 
         if (shards[target].IsCnotControl()) {
             shards[target].isPlusMinus = !shards[target].isPlusMinus;
             H(target);
         }
+
+        if (IS_ARG_0(topLeft) && tShard.IsInvertControlOf(&(shards[controls[0]]))) {
+            std::swap(control, target);
+        }
+        TransformBasis1Qb(false, control);
+
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
+
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
