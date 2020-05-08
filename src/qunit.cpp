@@ -3208,7 +3208,6 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
     QEngineShard& shard = shards[bitIndex];
-    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS);
 
     real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
 
@@ -3216,6 +3215,60 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     ShardToPhaseMap::iterator phaseShard, oppositeShard;
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
+
+    shard.OptimizeControls();
+
+    bool isCnot;
+
+    ShardToPhaseMap controlsShards = shard.controlsShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        partner = phaseShard->first;
+        bitLenInt target = FindShardIndex(*partner);
+        buffer = phaseShard->second;
+
+        polar0 = buffer->cmplx0;
+        polar1 = buffer->cmplx1;
+
+        isCnot = buffer->isInvert && (norm(polar0 - ONE_CMPLX) <= ampThreshold) &&
+            (norm(polar1 - ONE_CMPLX) <= ampThreshold);
+
+        if (!isCnot) {
+            ApplyBuffer(phaseShard, bitIndex, target, false);
+            shard.RemovePhaseTarget(partner);
+            continue;
+        }
+
+        // This will turn the CNOT buffer into a CZ buffer.
+        shards[target].isPlusMinus = !shards[target].isPlusMinus;
+        H(target);
+    }
+
+    controlsShards = shard.antiControlsShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        partner = phaseShard->first;
+        bitLenInt target = FindShardIndex(*partner);
+        buffer = phaseShard->second;
+
+        polar0 = buffer->cmplx0;
+        polar1 = buffer->cmplx1;
+
+        isCnot = buffer->isInvert && (norm(polar0 - ONE_CMPLX) <= ampThreshold) &&
+            (norm(polar1 - ONE_CMPLX) <= ampThreshold);
+
+        if (!isCnot) {
+            ApplyBuffer(phaseShard, bitIndex, target, true);
+            shard.RemovePhaseAntiTarget(partner);
+            continue;
+        }
+
+        // This will turn the CNOT buffer into a CZ buffer.
+        shards[target].isPlusMinus = !shards[target].isPlusMinus;
+        H(target);
+    }
+
+    shard.OptimizeControls();
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
