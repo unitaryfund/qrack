@@ -1353,7 +1353,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
-    if ((topLeft == bottomRight) && (randGlobalPhase || IS_ARG_0(topLeft))) {
+    if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_ARG_0(topLeft))) {
         return;
     }
 
