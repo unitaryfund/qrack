@@ -1177,6 +1177,57 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
+    QEngineShard& c1Shard = shards[control1];
+    QEngineShard& c2Shard = shards[control2];
+
+    if (!c1Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
+            if (IS_NORM_ZERO(c1Shard.amp1)) {
+                Flush0Eigenstate(control1);
+                return;
+            }
+            if (IS_NORM_ZERO(c1Shard.amp0)) {
+                Flush1Eigenstate(control1);
+                CNOT(control2, target);
+                return;
+            }
+        }
+    }
+
+    if (!c2Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
+            if (IS_NORM_ZERO(c2Shard.amp1)) {
+                Flush0Eigenstate(control2);
+                return;
+            }
+            if (IS_NORM_ZERO(c2Shard.amp0)) {
+                Flush1Eigenstate(control2);
+                CNOT(control1, target);
+                return;
+            }
+        }
+    }
+
+    if ((tShard.unit->GetQubitCount() == 1U) && (c1Shard.unit->GetQubitCount() == 1U) &&
+        (c2Shard.unit->GetQubitCount() == 1U)) {
+        H(target);
+        CNOT(control2, target);
+        IT(target);
+        CNOT(control1, target);
+        T(target);
+        CNOT(control2, target);
+        IT(target);
+        CNOT(control1, target);
+        T(control2);
+        T(target);
+        CNOT(control1, control2);
+        T(control1);
+        IT(control2);
+        CNOT(control1, control2);
+        H(target);
+        return;
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     ApplyEitherControlled(controls, 2, { target }, false,
@@ -1319,6 +1370,24 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 return;
             }
         }
+    }
+
+    if ((tShard.unit->GetQubitCount() == 1U) && (c1Shard.unit->GetQubitCount() == 1U) &&
+        (c2Shard.unit->GetQubitCount() == 1U)) {
+        CNOT(control2, target);
+        IT(target);
+        CNOT(control1, target);
+        T(target);
+        CNOT(control2, target);
+        IT(target);
+        CNOT(control1, target);
+        T(control2);
+        T(target);
+        CNOT(control1, control2);
+        T(control1);
+        IT(control2);
+        CNOT(control1, control2);
+        return;
     }
 
     bitLenInt controls[2] = { control1, control2 };

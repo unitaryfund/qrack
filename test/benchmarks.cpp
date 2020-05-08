@@ -741,11 +741,11 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_ccz_h", "[supreme]")
+TEST_CASE("test_ccz_ccx_h", "[supreme]")
 {
 
-    const int GateCount1Qb = 2;
-    const int GateCountMultiQb = 3;
+    const int GateCount1Qb = 4;
+    const int GateCountMultiQb = 4;
     const int Depth = 20;
 
     benchmarkLoop(
@@ -760,11 +760,15 @@ TEST_CASE("test_ccz_h", "[supreme]")
             for (d = 0; d < Depth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    gateRand = qReg->Rand();
-                    if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                    gateRand = GateCount1Qb * qReg->Rand();
+                    if (gateRand < 1) {
                         qReg->H(i);
-                    } else {
+                    } else if (gateRand < 2) {
                         qReg->Z(i);
+                    } else if (gateRand < 3) {
+                        qReg->X(i);
+                    } else {
+                        // Identity;
                     }
                 }
 
@@ -782,18 +786,21 @@ TEST_CASE("test_ccz_h", "[supreme]")
                     if (unusedBits.size() > 0) {
                         maxGates = GateCountMultiQb;
                     } else {
-                        maxGates = GateCountMultiQb - 1U;
+                        maxGates = GateCountMultiQb - 2U;
                     }
 
                     gateRand = maxGates * qReg->Rand();
 
                     if (gateRand < ONE_R1) {
-                        qReg->Swap(b1, b2);
-                    } else if ((gateRand < (2 * ONE_R1)) || (maxGates < 3)) {
                         qReg->CZ(b1, b2);
-                    } else {
+                    } else if (gateRand < 2) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateRand < 3) {
                         b3 = pickRandomBit(qReg, &unusedBits);
                         qReg->CCZ(b1, b2, b3);
+                    } else {
+                        b3 = pickRandomBit(qReg, &unusedBits);
+                        qReg->CCNOT(b1, b2, b3);
                     }
                 }
             }
