@@ -1141,6 +1141,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_PLUS(tShard)) {
+        return;
+    }
+
     QEngineShard& cShard = shards[control];
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
@@ -1177,57 +1182,6 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
-    QEngineShard& c1Shard = shards[control1];
-    QEngineShard& c2Shard = shards[control2];
-
-    if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
-            if (IS_NORM_ZERO(c1Shard.amp1)) {
-                Flush0Eigenstate(control1);
-                return;
-            }
-            if (IS_NORM_ZERO(c1Shard.amp0)) {
-                Flush1Eigenstate(control1);
-                CNOT(control2, target);
-                return;
-            }
-        }
-    }
-
-    if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
-            if (IS_NORM_ZERO(c2Shard.amp1)) {
-                Flush0Eigenstate(control2);
-                return;
-            }
-            if (IS_NORM_ZERO(c2Shard.amp0)) {
-                Flush1Eigenstate(control2);
-                CNOT(control1, target);
-                return;
-            }
-        }
-    }
-
-    if ((tShard.unit->GetQubitCount() == 1U) && (c1Shard.unit->GetQubitCount() == 1U) &&
-        (c2Shard.unit->GetQubitCount() == 1U)) {
-        H(target);
-        CNOT(control2, target);
-        IT(target);
-        CNOT(control1, target);
-        T(target);
-        CNOT(control2, target);
-        IT(target);
-        CNOT(control1, target);
-        T(control2);
-        T(target);
-        CNOT(control1, control2);
-        T(control1);
-        IT(control2);
-        CNOT(control1, control2);
-        H(target);
-        return;
-    }
-
     bitLenInt controls[2] = { control1, control2 };
 
     ApplyEitherControlled(controls, 2, { target }, false,
@@ -1251,6 +1205,11 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
+    QEngineShard& tShard = shards[target];
+    if (CACHED_PLUS(tShard)) {
+        return;
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     ApplyEitherControlled(controls, 2, { target }, true,
@@ -1370,24 +1329,6 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 return;
             }
         }
-    }
-
-    if ((tShard.unit->GetQubitCount() == 1U) && (c1Shard.unit->GetQubitCount() == 1U) &&
-        (c2Shard.unit->GetQubitCount() == 1U)) {
-        CNOT(control2, target);
-        IT(target);
-        CNOT(control1, target);
-        T(target);
-        CNOT(control2, target);
-        IT(target);
-        CNOT(control1, target);
-        T(control2);
-        T(target);
-        CNOT(control1, control2);
-        T(control1);
-        IT(control2);
-        CNOT(control1, control2);
-        return;
     }
 
     bitLenInt controls[2] = { control1, control2 };
