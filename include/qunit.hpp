@@ -595,7 +595,7 @@ public:
         return toRet;
     }
 
-    bool IsCnotControl()
+    bool IsInvertSamePhaseControl()
     {
         bool toRet = false;
         ShardToPhaseMap::iterator phaseShard;
@@ -603,7 +603,7 @@ public:
 
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             buffer = phaseShard->second;
-            if (buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
+            if (buffer->isInvert && IS_SAME(buffer->cmplx0, buffer->cmplx1)) {
                 toRet = true;
                 break;
             }
@@ -615,7 +615,7 @@ public:
 
         for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
             buffer = phaseShard->second;
-            if (buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
+            if (buffer->isInvert && IS_SAME(buffer->cmplx0, buffer->cmplx1)) {
                 toRet = true;
                 break;
             }

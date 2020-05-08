@@ -1288,12 +1288,12 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if (cShard.IsCnotControl()) {
+        if (cShard.IsInvertSamePhaseControl()) {
             cShard.isPlusMinus = !cShard.isPlusMinus;
             H(control);
         }
 
-        if (tShard.IsCnotControl()) {
+        if (tShard.IsInvertSamePhaseControl()) {
             tShard.isPlusMinus = !tShard.isPlusMinus;
             H(target);
         }
@@ -1567,12 +1567,12 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        if (shards[control].IsCnotControl()) {
+        if (shards[control].IsInvertSamePhaseControl()) {
             shards[control].isPlusMinus = !shards[control].isPlusMinus;
             H(control);
         }
 
-        if (shards[target].IsCnotControl()) {
+        if (shards[target].IsInvertSamePhaseControl()) {
             shards[target].isPlusMinus = !shards[target].isPlusMinus;
             H(target);
         }
