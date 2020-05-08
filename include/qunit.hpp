@@ -595,6 +595,35 @@ public:
         return toRet;
     }
 
+    bool IsCnotControl()
+    {
+        bool toRet = false;
+        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+
+        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
+                toRet = true;
+                break;
+            }
+        }
+
+        if (toRet) {
+            return true;
+        }
+
+        for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (buffer->isInvert && IS_ARG_0(buffer->cmplx0) && IS_ARG_0(buffer->cmplx1)) {
+                toRet = true;
+                break;
+            }
+        }
+
+        return toRet;
+    }
+
     bool IsInvertControl()
     {
         bool toRet = false;

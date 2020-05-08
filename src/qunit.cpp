@@ -1292,8 +1292,19 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             std::swap(control, target);
         }
         TransformBasis1Qb(false, control);
+
+        if (cShard.IsCnotControl()) {
+            cShard.isPlusMinus = !cShard.isPlusMinus;
+            H(control);
+        }
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
+
+        if (tShard.IsCnotControl()) {
+            tShard.isPlusMinus = !tShard.isPlusMinus;
+            H(target);
+        }
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { control });
+
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
     }
@@ -1542,24 +1553,36 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (!freezeBasis && (controlLen == 1U)) {
-        QEngineShard& cShard = shards[controls[0]];
+        bitLenInt control = controls[0];
+        QEngineShard& cShard = shards[control];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
             if (SHARD_STATE(cShard)) {
-                Flush1Eigenstate(controls[0]);
+                Flush1Eigenstate(control);
                 ApplySinglePhase(topLeft, bottomRight, target);
             } else {
-                Flush0Eigenstate(controls[0]);
+                Flush0Eigenstate(control);
             }
             return;
         }
 
         if (IS_ARG_0(topLeft) && tShard.IsInvertControlOf(&(shards[controls[0]]))) {
-            std::swap(controls[0], target);
+            std::swap(control, target);
         }
-        TransformBasis1Qb(false, controls[0]);
-        RevertBasis2Qb(controls[0], ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { controls[0] });
-        shards[target].AddPhaseAngles(&(shards[controls[0]]), topLeft, bottomRight);
+        TransformBasis1Qb(false, control);
+
+        if (shards[control].IsCnotControl()) {
+            shards[control].isPlusMinus = !shards[control].isPlusMinus;
+            H(control);
+        }
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, { target }, {});
+
+        if (shards[target].IsCnotControl()) {
+            shards[target].isPlusMinus = !shards[target].isPlusMinus;
+            H(target);
+        }
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { control });
+
+        shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
         delete[] controls;
         return;
     }
