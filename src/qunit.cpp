@@ -3179,7 +3179,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    bool isSame, isOpposite, anySame = false, anyOpposite = false;
+    bool isSame, isOpposite;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         partner = phaseShard->first;
@@ -3190,14 +3190,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar1 = buffer->cmplx1;
 
         isSame = norm(polar0 - polar1) <= ampThreshold;
-        anySame |= isSame;
         isOpposite = norm(polar0 - polar1) <= ampThreshold;
 
-        if (!isSame && (anyOpposite || !isOpposite)) {
+        if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, false);
             shard.RemovePhaseControl(partner);
-        } else if (isOpposite) {
-            anyOpposite = true;
         }
     }
 
@@ -3212,14 +3209,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar1 = buffer->cmplx1;
 
         isSame = norm(polar0 - polar1) <= ampThreshold;
-        anySame |= isSame;
         isOpposite = norm(polar0 - polar1) <= ampThreshold;
 
-        if (!isSame && (anyOpposite || !isOpposite)) {
+        if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
-        } else if (isOpposite) {
-            anyOpposite = true;
         }
     }
 
