@@ -1181,6 +1181,37 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         return;
     }
 
+    QEngineShard& c1Shard = shards[control1];
+    QEngineShard& c2Shard = shards[control2];
+
+    if (!c1Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
+            if (IS_NORM_ZERO(c1Shard.amp1)) {
+                Flush0Eigenstate(control1);
+                return;
+            }
+            if (IS_NORM_ZERO(c1Shard.amp0)) {
+                Flush1Eigenstate(control1);
+                CNOT(control2, target);
+                return;
+            }
+        }
+    }
+
+    if (!c2Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
+            if (IS_NORM_ZERO(c2Shard.amp1)) {
+                Flush0Eigenstate(control2);
+                return;
+            }
+            if (IS_NORM_ZERO(c2Shard.amp0)) {
+                Flush1Eigenstate(control2);
+                CNOT(control1, target);
+                return;
+            }
+        }
+    }
+
     bitLenInt controls[2] = { control1, control2 };
 
     ApplyEitherControlled(controls, 2, { target }, false,
