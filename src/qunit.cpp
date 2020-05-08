@@ -3179,8 +3179,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
-    bool isSame, isOpposite, anySame = false, anyOpposite = false, isOppositeAnti = false;
-    bitLenInt oppositeControl = 0;
+    bool isSame, isOpposite, anySame = false, anyOpposite = false;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         partner = phaseShard->first;
@@ -3197,11 +3196,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         if (!isSame && (anyOpposite || !isOpposite)) {
             ApplyBuffer(phaseShard, control, bitIndex, false);
             shard.RemovePhaseControl(partner);
-        } else if (isOpposite && !anyOpposite) {
+        } else if (isOpposite) {
             anyOpposite = true;
-            oppositeShard = phaseShard;
-            oppositeControl = control;
-            isOppositeAnti = false;
         }
     }
 
@@ -3222,17 +3218,9 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         if (!isSame && (anyOpposite || !isOpposite)) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
-        } else if (isOpposite && !anyOpposite) {
+        } else if (isOpposite) {
             anyOpposite = true;
-            oppositeShard = phaseShard;
-            oppositeControl = control;
-            isOppositeAnti = true;
         }
-    }
-
-    if (anyOpposite && anySame) {
-        ApplyBuffer(oppositeShard, oppositeControl, bitIndex, isOppositeAnti);
-        shard.RemovePhaseControl(&shards[oppositeControl]);
     }
 
     shard.CommuteH();
