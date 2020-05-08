@@ -988,6 +988,13 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.IsInvertSamePhaseControl()) {
+        // "CommutePhase()" can handle this case, but we do this to avoid a case that breaks theoretical CHP, (i.e.
+        // efficiency over a purely Clifford algebra).
+        shard.isPlusMinus = !shard.isPlusMinus;
+        H(target);
+    }
+
     if (shard.IsInvertTarget()) {
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
@@ -1407,6 +1414,13 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     }
 
     QEngineShard& shard = shards[target];
+
+    if (shard.IsInvertSamePhaseControl()) {
+        // "CommutePhase()" can handle this case, but we do this to avoid a case that breaks theoretical CHP, (i.e.
+        // efficiency over a purely Clifford algebra).
+        shard.isPlusMinus = !shard.isPlusMinus;
+        H(target);
+    }
 
     if (shard.IsInvertTarget()) {
         shard.CommutePhase(topLeft, bottomRight);
