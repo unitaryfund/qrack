@@ -14,6 +14,7 @@
 
 #include <cfloat>
 #include <random>
+#include <unordered_set>
 
 #include "qinterface.hpp"
 
@@ -437,19 +438,20 @@ public:
 
     void FlipPhaseAnti()
     {
-        // TODO: Totally bugged
-        /*std::vector<QEngineShardPtr> alreadySwapped;
-        ShardToPhaseMap::iterator phaseShard;
-        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
-            phaseShard->first->SwapTargetAnti(this);
-            alreadySwapped.push_back(phaseShard->first);
+        std::unordered_set<QEngineShardPtr> toSwap;
+        ShardToPhaseMap::iterator ctrlPhaseShard;
+        for (ctrlPhaseShard = controlsShards.begin(); ctrlPhaseShard != controlsShards.end(); ctrlPhaseShard++) {
+            toSwap.insert(ctrlPhaseShard->first);
         }
-        for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
-            if (std::find(alreadySwapped.begin(), alreadySwapped.end(), phaseShard->first) == alreadySwapped.end()) {
-                phaseShard->first->SwapTargetAnti(this);
-            }
+        for (ctrlPhaseShard = antiControlsShards.begin(); ctrlPhaseShard != antiControlsShards.end();
+             ctrlPhaseShard++) {
+            toSwap.insert(ctrlPhaseShard->first);
         }
-        std::swap(controlsShards, antiControlsShards);*/
+        std::unordered_set<QEngineShardPtr>::iterator swapShard;
+        for (swapShard = toSwap.begin(); swapShard != toSwap.end(); swapShard++) {
+            (*swapShard)->SwapTargetAnti(this);
+        }
+        std::swap(controlsShards, antiControlsShards);
 
         par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
