@@ -47,7 +47,9 @@ struct PhaseShard {
 };
 
 #define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
+#define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
 class QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
