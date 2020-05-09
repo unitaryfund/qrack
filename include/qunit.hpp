@@ -437,6 +437,7 @@ public:
 
     void FlipPhaseAnti()
     {
+        // TODO: Totally bugged
         std::vector<QEngineShardPtr> alreadySwapped;
         ShardToPhaseMap::iterator phaseShard;
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
@@ -460,6 +461,31 @@ public:
             ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
             std::advance(phaseShard, lcv);
             std::swap(phaseShard->second->cmplx0, phaseShard->second->cmplx1);
+        });
+    }
+
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    {
+        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            if (!phaseShard->second->isInvert) {
+                return;
+            }
+
+            phaseShard->second->cmplx0 *= topLeft / bottomRight;
+            phaseShard->second->cmplx1 *= bottomRight / topLeft;
+        });
+
+        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
+            std::advance(phaseShard, lcv);
+            if (!phaseShard->second->isInvert) {
+                return;
+            }
+
+            phaseShard->second->cmplx0 *= topLeft / bottomRight;
+            phaseShard->second->cmplx1 *= bottomRight / topLeft;
         });
     }
 

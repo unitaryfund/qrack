@@ -20,6 +20,7 @@
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -974,8 +975,8 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-    shard.FlipPhaseAnti();
+    RevertBasis2Qb(target);
+    // shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
         XBase(target);
@@ -988,8 +989,9 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-    if (!shard.IsInvert()) {
+    if (shard.IsInvertTarget()) {
+        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    } else {
         if (UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
@@ -1395,8 +1397,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-    if (!shard.IsInvert()) {
+    if (shard.IsInvertTarget()) {
+        shard.CommutePhase(topLeft, bottomRight);
+    } else {
         if (IS_ARG_0(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
@@ -1452,8 +1455,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-    shard.FlipPhaseAnti();
+    RevertBasis2Qb(target);
+    // shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(

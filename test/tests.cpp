@@ -4586,11 +4586,11 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 3;
+    const int Depth = 4;
 
-    const int TRIALS = 200;
+    const int TRIALS = 300;
     const int ITERATIONS = 60000;
-    const int n = 8;
+    const int n = 10;
     bitCapInt permCount = pow2(n);
     bitCapInt perm;
 
