@@ -1641,7 +1641,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        shards[target].AddAntiPhaseAngles(&(shards[control]), topLeft, bottomRight);
+        shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
         delete[] controls;
         return;
     }
@@ -3083,21 +3083,21 @@ void QUnit::ApplyBuffer(
 {
     const bitLenInt controls[1] = { control };
 
-    complex polar0 = phaseShard->second->cmplx0;
-    complex polar1 = phaseShard->second->cmplx1;
+    complex polarDiff = phaseShard->second->cmplxDiff;
+    complex polarSame = phaseShard->second->cmplxSame;
 
     freezeBasis = true;
     if (phaseShard->second->isInvert) {
         if (isAnti) {
-            ApplyAntiControlledSingleInvert(controls, 1U, target, polar0, polar1);
+            ApplyAntiControlledSingleInvert(controls, 1U, target, polarSame, polarDiff);
         } else {
-            ApplyControlledSingleInvert(controls, 1U, target, polar0, polar1);
+            ApplyControlledSingleInvert(controls, 1U, target, polarDiff, polarSame);
         }
     } else {
         if (isAnti) {
-            ApplyAntiControlledSinglePhase(controls, 1U, target, polar0, polar1);
+            ApplyAntiControlledSinglePhase(controls, 1U, target, polarSame, polarDiff);
         } else {
-            ApplyControlledSinglePhase(controls, 1U, target, polar0, polar1);
+            ApplyControlledSinglePhase(controls, 1U, target, polarDiff, polarSame);
         }
     }
     freezeBasis = false;
@@ -3228,7 +3228,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
 
-    complex polar0, polar1;
+    complex polarDiff, polarSame;
     ShardToPhaseMap::iterator phaseShard, oppositeShard;
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
@@ -3242,10 +3242,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
         buffer = phaseShard->second;
 
-        polar0 = buffer->cmplx0;
-        polar1 = buffer->cmplx1;
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
 
-        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && !buffer->isInvert;
+        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
 
         if (isOpposite) {
             needToCommute = true;
@@ -3260,10 +3260,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             partner = phaseShard->first;
             buffer = phaseShard->second;
 
-            polar0 = buffer->cmplx0;
-            polar1 = buffer->cmplx1;
+            polarDiff = buffer->cmplxDiff;
+            polarSame = buffer->cmplxSame;
 
-            isOpposite = (norm(polar0 + polar1) <= ampThreshold) && !buffer->isInvert;
+            isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
 
             if (isOpposite) {
                 needToCommute = true;
@@ -3277,11 +3277,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         control = FindShardIndex(*partner);
         buffer = phaseShard->second;
 
-        polar0 = buffer->cmplx0;
-        polar1 = buffer->cmplx1;
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
 
-        isSame = (norm(polar0 - polar1) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
-        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && !buffer->isInvert;
+        isSame = (norm(polarDiff - polarSame) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
+        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
 
         if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, false);
@@ -3294,11 +3294,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         control = FindShardIndex(*partner);
         buffer = phaseShard->second;
 
-        polar0 = buffer->cmplx0;
-        polar1 = buffer->cmplx1;
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
 
-        isSame = (norm(polar0 - polar1) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
-        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && !buffer->isInvert;
+        isSame = (norm(polarDiff - polarSame) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
+        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
 
         if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
