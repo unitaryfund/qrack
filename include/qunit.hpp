@@ -628,8 +628,6 @@ public:
         return false;
     }
 
-    bool IsInvert() { return IsInvertControl() || IsInvertTarget(); }
-
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
     bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
