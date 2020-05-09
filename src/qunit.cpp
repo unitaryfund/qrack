@@ -975,8 +975,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    // Should only let through controlled phase gates.
-    RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI);
     RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
     shard.FlipPhaseAnti();
 
