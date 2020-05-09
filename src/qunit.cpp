@@ -975,8 +975,11 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target);
-    // shard.FlipPhaseAnti();
+    // Should only let through (not anti-)controlled phase gates.
+    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+    RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+    RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI);
+    shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
         XBase(target);
@@ -1455,8 +1458,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target);
-    // shard.FlipPhaseAnti();
+    // Should only let through (not anti-)controlled phase gates.
+    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+    RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+    RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI);
+    shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
