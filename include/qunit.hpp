@@ -463,31 +463,6 @@ public:
         });
     }
 
-    void CommutePhase(const complex& topLeft, const complex& bottomRight)
-    {
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
-                return;
-            }
-
-            phaseShard->second->cmplx0 *= topLeft / bottomRight;
-            phaseShard->second->cmplx1 *= bottomRight / topLeft;
-        });
-
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
-                return;
-            }
-
-            phaseShard->second->cmplx0 *= topLeft / bottomRight;
-            phaseShard->second->cmplx1 *= bottomRight / topLeft;
-        });
-    }
-
 protected:
     void RemoveIdentityBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
@@ -516,7 +491,7 @@ public:
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplx0 - buffer->cmplx1) < ONE_R1) {
                 if (buffer->isInvert) {
-                    buffer->cmplx1 *= -ONE_CMPLX;
+                    buffer->cmplx1 = -buffer->cmplx0;
                     buffer->isInvert = false;
                 }
             } else {
@@ -537,7 +512,7 @@ public:
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplx0 - buffer->cmplx1) < ONE_R1) {
                 if (buffer->isInvert) {
-                    buffer->cmplx1 *= -ONE_CMPLX;
+                    buffer->cmplx1 = -buffer->cmplx0;
                     buffer->isInvert = false;
                 }
             } else {
