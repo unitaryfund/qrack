@@ -20,7 +20,6 @@
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
-
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -1292,8 +1291,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
@@ -1561,8 +1560,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
         delete[] controls;
@@ -3253,7 +3252,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isSame = norm(polar0 - polar1) <= ampThreshold;
         isOpposite = norm(polar0 + polar1) <= ampThreshold;
 
-        if (!isSame && !isOpposite) {
+        if ((!isSame || !buffer->isInvert) && (!isOpposite || buffer->isInvert)) {
             ApplyBuffer(phaseShard, control, bitIndex, false);
             shard.RemovePhaseControl(partner);
         }
@@ -3272,7 +3271,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isSame = norm(polar0 - polar1) <= ampThreshold;
         isOpposite = norm(polar0 + polar1) <= ampThreshold;
 
-        if (!isSame && !isOpposite) {
+        if ((!isSame || !buffer->isInvert) && (!isOpposite || buffer->isInvert)) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
         }
