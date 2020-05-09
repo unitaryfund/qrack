@@ -558,121 +558,70 @@ public:
 
     bool IsInvertControlOf(QEngineShardPtr target)
     {
-        bool toRet = false;
-
         ShardToPhaseMap::iterator phaseShard = controlsShards.find(target);
-        if (phaseShard != controlsShards.end()) {
-            toRet = phaseShard->second->isInvert;
-        }
-
-        if (toRet) {
-            return true;
-        }
-
-        phaseShard = antiControlsShards.find(target);
-        if (phaseShard != antiControlsShards.end()) {
-            toRet |= phaseShard->second->isInvert;
-        }
-
-        return toRet;
+        return phaseShard != controlsShards.end();
     }
 
-    bool IsInvertTargetOf(QEngineShardPtr control)
+    bool IsInvertAntiControlOf(QEngineShardPtr target)
     {
-        bool toRet = false;
-
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(control);
-        if (phaseShard != targetOfShards.end()) {
-            toRet = phaseShard->second->isInvert;
-        }
-
-        if (toRet) {
-            return true;
-        }
-
-        phaseShard = antiTargetOfShards.find(control);
-        if (phaseShard != antiTargetOfShards.end()) {
-            toRet |= phaseShard->second->isInvert;
-        }
-
-        return toRet;
+        ShardToPhaseMap::iterator phaseShard = controlsShards.find(target);
+        return phaseShard != controlsShards.end();
     }
 
     bool IsInvertSamePhaseControl()
     {
-        bool toRet = false;
         ShardToPhaseMap::iterator phaseShard;
         PhaseShardPtr buffer;
 
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             buffer = phaseShard->second;
             if (buffer->isInvert && IS_SAME(buffer->cmplx0, buffer->cmplx1)) {
-                toRet = true;
-                break;
+                return true;
             }
-        }
-
-        if (toRet) {
-            return true;
         }
 
         for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
             buffer = phaseShard->second;
             if (buffer->isInvert && IS_SAME(buffer->cmplx0, buffer->cmplx1)) {
-                toRet = true;
-                break;
+                return true;
             }
         }
 
-        return toRet;
+        return false;
     }
 
     bool IsInvertControl()
     {
-        bool toRet = false;
         ShardToPhaseMap::iterator phaseShard;
 
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
-                toRet = true;
-                break;
+                return true;
             }
-        }
-
-        if (toRet) {
-            return true;
         }
 
         for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
-                toRet = true;
-                break;
+                return true;
             }
         }
 
-        return toRet;
+        return false;
     }
 
     bool IsInvertTarget()
     {
-        bool toRet = false;
         ShardToPhaseMap::iterator phaseShard;
 
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
-                toRet = true;
-                break;
+                return true;
             }
-        }
-
-        if (toRet) {
-            return true;
         }
 
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
-                toRet = true;
-                break;
+                return true;
             }
         }
 
