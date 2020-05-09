@@ -302,7 +302,8 @@ public:
     }
 
 protected:
-    void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
+    void OptimizeBuffer(
+        ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl, bool isAnti)
     {
         PhaseShardPtr buffer;
         QEngineShardPtr partner;
@@ -315,7 +316,8 @@ protected:
             buffer = phaseShard->second;
             partner = phaseShard->first;
 
-            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplx0)) {
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) ||
+                ((isAnti && !IS_ARG_0(buffer->cmplx1)) || (!isAnti && !IS_ARG_0(buffer->cmplx0)))) {
                 continue;
             }
 
@@ -335,21 +337,21 @@ protected:
 public:
     void OptimizeControls()
     {
-        OptimizeBuffer(controlsShards, &QEngineShard::GetTargetOfShards, &QEngineShard::AddPhaseAngles, false);
+        OptimizeBuffer(controlsShards, &QEngineShard::GetTargetOfShards, &QEngineShard::AddPhaseAngles, false, false);
     }
     void OptimizeTargets()
     {
-        OptimizeBuffer(targetOfShards, &QEngineShard::GetControlsShards, &QEngineShard::AddPhaseAngles, true);
+        OptimizeBuffer(targetOfShards, &QEngineShard::GetControlsShards, &QEngineShard::AddPhaseAngles, true, false);
     }
     void OptimizeAntiControls()
     {
         OptimizeBuffer(
-            antiControlsShards, &QEngineShard::GetAntiTargetOfShards, &QEngineShard::AddAntiPhaseAngles, false);
+            antiControlsShards, &QEngineShard::GetAntiTargetOfShards, &QEngineShard::AddAntiPhaseAngles, false, true);
     }
     void OptimizeAntiTargets()
     {
         OptimizeBuffer(
-            antiTargetOfShards, &QEngineShard::GetAntiControlsShards, &QEngineShard::AddAntiPhaseAngles, true);
+            antiTargetOfShards, &QEngineShard::GetAntiControlsShards, &QEngineShard::AddAntiPhaseAngles, true, true);
     }
 
 protected:
