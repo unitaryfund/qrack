@@ -3292,7 +3292,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar1 = buffer->cmplx1;
 
         isSame = (norm(polar0 - polar1) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
-        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
+        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && !buffer->isInvert;
 
         if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, false);
@@ -3309,7 +3309,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polar1 = buffer->cmplx1;
 
         isSame = (norm(polar0 - polar1) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
-        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
+        isOpposite = (norm(polar0 + polar1) <= ampThreshold) && !buffer->isInvert;
 
         if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
