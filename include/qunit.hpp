@@ -47,9 +47,7 @@ struct PhaseShard {
 };
 
 #define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
-#define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
 class QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
@@ -307,7 +305,6 @@ protected:
     {
         PhaseShardPtr buffer;
         QEngineShardPtr partner;
-        complex partnerAngle;
 
         ShardToPhaseMap::iterator phaseShard;
         ShardToPhaseMap tempLocalMap = localMap;
@@ -321,15 +318,21 @@ protected:
                 continue;
             }
 
-            partnerAngle = buffer->cmplx1;
-
             ((*phaseShard->first).*remoteMapGet)().erase(this);
             localMap.erase(partner);
 
             if (makeThisControl) {
-                ((*partner).*phaseFn)(this, ONE_CMPLX, partnerAngle);
+                if (isAnti) {
+                    ((*partner).*phaseFn)(this, buffer->cmplx0, ONE_CMPLX);
+                } else {
+                    ((*partner).*phaseFn)(this, ONE_CMPLX, buffer->cmplx1);
+                }
             } else {
-                ((*this).*phaseFn)(partner, ONE_CMPLX, partnerAngle);
+                if (isAnti) {
+                    ((*this).*phaseFn)(partner, buffer->cmplx0, ONE_CMPLX);
+                } else {
+                    ((*this).*phaseFn)(partner, ONE_CMPLX, buffer->cmplx1);
+                }
             }
         }
     }
@@ -381,12 +384,20 @@ protected:
                 ((isAnti && IS_ARG_0(buffer1->cmplx1)) || (!isAnti && IS_ARG_0(buffer1->cmplx0)))) {
                 ((*partner).*targetMapGet)().erase(this);
                 ((*this).*controlMapGet)().erase(partner);
-                ((*this).*angleFn)(partner, ONE_CMPLX, isAnti ? buffer1->cmplx0 : buffer1->cmplx1);
+                if (isAnti) {
+                    ((*this).*angleFn)(partner, buffer1->cmplx0, ONE_CMPLX);
+                } else {
+                    ((*this).*angleFn)(partner, ONE_CMPLX, buffer1->cmplx1);
+                }
             } else if (!buffer2->isInvert &&
                 ((isAnti && IS_ARG_0(buffer2->cmplx1)) || (!isAnti && IS_ARG_0(buffer2->cmplx0)))) {
                 ((*partner).*controlMapGet)().erase(this);
                 ((*this).*targetMapGet)().erase(partner);
-                ((*partner).*angleFn)(this, ONE_CMPLX, isAnti ? buffer2->cmplx0 : buffer2->cmplx1);
+                if (isAnti) {
+                    ((*partner).*angleFn)(this, buffer2->cmplx0, ONE_CMPLX);
+                } else {
+                    ((*partner).*angleFn)(this, ONE_CMPLX, buffer2->cmplx1);
+                }
             }
         }
     }
