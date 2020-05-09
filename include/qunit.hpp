@@ -353,11 +353,12 @@ public:
     }
 
 protected:
-    void CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlMapGet, AddAnglesFn angleFn)
+    void CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlMapGet, AddAnglesFn angleFn, bool isAnti)
     {
         PhaseShardPtr buffer1, buffer2;
         ShardToPhaseMap::iterator partnerShard;
         QEngineShardPtr partner;
+        complex testAngle, residualAngle;
 
         ShardToPhaseMap::iterator phaseShard;
         ShardToPhaseMap tempControls = ((*this).*controlMapGet)();
@@ -374,14 +375,16 @@ protected:
             buffer1 = phaseShard->second;
             buffer2 = partnerShard->second;
 
-            if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplx0)) {
+            if (!buffer1->isInvert &&
+                ((isAnti && IS_ARG_0(buffer1->cmplx1)) || (!isAnti && IS_ARG_0(buffer1->cmplx0)))) {
                 ((*partner).*targetMapGet)().erase(this);
                 ((*this).*controlMapGet)().erase(partner);
-                ((*this).*angleFn)(partner, ONE_CMPLX, buffer1->cmplx1);
-            } else if (!buffer2->isInvert && IS_ARG_0(buffer2->cmplx0)) {
+                ((*this).*angleFn)(partner, ONE_CMPLX, isAnti ? buffer1->cmplx0 : buffer1->cmplx1);
+            } else if (!buffer2->isInvert &&
+                ((isAnti && IS_ARG_0(buffer2->cmplx1)) || (!isAnti && IS_ARG_0(buffer2->cmplx0)))) {
                 ((*partner).*controlMapGet)().erase(this);
                 ((*this).*targetMapGet)().erase(partner);
-                ((*partner).*angleFn)(this, ONE_CMPLX, buffer2->cmplx1);
+                ((*partner).*angleFn)(this, ONE_CMPLX, isAnti ? buffer2->cmplx0 : buffer2->cmplx1);
             }
         }
     }
@@ -391,9 +394,9 @@ public:
     void CombineGates()
     {
         CombineBuffers(
-            &QEngineShard::GetTargetOfShards, &QEngineShard::GetControlsShards, &QEngineShard::AddPhaseAngles);
+            &QEngineShard::GetTargetOfShards, &QEngineShard::GetControlsShards, &QEngineShard::AddPhaseAngles, false);
         CombineBuffers(&QEngineShard::GetAntiTargetOfShards, &QEngineShard::GetAntiControlsShards,
-            &QEngineShard::AddAntiPhaseAngles);
+            &QEngineShard::AddAntiPhaseAngles, true);
     }
 
     void SwapTargetAnti(QEngineShardPtr control)
