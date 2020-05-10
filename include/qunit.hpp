@@ -517,14 +517,14 @@ public:
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
                 if (buffer->isInvert) {
-                    buffer->cmplxSame = -buffer->cmplxDiff;
+                    buffer->cmplxDiff = -buffer->cmplxSame;
                     buffer->isInvert = false;
                 }
             } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxSame = buffer->cmplxDiff;
+                    buffer->cmplxDiff = buffer->cmplxSame;
                     buffer->isInvert = true;
                 }
             }
