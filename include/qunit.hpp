@@ -208,11 +208,11 @@ protected:
 
     void DumpSamePhaseBuffer(OptimizeFn optimizeFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
     {
+        ((*this).*optimizeFn)();
+
         PhaseShardPtr buffer;
         ShardToPhaseMap::iterator phaseShard = localMap.begin();
         int lcv = 0;
-
-        ((*this).*optimizeFn)();
 
         while (phaseShard != localMap.end()) {
             buffer = phaseShard->second;
