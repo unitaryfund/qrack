@@ -1636,14 +1636,14 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             std::swap(control, target);
         }
 
-        TransformBasis1Qb(false, control);
+        /*TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
         delete[] controls;
-        return;
+        return;*/
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
