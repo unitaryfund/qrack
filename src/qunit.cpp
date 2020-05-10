@@ -1455,7 +1455,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+    // TODO: Incorporate phase effects, to commute isInvert controls.
+    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {

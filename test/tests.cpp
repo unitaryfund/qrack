@@ -4584,11 +4584,6 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 {
     std::cout << ">>> 'test_universal_circuit_digital_cross_entropy':" << std::endl;
 
-    if (sparse) {
-        std::cout << "Skipped for sparse engine types (known accuracy issue)" << std::endl;
-        return;
-    }
-
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
     const int Depth = 4;
