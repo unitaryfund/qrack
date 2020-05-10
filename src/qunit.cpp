@@ -975,7 +975,6 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -1455,7 +1454,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
     shard.CommutePhase(bottomLeft, topRight);
     shard.FlipPhaseAnti();
 
