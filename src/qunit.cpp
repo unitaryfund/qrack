@@ -1502,6 +1502,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
+    if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
+        ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
+        return;
+    }
+
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
@@ -1554,6 +1559,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             } else {
                 Flush0Eigenstate(control);
             }
+            delete[] controls;
             return;
         }
 
@@ -1604,6 +1610,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         return;
     }
 
+    if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
+        ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
+        return;
+    }
+
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
@@ -1632,6 +1643,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 Flush0Eigenstate(control);
                 ApplySinglePhase(topLeft, bottomRight, target);
             }
+            delete[] controls;
             return;
         }
 
