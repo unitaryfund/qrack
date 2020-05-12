@@ -1502,6 +1502,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
+    if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
+        ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
+        return;
+    }
+
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
@@ -1554,6 +1559,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             } else {
                 Flush0Eigenstate(control);
             }
+            delete[] controls;
             return;
         }
 
@@ -1563,8 +1569,14 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
+        if (!IS_ARG_0(bottomRight)) {
+            RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+        }
+        if (!IS_ARG_0(topLeft)) {
+            RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, ONLY_ANTI);
+        }
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
         delete[] controls;
@@ -1598,6 +1610,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         return;
     }
 
+    if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
+        ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
+        return;
+    }
+
     bitLenInt* controls = new bitLenInt[controlLen];
     std::copy(cControls, cControls + controlLen, controls);
     bitLenInt target = cTarget;
@@ -1626,6 +1643,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 Flush0Eigenstate(control);
                 ApplySinglePhase(topLeft, bottomRight, target);
             }
+            delete[] controls;
             return;
         }
 
@@ -1635,8 +1653,14 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
+        if (!IS_ARG_0(topLeft)) {
+            RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
+        }
+        if (!IS_ARG_0(bottomRight)) {
+            RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, ONLY_CTRL);
+        }
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
         delete[] controls;
