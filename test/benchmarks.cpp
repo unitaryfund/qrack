@@ -826,20 +826,16 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // paper.
         std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
 
-        // Depending on which element of the sequential tiling we're running, per depth iteration,
-        // we need to start either with row "0" or row "1".
-        std::map<bitLenInt, bitLenInt> sequenceRowStart;
-        sequenceRowStart[0] = 1;
-        sequenceRowStart[1] = 1;
-        sequenceRowStart[2] = 0;
-        sequenceRowStart[3] = 0;
-
         // We factor the qubit count into two integers, as close to a perfect square as we can.
-        int rowLen = std::sqrt(n);
-        while (((n / rowLen) * rowLen) != n) {
-            rowLen--;
+        int colLen = std::sqrt(n);
+        while (((n / colLen) * colLen) != n) {
+            colLen--;
         }
-        int colLen = n / rowLen;
+        int rowLen = n / colLen;
+
+        //std::cout<<"rowLen="<<(int)rowLen<<std::endl;
+        //std::cout<<"colLen="<<(int)colLen<<std::endl;
+        //std::cout<<"n="<<(int)n<<std::endl;
 
         // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
         complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
@@ -850,8 +846,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         bitLenInt i, d;
         int row, col;
         int tempRow, tempCol;
-
-        bool startsEvenRow;
 
         bitLenInt controls[1];
 
@@ -897,10 +891,12 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     gateChoices.erase(gateChoiceIterator);
 
                     gateChoiceIterator = gateChoices.begin();
-                    std::advance(gateChoiceIterator, (gateRand < (ONE_R1 / 2)) ? 0 : 1);
-                    gateChoices.erase(gateChoiceIterator);
-
-                    gateChoice = *(gateChoices.begin());
+                    if (gateRand == 1) {
+                        gateChoice = *(gateChoices.rbegin());
+                    } else {
+                        std::advance(gateChoiceIterator, (int)(gateRand * 2));
+                    }
+                    gateChoice = *gateChoiceIterator;
 
                     if (gateChoice == 0) {
                         qReg->SqrtX(i);
@@ -925,10 +921,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
             gateSequence.pop_front();
             gateSequence.push_back(gate);
 
-            startsEvenRow = ((sequenceRowStart[gate] & 1U) == 0U);
-
-            for (row = sequenceRowStart[gate]; row < (int)(n / rowLen); row += 2) {
-                for (col = 0; col < (int)(n / colLen); col++) {
+            for (row = 1; row < rowLen; row += 2) {
+                for (col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
                     // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
@@ -940,28 +934,14 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     tempCol = col;
 
                     tempRow += ((gate & 2U) ? 1 : -1);
-
-                    if (startsEvenRow) {
-                        tempCol += ((gate & 1U) ? 0 : -1);
-                    } else {
-                        tempCol += ((gate & 1U) ? 1 : 0);
-                    }
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
                         continue;
                     }
 
-                    b1 = row * rowLen + col;
-                    b2 = tempRow * rowLen + tempCol;
-
-                    // For the efficiency of QUnit's mapper, we transpose the row and column.
-                    tempCol = b1 / rowLen;
-                    tempRow = b1 - (tempCol * rowLen);
-                    b1 = (tempRow * rowLen) + tempCol;
-
-                    tempCol = b2 / rowLen;
-                    tempRow = b2 - (tempCol * rowLen);
-                    b2 = (tempRow * rowLen) + tempCol;
+                    b1 = row * colLen + col;
+                    b2 = tempRow * colLen + tempCol;
 
                     // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                     // different.
@@ -970,9 +950,13 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     controls[0] = b1;
                     qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
+
+                    //std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
                 }
             }
+            //std::cout<<"Depth++"<<std::endl;
         }
+        //std::cout<<"New iteration."<<std::endl;
 
         // We measure all bits once, after the circuit is run.
         qReg->MReg(0, n);
