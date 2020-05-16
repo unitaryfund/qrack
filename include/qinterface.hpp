@@ -777,6 +777,14 @@ public:
     virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
+     * Controlled H gate
+     *
+     * If the "control" bit is set to 1, then the "H" Walsh-Hadamard transform operator is applied
+     * to "target."
+     */
+    virtual void CH(bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled S gate
      *
      * If the "control" bit is set to 1, then the S gate is applied
@@ -1410,6 +1418,14 @@ public:
      * to "target."
      */
     virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /**
+     * Bitwise controlled H gate
+     *
+     * If the "control" bit is set to 1, then the "H" Walsh-Hadamard transform operator is applied
+     * to "target."
+     */
+    virtual void CH(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled S gate

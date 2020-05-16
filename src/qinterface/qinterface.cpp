@@ -173,6 +173,9 @@ REG_GATE_C1_1(CY);
 /// Apply controlled Pauli Z matrix to each bit
 REG_GATE_C1_1(CZ);
 
+/// Apply controlled H gate to each bit
+REG_GATE_C1_1(CH);
+
 /// Apply controlled S gate to each bit
 REG_GATE_C1_1(CS);
 

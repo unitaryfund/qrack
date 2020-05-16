@@ -663,6 +663,8 @@ public:
     virtual void CZ(bitLenInt control, bitLenInt target);
     using QInterface::CCZ;
     virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+    using QInterface::CH;
+    virtual void CH(bitLenInt control, bitLenInt target);
 
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
