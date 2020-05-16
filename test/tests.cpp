@@ -4790,16 +4790,15 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
     int tempRow, tempCol;
     bitLenInt b1, b2;
     bitLenInt gate;
-    bool startsEvenRow;
 
     bitLenInt controls[1];
 
     // We factor the qubit count into two integers, as close to a perfect square as we can.
-    int rowLen = std::sqrt(n);
-    while (((n / rowLen) * rowLen) != n) {
-        rowLen--;
+    int colLen = std::sqrt(n);
+    while (((n / colLen) * colLen) != n) {
+        colLen--;
     }
-    int colLen = n / rowLen;
+    int rowLen = n / colLen;
 
     QInterfacePtr goldStandard = CreateQuantumInterface(
         testSubSubEngineType, n, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
@@ -4809,14 +4808,6 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
-
-        // Depending on which element of the sequential tiling we're running, per depth iteration,
-        // we need to start either with row "0" or row "1".
-        std::map<bitLenInt, bitLenInt> sequenceRowStart;
-        sequenceRowStart[0] = 1;
-        sequenceRowStart[1] = 1;
-        sequenceRowStart[2] = 0;
-        sequenceRowStart[3] = 0;
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -4842,11 +4833,9 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
             gateSequence.pop_front();
             gateSequence.push_back(gate);
 
-            startsEvenRow = ((sequenceRowStart[gate] & 1U) == 0U);
-
             std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (row = sequenceRowStart[gate]; row < (int)(n / rowLen); row += 2) {
-                for (col = 0; col < (int)(n / colLen); col++) {
+            for (row = 1; row < rowLen; row += 2) {
+                for (col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
                     // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
@@ -4858,28 +4847,14 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
                     tempCol = col;
 
                     tempRow += ((gate & 2U) ? 1 : -1);
-
-                    if (startsEvenRow) {
-                        tempCol += ((gate & 1U) ? 0 : -1);
-                    } else {
-                        tempCol += ((gate & 1U) ? 1 : 0);
-                    }
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
                         continue;
                     }
 
-                    b1 = row * rowLen + col;
-                    b2 = tempRow * rowLen + tempCol;
-
-                    // For the efficiency of QUnit's mapper, we transpose the row and column.
-                    tempCol = b1 / rowLen;
-                    tempRow = b1 - (tempCol * rowLen);
-                    b1 = (tempRow * rowLen) + tempCol;
-
-                    tempCol = b2 / rowLen;
-                    tempRow = b2 - (tempCol * rowLen);
-                    b2 = (tempRow * rowLen) + tempCol;
+                    b1 = row * colLen + col;
+                    b2 = tempRow * colLen + tempCol;
 
                     MultiQubitGate multiGate;
                     multiGate.b1 = b1;
