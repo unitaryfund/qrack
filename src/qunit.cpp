@@ -1306,6 +1306,17 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX);
 }
 
+void QUnit::CH(bitLenInt control, bitLenInt target)
+{
+    const complex mtrx[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
+        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+
+    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), H(target), false);
+}
+
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     if (shards[control1].isPlusMinus && !shards[target].isPlusMinus) {
