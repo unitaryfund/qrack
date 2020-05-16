@@ -212,6 +212,15 @@ void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyControlledSinglePhase(controls, 2, target, ONE_CMPLX, -ONE_CMPLX);
 }
 
+/// Apply controlled Pauli Z matrix to bit
+void QInterface::CH(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    const complex h[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
+        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
+    ApplyControlledSingleBit(controls, 1, target, h);
+}
+
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
