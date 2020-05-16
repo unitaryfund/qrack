@@ -833,9 +833,9 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         }
         int rowLen = n / colLen;
 
-        //std::cout<<"rowLen="<<(int)rowLen<<std::endl;
-        //std::cout<<"colLen="<<(int)colLen<<std::endl;
-        //std::cout<<"n="<<(int)n<<std::endl;
+        // std::cout<<"n="<<(int)n<<std::endl;
+        // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
+        // std::cout<<"colLen="<<(int)colLen<<std::endl;
 
         // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
         complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
@@ -951,12 +951,12 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
-                    //std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
+                    // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
                 }
             }
-            //std::cout<<"Depth++"<<std::endl;
+            // std::cout<<"Depth++"<<std::endl;
         }
-        //std::cout<<"New iteration."<<std::endl;
+        // std::cout<<"New iteration."<<std::endl;
 
         // We measure all bits once, after the circuit is run.
         qReg->MReg(0, n);
