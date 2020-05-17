@@ -3298,7 +3298,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isSame = !needToCommute && (norm(polarDiff - polarSame) <= ampThreshold);
+        isSame = (!needToCommute || !buffer->isInvert) && (norm(polarDiff - polarSame) <= ampThreshold);
         isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (!isSame && !isOpposite) {
@@ -3334,7 +3334,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isSame = !needToCommute && (norm(polarDiff - polarSame) <= ampThreshold);
+        isSame = (!needToCommute || !buffer->isInvert) && (norm(polarDiff - polarSame) <= ampThreshold);
         isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (!isSame && !isOpposite) {
