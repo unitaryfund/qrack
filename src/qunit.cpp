@@ -988,16 +988,15 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!shard.IsInvertTarget()) {
+    if (shard.IsInvertTarget()) {
+        TransformBasis1Qb(false, target);
+        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    } else {
         if (UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
         }
-    } else if (shard.isPlusMinus) {
-        TransformBasis1Qb(false, target);
     }
-
-    shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
     if (!shard.isPlusMinus) {
         ZBase(target);
@@ -1410,7 +1409,10 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    if (!shard.IsInvertTarget()) {
+    if (shard.IsInvertTarget()) {
+        TransformBasis1Qb(false, target);
+        shard.CommutePhase(topLeft, bottomRight);
+    } else {
         if (IS_ARG_0(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
@@ -1420,11 +1422,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             Flush1Eigenstate(target);
             return;
         }
-    } else if (shard.isPlusMinus) {
-        TransformBasis1Qb(false, target);
     }
-
-    shard.CommutePhase(topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
