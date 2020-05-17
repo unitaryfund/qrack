@@ -993,10 +993,11 @@ void QUnit::Z(bitLenInt target)
             Flush0Eigenstate(target);
             return;
         }
+    } else if (shard.isPlusMinus) {
+        TransformBasis1Qb(false, target);
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-    //shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
     if (!shard.isPlusMinus) {
         ZBase(target);
@@ -1419,10 +1420,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             Flush1Eigenstate(target);
             return;
         }
+    } else if (shard.isPlusMinus) {
+        TransformBasis1Qb(false, target);
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-    //shard.CommutePhase(topLeft, bottomRight);
+    shard.CommutePhase(topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
@@ -3296,8 +3298,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isSame = (norm(polarDiff - polarSame) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
-        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
+        isSame = !needToCommute && (norm(polarDiff - polarSame) <= ampThreshold);
+        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, false);
@@ -3332,8 +3334,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isSame = (norm(polarDiff - polarSame) <= ampThreshold) && (!needToCommute || !buffer->isInvert);
-        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
+        isSame = !needToCommute && (norm(polarDiff - polarSame) <= ampThreshold);
+        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (!isSame && !isOpposite) {
             ApplyBuffer(phaseShard, control, bitIndex, true);
