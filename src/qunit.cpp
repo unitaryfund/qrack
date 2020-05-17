@@ -995,8 +995,8 @@ void QUnit::Z(bitLenInt target)
         }
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
-    // shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+    //shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
     if (!shard.isPlusMinus) {
         ZBase(target);
@@ -1421,8 +1421,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
     }
 
-    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
-    // shard.CommutePhase(topLeft, bottomRight);
+    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+    //shard.CommutePhase(topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
