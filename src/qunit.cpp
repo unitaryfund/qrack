@@ -988,14 +988,15 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.IsInvertTarget()) {
-        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-    } else {
+    if (!shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
         }
     }
+
+    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+    // shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
 
     if (!shard.isPlusMinus) {
         ZBase(target);
@@ -1102,12 +1103,12 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    /*if (!freezeBasis) {
+    if (!freezeBasis) {
         H(target);
         CZ(control, target);
         H(target);
         return;
-    }*/
+    }
 
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
@@ -1292,8 +1293,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
@@ -1408,9 +1409,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    if (shard.IsInvertTarget()) {
-        shard.CommutePhase(topLeft, bottomRight);
-    } else {
+    if (!shard.IsInvertTarget()) {
         if (IS_ARG_0(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
@@ -1421,6 +1420,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             return;
         }
     }
+
+    RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+    // shard.CommutePhase(topLeft, bottomRight);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
