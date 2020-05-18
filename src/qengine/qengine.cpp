@@ -437,6 +437,30 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     Apply2x2(qPowersSorted[0], qPowersSorted[1], iSqrtX, 2, qPowersSorted, false);
 }
 
+/// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
+void QEngine::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+{
+    real1 cosTheta = cos(theta);
+    real1 sinTheta = sin(theta);
+
+    if (cosTheta != ONE_R1) {
+        const complex fSimSwap[4] = { complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta),
+            complex(ZERO_R1, sinTheta), complex(cosTheta, ZERO_R1) };
+        bitCapInt qPowersSorted[2];
+        qPowersSorted[0] = pow2(qubit1);
+        qPowersSorted[1] = pow2(qubit2);
+        std::sort(qPowersSorted, qPowersSorted + 2);
+        Apply2x2(qPowersSorted[0], qPowersSorted[1], fSimSwap, 2, qPowersSorted, false);
+    }
+
+    if (phi == ZERO_R1) {
+        return;
+    }
+
+    bitLenInt controls[1] = { qubit1 };
+    ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+}
+
 void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
     bitCapIntOcl lengthPower = pow2Ocl(length);

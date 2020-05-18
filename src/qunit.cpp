@@ -858,6 +858,48 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     shards[qubit2].MakeDirty();
 }
 
+void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+{
+    bitLenInt controls[1] = { qubit1 };
+    real1 sinTheta = sin(theta);
+
+    if (IS_ZERO_R1(sinTheta)) {
+        ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+        return;
+    }
+
+    if (IS_ONE_R1(-sinTheta)) {
+        ISwap(qubit1, qubit2);
+        ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+        return;
+    }
+
+    TransformBasis1Qb(false, qubit1);
+    TransformBasis1Qb(false, qubit2);
+    RevertBasis2Qb(qubit1, ONLY_INVERT);
+    RevertBasis2Qb(qubit2, ONLY_INVERT);
+
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
+        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
+        if (SHARD_STATE(shard1)) {
+            ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+        }
+        return;
+    }
+
+    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
+    unit->FSim(theta, phi, shards[qubit1].mapped, shards[qubit2].mapped);
+
+    // TODO: If we multiply out cached amplitudes, we can optimize this.
+
+    shards[qubit1].MakeDirty();
+    shards[qubit2].MakeDirty();
+}
+
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
     const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)

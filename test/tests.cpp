@@ -552,6 +552,48 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticisqrtswap")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x001));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
+{
+    real1 theta = 3 * M_PI / 2;
+
+    qftReg->SetPermutation(1);
+    qftReg->FSim(theta, ZERO_R1, 0, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 2);
+    qftReg->FSim(theta, ZERO_R1, 0, 1);
+    qftReg->FSim(theta, ZERO_R1, 0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 4);
+    qftReg->FSim(theta, ZERO_R1, 0, 2, 2);
+    qftReg->FSim(theta, ZERO_R1, 0, 2, 2);
+    qftReg->H(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0F));
+
+    real1 phi = M_PI;
+
+    qftReg->SetReg(0, 8, 0x35);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
+    qftReg->H(0, 4);
+    qftReg->FSim(ZERO_R1, phi, 4, 0);
+    qftReg->FSim(ZERO_R1, phi, 5, 1);
+    qftReg->FSim(ZERO_R1, phi, 6, 2);
+    qftReg->FSim(ZERO_R1, phi, 7, 3);
+    qftReg->H(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0);
+    qftReg->FSim(ZERO_R1, phi, 0, 1);
+    qftReg->FSim(ZERO_R1, phi, 0, 1);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {
     complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
