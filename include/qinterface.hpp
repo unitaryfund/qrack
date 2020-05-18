@@ -1858,6 +1858,12 @@ public:
     /** Bitwise inverse square root of swap */
     virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
+    /** The 2-qubit "fSim" gate, (useful in the simulation of particles with fermionic statistics) */
+    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+
+    /** Bitwise "fSim" */
+    virtual void FSim(real1 theta, real1 phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
+
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
     {

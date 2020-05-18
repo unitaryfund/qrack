@@ -107,6 +107,13 @@ REG_GATE_2(SqrtSwap);
 /// Bit-wise apply inverse square root of swap to two registers
 REG_GATE_2(ISqrtSwap);
 
+void QInterface::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        FSim(theta, phi, qubit1 + bit, qubit2 + bit);
+    }
+}
+
 /// Bit-wise apply doubly-controlled-z to two control registers and one target register
 REG_GATE_C2_1(CCZ);
 

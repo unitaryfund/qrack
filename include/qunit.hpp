@@ -788,6 +788,7 @@ public:
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
+    virtual void FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2);
 
     /** @} */
 

@@ -99,6 +99,8 @@ public:
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::ISqrtSwap;
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
+    using QInterface::FSim;
+    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
