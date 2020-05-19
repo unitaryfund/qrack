@@ -1510,7 +1510,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         return;
     }
 
-    shard.CommutePhase(bottomLeft, topRight);
+    if (shard.IsInvertTarget()) {
+        TransformBasis1Qb(false, target);
+        shard.CommutePhase(bottomLeft, topRight);
+    }
+
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
