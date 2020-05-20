@@ -1120,18 +1120,17 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
 
     if (CACHED_PLUS_MINUS(tShard)) {
         if (IS_NORM_ZERO(tShard.amp1)) {
             return;
         }
-        if (IS_NORM_ZERO(tShard.amp0)) {
+        if (IS_NORM_ZERO(tShard.amp0) && CACHED_PLUS_MINUS(cShard)) {
             Z(control);
             return;
         }
     }
-
-    QEngineShard& cShard = shards[control];
 
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
