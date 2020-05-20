@@ -3307,7 +3307,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control;
 
-    bool isSame, isOpposite, needToCommute = false;
+    bool isSame, isOpposite;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3319,8 +3319,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         isSame = norm(polarDiff - polarSame) <= ampThreshold;
         isOpposite = norm(polarDiff + polarSame) <= ampThreshold;
-
-        needToCommute |= isSame;
 
         if (!isSame && !isOpposite) {
             partner = phaseShard->first;
@@ -3337,7 +3335,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert || (needToCommute && norm(polarDiff + polarSame) <= ampThreshold)) {
+            if (phaseShard->second->isInvert) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
@@ -3346,8 +3344,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             }
         }
     }
-
-    needToCommute = false;
 
     targetOfShards = shard.antiTargetOfShards;
 
@@ -3359,8 +3355,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         isSame = norm(polarDiff - polarSame) <= ampThreshold;
         isOpposite = norm(polarDiff + polarSame) <= ampThreshold;
-
-        needToCommute |= isSame;
 
         if (!isSame && !isOpposite) {
             partner = phaseShard->first;
@@ -3377,7 +3371,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert || (needToCommute && norm(polarDiff + polarSame) <= ampThreshold)) {
+            if (phaseShard->second->isInvert) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
