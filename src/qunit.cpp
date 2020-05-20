@@ -1146,9 +1146,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        H(target);
-        CZ(control, target);
-        H(target);
+        TransformBasis1Qb(false, control);
+        TransformBasis1Qb(false, target);
+
+        RevertBasis2Qb(control, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        shards[target].AddInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+
         return;
     }
 
