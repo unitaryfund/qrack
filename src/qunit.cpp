@@ -1133,7 +1133,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
             Flush0Eigenstate(control);
             return;
@@ -3321,16 +3321,20 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         partner = phaseShard->first;
+        control = FindShardIndex(*partner);
         buffer = phaseShard->second;
 
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
+        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (isOpposite) {
+            if (needToCommute) {
+                ApplyBuffer(phaseShard, control, bitIndex, false);
+                shard.RemovePhaseControl(partner);
+            }
             needToCommute = true;
-            break;
         }
     }
 
@@ -3357,16 +3361,20 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         partner = phaseShard->first;
+        control = FindShardIndex(*partner);
         buffer = phaseShard->second;
 
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isOpposite = (norm(polarDiff + polarSame) <= ampThreshold) && !buffer->isInvert;
+        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (isOpposite) {
+            if (needToCommute) {
+                ApplyBuffer(phaseShard, control, bitIndex, true);
+                shard.RemovePhaseAntiControl(partner);
+            }
             needToCommute = true;
-            break;
         }
     }
 
