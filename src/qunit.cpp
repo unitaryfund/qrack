@@ -3335,7 +3335,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             ApplyBuffer(phaseShard, control, bitIndex, false);
             shard.RemovePhaseControl(partner);
         } else {
-            anyInvert |= buffer->isInvert;
+            anyInvert |= isSame && buffer->isInvert;
         }
     }
 
@@ -3345,7 +3345,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert != anyInvert) {
+            if (phaseShard->second->isInvert != anyInvert || (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
@@ -3375,7 +3375,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
         } else {
-            anyInvert |= buffer->isInvert;
+            anyInvert |= isSame && buffer->isInvert;
         }
     }
 
@@ -3385,7 +3385,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert != anyInvert) {
+            if (phaseShard->second->isInvert != anyInvert || (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
