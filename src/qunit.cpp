@@ -3342,7 +3342,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     targetOfShards = shard.targetOfShards;
 
-    if (!anyInvert && !anyPhase && targetOfShards.size() > 0U) {
+    if (!anyInvert && !anyPhase && targetOfShards.size() > 1U) {
         phaseShard = targetOfShards.begin();
         std::advance(phaseShard, 1);
         for (phaseShard = phaseShard; phaseShard != targetOfShards.end(); phaseShard++) {
@@ -3396,7 +3396,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     targetOfShards = shard.antiTargetOfShards;
 
-    if (!anyInvert && !anyPhase && targetOfShards.size() > 0U) {
+    if (!anyInvert && !anyPhase && targetOfShards.size() > 1U) {
         phaseShard = targetOfShards.begin();
         std::advance(phaseShard, 1);
         for (phaseShard = phaseShard; phaseShard != targetOfShards.end(); phaseShard++) {
