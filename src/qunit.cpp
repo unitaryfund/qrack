@@ -3315,7 +3315,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control;
 
-    bool isSame, isOpposite, anyPhase = false, anyInvert = false;
+    bool isSame, isOpposite, anyInvert = false;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3335,26 +3335,13 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             ApplyBuffer(phaseShard, control, bitIndex, false);
             shard.RemovePhaseControl(partner);
         } else {
-            anyPhase |= !buffer->isInvert;
             anyInvert |= isSame && buffer->isInvert;
         }
     }
 
     targetOfShards = shard.targetOfShards;
 
-    if (!anyInvert && !anyPhase && targetOfShards.size() > 1U) {
-        phaseShard = targetOfShards.begin();
-        std::advance(phaseShard, 1);
-        for (phaseShard = phaseShard; phaseShard != targetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
-
-            partner = phaseShard->first;
-            control = FindShardIndex(*partner);
-
-            ApplyBuffer(phaseShard, control, bitIndex, false);
-            shard.RemovePhaseControl(partner);
-        }
-    } else if (targetOfShards.size() > 1U) {
+    if (targetOfShards.size() > 1U) {
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
@@ -3368,7 +3355,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
     }
 
-    anyPhase = false;
     anyInvert = false;
 
     targetOfShards = shard.antiTargetOfShards;
@@ -3389,26 +3375,13 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
         } else {
-            anyPhase |= !buffer->isInvert;
             anyInvert |= isSame && buffer->isInvert;
         }
     }
 
     targetOfShards = shard.antiTargetOfShards;
 
-    if (!anyInvert && !anyPhase && targetOfShards.size() > 1U) {
-        phaseShard = targetOfShards.begin();
-        std::advance(phaseShard, 1);
-        for (phaseShard = phaseShard; phaseShard != targetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
-
-            partner = phaseShard->first;
-            control = FindShardIndex(*partner);
-
-            ApplyBuffer(phaseShard, control, bitIndex, true);
-            shard.RemovePhaseAntiControl(partner);
-        }
-    } else if (targetOfShards.size() > 1U) {
+    if (targetOfShards.size() > 1U) {
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
