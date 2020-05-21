@@ -1146,13 +1146,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-        TransformBasis1Qb(false, target);
-
-        RevertBasis2Qb(control, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-
-        shards[target].AddInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+        H(target);
+        CZ(control, target);
+        H(target);
 
         return;
     }
@@ -3312,7 +3308,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control;
 
-    bool isSame, isOpposite;
+    bool isSame, isOpposite, isAllInvert = true;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3331,6 +3327,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
             ApplyBuffer(phaseShard, control, bitIndex, false);
             shard.RemovePhaseControl(partner);
+        } else {
+            isAllInvert &= buffer->isInvert;
         }
     }
 
@@ -3340,7 +3338,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert) {
+            if (phaseShard->second->isInvert != isAllInvert) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
@@ -3349,6 +3347,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             }
         }
     }
+
+    isAllInvert = true;
 
     targetOfShards = shard.antiTargetOfShards;
 
@@ -3367,6 +3367,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
+        } else {
+            isAllInvert &= buffer->isInvert;
         }
     }
 
@@ -3376,7 +3378,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert) {
+            if (phaseShard->second->isInvert != isAllInvert) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
