@@ -3375,15 +3375,14 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     // TODO: Should be able to commute these:
     if (anyInvert || anyAntiInvert) {
         if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
-            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_TARGETS, ONLY_ANTI);
+            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         } else {
-            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_TARGETS, ONLY_CTRL);
+            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         }
     }
 
-    targetOfShards = shard.targetOfShards;
-
-    if (targetOfShards.size() > 1U) {
+    if (shard.targetOfShards.size() > 1U || shard.antiTargetOfShards.size() > 0U) {
+        targetOfShards = shard.targetOfShards;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
@@ -3398,9 +3397,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
     }
 
-    targetOfShards = shard.antiTargetOfShards;
-
-    if (targetOfShards.size() > 1U) {
+    if (shard.antiTargetOfShards.size() > 1U || shard.targetOfShards.size() > 0U) {
+        targetOfShards = shard.antiTargetOfShards;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
