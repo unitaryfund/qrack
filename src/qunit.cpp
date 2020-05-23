@@ -3314,6 +3314,13 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     QEngineShard& shard = shards[bitIndex];
 
+    // TODO: Should be able to commute these:
+    if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
+        RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_TARGETS, ONLY_ANTI);
+    } else {
+        RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_TARGETS, ONLY_CTRL);
+    }
+
     if (!QUEUED_PHASE(shard)) {
         return;
     }
