@@ -121,11 +121,11 @@ void QEngineCPU::GetProbs(real1* outputProbs)
     stateVec->get_probs(outputProbs);
 }
 
-    /**
-     * Apply a 2x2 matrix to the state vector
-     *
-     * A fundamental operation used by almost all gates.
-     */
+/**
+ * Apply a 2x2 matrix to the state vector
+ *
+ * A fundamental operation used by almost all gates.
+ */
 
 #if ENABLE_COMPLEX_X2
 

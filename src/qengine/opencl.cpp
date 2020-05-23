@@ -2356,7 +2356,7 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
         return NULL;
     }
 
-        // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
+    // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
 #if defined(__APPLE__)
     void* toRet;
     posix_memalign(&toRet, QRACK_ALIGN_SIZE,
