@@ -4635,12 +4635,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     qftReg->CNOT(1, 0);
     qftReg->H(1);
 
-    bitCapInt qPowers[2];
-    for (bitLenInt i = 0; i < 2; i++) {
+    bitCapInt qPowers[8];
+    for (bitLenInt i = 0; i < 8; i++) {
         qPowers[i] = pow2(i);
     }
 
-    std::map<bitCapInt, int> testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 2, 10000);
+    std::map<bitCapInt, int> testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
 
     QInterfacePtr goldStandard = CreateQuantumInterface(
         testSubSubEngineType, 8, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
@@ -4655,12 +4655,61 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     goldStandard->CNOT(1, 0);
     goldStandard->H(1);
 
-    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 2, 10000);
+    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
 
     int testBinResult, goldBinResult;
     std::map<bitCapInt, int>::iterator measurementBin;
     real1 crossEntropy = ZERO_R1;
-    for (int perm = 0; perm < 4; perm++) {
+    for (int perm = 0; perm < 256; perm++) {
+        measurementBin = goldStandardResult.find(perm);
+        if (measurementBin == goldStandardResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
+    REQUIRE(crossEntropy > 0.97);
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->H(2);
+    qftReg->CZ(2, 0);
+    qftReg->X(2);
+    qftReg->CNOT(0, 3);
+    qftReg->Y(0);
+    qftReg->Y(1);
+    qftReg->CNOT(1, 2);
+    qftReg->H(1);
+    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    goldStandard->SetPermutation(0);
+    goldStandard->H(0);
+    goldStandard->H(1);
+    goldStandard->H(2);
+    goldStandard->CZ(2, 0);
+    goldStandard->X(2);
+    goldStandard->CNOT(0, 3);
+    goldStandard->Y(0);
+    goldStandard->Y(1);
+    goldStandard->CNOT(1, 2);
+    goldStandard->H(1);
+    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    crossEntropy = ZERO_R1;
+    for (int perm = 0; perm < 256; perm++) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
             goldBinResult = 0;
