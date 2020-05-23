@@ -500,7 +500,6 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-
             int d;
             bitLenInt i;
             real1 theta, phi, lambda;
@@ -548,7 +547,6 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-
             int d;
             bitLenInt i;
             real1 gateRand;
@@ -606,7 +604,6 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-
             int d;
             bitLenInt i;
             real1 gateRand;
@@ -673,7 +670,6 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-
             int d;
             bitLenInt i;
             real1 gateRand;
@@ -750,7 +746,6 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
-
             int d;
             bitLenInt i;
             real1 gateRand;
@@ -818,7 +813,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
     const int depth = 20;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
-
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
         // The 2 bit indicates +/- row offset.

@@ -132,10 +132,10 @@ int main(int argc, char* argv[])
                 max_qubits = log2(maxMem / QEngineOCL::OclMemDenom);
             }
 #else
-        // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.
-        // If we're not talking about the OpenCL resources of a single device,
-        // maximum allocation becomes a notoriously thorny matter.
-        // For any case besides the above, we just use the default.
+            // With OpenCL tests disabled, it's ambiguous what device we want to set the limit by.
+            // If we're not talking about the OpenCL resources of a single device,
+            // maximum allocation becomes a notoriously thorny matter.
+            // For any case besides the above, we just use the default.
 #endif
         }
     } else {

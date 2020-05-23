@@ -4624,6 +4624,63 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
         qftReg->CNOT(control1 + i, control2 + i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->T(1);
+    qftReg->CNOT(0, 1);
+    qftReg->CZ(0, 1);
+    qftReg->T(0);
+    qftReg->H(1);
+    qftReg->CNOT(1, 0);
+    qftReg->H(1);
+
+    bitCapInt qPowers[2];
+    for (bitLenInt i = 0; i < 2; i++) {
+        qPowers[i] = pow2(i);
+    }
+
+    std::map<bitCapInt, int> testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 2, 10000);
+
+    QInterfacePtr goldStandard = CreateQuantumInterface(
+        testSubSubEngineType, 8, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
+
+    goldStandard->SetPermutation(0);
+    goldStandard->H(0);
+    goldStandard->T(1);
+    goldStandard->CNOT(0, 1);
+    goldStandard->CZ(0, 1);
+    goldStandard->T(0);
+    goldStandard->H(1);
+    goldStandard->CNOT(1, 0);
+    goldStandard->H(1);
+
+    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 2, 10000);
+
+    int testBinResult, goldBinResult;
+    std::map<bitCapInt, int>::iterator measurementBin;
+    real1 crossEntropy = ZERO_R1;
+    for (int perm = 0; perm < 4; perm++) {
+        measurementBin = goldStandardResult.find(perm);
+        if (measurementBin == goldStandardResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
+    REQUIRE(crossEntropy > 0.97);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)

@@ -1068,7 +1068,6 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
     std::sort(qPowers, qPowers + 2);
 
     par_for_mask(0, maxQPower, qPowers, 2, [&](const bitCapInt lcv, const int cpu) {
-
         // Carry-in, sum bit in
         complex ins0c0 = stateVec->read(lcv);
         complex ins0c1 = stateVec->read(lcv | carryInSumOutMask);
@@ -1133,7 +1132,6 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
     std::sort(qPowers, qPowers + 2);
 
     par_for_mask(0, maxQPower, qPowers, 2, [&](const bitCapInt lcv, const int cpu) {
-
         // Carry-in, sum bit out
         complex outs0c0 = stateVec->read(lcv);
         complex outs0c1 = stateVec->read(lcv | carryOutMask);

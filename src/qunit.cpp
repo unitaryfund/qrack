@@ -1072,7 +1072,8 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
 }
 
 #define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
-    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+    ApplyEitherControlled(                                                                                             \
+        controls, controlLen, { target }, anti,                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                  \
             if (!shards[target].isPlusMinus) {                                                                         \
@@ -1085,7 +1086,8 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
         [&]() { bare; });
 
 #define CTRLED_PHASE_INVERT_WRAP(ctrld, ctrldgen, bare, anti, isInvert, top, bottom)                                   \
-    ApplyEitherControlled(controls, controlLen, { target }, anti,                                                      \
+    ApplyEitherControlled(                                                                                             \
+        controls, controlLen, { target }, anti,                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             if (!shards[target].isPlusMinus) {                                                                         \
                 unit->ctrld;                                                                                           \
@@ -1107,7 +1109,8 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     }                                                                                                                  \
     ToPermBasis(qubit1);                                                                                               \
     ToPermBasis(qubit2);                                                                                               \
-    ApplyEitherControlled(controls, controlLen, { qubit1, qubit2 }, anti,                                              \
+    ApplyEitherControlled(                                                                                             \
+        controls, controlLen, { qubit1, qubit2 }, anti,                                                                \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, [&]() { bare; })
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, trnsMtrx
 #define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), shards[target].mapped, mtrx
@@ -1169,7 +1172,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target);
 
         std::swap(controls[0], target);
-        ApplyEitherControlled(controls, controlLen, { target }, false,
+        ApplyEitherControlled(
+            controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true);
         return;
@@ -1255,7 +1259,8 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     bitLenInt controls[2] = { control1, control2 };
 
-    ApplyEitherControlled(controls, 2, { target }, false,
+    ApplyEitherControlled(
+        controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
             if (shards[target].isPlusMinus) {
                 if (mappedControls.size() == 2) {
@@ -1283,7 +1288,8 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     bitLenInt controls[2] = { control1, control2 };
 
-    ApplyEitherControlled(controls, 2, { target }, true,
+    ApplyEitherControlled(
+        controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
             if (shards[target].isPlusMinus) {
                 unit->ApplyAntiControlledSinglePhase(
@@ -1419,7 +1425,8 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     bitLenInt controls[2] = { control1, control2 };
 
-    ApplyEitherControlled(controls, 2, { target }, false,
+    ApplyEitherControlled(
+        controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
             if (shards[target].isPlusMinus) {
                 if (mappedControls.size() == 2) {
@@ -3358,7 +3365,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert != anyInvert || (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
+            if (phaseShard->second->isInvert != anyInvert ||
+                (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 
@@ -3412,7 +3420,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (phaseShard->second->isInvert != anyInvert || (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
+            if (phaseShard->second->isInvert != anyInvert ||
+                (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
                 partner = phaseShard->first;
                 control = FindShardIndex(*partner);
 

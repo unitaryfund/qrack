@@ -73,9 +73,9 @@ int main(int argc, char* argv[])
         return returnCode;
     }
 
-        // If we're talking about a particular OpenCL device,
-        // we have an API designed to tell us device capabilities and limitations,
-        // like maximum RAM allocation.
+    // If we're talking about a particular OpenCL device,
+    // we have an API designed to tell us device capabilities and limitations,
+    // like maximum RAM allocation.
 #if ENABLE_OPENCL
     if (opencl_single) {
         // Make sure the context singleton is initialized.
