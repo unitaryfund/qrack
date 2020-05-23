@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include <cfloat>
 #include <random>
 #include <unordered_set>
