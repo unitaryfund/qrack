@@ -4779,6 +4779,51 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
     REQUIRE(crossEntropy > 0.97);
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 5);
+    qftReg->CZ(0, 2);
+    qftReg->CZ(2, 1);
+    qftReg->CZ(4, 3);
+    qftReg->H(3);
+    qftReg->Y(4);
+    qftReg->CZ(2, 3);
+    qftReg->H(2);
+    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    goldStandard->SetPermutation(0);
+    goldStandard->H(0, 5);
+    goldStandard->CZ(0, 2);
+    goldStandard->CZ(2, 1);
+    goldStandard->CZ(4, 3);
+    goldStandard->H(3);
+    goldStandard->Y(4);
+    goldStandard->CZ(2, 3);
+    goldStandard->H(2);
+    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    crossEntropy = ZERO_R1;
+    for (int perm = 0; perm < 256; perm++) {
+        measurementBin = goldStandardResult.find(perm);
+        if (measurementBin == goldStandardResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
+    REQUIRE(crossEntropy > 0.97);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
@@ -4960,6 +5005,52 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             crossEntropy = ZERO_R1;
         }
         crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+
+        if (crossEntropy <= 0.97) {
+            for (d = 0; d < Depth; d++) {
+                std::vector<int>& layer1QbRands = gate1QbRands[d];
+                for (i = 0; i < layer1QbRands.size(); i++) {
+                    int gate1Qb = layer1QbRands[i];
+                    if (gate1Qb == 0) {
+                        std::cout << "qftReg->H(" << (int)i << ");" << std::endl;
+                        // testCase->H(i);
+                    } else if (gate1Qb == 1) {
+                        std::cout << "qftReg->X(" << (int)i << ");" << std::endl;
+                        // testCase->X(i);
+                    } else if (gate1Qb == 2) {
+                        std::cout << "qftReg->Y(" << (int)i << ");" << std::endl;
+                        // testCase->Y(i);
+                    } else if (gate1Qb == 3) {
+                        std::cout << "qftReg->T(" << (int)i << ");" << std::endl;
+                        // testCase->T(i);
+                    } else {
+                        // Identity test
+                    }
+                }
+
+                std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+                for (i = 0; i < layerMultiQbRands.size(); i++) {
+                    MultiQubitGate multiGate = layerMultiQbRands[i];
+                    if (multiGate.gate == 0) {
+                        std::cout << "qftReg->Swap(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
+                                  << std::endl;
+                        // testCase->Swap(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 1) {
+                        std::cout << "qftReg->CZ(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
+                                  << std::endl;
+                        // testCase->CZ(multiGate.b1, multiGate.b2);
+                    } else if (multiGate.gate == 2) {
+                        std::cout << "qftReg->CNOT(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
+                                  << std::endl;
+                        // testCase->CNOT(multiGate.b1, multiGate.b2);
+                    } else {
+                        std::cout << "qftReg->CCNOT(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ","
+                                  << (int)multiGate.b3 << ");" << std::endl;
+                        // testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
+                    }
+                }
+            }
+        }
 
         REQUIRE(crossEntropy > 0.97);
     }
