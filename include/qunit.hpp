@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include <cfloat>
 #include <random>
 #include <unordered_set>
@@ -923,7 +925,7 @@ protected:
     void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
         const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS,
         const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
-        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
+        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false, const bool& skipOptimized = false);
 
     void Flush0Eigenstate(const bitLenInt& i)
     {
