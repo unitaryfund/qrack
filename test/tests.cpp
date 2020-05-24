@@ -4780,13 +4780,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
     REQUIRE(crossEntropy > 0.97);
 
+    std::cout << "Start test." << std::endl;
+
     qftReg->SetPermutation(0);
     qftReg->H(0, 5);
     qftReg->CZ(0, 2);
     qftReg->CZ(2, 1);
     qftReg->CZ(4, 3);
     qftReg->H(3);
-    qftReg->Y(4);
+    qftReg->X(4);
     qftReg->CZ(2, 3);
     qftReg->H(2);
     testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
@@ -4797,7 +4799,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     goldStandard->CZ(2, 1);
     goldStandard->CZ(4, 3);
     goldStandard->H(3);
-    goldStandard->Y(4);
+    goldStandard->X(4);
     goldStandard->CZ(2, 3);
     goldStandard->H(2);
     goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
