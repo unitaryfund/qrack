@@ -4736,11 +4736,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     qftReg->H(1);
     qftReg->CNOT(0, 3);
     qftReg->CNOT(1, 2);
-    qftReg->T(2);
-    qftReg->T(3);
     qftReg->CZ(2, 3);
     qftReg->CZ(1, 0);
-    qftReg->T(3);
     qftReg->CNOT(0, 1);
     qftReg->H(0);
     qftReg->H(2);
@@ -4752,11 +4749,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     goldStandard->H(1);
     goldStandard->CNOT(0, 3);
     goldStandard->CNOT(1, 2);
-    goldStandard->T(2);
-    goldStandard->T(3);
     goldStandard->CZ(2, 3);
     goldStandard->CZ(1, 0);
-    goldStandard->T(3);
     goldStandard->CNOT(0, 1);
     goldStandard->H(0);
     goldStandard->H(2);
