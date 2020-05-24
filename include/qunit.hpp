@@ -305,6 +305,10 @@ public:
 protected:
     void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
     {
+        if (IsInvertTarget()) {
+            return;
+        }
+
         PhaseShardPtr buffer;
         QEngineShardPtr partner;
 
@@ -315,7 +319,8 @@ protected:
             buffer = phaseShard->second;
             partner = phaseShard->first;
 
-            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplxDiff)) {
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplxDiff) ||
+                partner->IsInvertTarget()) {
                 continue;
             }
 
